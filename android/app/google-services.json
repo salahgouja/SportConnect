@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "950804897667",
+    "firebase_url": "https://marathon-connect-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "marathon-connect",
+    "storage_bucket": "marathon-connect.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:950804897667:android:336cec4dff83493780e0b6",
+        "android_client_info": {
+          "package_name": "com.sportconnect.sport_connect"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "950804897667-9b5maiqh6qla3t0qk2j28jtfd2ieoh9g.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sportconnect.sport_connect",
+            "certificate_hash": "83dd748efd39d1158d5d0b69e62d39c89d043610"
+          }
+        },
+        {
+          "client_id": "950804897667-75aqg4bh5hq39atm35s6jcn5uo2rbp9r.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCaE4XE8mT3MkH5MM47zc8DqXHTET-KI1w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "950804897667-75aqg4bh5hq39atm35s6jcn5uo2rbp9r.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "950804897667-92ufpn1kmot4pdplnmqat89ir7kbeg9i.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.sportconnect.sportConnect"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

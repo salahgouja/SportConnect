@@ -1,0 +1,12 @@
+appId: com.sportconnect.sport_connect
+---
+- launchApp:
+    clearState: true
+- tapOn: Skip
+- tapOn: Continue
+- tapOn: Enter your email
+- swipe:
+    from:
+      text: Enter your email
+    direction: UP
+

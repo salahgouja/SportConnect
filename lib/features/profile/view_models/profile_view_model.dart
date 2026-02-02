@@ -1,0 +1,360 @@
+import 'dart:io';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sport_connect/features/auth/models/user_model.dart';
+import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
+
+part 'profile_view_model.g.dart';
+
+/// Profile Edit State
+class ProfileEditState {
+  final String displayName;
+  final String? bio;
+  final String? phoneNumber;
+  final DateTime? dateOfBirth;
+  final String? gender;
+  final List<String> interests;
+  final File? newPhotoFile;
+  final bool isLoading;
+  final bool isSaved;
+  final String? error;
+
+  const ProfileEditState({
+    this.displayName = '',
+    this.bio,
+    this.phoneNumber,
+    this.dateOfBirth,
+    this.gender,
+    this.interests = const [],
+    this.newPhotoFile,
+    this.isLoading = false,
+    this.isSaved = false,
+    this.error,
+  });
+
+  ProfileEditState copyWith({
+    String? displayName,
+    String? bio,
+    String? phoneNumber,
+    DateTime? dateOfBirth,
+    String? gender,
+    List<String>? interests,
+    File? newPhotoFile,
+    bool? isLoading,
+    bool? isSaved,
+    String? error,
+  }) {
+    return ProfileEditState(
+      displayName: displayName ?? this.displayName,
+      bio: bio ?? this.bio,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+      gender: gender ?? this.gender,
+      interests: interests ?? this.interests,
+      newPhotoFile: newPhotoFile ?? this.newPhotoFile,
+      isLoading: isLoading ?? this.isLoading,
+      isSaved: isSaved ?? this.isSaved,
+      error: error,
+    );
+  }
+
+  factory ProfileEditState.fromUser(UserModel user) {
+    return ProfileEditState(
+      displayName: user.displayName,
+      bio: user.bio,
+      phoneNumber: user.phoneNumber,
+      dateOfBirth: user.dateOfBirth,
+      gender: user.gender,
+      interests: user.interests,
+    );
+  }
+}
+
+/// Current User Profile Stream
+@riverpod
+Stream<UserModel?> currentUserProfile(Ref ref, String uid) {
+  final repository = ref.read(profileRepositoryProvider);
+  return repository.streamUser(uid);
+}
+
+/// Other User Profile
+@riverpod
+Future<UserModel?> userProfile(Ref ref, String uid) async {
+  final repository = ref.read(profileRepositoryProvider);
+  return repository.getUserById(uid);
+}
+
+/// Profile Edit View Model
+@riverpod
+class ProfileEditViewModel extends _$ProfileEditViewModel {
+  @override
+  ProfileEditState build(String uid) {
+    return const ProfileEditState();
+  }
+
+  void initFromUser(UserModel user) {
+    state = ProfileEditState.fromUser(user);
+  }
+
+  void setDisplayName(String name) {
+    state = state.copyWith(displayName: name);
+  }
+
+  void setBio(String bio) {
+    state = state.copyWith(bio: bio);
+  }
+
+  void setPhoneNumber(String phone) {
+    state = state.copyWith(phoneNumber: phone);
+  }
+
+  void setDateOfBirth(DateTime date) {
+    state = state.copyWith(dateOfBirth: date);
+  }
+
+  void setGender(String gender) {
+    state = state.copyWith(gender: gender);
+  }
+
+  void setInterests(List<String> interests) {
+    state = state.copyWith(interests: interests);
+  }
+
+  void addInterest(String interest) {
+    if (!state.interests.contains(interest)) {
+      state = state.copyWith(interests: [...state.interests, interest]);
+    }
+  }
+
+  void removeInterest(String interest) {
+    state = state.copyWith(
+      interests: state.interests.where((i) => i != interest).toList(),
+    );
+  }
+
+  void setPhotoFile(File? file) {
+    state = state.copyWith(newPhotoFile: file);
+  }
+
+  Future<bool> saveProfile() async {
+    if (state.displayName.isEmpty) {
+      state = state.copyWith(error: 'Display name is required');
+      return false;
+    }
+
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      final repository = ref.read(profileRepositoryProvider);
+
+      // Upload photo if changed
+      if (state.newPhotoFile != null) {
+        await repository.updateProfilePhoto(uid, state.newPhotoFile!);
+      }
+
+      // Update profile
+      await repository.updateProfile(uid, {
+        'displayName': state.displayName,
+        'bio': state.bio,
+        'phoneNumber': state.phoneNumber,
+        'dateOfBirth': state.dateOfBirth,
+        'gender': state.gender,
+        'interests': state.interests,
+      });
+
+      state = state.copyWith(isLoading: false, isSaved: true);
+      return true;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+      return false;
+    }
+  }
+}
+
+/// Social Actions View Model
+@riverpod
+class SocialActionsViewModel extends _$SocialActionsViewModel {
+  @override
+  SocialState build(String currentUserId, String targetUserId) {
+    _checkFollowStatus();
+    return const SocialState();
+  }
+
+  Future<void> _checkFollowStatus() async {
+    try {
+      final repository = ref.read(profileRepositoryProvider);
+      final currentUser = await repository.getUserById(currentUserId);
+
+      if (currentUser != null) {
+        // Following feature has been removed - just check blocked status
+        state = state.copyWith(
+          isFollowing: false,
+          isBlocked: currentUser.blockedUsers.contains(targetUserId),
+        );
+      }
+    } catch (e) {
+      // Ignore errors
+    }
+  }
+
+  Future<void> toggleFollow() async {
+    state = state.copyWith(isLoading: true);
+
+    try {
+      final repository = ref.read(profileRepositoryProvider);
+
+      if (state.isFollowing) {
+        await repository.unfollowUser(currentUserId, targetUserId);
+      } else {
+        await repository.followUser(currentUserId, targetUserId);
+      }
+
+      state = state.copyWith(isFollowing: !state.isFollowing, isLoading: false);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
+  Future<void> toggleBlock() async {
+    state = state.copyWith(isLoading: true);
+
+    try {
+      final repository = ref.read(profileRepositoryProvider);
+
+      if (state.isBlocked) {
+        await repository.unblockUser(currentUserId, targetUserId);
+      } else {
+        await repository.blockUser(currentUserId, targetUserId);
+      }
+
+      state = state.copyWith(
+        isBlocked: !state.isBlocked,
+        isFollowing: state.isBlocked ? state.isFollowing : false,
+        isLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+}
+
+class SocialState {
+  final bool isFollowing;
+  final bool isBlocked;
+  final bool isLoading;
+  final String? error;
+
+  const SocialState({
+    this.isFollowing = false,
+    this.isBlocked = false,
+    this.isLoading = false,
+    this.error,
+  });
+
+  SocialState copyWith({
+    bool? isFollowing,
+    bool? isBlocked,
+    bool? isLoading,
+    String? error,
+  }) {
+    return SocialState(
+      isFollowing: isFollowing ?? this.isFollowing,
+      isBlocked: isBlocked ?? this.isBlocked,
+      isLoading: isLoading ?? this.isLoading,
+      error: error,
+    );
+  }
+}
+
+/// Vehicle Management View Model
+@riverpod
+class VehicleViewModel extends _$VehicleViewModel {
+  @override
+  VehicleState build(String uid) {
+    return const VehicleState();
+  }
+
+  Future<void> addVehicle(Vehicle vehicle) async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      final repository = ref.read(profileRepositoryProvider);
+      await repository.addVehicle(uid, vehicle);
+      state = state.copyWith(isLoading: false);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
+  Future<void> updateVehicle(Vehicle vehicle) async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      final repository = ref.read(profileRepositoryProvider);
+      await repository.updateVehicle(uid, vehicle);
+      state = state.copyWith(isLoading: false);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
+  Future<void> removeVehicle(String vehicleId) async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      final repository = ref.read(profileRepositoryProvider);
+      await repository.removeVehicle(uid, vehicleId);
+      state = state.copyWith(isLoading: false);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
+  Future<void> setDefault(String vehicleId) async {
+    try {
+      final repository = ref.read(profileRepositoryProvider);
+      await repository.setDefaultVehicle(uid, vehicleId);
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+    }
+  }
+}
+
+class VehicleState {
+  final bool isLoading;
+  final String? error;
+
+  const VehicleState({this.isLoading = false, this.error});
+
+  VehicleState copyWith({bool? isLoading, String? error}) {
+    return VehicleState(isLoading: isLoading ?? this.isLoading, error: error);
+  }
+}
+
+/// Leaderboard Provider
+@riverpod
+Future<List<LeaderboardEntry>> leaderboard(Ref ref) async {
+  final repository = ref.read(profileRepositoryProvider);
+  return repository.getLeaderboard();
+}
+
+/// User Rank Provider
+@riverpod
+Future<int> userRank(Ref ref, String uid) async {
+  final repository = ref.read(profileRepositoryProvider);
+  return repository.getUserRank(uid);
+}
+
+/// Followers List Provider
+@riverpod
+Future<List<UserModel>> followers(Ref ref, String uid) async {
+  final repository = ref.read(profileRepositoryProvider);
+  return repository.getFollowers(uid);
+}
+
+/// Following List Provider
+@riverpod
+Future<List<UserModel>> following(Ref ref, String uid) async {
+  final repository = ref.read(profileRepositoryProvider);
+  return repository.getFollowing(uid);
+}

@@ -1,0 +1,221 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'driver_stats_repository.dart';
+
+// **************************************************************************
+// RiverpodGenerator
+// **************************************************************************
+
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
+
+@ProviderFor(driverStatsRepository)
+final driverStatsRepositoryProvider = DriverStatsRepositoryProvider._();
+
+final class DriverStatsRepositoryProvider
+    extends
+        $FunctionalProvider<
+          DriverStatsRepository,
+          DriverStatsRepository,
+          DriverStatsRepository
+        >
+    with $Provider<DriverStatsRepository> {
+  DriverStatsRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'driverStatsRepositoryProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$driverStatsRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<DriverStatsRepository> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  DriverStatsRepository create(Ref ref) {
+    return driverStatsRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(DriverStatsRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<DriverStatsRepository>(value),
+    );
+  }
+}
+
+String _$driverStatsRepositoryHash() =>
+    r'4f86dd23045cd374c392daca991e7b7eab4a8c87';
+
+@ProviderFor(driverStats)
+final driverStatsProvider = DriverStatsProvider._();
+
+final class DriverStatsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<DriverStats>,
+          DriverStats,
+          Stream<DriverStats>
+        >
+    with $FutureModifier<DriverStats>, $StreamProvider<DriverStats> {
+  DriverStatsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'driverStatsProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$driverStatsHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<DriverStats> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<DriverStats> create(Ref ref) {
+    return driverStats(ref);
+  }
+}
+
+String _$driverStatsHash() => r'fcb3a7aecfbc2da6a9e6b1ae8a6906649d1a36d6';
+
+@ProviderFor(pendingRideRequests)
+final pendingRideRequestsProvider = PendingRideRequestsProvider._();
+
+final class PendingRideRequestsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<RideRequest>>,
+          List<RideRequest>,
+          Stream<List<RideRequest>>
+        >
+    with
+        $FutureModifier<List<RideRequest>>,
+        $StreamProvider<List<RideRequest>> {
+  PendingRideRequestsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'pendingRideRequestsProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$pendingRideRequestsHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<RideRequest>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<RideRequest>> create(Ref ref) {
+    return pendingRideRequests(ref);
+  }
+}
+
+String _$pendingRideRequestsHash() =>
+    r'a86ba77ff85bcad9a7d4a320549e0980098aa3da';
+
+@ProviderFor(upcomingDriverRides)
+final upcomingDriverRidesProvider = UpcomingDriverRidesProvider._();
+
+final class UpcomingDriverRidesProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<RideModel>>,
+          List<RideModel>,
+          Stream<List<RideModel>>
+        >
+    with $FutureModifier<List<RideModel>>, $StreamProvider<List<RideModel>> {
+  UpcomingDriverRidesProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'upcomingDriverRidesProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$upcomingDriverRidesHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<RideModel>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<RideModel>> create(Ref ref) {
+    return upcomingDriverRides(ref);
+  }
+}
+
+String _$upcomingDriverRidesHash() =>
+    r'38abf09b754596e28d058e3174cdbcd67ce5d093';
+
+@ProviderFor(earningsTransactions)
+final earningsTransactionsProvider = EarningsTransactionsProvider._();
+
+final class EarningsTransactionsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<EarningsTransaction>>,
+          List<EarningsTransaction>,
+          Stream<List<EarningsTransaction>>
+        >
+    with
+        $FutureModifier<List<EarningsTransaction>>,
+        $StreamProvider<List<EarningsTransaction>> {
+  EarningsTransactionsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'earningsTransactionsProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$earningsTransactionsHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<EarningsTransaction>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<EarningsTransaction>> create(Ref ref) {
+    return earningsTransactions(ref);
+  }
+}
+
+String _$earningsTransactionsHash() =>
+    r'2994d8065c1a5de47125a8391fc7019f081222b1';

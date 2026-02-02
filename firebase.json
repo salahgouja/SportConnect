@@ -1,0 +1,82 @@
+{
+  "firestore": {
+    "database": "(default)",
+    "location": "nam5",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "database": {
+    "rules": "database.rules.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "functions": [
+    {
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ],
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run lint",
+        "npm --prefix \"$RESOURCE_DIR\" run build"
+      ],
+      "source": "functions"
+    }
+  ],
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "marathon-connect",
+          "appId": "1:950804897667:android:336cec4dff83493780e0b6",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "marathon-connect",
+          "configurations": {
+            "android": "1:950804897667:android:336cec4dff83493780e0b6",
+            "ios": "1:950804897667:ios:f00be9b758b88a6480e0b6",
+            "macos": "1:950804897667:ios:f00be9b758b88a6480e0b6",
+            "web": "1:950804897667:web:35fe380e9a6e27ef80e0b6",
+            "windows": "1:950804897667:web:14230de23dab235980e0b6"
+          }
+        }
+      }
+    }
+  },
+  "emulators": {
+    "auth": {
+      "port": 9099,
+      "host": "0.0.0.0"
+    },
+    "functions": {
+      "port": 5001,
+      "host": "0.0.0.0"
+    },
+    "firestore": {
+      "port": 8080,
+      "host": "0.0.0.0"
+    },
+    "database": {
+      "port": 9000,
+      "host": "0.0.0.0"
+    },
+    "storage": {
+      "port": 9199,
+      "host": "0.0.0.0"
+    },
+    "ui": {
+      "enabled": true,
+      "port": 4000,
+      "host": "0.0.0.0"
+    },
+    "singleProjectMode": true
+  }
+}

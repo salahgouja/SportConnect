@@ -1,0 +1,138 @@
+name: sport_connect
+description: "SportConnect - Social carpooling app for students and sports enthusiasts"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # UI & Icons
+  cupertino_icons: ^1.0.8
+  flutter_screenutil: ^5.9.3
+  cached_network_image: ^3.4.1
+  shimmer: ^3.0.0
+  
+  # State Management (MVVM)
+  flutter_riverpod: ^3.1.0
+  riverpod_annotation: ^4.0.0
+  
+  # Firebase (Free Tier - Spark Plan)
+  firebase_core: ^4.3.0
+  firebase_auth: ^6.1.3
+  cloud_firestore: ^6.1.1
+  firebase_storage: ^13.0.5
+  firebase_messaging: ^16.1.0
+  cloud_functions: ^6.0.6  # Firebase Cloud Functions for Stripe payments
+  
+  # Networking
+  http: ^1.2.1  # For HTTP requests
+  web_socket_channel: ^3.0.1
+  
+  # Video/Voice Calling (Open Source - WebView-based WebRTC)
+  # Uses native browser WebRTC stack - 100% open source, free for commercial use
+  flutter_inappwebview: ^6.1.5
+  permission_handler: ^12.0.1
+  
+  # Maps & Geolocation (Open Source - Free Worldwide!)
+  # Works in France, Tunisia, and everywhere else
+  flutter_map: ^8.2.2  # OpenStreetMap (ODbL License - Free Commercial)
+  latlong2: ^0.9.1  # Coordinate utilities (MIT License)
+  geolocator: ^14.0.2  # Device location (MIT License)
+  geocoding: ^4.0.0  # Address lookup (MIT License)
+  flutter_map_marker_cluster: ^8.2.2  # Marker clustering (BSD-3-Clause)
+  flutter_map_animations: ^0.9.0  # Smooth map animations (MIT License)
+  flutter_map_marker_popup: ^8.1.0  # Marker popups (BSD-3-Clause)
+  
+  # Navigation
+  go_router: ^17.0.1
+  
+  # Local Storage
+  shared_preferences: ^2.3.3
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  
+  # Data Models
+  freezed_annotation: ^3.1.0
+  json_annotation: ^4.9.0
+  
+  # Payments (Stripe)
+  flutter_stripe: ^12.1.1
+  
+  # Utilities
+  intl: ^0.20.1
+  logger: ^2.5.0
+  image_picker: ^1.1.2
+  uuid: ^4.5.1
+  share_plus: ^12.0.1
+    
+  # Connectivity & Network State
+  connectivity_plus: ^7.0.0
+  
+  # App Rating & Reviews
+  in_app_review: ^2.0.10
+  
+  # Onboarding & Showcase
+  showcaseview: ^5.0.1
+  smooth_page_indicator: ^2.0.1
+  lottie: ^3.3.2
+  flutter_animate: ^4.5.2
+  emoji_picker_flutter: ^4.4.0
+  glassmorphism: ^3.0.0
+  flutter_staggered_animations: ^1.1.1
+  rive: ^0.14.0
+  flutter_svg: ^2.0.17
+  dotlottie_loader: ^0.0.5
+  google_sign_in: ^7.2.0
+  sign_in_with_apple: ^7.0.1
+  crypto: ^3.0.7
+  url_launcher: ^6.3.2
+  
+  # Firebase UI Auth - Pre-built authentication widgets  
+  # Note: Using email provider only due to google_sign_in version conflict
+  # The app already has google_sign_in and sign_in_with_apple integrated directly
+  firebase_ui_auth: ^3.0.1
+
+  # Enhanced UI & Navigation (Open Source - Free for Commercial Use)
+  animations: ^2.0.11  # Official Flutter animations package (BSD-3-Clause)
+  page_transition: ^2.2.1  # Beautiful page transitions (MIT License)
+  animated_text_kit: ^4.2.3  # Cool text animations (MIT License)
+  sprung: ^3.0.1  # Spring physics animations (MIT License)
+  dio: ^5.9.0
+  fl_chart: ^1.1.1
+  google_nav_bar: ^5.0.7  # Modern Google-style bottom navigation (MIT License)
+  talker_flutter: ^5.1.12
+  talker_riverpod_logger: ^5.1.12
+  talker_dio_logger: ^5.1.12
+  device_preview: ^1.3.1
+  flex_color_scheme: ^8.4.0  # Theme playground and beautiful color schemes
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  
+  # Code Generation
+  build_runner: ^2.10.4
+  freezed: ^3.1.0
+  json_serializable: ^6.9.2
+  riverpod_generator: ^4.0.0
+  
+  # Seed Tool
+  faker: ^2.2.0  # Generate realistic test data
+  args: ^2.6.0   # CLI argument parsing
+
+flutter:
+  uses-material-design: true
+
+  # Assets
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/animations/
+    - assets/webrtc/
+    - shorebird.yaml

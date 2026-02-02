@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "default": "marathon-connect"
+  },
+  "targets": {},
+  "etags": {}
+}
