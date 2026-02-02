@@ -4,6 +4,10 @@
 *.pyc
 *.swp
 .DS_Store
+
+# Large files
+*.zip
+connect.zip
 .atom/
 .build/
 .buildlog/
