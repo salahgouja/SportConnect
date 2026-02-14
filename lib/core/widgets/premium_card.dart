@@ -73,9 +73,12 @@ class GlassCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
+        color: Colors.white.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(borderRadius.r),
-        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.2),
+          width: 1,
+        ),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(borderRadius.r),
@@ -120,7 +123,7 @@ class StatCard extends StatelessWidget {
           Container(
             padding: EdgeInsets.all(10.w),
             decoration: BoxDecoration(
-              color: (iconColor ?? AppColors.primary).withOpacity(0.1),
+              color: (iconColor ?? AppColors.primary).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12.r),
             ),
             child: Icon(
@@ -145,7 +148,7 @@ class StatCard extends StatelessWidget {
               fontSize: 14.sp,
               fontWeight: FontWeight.w500,
               color: gradient != null
-                  ? Colors.white.withOpacity(0.8)
+                  ? Colors.white.withValues(alpha: 0.8)
                   : AppColors.textSecondary,
             ),
           ),
@@ -156,7 +159,7 @@ class StatCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12.sp,
                 color: gradient != null
-                    ? Colors.white.withOpacity(0.6)
+                    ? Colors.white.withValues(alpha: 0.6)
                     : AppColors.textTertiary,
               ),
             ),
@@ -216,7 +219,7 @@ class FeaturedCard extends StatelessWidget {
                   height: 120.w,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withValues(alpha: 0.1),
                   ),
                 ),
               ),
@@ -228,7 +231,7 @@ class FeaturedCard extends StatelessWidget {
                   height: 80.w,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.08),
+                    color: Colors.white.withValues(alpha: 0.08),
                   ),
                 ),
               ),
@@ -253,7 +256,7 @@ class FeaturedCard extends StatelessWidget {
                       subtitle,
                       style: TextStyle(
                         fontSize: 14.sp,
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                       ),
                     ),
                   ],

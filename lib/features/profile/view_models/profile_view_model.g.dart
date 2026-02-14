@@ -451,7 +451,7 @@ final class VehicleViewModelProvider
   }
 }
 
-String _$vehicleViewModelHash() => r'7db2f8fdd23e7d95b422de02207c2a273f7a0398';
+String _$vehicleViewModelHash() => r'fd8cfaec54af6fd26f104ab4af435e656acf44d2';
 
 /// Vehicle Management View Model
 

@@ -3,14 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
-import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
+import 'package:sport_connect/core/models/user/user_model.dart';
+import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/notifications/models/notification_model.dart';
 import 'package:sport_connect/features/notifications/repositories/notification_repository.dart';
+import 'package:sport_connect/features/notifications/view_models/notification_view_model.dart';
 import 'package:intl/intl.dart';
-import 'package:sport_connect/core/config/app_router.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Notifications Screen with Firestore real-time updates
 class NotificationsScreen extends ConsumerStatefulWidget {
@@ -38,14 +42,13 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
   }
 
   void _markAllAsRead() async {
-    final user = ref.read(currentUserProvider).value;
-    if (user == null) return;
-
-    await ref.read(notificationRepositoryProvider).markAllAsRead(user.uid);
+    await ref.read(notificationViewModelProvider.notifier).markAllAsRead();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('All notifications marked as read'),
+          content: Text(
+            AppLocalizations.of(context).allNotificationsMarkedAsRead,
+          ),
           backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
         ),
@@ -66,26 +69,26 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16.r),
         ),
-        title: const Text('Clear All Notifications'),
-        content: const Text(
-          'Are you sure you want to clear all notifications?',
-        ),
+        title: Text(AppLocalizations.of(context).clearAllNotifications),
+        content: Text(AppLocalizations.of(context).areYouSureYouWant2),
         actions: [
           TextButton(
             onPressed: () => dialogContext.pop(),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           ElevatedButton(
             onPressed: () async {
               dialogContext.pop();
               try {
                 await ref
-                    .read(notificationRepositoryProvider)
-                    .archiveAll(user.uid);
+                    .read(notificationViewModelProvider.notifier)
+                    .archiveAll();
                 if (!mounted) return;
                 ScaffoldMessenger.of(scaffoldContext).showSnackBar(
                   SnackBar(
-                    content: const Text('All notifications cleared'),
+                    content: Text(
+                      AppLocalizations.of(context).allNotificationsCleared,
+                    ),
                     backgroundColor: AppColors.success,
                     behavior: SnackBarBehavior.floating,
                   ),
@@ -94,7 +97,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                 if (!mounted) return;
                 ScaffoldMessenger.of(scaffoldContext).showSnackBar(
                   SnackBar(
-                    content: const Text('Failed to clear notifications'),
+                    content: Text(
+                      AppLocalizations.of(context).failedToClearNotifications,
+                    ),
                     backgroundColor: AppColors.error,
                     behavior: SnackBarBehavior.floating,
                   ),
@@ -102,8 +107,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text(
-              'Clear All',
+            child: Text(
+              AppLocalizations.of(context).clearAll,
               style: TextStyle(color: Colors.white),
             ),
           ),
@@ -133,7 +138,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                   ),
                   SizedBox(height: 16.h),
                   Text(
-                    'Please sign in to view notifications',
+                    AppLocalizations.of(context).pleaseSignInToView,
                     style: TextStyle(
                       fontSize: 16.sp,
                       color: AppColors.textSecondary,
@@ -155,24 +160,133 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
           loading: () => Scaffold(
             backgroundColor: AppColors.background,
             appBar: _buildAppBar(0),
-            body: const Center(child: CircularProgressIndicator()),
+            body: _buildLoadingState(),
           ),
           error: (e, _) => Scaffold(
             backgroundColor: AppColors.background,
             appBar: _buildAppBar(0),
-            body: Center(child: Text('Error: $e')),
+            body: _buildErrorState(
+              onRetry: () =>
+                  ref.invalidate(userNotificationsStreamProvider(userId)),
+            ),
           ),
         );
       },
       loading: () => Scaffold(
         backgroundColor: AppColors.background,
         appBar: _buildAppBar(0),
-        body: const Center(child: CircularProgressIndicator()),
+        body: _buildLoadingState(),
       ),
-      error: (e, _) => Scaffold(
+      error: (_, __) => Scaffold(
         backgroundColor: AppColors.background,
         appBar: _buildAppBar(0),
-        body: Center(child: Text('Error: $e')),
+        body: _buildErrorState(
+          onRetry: () => ref.invalidate(authStateProvider),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return ListView.builder(
+      padding: EdgeInsets.all(AppSpacing.md),
+      itemCount: 6,
+      itemBuilder: (context, index) {
+        return Container(
+              margin: EdgeInsets.only(bottom: 12.h),
+              padding: EdgeInsets.all(16.w),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(16.r),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44.w,
+                    height: 44.w,
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                  ),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          height: 14.h,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: AppColors.background,
+                            borderRadius: BorderRadius.circular(4.r),
+                          ),
+                        ),
+                        SizedBox(height: 8.h),
+                        Container(
+                          height: 12.h,
+                          width: 160.w,
+                          decoration: BoxDecoration(
+                            color: AppColors.background,
+                            borderRadius: BorderRadius.circular(4.r),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            )
+            .animate(onPlay: (c) => c.repeat())
+            .shimmer(duration: 1200.ms, color: AppColors.background);
+      },
+    );
+  }
+
+  Widget _buildErrorState({required VoidCallback onRetry}) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(32.w),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.cloud_off_rounded,
+              size: 64.sp,
+              color: AppColors.textSecondary,
+            ),
+            SizedBox(height: 16.h),
+            Text(
+              AppLocalizations.of(context).failedToLoadNotifications,
+              style: TextStyle(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              AppLocalizations.of(context).checkYourConnectionAndTry,
+              style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 24.h),
+            ElevatedButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh_rounded),
+              label: Text(AppLocalizations.of(context).tryAgain),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -219,7 +333,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text('Unread'),
+                      Text(AppLocalizations.of(context).unread),
                       if (unreadCount > 0) ...[
                         SizedBox(width: 8.w),
                         Container(
@@ -244,7 +358,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                     ],
                   ),
                 ),
-                const Tab(text: 'All'),
+                Tab(text: AppLocalizations.of(context).all),
               ],
             ),
           ),
@@ -286,7 +400,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
       title: Row(
         children: [
           Text(
-            'Notifications',
+            AppLocalizations.of(context).settingsNotifications,
             style: TextStyle(
               fontSize: 20.sp,
               fontWeight: FontWeight.bold,
@@ -302,7 +416,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                 borderRadius: BorderRadius.circular(12.r),
               ),
               child: Text(
-                '$unreadCount new',
+                AppLocalizations.of(context).valueNew(unreadCount),
                 style: TextStyle(
                   fontSize: 12.sp,
                   fontWeight: FontWeight.bold,
@@ -333,7 +447,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                 children: [
                   Icon(Icons.done_all, color: AppColors.primary, size: 20.sp),
                   SizedBox(width: 12.w),
-                  const Text('Mark all as read'),
+                  Text(AppLocalizations.of(context).markAllAsRead),
                 ],
               ),
             ),
@@ -347,7 +461,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                     size: 20.sp,
                   ),
                   SizedBox(width: 12.w),
-                  const Text('Clear all'),
+                  Text(AppLocalizations.of(context).clearAll2),
                 ],
               ),
             ),
@@ -373,7 +487,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
             ),
             SizedBox(height: 16.h),
             Text(
-              'No notifications',
+              AppLocalizations.of(context).noNotifications,
               style: TextStyle(
                 fontSize: 18.sp,
                 fontWeight: FontWeight.w600,
@@ -382,7 +496,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
             ),
             SizedBox(height: 8.h),
             Text(
-              'You\'re all caught up!',
+              AppLocalizations.of(context).youReAllCaughtUp,
               style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
             ),
           ],
@@ -410,7 +524,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
   void _handleNotificationTap(NotificationModel notification) {
     // Mark as read
     if (!notification.isRead) {
-      ref.read(notificationRepositoryProvider).markAsRead(notification.id);
+      ref
+          .read(notificationViewModelProvider.notifier)
+          .markAsRead(notification.id);
     }
 
     // Navigate based on notification type
@@ -422,19 +538,27 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
       case NotificationType.rideStarted:
       case NotificationType.rideCompleted:
         if (notification.referenceId != null) {
-          context.push(AppRouter.rideDetailPath(notification.referenceId!));
+          context.pushNamed(
+            AppRoutes.rideDetail.name,
+            pathParameters: {'id': notification.referenceId!},
+          );
         }
         break;
       case NotificationType.newMessage:
       case NotificationType.newGroupMessage:
         if (notification.referenceId != null) {
-          context.push(AppRouter.chatPath(notification.referenceId!));
+          // referenceId is the chatId
+          // We need to fetch the chat to get participant info, then navigate
+          _navigateToChatFromNotification(notification.referenceId!);
         }
         break;
       case NotificationType.newFollower:
       case NotificationType.followAccepted:
         if (notification.senderId != null) {
-          context.push(AppRouter.userProfilePath(notification.senderId!));
+          context.pushNamed(
+            AppRoutes.profile.name,
+            pathParameters: {'userId': notification.senderId!},
+          );
         }
         break;
       default:
@@ -444,8 +568,49 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
 
   void _dismissNotification(String notificationId) {
     ref
-        .read(notificationRepositoryProvider)
-        .archiveNotification(notificationId);
+        .read(notificationViewModelProvider.notifier)
+        .deleteNotification(notificationId);
+  }
+
+  Future<void> _navigateToChatFromNotification(String chatId) async {
+    final user = ref.read(currentUserProvider).value;
+    if (user == null) return;
+
+    try {
+      // Fetch chat to get participant information
+      final chatController = ref.read(chatActionsViewModelProvider);
+      final chat = await chatController.getChatById(chatId);
+
+      if (chat != null && mounted) {
+        final otherParticipant = chat.getOtherParticipant(user.uid);
+        final title = chat.getChatTitle(user.uid);
+        final photoUrl = chat.getChatPhoto(user.uid);
+
+        // Create minimal UserModel for the other participant
+        final receiverUser = UserModel.rider(
+          uid: otherParticipant?.odid ?? '',
+          email: '', // Not needed for chat display
+          displayName: title,
+          photoUrl: photoUrl,
+        );
+
+        context.pushNamed(
+          AppRoutes.chatDetail.name,
+          pathParameters: {'id': chatId},
+          extra: receiverUser,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context).couldNotOpenChat),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 }
 
@@ -628,15 +793,15 @@ class _NotificationTile extends StatelessWidget {
     final difference = now.difference(dateTime);
 
     if (difference.inMinutes < 1) {
-      return 'Just now';
+      return 'now';
     } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}m ago';
+      return '${difference.inMinutes} min';
     } else if (difference.inHours < 24) {
-      return '${difference.inHours}h ago';
+      return '${difference.inHours}h';
     } else if (difference.inDays < 7) {
-      return '${difference.inDays}d ago';
+      return '${difference.inDays}d';
     } else {
-      return DateFormat('MMM d').format(dateTime);
+      return DateFormat.MMMd().format(dateTime);
     }
   }
 }

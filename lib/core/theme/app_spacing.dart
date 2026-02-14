@@ -65,7 +65,7 @@ class AppSpacing {
   // Card Elevation
   static List<BoxShadow> get shadowSm => [
     BoxShadow(
-      color: Colors.black.withOpacity(0.04),
+      color: Colors.black.withValues(alpha: 0.04),
       blurRadius: 8,
       offset: const Offset(0, 2),
     ),
@@ -73,7 +73,7 @@ class AppSpacing {
 
   static List<BoxShadow> get shadowMd => [
     BoxShadow(
-      color: Colors.black.withOpacity(0.08),
+      color: Colors.black.withValues(alpha: 0.08),
       blurRadius: 16,
       offset: const Offset(0, 4),
     ),
@@ -81,7 +81,7 @@ class AppSpacing {
 
   static List<BoxShadow> get shadowLg => [
     BoxShadow(
-      color: Colors.black.withOpacity(0.12),
+      color: Colors.black.withValues(alpha: 0.12),
       blurRadius: 24,
       offset: const Offset(0, 8),
     ),
@@ -89,7 +89,7 @@ class AppSpacing {
 
   static List<BoxShadow> get shadowXl => [
     BoxShadow(
-      color: Colors.black.withOpacity(0.16),
+      color: Colors.black.withValues(alpha: 0.16),
       blurRadius: 32,
       offset: const Offset(0, 12),
     ),
@@ -98,7 +98,7 @@ class AppSpacing {
   // Colored Shadows
   static List<BoxShadow> primaryShadow(Color color) => [
     BoxShadow(
-      color: color.withOpacity(0.3),
+      color: color.withValues(alpha: 0.3),
       blurRadius: 20,
       offset: const Offset(0, 8),
     ),

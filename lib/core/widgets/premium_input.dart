@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Premium Text Field with modern design and animations
 class PremiumTextField extends StatefulWidget {
@@ -473,7 +474,9 @@ class _PremiumSearchFieldState extends State<PremiumSearchField> {
                             shape: BoxShape.circle,
                           ),
                           child: Text(
-                            '${widget.filterCount}',
+                            AppLocalizations.of(
+                              context,
+                            ).value2(widget.filterCount!),
                             style: TextStyle(
                               fontSize: 10.sp,
                               fontWeight: FontWeight.w700,

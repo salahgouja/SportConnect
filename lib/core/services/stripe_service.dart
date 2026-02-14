@@ -77,8 +77,8 @@ class StripeService {
     amount, // Total amount in smallest currency unit (e.g., cents)
     required String currency,
     String? customerId,
-    String? existingCustomerId, // Pass existing customer ID from Firestore
-    String? driverStripeAccountId, // Driver's connected account for split
+    String? existingCustomerId,
+    String? driverStripeAccountId,
     String? description,
   }) async {
     try {
@@ -181,6 +181,7 @@ class StripeService {
   }) async {
     try {
       final response = await _callFunction('createConnectedAccount', {
+        'userId': userId,
         'email': email,
         'country': country,
       });

@@ -5,10 +5,18 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
+import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
+import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
+
 import 'package:sport_connect/features/rides/repositories/driver_stats_repository.dart';
+import 'package:sport_connect/features/rides/view_models/driver_view_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sport_connect/features/rides/models/ride_request_model.dart';
 
 /// Driver Requests Screen - View and manage incoming ride requests
 class DriverRequestsScreen extends ConsumerStatefulWidget {
@@ -43,7 +51,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
         backgroundColor: AppColors.surface,
         elevation: 0,
         title: Text(
-          'Ride Requests',
+          AppLocalizations.of(context).rideRequests,
           style: TextStyle(
             fontSize: 20.sp,
             fontWeight: FontWeight.w700,
@@ -77,7 +85,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('Pending'),
+                      Text(AppLocalizations.of(context).pending),
                       SizedBox(width: 6.w),
                       Container(
                         padding: EdgeInsets.symmetric(
@@ -135,7 +143,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
                 ),
                 SizedBox(height: 16.h),
                 Text(
-                  'No pending requests',
+                  AppLocalizations.of(context).noPendingRequests,
                   style: TextStyle(
                     fontSize: 18.sp,
                     fontWeight: FontWeight.w600,
@@ -144,7 +152,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
                 ),
                 SizedBox(height: 8.h),
                 Text(
-                  'New ride requests will appear here',
+                  AppLocalizations.of(context).newRideRequestsWillAppear,
                   style: TextStyle(
                     fontSize: 14.sp,
                     color: AppColors.textTertiary,
@@ -186,7 +194,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
             Icon(Icons.error_outline, size: 64.sp, color: AppColors.error),
             SizedBox(height: 16.h),
             Text(
-              'Failed to load requests',
+              AppLocalizations.of(context).failedToLoadRequests,
               style: TextStyle(
                 fontSize: 18.sp,
                 fontWeight: FontWeight.w600,
@@ -197,7 +205,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
             TextButton.icon(
               onPressed: () => ref.invalidate(pendingRideRequestsProvider),
               icon: Icon(Icons.refresh),
-              label: Text('Retry'),
+              label: Text(AppLocalizations.of(context).retry),
             ),
           ],
         ),
@@ -206,95 +214,151 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
   }
 
   Widget _buildAcceptedRequests() {
-    final accepted = [
-      _AcceptedRequest(
-        passengerName: 'Tom Wilson',
-        from: 'Downtown Stadium',
-        to: 'Westside Sports Complex',
-        date: 'Tomorrow',
-        time: '5:30 PM',
-        seats: 3,
-        price: 36.00,
-        acceptedAt: 'Yesterday',
-      ),
-      _AcceptedRequest(
-        passengerName: 'Jane Doe',
-        from: 'City Center',
-        to: 'National Arena',
-        date: 'Friday',
-        time: '7:00 PM',
-        seats: 2,
-        price: 24.00,
-        acceptedAt: '2 days ago',
-      ),
-    ];
+    final acceptedRequests = ref.watch(acceptedRideRequestsProvider);
 
-    return ListView.builder(
-      padding: EdgeInsets.all(16.w),
-      itemCount: accepted.length,
-      itemBuilder: (context, index) {
-        final request = accepted[index];
-        return _AcceptedRequestCard(request: request)
-            .animate(delay: Duration(milliseconds: 100 * index))
-            .fadeIn()
-            .slideY(begin: 0.1);
+    return acceptedRequests.when(
+      data: (requests) {
+        if (requests.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.check_circle_outline_rounded,
+                  size: 64.sp,
+                  color: AppColors.success.withValues(alpha: 0.5),
+                ),
+                SizedBox(height: 16.h),
+                Text(
+                  AppLocalizations.of(context).noAcceptedRequestsYet,
+                  style: TextStyle(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  AppLocalizations.of(
+                    context,
+                  ).acceptedRequestsWillAppearHere,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: EdgeInsets.all(16.w),
+          itemCount: requests.length,
+          itemBuilder: (context, index) {
+            final request = requests[index];
+            return _AcceptedRequestCard(
+                  request: request,
+                  onMessage: () => _handleMessagePassenger(request),
+                  onViewDetails: () => _handleViewRideDetails(request),
+                )
+                .animate(delay: Duration(milliseconds: 100 * index))
+                .fadeIn()
+                .slideY(begin: 0.1);
+          },
+        );
       },
+      loading: () =>
+          Center(child: CircularProgressIndicator(color: AppColors.primary)),
+      error: (error, _) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64.sp, color: AppColors.error),
+            SizedBox(height: 16.h),
+            Text(
+              AppLocalizations.of(context).failedToLoadRequests,
+              style: TextStyle(
+                fontSize: 18.sp,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildDeclinedRequests() {
-    final declined = [
-      _DeclinedRequest(
-        passengerName: 'Bob Smith',
-        from: 'Airport',
-        to: 'City Stadium',
-        date: 'Yesterday',
-        time: '10:00 AM',
-        reason: 'Schedule conflict',
-        declinedAt: '1 day ago',
-      ),
-    ];
+    final rejectedRequests = ref.watch(rejectedRideRequestsProvider);
 
-    if (declined.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.check_circle_outline_rounded,
-              size: 64.sp,
-              color: AppColors.success.withOpacity(0.5),
+    return rejectedRequests.when(
+      data: (requests) {
+        if (requests.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.check_circle_outline_rounded,
+                  size: 64.sp,
+                  color: AppColors.success.withValues(alpha: 0.5),
+                ),
+                SizedBox(height: 16.h),
+                Text(
+                  AppLocalizations.of(context).noDeclinedRequests,
+                  style: TextStyle(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  AppLocalizations.of(context).youHavenTDeclinedAny,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
             ),
+          );
+        }
+
+        return ListView.builder(
+          padding: EdgeInsets.all(16.w),
+          itemCount: requests.length,
+          itemBuilder: (context, index) {
+            final request = requests[index];
+            return _DeclinedRequestCard(request: request);
+          },
+        );
+      },
+      loading: () =>
+          Center(child: CircularProgressIndicator(color: AppColors.primary)),
+      error: (error, _) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64.sp, color: AppColors.error),
             SizedBox(height: 16.h),
             Text(
-              'No Declined Requests',
+              AppLocalizations.of(context).failedToLoadRequests,
               style: TextStyle(
                 fontSize: 18.sp,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: AppColors.textSecondary,
               ),
-            ),
-            SizedBox(height: 8.h),
-            Text(
-              'You haven\'t declined any requests yet',
-              style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
             ),
           ],
         ),
-      );
-    }
-
-    return ListView.builder(
-      padding: EdgeInsets.all(16.w),
-      itemCount: declined.length,
-      itemBuilder: (context, index) {
-        final request = declined[index];
-        return _DeclinedRequestCard(request: request);
-      },
+      ),
     );
   }
 
-  void _handleAccept(RideRequest request) {
+  void _handleAccept(RideRequestModel request) {
     HapticFeedback.heavyImpact();
     final formattedDate = DateFormat(
       'EEE, MMM d',
@@ -316,51 +380,63 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
               child: Icon(Icons.check_rounded, color: AppColors.success),
             ),
             SizedBox(width: 12.w),
-            Text('Accept Request?'),
+            Text(AppLocalizations.of(context).acceptRequest),
           ],
         ),
         content: Text(
-          'You are about to accept ${request.passengerName}\'s ride request for $formattedDate at ${request.requestedTime}.',
+          AppLocalizations.of(context).youAreAboutToAccept(
+            request.passenger.displayName,
+            formattedDate,
+            request.requestedTime,
+          ),
         ),
         actions: [
-          TextButton(onPressed: () => context.pop(), child: Text('Cancel')),
+          TextButton(
+            onPressed: () => context.pop(),
+            child: Text(AppLocalizations.of(context).actionCancel),
+          ),
           ElevatedButton(
             onPressed: () async {
               context.pop();
-              try {
-                await ref
-                    .read(driverStatsRepositoryProvider)
-                    .acceptRequest(request.rideId, request.id);
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Request accepted! ${request.passengerName} has been notified.',
+              final accepted = await ref
+                  .read(driverViewModelProvider.notifier)
+                  .acceptRideRequest(request.rideId, request.id);
+
+              if (!mounted) {
+                return;
+              }
+
+              if (accepted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      AppLocalizations.of(context).requestAcceptedValueHasBeen(
+                        request.passenger.displayName,
                       ),
-                      backgroundColor: AppColors.success,
                     ),
-                  );
-                }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Failed to accept request'),
-                      backgroundColor: AppColors.error,
+                    backgroundColor: AppColors.success,
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      AppLocalizations.of(context).failedToAcceptRequest,
                     ),
-                  );
-                }
+                    backgroundColor: AppColors.error,
+                  ),
+                );
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
-            child: Text('Accept'),
+            child: Text(AppLocalizations.of(context).accept),
           ),
         ],
       ),
     );
   }
 
-  void _handleDecline(RideRequest request) {
+  void _handleDecline(RideRequestModel request) {
     HapticFeedback.lightImpact();
     showModalBottomSheet(
       context: context,
@@ -370,40 +446,91 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
         request: request,
         onDecline: (reason) async {
           context.pop();
-          try {
-            await ref
-                .read(driverStatsRepositoryProvider)
-                .declineRequest(request.rideId, request.id);
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Request declined'),
-                  backgroundColor: AppColors.textSecondary,
+          final declined = await ref
+              .read(driverViewModelProvider.notifier)
+              .declineRideRequest(request.rideId, request.id);
+
+          if (!mounted) {
+            return;
+          }
+
+          if (declined) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(AppLocalizations.of(context).requestDeclined),
+                backgroundColor: AppColors.textSecondary,
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  AppLocalizations.of(context).failedToDeclineRequest,
                 ),
-              );
-            }
-          } catch (e) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Failed to decline request'),
-                  backgroundColor: AppColors.error,
-                ),
-              );
-            }
+                backgroundColor: AppColors.error,
+              ),
+            );
           }
         },
       ),
     );
   }
 
-  void _handleViewProfile(RideRequest request) {
+  void _handleViewProfile(RideRequestModel request) {
     // Navigate to passenger profile
+  }
+
+  /// Navigate to ride detail screen for the accepted request.
+  void _handleViewRideDetails(RideRequestModel request) {
+    context.pushNamed(
+      AppRoutes.rideDetail.name,
+      pathParameters: {'id': request.rideId},
+    );
+  }
+
+  /// Start a chat with the passenger who made the request.
+  Future<void> _handleMessagePassenger(RideRequestModel request) async {
+    try {
+      final currentUser = ref.read(authStateProvider).value;
+      if (currentUser == null || !mounted) return;
+
+      final passengerProfile = await ref.read(
+        userProfileProvider(request.requesterId).future,
+      );
+      if (passengerProfile == null || !mounted) return;
+
+      final chat = await ref.read(
+        getOrCreateChatProvider(
+          userId1: currentUser.uid,
+          userId2: request.requesterId,
+          userName1: currentUser.displayName ?? '',
+          userName2: passengerProfile.displayName,
+          userPhoto1: currentUser.photoURL,
+          userPhoto2: passengerProfile.photoUrl,
+        ).future,
+      );
+
+      if (!mounted) return;
+
+      context.pushNamed(
+        AppRoutes.chatDetail.name,
+        pathParameters: {'id': chat.id},
+        extra: passengerProfile,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context).failedToLaunchDialer),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 }
 
 class _PendingRequestCard extends StatelessWidget {
-  final RideRequest request;
+  final RideRequestModel request;
   final String formattedDate;
   final VoidCallback onAccept;
   final VoidCallback onDecline;
@@ -424,7 +551,7 @@ class _PendingRequestCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
         boxShadow: AppSpacing.shadowMd,
       ),
       child: Column(
@@ -433,7 +560,7 @@ class _PendingRequestCard extends StatelessWidget {
           Container(
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
             decoration: BoxDecoration(
-              color: AppColors.warning.withOpacity(0.1),
+              color: AppColors.warning.withValues(alpha: 0.1),
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(20.r),
                 topRight: Radius.circular(20.r),
@@ -448,7 +575,7 @@ class _PendingRequestCard extends StatelessWidget {
                 ),
                 SizedBox(width: 6.w),
                 Text(
-                  'Requested $formattedDate',
+                  AppLocalizations.of(context).requestedValue(formattedDate),
                   style: TextStyle(
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w500,
@@ -466,7 +593,10 @@ class _PendingRequestCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                   child: Text(
-                    '${(request.pricePerSeat * request.seatsRequested).toStringAsFixed(0)} €',
+                    AppLocalizations.of(context).value5(
+                      (request.pricePerSeat * request.seatsRequested)
+                          .toStringAsFixed(0),
+                    ),
                     style: TextStyle(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w700,
@@ -489,8 +619,8 @@ class _PendingRequestCard extends StatelessWidget {
                   child: Row(
                     children: [
                       PremiumAvatar(
-                        imageUrl: request.passengerPhotoUrl,
-                        name: request.passengerName,
+                        imageUrl: request.passenger.photoUrl,
+                        name: request.passenger.displayName,
                         size: 54.w,
                         hasBorder: true,
                         borderColor: AppColors.primary.withValues(alpha: 0.3),
@@ -503,7 +633,7 @@ class _PendingRequestCard extends StatelessWidget {
                             Row(
                               children: [
                                 Text(
-                                  request.passengerName,
+                                  request.passenger.displayName,
                                   style: TextStyle(
                                     fontSize: 16.sp,
                                     fontWeight: FontWeight.w600,
@@ -528,7 +658,8 @@ class _PendingRequestCard extends StatelessWidget {
                                 ),
                                 SizedBox(width: 4.w),
                                 Text(
-                                  request.passengerRating.toStringAsFixed(1),
+                                  request.passenger.rating.average
+                                      .toStringAsFixed(1),
                                   style: TextStyle(
                                     fontSize: 13.sp,
                                     fontWeight: FontWeight.w600,
@@ -537,7 +668,10 @@ class _PendingRequestCard extends StatelessWidget {
                                 ),
                                 SizedBox(width: 8.w),
                                 Text(
-                                  '• ${request.seatsRequested} seat${request.seatsRequested > 1 ? 's' : ''}',
+                                  AppLocalizations.of(context).valueSeatValue2(
+                                    request.seatsRequested,
+                                    request.seatsRequested > 1 ? 's' : '',
+                                  ),
                                   style: TextStyle(
                                     fontSize: 13.sp,
                                     color: AppColors.textSecondary,
@@ -602,7 +736,12 @@ class _PendingRequestCard extends StatelessWidget {
                             ),
                             SizedBox(width: 16.w),
                             Text(
-                              '${request.seatsRequested} seat${request.seatsRequested > 1 ? 's' : ''} requested',
+                              AppLocalizations.of(
+                                context,
+                              ).valueSeatValueRequested(
+                                request.seatsRequested,
+                                request.seatsRequested > 1 ? 's' : '',
+                              ),
                               style: TextStyle(
                                 fontSize: 11.sp,
                                 color: AppColors.textTertiary,
@@ -660,10 +799,10 @@ class _PendingRequestCard extends StatelessWidget {
                     width: double.infinity,
                     padding: EdgeInsets.all(12.w),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.05),
+                      color: AppColors.primary.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(10.r),
                       border: Border.all(
-                        color: AppColors.primary.withOpacity(0.1),
+                        color: AppColors.primary.withValues(alpha: 0.1),
                       ),
                     ),
                     child: Row(
@@ -699,7 +838,7 @@ class _PendingRequestCard extends StatelessWidget {
                       child: OutlinedButton.icon(
                         onPressed: onDecline,
                         icon: Icon(Icons.close_rounded, size: 18.sp),
-                        label: Text('Decline'),
+                        label: Text(AppLocalizations.of(context).decline),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.error,
                           side: BorderSide(color: AppColors.error),
@@ -716,7 +855,9 @@ class _PendingRequestCard extends StatelessWidget {
                       child: ElevatedButton.icon(
                         onPressed: onAccept,
                         icon: Icon(Icons.check_rounded, size: 18.sp),
-                        label: Text('Accept Request'),
+                        label: Text(
+                          AppLocalizations.of(context).acceptRequest2,
+                        ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.success,
                           foregroundColor: Colors.white,
@@ -768,42 +909,30 @@ class _InfoChip extends StatelessWidget {
   }
 }
 
-class _AcceptedRequest {
-  final String passengerName;
-  final String from;
-  final String to;
-  final String date;
-  final String time;
-  final int seats;
-  final double price;
-  final String acceptedAt;
-
-  _AcceptedRequest({
-    required this.passengerName,
-    required this.from,
-    required this.to,
-    required this.date,
-    required this.time,
-    required this.seats,
-    required this.price,
-    required this.acceptedAt,
-  });
-}
-
 class _AcceptedRequestCard extends StatelessWidget {
-  final _AcceptedRequest request;
+  final RideRequestModel request;
+  final VoidCallback onMessage;
+  final VoidCallback onViewDetails;
 
-  const _AcceptedRequestCard({required this.request});
+  const _AcceptedRequestCard({
+    required this.request,
+    required this.onMessage,
+    required this.onViewDetails,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final formattedDate = DateFormat(
+      'EEE, MMM d',
+    ).format(request.requestedDate);
+
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.success.withOpacity(0.3)),
+        border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
         boxShadow: AppSpacing.shadowSm,
       ),
       child: Column(
@@ -814,7 +943,7 @@ class _AcceptedRequestCard extends StatelessWidget {
               Container(
                 padding: EdgeInsets.all(8.w),
                 decoration: BoxDecoration(
-                  color: AppColors.success.withOpacity(0.1),
+                  color: AppColors.success.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -829,25 +958,31 @@ class _AcceptedRequestCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      request.passengerName,
+                      request.passenger.displayName,
                       style: TextStyle(
                         fontSize: 15.sp,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    Text(
-                      'Accepted ${request.acceptedAt}',
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: AppColors.success,
+                    if (request.respondedAt != null)
+                      Text(
+                        AppLocalizations.of(context).acceptedValue(
+                          DateFormat('MMM d').format(request.respondedAt!),
+                        ),
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: AppColors.success,
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
               Text(
-                '${request.price.toStringAsFixed(0)} €',
+                AppLocalizations.of(context).value5(
+                  (request.pricePerSeat * request.requestedSeats)
+                      .toStringAsFixed(0),
+                ),
                 style: TextStyle(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.w700,
@@ -858,7 +993,10 @@ class _AcceptedRequestCard extends StatelessWidget {
           ),
           SizedBox(height: 12.h),
           Text(
-            '${request.from} → ${request.to}',
+            AppLocalizations.of(context).valueValue2(
+              request.fromLocation,
+              request.toLocation,
+            ),
             style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
           ),
           SizedBox(height: 8.h),
@@ -871,7 +1009,10 @@ class _AcceptedRequestCard extends StatelessWidget {
               ),
               SizedBox(width: 4.w),
               Text(
-                '${request.date} at ${request.time}',
+                AppLocalizations.of(context).valueAtValue(
+                  formattedDate,
+                  request.requestedTime,
+                ),
                 style: TextStyle(
                   fontSize: 12.sp,
                   color: AppColors.textSecondary,
@@ -885,7 +1026,9 @@ class _AcceptedRequestCard extends StatelessWidget {
               ),
               SizedBox(width: 4.w),
               Text(
-                '${request.seats} seats',
+                AppLocalizations.of(
+                  context,
+                ).valueSeats(request.requestedSeats),
                 style: TextStyle(
                   fontSize: 12.sp,
                   color: AppColors.textSecondary,
@@ -898,23 +1041,23 @@ class _AcceptedRequestCard extends StatelessWidget {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () {},
+                  onPressed: onMessage,
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.primary,
                     padding: EdgeInsets.symmetric(vertical: 10.h),
                   ),
-                  child: Text('Message'),
+                  child: Text(AppLocalizations.of(context).message),
                 ),
               ),
               SizedBox(width: 8.w),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: onViewDetails,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     padding: EdgeInsets.symmetric(vertical: 10.h),
                   ),
-                  child: Text('View Details'),
+                  child: Text(AppLocalizations.of(context).viewDetails),
                 ),
               ),
             ],
@@ -925,28 +1068,8 @@ class _AcceptedRequestCard extends StatelessWidget {
   }
 }
 
-class _DeclinedRequest {
-  final String passengerName;
-  final String from;
-  final String to;
-  final String date;
-  final String time;
-  final String reason;
-  final String declinedAt;
-
-  _DeclinedRequest({
-    required this.passengerName,
-    required this.from,
-    required this.to,
-    required this.date,
-    required this.time,
-    required this.reason,
-    required this.declinedAt,
-  });
-}
-
 class _DeclinedRequestCard extends StatelessWidget {
-  final _DeclinedRequest request;
+  final RideRequestModel request;
 
   const _DeclinedRequestCard({required this.request});
 
@@ -968,7 +1091,7 @@ class _DeclinedRequestCard extends StatelessWidget {
               Container(
                 padding: EdgeInsets.all(8.w),
                 decoration: BoxDecoration(
-                  color: AppColors.error.withOpacity(0.1),
+                  color: AppColors.error.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -983,17 +1106,23 @@ class _DeclinedRequestCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      request.passengerName,
+                      request.passenger.displayName,
                       style: TextStyle(
                         fontSize: 15.sp,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    Text(
-                      'Declined ${request.declinedAt}',
-                      style: TextStyle(fontSize: 12.sp, color: AppColors.error),
-                    ),
+                    if (request.respondedAt != null)
+                      Text(
+                        AppLocalizations.of(context).declinedValue(
+                          DateFormat('MMM d').format(request.respondedAt!),
+                        ),
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: AppColors.error,
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -1001,34 +1130,43 @@ class _DeclinedRequestCard extends StatelessWidget {
           ),
           SizedBox(height: 12.h),
           Text(
-            '${request.from} → ${request.to}',
+            AppLocalizations.of(context).valueValue2(
+              request.fromLocation,
+              request.toLocation,
+            ),
             style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
           ),
-          SizedBox(height: 8.h),
-          Container(
-            padding: EdgeInsets.all(10.w),
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              borderRadius: BorderRadius.circular(8.r),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.info_outline_rounded,
-                  size: 16.sp,
-                  color: AppColors.textTertiary,
-                ),
-                SizedBox(width: 8.w),
-                Text(
-                  'Reason: ${request.reason}',
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: AppColors.textSecondary,
+          if (request.rejectionReason != null) ...[
+            SizedBox(height: 8.h),
+            Container(
+              padding: EdgeInsets.all(10.w),
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline_rounded,
+                    size: 16.sp,
+                    color: AppColors.textTertiary,
                   ),
-                ),
-              ],
+                  SizedBox(width: 8.w),
+                  Expanded(
+                    child: Text(
+                      AppLocalizations.of(context).reasonValue(
+                        request.rejectionReason!,
+                      ),
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -1036,7 +1174,7 @@ class _DeclinedRequestCard extends StatelessWidget {
 }
 
 class _DeclineReasonSheet extends StatefulWidget {
-  final RideRequest request;
+  final RideRequestModel request;
   final Future<void> Function(String) onDecline;
 
   const _DeclineReasonSheet({required this.request, required this.onDecline});
@@ -1084,7 +1222,7 @@ class _DeclineReasonSheetState extends State<_DeclineReasonSheet> {
           ),
           SizedBox(height: 20.h),
           Text(
-            'Decline Request',
+            AppLocalizations.of(context).declineRequest,
             style: TextStyle(
               fontSize: 20.sp,
               fontWeight: FontWeight.w700,
@@ -1093,7 +1231,9 @@ class _DeclineReasonSheetState extends State<_DeclineReasonSheet> {
           ),
           SizedBox(height: 8.h),
           Text(
-            'Please let ${widget.request.passengerName} know why you can\'t accept this ride.',
+            AppLocalizations.of(
+              context,
+            ).pleaseLetValueKnowWhy(widget.request.passenger.displayName),
             style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
           ),
           SizedBox(height: 20.h),
@@ -1107,7 +1247,7 @@ class _DeclineReasonSheetState extends State<_DeclineReasonSheet> {
                   padding: EdgeInsets.all(16.w),
                   decoration: BoxDecoration(
                     color: _selectedReason == reason
-                        ? AppColors.primary.withOpacity(0.1)
+                        ? AppColors.primary.withValues(alpha: 0.1)
                         : AppColors.background,
                     borderRadius: BorderRadius.circular(12.r),
                     border: Border.all(
@@ -1148,7 +1288,7 @@ class _DeclineReasonSheetState extends State<_DeclineReasonSheet> {
             TextField(
               controller: _otherController,
               decoration: InputDecoration(
-                hintText: 'Please specify...',
+                hintText: AppLocalizations.of(context).pleaseSpecify,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12.r),
                 ),
@@ -1165,7 +1305,7 @@ class _DeclineReasonSheetState extends State<_DeclineReasonSheet> {
                   style: OutlinedButton.styleFrom(
                     padding: EdgeInsets.symmetric(vertical: 16.h),
                   ),
-                  child: Text('Cancel'),
+                  child: Text(AppLocalizations.of(context).actionCancel),
                 ),
               ),
               SizedBox(width: 12.w),
@@ -1182,7 +1322,7 @@ class _DeclineReasonSheetState extends State<_DeclineReasonSheet> {
                     backgroundColor: AppColors.error,
                     padding: EdgeInsets.symmetric(vertical: 16.h),
                   ),
-                  child: Text('Decline'),
+                  child: Text(AppLocalizations.of(context).decline),
                 ),
               ),
             ],

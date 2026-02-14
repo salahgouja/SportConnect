@@ -8,8 +8,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/core/widgets/premium_text_field.dart';
-import 'package:sport_connect/features/auth/models/user_model.dart';
 import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
+import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
+import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 class VehiclesScreen extends ConsumerStatefulWidget {
   const VehiclesScreen({super.key});
@@ -28,49 +30,62 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
       // We use a Stack to float the button with a custom position if needed,
       // but standard FAB works well here.
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'vehicles_add_fab',
         onPressed: () => _showAddVehicleSheet(null),
         backgroundColor: AppColors.primary,
         elevation: 4,
         icon: const Icon(Icons.add_rounded),
-        label: const Text(
-          'Add Ride',
+        label: Text(
+          AppLocalizations.of(context).addRide,
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
       body: userAsync.when(
         data: (user) {
-          if (user == null) return const Center(child: Text("User not found"));
+          if (user == null)
+            return Center(
+              child: Text(AppLocalizations.of(context).userNotFound),
+            );
 
-          // Vehicles are only available for drivers
-          final vehicles = user.maybeDriver?.vehicles ?? [];
+          // Load vehicles from the repository using provider
+          final vehiclesAsync = ref.watch(driverVehiclesProvider(user.uid));
 
-          return CustomScrollView(
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              _buildSliverAppBar(vehicles.length),
-              if (vehicles.isEmpty)
-                SliverFillRemaining(child: _buildEmptyState())
-              else
-                SliverPadding(
-                  padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 100.h),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      if (index == vehicles.length) {
-                        return _buildTipsCard();
-                      }
-                      return _buildDismissibleVehicleCard(
-                        vehicles[index],
-                        user.uid,
-                      );
-                    }, childCount: vehicles.length + 1),
-                  ),
-                ),
-            ],
+          return vehiclesAsync.when(
+            data: (vehicles) {
+              return CustomScrollView(
+                physics: const BouncingScrollPhysics(),
+                slivers: [
+                  _buildSliverAppBar(vehicles.length),
+                  if (vehicles.isEmpty)
+                    SliverFillRemaining(child: _buildEmptyState())
+                  else
+                    SliverPadding(
+                      padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 100.h),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          if (index == vehicles.length) {
+                            return _buildTipsCard();
+                          }
+                          return _buildDismissibleVehicleCard(
+                            vehicles[index],
+                            user.uid,
+                          );
+                        }, childCount: vehicles.length + 1),
+                      ),
+                    ),
+                ],
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, stack) => Center(
+              child: Text(AppLocalizations.of(context).errorLoadingVehicles),
+            ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) =>
-            const Center(child: Text('Error loading vehicles')),
+        error: (err, stack) => Center(
+          child: Text(AppLocalizations.of(context).errorLoadingVehicles),
+        ),
       ),
     );
   }
@@ -101,7 +116,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
         centerTitle: false,
         titlePadding: EdgeInsets.only(left: 16.w, bottom: 16.h),
         title: Text(
-          'My Garage',
+          AppLocalizations.of(context).myGarage,
           style: TextStyle(
             color: AppColors.textPrimary,
             fontWeight: FontWeight.w800,
@@ -124,7 +139,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                 child: Icon(
                   Icons.directions_car_filled_rounded,
                   size: 150.sp,
-                  color: AppColors.primary.withOpacity(0.05),
+                  color: AppColors.primary.withValues(alpha: 0.05),
                 ),
               ),
               Positioned(
@@ -138,14 +153,14 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                         vertical: 4.h,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
+                        color: AppColors.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20.r),
                         border: Border.all(
-                          color: AppColors.primary.withOpacity(0.2),
+                          color: AppColors.primary.withValues(alpha: 0.2),
                         ),
                       ),
                       child: Text(
-                        '$count Vehicles',
+                        AppLocalizations.of(context).valueVehicles(count),
                         style: TextStyle(
                           color: AppColors.primary,
                           fontSize: 12.sp,
@@ -164,7 +179,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
   }
 
   /// Wraps the card in Swipe-to-Action logic
-  Widget _buildDismissibleVehicleCard(Vehicle vehicle, String uid) {
+  Widget _buildDismissibleVehicleCard(VehicleModel vehicle, String uid) {
     return Dismissible(
       key: Key(vehicle.id),
       direction: DismissDirection.horizontal,
@@ -175,9 +190,9 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
           return false; // Let the dialog handle the actual delete
         } else if (direction == DismissDirection.startToEnd) {
           // Swipe Right -> Set Default
-          if (!vehicle.isDefault) {
-            final repo = ref.read(profileRepositoryProvider);
-            await repo.setDefaultVehicle(uid, vehicle.id);
+          if (!vehicle.isActive) {
+            final actions = ref.read(profileActionsViewModelProvider);
+            await actions.setDefaultVehicle(uid, vehicle.id);
             HapticFeedback.mediumImpact();
           }
           return false; // Don't remove from list, just trigger action
@@ -197,7 +212,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
             Icon(Icons.star_rounded, color: Colors.white, size: 28.sp),
             SizedBox(width: 8.w),
             Text(
-              "Set Default",
+              AppLocalizations.of(context).setDefault,
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -219,7 +234,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             Text(
-              "Delete",
+              AppLocalizations.of(context).actionDelete,
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -240,11 +255,8 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
   }
 
   /// The new "Hero" Card Design
-  Widget _buildDigitalKeyCard(Vehicle vehicle, String uid) {
+  Widget _buildDigitalKeyCard(VehicleModel vehicle, String uid) {
     final baseColor = _getVehicleColor(vehicle.color);
-    final isEco =
-        vehicle.fuelType == 'Electric' || vehicle.fuelType == 'Hybrid';
-
     return GestureDetector(
       onTap: () => _showEditVehicleSheet(vehicle, uid),
       child: Container(
@@ -255,7 +267,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
           color: AppColors.surface,
           boxShadow: [
             BoxShadow(
-              color: baseColor.withOpacity(0.15),
+              color: baseColor.withValues(alpha: 0.15),
               blurRadius: 20,
               offset: const Offset(0, 8),
               spreadRadius: 0,
@@ -273,8 +285,8 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      baseColor.withOpacity(0.12),
-                      AppColors.surface.withOpacity(0.5),
+                      baseColor.withValues(alpha: 0.12),
+                      AppColors.surface.withValues(alpha: 0.5),
                     ],
                   ),
                 ),
@@ -288,7 +300,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
               child: Icon(
                 _getVehicleIcon(vehicle.fuelType),
                 size: 140.sp,
-                color: baseColor.withOpacity(0.08),
+                color: baseColor.withValues(alpha: 0.08),
               ),
             ),
 
@@ -306,13 +318,13 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                     ),
                     decoration: BoxDecoration(
                       color: vehicle.isVerified
-                          ? AppColors.success.withOpacity(0.1)
-                          : Colors.orange.withOpacity(0.1),
+                          ? AppColors.success.withValues(alpha: 0.1)
+                          : Colors.orange.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12.r),
                       border: Border.all(
                         color: vehicle.isVerified
-                            ? AppColors.success.withOpacity(0.3)
-                            : Colors.orange.withOpacity(0.3),
+                            ? AppColors.success.withValues(alpha: 0.3)
+                            : Colors.orange.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(
@@ -329,7 +341,9 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                         ),
                         SizedBox(width: 4.w),
                         Text(
-                          vehicle.isVerified ? 'Verified' : 'Pending',
+                          vehicle.isVerified
+                              ? AppLocalizations.of(context).verified
+                              : AppLocalizations.of(context).pending,
                           style: TextStyle(
                             fontSize: 10.sp,
                             fontWeight: FontWeight.bold,
@@ -341,7 +355,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                       ],
                     ),
                   ),
-                  if (vehicle.isDefault) ...[
+                  if (vehicle.isActive) ...[
                     SizedBox(height: 6.h),
                     Container(
                       padding: EdgeInsets.symmetric(
@@ -352,13 +366,13 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                         gradient: LinearGradient(
                           colors: [
                             AppColors.primary,
-                            AppColors.primary.withOpacity(0.8),
+                            AppColors.primary.withValues(alpha: 0.8),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(12.r),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withOpacity(0.4),
+                            color: AppColors.primary.withValues(alpha: 0.4),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),
@@ -395,7 +409,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -443,10 +457,10 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                       child: Container(
                         padding: EdgeInsets.all(12.w),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.6),
+                          color: Colors.white.withValues(alpha: 0.6),
                           borderRadius: BorderRadius.circular(16.r),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.5),
+                            color: Colors.white.withValues(alpha: 0.5),
                           ),
                         ),
                         child: Row(
@@ -457,7 +471,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                               Icons
                                   .horizontal_rule_rounded, // Abstract plate look
                               vehicle.licensePlate,
-                              "Plate",
+                              AppLocalizations.of(context).plate,
                             ),
                             Container(
                               width: 1,
@@ -468,7 +482,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                             _buildMiniInfo(
                               Icons.calendar_today_rounded,
                               vehicle.year.toString(),
-                              "Year",
+                              AppLocalizations.of(context).year,
                             ),
                             Container(
                               width: 1,
@@ -480,7 +494,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  "Seats",
+                                  AppLocalizations.of(context).seats2,
                                   style: TextStyle(
                                     fontSize: 10.sp,
                                     color: AppColors.textSecondary,
@@ -494,7 +508,8 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                                       padding: EdgeInsets.only(right: 2.w),
                                       child: CircleAvatar(
                                         radius: 3.sp,
-                                        backgroundColor: index < vehicle.seats
+                                        backgroundColor:
+                                            index < vehicle.capacity
                                             ? AppColors.textPrimary
                                             : AppColors.border,
                                       ),
@@ -551,7 +566,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                 height: 150.w,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.primary.withOpacity(0.05),
+                  color: AppColors.primary.withValues(alpha: 0.05),
                 ),
               ),
               Container(
@@ -559,7 +574,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                 height: 110.w,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                 ),
               ),
               Icon(
@@ -571,7 +586,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
           ),
           SizedBox(height: 32.h),
           Text(
-            'Garage is Empty',
+            AppLocalizations.of(context).garageIsEmpty,
             style: TextStyle(
               fontSize: 24.sp,
               fontWeight: FontWeight.w800,
@@ -582,7 +597,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 40.w),
             child: Text(
-              'Add a vehicle to start your journey. Connect with others and share rides.',
+              AppLocalizations.of(context).addAVehicleToStart,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 15.sp,
@@ -616,7 +631,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
           Container(
             padding: EdgeInsets.all(10.w),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12.r),
             ),
             child: Icon(
@@ -631,7 +646,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Quick Tip',
+                  AppLocalizations.of(context).quickTip,
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.bold,
@@ -640,7 +655,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                 ),
                 SizedBox(height: 4.h),
                 Text(
-                  'Swipe right on a vehicle card to set it as default. Swipe left to remove it.',
+                  AppLocalizations.of(context).swipeRightOnAVehicle,
                   style: TextStyle(
                     fontSize: 12.sp,
                     color: AppColors.textSecondary,
@@ -657,14 +672,14 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
 
   // --- Logic Helpers (Kept mostly same, added Haptic) ---
 
-  IconData _getVehicleIcon(String fuelType) {
+  IconData _getVehicleIcon(FuelType fuelType) {
     switch (fuelType) {
-      case 'Electric':
+      case FuelType.electric:
         return Icons.electric_car_rounded;
-      case 'Hybrid':
+      case FuelType.hybrid:
         return Icons.battery_charging_full_rounded;
-      case 'Diesel':
-        return Icons.local_shipping_rounded; // Just to differentiate
+      case FuelType.diesel:
+        return Icons.local_shipping_rounded;
       default:
         return Icons.directions_car_rounded;
     }
@@ -692,7 +707,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
     }
   }
 
-  void _showDeleteConfirmation(Vehicle vehicle, String uid) {
+  void _showDeleteConfirmation(VehicleModel vehicle, String uid) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -703,17 +718,17 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
           children: [
             Icon(Icons.warning_amber_rounded, color: AppColors.error),
             SizedBox(width: 12.w),
-            const Text('Delete Ride?'),
+            Text(AppLocalizations.of(context).deleteRide),
           ],
         ),
         content: Text(
-          'Are you sure you want to remove ${vehicle.make}? This cannot be undone.',
+          AppLocalizations.of(context).areYouSureYouWant6(vehicle.make),
         ),
         actions: [
           TextButton(
             onPressed: () => context.pop(),
             child: Text(
-              'Keep It',
+              AppLocalizations.of(context).keepIt,
               style: TextStyle(color: AppColors.textSecondary),
             ),
           ),
@@ -721,19 +736,24 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
             onPressed: () async {
               context.pop();
               await ref
-                  .read(profileRepositoryProvider)
+                  .read(profileActionsViewModelProvider)
                   .removeVehicle(uid, vehicle.id);
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: const Text('Vehicle removed from garage'),
+                    content: Text(
+                      AppLocalizations.of(context).vehicleRemovedFromGarage,
+                    ),
                     backgroundColor: AppColors.textPrimary,
                     behavior: SnackBarBehavior.floating,
                   ),
                 );
               }
             },
-            child: Text('Delete', style: TextStyle(color: AppColors.error)),
+            child: Text(
+              AppLocalizations.of(context).actionDelete,
+              style: TextStyle(color: AppColors.error),
+            ),
           ),
         ],
       ),
@@ -741,11 +761,11 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
   }
 
   void _showAddVehicleSheet(String? uid) => _showVehicleFormSheet(null);
-  void _showEditVehicleSheet(Vehicle vehicle, String uid) =>
+  void _showEditVehicleSheet(VehicleModel vehicle, String uid) =>
       _showVehicleFormSheet(vehicle);
 
   // Form Sheet Logic (Reused existing structure but cleaned UI)
-  void _showVehicleFormSheet(Vehicle? vehicle) {
+  void _showVehicleFormSheet(VehicleModel? vehicle) {
     final isEditing = vehicle != null;
     final makeController = TextEditingController(text: vehicle?.make ?? '');
     final modelController = TextEditingController(text: vehicle?.model ?? '');
@@ -756,8 +776,8 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
     final plateController = TextEditingController(
       text: vehicle?.licensePlate ?? '',
     );
-    var seats = vehicle?.seats ?? 4;
-    var fuelType = vehicle?.fuelType ?? 'Gasoline';
+    var capacity = vehicle?.capacity ?? 4;
+    var fuelType = vehicle?.fuelType ?? FuelType.gasoline;
 
     showModalBottomSheet(
       context: context,
@@ -774,7 +794,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
               borderRadius: BorderRadius.vertical(top: Radius.circular(32.r)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 20,
                   offset: const Offset(0, -5),
                 ),
@@ -787,7 +807,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                   width: 40.w,
                   height: 4.h,
                   decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.3),
+                    color: Colors.grey.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(2.r),
                   ),
                 ),
@@ -797,7 +817,9 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                     padding: EdgeInsets.all(24.w),
                     children: [
                       Text(
-                        isEditing ? 'Edit Ride' : 'New Ride',
+                        isEditing
+                            ? AppLocalizations.of(context).editRide
+                            : AppLocalizations.of(context).newRide,
                         style: TextStyle(
                           fontSize: 24.sp,
                           fontWeight: FontWeight.w800,
@@ -865,7 +887,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
 
                       // Modern Seat Selector
                       Text(
-                        'Seats Capacity',
+                        AppLocalizations.of(context).seatsCapacity,
                         style: TextStyle(
                           fontSize: 14.sp,
                           fontWeight: FontWeight.w600,
@@ -881,10 +903,10 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                           separatorBuilder: (_, __) => SizedBox(width: 12.w),
                           itemBuilder: (context, index) {
                             final count = index + 1;
-                            final isSelected = seats == count;
+                            final isSelected = capacity == count;
                             return GestureDetector(
                               onTap: () {
-                                setModalState(() => seats = count);
+                                setModalState(() => capacity = count);
                                 HapticFeedback.selectionClick();
                               },
                               child: AnimatedContainer(
@@ -903,7 +925,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                                 ),
                                 child: Center(
                                   child: Text(
-                                    '$count',
+                                    AppLocalizations.of(context).value2(count),
                                     style: TextStyle(
                                       color: isSelected
                                           ? Colors.white
@@ -923,7 +945,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
 
                       // Fuel Type Chips
                       Text(
-                        'Fuel Type',
+                        AppLocalizations.of(context).fuelType,
                         style: TextStyle(
                           fontSize: 14.sp,
                           fontWeight: FontWeight.w600,
@@ -934,11 +956,16 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                       Wrap(
                         spacing: 10.w,
                         runSpacing: 10.h,
-                        children: ['Gasoline', 'Diesel', 'Hybrid', 'Electric']
-                            .map((type) {
+                        children:
+                            [
+                              FuelType.gasoline,
+                              FuelType.diesel,
+                              FuelType.hybrid,
+                              FuelType.electric,
+                            ].map((type) {
                               final isSelected = fuelType == type;
                               return ChoiceChip(
-                                label: Text(type),
+                                label: Text(type.displayName),
                                 selected: isSelected,
                                 onSelected: (val) {
                                   setModalState(() => fuelType = type);
@@ -967,8 +994,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                                   ),
                                 ),
                               );
-                            })
-                            .toList(),
+                            }).toList(),
                       ),
 
                       SizedBox(height: 40.h),
@@ -987,28 +1013,32 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                               .value;
                           if (user == null) return;
 
-                          final newVehicle = Vehicle(
+                          final newVehicle = VehicleModel(
                             id:
                                 vehicle?.id ??
                                 DateTime.now().millisecondsSinceEpoch
                                     .toString(),
+                            ownerId: user.uid,
                             make: makeController.text,
                             model: modelController.text,
                             year: int.tryParse(yearController.text) ?? 2023,
                             color: colorController.text,
                             licensePlate: plateController.text,
-                            seats: seats,
-                            isDefault: vehicle?.isDefault ?? false,
-                            isVerified: vehicle?.isVerified ?? false,
+                            capacity: capacity,
+                            isActive: vehicle?.isActive ?? false,
+                            verificationStatus:
+                                VehicleVerificationStatus.pending,
                             fuelType: fuelType,
                           );
 
                           context.pop();
-                          final repo = ref.read(profileRepositoryProvider);
+                          final actions = ref.read(
+                            profileActionsViewModelProvider,
+                          );
                           if (isEditing) {
-                            await repo.updateVehicle(user.uid, newVehicle);
+                            await actions.updateVehicle(user.uid, newVehicle);
                           } else {
-                            await repo.addVehicle(user.uid, newVehicle);
+                            await actions.addVehicle(user.uid, newVehicle);
                           }
                         },
                         icon: isEditing

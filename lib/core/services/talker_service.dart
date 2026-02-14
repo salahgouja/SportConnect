@@ -110,6 +110,8 @@ class TalkerService {
   /// Usage:
   /// ```dart
   /// MaterialApp(
+  ///   localizationsDelegates: AppLocalizations.localizationsDelegates,
+  ///   supportedLocales: AppLocalizations.supportedLocales,
   ///   navigatorObservers: [TalkerService.routeObserver],
   /// )
   /// ```

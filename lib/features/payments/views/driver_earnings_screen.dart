@@ -3,14 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sport_connect/core/config/app_router.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
+import 'package:sport_connect/features/rides/models/driver_stats.dart';
 import 'package:sport_connect/features/rides/repositories/driver_stats_repository.dart';
-import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/payments/view_models/payment_view_model.dart';
 import 'package:intl/intl.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Driver Earnings Screen  - View earnings with real Firestore data
 class DriverEarningsScreen extends ConsumerStatefulWidget {
@@ -29,6 +32,59 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
     'This Month',
     'All Time',
   ];
+
+  void _exportEarnings() {
+    final driverStats = ref.read(driverStatsProvider);
+    final transactions = ref.read(earningsTransactionsProvider);
+
+    final stats = driverStats.value;
+    final txList = transactions.value;
+
+    if (stats == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context).noData),
+          backgroundColor: AppColors.primary,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final dateFormat = DateFormat('MMM dd, yyyy HH:mm');
+    final now = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final buffer = StringBuffer()
+      ..writeln('SportConnect - Earnings Report')
+      ..writeln('Generated: $now')
+      ..writeln('================================')
+      ..writeln()
+      ..writeln('EARNINGS SUMMARY')
+      ..writeln('  Today:      \$${stats.earningsToday.toStringAsFixed(2)}')
+      ..writeln('  This Week:  \$${stats.earningsThisWeek.toStringAsFixed(2)}')
+      ..writeln(
+        '  This Month: \$${stats.earningsThisMonth.toStringAsFixed(2)}',
+      )
+      ..writeln('  Total:      \$${stats.totalEarnings.toStringAsFixed(2)}')
+      ..writeln()
+      ..writeln('RIDE STATISTICS')
+      ..writeln('  Total Rides: ${stats.totalRides}')
+      ..writeln('  CO2 Saved:   ${stats.co2Saved.toStringAsFixed(1)} kg')
+      ..writeln();
+
+    if (txList != null && txList.isNotEmpty) {
+      buffer
+        ..writeln('RECENT TRANSACTIONS')
+        ..writeln('--------------------------------');
+      for (final tx in txList.take(20)) {
+        final date = dateFormat.format(tx.createdAt);
+        buffer.writeln(
+          '  $date | \$${tx.amount.toStringAsFixed(2)} | ${tx.description}',
+        );
+      }
+    }
+
+    SharePlus.instance.share(ShareParams(text: buffer.toString()));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +109,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
                 background: _buildEarningsHeader(driverStats),
               ),
               title: Text(
-                'Earnings',
+                AppLocalizations.of(context).earnings,
                 style: TextStyle(
                   fontSize: 20.sp,
                   fontWeight: FontWeight.w700,
@@ -62,9 +118,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
               ),
               actions: [
                 IconButton(
-                  onPressed: () {
-                    // Show export options
-                  },
+                  onPressed: _exportEarnings,
                   icon: const Icon(Icons.download_rounded, color: Colors.white),
                 ),
               ],
@@ -102,7 +156,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
             end: Alignment.bottomRight,
             colors: [
               AppColors.primary,
-              AppColors.primary.withOpacity(0.8),
+              AppColors.primary.withValues(alpha: 0.8),
               AppColors.secondary,
             ],
           ),
@@ -114,15 +168,17 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 Text(
-                  'Total Earnings',
+                  AppLocalizations.of(context).totalEarnings,
                   style: TextStyle(
                     fontSize: 14.sp,
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                   ),
                 ),
                 SizedBox(height: 8.h),
                 Text(
-                  '${stats.totalEarnings.toStringAsFixed(0)} €',
+                  AppLocalizations.of(
+                    context,
+                  ).value5(stats.totalEarnings.toStringAsFixed(0)),
                   style: TextStyle(
                     fontSize: 42.sp,
                     fontWeight: FontWeight.w800,
@@ -137,7 +193,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
                     vertical: 6.h,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(20.r),
                   ),
                   child: Row(
@@ -150,7 +206,9 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
                       ),
                       SizedBox(width: 6.w),
                       Text(
-                        'This week: ${stats.earningsThisWeek.toStringAsFixed(0)} €',
+                        AppLocalizations.of(context).thisWeekValue(
+                          stats.earningsThisWeek.toStringAsFixed(0),
+                        ),
                         style: TextStyle(
                           fontSize: 13.sp,
                           fontWeight: FontWeight.w500,
@@ -166,27 +224,27 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
                   children: [
                     _HeaderStat(
                       value: stats.totalRides.toString(),
-                      label: 'Total Rides',
+                      label: AppLocalizations.of(context).totalRides,
                     ),
                     Container(
                       width: 1,
                       height: 40.h,
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                     ),
                     _HeaderStat(
                       value: stats.totalRides > 0
                           ? '${(stats.totalEarnings / stats.totalRides).toStringAsFixed(0)} €'
                           : '0 €',
-                      label: 'Avg per Ride',
+                      label: AppLocalizations.of(context).avgPerRide,
                     ),
                     Container(
                       width: 1,
                       height: 40.h,
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                     ),
                     _HeaderStat(
                       value: '${stats.hoursOnline.toStringAsFixed(0)}h',
-                      label: 'Drive Time',
+                      label: AppLocalizations.of(context).driveTime,
                     ),
                   ],
                 ),
@@ -202,7 +260,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
             end: Alignment.bottomRight,
             colors: [
               AppColors.primary,
-              AppColors.primary.withOpacity(0.8),
+              AppColors.primary.withValues(alpha: 0.8),
               AppColors.secondary,
             ],
           ),
@@ -218,15 +276,29 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
             end: Alignment.bottomRight,
             colors: [
               AppColors.primary,
-              AppColors.primary.withOpacity(0.8),
+              AppColors.primary.withValues(alpha: 0.8),
               AppColors.secondary,
             ],
           ),
         ),
         child: Center(
-          child: Text(
-            'Failed to load earnings',
-            style: TextStyle(color: Colors.white, fontSize: 16.sp),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                AppLocalizations.of(context).failedToLoadEarnings,
+                style: TextStyle(color: Colors.white, fontSize: 16.sp),
+              ),
+              SizedBox(height: 12.h),
+              TextButton.icon(
+                onPressed: () => ref.invalidate(driverStatsProvider),
+                icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+                label: Text(
+                  AppLocalizations.of(context).tryAgain,
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -409,7 +481,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Earnings Overview',
+                  AppLocalizations.of(context).earningsOverview,
                   style: TextStyle(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w700,
@@ -422,7 +494,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
                     vertical: 4.h,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.success.withOpacity(0.1),
+                    color: AppColors.success.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                   child: Row(
@@ -434,7 +506,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
                       ),
                       SizedBox(width: 4.w),
                       Text(
-                        'Active',
+                        AppLocalizations.of(context).active,
                         style: TextStyle(
                           fontSize: 12.sp,
                           fontWeight: FontWeight.w600,
@@ -449,13 +521,13 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
             SizedBox(height: 20.h),
             // Simple earnings breakdown
             _buildEarningsBreakdownItem(
-              'Rides Earnings',
+              AppLocalizations.of(context).ridesEarnings,
               stats.totalEarnings * 0.85,
               AppColors.primary,
             ),
             SizedBox(height: 12.h),
             _buildEarningsBreakdownItem(
-              'Tips & Bonuses',
+              AppLocalizations.of(context).tipsBonuses,
               stats.totalEarnings * 0.15,
               AppColors.success,
             ),
@@ -464,7 +536,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
             Container(
               padding: EdgeInsets.all(16.w),
               decoration: BoxDecoration(
-                color: AppColors.success.withOpacity(0.1),
+                color: AppColors.success.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16.r),
               ),
               child: Row(
@@ -476,7 +548,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Environmental Impact',
+                          AppLocalizations.of(context).environmentalImpact,
                           style: TextStyle(
                             fontSize: 14.sp,
                             fontWeight: FontWeight.w600,
@@ -484,7 +556,9 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
                           ),
                         ),
                         Text(
-                          '${stats.co2Saved.toStringAsFixed(1)} kg CO₂ saved',
+                          AppLocalizations.of(
+                            context,
+                          ).valueKgCoSaved(stats.co2Saved.toStringAsFixed(1)),
                           style: TextStyle(
                             fontSize: 12.sp,
                             color: AppColors.success,
@@ -531,7 +605,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
           ),
         ),
         Text(
-          '${amount.toStringAsFixed(0)} €',
+          AppLocalizations.of(context).value5(amount.toStringAsFixed(0)),
           style: TextStyle(
             fontSize: 14.sp,
             fontWeight: FontWeight.w600,
@@ -574,20 +648,26 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
       decoration: BoxDecoration(
         gradient: isConnected
             ? LinearGradient(
-                colors: [AppColors.success.withOpacity(0.1), AppColors.surface],
+                colors: [
+                  AppColors.success.withValues(alpha: 0.1),
+                  AppColors.surface,
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               )
             : LinearGradient(
-                colors: [AppColors.primary.withOpacity(0.1), AppColors.surface],
+                colors: [
+                  AppColors.primary.withValues(alpha: 0.1),
+                  AppColors.surface,
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
         borderRadius: BorderRadius.circular(20.r),
         border: Border.all(
           color: isConnected
-              ? AppColors.success.withOpacity(0.3)
-              : AppColors.primary.withOpacity(0.3),
+              ? AppColors.success.withValues(alpha: 0.3)
+              : AppColors.primary.withValues(alpha: 0.3),
         ),
       ),
       child: Column(
@@ -599,8 +679,8 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
                 padding: EdgeInsets.all(12.w),
                 decoration: BoxDecoration(
                   color: isConnected
-                      ? AppColors.success.withOpacity(0.2)
-                      : AppColors.primary.withOpacity(0.2),
+                      ? AppColors.success.withValues(alpha: 0.2)
+                      : AppColors.primary.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12.r),
                 ),
                 child: Icon(
@@ -615,7 +695,9 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isConnected ? 'Stripe Connected' : 'Set Up Payouts',
+                      isConnected
+                          ? AppLocalizations.of(context).stripeConnected
+                          : AppLocalizations.of(context).setUpPayouts,
                       style: TextStyle(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.w700,
@@ -626,9 +708,13 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
                     Text(
                       isConnected
                           ? (payoutsEnabled
-                                ? 'Receive payments from riders'
-                                : 'Complete verification')
-                          : 'Connect your bank account',
+                                ? AppLocalizations.of(
+                                    context,
+                                  ).receivePaymentsFromRiders
+                                : AppLocalizations.of(
+                                    context,
+                                  ).completeVerification)
+                          : AppLocalizations.of(context).connectYourBankAccount,
                       style: TextStyle(
                         fontSize: 13.sp,
                         color: AppColors.textSecondary,
@@ -653,7 +739,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
                       Icon(Icons.check, color: Colors.white, size: 14.sp),
                       SizedBox(width: 4.w),
                       Text(
-                        'Active',
+                        AppLocalizations.of(context).active,
                         style: TextStyle(
                           fontSize: 12.sp,
                           fontWeight: FontWeight.w600,
@@ -672,7 +758,9 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
               decoration: BoxDecoration(
                 color: AppColors.surface,
                 borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(color: AppColors.border.withOpacity(0.5)),
+                border: Border.all(
+                  color: AppColors.border.withValues(alpha: 0.5),
+                ),
               ),
               child: Row(
                 children: [
@@ -681,7 +769,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Available Balance',
+                          AppLocalizations.of(context).availableBalance,
                           style: TextStyle(
                             fontSize: 13.sp,
                             color: AppColors.textSecondary,
@@ -689,7 +777,9 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
                         ),
                         SizedBox(height: 4.h),
                         Text(
-                          '${availableBalance.toStringAsFixed(2)} €',
+                          AppLocalizations.of(
+                            context,
+                          ).value5(availableBalance.toStringAsFixed(2)),
                           style: TextStyle(
                             fontSize: 22.sp,
                             fontWeight: FontWeight.w800,
@@ -721,7 +811,8 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
               width: double.infinity,
               child: PremiumButton(
                 text: 'Connect Stripe Account',
-                onPressed: () => context.push(AppRouter.driverStripeOnboarding),
+                onPressed: () =>
+                    context.push(AppRoutes.driverStripeOnboarding.path),
                 style: PremiumButtonStyle.primary,
               ),
             ),
@@ -732,7 +823,8 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
               width: double.infinity,
               child: PremiumButton(
                 text: 'Complete Verification',
-                onPressed: () => context.push(AppRouter.driverStripeOnboarding),
+                onPressed: () =>
+                    context.push(AppRoutes.driverStripeOnboarding.path),
                 style: PremiumButtonStyle.primary,
               ),
             ),
@@ -767,14 +859,16 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20.r),
         ),
-        title: Text('Confirm Payout'),
+        title: Text(AppLocalizations.of(context).confirmPayout),
         content: Text(
-          'Withdraw ${amount.toStringAsFixed(2)} € to your connected bank account?',
+          AppLocalizations.of(
+            context,
+          ).withdrawValueToYourConnected(amount.toStringAsFixed(2)),
         ),
         actions: [
           TextButton(
             onPressed: () => context.pop(false),
-            child: Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           ElevatedButton(
             onPressed: () => context.pop(true),
@@ -784,7 +878,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
                 borderRadius: BorderRadius.circular(12.r),
               ),
             ),
-            child: Text('Withdraw'),
+            child: Text(AppLocalizations.of(context).withdraw),
           ),
         ],
       ),
@@ -798,7 +892,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
         userId: userId,
         stripeAccountId: stripeAccountId,
         amount: amount,
-        currency: '€',
+        currency: 'eur',
         isFullySetup: isFullySetup,
       );
 
@@ -807,7 +901,9 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Payout of ${amount.toStringAsFixed(2)} € initiated!',
+              AppLocalizations.of(
+                context,
+              ).payoutOfValueInitiated(amount.toStringAsFixed(2)),
             ),
             backgroundColor: AppColors.success,
           ),
@@ -818,7 +914,9 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Payout failed. Please try again.'),
+            content: Text(
+              AppLocalizations.of(context).payoutFailedPleaseTryAgain,
+            ),
             backgroundColor: AppColors.error,
           ),
         );
@@ -826,7 +924,10 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).errorValue(e)),
+          backgroundColor: AppColors.error,
+        ),
       );
     }
   }
@@ -840,7 +941,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.w),
           child: Text(
-            'Recent Transactions',
+            AppLocalizations.of(context).recentTransactions,
             style: TextStyle(
               fontSize: 16.sp,
               fontWeight: FontWeight.w700,
@@ -869,7 +970,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
                     ),
                     SizedBox(height: 12.h),
                     Text(
-                      'No transactions yet',
+                      AppLocalizations.of(context).noTransactionsYet,
                       style: TextStyle(
                         fontSize: 14.sp,
                         color: AppColors.textSecondary,
@@ -912,7 +1013,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
             margin: EdgeInsets.symmetric(horizontal: 20.w),
             padding: EdgeInsets.all(20.w),
             decoration: BoxDecoration(
-              color: AppColors.error.withOpacity(0.1),
+              color: AppColors.error.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16.r),
             ),
             child: Row(
@@ -920,7 +1021,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
                 Icon(Icons.error_outline, color: AppColors.error),
                 SizedBox(width: 12.w),
                 Text(
-                  'Failed to load transactions',
+                  AppLocalizations.of(context).failedToLoadTransactions,
                   style: TextStyle(color: AppColors.error),
                 ),
               ],
@@ -955,7 +1056,7 @@ class _HeaderStat extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 12.sp,
-            color: Colors.white.withOpacity(0.7),
+            color: Colors.white.withValues(alpha: 0.7),
           ),
         ),
       ],
@@ -990,7 +1091,7 @@ class _StatCard extends StatelessWidget {
           Container(
             padding: EdgeInsets.all(10.w),
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
+              color: iconColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12.r),
             ),
             child: Icon(icon, color: iconColor, size: 22.sp),
@@ -1078,7 +1179,7 @@ class _TransactionItem extends StatelessWidget {
           Container(
             padding: EdgeInsets.all(10.w),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12.r),
             ),
             child: Icon(icon, color: color, size: 22.sp),
@@ -1108,7 +1209,9 @@ class _TransactionItem extends StatelessWidget {
             ),
           ),
           Text(
-            '${amount >= 0 ? '+' : ''}${amount.toStringAsFixed(0)} €',
+            AppLocalizations.of(
+              context,
+            ).valueValue3(amount >= 0 ? '+' : '', amount.toStringAsFixed(0)),
             style: TextStyle(
               fontSize: 16.sp,
               fontWeight: FontWeight.w700,

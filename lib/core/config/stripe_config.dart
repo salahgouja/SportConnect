@@ -1,3 +1,5 @@
+import 'package:sport_connect/core/config/environment.dart';
+
 /// Stripe Configuration for SportConnect
 ///
 /// This configuration uses:
@@ -13,11 +15,7 @@ class StripeConfig {
   /// This is safe to include in client code (it's meant to be public)
   ///
   /// Override with: --dart-define=STRIPE_PUBLISHABLE_KEY=pk_live_xxx
-  static const String publishableKey = String.fromEnvironment(
-    'STRIPE_PUBLISHABLE_KEY',
-    defaultValue:
-        'pk_test_51SCo5zEXL0WZSSzlqwu30CMbNEl0wQKyj7lsfLPLbFuiEvuIj6x8SZrWfNej1oJYOUJhR26gBurV2uxSd5g7u2Vz004dmyIcEI',
-  );
+  static const String publishableKey = Environment.stripePublishableKey;
 
   /// Platform fee percentage (taken from each payment)
   /// Default: 15%

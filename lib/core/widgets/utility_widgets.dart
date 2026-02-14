@@ -198,7 +198,7 @@ class _SuccessCheckmarkState extends State<SuccessCheckmark>
         width: widget.size.w,
         height: widget.size.w,
         decoration: BoxDecoration(
-          color: (widget.color ?? AppColors.success).withOpacity(0.1),
+          color: (widget.color ?? AppColors.success).withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
         child: Icon(
@@ -241,12 +241,12 @@ class PremiumTag extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primary
-              : (backgroundColor ?? AppColors.primary.withOpacity(0.1)),
+              : (backgroundColor ?? AppColors.primary.withValues(alpha: 0.1)),
           borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
           border: Border.all(
             color: isSelected
                 ? AppColors.primary
-                : AppColors.primary.withOpacity(0.2),
+                : AppColors.primary.withValues(alpha: 0.2),
           ),
         ),
         child: Row(
@@ -343,9 +343,9 @@ class StatusBadge extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
       decoration: BoxDecoration(
-        color: _color.withOpacity(0.1),
+        color: _color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(6.r),
-        border: Border.all(color: _color.withOpacity(0.3)),
+        border: Border.all(color: _color.withValues(alpha: 0.3)),
       ),
       child: Text(
         label,
@@ -383,10 +383,10 @@ class InfoBanner extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
-        color: backgroundColor ?? AppColors.info.withOpacity(0.1),
+        color: backgroundColor ?? AppColors.info.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(
-          color: (iconColor ?? AppColors.info).withOpacity(0.2),
+          color: (iconColor ?? AppColors.info).withValues(alpha: 0.2),
         ),
       ),
       child: Row(

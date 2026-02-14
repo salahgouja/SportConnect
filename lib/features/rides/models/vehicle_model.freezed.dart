@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$VehicleModel {
 
- String get id; String get ownerId; String get make; String get model; String get year; String get color; String get licensePlate; int get capacity; FuelType get fuelType; String? get imageUrl; List<String> get imageUrls; bool get isActive; VehicleVerificationStatus get verificationStatus; String? get verificationNote;// Vehicle documents
+ String get id; String get ownerId; String get make; String get model; int get year; String get color; String get licensePlate; int get capacity; FuelType get fuelType; String? get imageUrl; List<String> get imageUrls; bool get isActive; VehicleVerificationStatus get verificationStatus; String? get verificationNote;// Vehicle documents
  String? get registrationDocUrl; String? get insuranceDocUrl;@TimestampConverter() DateTime? get insuranceExpiry;// Vehicle features/amenities
  bool get hasAC; bool get hasCharger; bool get hasWifi; bool get petsAllowed; bool get smokingAllowed; bool get hasLuggage;// Stats
  int get totalRides; double get averageRating;// Timestamps
@@ -52,7 +52,7 @@ abstract mixin class $VehicleModelCopyWith<$Res>  {
   factory $VehicleModelCopyWith(VehicleModel value, $Res Function(VehicleModel) _then) = _$VehicleModelCopyWithImpl;
 @useResult
 $Res call({
- String id, String ownerId, String make, String model, String year, String color, String licensePlate, int capacity, FuelType fuelType, String? imageUrl, List<String> imageUrls, bool isActive, VehicleVerificationStatus verificationStatus, String? verificationNote, String? registrationDocUrl, String? insuranceDocUrl,@TimestampConverter() DateTime? insuranceExpiry, bool hasAC, bool hasCharger, bool hasWifi, bool petsAllowed, bool smokingAllowed, bool hasLuggage, int totalRides, double averageRating,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? updatedAt
+ String id, String ownerId, String make, String model, int year, String color, String licensePlate, int capacity, FuelType fuelType, String? imageUrl, List<String> imageUrls, bool isActive, VehicleVerificationStatus verificationStatus, String? verificationNote, String? registrationDocUrl, String? insuranceDocUrl,@TimestampConverter() DateTime? insuranceExpiry, bool hasAC, bool hasCharger, bool hasWifi, bool petsAllowed, bool smokingAllowed, bool hasLuggage, int totalRides, double averageRating,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? updatedAt
 });
 
 
@@ -76,7 +76,7 @@ as String,ownerId: null == ownerId ? _self.ownerId : ownerId // ignore: cast_nul
 as String,make: null == make ? _self.make : make // ignore: cast_nullable_to_non_nullable
 as String,model: null == model ? _self.model : model // ignore: cast_nullable_to_non_nullable
 as String,year: null == year ? _self.year : year // ignore: cast_nullable_to_non_nullable
-as String,color: null == color ? _self.color : color // ignore: cast_nullable_to_non_nullable
+as int,color: null == color ? _self.color : color // ignore: cast_nullable_to_non_nullable
 as String,licensePlate: null == licensePlate ? _self.licensePlate : licensePlate // ignore: cast_nullable_to_non_nullable
 as String,capacity: null == capacity ? _self.capacity : capacity // ignore: cast_nullable_to_non_nullable
 as int,fuelType: null == fuelType ? _self.fuelType : fuelType // ignore: cast_nullable_to_non_nullable
@@ -183,7 +183,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String ownerId,  String make,  String model,  String year,  String color,  String licensePlate,  int capacity,  FuelType fuelType,  String? imageUrl,  List<String> imageUrls,  bool isActive,  VehicleVerificationStatus verificationStatus,  String? verificationNote,  String? registrationDocUrl,  String? insuranceDocUrl, @TimestampConverter()  DateTime? insuranceExpiry,  bool hasAC,  bool hasCharger,  bool hasWifi,  bool petsAllowed,  bool smokingAllowed,  bool hasLuggage,  int totalRides,  double averageRating, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String ownerId,  String make,  String model,  int year,  String color,  String licensePlate,  int capacity,  FuelType fuelType,  String? imageUrl,  List<String> imageUrls,  bool isActive,  VehicleVerificationStatus verificationStatus,  String? verificationNote,  String? registrationDocUrl,  String? insuranceDocUrl, @TimestampConverter()  DateTime? insuranceExpiry,  bool hasAC,  bool hasCharger,  bool hasWifi,  bool petsAllowed,  bool smokingAllowed,  bool hasLuggage,  int totalRides,  double averageRating, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _VehicleModel() when $default != null:
 return $default(_that.id,_that.ownerId,_that.make,_that.model,_that.year,_that.color,_that.licensePlate,_that.capacity,_that.fuelType,_that.imageUrl,_that.imageUrls,_that.isActive,_that.verificationStatus,_that.verificationNote,_that.registrationDocUrl,_that.insuranceDocUrl,_that.insuranceExpiry,_that.hasAC,_that.hasCharger,_that.hasWifi,_that.petsAllowed,_that.smokingAllowed,_that.hasLuggage,_that.totalRides,_that.averageRating,_that.createdAt,_that.updatedAt);case _:
@@ -204,7 +204,7 @@ return $default(_that.id,_that.ownerId,_that.make,_that.model,_that.year,_that.c
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String ownerId,  String make,  String model,  String year,  String color,  String licensePlate,  int capacity,  FuelType fuelType,  String? imageUrl,  List<String> imageUrls,  bool isActive,  VehicleVerificationStatus verificationStatus,  String? verificationNote,  String? registrationDocUrl,  String? insuranceDocUrl, @TimestampConverter()  DateTime? insuranceExpiry,  bool hasAC,  bool hasCharger,  bool hasWifi,  bool petsAllowed,  bool smokingAllowed,  bool hasLuggage,  int totalRides,  double averageRating, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String ownerId,  String make,  String model,  int year,  String color,  String licensePlate,  int capacity,  FuelType fuelType,  String? imageUrl,  List<String> imageUrls,  bool isActive,  VehicleVerificationStatus verificationStatus,  String? verificationNote,  String? registrationDocUrl,  String? insuranceDocUrl, @TimestampConverter()  DateTime? insuranceExpiry,  bool hasAC,  bool hasCharger,  bool hasWifi,  bool petsAllowed,  bool smokingAllowed,  bool hasLuggage,  int totalRides,  double averageRating, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)  $default,) {final _that = this;
 switch (_that) {
 case _VehicleModel():
 return $default(_that.id,_that.ownerId,_that.make,_that.model,_that.year,_that.color,_that.licensePlate,_that.capacity,_that.fuelType,_that.imageUrl,_that.imageUrls,_that.isActive,_that.verificationStatus,_that.verificationNote,_that.registrationDocUrl,_that.insuranceDocUrl,_that.insuranceExpiry,_that.hasAC,_that.hasCharger,_that.hasWifi,_that.petsAllowed,_that.smokingAllowed,_that.hasLuggage,_that.totalRides,_that.averageRating,_that.createdAt,_that.updatedAt);case _:
@@ -224,7 +224,7 @@ return $default(_that.id,_that.ownerId,_that.make,_that.model,_that.year,_that.c
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String ownerId,  String make,  String model,  String year,  String color,  String licensePlate,  int capacity,  FuelType fuelType,  String? imageUrl,  List<String> imageUrls,  bool isActive,  VehicleVerificationStatus verificationStatus,  String? verificationNote,  String? registrationDocUrl,  String? insuranceDocUrl, @TimestampConverter()  DateTime? insuranceExpiry,  bool hasAC,  bool hasCharger,  bool hasWifi,  bool petsAllowed,  bool smokingAllowed,  bool hasLuggage,  int totalRides,  double averageRating, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String ownerId,  String make,  String model,  int year,  String color,  String licensePlate,  int capacity,  FuelType fuelType,  String? imageUrl,  List<String> imageUrls,  bool isActive,  VehicleVerificationStatus verificationStatus,  String? verificationNote,  String? registrationDocUrl,  String? insuranceDocUrl, @TimestampConverter()  DateTime? insuranceExpiry,  bool hasAC,  bool hasCharger,  bool hasWifi,  bool petsAllowed,  bool smokingAllowed,  bool hasLuggage,  int totalRides,  double averageRating, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _VehicleModel() when $default != null:
 return $default(_that.id,_that.ownerId,_that.make,_that.model,_that.year,_that.color,_that.licensePlate,_that.capacity,_that.fuelType,_that.imageUrl,_that.imageUrls,_that.isActive,_that.verificationStatus,_that.verificationNote,_that.registrationDocUrl,_that.insuranceDocUrl,_that.insuranceExpiry,_that.hasAC,_that.hasCharger,_that.hasWifi,_that.petsAllowed,_that.smokingAllowed,_that.hasLuggage,_that.totalRides,_that.averageRating,_that.createdAt,_that.updatedAt);case _:
@@ -246,7 +246,7 @@ class _VehicleModel extends VehicleModel {
 @override final  String ownerId;
 @override final  String make;
 @override final  String model;
-@override final  String year;
+@override final  int year;
 @override final  String color;
 @override final  String licensePlate;
 @override@JsonKey() final  int capacity;
@@ -313,7 +313,7 @@ abstract mixin class _$VehicleModelCopyWith<$Res> implements $VehicleModelCopyWi
   factory _$VehicleModelCopyWith(_VehicleModel value, $Res Function(_VehicleModel) _then) = __$VehicleModelCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String ownerId, String make, String model, String year, String color, String licensePlate, int capacity, FuelType fuelType, String? imageUrl, List<String> imageUrls, bool isActive, VehicleVerificationStatus verificationStatus, String? verificationNote, String? registrationDocUrl, String? insuranceDocUrl,@TimestampConverter() DateTime? insuranceExpiry, bool hasAC, bool hasCharger, bool hasWifi, bool petsAllowed, bool smokingAllowed, bool hasLuggage, int totalRides, double averageRating,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? updatedAt
+ String id, String ownerId, String make, String model, int year, String color, String licensePlate, int capacity, FuelType fuelType, String? imageUrl, List<String> imageUrls, bool isActive, VehicleVerificationStatus verificationStatus, String? verificationNote, String? registrationDocUrl, String? insuranceDocUrl,@TimestampConverter() DateTime? insuranceExpiry, bool hasAC, bool hasCharger, bool hasWifi, bool petsAllowed, bool smokingAllowed, bool hasLuggage, int totalRides, double averageRating,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? updatedAt
 });
 
 
@@ -337,7 +337,7 @@ as String,ownerId: null == ownerId ? _self.ownerId : ownerId // ignore: cast_nul
 as String,make: null == make ? _self.make : make // ignore: cast_nullable_to_non_nullable
 as String,model: null == model ? _self.model : model // ignore: cast_nullable_to_non_nullable
 as String,year: null == year ? _self.year : year // ignore: cast_nullable_to_non_nullable
-as String,color: null == color ? _self.color : color // ignore: cast_nullable_to_non_nullable
+as int,color: null == color ? _self.color : color // ignore: cast_nullable_to_non_nullable
 as String,licensePlate: null == licensePlate ? _self.licensePlate : licensePlate // ignore: cast_nullable_to_non_nullable
 as String,capacity: null == capacity ? _self.capacity : capacity // ignore: cast_nullable_to_non_nullable
 as int,fuelType: null == fuelType ? _self.fuelType : fuelType // ignore: cast_nullable_to_non_nullable

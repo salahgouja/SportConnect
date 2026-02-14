@@ -9,24 +9,17 @@ import 'package:latlong2/latlong.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:showcaseview/showcaseview.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/services/feature_discovery_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/services/routing_service.dart';
-import 'package:sport_connect/features/profile/views/profile_screen.dart';
-import 'package:sport_connect/features/rides/views/passenger/ride_search_screen.dart';
-import 'package:sport_connect/features/rides/views/passenger/rider_my_rides_screen.dart';
-import 'package:sport_connect/features/rides/views/passenger/rider_request_ride_screen.dart';
-import 'package:sport_connect/features/rides/views/driver/driver_offer_ride_screen.dart';
-import 'package:sport_connect/features/rides/views/driver/driver_my_rides_screen.dart';
-import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
-import 'package:sport_connect/features/auth/models/user_model.dart';
-import 'package:sport_connect/core/config/app_router.dart';
 import 'package:sport_connect/features/home/repositories/home_repository.dart';
 import 'package:sport_connect/features/home/models/home_models.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Modern Carpooling Home Screen  - Uses proper MVVM architecture with repository
 class HomeScreen extends ConsumerStatefulWidget {
@@ -38,7 +31,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen>
     with TickerProviderStateMixin {
-  int _currentIndex = 0;
   late final AnimationController _fabAnimationController;
   late final AnimationController _pulseAnimationController;
 
@@ -98,7 +90,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     _getCurrentLocation();
     _startLocationTracking();
 
-    // Delay tour start to ensure widget tree is built
+    // Start feature discovery tour
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAndStartTour();
     });
@@ -202,157 +194,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     super.dispose();
   }
 
-  void _onNavTap(int index) {
-    HapticFeedback.selectionClick();
-    setState(() => _currentIndex = index);
-  }
-
-  Widget _getCurrentScreen() {
-    final userAsync = ref.watch(currentUserProvider);
-    final user = userAsync.whenData((u) => u).value;
-    final isDriver = user?.role == UserRole.driver;
-
-    switch (_currentIndex) {
-      case 0:
-        return _buildMapHome();
-      case 1:
-        // Find/Browse rides - Both can search for available rides
-        return const RideSearchScreen();
-      case 2:
-        // Request/Offer - Different for riders vs drivers
-        return isDriver
-            ? const DriverOfferRideScreen() // Drivers offer rides
-            : const RiderRequestRideScreen(); // Riders request rides
-      case 3:
-        // My Rides - Different for riders vs drivers
-        return isDriver
-            ? const DriverMyRidesScreen()
-            : const RiderMyRidesScreen();
-      case 4:
-        return const ProfileScreen();
-      default:
-        return _buildMapHome();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: _getCurrentScreen(),
-      bottomNavigationBar: Showcase(
-        key: _bottomNavKey,
-        title: 'Navigate the App',
-        description:
-            'Use the navigation bar to explore different sections: Explore the map, Search rides, Request or Offer rides, view your trips, and access your Profile.',
-        titleTextStyle: TextStyle(
-          fontSize: 18.sp,
-          fontWeight: FontWeight.w700,
-          color: Colors.white,
-        ),
-        descTextStyle: TextStyle(
-          fontSize: 14.sp,
-          fontWeight: FontWeight.w400,
-          color: Colors.white.withOpacity(0.9),
-        ),
-        tooltipBackgroundColor: AppColors.primary,
-        targetPadding: EdgeInsets.all(4.w),
-        child: _buildModernBottomNav(),
-      ),
-    );
-  }
-
-  /// Modern bottom navigation bar with Google Nav Bar design
-  Widget _buildModernBottomNav() {
-    final userAsync = ref.watch(currentUserProvider);
-    final user = userAsync.whenData((u) => u).value;
-    final isDriver = user?.role == UserRole.driver;
-
-    return SafeArea(
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          boxShadow: [
-            BoxShadow(blurRadius: 20, color: Colors.black.withOpacity(0.1)),
-          ],
-        ),
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-          child: GNav(
-            rippleColor: AppColors.primary.withOpacity(0.1),
-            hoverColor: AppColors.primary.withOpacity(0.1),
-            haptic: true,
-            tabBorderRadius: 16.r,
-            curve: Curves.easeOutExpo,
-            duration: const Duration(milliseconds: 400),
-            gap: 6,
-            color: AppColors.textTertiary,
-            activeColor: AppColors.primary,
-            iconSize: 24.sp,
-            tabBackgroundColor: AppColors.primary.withOpacity(0.1),
-            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-            selectedIndex: _currentIndex,
-            onTabChange: (index) {
-              HapticFeedback.selectionClick();
-              setState(() => _currentIndex = index);
-            },
-            tabs: [
-              GButton(
-                icon: Icons.explore_outlined,
-                iconActiveColor: AppColors.primary,
-                text: 'Explore',
-                textStyle: TextStyle(
-                  fontSize: 13.sp,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
-                ),
-              ),
-              GButton(
-                icon: Icons.search_rounded,
-                iconActiveColor: AppColors.primary,
-                text: 'Search',
-                textStyle: TextStyle(
-                  fontSize: 13.sp,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
-                ),
-              ),
-              GButton(
-                icon: isDriver ? Icons.add_road_rounded : Icons.hail_rounded,
-                iconActiveColor: AppColors.primary,
-                text: isDriver ? 'Offer' : 'Request',
-                textStyle: TextStyle(
-                  fontSize: 13.sp,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
-                ),
-              ),
-              GButton(
-                icon: isDriver
-                    ? Icons.dashboard_rounded
-                    : Icons.receipt_long_rounded,
-                iconActiveColor: AppColors.primary,
-                text: isDriver ? 'Dashboard' : 'My Trips',
-                textStyle: TextStyle(
-                  fontSize: 13.sp,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
-                ),
-              ),
-              GButton(
-                icon: Icons.person_outline,
-                iconActiveColor: AppColors.primary,
-                text: 'Profile',
-                textStyle: TextStyle(
-                  fontSize: 13.sp,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    return Scaffold(body: _buildMapHome());
   }
 
   Widget _buildMapHome() {
@@ -393,8 +237,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     return Polyline(
                       points: entry.value.coordinates,
                       color: entry.key == _selectedRouteIndex
-                          ? AppColors.primary.withOpacity(0.8)
-                          : AppColors.textSecondary.withOpacity(0.4),
+                          ? AppColors.primary.withValues(alpha: 0.8)
+                          : AppColors.textSecondary.withValues(alpha: 0.4),
                       strokeWidth: entry.key == _selectedRouteIndex ? 5 : 3,
                     );
                   }),
@@ -417,7 +261,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 data: (spots) => MarkerLayer(
                   markers: spots.map((hotspot) {
                     return Marker(
-                      point: hotspot.location,
+                      point: hotspot.location.toLatLng(),
                       width: 80.w,
                       height: 40.h,
                       child: _buildHotspotMarker(hotspot),
@@ -448,8 +292,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     point: _currentLocation,
                     radius: _searchRadius * 1000, // Convert km to meters
                     useRadiusInMeter: true,
-                    color: AppColors.primary.withOpacity(0.1),
-                    borderColor: AppColors.primary.withOpacity(0.5),
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderColor: AppColors.primary.withValues(alpha: 0.5),
                     borderStrokeWidth: 2,
                   ),
                 ],
@@ -492,7 +336,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   borderRadius: BorderRadius.circular(24.r),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 10,
                     ),
                   ],
@@ -511,8 +355,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     SizedBox(width: 12.w),
                     Text(
                       _isLoadingLocation
-                          ? 'Getting location...'
-                          : 'Loading route...',
+                          ? AppLocalizations.of(context).gettingLocation
+                          : AppLocalizations.of(context).loadingRoute,
                       style: TextStyle(
                         fontSize: 13.sp,
                         color: AppColors.textSecondary,
@@ -545,7 +389,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   List<Marker> _buildRideMarkers(List<NearbyRidePreview> rides) {
     return rides.map((ride) {
       return Marker(
-        point: ride.origin,
+        point: ride.origin.toLatLng(),
         width: 70.w,
         height: 80.h,
         child: GestureDetector(
@@ -569,7 +413,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   ],
                 ),
                 child: Text(
-                  '${ride.pricePerSeat.toStringAsFixed(0)} €',
+                  AppLocalizations.of(
+                    context,
+                  ).value5(ride.pricePerSeat.toStringAsFixed(0)),
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
@@ -608,7 +454,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           Icon(Icons.place, color: Colors.white, size: 14.sp),
           SizedBox(width: 4.w),
           Text(
-            '${hotspot.rideCount}',
+            AppLocalizations.of(context).value2(hotspot.rideCount),
             style: TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.w700,
@@ -633,8 +479,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 width: 50.w * (1 + _pulseAnimationController.value * 0.3),
                 height: 50.w * (1 + _pulseAnimationController.value * 0.3),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(
-                    0.2 * (1 - _pulseAnimationController.value),
+                  color: AppColors.primary.withValues(
+                    alpha: 0.2 * (1 - _pulseAnimationController.value),
                   ),
                   shape: BoxShape.circle,
                 ),
@@ -644,7 +490,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               width: 45.w,
               height: 45.w,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.15),
+                color: AppColors.primary.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
             ),
@@ -660,7 +506,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   border: Border.all(color: Colors.white, width: 3),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.4),
+                      color: AppColors.primary.withValues(alpha: 0.4),
                       blurRadius: 10,
                       spreadRadius: 2,
                     ),
@@ -690,14 +536,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     // Calculate approximate scale based on zoom level
     // At zoom 14, 1km ≈ ~100 pixels (varies by latitude)
     final scaleKm =
-        (156543.03392 *
-                (1 / (180 / 3.14159)) *
-                180 /
-                3.14159 /
-                (1 << _currentZoom.toInt()) *
-                100 /
-                1000)
-            .clamp(0.1, 100.0);
+        156543.03392 *
+        math.cos(_currentLocation.latitude * pi / 180) /
+        math.pow(2, _currentZoom);
     String scaleText;
     if (scaleKm < 1) {
       scaleText = '${(scaleKm * 1000).toInt()} m';
@@ -711,10 +552,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
         decoration: BoxDecoration(
-          color: AppColors.surface.withOpacity(0.9),
+          color: AppColors.surface.withValues(alpha: 0.9),
           borderRadius: BorderRadius.circular(8.r),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 4,
+            ),
           ],
         ),
         child: Row(
@@ -755,7 +599,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 8,
+            ),
           ],
         ),
         child: Column(
@@ -773,7 +620,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     ),
                     SizedBox(width: 8.w),
                     Text(
-                      'Search Radius',
+                      AppLocalizations.of(context).searchRadius,
                       style: TextStyle(
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w600,
@@ -792,7 +639,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     borderRadius: BorderRadius.circular(8.r),
                   ),
                   child: Text(
-                    '${_searchRadius.toStringAsFixed(1)} km',
+                    AppLocalizations.of(
+                      context,
+                    ).valueKm(_searchRadius.toStringAsFixed(1)),
                     style: TextStyle(
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w700,
@@ -808,7 +657,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 activeTrackColor: AppColors.primary,
                 inactiveTrackColor: AppColors.border,
                 thumbColor: AppColors.primary,
-                overlayColor: AppColors.primary.withOpacity(0.2),
+                overlayColor: AppColors.primary.withValues(alpha: 0.2),
                 trackHeight: 4.h,
               ),
               child: Slider(
@@ -858,13 +707,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               children: [
                 _buildStatItem(
                   Icons.directions_car,
-                  '${filteredRides.length}',
-                  'rides',
+                  AppLocalizations.of(context).value2(filteredRides.length),
+                  AppLocalizations.of(context).rides,
                 ),
                 SizedBox(width: 16.w),
                 Container(width: 1, height: 24.h, color: AppColors.border),
                 SizedBox(width: 16.w),
-                _buildStatItem(Icons.event_seat, '$availableSeats', 'seats'),
+                _buildStatItem(
+                  Icons.event_seat,
+                  AppLocalizations.of(context).value2(availableSeats),
+                  AppLocalizations.of(context).seats,
+                ),
               ],
             ),
           ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2);
@@ -923,13 +776,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               descTextStyle: TextStyle(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w400,
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withValues(alpha: 0.9),
               ),
               tooltipBackgroundColor: AppColors.primary,
               targetShapeBorder: const CircleBorder(),
               targetPadding: EdgeInsets.all(8.w),
               child: GestureDetector(
-                onTap: () => setState(() => _currentIndex = 4),
                 child: Container(
                   padding: EdgeInsets.all(3.w),
                   decoration: BoxDecoration(
@@ -937,7 +789,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 10,
                       ),
                     ],
@@ -978,7 +830,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 descTextStyle: TextStyle(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w400,
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                 ),
                 tooltipBackgroundColor: AppColors.primary,
                 targetBorderRadius: BorderRadius.circular(28.r),
@@ -995,7 +847,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       borderRadius: BorderRadius.circular(28.r),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
+                          color: Colors.black.withValues(alpha: 0.08),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -1011,7 +863,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         SizedBox(width: 10.w),
                         Expanded(
                           child: Text(
-                            'Where are you going?',
+                            AppLocalizations.of(context).whereAreYouGoing,
                             style: TextStyle(
                               color: AppColors.textSecondary,
                               fontSize: 14.sp,
@@ -1030,7 +882,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
             // Profile Search
             GestureDetector(
-              onTap: () => context.push(AppRouter.profileSearch),
+              onTap: () => context.push(AppRoutes.profileSearch.path),
               child: Container(
                 padding: EdgeInsets.all(10.w),
                 decoration: BoxDecoration(
@@ -1038,7 +890,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 10,
                     ),
                   ],
@@ -1055,7 +907,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
             // Notifications
             GestureDetector(
-              onTap: () => context.push(AppRouter.notifications),
+              onTap: () => context.push(AppRoutes.notifications.path),
               child: Container(
                 padding: EdgeInsets.all(10.w),
                 decoration: BoxDecoration(
@@ -1063,7 +915,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 10,
                     ),
                   ],
@@ -1117,7 +969,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     borderRadius: BorderRadius.circular(18.r),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: Colors.black.withValues(alpha: 0.08),
                         blurRadius: 4,
                       ),
                     ],
@@ -1176,7 +1028,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               HapticFeedback.selectionClick();
               setState(() => _showDistanceRadius = !_showDistanceRadius);
             },
-            tooltip: 'Search Radius',
+            tooltip: AppLocalizations.of(context).searchRadius,
           ),
           SizedBox(height: 8.h),
           // Toggle Hotspots
@@ -1187,7 +1039,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               HapticFeedback.selectionClick();
               setState(() => _showHotspots = !_showHotspots);
             },
-            tooltip: 'Hotspots',
+            tooltip: AppLocalizations.of(context).hotspots,
           ),
           SizedBox(height: 8.h),
           // Toggle Drivers
@@ -1198,7 +1050,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               HapticFeedback.selectionClick();
               setState(() => _showNearbyDrivers = !_showNearbyDrivers);
             },
-            tooltip: 'Nearby Rides',
+            tooltip: AppLocalizations.of(context).nearbyRides,
           ),
           SizedBox(height: 8.h),
           // Toggle Follow User
@@ -1212,7 +1064,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 _mapController.move(_currentLocation, _currentZoom);
               }
             },
-            tooltip: 'Follow Location',
+            tooltip: AppLocalizations.of(context).followLocation,
           ),
           SizedBox(height: 8.h),
           // Zoom In
@@ -1255,7 +1107,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           color: isActive ? AppColors.primary : AppColors.surface,
           borderRadius: BorderRadius.circular(12.r),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 6),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 6,
+            ),
           ],
         ),
         child: Icon(
@@ -1279,7 +1134,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           borderRadius: BorderRadius.circular(20.r),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.15),
+              color: Colors.black.withValues(alpha: 0.15),
               blurRadius: 15,
               offset: const Offset(0, -2),
             ),
@@ -1293,7 +1148,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 Container(
                   padding: EdgeInsets.all(10.w),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                   child: Icon(
@@ -1308,7 +1163,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${(_activeRoute!.distanceKm).toStringAsFixed(1)} km',
+                        AppLocalizations.of(context).valueKm(
+                          (_activeRoute!.distanceKm).toStringAsFixed(1),
+                        ),
                         style: TextStyle(
                           fontSize: 18.sp,
                           fontWeight: FontWeight.w700,
@@ -1316,7 +1173,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         ),
                       ),
                       Text(
-                        '${_activeRoute!.durationMinutes} min',
+                        AppLocalizations.of(
+                          context,
+                        ).valueMin(_activeRoute!.durationMinutes),
                         style: TextStyle(
                           fontSize: 13.sp,
                           color: AppColors.textSecondary,
@@ -1343,101 +1202,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     ).animate().fadeIn().slideY(begin: 0.3);
   }
 
-  // ignore: unused_element - keeping for potential future use
-  Widget _buildFAB() {
-    return FloatingActionButton.extended(
-      onPressed: () => setState(() => _currentIndex = 2),
-      backgroundColor: AppColors.primary,
-      icon: Icon(Icons.add_rounded, size: 22.sp),
-      label: Text(
-        'Offer Ride',
-        style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
-      ),
-    ).animate().fadeIn(delay: 300.ms).scale(begin: const Offset(0.8, 0.8));
-  }
-
-  Widget _buildBottomNav() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildNavItem(0, Icons.map_outlined, Icons.map, 'Map'),
-              _buildNavItem(1, Icons.search_outlined, Icons.search, 'Search'),
-              _buildNavItem(
-                2,
-                Icons.add_circle_outline,
-                Icons.add_circle,
-                'Offer',
-              ),
-              _buildNavItem(
-                3,
-                Icons.history_outlined,
-                Icons.history,
-                'My Rides',
-              ),
-              _buildNavItem(4, Icons.person_outline, Icons.person, 'Profile'),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(
-    int index,
-    IconData icon,
-    IconData activeIcon,
-    String label,
-  ) {
-    final isSelected = _currentIndex == index;
-    return GestureDetector(
-      onTap: () => _onNavTap(index),
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary.withOpacity(0.1)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isSelected ? activeIcon : icon,
-              color: isSelected ? AppColors.primary : AppColors.textTertiary,
-              size: 24.sp,
-            ),
-            SizedBox(height: 4.h),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11.sp,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected ? AppColors.primary : AppColors.textTertiary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _showMapStylePicker() {
     showModalBottomSheet(
       context: context,
@@ -1452,7 +1216,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Map Style',
+                AppLocalizations.of(context).mapStyle,
                 style: TextStyle(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.w700,
@@ -1462,11 +1226,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               SizedBox(height: 16.h),
               Row(
                 children: [
-                  _buildStyleOption('standard', 'Standard', Icons.map),
+                  _buildStyleOption(
+                    AppLocalizations.of(context).standard,
+                    AppLocalizations.of(context).standard2,
+                    Icons.map,
+                  ),
                   SizedBox(width: 12.w),
-                  _buildStyleOption('terrain', 'Terrain', Icons.terrain),
+                  _buildStyleOption(
+                    AppLocalizations.of(context).terrain,
+                    AppLocalizations.of(context).terrain2,
+                    Icons.terrain,
+                  ),
                   SizedBox(width: 12.w),
-                  _buildStyleOption('dark', 'Dark', Icons.dark_mode),
+                  _buildStyleOption(
+                    AppLocalizations.of(context).dark,
+                    AppLocalizations.of(context).dark2,
+                    Icons.dark_mode,
+                  ),
                 ],
               ),
               SizedBox(height: 20.h),
@@ -1489,7 +1265,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           padding: EdgeInsets.all(16.w),
           decoration: BoxDecoration(
             color: isSelected
-                ? AppColors.primary.withOpacity(0.1)
+                ? AppColors.primary.withValues(alpha: 0.1)
                 : AppColors.cardBg,
             borderRadius: BorderRadius.circular(16.r),
             border: Border.all(
@@ -1575,7 +1351,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         ),
                         SizedBox(width: 16.w),
                         Text(
-                          'Find a Ride',
+                          AppLocalizations.of(context).findARide,
                           style: TextStyle(
                             fontSize: 20.sp,
                             fontWeight: FontWeight.w700,
@@ -1586,10 +1362,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         TextButton.icon(
                           onPressed: () {
                             context.pop();
-                            setState(() => _currentIndex = 1);
                           },
                           icon: Icon(Icons.tune_rounded, size: 18.sp),
-                          label: const Text('Filters'),
+                          label: Text(AppLocalizations.of(context).filters),
                         ),
                       ],
                     ),
@@ -1604,7 +1379,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       borderRadius: BorderRadius.circular(16.r),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 10,
                         ),
                       ],
@@ -1615,7 +1390,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         TextField(
                           controller: fromController,
                           decoration: InputDecoration(
-                            hintText: 'From where?',
+                            hintText: AppLocalizations.of(context).fromWhere,
                             hintStyle: TextStyle(
                               color: AppColors.textSecondary,
                               fontSize: 14.sp,
@@ -1637,7 +1412,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         TextField(
                           controller: toController,
                           decoration: InputDecoration(
-                            hintText: 'To where?',
+                            hintText: AppLocalizations.of(context).toWhere,
                             hintStyle: TextStyle(
                               color: AppColors.textSecondary,
                               fontSize: 14.sp,
@@ -1749,7 +1524,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                               Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 8.w),
                                 child: Text(
-                                  '$selectedSeats',
+                                  AppLocalizations.of(
+                                    context,
+                                  ).value2(selectedSeats),
                                   style: TextStyle(
                                     fontSize: 14.sp,
                                     fontWeight: FontWeight.w600,
@@ -1787,7 +1564,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Nearby Rides',
+                          AppLocalizations.of(context).nearbyRides,
                           style: TextStyle(
                             fontSize: 16.sp,
                             fontWeight: FontWeight.w600,
@@ -1796,7 +1573,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         ),
                         nearbyRides.when(
                           data: (rides) => Text(
-                            '${rides.length} available',
+                            AppLocalizations.of(
+                              context,
+                            ).valueAvailable(rides.length),
                             style: TextStyle(
                               fontSize: 13.sp,
                               color: AppColors.textSecondary,
@@ -1834,7 +1613,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                 ),
                                 SizedBox(height: 16.h),
                                 Text(
-                                  'No rides available nearby',
+                                  AppLocalizations.of(
+                                    context,
+                                  ).noRidesAvailableNearby,
                                   style: TextStyle(
                                     fontSize: 16.sp,
                                     color: AppColors.textSecondary,
@@ -1842,7 +1623,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                 ),
                                 SizedBox(height: 8.h),
                                 Text(
-                                  'Try expanding your search radius',
+                                  AppLocalizations.of(
+                                    context,
+                                  ).tryExpandingYourSearchRadius,
                                   style: TextStyle(
                                     fontSize: 13.sp,
                                     color: AppColors.textSecondary,
@@ -1878,7 +1661,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                             ),
                             SizedBox(height: 12.h),
                             Text(
-                              'Failed to load rides',
+                              AppLocalizations.of(context).failedToLoadRides,
                               style: TextStyle(
                                 fontSize: 14.sp,
                                 color: AppColors.textSecondary,
@@ -1908,7 +1691,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     return GestureDetector(
       onTap: () {
         sheetContext.pop();
-        context.push(AppRouter.rideDetailPath(ride.id));
+        context.pushNamed(
+          AppRoutes.rideDetail.name,
+          pathParameters: {'id': ride.id},
+        );
       },
       child: Container(
         margin: EdgeInsets.only(bottom: 12.h),
@@ -2011,7 +1797,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     borderRadius: BorderRadius.circular(20.r),
                   ),
                   child: Text(
-                    '${ride.pricePerSeat.toStringAsFixed(0)} €',
+                    AppLocalizations.of(
+                      context,
+                    ).value5(ride.pricePerSeat.toStringAsFixed(0)),
                     style: TextStyle(
                       fontSize: 15.sp,
                       fontWeight: FontWeight.w700,
@@ -2056,9 +1844,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        ride.originAddress.isNotEmpty
-                            ? ride.originAddress
-                            : 'Pickup point',
+                        ride.origin.address.isNotEmpty
+                            ? ride.origin.address
+                            : AppLocalizations.of(context).pickupPoint,
                         style: TextStyle(
                           fontSize: 13.sp,
                           color: AppColors.textPrimary,
@@ -2068,9 +1856,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       ),
                       SizedBox(height: 16.h),
                       Text(
-                        ride.destinationAddress.isNotEmpty
-                            ? ride.destinationAddress
-                            : 'Destination',
+                        ride.destination.address.isNotEmpty
+                            ? ride.destination.address
+                            : AppLocalizations.of(context).destination,
                         style: TextStyle(
                           fontSize: 13.sp,
                           color: AppColors.textPrimary,
@@ -2091,16 +1879,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               children: [
                 _buildSearchChip(
                   Icons.event_seat,
-                  '${ride.availableSeats} seats',
+                  AppLocalizations.of(context).valueSeats(ride.availableSeats),
                   AppColors.primary,
                 ),
                 SizedBox(width: 8.w),
                 if (ride.isEco)
-                  _buildSearchChip(Icons.eco_rounded, 'Eco', AppColors.success),
+                  _buildSearchChip(
+                    Icons.eco_rounded,
+                    AppLocalizations.of(context).eco,
+                    AppColors.success,
+                  ),
                 if (ride.isPremium)
                   _buildSearchChip(
                     Icons.star_rounded,
-                    'Premium',
+                    AppLocalizations.of(context).premium,
                     AppColors.starFilled,
                   ),
               ],
@@ -2183,7 +1975,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 clipBehavior: Clip.antiAlias,
                 child: FlutterMap(
                   options: MapOptions(
-                    initialCenter: ride.origin,
+                    initialCenter: ride.origin.toLatLng(),
                     initialZoom: 13,
                     interactionOptions: const InteractionOptions(
                       flags: InteractiveFlag.none,
@@ -2198,7 +1990,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     MarkerLayer(
                       markers: [
                         Marker(
-                          point: ride.origin,
+                          point: ride.origin.toLatLng(),
                           width: 40,
                           height: 40,
                           child: Container(
@@ -2273,7 +2065,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       borderRadius: BorderRadius.circular(20.r),
                     ),
                     child: Text(
-                      '${ride.pricePerSeat.toStringAsFixed(0)} €',
+                      AppLocalizations.of(
+                        context,
+                      ).value5(ride.pricePerSeat.toStringAsFixed(0)),
                       style: TextStyle(
                         fontSize: 18.sp,
                         fontWeight: FontWeight.w700,
@@ -2305,9 +2099,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         SizedBox(width: 12.w),
                         Expanded(
                           child: Text(
-                            ride.originAddress.isNotEmpty
-                                ? ride.originAddress
-                                : 'Pickup location',
+                            ride.origin.address.isNotEmpty
+                                ? ride.origin.address
+                                : AppLocalizations.of(context).pickupLocation,
                             style: TextStyle(
                               fontSize: 14.sp,
                               color: AppColors.textPrimary,
@@ -2334,9 +2128,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         SizedBox(width: 12.w),
                         Expanded(
                           child: Text(
-                            ride.destinationAddress.isNotEmpty
-                                ? ride.destinationAddress
-                                : 'Destination',
+                            ride.destination.address.isNotEmpty
+                                ? ride.destination.address
+                                : AppLocalizations.of(context).destination,
                             style: TextStyle(
                               fontSize: 14.sp,
                               color: AppColors.textPrimary,
@@ -2356,19 +2150,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 children: [
                   _buildRideInfoChip(
                     Icons.event_seat,
-                    '${ride.availableSeats} seats',
+                    AppLocalizations.of(
+                      context,
+                    ).valueSeats(ride.availableSeats),
                   ),
                   SizedBox(width: 8.w),
                   if (ride.isEco)
                     _buildRideInfoChip(
                       Icons.eco,
-                      'Eco',
+                      AppLocalizations.of(context).eco,
                       color: AppColors.success,
                     ),
                   if (ride.isPremium)
                     _buildRideInfoChip(
                       Icons.star,
-                      'Premium',
+                      AppLocalizations.of(context).premium,
                       color: AppColors.starFilled,
                     ),
                 ],
@@ -2382,7 +2178,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 child: ElevatedButton(
                   onPressed: () {
                     context.pop();
-                    context.push(AppRouter.rideDetailPath(ride.id));
+                    context.pushNamed(
+                      AppRoutes.rideDetail.name,
+                      pathParameters: {'id': ride.id},
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
@@ -2392,7 +2191,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     ),
                   ),
                   child: Text(
-                    'Book This Ride',
+                    AppLocalizations.of(context).bookThisRide,
                     style: TextStyle(
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w600,

@@ -3,11 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/payments/models/payment_model.dart';
 import 'package:sport_connect/features/payments/view_models/payment_view_model.dart';
 import 'package:intl/intl.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Payment History Screen - View all payment transactions for a rider
 class PaymentHistoryScreen extends ConsumerStatefulWidget {
@@ -35,8 +36,10 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
     return userAsync.when(
       data: (user) {
         if (user == null) {
-          return const Scaffold(
-            body: Center(child: Text('Please sign in to view payment history')),
+          return Scaffold(
+            body: Center(
+              child: Text(AppLocalizations.of(context).pleaseSignInToView2),
+            ),
           );
         }
 
@@ -55,7 +58,7 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
                 backgroundColor: AppColors.primary,
                 flexibleSpace: FlexibleSpaceBar(background: _buildHeader()),
                 title: Text(
-                  'Payment History',
+                  AppLocalizations.of(context).paymentHistory,
                   style: TextStyle(
                     fontSize: 20.sp,
                     fontWeight: FontWeight.w700,
@@ -88,7 +91,9 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
                   child: Center(child: CircularProgressIndicator()),
                 ),
                 error: (error, stack) => SliverFillRemaining(
-                  child: Center(child: Text('Error: $error')),
+                  child: Center(
+                    child: Text(AppLocalizations.of(context).errorValue(error)),
+                  ),
                 ),
               ),
 
@@ -100,8 +105,11 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
       },
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (error, stack) =>
-          Scaffold(body: Center(child: Text('Error: $error'))),
+      error: (error, stack) => Scaffold(
+        body: Center(
+          child: Text(AppLocalizations.of(context).errorValue(error)),
+        ),
+      ),
     );
   }
 
@@ -113,7 +121,7 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
           end: Alignment.bottomRight,
           colors: [
             AppColors.primary,
-            AppColors.primary.withOpacity(0.8),
+            AppColors.primary.withValues(alpha: 0.8),
             AppColors.secondary,
           ],
         ),
@@ -126,10 +134,10 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Your Transactions',
+                AppLocalizations.of(context).yourTransactions,
                 style: TextStyle(
                   fontSize: 14.sp,
-                  color: Colors.white.withOpacity(0.8),
+                  color: Colors.white.withValues(alpha: 0.8),
                 ),
               ),
             ],
@@ -157,7 +165,7 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
                   setState(() => _selectedFilter = filter);
                 },
                 backgroundColor: AppColors.surface,
-                selectedColor: AppColors.primary.withOpacity(0.2),
+                selectedColor: AppColors.primary.withValues(alpha: 0.2),
                 labelStyle: TextStyle(
                   color: isSelected
                       ? AppColors.primary
@@ -223,7 +231,7 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
           ),
           SizedBox(height: 16.h),
           Text(
-            'No payments found',
+            AppLocalizations.of(context).noPaymentsFound,
             style: TextStyle(
               fontSize: 18.sp,
               fontWeight: FontWeight.w600,
@@ -232,7 +240,7 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
           ),
           SizedBox(height: 8.h),
           Text(
-            'Your payment history will appear here',
+            AppLocalizations.of(context).yourPaymentHistoryWillAppear,
             style: TextStyle(fontSize: 14.sp, color: AppColors.textTertiary),
           ),
         ],
@@ -244,116 +252,129 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
     final dateFormat = DateFormat('MMM dd, yyyy • HH:mm');
 
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: InkWell(
-        onTap: () => _showPaymentDetails(payment),
-        borderRadius: BorderRadius.circular(16.r),
-        child: Padding(
-          padding: EdgeInsets.all(16.w),
-          child: Row(
-            children: [
-              // Status Icon
-              Container(
-                width: 48.w,
-                height: 48.w,
-                decoration: BoxDecoration(
-                  color: _getStatusColor(payment.status).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                child: Icon(
-                  _getStatusIcon(payment.status),
-                  color: _getStatusColor(payment.status),
-                  size: 24.sp,
-                ),
-              ),
-              SizedBox(width: 12.w),
-
-              // Payment Info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Ride Payment',
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    SizedBox(height: 4.h),
-                    Text(
-                      payment.createdAt != null
-                          ? dateFormat.format(payment.createdAt!)
-                          : 'Unknown date',
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    SizedBox(height: 4.h),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 8.w,
-                        vertical: 2.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _getStatusColor(payment.status).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(4.r),
-                      ),
-                      child: Text(
-                        _getStatusText(payment.status),
-                        style: TextStyle(
-                          fontSize: 10.sp,
-                          fontWeight: FontWeight.w600,
-                          color: _getStatusColor(payment.status),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Amount
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    '${payment.amount.toStringAsFixed(2)} ${payment.currency}',
-                    style: TextStyle(
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  if (payment.seatsBooked != null) ...[
-                    SizedBox(height: 4.h),
-                    Text(
-                      '${payment.seatsBooked} seat${payment.seatsBooked! > 1 ? 's' : ''}',
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ],
+          margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16.r),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
-        ),
-      ),
-    ).animate().fadeIn(delay: Duration(milliseconds: index * 50)).slideX(begin: 0.1);
+          child: InkWell(
+            onTap: () => _showPaymentDetails(payment),
+            borderRadius: BorderRadius.circular(16.r),
+            child: Padding(
+              padding: EdgeInsets.all(16.w),
+              child: Row(
+                children: [
+                  // Status Icon
+                  Container(
+                    width: 48.w,
+                    height: 48.w,
+                    decoration: BoxDecoration(
+                      color: _getStatusColor(
+                        payment.status,
+                      ).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    child: Icon(
+                      _getStatusIcon(payment.status),
+                      color: _getStatusColor(payment.status),
+                      size: 24.sp,
+                    ),
+                  ),
+                  SizedBox(width: 12.w),
+
+                  // Payment Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          AppLocalizations.of(context).ridePayment,
+                          style: TextStyle(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          payment.createdAt != null
+                              ? dateFormat.format(payment.createdAt!)
+                              : AppLocalizations.of(context).unknownDate,
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        SizedBox(height: 4.h),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 8.w,
+                            vertical: 2.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _getStatusColor(
+                              payment.status,
+                            ).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4.r),
+                          ),
+                          child: Text(
+                            _getStatusText(payment.status),
+                            style: TextStyle(
+                              fontSize: 10.sp,
+                              fontWeight: FontWeight.w600,
+                              color: _getStatusColor(payment.status),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Amount
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        AppLocalizations.of(context).valueValue4(
+                          payment.amount.toStringAsFixed(2),
+                          payment.currency,
+                        ),
+                        style: TextStyle(
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      if (payment.seatsBooked != null) ...[
+                        SizedBox(height: 4.h),
+                        Text(
+                          AppLocalizations.of(context).valueSeatValue(
+                            payment.seatsBooked!,
+                            payment.seatsBooked! > 1 ? 's' : '',
+                          ),
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        )
+        .animate()
+        .fadeIn(delay: Duration(milliseconds: index * 50))
+        .slideX(begin: 0.1);
   }
 
   Color _getStatusColor(PaymentStatus status) {
@@ -434,7 +455,7 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
                       width: 40.w,
                       height: 4.h,
                       decoration: BoxDecoration(
-                        color: AppColors.textTertiary.withOpacity(0.3),
+                        color: AppColors.textTertiary.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(2.r),
                       ),
                     ),
@@ -443,7 +464,7 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
 
                   // Title
                   Text(
-                    'Payment Details',
+                    AppLocalizations.of(context).paymentDetails,
                     style: TextStyle(
                       fontSize: 24.sp,
                       fontWeight: FontWeight.w700,
@@ -454,32 +475,49 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
 
                   // Amount
                   _buildDetailRow(
-                    'Amount',
-                    '${payment.amount.toStringAsFixed(2)} ${payment.currency}',
+                    AppLocalizations.of(context).amount,
+                    AppLocalizations.of(context).valueValue4(
+                      payment.amount.toStringAsFixed(2),
+                      payment.currency,
+                    ),
                   ),
-                  _buildDetailRow('Status', _getStatusText(payment.status)),
-                  _buildDetailRow('Driver', payment.driverName),
-                  if (payment.seatsBooked != null)
-                    _buildDetailRow('Seats', '${payment.seatsBooked}'),
                   _buildDetailRow(
-                    'Platform Fee',
-                    '${payment.platformFee.toStringAsFixed(2)} ${payment.currency}',
+                    AppLocalizations.of(context).status,
+                    _getStatusText(payment.status),
+                  ),
+                  _buildDetailRow(
+                    AppLocalizations.of(context).driver,
+                    payment.driverName,
+                  ),
+                  if (payment.seatsBooked != null)
+                    _buildDetailRow(
+                      AppLocalizations.of(context).seats2,
+                      AppLocalizations.of(context).value2(payment.seatsBooked!),
+                    ),
+                  _buildDetailRow(
+                    AppLocalizations.of(context).platformFee,
+                    AppLocalizations.of(context).valueValue4(
+                      payment.platformFee.toStringAsFixed(2),
+                      payment.currency,
+                    ),
                   ),
                   if (payment.paymentMethodLast4 != null)
                     _buildDetailRow(
-                      'Card',
-                      '•••• ${payment.paymentMethodLast4}',
+                      AppLocalizations.of(context).card,
+                      AppLocalizations.of(
+                        context,
+                      ).value7(payment.paymentMethodLast4!),
                     ),
                   if (payment.createdAt != null)
                     _buildDetailRow(
-                      'Date',
+                      AppLocalizations.of(context).date,
                       DateFormat(
                         'MMM dd, yyyy HH:mm',
                       ).format(payment.createdAt!),
                     ),
                   if (payment.stripePaymentIntentId != null)
                     _buildDetailRow(
-                      'Transaction ID',
+                      AppLocalizations.of(context).transactionId,
                       payment.stripePaymentIntentId!.substring(0, 20) + '...',
                     ),
 
@@ -492,17 +530,19 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
                       child: ElevatedButton(
                         onPressed: () {
                           context.pop();
-                          // TODO: Implement refund request
+                          _requestRefund(payment);
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.error.withOpacity(0.1),
+                          backgroundColor: AppColors.error.withValues(
+                            alpha: 0.1,
+                          ),
                           foregroundColor: AppColors.error,
                           padding: EdgeInsets.symmetric(vertical: 16.h),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12.r),
                           ),
                         ),
-                        child: const Text('Request Refund'),
+                        child: Text(AppLocalizations.of(context).requestRefund),
                       ),
                     ),
                 ],
@@ -535,5 +575,64 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _requestRefund(PaymentTransaction payment) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(AppLocalizations.of(context).requestRefund),
+        content: Text(
+          AppLocalizations.of(context).areYouSureYouWant10(
+            '${payment.amount.toStringAsFixed(2)} ${payment.currency}',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(AppLocalizations.of(context).actionCancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              AppLocalizations.of(context).requestRefund,
+              style: TextStyle(color: AppColors.error),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await ref
+          .read(paymentViewModelProvider.notifier)
+          .refundBookingPayment(
+            paymentId: payment.id,
+            reason: 'User requested refund',
+          );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context).requestRefund),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context).errorValue(e.toString()),
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 }

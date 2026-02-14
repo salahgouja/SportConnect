@@ -1,18 +1,24 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
-import 'package:sport_connect/features/rides/models/ride_model.dart';
+import 'package:sport_connect/core/interfaces/repositories/i_ride_repository.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
+import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
+import 'package:sport_connect/features/rides/models/ride_request_model.dart';
 
 part 'ride_repository.g.dart';
 
 /// Ride Repository for Firestore operations
-class RideRepository {
+class RideRepository implements IRideRepository {
   final FirebaseFirestore _firestore;
 
   RideRepository(this._firestore);
 
   CollectionReference<Map<String, dynamic>> get _ridesCollection =>
       _firestore.collection(AppConstants.ridesCollection);
+
+  CollectionReference<Map<String, dynamic>> get _rideRequestsCollection =>
+      _firestore.collection('rideRequests');
 
   /// Create a new ride
   Future<String> createRide(RideModel ride) async {
@@ -42,7 +48,19 @@ class RideRepository {
   }
 
   /// Update ride
-  Future<void> updateRide(String rideId, Map<String, dynamic> updates) async {
+  @override
+  Future<void> updateRide(RideModel ride) async {
+    await _ridesCollection.doc(ride.id).update({
+      ...ride.toJson(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Update ride with map (helper method)
+  Future<void> updateRideFields(
+    String rideId,
+    Map<String, dynamic> updates,
+  ) async {
     updates['updatedAt'] = FieldValue.serverTimestamp();
     await _ridesCollection.doc(rideId).update(updates);
   }
@@ -52,21 +70,15 @@ class RideRepository {
     await _ridesCollection.doc(rideId).delete();
   }
 
-  /// Get rides by driver
-  Future<List<RideModel>> getRidesByDriver(String driverId) async {
-    final query = await _ridesCollection
-        .where('driverId', isEqualTo: driverId)
-        .orderBy('departureTime', descending: true)
-        .get();
+  // ==================== INTERFACE IMPLEMENTATIONS ====================
 
-    return query.docs.map((doc) => RideModel.fromJson(doc.data())).toList();
-  }
-
-  /// Stream rides by driver (real-time)
-  Stream<List<RideModel>> streamRidesByDriver(String driverId) {
+  @override
+  Stream<List<RideModel>> getActiveRides(String userId) {
     return _ridesCollection
-        .where('driverId', isEqualTo: driverId)
-        .orderBy('departureTime', descending: true)
+        .where('status', isEqualTo: 'active')
+        .where('driverId', isEqualTo: userId)
+        .where('schedule.departureTime', isGreaterThan: Timestamp.now())
+        .orderBy('schedule.departureTime')
         .snapshots()
         .map(
           (snapshot) => snapshot.docs
@@ -75,81 +87,113 @@ class RideRepository {
         );
   }
 
-  /// Stream rides where user is a passenger
-  Stream<List<RideModel>> streamRidesAsPassenger(String userId) {
+  @override
+  Stream<List<RideModel>> getRideHistory(String userId) {
     return _ridesCollection
-        .orderBy('departureTime', descending: true)
+        .where('driverId', isEqualTo: userId)
+        .where('status', whereIn: ['completed', 'cancelled'])
+        .orderBy('schedule.departureTime', descending: true)
         .limit(50)
         .snapshots()
-        .map((snapshot) {
-          return snapshot.docs
+        .map(
+          (snapshot) => snapshot.docs
               .map((doc) => RideModel.fromJson(doc.data()))
-              .where(
-                (ride) => ride.bookings.any(
-                  (booking) =>
-                      booking.passengerId == userId &&
-                      booking.status != BookingStatus.rejected,
-                ),
-              )
-              .toList();
-        });
+              .toList(),
+        );
   }
 
-  /// Get upcoming rides for user (as passenger)
-  Future<List<RideModel>> getUpcomingRidesAsPassenger(String userId) async {
-    final query = await _ridesCollection
-        .where(
-          'bookings',
-          arrayContainsAny: [
-            {'passengerId': userId, 'status': 'accepted'},
-          ],
-        )
-        .where('departureTime', isGreaterThan: Timestamp.now())
-        .orderBy('departureTime')
-        .get();
-
-    return query.docs.map((doc) => RideModel.fromJson(doc.data())).toList();
+  @override
+  Future<String> createRideRequest(RideRequestModel request) async {
+    final docRef = _rideRequestsCollection.doc();
+    final requestWithId = request.copyWith(
+      id: docRef.id,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+    await docRef.set(requestWithId.toJson());
+    return docRef.id;
   }
 
-  /// Search rides with filters
+  @override
+  Future<void> acceptRideRequest(String requestId) async {
+    await _rideRequestsCollection.doc(requestId).update({
+      'status': RideRequestStatus.accepted.name,
+      'respondedAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  @override
+  Future<void> rejectRideRequest(String requestId) async {
+    await _rideRequestsCollection.doc(requestId).update({
+      'status': RideRequestStatus.rejected.name,
+      'respondedAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  @override
+  Future<RideRequestModel?> getRideRequest(String requestId) async {
+    final doc = await _rideRequestsCollection.doc(requestId).get();
+    if (!doc.exists) return null;
+    return RideRequestModel.fromJson(doc.data()!);
+  }
+
+  @override
+  Future<void> updateRideRequest(RideRequestModel request) async {
+    await _rideRequestsCollection.doc(request.id).update({
+      ...request.toJson(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  @override
+  Stream<List<RideRequestModel>> getRideRequests(String rideId) {
+    return _rideRequestsCollection
+        .where('rideId', isEqualTo: rideId)
+        .where('status', isEqualTo: RideRequestStatus.pending.name)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => RideRequestModel.fromJson(doc.data()))
+              .toList(),
+        );
+  }
+
+  @override
   Future<List<RideModel>> searchRides({
     required double originLat,
     required double originLng,
     required double destLat,
     required double destLng,
-    required DateTime departureDate,
-    int minSeats = 1,
-    double radiusKm = 10.0,
+    DateTime? date,
+    int? minSeats,
     double? maxPrice,
   }) async {
-    // Calculate bounding box for origin (simplified - for production use geohashing)
-    final latRange = radiusKm / 111.0; // ~111km per degree latitude
-    // Note: lngRange could be used for more precise filtering: radiusKm / (111.0 * cosDeg(originLat))
+    final radiusKm = 10.0;
+    final latRange = radiusKm / 111.0;
 
     Query<Map<String, dynamic>> query = _ridesCollection
         .where('status', isEqualTo: 'active')
-        .where('origin.latitude', isGreaterThan: originLat - latRange)
-        .where('origin.latitude', isLessThan: originLat + latRange);
+        .where('route.origin.latitude', isGreaterThan: originLat - latRange)
+        .where('route.origin.latitude', isLessThan: originLat + latRange);
 
     final results = await query.get();
 
-    // Filter results in memory for other criteria
     final rides = results.docs
         .map((doc) => RideModel.fromJson(doc.data()))
         .where((ride) {
-          // Check departure date
-          if (!_isSameDay(ride.departureTime, departureDate)) return false;
+          if (date != null && !_isSameDay(ride.schedule.departureTime, date))
+            return false;
+          if (minSeats != null && ride.capacity.available < minSeats)
+            return false;
+          if (maxPrice != null && ride.pricing.pricePerSeat.amount > maxPrice)
+            return false;
 
-          // Check available seats
-          if (ride.remainingSeats < minSeats) return false;
-
-          // Check price
-          if (maxPrice != null && ride.pricePerSeat > maxPrice) return false;
-
-          // Check destination proximity
           final destDistance = _calculateDistance(
-            ride.destination.latitude,
-            ride.destination.longitude,
+            ride.route.destination.latitude,
+            ride.route.destination.longitude,
             destLat,
             destLng,
           );
@@ -159,10 +203,130 @@ class RideRepository {
         })
         .toList();
 
-    // Sort by departure time
-    rides.sort((a, b) => a.departureTime.compareTo(b.departureTime));
-
+    rides.sort(
+      (a, b) => a.schedule.departureTime.compareTo(b.schedule.departureTime),
+    );
     return rides;
+  }
+
+  @override
+  Future<void> cancelRide(String rideId, String reason) async {
+    await _ridesCollection.doc(rideId).update({
+      'status': RideStatus.cancelled.name,
+      'cancellationReason': reason,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  // ==================== EXISTING METHODS ====================
+
+  /// Get rides by driver
+  Future<List<RideModel>> getRidesByDriver(String driverId) async {
+    final query = await _ridesCollection
+        .where('driverId', isEqualTo: driverId)
+        .orderBy('schedule.departureTime', descending: true)
+        .get();
+
+    return query.docs.map((doc) => RideModel.fromJson(doc.data())).toList();
+  }
+
+  /// Stream rides by driver (real-time)
+  Stream<List<RideModel>> streamRidesByDriver(String driverId) {
+    return _ridesCollection
+        .where('driverId', isEqualTo: driverId)
+        .orderBy('schedule.departureTime', descending: true)
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => RideModel.fromJson(doc.data()))
+              .toList(),
+        );
+  }
+
+  /// Stream rides where user is a passenger.
+  ///
+  /// Queries the bookings collection via [BookingRepository] to find
+  /// rides the user is booked on, then fetches the ride documents.
+  Stream<List<RideModel>> streamRidesAsPassenger(String userId) {
+    // Query the bookings collection for this passenger's active bookings
+    final bookingsCollection = _firestore.collection('bookings');
+    return bookingsCollection
+        .where('passengerId', isEqualTo: userId)
+        .where('status', whereIn: ['pending', 'accepted'])
+        .orderBy('createdAt', descending: true)
+        .limit(50)
+        .snapshots()
+        .asyncMap((bookingSnapshot) async {
+          final rideIds = bookingSnapshot.docs
+              .map((doc) => doc.data()['rideId'] as String?)
+              .whereType<String>()
+              .toSet()
+              .toList();
+
+          if (rideIds.isEmpty) return <RideModel>[];
+
+          // Firestore whereIn supports max 30 items
+          final rides = <RideModel>[];
+          for (var i = 0; i < rideIds.length; i += 30) {
+            final batch = rideIds.sublist(
+              i,
+              i + 30 > rideIds.length ? rideIds.length : i + 30,
+            );
+            final query = await _ridesCollection
+                .where(FieldPath.documentId, whereIn: batch)
+                .get();
+            rides.addAll(
+              query.docs.map((doc) => RideModel.fromJson(doc.data())),
+            );
+          }
+
+          // Sort by departure time descending
+          rides.sort((a, b) => b.departureTime.compareTo(a.departureTime));
+          return rides;
+        });
+  }
+
+  /// Gets upcoming rides for user (as passenger).
+  ///
+  /// Queries the bookings collection to find active bookings,
+  /// then filters to upcoming rides only.
+  Future<List<RideModel>> getUpcomingRidesAsPassenger(String userId) async {
+    final bookingsCollection = _firestore.collection('bookings');
+    final bookingSnapshot = await bookingsCollection
+        .where('passengerId', isEqualTo: userId)
+        .where('status', whereIn: ['pending', 'accepted'])
+        .get();
+
+    final rideIds = bookingSnapshot.docs
+        .map((doc) => doc.data()['rideId'] as String?)
+        .whereType<String>()
+        .toSet()
+        .toList();
+
+    if (rideIds.isEmpty) return [];
+
+    final rides = <RideModel>[];
+    for (var i = 0; i < rideIds.length; i += 30) {
+      final batch = rideIds.sublist(
+        i,
+        i + 30 > rideIds.length ? rideIds.length : i + 30,
+      );
+      final query = await _ridesCollection
+          .where(FieldPath.documentId, whereIn: batch)
+          .get();
+      rides.addAll(
+        query.docs.map((doc) => RideModel.fromJson(doc.data())),
+      );
+    }
+
+    // Filter to only future rides and sort ascending
+    final now = DateTime.now();
+    final upcoming = rides
+        .where((ride) => ride.departureTime.isAfter(now))
+        .toList()
+      ..sort((a, b) => a.departureTime.compareTo(b.departureTime));
+
+    return upcoming;
   }
 
   /// Stream rides near location (real-time)
@@ -175,11 +339,11 @@ class RideRepository {
 
     return _ridesCollection
         .where('status', isEqualTo: 'active')
-        .where('departureTime', isGreaterThan: Timestamp.now())
-        .where('origin.latitude', isGreaterThan: latitude - latRange)
-        .where('origin.latitude', isLessThan: latitude + latRange)
-        .orderBy('origin.latitude')
-        .orderBy('departureTime')
+        .where('schedule.departureTime', isGreaterThan: Timestamp.now())
+        .where('route.origin.latitude', isGreaterThan: latitude - latRange)
+        .where('route.origin.latitude', isLessThan: latitude + latRange)
+        .orderBy('route.origin.latitude')
+        .orderBy('schedule.departureTime')
         .limit(50)
         .snapshots()
         .map(
@@ -193,8 +357,8 @@ class RideRepository {
   Stream<List<RideModel>> streamActiveRides() {
     return _ridesCollection
         .where('status', isEqualTo: 'active')
-        .where('departureTime', isGreaterThan: Timestamp.now())
-        .orderBy('departureTime')
+        .where('schedule.departureTime', isGreaterThan: Timestamp.now())
+        .orderBy('schedule.departureTime')
         .limit(50)
         .snapshots()
         .map(
@@ -204,57 +368,57 @@ class RideRepository {
         );
   }
 
-  /// Book a ride
+  /// Books a ride by creating a booking document in the bookings
+  /// collection and updating the ride's booking IDs and capacity.
   Future<void> bookRide({
     required String rideId,
     required RideBooking booking,
   }) async {
+    // Store the booking in the bookings collection
+    await _firestore
+        .collection('bookings')
+        .doc(booking.id)
+        .set(booking.toJson());
+
+    // Update ride's bookingIds list and increment booked capacity
     await _ridesCollection.doc(rideId).update({
-      'bookings': FieldValue.arrayUnion([booking.toJson()]),
-      'bookedSeats': FieldValue.increment(booking.seatsBooked),
+      'bookingIds': FieldValue.arrayUnion([booking.id]),
+      'capacity.booked': FieldValue.increment(booking.seatsBooked),
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
 
-  /// Update booking status
+  /// Updates booking status in the bookings collection and adjusts
+  /// ride capacity when a booking is cancelled.
   Future<void> updateBookingStatus({
     required String rideId,
     required String bookingId,
     required BookingStatus newStatus,
   }) async {
-    final rideDoc = await _ridesCollection.doc(rideId).get();
-    if (!rideDoc.exists) return;
-
-    final ride = RideModel.fromJson(rideDoc.data()!);
-    final updatedBookings = ride.bookings.map((b) {
-      if (b.id == bookingId) {
-        return b.copyWith(status: newStatus, respondedAt: DateTime.now());
-      }
-      return b;
-    }).toList();
-
-    // Calculate booked seats
-    final bookedSeats = updatedBookings
-        .where((b) => b.status == BookingStatus.accepted)
-        .fold(0, (sum, b) => sum + b.seatsBooked);
-
-    // Update status if full
-    var status = ride.status;
-    if (bookedSeats >= ride.availableSeats) {
-      status = RideStatus.full;
-    } else if (status == RideStatus.full && bookedSeats < ride.availableSeats) {
-      status = RideStatus.active;
-    }
-
-    await _ridesCollection.doc(rideId).update({
-      'bookings': updatedBookings.map((b) => b.toJson()).toList(),
-      'bookedSeats': bookedSeats,
-      'status': status.name,
-      'updatedAt': FieldValue.serverTimestamp(),
+    // Update the booking document directly
+    await _firestore.collection('bookings').doc(bookingId).update({
+      'status': newStatus.name,
+      'respondedAt': FieldValue.serverTimestamp(),
     });
+
+    // If cancelled, free up the seats on the ride
+    if (newStatus == BookingStatus.cancelled ||
+        newStatus == BookingStatus.rejected) {
+      final bookingDoc =
+          await _firestore.collection('bookings').doc(bookingId).get();
+      if (bookingDoc.exists) {
+        final seatsBooked =
+            (bookingDoc.data()?['seatsBooked'] as num?)?.toInt() ?? 1;
+        await _ridesCollection.doc(rideId).update({
+          'bookingIds': FieldValue.arrayRemove([bookingId]),
+          'capacity.booked': FieldValue.increment(-seatsBooked),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      }
+    }
   }
 
-  /// Cancel booking
+  /// Cancels a booking by delegating to [updateBookingStatus].
   Future<void> cancelBooking({
     required String rideId,
     required String bookingId,
@@ -266,13 +430,22 @@ class RideRepository {
     );
   }
 
-  /// Add review
+  /// Adds a review for a ride.
+  ///
+  /// Stores the review in the reviews collection and updates the
+  /// ride's aggregated review count and average rating.
   Future<void> addReview({
     required String rideId,
-    required RideReview review,
+    required Map<String, dynamic> reviewData,
   }) async {
+    final reviewId = reviewData['id'] as String? ?? '';
+
+    // Store the review in the reviews collection
+    await _firestore.collection('reviews').doc(reviewId).set(reviewData);
+
+    // Update ride's aggregated stats
     await _ridesCollection.doc(rideId).update({
-      'reviews': FieldValue.arrayUnion([review.toJson()]),
+      'reviewCount': FieldValue.increment(1),
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
@@ -290,14 +463,6 @@ class RideRepository {
     await _ridesCollection.doc(rideId).update({
       'status': RideStatus.completed.name,
       'arrivalTime': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
-  }
-
-  /// Cancel ride
-  Future<void> cancelRide(String rideId) async {
-    await _ridesCollection.doc(rideId).update({
-      'status': RideStatus.cancelled.name,
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }

@@ -44,7 +44,7 @@ final class RideFormViewModelProvider
   }
 }
 
-String _$rideFormViewModelHash() => r'8a76bb64b2ab6e480bd3a52e1613f70900f9c3ee';
+String _$rideFormViewModelHash() => r'bfff1077451e76cf3392b635144b4fd7402ea06a';
 
 /// Ride Form View Model
 
@@ -103,7 +103,7 @@ final class RideSearchViewModelProvider
 }
 
 String _$rideSearchViewModelHash() =>
-    r'bcd0e38f94d0a57a77e1bf4c4a55ad7be1e65e2d';
+    r'51284b1d3065e1a4c52fc36b15be689b7a9bd5c4';
 
 /// Ride Search View Model
 
@@ -125,15 +125,15 @@ abstract class _$RideSearchViewModel extends $Notifier<RideSearchState> {
   }
 }
 
-/// Single Ride Detail View Model
+/// Single Ride Detail View Model (real-time updates)
 
 @ProviderFor(RideDetailViewModel)
 final rideDetailViewModelProvider = RideDetailViewModelFamily._();
 
-/// Single Ride Detail View Model
+/// Single Ride Detail View Model (real-time updates)
 final class RideDetailViewModelProvider
-    extends $AsyncNotifierProvider<RideDetailViewModel, RideModel?> {
-  /// Single Ride Detail View Model
+    extends $StreamNotifierProvider<RideDetailViewModel, RideModel?> {
+  /// Single Ride Detail View Model (real-time updates)
   RideDetailViewModelProvider._({
     required RideDetailViewModelFamily super.from,
     required String super.argument,
@@ -171,9 +171,9 @@ final class RideDetailViewModelProvider
 }
 
 String _$rideDetailViewModelHash() =>
-    r'd0d6b921afe2c16adaa617f9fc22eb4092dec3ad';
+    r'99016bd3a7de5d0325cd4e1fc2429917027dc5ee';
 
-/// Single Ride Detail View Model
+/// Single Ride Detail View Model (real-time updates)
 
 final class RideDetailViewModelFamily extends $Family
     with
@@ -181,7 +181,7 @@ final class RideDetailViewModelFamily extends $Family
           RideDetailViewModel,
           AsyncValue<RideModel?>,
           RideModel?,
-          FutureOr<RideModel?>,
+          Stream<RideModel?>,
           String
         > {
   RideDetailViewModelFamily._()
@@ -193,7 +193,7 @@ final class RideDetailViewModelFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Single Ride Detail View Model
+  /// Single Ride Detail View Model (real-time updates)
 
   RideDetailViewModelProvider call(String rideId) =>
       RideDetailViewModelProvider._(argument: rideId, from: this);
@@ -202,13 +202,13 @@ final class RideDetailViewModelFamily extends $Family
   String toString() => r'rideDetailViewModelProvider';
 }
 
-/// Single Ride Detail View Model
+/// Single Ride Detail View Model (real-time updates)
 
-abstract class _$RideDetailViewModel extends $AsyncNotifier<RideModel?> {
+abstract class _$RideDetailViewModel extends $StreamNotifier<RideModel?> {
   late final _$args = ref.$arg as String;
   String get rideId => _$args;
 
-  FutureOr<RideModel?> build(String rideId);
+  Stream<RideModel?> build(String rideId);
   @$mustCallSuper
   @override
   void runBuild() {

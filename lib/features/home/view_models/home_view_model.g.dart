@@ -8,18 +8,18 @@ part of 'home_view_model.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// ViewModel for the home screen
-/// Manages navigation state, map expansion, and location
+/// ViewModel for the home screen with full business logic extraction
+/// Manages navigation, map state, location tracking, and routing
 
 @ProviderFor(HomeViewModel)
 final homeViewModelProvider = HomeViewModelProvider._();
 
-/// ViewModel for the home screen
-/// Manages navigation state, map expansion, and location
+/// ViewModel for the home screen with full business logic extraction
+/// Manages navigation, map state, location tracking, and routing
 final class HomeViewModelProvider
     extends $NotifierProvider<HomeViewModel, HomeState> {
-  /// ViewModel for the home screen
-  /// Manages navigation state, map expansion, and location
+  /// ViewModel for the home screen with full business logic extraction
+  /// Manages navigation, map state, location tracking, and routing
   HomeViewModelProvider._()
     : super(
         from: null,
@@ -47,10 +47,10 @@ final class HomeViewModelProvider
   }
 }
 
-String _$homeViewModelHash() => r'0b6e27fb5e09fdc304bb70a8a82ddc6ade050562';
+String _$homeViewModelHash() => r'c455c0d505164b7ea42117c7261b0d995ed844fb';
 
-/// ViewModel for the home screen
-/// Manages navigation state, map expansion, and location
+/// ViewModel for the home screen with full business logic extraction
+/// Manages navigation, map state, location tracking, and routing
 
 abstract class _$HomeViewModel extends $Notifier<HomeState> {
   HomeState build();

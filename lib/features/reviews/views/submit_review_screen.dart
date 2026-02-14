@@ -1,0 +1,356 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
+import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/premium_avatar.dart';
+import 'package:sport_connect/core/widgets/premium_button.dart';
+import 'package:sport_connect/features/reviews/models/review_model.dart';
+import 'package:sport_connect/features/reviews/view_models/review_view_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
+
+/// Screen for submitting a review after a ride
+class SubmitReviewScreen extends ConsumerStatefulWidget {
+  final String rideId;
+  final String revieweeId;
+  final String revieweeName;
+  final String? revieweePhotoUrl;
+  final ReviewType reviewType;
+
+  const SubmitReviewScreen({
+    super.key,
+    required this.rideId,
+    required this.revieweeId,
+    required this.revieweeName,
+    this.revieweePhotoUrl,
+    required this.reviewType,
+  });
+
+  @override
+  ConsumerState<SubmitReviewScreen> createState() => _SubmitReviewScreenState();
+}
+
+class _SubmitReviewScreenState extends ConsumerState<SubmitReviewScreen> {
+  final _commentController = TextEditingController();
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(reviewFormViewModelProvider);
+    final viewModel = ref.read(reviewFormViewModelProvider.notifier);
+    final availableTags = ReviewTag.getTagsFor(widget.reviewType);
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context).leaveAReview),
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
+      ),
+      body: state.isSubmitting
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: EdgeInsets.all(16.r),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // User being reviewed
+                  _buildUserCard()
+                      .animate()
+                      .fadeIn(duration: 300.ms)
+                      .slideY(begin: 0.1, end: 0),
+
+                  SizedBox(height: 32.h),
+
+                  // Rating selector
+                  Text(
+                    AppLocalizations.of(context).howWasYourExperience,
+                    style: TextStyle(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
+                  _buildRatingSelector(
+                    state,
+                    viewModel,
+                  ).animate().fadeIn(delay: 100.ms, duration: 300.ms),
+
+                  SizedBox(height: 32.h),
+
+                  // Tag selection
+                  if (availableTags.isNotEmpty) ...[
+                    Text(
+                      AppLocalizations.of(context).whatStoodOut,
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    SizedBox(height: 12.h),
+                    _buildTagSelector(
+                      availableTags,
+                      state,
+                      viewModel,
+                    ).animate().fadeIn(delay: 200.ms, duration: 300.ms),
+                    SizedBox(height: 24.h),
+                  ],
+
+                  // Comment field
+                  Text(
+                    AppLocalizations.of(context).additionalCommentsOptional,
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
+                  _buildCommentField(
+                    viewModel,
+                  ).animate().fadeIn(delay: 300.ms, duration: 300.ms),
+
+                  SizedBox(height: 24.h),
+
+                  // Error message
+                  if (state.error != null)
+                    Container(
+                      margin: EdgeInsets.only(bottom: 16.h),
+                      padding: EdgeInsets.all(12.r),
+                      decoration: BoxDecoration(
+                        color: AppColors.error.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            color: AppColors.error,
+                            size: 20.r,
+                          ),
+                          SizedBox(width: 8.w),
+                          Expanded(
+                            child: Text(
+                              state.error!,
+                              style: TextStyle(
+                                color: AppColors.error,
+                                fontSize: 14.sp,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  // Submit button
+                  PremiumButton(
+                    text: 'Submit Review',
+                    onPressed: state.isValid
+                        ? () => _submitReview(viewModel)
+                        : null,
+                    isLoading: state.isSubmitting,
+                    fullWidth: true,
+                  ).animate().fadeIn(delay: 400.ms, duration: 300.ms),
+
+                  SizedBox(height: 16.h),
+
+                  // Skip button
+                  TextButton(
+                    onPressed: () => context.pop(),
+                    child: Text(
+                      AppLocalizations.of(context).skipForNow,
+                      style: TextStyle(
+                        color: AppColors.textTertiary,
+                        fontSize: 14.sp,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+    );
+  }
+
+  Widget _buildUserCard() {
+    return Container(
+      padding: EdgeInsets.all(20.r),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(16.r),
+      ),
+      child: Column(
+        children: [
+          PremiumAvatar(
+            imageUrl: widget.revieweePhotoUrl,
+            name: widget.revieweeName,
+            size: 80,
+          ),
+          SizedBox(height: 12.h),
+          Text(
+            widget.revieweeName,
+            style: TextStyle(
+              fontSize: 20.sp,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          SizedBox(height: 4.h),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+            decoration: BoxDecoration(
+              color: widget.reviewType == ReviewType.driver
+                  ? AppColors.info.withValues(alpha: 0.1)
+                  : AppColors.success.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+            child: Text(
+              widget.reviewType == ReviewType.driver
+                  ? AppLocalizations.of(context).yourDriver
+                  : AppLocalizations.of(context).yourPassenger,
+              style: TextStyle(
+                color: widget.reviewType == ReviewType.driver
+                    ? AppColors.info
+                    : AppColors.success,
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRatingSelector(
+    ReviewFormState state,
+    ReviewFormViewModel viewModel,
+  ) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(5, (index) {
+        final starNumber = index + 1;
+        final isSelected = starNumber <= state.rating;
+        return GestureDetector(
+          onTap: () {
+            HapticFeedback.lightImpact();
+            viewModel.setRating(starNumber);
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            margin: EdgeInsets.symmetric(horizontal: 4.w),
+            child: Icon(
+              isSelected ? Icons.star_rounded : Icons.star_outline_rounded,
+              size: 48.r,
+              color: isSelected ? Colors.amber : AppColors.textTertiary,
+            ),
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget _buildTagSelector(
+    List<ReviewTag> availableTags,
+    ReviewFormState state,
+    ReviewFormViewModel viewModel,
+  ) {
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 8.w,
+      runSpacing: 8.h,
+      children: availableTags.map((tag) {
+        final isSelected = state.selectedTags.contains(tag);
+        return GestureDetector(
+          onTap: () {
+            HapticFeedback.selectionClick();
+            viewModel.toggleTag(tag);
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+            decoration: BoxDecoration(
+              color: isSelected ? AppColors.primary : AppColors.surfaceVariant,
+              borderRadius: BorderRadius.circular(20.r),
+              border: Border.all(
+                color: isSelected ? AppColors.primary : AppColors.divider,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(tag.emoji, style: TextStyle(fontSize: 14.sp)),
+                SizedBox(width: 6.w),
+                Text(
+                  tag.label,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : AppColors.textSecondary,
+                    fontSize: 13.sp,
+                    fontWeight: isSelected
+                        ? FontWeight.w600
+                        : FontWeight.normal,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildCommentField(ReviewFormViewModel viewModel) {
+    return TextField(
+      controller: _commentController,
+      onChanged: viewModel.setComment,
+      maxLines: 4,
+      maxLength: 500,
+      decoration: InputDecoration(
+        hintText: AppLocalizations.of(context).shareYourExperience,
+        hintStyle: TextStyle(color: AppColors.textTertiary),
+        filled: true,
+        fillColor: AppColors.surfaceVariant,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.r),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.r),
+          borderSide: BorderSide(color: AppColors.primary),
+        ),
+        contentPadding: EdgeInsets.all(16.r),
+        counterStyle: TextStyle(color: AppColors.textTertiary),
+      ),
+      style: TextStyle(color: AppColors.textPrimary, fontSize: 14.sp),
+    );
+  }
+
+  Future<void> _submitReview(ReviewFormViewModel viewModel) async {
+    final success = await viewModel.submitReview(
+      rideId: widget.rideId,
+      revieweeId: widget.revieweeId,
+      revieweeName: widget.revieweeName,
+      revieweePhotoUrl: widget.revieweePhotoUrl,
+      type: widget.reviewType,
+    );
+
+    if (success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context).thankYouForYourReview),
+          backgroundColor: AppColors.success,
+        ),
+      );
+      context.pop();
+    }
+  }
+}

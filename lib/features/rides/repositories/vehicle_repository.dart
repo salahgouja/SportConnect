@@ -4,12 +4,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
-import 'package:sport_connect/features/rides/models/vehicle_model.dart';
+import 'package:sport_connect/core/interfaces/repositories/i_vehicle_repository.dart';
+import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 
 part 'vehicle_repository.g.dart';
 
 /// Vehicle Repository for Firestore operations
-class VehicleRepository {
+class VehicleRepository implements IVehicleRepository {
   final FirebaseFirestore _firestore;
   final FirebaseStorage _storage;
 

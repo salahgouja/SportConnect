@@ -6,16 +6,19 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:intl/intl.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
-import 'package:sport_connect/core/widgets/premium_avatar.dart';
+import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/utility_widgets.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
-import 'package:sport_connect/features/rides/models/ride_model.dart';
+import 'package:sport_connect/core/models/location/location_point.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
+import 'package:sport_connect/features/rides/models/ride_search_filters.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
-import 'package:sport_connect/core/config/app_router.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Ride Search Screen with filters - Enhanced UI
 class RideSearchScreen extends ConsumerStatefulWidget {
@@ -112,7 +115,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
       backgroundColor: AppColors.primary,
       leading: IconButton(
         onPressed: () =>
-            context.canPop() ? context.pop() : context.go(AppRouter.home),
+            context.canPop() ? context.pop() : context.go(AppRoutes.home.path),
         icon: Icon(
           Icons.arrow_back_ios_new_rounded,
           color: Colors.white,
@@ -120,7 +123,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
         ),
       ),
       title: Text(
-        'Find a Ride',
+        AppLocalizations.of(context).findARide,
         style: TextStyle(
           fontSize: 18.sp,
           fontWeight: FontWeight.w600,
@@ -171,7 +174,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
                         border: Border.all(color: Colors.white, width: 2),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withOpacity(0.3),
+                            color: AppColors.primary.withValues(alpha: 0.3),
                             blurRadius: 4,
                             spreadRadius: 1,
                           ),
@@ -212,7 +215,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
                       Divider(
                         height: 16.h,
                         thickness: 1,
-                        color: AppColors.border.withOpacity(0.5),
+                        color: AppColors.border.withValues(alpha: 0.5),
                       ),
                       _buildCompactInputField(
                         controller: _toController,
@@ -358,7 +361,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
         decoration: BoxDecoration(
           color: AppColors.surfaceVariant,
           borderRadius: BorderRadius.circular(10.r),
-          border: Border.all(color: AppColors.border.withOpacity(0.5)),
+          border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -389,7 +392,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
       decoration: BoxDecoration(
         color: AppColors.surfaceVariant,
         borderRadius: BorderRadius.circular(10.r),
-        border: Border.all(color: AppColors.border.withOpacity(0.5)),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -421,7 +424,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
                 ),
                 SizedBox(width: 2.w),
                 Text(
-                  '$_seats',
+                  AppLocalizations.of(context).value2(_seats),
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
@@ -462,7 +465,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
           borderRadius: BorderRadius.circular(12.r),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withOpacity(0.3),
+              color: AppColors.primary.withValues(alpha: 0.3),
               blurRadius: 8,
               offset: const Offset(0, 3),
             ),
@@ -486,7 +489,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
     if (_fromController.text.isEmpty || _toController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please enter both locations'),
+          content: Text(AppLocalizations.of(context).pleaseEnterBothLocations),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -499,7 +502,9 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
     if (_fromLocation == null || _toLocation == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please select locations from the picker'),
+          content: Text(
+            AppLocalizations.of(context).pleaseSelectLocationsFromThe,
+          ),
           backgroundColor: AppColors.error,
         ),
       );
@@ -533,7 +538,11 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
       if (!mounted) return;
       TalkerService.debug('Ride search failed: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: const Text('Search failed. Please try again.')),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).searchFailedPleaseTryAgain,
+          ),
+        ),
       );
     } finally {
       if (mounted) setState(() => _isSearching = false);
@@ -622,44 +631,52 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
 
     if (_maxPrice < 50) {
       filters.add(
-        _buildFilterTag('Max ${_maxPrice.toInt()} €', () {
-          setState(() => _maxPrice = 50);
-        }),
+        _buildFilterTag(
+          AppLocalizations.of(context).maxValue(_maxPrice.toInt()),
+          () {
+            setState(() => _maxPrice = 50);
+          },
+        ),
       );
     }
     if (_femaleOnly) {
       filters.add(
-        _buildFilterTag('Female only', () {
+        _buildFilterTag(AppLocalizations.of(context).femaleOnly, () {
           setState(() => _femaleOnly = false);
         }),
       );
     }
     if (_instantBook) {
       filters.add(
-        _buildFilterTag('Instant book', () {
+        _buildFilterTag(AppLocalizations.of(context).instantBook, () {
           setState(() => _instantBook = false);
         }),
       );
     }
     if (_verifiedOnly) {
       filters.add(
-        _buildFilterTag('Verified', () {
+        _buildFilterTag(AppLocalizations.of(context).verified, () {
           setState(() => _verifiedOnly = false);
         }),
       );
     }
     if (_petFriendly) {
       filters.add(
-        _buildFilterTag('Pet friendly', () {
+        _buildFilterTag(AppLocalizations.of(context).petFriendly, () {
           setState(() => _petFriendly = false);
         }),
       );
     }
     if (_minRating > 0) {
       filters.add(
-        _buildFilterTag('${_minRating.toStringAsFixed(1)}+ rating', () {
-          setState(() => _minRating = 0);
-        }),
+        _buildFilterTag(
+          AppLocalizations.of(
+            context,
+          ).valueRating(_minRating.toStringAsFixed(1)),
+          () {
+            setState(() => _minRating = 0);
+          },
+        ),
       );
     }
 
@@ -672,7 +689,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Active Filters',
+                AppLocalizations.of(context).activeFilters,
                 style: TextStyle(
                   fontSize: 12.sp,
                   fontWeight: FontWeight.w500,
@@ -693,7 +710,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
                   });
                 },
                 child: Text(
-                  'Clear all',
+                  AppLocalizations.of(context).clearAll2,
                   style: TextStyle(
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w500,
@@ -716,7 +733,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
       decoration: BoxDecoration(
         color: AppColors.primarySurface,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -762,7 +779,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '$ridesCount rides available',
+                AppLocalizations.of(context).valueRidesAvailable(ridesCount),
                 style: TextStyle(
                   fontSize: 16.sp,
                   fontWeight: FontWeight.w600,
@@ -830,11 +847,9 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
       // Filter by max price
       if (ride.pricePerSeat > _maxPrice) return false;
 
-      // Filter by minimum rating
-      if (_minRating > 0 && (ride.driverRating ?? 0) < _minRating) return false;
-
-      // Filter by verified only - check if driver rating exists and is high
-      if (_verifiedOnly && (ride.driverRating ?? 0) < 4.5) return false;
+      // Note: Rating-based filtering removed due to database normalization
+      // Driver ratings are no longer stored in RideModel for data integrity
+      // Rating filters can be re-implemented with cached driver stats if needed
 
       return true;
     }).toList();
@@ -864,11 +879,14 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
       duration: const Duration(milliseconds: 200),
       offset: _showFilters ? const Offset(0, 2) : Offset.zero,
       child: FloatingActionButton.extended(
+        heroTag: 'ride_search_filter_fab',
         onPressed: _showAdvancedFilters,
         backgroundColor: AppColors.primary,
         icon: Icon(Icons.filter_list_rounded, size: 20.sp),
         label: Text(
-          'Filters${_hasActiveFilters ? ' (${_getActiveFilterCount()})' : ''}',
+          AppLocalizations.of(context).filtersValue(
+            _hasActiveFilters ? ' (${_getActiveFilterCount()})' : '',
+          ),
           style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
         ),
       ),
@@ -929,7 +947,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Filters',
+                            AppLocalizations.of(context).filters,
                             style: TextStyle(
                               fontSize: 20.sp,
                               fontWeight: FontWeight.w700,
@@ -949,7 +967,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
                               });
                             },
                             child: Text(
-                              'Reset',
+                              AppLocalizations.of(context).reset,
                               style: TextStyle(
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.w600,
@@ -970,13 +988,15 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Price Range
-                        _buildFilterSectionTitle('Price Range'),
+                        _buildFilterSectionTitle(
+                          AppLocalizations.of(context).priceRange,
+                        ),
                         SizedBox(height: 8.h),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              '5 €',
+                              AppLocalizations.of(context).text52,
                               style: TextStyle(
                                 fontSize: 13.sp,
                                 color: AppColors.textSecondary,
@@ -992,7 +1012,9 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
                                 borderRadius: BorderRadius.circular(8.r),
                               ),
                               child: Text(
-                                'Max ${_maxPrice.toInt()} €',
+                                AppLocalizations.of(
+                                  context,
+                                ).maxValue(_maxPrice.toInt()),
                                 style: TextStyle(
                                   fontSize: 14.sp,
                                   fontWeight: FontWeight.w600,
@@ -1001,7 +1023,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
                               ),
                             ),
                             Text(
-                              '100 €',
+                              AppLocalizations.of(context).text100,
                               style: TextStyle(
                                 fontSize: 13.sp,
                                 color: AppColors.textSecondary,
@@ -1014,7 +1036,9 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
                             activeTrackColor: AppColors.primary,
                             inactiveTrackColor: AppColors.border,
                             thumbColor: AppColors.primary,
-                            overlayColor: AppColors.primary.withOpacity(0.2),
+                            overlayColor: AppColors.primary.withValues(
+                              alpha: 0.2,
+                            ),
                             trackHeight: 4.h,
                           ),
                           child: Slider(
@@ -1032,7 +1056,9 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
                         SizedBox(height: 20.h),
 
                         // Driver Rating
-                        _buildFilterSectionTitle('Minimum Rating'),
+                        _buildFilterSectionTitle(
+                          AppLocalizations.of(context).minimumRating,
+                        ),
                         SizedBox(height: 12.h),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -1074,7 +1100,11 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
                                       SizedBox(width: 2.w),
                                     ],
                                     Text(
-                                      rating == 0 ? 'Any' : '$rating+',
+                                      rating == 0
+                                          ? AppLocalizations.of(context).any
+                                          : AppLocalizations.of(
+                                              context,
+                                            ).value13(rating),
                                       style: TextStyle(
                                         fontSize: 13.sp,
                                         fontWeight: FontWeight.w500,
@@ -1093,14 +1123,16 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
                         SizedBox(height: 24.h),
 
                         // Preferences
-                        _buildFilterSectionTitle('Preferences'),
+                        _buildFilterSectionTitle(
+                          AppLocalizations.of(context).preferences,
+                        ),
                         SizedBox(height: 12.h),
                         Wrap(
                           spacing: 10.w,
                           runSpacing: 10.h,
                           children: [
                             _buildToggleChip(
-                              label: 'Female only',
+                              label: AppLocalizations.of(context).femaleOnly,
                               icon: Icons.female_rounded,
                               isSelected: _femaleOnly,
                               onTap: () {
@@ -1109,7 +1141,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
                               },
                             ),
                             _buildToggleChip(
-                              label: 'Instant book',
+                              label: AppLocalizations.of(context).instantBook,
                               icon: Icons.bolt_rounded,
                               isSelected: _instantBook,
                               onTap: () {
@@ -1120,7 +1152,9 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
                               },
                             ),
                             _buildToggleChip(
-                              label: 'Verified driver',
+                              label: AppLocalizations.of(
+                                context,
+                              ).verifiedDriver2,
                               icon: Icons.verified_rounded,
                               isSelected: _verifiedOnly,
                               onTap: () {
@@ -1131,7 +1165,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
                               },
                             ),
                             _buildToggleChip(
-                              label: 'Pet friendly',
+                              label: AppLocalizations.of(context).petFriendly,
                               icon: Icons.pets_rounded,
                               isSelected: _petFriendly,
                               onTap: () {
@@ -1142,7 +1176,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
                               },
                             ),
                             _buildToggleChip(
-                              label: 'Music allowed',
+                              label: AppLocalizations.of(context).musicAllowed,
                               icon: Icons.music_note_rounded,
                               isSelected: _musicAllowed,
                               onTap: () {
@@ -1158,27 +1192,29 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
                         SizedBox(height: 24.h),
 
                         // Vehicle Type (New Feature)
-                        _buildFilterSectionTitle('Vehicle Type'),
+                        _buildFilterSectionTitle(
+                          AppLocalizations.of(context).vehicleType,
+                        ),
                         SizedBox(height: 12.h),
                         Row(
                           children: [
                             _buildVehicleOption(
                               Icons.directions_car,
-                              'Any',
+                              AppLocalizations.of(context).any,
                               true,
                               setModalState,
                             ),
                             SizedBox(width: 10.w),
                             _buildVehicleOption(
                               Icons.electric_car,
-                              'Electric',
+                              AppLocalizations.of(context).electric,
                               false,
                               setModalState,
                             ),
                             SizedBox(width: 10.w),
                             _buildVehicleOption(
                               Icons.local_taxi,
-                              'Comfort',
+                              AppLocalizations.of(context).comfort,
                               false,
                               setModalState,
                             ),
@@ -1402,7 +1438,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
             subtitle:
                 'Try adjusting your filters or search for a different date',
             actionText: 'Offer a Ride',
-            onActionPressed: () => context.push(AppRouter.createRide),
+            onActionPressed: () => context.push(AppRoutes.driverOfferRide.path),
           ),
         );
       }
@@ -1434,7 +1470,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
               CircularProgressIndicator(color: AppColors.primary),
               SizedBox(height: 16.h),
               Text(
-                'Finding rides...',
+                AppLocalizations.of(context).findingRides,
                 style: TextStyle(
                   fontSize: 14.sp,
                   color: AppColors.textSecondary,
@@ -1464,7 +1500,8 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
               subtitle:
                   'Try adjusting your filters or search for a different date',
               actionText: 'Offer a Ride',
-              onActionPressed: () => context.push(AppRouter.createRide),
+              onActionPressed: () =>
+                  context.push(AppRoutes.driverOfferRide.path),
             ),
           );
         }
@@ -1497,18 +1534,20 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
         sorted.sort((a, b) => b.pricePerSeat.compareTo(a.pricePerSeat));
         break;
       case 'rating':
-        sorted.sort(
-          (a, b) => (b.driverRating ?? 0).compareTo(a.driverRating ?? 0),
-        );
+        // Note: Rating-based sorting removed due to database normalization
+        // Fallback to departure time sorting
+        sorted.sort((a, b) => a.departureTime.compareTo(b.departureTime));
         break;
       case 'departure':
         sorted.sort((a, b) => a.departureTime.compareTo(b.departureTime));
         break;
       default:
-        // Recommended: combination of rating and available seats
+        // Recommended: combination of remaining seats and departure time
         sorted.sort((a, b) {
-          final scoreA = (a.driverRating ?? 0) + (a.remainingSeats * 0.1);
-          final scoreB = (b.driverRating ?? 0) + (b.remainingSeats * 0.1);
+          final scoreA = (a.remainingSeats * 10) + 
+                         (100 - a.departureTime.difference(DateTime.now()).inMinutes);
+          final scoreB = (b.remainingSeats * 10) + 
+                         (100 - b.departureTime.difference(DateTime.now()).inMinutes);
           return scoreB.compareTo(scoreA);
         });
     }
@@ -1525,7 +1564,6 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
     );
     final arrivalTimeFormatted = DateFormat('h:mm a').format(estimatedArrival);
     final durationFormatted = _formatDuration(ride.durationMinutes ?? 60);
-    final isVerifiedDriver = (ride.driverRating ?? 0) >= 4.5;
 
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
@@ -1534,17 +1572,18 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: AppSpacing.shadowSm,
         border: Border.all(
-          color: isVerifiedDriver
-              ? AppColors.starFilled.withValues(alpha: 0.5)
-              : AppColors.border.withOpacity(0.5),
-          width: isVerifiedDriver ? 1.5 : 1,
+          color: AppColors.border.withValues(alpha: 0.5),
+          width: 1,
         ),
       ),
       child: Material(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(16.r),
         child: InkWell(
-          onTap: () => context.push(AppRouter.rideDetailPath(ride.id)),
+          onTap: () => context.pushNamed(
+            AppRoutes.rideDetail.name,
+            pathParameters: {'id': ride.id},
+          ),
           borderRadius: BorderRadius.circular(16.r),
           child: Column(
             children: [
@@ -1558,35 +1597,9 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Driver Avatar
-                        Stack(
-                          children: [
-                            PremiumAvatar(
-                              imageUrl: ride.driverPhotoUrl,
-                              name: ride.driverName,
-                              size: 44.w,
-                            ),
-                            if (isVerifiedDriver)
-                              Positioned(
-                                right: -2,
-                                bottom: -2,
-                                child: Container(
-                                  padding: EdgeInsets.all(2.w),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.starFilled,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.white,
-                                      width: 1.5,
-                                    ),
-                                  ),
-                                  child: Icon(
-                                    Icons.star,
-                                    color: Colors.white,
-                                    size: 10.sp,
-                                  ),
-                                ),
-                              ),
-                          ],
+                        DriverAvatarWidget(
+                          driverId: ride.driverId,
+                          radius: 22,
                         ),
                         SizedBox(width: 10.w),
                         // Driver info
@@ -1594,39 +1607,20 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    ride.driverName,
-                                    style: TextStyle(
-                                      fontSize: 14.sp,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.textPrimary,
-                                    ),
-                                  ),
-                                  if (isVerifiedDriver) ...[
-                                    SizedBox(width: 4.w),
-                                    Icon(
-                                      Icons.verified,
-                                      color: AppColors.starFilled,
-                                      size: 14.sp,
-                                    ),
-                                  ],
-                                ],
+                              DriverNameWidget(
+                                driverId: ride.driverId,
+                                style: TextStyle(
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimary,
+                                ),
                               ),
                               SizedBox(height: 2.h),
                               Row(
                                 children: [
-                                  Icon(
-                                    Icons.star_rounded,
-                                    color: AppColors.starFilled,
-                                    size: 14.sp,
-                                  ),
-                                  SizedBox(width: 2.w),
-                                  Text(
-                                    (ride.driverRating ?? 0.0).toStringAsFixed(
-                                      1,
-                                    ),
+                                  DriverRatingWidget(
+                                    driverId: ride.driverId,
+                                    showIcon: true,
                                     style: TextStyle(
                                       fontSize: 12.sp,
                                       fontWeight: FontWeight.w500,
@@ -1660,23 +1654,18 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
                             vertical: 6.h,
                           ),
                           decoration: BoxDecoration(
-                            gradient: isVerifiedDriver
-                                ? LinearGradient(
-                                    colors: [
-                                      AppColors.starFilled,
-                                      AppColors.warning,
-                                    ],
-                                  )
-                                : LinearGradient(
-                                    colors: [
-                                      AppColors.primary,
-                                      AppColors.primary.withOpacity(0.8),
-                                    ],
-                                  ),
+                            gradient: LinearGradient(
+                              colors: [
+                                AppColors.primary,
+                                AppColors.primary.withValues(alpha: 0.8),
+                              ],
+                            ),
                             borderRadius: BorderRadius.circular(10.r),
                           ),
                           child: Text(
-                            '${ride.pricePerSeat.toStringAsFixed(0)} €',
+                            AppLocalizations.of(
+                              context,
+                            ).value5(ride.pricePerSeat.toStringAsFixed(0)),
                             style: TextStyle(
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w700,
@@ -1791,13 +1780,15 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
                 decoration: BoxDecoration(
-                  color: AppColors.cardBg.withOpacity(0.5),
+                  color: AppColors.cardBg.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(16.r),
                     bottomRight: Radius.circular(16.r),
                   ),
                   border: Border(
-                    top: BorderSide(color: AppColors.border.withOpacity(0.5)),
+                    top: BorderSide(
+                      color: AppColors.border.withValues(alpha: 0.5),
+                    ),
                   ),
                 ),
                 child: Row(
@@ -1805,7 +1796,9 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
                     // Seats
                     _buildInfoChip(
                       Icons.event_seat_rounded,
-                      '${ride.remainingSeats} seats',
+                      AppLocalizations.of(
+                        context,
+                      ).valueSeats(ride.remainingSeats),
                       AppColors.primary,
                     ),
                     SizedBox(width: 8.w),
@@ -1813,7 +1806,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
                     if (!ride.allowSmoking)
                       _buildInfoChip(
                         Icons.eco_rounded,
-                        'Eco',
+                        AppLocalizations.of(context).eco,
                         AppColors.success,
                       ),
                     const Spacer(),
@@ -1828,7 +1821,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
                         borderRadius: BorderRadius.circular(8.r),
                       ),
                       child: Text(
-                        'Book',
+                        AppLocalizations.of(context).book,
                         style: TextStyle(
                           fontSize: 12.sp,
                           fontWeight: FontWeight.w600,
@@ -1850,7 +1843,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(6.r),
       ),
       child: Row(
@@ -1910,7 +1903,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Sort By',
+                    AppLocalizations.of(context).sortBy2,
                     style: TextStyle(
                       fontSize: 20.sp,
                       fontWeight: FontWeight.w700,
@@ -1920,31 +1913,31 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
                   SizedBox(height: 16.h),
                   _buildSortOption(
                     icon: Icons.recommend_rounded,
-                    title: 'Recommended',
+                    title: AppLocalizations.of(context).recommended,
                     subtitle: 'Best match for your search',
                     value: 'recommended',
                   ),
                   _buildSortOption(
                     icon: Icons.arrow_downward_rounded,
-                    title: 'Lowest Price',
+                    title: AppLocalizations.of(context).lowestPrice2,
                     subtitle: 'Show cheapest rides first',
                     value: 'price_low',
                   ),
                   _buildSortOption(
                     icon: Icons.access_time_rounded,
-                    title: 'Earliest Departure',
+                    title: AppLocalizations.of(context).earliestDeparture2,
                     subtitle: 'Show rides leaving soonest',
                     value: 'departure',
                   ),
                   _buildSortOption(
                     icon: Icons.star_rounded,
-                    title: 'Highest Rated',
+                    title: AppLocalizations.of(context).highestRated2,
                     subtitle: 'Show best-rated drivers first',
                     value: 'rating',
                   ),
                   _buildSortOption(
                     icon: Icons.timer_rounded,
-                    title: 'Shortest Duration',
+                    title: AppLocalizations.of(context).shortestDuration,
                     subtitle: 'Show fastest routes first',
                     value: 'duration',
                   ),

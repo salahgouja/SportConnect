@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:sport_connect/core/converters/timestamp_converter.dart';
 
 part 'payment_model.freezed.dart';
 part 'payment_model.g.dart';
@@ -288,34 +289,4 @@ abstract class EarningsSummary with _$EarningsSummary {
   /// Get average earnings per ride
   double get averagePerRide =>
       totalRidesCompleted > 0 ? totalEarnings / totalRidesCompleted : 0.0;
-}
-
-/// Timestamp converter for Firestore
-class TimestampConverter implements JsonConverter<DateTime?, dynamic> {
-  const TimestampConverter();
-
-  @override
-  DateTime? fromJson(dynamic timestamp) {
-    if (timestamp == null) return null;
-    if (timestamp is int) {
-      return DateTime.fromMillisecondsSinceEpoch(timestamp);
-    }
-    // Handle Firestore Timestamp
-    if (timestamp is Map) {
-      final seconds = timestamp['_seconds'] ?? timestamp['seconds'];
-      if (seconds != null) {
-        return DateTime.fromMillisecondsSinceEpoch(seconds * 1000);
-      }
-    }
-    return null;
-  }
-
-  @override
-  dynamic toJson(DateTime? date) {
-    if (date == null) return null;
-    return {
-      '_seconds': date.millisecondsSinceEpoch ~/ 1000,
-      '_nanoseconds': (date.millisecondsSinceEpoch % 1000) * 1000000,
-    };
-  }
 }

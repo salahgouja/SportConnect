@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sport_connect/core/interfaces/repositories/i_payment_repository.dart';
 import 'package:sport_connect/core/services/stripe_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/payments/models/payment_model.dart';
@@ -8,7 +9,7 @@ import 'package:sport_connect/features/payments/models/payment_model.dart';
 part 'payment_repository.g.dart';
 
 /// Payment Repository for Firestore operations
-class PaymentRepository {
+class PaymentRepository implements IPaymentRepository {
   final FirebaseFirestore _firestore;
   final StripeService _stripeService;
 

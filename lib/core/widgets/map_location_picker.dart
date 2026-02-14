@@ -9,6 +9,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/services/map_service.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Full-screen Location Picker with Search and Map
 ///
@@ -81,9 +82,7 @@ class _MapLocationPickerState extends State<MapLocationPicker>
     if (widget.countryCode == 'fr') {
       return MapService.franceCities;
     } else {
-      return [
-        ...MapService.franceCities.take(5),
-      ];
+      return [...MapService.franceCities.take(5)];
     }
   }
 
@@ -350,11 +349,31 @@ class _MapLocationPickerState extends State<MapLocationPicker>
         setState(() => _selectedMapStyle = style);
       },
       itemBuilder: (context) => [
-        _buildMapStyleItem('standard', 'Standard', Icons.map),
-        _buildMapStyleItem('terrain', 'Terrain', Icons.terrain),
-        _buildMapStyleItem('dark', 'Dark Mode', Icons.dark_mode),
-        _buildMapStyleItem('light', 'Light Mode', Icons.light_mode),
-        _buildMapStyleItem('humanitarian', 'Humanitarian', Icons.favorite),
+        _buildMapStyleItem(
+          AppLocalizations.of(context).standard,
+          AppLocalizations.of(context).standard2,
+          Icons.map,
+        ),
+        _buildMapStyleItem(
+          AppLocalizations.of(context).terrain,
+          AppLocalizations.of(context).terrain2,
+          Icons.terrain,
+        ),
+        _buildMapStyleItem(
+          AppLocalizations.of(context).dark,
+          AppLocalizations.of(context).settingsDarkMode,
+          Icons.dark_mode,
+        ),
+        _buildMapStyleItem(
+          AppLocalizations.of(context).light,
+          AppLocalizations.of(context).lightMode,
+          Icons.light_mode,
+        ),
+        _buildMapStyleItem(
+          AppLocalizations.of(context).humanitarian,
+          AppLocalizations.of(context).humanitarian2,
+          Icons.favorite,
+        ),
       ],
     );
   }
@@ -449,7 +468,9 @@ class _MapLocationPickerState extends State<MapLocationPicker>
                   fontWeight: FontWeight.w500,
                 ),
                 decoration: InputDecoration(
-                  hintText: 'Search address, city, or place...',
+                  hintText: AppLocalizations.of(
+                    context,
+                  ).searchAddressCityOrPlace,
                   hintStyle: TextStyle(
                     fontSize: 15.sp,
                     color: AppColors.textTertiary,
@@ -615,7 +636,7 @@ class _MapLocationPickerState extends State<MapLocationPicker>
                 Icon(Icons.star_rounded, size: 16.sp, color: AppColors.warning),
                 SizedBox(width: 6.w),
                 Text(
-                  'Popular Cities',
+                  AppLocalizations.of(context).popularCities,
                   style: TextStyle(
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w600,
@@ -954,7 +975,7 @@ class _MapLocationPickerState extends State<MapLocationPicker>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Selected Location',
+                            AppLocalizations.of(context).selectedLocation,
                             style: TextStyle(
                               fontSize: 11.sp,
                               fontWeight: FontWeight.w500,
@@ -1041,7 +1062,7 @@ class _MapLocationPickerState extends State<MapLocationPicker>
                           ),
                           SizedBox(width: 10.w),
                           Text(
-                            'Confirm Location',
+                            AppLocalizations.of(context).confirmLocation,
                             style: TextStyle(
                               fontSize: 17.sp,
                               fontWeight: FontWeight.w700,

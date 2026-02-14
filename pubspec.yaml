@@ -10,13 +10,18 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  
+  # Localization
+  flutter_localizations:
+    sdk: flutter
 
   # UI & Icons
   cupertino_icons: ^1.0.8
   flutter_screenutil: ^5.9.3
   cached_network_image: ^3.4.1
   shimmer: ^3.0.0
-  
+  flutter_svg: ^2.0.17
+    
   # State Management (MVVM)
   flutter_riverpod: ^3.1.0
   riverpod_annotation: ^4.0.0
@@ -27,26 +32,37 @@ dependencies:
   cloud_firestore: ^6.1.1
   firebase_storage: ^13.0.5
   firebase_messaging: ^16.1.0
-  cloud_functions: ^6.0.6  # Firebase Cloud Functions for Stripe payments
+  firebase_analytics: ^12.1.2
+  firebase_performance: ^0.11.1+4
+  cloud_functions: ^6.0.6
   
-  # Networking
-  http: ^1.2.1  # For HTTP requests
-  web_socket_channel: ^3.0.1
+  # 🔴 NEW - Critical Additions
   
-  # Video/Voice Calling (Open Source - WebView-based WebRTC)
-  # Uses native browser WebRTC stack - 100% open source, free for commercial use
+  # Deep Linking & Notifications
+  app_links: ^7.0.0  # Deep linking for ride sharing (1.13M downloads)
+  flutter_local_notifications: ^20.0.0  # Foreground notifications (1.27M!)
+  
+  # Real-time Communication
+  socket_io_client: ^3.1.4  # Real-time chat (1.1M downloads)
+  
+  # Maps & Route Visualization
+  flutter_map: ^8.2.2  # OpenStreetMap (free!)
+  latlong2: ^0.9.1
+  geolocator: ^14.0.2
+  geocoding: ^4.0.0
+  flutter_map_marker_cluster: ^8.2.2
+  flutter_map_animations: ^0.9.0
+  flutter_map_marker_popup: ^8.1.0
+  flutter_polyline_points: ^3.1.0  # 🔴 NEW - Draw routes on map
+  
+  # Networking & HTTP
+  dio: ^5.9.0  # Advanced HTTP (keep this, remove 'http' package)
+  
+  # WebView (Stripe onboarding)
   flutter_inappwebview: ^6.1.5
+
+  # Permissions
   permission_handler: ^12.0.1
-  
-  # Maps & Geolocation (Open Source - Free Worldwide!)
-  # Works in France, Tunisia, and everywhere else
-  flutter_map: ^8.2.2  # OpenStreetMap (ODbL License - Free Commercial)
-  latlong2: ^0.9.1  # Coordinate utilities (MIT License)
-  geolocator: ^14.0.2  # Device location (MIT License)
-  geocoding: ^4.0.0  # Address lookup (MIT License)
-  flutter_map_marker_cluster: ^8.2.2  # Marker clustering (BSD-3-Clause)
-  flutter_map_animations: ^0.9.0  # Smooth map animations (MIT License)
-  flutter_map_marker_popup: ^8.1.0  # Marker popups (BSD-3-Clause)
   
   # Navigation
   go_router: ^17.0.1
@@ -63,53 +79,56 @@ dependencies:
   # Payments (Stripe)
   flutter_stripe: ^12.1.1
   
-  # Utilities
+  # Core Utilities
   intl: ^0.20.1
   logger: ^2.5.0
   image_picker: ^1.1.2
   uuid: ^4.5.1
   share_plus: ^12.0.1
-    
-  # Connectivity & Network State
   connectivity_plus: ^7.0.0
+  url_launcher: ^6.3.2
+  crypto: ^3.0.7
+  path_provider: ^2.1.5
   
-  # App Rating & Reviews
-  in_app_review: ^2.0.10
+  # Audio
+  record: ^6.2.0  # Audio recording
+  audioplayers: ^6.1.0  # Audio playback
   
-  # Onboarding & Showcase
-  showcaseview: ^5.0.1
-  smooth_page_indicator: ^2.0.1
-  lottie: ^3.3.2
-  flutter_animate: ^4.5.2
-  emoji_picker_flutter: ^4.4.0
-  glassmorphism: ^3.0.0
-  flutter_staggered_animations: ^1.1.1
-  rive: ^0.14.0
-  flutter_svg: ^2.0.17
-  dotlottie_loader: ^0.0.5
+  # Authentication
   google_sign_in: ^7.2.0
   sign_in_with_apple: ^7.0.1
-  crypto: ^3.0.7
-  url_launcher: ^6.3.2
   
-  # Firebase UI Auth - Pre-built authentication widgets  
-  # Note: Using email provider only due to google_sign_in version conflict
-  # The app already has google_sign_in and sign_in_with_apple integrated directly
-  firebase_ui_auth: ^3.0.1
-
-  # Enhanced UI & Navigation (Open Source - Free for Commercial Use)
-  animations: ^2.0.11  # Official Flutter animations package (BSD-3-Clause)
-  page_transition: ^2.2.1  # Beautiful page transitions (MIT License)
-  animated_text_kit: ^4.2.3  # Cool text animations (MIT License)
-  sprung: ^3.0.1  # Spring physics animations (MIT License)
-  dio: ^5.9.0
+  # App Features
+  in_app_review: ^2.0.10
+  showcaseview: ^5.0.1
+  smooth_page_indicator: ^2.0.1
+  emoji_picker_flutter: ^4.4.0
+  
+  # Essential Animations (reduced from 8 to 3)
+  lottie: ^3.3.2
+  flutter_animate: ^4.5.2
+  animations: ^2.0.11
+  
+  # Charts & Visualization
   fl_chart: ^1.1.1
-  google_nav_bar: ^5.0.7  # Modern Google-style bottom navigation (MIT License)
+  
+  # Development Tools (keep for debugging)
   talker_flutter: ^5.1.12
   talker_riverpod_logger: ^5.1.12
   talker_dio_logger: ^5.1.12
   device_preview: ^1.3.1
-  flex_color_scheme: ^8.4.0  # Theme playground and beautiful color schemes
+  riverpod_devtools_tracker: ^1.0.7
+  
+  # UI Components
+  table_calendar: ^3.2.0
+  badges: ^3.1.2
+  percent_indicator: ^4.2.5
+  flutter_slidable: ^4.0.3
+  card_swiper: ^3.0.1
+  carousel_slider: ^5.1.2
+
+  # Secrets Management (runtime annotation)
+  envied: ^1.3.3
 
 dev_dependencies:
   flutter_test:
@@ -119,20 +138,64 @@ dev_dependencies:
   # Code Generation
   build_runner: ^2.10.4
   freezed: ^3.1.0
-  json_serializable: ^6.9.2
+  json_serializable: ^6.11.2
   riverpod_generator: ^4.0.0
+  riverpod_lint: ^3.1.0
+  custom_lint: ^0.8.1
+  
+  # Secrets Management (code generation only)
+  envied_generator: ^1.3.3
+  
+  # Testing
+  mockito: ^5.4.4
   
   # Seed Tool
-  faker: ^2.2.0  # Generate realistic test data
-  args: ^2.6.0   # CLI argument parsing
+  faker: ^2.2.0
+  args: ^2.6.0
+  
+  # Production UI
+  flutter_native_splash: ^2.4.7
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
+  generate: true
 
-  # Assets
   assets:
     - assets/images/
     - assets/icons/
     - assets/animations/
-    - assets/webrtc/
     - shorebird.yaml
+
+# Flutter Native Splash Configuration
+flutter_native_splash:
+  color: "#FFFFFF"
+  color_dark: "#1A1A1A"
+  image: assets/images/splash_icon.png
+  image_dark: assets/images/splash_icon_dark.png
+  branding: assets/images/branding.png
+  branding_dark: assets/images/branding_dark.png
+  fullscreen: true
+  android_12:
+    image: assets/images/splash_icon_android12.png
+    image_dark: assets/images/splash_icon_android12_dark.png
+    icon_background_color: "#FFFFFF"
+    icon_background_color_dark: "#1A1A1A"
+
+# Flutter Launcher Icons Configuration
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  web:
+    generate: true
+    theme_color: "#FFFFFF"
+    background_color: "#FFFFFF"
+  windows:
+    generate: true
+    icon_size: 48
+  macos:
+    generate: true
+  image_path: "assets/icons/app_icon.png"
+  image_path_ios: "assets/icons/app_icon_ios.png"
+  remove_alpha_ios: true
+  min_sdk_android: 21

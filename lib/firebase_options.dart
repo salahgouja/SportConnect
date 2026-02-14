@@ -85,5 +85,4 @@ class DefaultFirebaseOptions {
     storageBucket: 'marathon-connect.firebasestorage.app',
     measurementId: 'G-E0ZBLTCHH3',
   );
-
 }

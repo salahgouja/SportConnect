@@ -1,8 +1,10 @@
 import 'dart:io';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sport_connect/features/auth/models/user_model.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
+import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 
 part 'profile_view_model.g.dart';
 
@@ -67,6 +69,54 @@ class ProfileEditState {
       gender: user.gender,
       interests: user.interests,
     );
+  }
+}
+
+final profileActionsViewModelProvider = Provider<ProfileActionsViewModel>((
+  ref,
+) {
+  return ProfileActionsViewModel(ref);
+});
+
+class ProfileActionsViewModel {
+  ProfileActionsViewModel(this._ref);
+
+  final Ref _ref;
+
+  Future<List<UserModel>> searchUsers({required String query}) {
+    return _ref.read(profileRepositoryProvider).searchUsers(query: query);
+  }
+
+  Future<UserModel?> getUserById(String userId) {
+    return _ref.read(profileRepositoryProvider).getUserById(userId);
+  }
+
+  Future<void> updateProfile(String uid, Map<String, dynamic> updates) {
+    return _ref.read(profileRepositoryProvider).updateProfile(uid, updates);
+  }
+
+  Future<void> updateProfilePhoto(String uid, File imageFile) {
+    return _ref
+        .read(profileRepositoryProvider)
+        .updateProfilePhoto(uid, imageFile);
+  }
+
+  Future<void> setDefaultVehicle(String uid, String vehicleId) {
+    return _ref
+        .read(profileRepositoryProvider)
+        .setDefaultVehicle(uid, vehicleId);
+  }
+
+  Future<void> removeVehicle(String uid, String vehicleId) {
+    return _ref.read(profileRepositoryProvider).removeVehicle(uid, vehicleId);
+  }
+
+  Future<void> updateVehicle(String uid, VehicleModel vehicle) {
+    return _ref.read(profileRepositoryProvider).updateVehicle(uid, vehicle);
+  }
+
+  Future<void> addVehicle(String uid, VehicleModel vehicle) {
+    return _ref.read(profileRepositoryProvider).addVehicle(uid, vehicle);
   }
 }
 
@@ -274,7 +324,7 @@ class VehicleViewModel extends _$VehicleViewModel {
     return const VehicleState();
   }
 
-  Future<void> addVehicle(Vehicle vehicle) async {
+  Future<void> addVehicle(VehicleModel vehicle) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
@@ -286,7 +336,7 @@ class VehicleViewModel extends _$VehicleViewModel {
     }
   }
 
-  Future<void> updateVehicle(Vehicle vehicle) async {
+  Future<void> updateVehicle(VehicleModel vehicle) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {

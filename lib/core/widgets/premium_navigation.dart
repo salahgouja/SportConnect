@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Premium App Bar with gradient and animations
 class PremiumAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -366,7 +367,11 @@ class PremiumBottomNav extends StatelessWidget {
                             ),
                             child: Center(
                               child: Text(
-                                item.badge! > 99 ? '99+' : '${item.badge}',
+                                item.badge! > 99
+                                    ? AppLocalizations.of(context).text99
+                                    : AppLocalizations.of(
+                                        context,
+                                      ).value2(item.badge!),
                                 style: TextStyle(
                                   fontSize: 9.sp,
                                   fontWeight: FontWeight.w700,
@@ -602,7 +607,9 @@ class PremiumActionButton extends StatelessWidget {
                   constraints: BoxConstraints(minWidth: 16.w, minHeight: 16.w),
                   child: Center(
                     child: Text(
-                      badge! > 9 ? '9+' : '$badge',
+                      badge! > 9
+                          ? AppLocalizations.of(context).text9
+                          : AppLocalizations.of(context).value2(badge!),
                       style: TextStyle(
                         fontSize: 8.sp,
                         fontWeight: FontWeight.w700,

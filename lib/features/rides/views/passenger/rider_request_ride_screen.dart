@@ -6,14 +6,17 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:intl/intl.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
-import 'package:sport_connect/core/config/app_router.dart';
-import 'package:sport_connect/features/rides/models/ride_model.dart';
+import 'package:sport_connect/core/widgets/driver_info_widget.dart';
+import 'package:sport_connect/core/models/location/location_point.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
+import 'package:sport_connect/features/rides/models/ride_search_filters.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
-import 'package:sport_connect/features/rides/repositories/ride_repository.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Rider's screen to request/search for a ride
 /// Modern, Bolt-like UI with minimal steps and clear visual feedback
@@ -42,6 +45,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
   bool _isSearching = false;
   bool _showResults = false;
   int _selectedDateOption = 0; // 0: Today, 1: Tomorrow, 2: Custom
+  String _sortOption = 'recommended'; // recommended, earliest, price, rating
 
   late AnimationController _animationController;
 
@@ -96,7 +100,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
       backgroundColor: AppColors.primary,
       leading: IconButton(
         onPressed: () =>
-            context.canPop() ? context.pop() : context.go(AppRouter.home),
+            context.canPop() ? context.pop() : context.go(AppRoutes.home.path),
         icon: Icon(
           Icons.arrow_back_ios_new_rounded,
           color: Colors.white,
@@ -113,7 +117,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Where to?',
+                    AppLocalizations.of(context).whereTo,
                     style: TextStyle(
                       fontSize: 28.sp,
                       fontWeight: FontWeight.bold,
@@ -122,10 +126,10 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
                   ),
                   SizedBox(height: 4.h),
                   Text(
-                    'Find the perfect ride for your journey',
+                    AppLocalizations.of(context).findThePerfectRideFor,
                     style: TextStyle(
                       fontSize: 14.sp,
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                     ),
                   ),
                 ],
@@ -151,7 +155,9 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
           _buildLocationRow(
             icon: Icons.my_location_rounded,
             iconColor: AppColors.primary,
-            label: _fromAddress.isEmpty ? 'Where from?' : _fromAddress,
+            label: _fromAddress.isEmpty
+                ? AppLocalizations.of(context).whereFrom
+                : _fromAddress,
             hint: _fromAddress.isEmpty,
             onTap: () => _selectLocation(isFrom: true),
           ),
@@ -206,7 +212,9 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
           _buildLocationRow(
             icon: Icons.location_on_rounded,
             iconColor: AppColors.error,
-            label: _toAddress.isEmpty ? 'Where to?' : _toAddress,
+            label: _toAddress.isEmpty
+                ? AppLocalizations.of(context).whereTo
+                : _toAddress,
             hint: _toAddress.isEmpty,
             onTap: () => _selectLocation(isFrom: false),
           ),
@@ -233,7 +241,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
               width: 40.w,
               height: 40.w,
               decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.1),
+                color: iconColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12.r),
               ),
               child: Icon(icon, color: iconColor, size: 20.sp),
@@ -284,7 +292,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
                     ),
                     SizedBox(width: 8.w),
                     Text(
-                      'When?',
+                      AppLocalizations.of(context).when,
                       style: TextStyle(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.w600,
@@ -301,15 +309,23 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
                 padding: EdgeInsets.symmetric(horizontal: 16.w),
                 child: Row(
                   children: [
-                    _buildDateChip(0, 'Today', DateTime.now()),
+                    _buildDateChip(
+                      0,
+                      AppLocalizations.of(context).today,
+                      DateTime.now(),
+                    ),
                     SizedBox(width: 8.w),
                     _buildDateChip(
                       1,
-                      'Tomorrow',
+                      AppLocalizations.of(context).tomorrow,
                       DateTime.now().add(const Duration(days: 1)),
                     ),
                     SizedBox(width: 8.w),
-                    _buildDateChip(2, 'Pick Date', null),
+                    _buildDateChip(
+                      2,
+                      AppLocalizations.of(context).pickDate,
+                      null,
+                    ),
                   ],
                 ),
               ),
@@ -355,7 +371,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
                       ),
                       SizedBox(width: 8.w),
                       Text(
-                        'Departure time',
+                        AppLocalizations.of(context).departureTime2,
                         style: TextStyle(
                           fontSize: 13.sp,
                           color: AppColors.textSecondary,
@@ -409,11 +425,11 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
             if (index != 2 || isSelected) ...[
               SizedBox(height: 2.h),
               Text(
-                index == 2 ? displayDate : displayDate,
+                displayDate,
                 style: TextStyle(
                   fontSize: 11.sp,
                   color: isSelected
-                      ? Colors.white.withOpacity(0.8)
+                      ? Colors.white.withValues(alpha: 0.8)
                       : AppColors.textTertiary,
                 ),
               ),
@@ -454,7 +470,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Passengers',
+                      AppLocalizations.of(context).passengers,
                       style: TextStyle(
                         fontSize: 15.sp,
                         fontWeight: FontWeight.w600,
@@ -462,7 +478,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
                       ),
                     ),
                     Text(
-                      'How many seats do you need?',
+                      AppLocalizations.of(context).howManySeatsDoYou,
                       style: TextStyle(
                         fontSize: 12.sp,
                         color: AppColors.textSecondary,
@@ -490,7 +506,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
                       width: 40.w,
                       alignment: Alignment.center,
                       child: Text(
-                        '$_passengers',
+                        AppLocalizations.of(context).value2(_passengers),
                         style: TextStyle(
                           fontSize: 18.sp,
                           fontWeight: FontWeight.bold,
@@ -529,7 +545,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
         height: 36.w,
         decoration: BoxDecoration(
           color: enabled
-              ? AppColors.primary.withOpacity(0.1)
+              ? AppColors.primary.withValues(alpha: 0.1)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(10.r),
         ),
@@ -555,7 +571,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
       child: Row(
         children: [
           Text(
-            'Available Rides',
+            AppLocalizations.of(context).availableRides,
             style: TextStyle(
               fontSize: 18.sp,
               fontWeight: FontWeight.bold,
@@ -570,7 +586,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
               borderRadius: BorderRadius.circular(8.r),
             ),
             child: Text(
-              '$count',
+              AppLocalizations.of(context).value2(count),
               style: TextStyle(
                 fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
@@ -582,7 +598,10 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
           TextButton.icon(
             onPressed: () => _showSortOptions(),
             icon: Icon(Icons.sort_rounded, size: 18.sp),
-            label: Text('Sort', style: TextStyle(fontSize: 13.sp)),
+            label: Text(
+              AppLocalizations.of(context).sort,
+              style: TextStyle(fontSize: 13.sp),
+            ),
             style: TextButton.styleFrom(
               foregroundColor: AppColors.textSecondary,
               padding: EdgeInsets.symmetric(horizontal: 12.w),
@@ -602,10 +621,27 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
           return SliverToBoxAdapter(child: _buildEmptyState());
         }
 
+        final sortedList = List<RideModel>.of(rideList);
+        switch (_sortOption) {
+          case 'earliest':
+            sortedList.sort(
+              (a, b) => a.departureTime.compareTo(b.departureTime),
+            );
+          case 'price':
+            sortedList.sort((a, b) => a.pricePerSeat.compareTo(b.pricePerSeat));
+          case 'rating':
+            // Rating-based sorting disabled - would require fetching driver data
+            // for each ride which is inefficient. Consider using recommended sort.
+            break;
+          default:
+            // 'recommended' — keep original order
+            break;
+        }
+
         return SliverList(
           delegate: SliverChildBuilderDelegate(
-            (context, index) => _buildRideCard(rideList[index]),
-            childCount: rideList.length,
+            (context, index) => _buildRideCard(sortedList[index]),
+            childCount: sortedList.length,
           ),
         );
       },
@@ -624,7 +660,10 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
         boxShadow: AppSpacing.shadowSm,
       ),
       child: InkWell(
-        onTap: () => context.push('${AppRouter.rideDetail}/${ride.id}'),
+        onTap: () => context.pushNamed(
+          AppRoutes.rideDetail.name,
+          pathParameters: {'id': ride.id},
+        ),
         borderRadius: BorderRadius.circular(16.r),
         child: Padding(
           padding: EdgeInsets.all(14.w),
@@ -633,50 +672,31 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
               // Driver info row
               Row(
                 children: [
-                  CircleAvatar(
+                  DriverAvatarWidget(
+                    driverId: ride.driverId,
                     radius: 22.r,
-                    backgroundImage: ride.driverPhotoUrl != null
-                        ? NetworkImage(ride.driverPhotoUrl!)
-                        : null,
-                    backgroundColor: AppColors.primarySurface,
-                    child: ride.driverPhotoUrl == null
-                        ? Icon(
-                            Icons.person,
-                            color: AppColors.primary,
-                            size: 22.sp,
-                          )
-                        : null,
                   ),
                   SizedBox(width: 10.w),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          ride.driverName,
+                        DriverNameWidget(
+                          driverId: ride.driverId,
                           style: TextStyle(
                             fontSize: 15.sp,
                             fontWeight: FontWeight.w600,
                             color: AppColors.textPrimary,
                           ),
                         ),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.star_rounded,
-                              size: 14.sp,
-                              color: AppColors.starFilled,
-                            ),
-                            SizedBox(width: 2.w),
-                            Text(
-                              (ride.driverRating ?? 0).toStringAsFixed(1),
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
+                        DriverRatingWidget(
+                          driverId: ride.driverId,
+                          showIcon: true,
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                       ],
                     ),
@@ -694,7 +714,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
                         ),
                       ),
                       Text(
-                        'per seat',
+                        AppLocalizations.of(context).perSeat2,
                         style: TextStyle(
                           fontSize: 10.sp,
                           color: AppColors.textTertiary,
@@ -734,7 +754,9 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
                   ),
                   SizedBox(width: 4.w),
                   Text(
-                    '${ride.remainingSeats} seats',
+                    AppLocalizations.of(
+                      context,
+                    ).valueSeats(ride.remainingSeats),
                     style: TextStyle(
                       fontSize: 13.sp,
                       color: AppColors.textSecondary,
@@ -780,7 +802,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
           ),
           SizedBox(height: 16.h),
           Text(
-            'No rides found',
+            AppLocalizations.of(context).noRidesFound,
             style: TextStyle(
               fontSize: 18.sp,
               fontWeight: FontWeight.w600,
@@ -789,7 +811,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
           ),
           SizedBox(height: 8.h),
           Text(
-            'Try adjusting your search criteria\nor check back later',
+            AppLocalizations.of(context).tryAdjustingYourSearchCriteria,
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
           ),
@@ -806,7 +828,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
           CircularProgressIndicator(color: AppColors.primary),
           SizedBox(height: 16.h),
           Text(
-            'Finding rides...',
+            AppLocalizations.of(context).findingRides,
             style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
           ),
         ],
@@ -826,7 +848,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
           ),
           SizedBox(height: 16.h),
           Text(
-            'Something went wrong',
+            AppLocalizations.of(context).somethingWentWrong,
             style: TextStyle(
               fontSize: 16.sp,
               fontWeight: FontWeight.w600,
@@ -851,7 +873,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
         color: AppColors.cardBg,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -5),
           ),
@@ -932,7 +954,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
         },
       );
 
-      if (picked != null) {
+      if (mounted && picked != null) {
         setState(() {
           _selectedDate = picked;
           _selectedDateOption = 2;
@@ -965,7 +987,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
       },
     );
 
-    if (picked != null) {
+    if (mounted && picked != null) {
       setState(() => _selectedTime = picked);
     }
   }
@@ -994,7 +1016,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                 child: Text(
-                  'Sort by',
+                  AppLocalizations.of(context).sortBy,
                   style: TextStyle(
                     fontSize: 18.sp,
                     fontWeight: FontWeight.bold,
@@ -1002,10 +1024,26 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
                   ),
                 ),
               ),
-              _buildSortOption('Recommended', Icons.auto_awesome_rounded),
-              _buildSortOption('Earliest departure', Icons.schedule_rounded),
-              _buildSortOption('Lowest price', Icons.attach_money_rounded),
-              _buildSortOption('Highest rated', Icons.star_rounded),
+              _buildSortOption(
+                AppLocalizations.of(context).recommended,
+                Icons.auto_awesome_rounded,
+                'recommended',
+              ),
+              _buildSortOption(
+                AppLocalizations.of(context).earliestDeparture,
+                Icons.schedule_rounded,
+                'earliest',
+              ),
+              _buildSortOption(
+                AppLocalizations.of(context).lowestPrice,
+                Icons.attach_money_rounded,
+                'price',
+              ),
+              _buildSortOption(
+                AppLocalizations.of(context).highestRated,
+                Icons.star_rounded,
+                'rating',
+              ),
               SizedBox(height: 16.h),
             ],
           ),
@@ -1014,13 +1052,26 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
     );
   }
 
-  Widget _buildSortOption(String label, IconData icon) {
+  Widget _buildSortOption(String label, IconData icon, String sortKey) {
+    final isSelected = _sortOption == sortKey;
     return ListTile(
-      leading: Icon(icon, color: AppColors.primary),
-      title: Text(label),
+      leading: Icon(
+        icon,
+        color: isSelected ? AppColors.primary : AppColors.textSecondary,
+      ),
+      title: Text(
+        label,
+        style: TextStyle(
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+          color: isSelected ? AppColors.primary : AppColors.textPrimary,
+        ),
+      ),
+      trailing: isSelected
+          ? Icon(Icons.check_rounded, color: AppColors.primary, size: 20.sp)
+          : null,
       onTap: () {
         Navigator.pop(context);
-        // TODO: Implement sorting
+        setState(() => _sortOption = sortKey);
       },
     );
   }
@@ -1064,10 +1115,14 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
       ref.read(rideSearchViewModelProvider.notifier).updateFilters(filters);
       try {
         await ref.read(rideSearchViewModelProvider.notifier).searchRides();
-      } on Object catch (e) {
+      } on Object catch (_) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Search failed. Please try again.')),
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(context).searchFailedPleaseTryAgain,
+              ),
+            ),
           );
         }
       }

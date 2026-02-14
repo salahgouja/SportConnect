@@ -48,6 +48,11 @@ service cloud.firestore {
       match /messages/{messageId} {
         allow read, write: if isDevMode() || isAuthenticated();
       }
+      
+      // Typing indicators subcollection
+      match /typing/{typingId} {
+        allow read, write: if isDevMode() || isAuthenticated();
+      }
     }
     
     // ==================== NOTIFICATIONS COLLECTION ====================
@@ -112,6 +117,71 @@ service cloud.firestore {
       allow read: if isDevMode() || (isAuthenticated() && resource.data.driverId == request.auth.uid);
       allow create: if isDevMode() || (isAuthenticated() && request.resource.data.driverId == request.auth.uid);
       allow update, delete: if isDevMode() || (isAuthenticated() && resource.data.driverId == request.auth.uid);
+    }
+
+    // ==================== DRIVER CONNECTED ACCOUNTS COLLECTION ====================
+    // Used for Stripe connected accounts for drivers
+    match /driver_connected_accounts/{userId} {
+      allow read: if isDevMode() || (isAuthenticated() && userId == request.auth.uid);
+      allow create, update: if isDevMode(); // Only Cloud Functions should create/update
+      allow delete: if isDevMode() || (isAuthenticated() && userId == request.auth.uid);
+    }
+
+    // ==================== BOOKINGS COLLECTION ====================
+    // Used for tracking ride bookings (passengers booking rides)
+    match /bookings/{bookingId} {
+      allow read: if isDevMode() || (isAuthenticated() && (
+        resource.data.userId == request.auth.uid || 
+        resource.data.driverId == request.auth.uid
+      ));
+      allow create: if isDevMode() || (isAuthenticated() && request.resource.data.userId == request.auth.uid);
+      allow update: if isDevMode() || (isAuthenticated() && (
+        resource.data.userId == request.auth.uid || 
+        resource.data.driverId == request.auth.uid
+      ));
+      allow delete: if isDevMode() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+    }
+
+    // ==================== RIDE REQUESTS COLLECTION ====================
+    // Used for ride booking requests (riders request rides from drivers)
+    match /rideRequests/{requestId} {
+      allow read: if isDevMode() || (isAuthenticated() && (
+        resource.data.riderId == request.auth.uid || 
+        resource.data.driverId == request.auth.uid
+      ));
+      allow create: if isDevMode() || (isAuthenticated() && request.resource.data.riderId == request.auth.uid);
+      allow update: if isDevMode() || (isAuthenticated() && (
+        resource.data.riderId == request.auth.uid || 
+        resource.data.driverId == request.auth.uid
+      ));
+      allow delete: if isDevMode() || (isAuthenticated() && (
+        resource.data.riderId == request.auth.uid || 
+        resource.data.driverId == request.auth.uid
+      ));
+    }
+
+    // ==================== MESSAGES COLLECTION (Top-level) ====================
+    // Used for standalone messages (delete account cleanup)
+    match /messages/{messageId} {
+      allow read: if isDevMode() || (isAuthenticated() && (
+        resource.data.senderId == request.auth.uid || 
+        resource.data.receiverId == request.auth.uid
+      ));
+      allow create: if isDevMode() || (isAuthenticated() && request.resource.data.senderId == request.auth.uid);
+      allow update: if isDevMode() || (isAuthenticated() && resource.data.senderId == request.auth.uid);
+      allow delete: if isDevMode() || (isAuthenticated() && resource.data.senderId == request.auth.uid);
+    }
+
+    // ==================== REVIEWS COLLECTION ====================
+    // Used for ride/driver reviews
+    match /reviews/{reviewId} {
+      allow read: if isDevMode() || isAuthenticated();
+      allow create: if isDevMode() || (isAuthenticated() && request.resource.data.reviewerId == request.auth.uid);
+      allow update: if isDevMode() || (isAuthenticated() && (
+        resource.data.reviewerId == request.auth.uid || 
+        resource.data.targetUserId == request.auth.uid
+      ));
+      allow delete: if isDevMode() || (isAuthenticated() && resource.data.reviewerId == request.auth.uid);
     }
   }
 }

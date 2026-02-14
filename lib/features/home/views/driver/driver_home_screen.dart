@@ -1,23 +1,28 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_nav_bar/google_nav_bar.dart';
+import 'package:intl/intl.dart';
+import 'package:shimmer/shimmer.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/core/services/location_service.dart';
+import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
-import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
+import 'package:sport_connect/features/rides/models/driver_stats.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
+import 'package:sport_connect/features/rides/models/ride_request_model.dart';
 import 'package:sport_connect/features/rides/repositories/driver_stats_repository.dart';
-import 'package:sport_connect/features/rides/models/ride_model.dart';
-import 'package:sport_connect/features/payments/views/driver_earnings_screen.dart';
-import 'package:sport_connect/features/profile/views/driver_profile_screen.dart';
-import 'package:sport_connect/features/rides/views/driver/driver_offer_ride_screen.dart';
-import 'package:sport_connect/features/rides/views/passenger/ride_search_screen.dart';
-import 'package:intl/intl.dart';
-import 'package:sport_connect/core/config/app_router.dart';
+import 'package:sport_connect/features/rides/view_models/driver_view_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
-/// Driver Home Screen - Modern dashboard for carpooling drivers
+/// Driver Home Screen - Responsive dashboard with location support.
 class DriverHomeScreen extends ConsumerStatefulWidget {
   const DriverHomeScreen({super.key});
 
@@ -26,134 +31,162 @@ class DriverHomeScreen extends ConsumerStatefulWidget {
 }
 
 class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
-  int _currentIndex = 0;
+  bool _isLoadingLocation = true;
+  bool _locationGranted = false;
+  bool _locationDeniedForever = false;
+  Position? _currentPosition;
+  StreamSubscription<Position>? _positionStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLocationStatus();
+  }
+
+  @override
+  void dispose() {
+    _positionStream?.cancel();
+    super.dispose();
+  }
+
+  /// Checks current location permission status without requesting.
+  /// This is non-invasive and happens on init.
+  Future<void> _checkLocationStatus() async {
+    try {
+      final hasPermission = await LocationServiceImpl.instance
+          .checkPermission();
+      if (mounted) {
+        setState(() {
+          _isLoadingLocation = false;
+          _locationGranted = hasPermission;
+        });
+      }
+
+      if (hasPermission) {
+        final position = await LocationServiceImpl.instance
+            .getCurrentLocation();
+        if (position != null && mounted) {
+          setState(() {
+            _currentPosition = position;
+            _locationGranted = true;
+          });
+        }
+        _startLocationTracking();
+      } else {
+        // Check if permission is denied forever
+        final permission = await Geolocator.checkPermission();
+        if (mounted && permission == LocationPermission.deniedForever) {
+          setState(() => _locationDeniedForever = true);
+        }
+      }
+    } catch (e) {
+      TalkerService.debug('Error checking location status: $e');
+      if (mounted) {
+        setState(() => _isLoadingLocation = false);
+      }
+    }
+  }
+
+  /// Requests location permission when user explicitly taps the enable button.
+  /// Opens location settings if permission denied or services disabled.
+  Future<void> _requestLocationPermission() async {
+    try {
+      final granted = await LocationServiceImpl.instance.requestPermission();
+      if (mounted) {
+        setState(() {
+          _isLoadingLocation = false;
+          _locationGranted = granted;
+        });
+      }
+
+      if (granted) {
+        final position = await LocationServiceImpl.instance
+            .getCurrentLocation();
+        if (position != null && mounted) {
+          setState(() => _currentPosition = position);
+        }
+        _startLocationTracking();
+      } else {
+        // Permission still denied, open location settings
+        await Geolocator.openLocationSettings();
+      }
+    } catch (e) {
+      TalkerService.debug('Error requesting location permission: $e');
+      if (mounted) {
+        setState(() => _isLoadingLocation = false);
+      }
+    }
+  }
+
+  void _startLocationTracking() {
+    _positionStream = LocationServiceImpl.instance.getLocationStream().listen(
+      (position) {
+        if (mounted) {
+          setState(() => _currentPosition = position);
+        }
+      },
+      onError: (Object e) {
+        TalkerService.debug('Location stream error: $e');
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: _getCurrentScreen(),
-      bottomNavigationBar: _buildBottomNav(),
-      floatingActionButton: _currentIndex == 0 ? _buildFAB() : null,
-    );
-  }
-
-  Widget _buildBottomNav() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        boxShadow: [
-          BoxShadow(
-            blurRadius: 20,
-            color: Colors.black.withAlpha(15),
-            offset: const Offset(0, -5),
-          ),
-        ],
+      body: _DriverDashboard(
+        isLoadingLocation: _isLoadingLocation,
+        locationGranted: _locationGranted,
+        locationDeniedForever: _locationDeniedForever,
+        currentPosition: _currentPosition,
+        onRetryLocation: _requestLocationPermission,
+        onOpenSettings: () => Geolocator.openLocationSettings(),
       ),
-      child: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-          child: GNav(
-            rippleColor: AppColors.primary.withAlpha(25),
-            hoverColor: AppColors.primary.withAlpha(25),
-            haptic: true,
-            tabBorderRadius: 16.r,
-            curve: Curves.easeOutExpo,
-            duration: const Duration(milliseconds: 400),
-            gap: 6,
-            color: AppColors.textTertiary,
-            activeColor: AppColors.primary,
-            iconSize: 20.sp,
-            tabBackgroundColor: AppColors.primary.withAlpha(25),
-            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-            selectedIndex: _currentIndex,
-            onTabChange: (index) {
-              HapticFeedback.selectionClick();
-              setState(() => _currentIndex = index);
-            },
-            tabs: [
-              GButton(
-                icon: Icons.home_outlined,
-                text: 'Home',
-                textStyle: _navTextStyle,
-              ),
-              GButton(
-                icon: Icons.search_rounded,
-                text: 'Browse',
-                textStyle: _navTextStyle,
-              ),
-              GButton(
-                icon: Icons.add_road_rounded,
-                text: 'Offer',
-                textStyle: _navTextStyle,
-              ),
-              GButton(
-                icon: Icons.account_balance_wallet_outlined,
-                iconActiveColor: AppColors.success,
-                text: 'Earnings',
-                textStyle: _navTextStyle.copyWith(color: AppColors.success),
-              ),
-              GButton(
-                icon: Icons.person_outline,
-                text: 'Profile',
-                textStyle: _navTextStyle,
-              ),
-            ],
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'driver_home_offer_fab',
+        onPressed: () => context.push(AppRoutes.driverOfferRide.path),
+        backgroundColor: AppColors.primary,
+        elevation: 4,
+        icon: Icon(Icons.add_rounded, size: 22.sp, color: Colors.white),
+        label: Text(
+          AppLocalizations.of(context).offerRide,
+          style: TextStyle(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
           ),
         ),
-      ),
+      ).animate().fadeIn(duration: 400.ms).scale(begin: const Offset(0.8, 0.8)),
     );
-  }
-
-  TextStyle get _navTextStyle => TextStyle(
-    fontSize: 12.sp,
-    fontWeight: FontWeight.w600,
-    color: AppColors.primary,
-  );
-
-  Widget _buildFAB() {
-    return FloatingActionButton.extended(
-      onPressed: () => setState(() => _currentIndex = 2),
-      backgroundColor: AppColors.primary,
-      elevation: 4,
-      icon: Icon(Icons.add_rounded, size: 22.sp, color: Colors.white),
-      label: Text(
-        'Offer Ride',
-        style: TextStyle(
-          fontSize: 14.sp,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-        ),
-      ),
-    ).animate().fadeIn(duration: 400.ms).scale(begin: const Offset(0.8, 0.8));
-  }
-
-  Widget _getCurrentScreen() {
-    switch (_currentIndex) {
-      case 0:
-        return _DriverDashboard();
-      case 1:
-        return const RideSearchScreen();
-      case 2:
-        return const DriverOfferRideScreen();
-      case 3:
-        return const DriverEarningsScreen();
-      case 4:
-        return const DriverProfileScreen();
-      default:
-        return _DriverDashboard();
-    }
   }
 }
 
-/// Main Dashboard Widget
+/// Main dashboard widget - adapts to orientation and screen size.
 class _DriverDashboard extends ConsumerWidget {
+  const _DriverDashboard({
+    required this.isLoadingLocation,
+    required this.locationGranted,
+    required this.locationDeniedForever,
+    required this.currentPosition,
+    required this.onRetryLocation,
+    required this.onOpenSettings,
+  });
+
+  final bool isLoadingLocation;
+  final bool locationGranted;
+  final bool locationDeniedForever;
+  final Position? currentPosition;
+  final VoidCallback onRetryLocation;
+  final VoidCallback onOpenSettings;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
     final driverStats = ref.watch(driverStatsProvider);
     final pendingRequests = ref.watch(pendingRideRequestsProvider);
     final upcomingRides = ref.watch(upcomingDriverRidesProvider);
+    final l10n = AppLocalizations.of(context);
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -161,63 +194,139 @@ class _DriverDashboard extends ConsumerWidget {
         ref.invalidate(pendingRideRequestsProvider);
         ref.invalidate(upcomingDriverRidesProvider);
       },
-      child: CustomScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        slivers: [
-          // App Bar
-          SliverToBoxAdapter(child: _buildHeader(context, ref, user)),
+      child: OrientationBuilder(
+        builder: (context, orientation) {
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final isLandscape = orientation == Orientation.landscape;
+              final isSmall = constraints.maxWidth < 360;
+              final isWide = constraints.maxWidth >= 600;
+              final hPad = isSmall ? 14.0 : 20.0;
 
-          // Online Status Card
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20.w),
-              child: _buildOnlineStatus(ref, driverStats),
-            ),
-          ),
+              return CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  // Header
+                  SliverToBoxAdapter(
+                    child: _buildHeader(context, ref, user, l10n, hPad),
+                  ),
 
-          // Quick Actions
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.all(20.w),
-              child: _buildQuickActions(context),
-            ),
-          ),
+                  // Location banner when permission not granted
+                  if (!locationGranted && !isLoadingLocation)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: hPad),
+                        child: Column(
+                          children: [
+                            _buildLocationBanner(l10n),
+                            SizedBox(height: 16.h),
+                          ],
+                        ),
+                      ),
+                    ),
 
-          // Earnings Summary
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20.w),
-              child: _buildEarningsSummary(driverStats),
-            ),
-          ),
+                  // Online status
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 0),
+                      child: _buildOnlineStatus(
+                        context,
+                        ref,
+                        l10n,
+                        driverStats,
+                        isSmall,
+                      ),
+                    ),
+                  ),
 
-          // Stats Row
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.all(20.w),
-              child: _buildStatsRow(driverStats),
-            ),
-          ),
+                  // Quick actions
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.all(hPad),
+                      child: _buildQuickActions(context, l10n),
+                    ),
+                  ),
 
-          // Pending Requests
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20.w),
-              child: _buildPendingRequests(context, ref, pendingRequests),
-            ),
-          ),
+                  // Earnings + Stats side-by-side in landscape on wide screens
+                  if (isLandscape && isWide)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: hPad),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: _buildEarningsSummary(
+                                l10n,
+                                driverStats,
+                                isSmall,
+                              ),
+                            ),
+                            SizedBox(width: 16.w),
+                            Expanded(
+                              child: _buildStatsGrid(
+                                l10n,
+                                driverStats,
+                                isLandscape,
+                                isSmall,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else ...[
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: hPad),
+                        child: _buildEarningsSummary(
+                          l10n,
+                          driverStats,
+                          isSmall,
+                        ),
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.all(hPad),
+                        child: _buildStatsGrid(
+                          l10n,
+                          driverStats,
+                          isLandscape,
+                          isSmall,
+                        ),
+                      ),
+                    ),
+                  ],
 
-          // Upcoming Rides
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.all(20.w),
-              child: _buildUpcomingRides(context, upcomingRides),
-            ),
-          ),
+                  // Pending requests
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: hPad),
+                      child: _buildPendingRequests(
+                        context,
+                        ref,
+                        l10n,
+                        pendingRequests,
+                      ),
+                    ),
+                  ),
 
-          // Bottom spacing
-          SliverToBoxAdapter(child: SizedBox(height: 100.h)),
-        ],
+                  // Upcoming rides
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.all(hPad),
+                      child: _buildUpcomingRides(context, l10n, upcomingRides),
+                    ),
+                  ),
+
+                  // Bottom spacing for FAB
+                  SliverToBoxAdapter(child: SizedBox(height: 100.h)),
+                ],
+              );
+            },
+          );
+        },
       ),
     );
   }
@@ -226,9 +335,13 @@ class _DriverDashboard extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     AsyncValue<dynamic> user,
+    AppLocalizations l10n,
+    double hPad,
   ) {
+    final topPad = MediaQuery.of(context).padding.top;
+
     return Container(
-      padding: EdgeInsets.fromLTRB(20.w, 60.h, 20.w, 20.h),
+      padding: EdgeInsets.fromLTRB(hPad, topPad + 16, hPad, 16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
@@ -240,11 +353,11 @@ class _DriverDashboard extends ConsumerWidget {
         children: [
           // Avatar
           GestureDetector(
-            onTap: () => context.push(AppRouter.profile),
+            onTap: () => context.go(AppRoutes.profile.path),
             child: user.when(
               data: (userData) => PremiumAvatar(
                 imageUrl: userData?.photoUrl,
-                name: userData?.displayName ?? 'Driver',
+                name: userData?.displayName ?? l10n.driver,
                 size: 52.w,
                 hasBorder: true,
               ),
@@ -260,7 +373,7 @@ class _DriverDashboard extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _getGreeting(),
+                  _getGreeting(l10n),
                   style: TextStyle(
                     fontSize: 14.sp,
                     color: AppColors.textSecondary,
@@ -269,17 +382,19 @@ class _DriverDashboard extends ConsumerWidget {
                 SizedBox(height: 2.h),
                 user.when(
                   data: (userData) => Text(
-                    userData?.displayName ?? 'Driver',
+                    userData?.displayName ?? l10n.driver,
                     style: TextStyle(
                       fontSize: 20.sp,
                       fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   loading: () =>
-                      Text('Loading...', style: TextStyle(fontSize: 20.sp)),
+                      Text(l10n.loading, style: TextStyle(fontSize: 20.sp)),
                   error: (_, _) =>
-                      Text('Driver', style: TextStyle(fontSize: 20.sp)),
+                      Text(l10n.driver, style: TextStyle(fontSize: 20.sp)),
                 ),
               ],
             ),
@@ -287,7 +402,7 @@ class _DriverDashboard extends ConsumerWidget {
 
           // Actions
           IconButton(
-            onPressed: () => context.push(AppRouter.notifications),
+            onPressed: () => context.push(AppRoutes.notifications.path),
             icon: Badge(
               smallSize: 8.w,
               backgroundColor: AppColors.error,
@@ -299,7 +414,7 @@ class _DriverDashboard extends ConsumerWidget {
             ),
           ),
           IconButton(
-            onPressed: () => context.push(AppRouter.chat),
+            onPressed: () => context.go(AppRoutes.chat.path),
             icon: Icon(
               Icons.chat_bubble_outline_rounded,
               size: 24.sp,
@@ -311,29 +426,101 @@ class _DriverDashboard extends ConsumerWidget {
     ).animate().fadeIn(duration: 400.ms);
   }
 
-  String _getGreeting() {
+  String _getGreeting(AppLocalizations l10n) {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good morning 👋';
-    if (hour < 17) return 'Good afternoon 👋';
-    return 'Good evening 👋';
+    if (hour < 12) return '${l10n.goodMorning} \u{1F44B}';
+    if (hour < 17) return '${l10n.goodAfternoon} \u{1F44B}';
+    return '${l10n.goodEvening} \u{1F44B}';
   }
 
-  Widget _buildOnlineStatus(WidgetRef ref, AsyncValue<DriverStats> stats) {
+  Widget _buildLocationBanner(AppLocalizations l10n) {
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withAlpha(20),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: AppColors.warning.withAlpha(60)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(10.w),
+            decoration: BoxDecoration(
+              color: AppColors.warning.withAlpha(30),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.location_off_rounded,
+              color: AppColors.warning,
+              size: 24.sp,
+            ),
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.locationRequired,
+                  style: TextStyle(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  l10n.enableLocationForBetterExperience,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: 8.w),
+          if (locationDeniedForever)
+            TextButton(
+              onPressed: () => Geolocator.openLocationSettings(),
+              child: Text(
+                l10n.openSettings,
+                style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
+              ),
+            )
+          else
+            TextButton(
+              onPressed: onRetryLocation,
+              child: Text(
+                l10n.enable,
+                style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
+              ),
+            ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 300.ms).slideY(begin: -0.1);
+  }
+
+  Widget _buildOnlineStatus(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+    AsyncValue<DriverStats> stats,
+    bool isSmall,
+  ) {
     return stats.when(
       data: (driverStats) {
         final isOnline = driverStats.isOnline;
+        final iconSize = isSmall ? 40.w : 56.w;
         return GestureDetector(
           onTap: () async {
             HapticFeedback.mediumImpact();
-            final user = ref.read(currentUserProvider).value;
-            if (user != null) {
-              await ref
-                  .read(driverStatsRepositoryProvider)
-                  .setOnlineStatus(user.uid, !isOnline);
-            }
+            await ref
+                .read(driverViewModelProvider.notifier)
+                .toggleOnlineStatus();
           },
           child: Container(
-            padding: EdgeInsets.all(20.w),
+            padding: EdgeInsets.all(isSmall ? 14.w : 20.w),
             decoration: BoxDecoration(
               gradient: isOnline
                   ? LinearGradient(
@@ -356,10 +543,9 @@ class _DriverDashboard extends ConsumerWidget {
             ),
             child: Row(
               children: [
-                // Status indicator
                 Container(
-                  width: 56.w,
-                  height: 56.w,
+                  width: iconSize,
+                  height: iconSize,
                   decoration: BoxDecoration(
                     color: isOnline
                         ? AppColors.success
@@ -378,10 +564,10 @@ class _DriverDashboard extends ConsumerWidget {
                   child: Icon(
                     isOnline ? Icons.wifi_tethering : Icons.wifi_tethering_off,
                     color: Colors.white,
-                    size: 28.sp,
+                    size: isSmall ? 20.sp : 28.sp,
                   ),
                 ),
-                SizedBox(width: 16.w),
+                SizedBox(width: isSmall ? 10.w : 16.w),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -399,14 +585,18 @@ class _DriverDashboard extends ConsumerWidget {
                             ),
                           ),
                           SizedBox(width: 8.w),
-                          Text(
-                            isOnline ? 'Online' : 'Offline',
-                            style: TextStyle(
-                              fontSize: 18.sp,
-                              fontWeight: FontWeight.w800,
-                              color: isOnline
-                                  ? AppColors.success
-                                  : AppColors.textPrimary,
+                          Flexible(
+                            child: Text(
+                              isOnline ? l10n.online : l10n.offline,
+                              style: TextStyle(
+                                fontSize: isSmall ? 15.sp : 18.sp,
+                                fontWeight: FontWeight.w800,
+                                color: isOnline
+                                    ? AppColors.success
+                                    : AppColors.textPrimary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
@@ -414,12 +604,14 @@ class _DriverDashboard extends ConsumerWidget {
                       SizedBox(height: 4.h),
                       Text(
                         isOnline
-                            ? 'Accepting ride requests'
-                            : 'Tap to go online and start earning',
+                            ? l10n.acceptingRideRequests
+                            : l10n.tapToGoOnlineAnd,
                         style: TextStyle(
-                          fontSize: 13.sp,
+                          fontSize: isSmall ? 11.sp : 13.sp,
                           color: AppColors.textSecondary,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
@@ -429,55 +621,59 @@ class _DriverDashboard extends ConsumerWidget {
                   color: isOnline
                       ? AppColors.success.withAlpha(150)
                       : AppColors.textTertiary,
-                  size: 24.sp,
+                  size: isSmall ? 20.sp : 24.sp,
                 ),
               ],
             ),
           ),
         ).animate().fadeIn(duration: 400.ms, delay: 100.ms).slideY(begin: 0.1);
       },
-      loading: () => _buildLoadingCard(),
-      error: (_, _) => _buildErrorCard('Failed to load status'),
+      loading: () => _buildShimmerCard(height: 100),
+      error: (_, _) => _buildErrorCard(l10n.failedToLoadStatus),
     );
   }
 
-  Widget _buildQuickActions(BuildContext context) {
+  Widget _buildQuickActions(BuildContext context, AppLocalizations l10n) {
     return Row(
       children: [
         Expanded(
           child: _QuickActionButton(
             icon: Icons.add_road_rounded,
-            label: 'Create Ride',
+            label: l10n.driverCreateRide,
             color: AppColors.primary,
-            onTap: () => context.push(AppRouter.createRide),
+            onTap: () => context.push(AppRoutes.driverOfferRide.path),
           ),
         ),
         SizedBox(width: 12.w),
         Expanded(
           child: _QuickActionButton(
             icon: Icons.directions_car_rounded,
-            label: 'My Vehicles',
+            label: l10n.myVehicles,
             color: AppColors.secondary,
-            onTap: () => context.push(AppRouter.driverVehicles),
+            onTap: () => context.push(AppRoutes.driverVehicles.path),
           ),
         ),
         SizedBox(width: 12.w),
         Expanded(
           child: _QuickActionButton(
             icon: Icons.history_rounded,
-            label: 'History',
+            label: l10n.history,
             color: AppColors.info,
-            onTap: () => context.push(AppRouter.driverMyRides),
+            onTap: () => context.go(AppRoutes.driverRides.path),
           ),
         ),
       ],
     ).animate().fadeIn(duration: 400.ms, delay: 200.ms);
   }
 
-  Widget _buildEarningsSummary(AsyncValue<DriverStats> stats) {
+  Widget _buildEarningsSummary(
+    AppLocalizations l10n,
+    AsyncValue<DriverStats> stats,
+    bool isSmall,
+  ) {
     return stats.when(
       data: (driverStats) => Container(
-        padding: EdgeInsets.all(20.w),
+        padding: EdgeInsets.all(isSmall ? 14.w : 20.w),
         decoration: BoxDecoration(
           gradient: AppColors.primaryGradient,
           borderRadius: BorderRadius.circular(24.r),
@@ -495,12 +691,16 @@ class _DriverDashboard extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  "Today's Earnings",
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white.withAlpha(200),
+                Flexible(
+                  child: Text(
+                    l10n.todaySEarnings,
+                    style: TextStyle(
+                      fontSize: isSmall ? 12.sp : 14.sp,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white.withAlpha(200),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 Container(
@@ -513,11 +713,12 @@ class _DriverDashboard extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(20.r),
                   ),
                   child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.trending_up, size: 14.sp, color: Colors.white),
                       SizedBox(width: 4.w),
                       Text(
-                        'Live',
+                        l10n.live,
                         style: TextStyle(
                           fontSize: 11.sp,
                           fontWeight: FontWeight.w600,
@@ -533,22 +734,26 @@ class _DriverDashboard extends ConsumerWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
-                  '€${driverStats.earningsToday.toStringAsFixed(2)}',
-                  style: TextStyle(
-                    fontSize: 36.sp,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                    letterSpacing: -1,
+                Flexible(
+                  child: Text(
+                    l10n.value6(driverStats.earningsToday.toStringAsFixed(2)),
+                    style: TextStyle(
+                      fontSize: isSmall ? 28.sp : 36.sp,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      letterSpacing: -1,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 SizedBox(width: 12.w),
                 Padding(
                   padding: EdgeInsets.only(bottom: 6.h),
                   child: Text(
-                    '${driverStats.ridesCompleted} rides',
+                    l10n.valueRides(driverStats.ridesCompleted),
                     style: TextStyle(
-                      fontSize: 14.sp,
+                      fontSize: isSmall ? 12.sp : 14.sp,
                       color: Colors.white.withAlpha(200),
                     ),
                   ),
@@ -556,68 +761,107 @@ class _DriverDashboard extends ConsumerWidget {
               ],
             ),
             SizedBox(height: 16.h),
-            // Weekly progress
             Row(
               children: [
                 _EarningsMetric(
-                  label: 'This Week',
-                  value: '€${driverStats.earningsThisWeek.toStringAsFixed(0)}',
+                  label: l10n.driverThisWeek,
+                  value: l10n.value6(
+                    driverStats.earningsThisWeek.toStringAsFixed(0),
+                  ),
                 ),
                 SizedBox(width: 24.w),
                 _EarningsMetric(
-                  label: 'This Month',
-                  value: '€${driverStats.earningsThisMonth.toStringAsFixed(0)}',
+                  label: l10n.driverThisMonth,
+                  value: l10n.value6(
+                    driverStats.earningsThisMonth.toStringAsFixed(0),
+                  ),
                 ),
               ],
             ),
           ],
         ),
       ).animate().fadeIn(duration: 400.ms, delay: 300.ms).slideY(begin: 0.1),
-      loading: () => _buildLoadingCard(),
-      error: (_, _) => _buildErrorCard('Failed to load earnings'),
+      loading: () => _buildShimmerCard(height: 180),
+      error: (_, _) => _buildErrorCard(l10n.failedToLoadEarnings),
     );
   }
 
-  Widget _buildStatsRow(AsyncValue<DriverStats> stats) {
+  Widget _buildStatsGrid(
+    AppLocalizations l10n,
+    AsyncValue<DriverStats> stats,
+    bool isLandscape,
+    bool isSmall,
+  ) {
     return stats.when(
-      data: (driverStats) => Row(
-        children: [
-          Expanded(
-            child: _StatCard(
-              icon: Icons.star_rounded,
-              iconColor: AppColors.starFilled,
-              value: driverStats.rating > 0
-                  ? driverStats.rating.toStringAsFixed(1)
-                  : '—',
-              label: 'Rating',
-            ),
+      data: (driverStats) {
+        final cards = [
+          _StatCard(
+            icon: Icons.star_rounded,
+            iconColor: AppColors.starFilled,
+            value: driverStats.rating > 0
+                ? driverStats.rating.toStringAsFixed(1)
+                : '\u2014',
+            label: l10n.rating,
           ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: _StatCard(
-              icon: Icons.route_rounded,
-              iconColor: AppColors.primary,
-              value: '${driverStats.totalRides}',
-              label: 'Total Rides',
-            ),
+          _StatCard(
+            icon: Icons.route_rounded,
+            iconColor: AppColors.primary,
+            value: '${driverStats.totalRides}',
+            label: l10n.totalRides,
           ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: _StatCard(
-              icon: Icons.eco_rounded,
-              iconColor: AppColors.success,
-              value: '${driverStats.co2Saved.toStringAsFixed(0)}kg',
-              label: 'CO₂ Saved',
-            ),
+          _StatCard(
+            icon: Icons.eco_rounded,
+            iconColor: AppColors.success,
+            value: '${driverStats.co2Saved.toStringAsFixed(0)}kg',
+            label: l10n.driverCo2Saved,
           ),
-        ],
-      ).animate().fadeIn(duration: 400.ms, delay: 400.ms),
-      loading: () => Row(
-        children: List.generate(
-          3,
-          (_) => Expanded(child: _buildLoadingStatCard()),
-        ),
-      ),
+          _StatCard(
+            icon: Icons.timer_outlined,
+            iconColor: AppColors.info,
+            value: '${driverStats.hoursOnline.toStringAsFixed(0)}h',
+            label: l10n.driverHoursOnline,
+          ),
+        ];
+
+        if (isLandscape || isSmall) {
+          // In landscape or small: one scrollable row
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: cards
+                  .map(
+                    (c) => Padding(
+                      padding: EdgeInsets.only(right: 12.w),
+                      child: SizedBox(width: 120.w, child: c),
+                    ),
+                  )
+                  .toList(),
+            ),
+          );
+        }
+
+        // Portrait: 2x2 grid
+        return Column(
+          children: [
+            Row(
+              children: [
+                Expanded(child: cards[0]),
+                SizedBox(width: 12.w),
+                Expanded(child: cards[1]),
+              ],
+            ),
+            SizedBox(height: 12.h),
+            Row(
+              children: [
+                Expanded(child: cards[2]),
+                SizedBox(width: 12.w),
+                Expanded(child: cards[3]),
+              ],
+            ),
+          ],
+        );
+      },
+      loading: () => _buildShimmerStatsRow(),
       error: (_, _) => const SizedBox.shrink(),
     );
   }
@@ -625,7 +869,8 @@ class _DriverDashboard extends ConsumerWidget {
   Widget _buildPendingRequests(
     BuildContext context,
     WidgetRef ref,
-    AsyncValue<List<RideRequest>> requestsAsync,
+    AppLocalizations l10n,
+    AsyncValue<List<RideRequestModel>> requestsAsync,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -633,19 +878,23 @@ class _DriverDashboard extends ConsumerWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Ride Requests',
-              style: TextStyle(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+            Flexible(
+              child: Text(
+                l10n.rideRequests,
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             TextButton.icon(
-              onPressed: () => context.push(AppRouter.driverRequests),
+              onPressed: () => context.push(AppRoutes.driverRequests.path),
               icon: Icon(Icons.arrow_forward_ios, size: 14.sp),
               label: Text(
-                'View All',
+                l10n.viewAll,
                 style: TextStyle(
                   fontSize: 13.sp,
                   fontWeight: FontWeight.w600,
@@ -662,8 +911,8 @@ class _DriverDashboard extends ConsumerWidget {
             if (requests.isEmpty) {
               return _buildEmptyState(
                 icon: Icons.inbox_outlined,
-                title: 'No pending requests',
-                subtitle: 'New ride requests will appear here',
+                title: l10n.noPendingRequests,
+                subtitle: l10n.newRideRequestsWillAppear,
               );
             }
             return Column(
@@ -675,22 +924,22 @@ class _DriverDashboard extends ConsumerWidget {
                     onAccept: () async {
                       HapticFeedback.heavyImpact();
                       await ref
-                          .read(driverStatsRepositoryProvider)
-                          .acceptRequest(request.rideId, request.id);
+                          .read(driverViewModelProvider.notifier)
+                          .acceptRideRequest(request.rideId, request.id);
                     },
                     onDecline: () async {
                       HapticFeedback.lightImpact();
                       await ref
-                          .read(driverStatsRepositoryProvider)
-                          .declineRequest(request.rideId, request.id);
+                          .read(driverViewModelProvider.notifier)
+                          .declineRideRequest(request.rideId, request.id);
                     },
                   ),
                 );
               }).toList(),
             );
           },
-          loading: () => _buildLoadingCard(),
-          error: (_, _) => _buildErrorCard('Failed to load requests'),
+          loading: () => _buildShimmerCard(height: 100),
+          error: (_, _) => _buildErrorCard(l10n.failedToLoadRequests),
         ),
       ],
     ).animate().fadeIn(duration: 400.ms, delay: 500.ms);
@@ -698,13 +947,14 @@ class _DriverDashboard extends ConsumerWidget {
 
   Widget _buildUpcomingRides(
     BuildContext context,
+    AppLocalizations l10n,
     AsyncValue<List<RideModel>> ridesAsync,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Upcoming Rides',
+          l10n.upcomingRides,
           style: TextStyle(
             fontSize: 18.sp,
             fontWeight: FontWeight.w700,
@@ -717,8 +967,8 @@ class _DriverDashboard extends ConsumerWidget {
             if (rides.isEmpty) {
               return _buildEmptyState(
                 icon: Icons.event_available_outlined,
-                title: 'No upcoming rides',
-                subtitle: 'Create a ride to start earning',
+                title: l10n.noUpcomingRides,
+                subtitle: l10n.createARideToStartEarning,
               );
             }
             return Column(
@@ -727,43 +977,56 @@ class _DriverDashboard extends ConsumerWidget {
                   padding: EdgeInsets.only(bottom: 12.h),
                   child: _UpcomingRideCard(
                     ride: ride,
-                    onTap: () =>
-                        context.push(AppRouter.rideDetailPath(ride.id)),
+                    onTap: () => context.pushNamed(
+                      AppRoutes.rideDetail.name,
+                      pathParameters: {'id': ride.id},
+                    ),
                   ),
                 );
               }).toList(),
             );
           },
-          loading: () => _buildLoadingCard(),
-          error: (_, _) => _buildErrorCard('Failed to load rides'),
+          loading: () => _buildShimmerCard(height: 100),
+          error: (_, _) => _buildErrorCard(l10n.failedToLoadRides),
         ),
       ],
     ).animate().fadeIn(duration: 400.ms, delay: 600.ms);
   }
 
-  Widget _buildLoadingCard() {
-    return Container(
-      height: 100.h,
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16.r),
-      ),
-      child: Center(
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          color: AppColors.primary,
+  Widget _buildShimmerCard({required double height}) {
+    return Shimmer.fromColors(
+      baseColor: AppColors.surface,
+      highlightColor: AppColors.border.withAlpha(100),
+      child: Container(
+        height: height.h,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16.r),
         ),
       ),
     );
   }
 
-  Widget _buildLoadingStatCard() {
-    return Container(
-      height: 90.h,
-      margin: EdgeInsets.symmetric(horizontal: 4.w),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16.r),
+  Widget _buildShimmerStatsRow() {
+    return Row(
+      children: List.generate(
+        3,
+        (_) => Expanded(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 4.w),
+            child: Shimmer.fromColors(
+              baseColor: AppColors.surface,
+              highlightColor: AppColors.border.withAlpha(100),
+              child: Container(
+                height: 90.h,
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16.r),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -779,9 +1042,13 @@ class _DriverDashboard extends ConsumerWidget {
         children: [
           Icon(Icons.error_outline, color: AppColors.error, size: 20.sp),
           SizedBox(width: 12.w),
-          Text(
-            message,
-            style: TextStyle(fontSize: 14.sp, color: AppColors.error),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(fontSize: 14.sp, color: AppColors.error),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),
@@ -871,6 +1138,9 @@ class _QuickActionButton extends StatelessWidget {
                 fontWeight: FontWeight.w600,
                 color: color,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -968,7 +1238,7 @@ class _StatCard extends StatelessWidget {
 }
 
 class _RequestCard extends StatelessWidget {
-  final RideRequest request;
+  final RideRequestModel request;
   final VoidCallback onAccept;
   final VoidCallback onDecline;
 
@@ -998,14 +1268,14 @@ class _RequestCard extends StatelessWidget {
           // Passenger info
           Row(
             children: [
-              PremiumAvatar(name: request.passengerName, size: 44.w),
+              PremiumAvatar(name: request.passenger.displayName, size: 44.w),
               SizedBox(width: 12.w),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      request.passengerName,
+                      request.passenger.displayName,
                       style: TextStyle(
                         fontSize: 15.sp,
                         fontWeight: FontWeight.w600,
@@ -1021,9 +1291,10 @@ class _RequestCard extends StatelessWidget {
                         ),
                         SizedBox(width: 4.w),
                         Text(
-                          request.passengerRating > 0
-                              ? request.passengerRating.toStringAsFixed(1)
-                              : 'New',
+                          request.passenger.rating.average > 0
+                              ? request.passenger.rating.average
+                                    .toStringAsFixed(1)
+                              : AppLocalizations.of(context).kNew,
                           style: TextStyle(
                             fontSize: 12.sp,
                             color: AppColors.textSecondary,
@@ -1037,7 +1308,10 @@ class _RequestCard extends StatelessWidget {
                         ),
                         SizedBox(width: 4.w),
                         Text(
-                          '${request.seatsRequested} seat${request.seatsRequested > 1 ? 's' : ''}',
+                          AppLocalizations.of(context).valueSeatValue(
+                            request.seatsRequested,
+                            request.seatsRequested > 1 ? 's' : '',
+                          ),
                           style: TextStyle(
                             fontSize: 12.sp,
                             color: AppColors.textSecondary,
@@ -1055,7 +1329,10 @@ class _RequestCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20.r),
                 ),
                 child: Text(
-                  '€${(request.pricePerSeat * request.seatsRequested).toStringAsFixed(0)}',
+                  AppLocalizations.of(context).value6(
+                    (request.pricePerSeat * request.seatsRequested)
+                        .toStringAsFixed(0),
+                  ),
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w700,
@@ -1163,7 +1440,7 @@ class _RequestCard extends StatelessWidget {
                     padding: EdgeInsets.symmetric(vertical: 12.h),
                   ),
                   child: Text(
-                    'Decline',
+                    AppLocalizations.of(context).decline,
                     style: TextStyle(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
@@ -1184,7 +1461,7 @@ class _RequestCard extends StatelessWidget {
                     padding: EdgeInsets.symmetric(vertical: 12.h),
                   ),
                   child: Text(
-                    'Accept',
+                    AppLocalizations.of(context).accept,
                     style: TextStyle(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
@@ -1236,7 +1513,9 @@ class _UpcomingRideCard extends StatelessWidget {
               child: Column(
                 children: [
                   Text(
-                    DateFormat('MMM').format(ride.departureTime).toUpperCase(),
+                    DateFormat(
+                      'MMM',
+                    ).format(ride.schedule.departureTime).toUpperCase(),
                     style: TextStyle(
                       fontSize: 10.sp,
                       fontWeight: FontWeight.w700,
@@ -1244,7 +1523,7 @@ class _UpcomingRideCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    DateFormat('d').format(ride.departureTime),
+                    DateFormat('d').format(ride.schedule.departureTime),
                     style: TextStyle(
                       fontSize: 20.sp,
                       fontWeight: FontWeight.w800,
@@ -1261,7 +1540,11 @@ class _UpcomingRideCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${ride.origin.city ?? ride.origin.address} → ${ride.destination.city ?? ride.destination.address}',
+                    AppLocalizations.of(context).valueValue2(
+                      ride.route.origin.city ?? ride.route.origin.address,
+                      ride.route.destination.city ??
+                          ride.route.destination.address,
+                    ),
                     style: TextStyle(
                       fontSize: 15.sp,
                       fontWeight: FontWeight.w600,
@@ -1280,7 +1563,9 @@ class _UpcomingRideCard extends StatelessWidget {
                       ),
                       SizedBox(width: 4.w),
                       Text(
-                        DateFormat('h:mm a').format(ride.departureTime),
+                        DateFormat(
+                          'h:mm a',
+                        ).format(ride.schedule.departureTime),
                         style: TextStyle(
                           fontSize: 12.sp,
                           color: AppColors.textSecondary,
@@ -1294,7 +1579,10 @@ class _UpcomingRideCard extends StatelessWidget {
                       ),
                       SizedBox(width: 4.w),
                       Text(
-                        '${ride.bookedSeats}/${ride.availableSeats}',
+                        AppLocalizations.of(context).valueValue(
+                          ride.capacity.booked,
+                          ride.capacity.available,
+                        ),
                         style: TextStyle(
                           fontSize: 12.sp,
                           color: AppColors.textSecondary,
@@ -1310,15 +1598,20 @@ class _UpcomingRideCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  '€${(ride.pricePerSeat * ride.bookedSeats).toStringAsFixed(0)}',
+                  AppLocalizations.of(context).value6(
+                    (ride.pricing.pricePerSeat.amount * ride.capacity.booked)
+                        .toStringAsFixed(0),
+                  ),
                   style: TextStyle(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w700,
                     color: AppColors.success,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  'earned',
+                  AppLocalizations.of(context).earned,
                   style: TextStyle(
                     fontSize: 11.sp,
                     color: AppColors.textTertiary,

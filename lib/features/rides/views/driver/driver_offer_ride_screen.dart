@@ -1,25 +1,34 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:intl/intl.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/core/theme/app_spacing.dart';
-import 'package:sport_connect/core/widgets/premium_button.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_pricing.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_capacity.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_schedule.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_preferences.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_route.dart';
+import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/core/models/location/location_point.dart';
+import 'package:sport_connect/core/models/user/user_model.dart';
+import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
+import 'package:sport_connect/core/models/value_objects/money.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:uuid/uuid.dart';
+import 'package:sport_connect/features/profile/repositories/profile_repository.dart'; // Added for driverVehiclesProvider
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
-import 'package:sport_connect/core/config/app_router.dart';
-import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
-import 'package:sport_connect/features/auth/models/user_model.dart';
-import 'package:sport_connect/features/rides/models/ride_model.dart';
-import 'package:sport_connect/features/rides/repositories/ride_repository.dart';
+import 'package:latlong2/latlong.dart';
 
-/// Driver's screen to offer/create a ride
-/// Modern UI with automatic vehicle selection and seat count from driver's vehicles
 class DriverOfferRideScreen extends ConsumerStatefulWidget {
-  const DriverOfferRideScreen({super.key});
+  final RideModel? existingRide;
+  final bool isEditMode;
+
+  const DriverOfferRideScreen({
+    super.key,
+    this.existingRide,
+    this.isEditMode = false,
+  });
 
   @override
   ConsumerState<DriverOfferRideScreen> createState() =>
@@ -27,63 +36,93 @@ class DriverOfferRideScreen extends ConsumerStatefulWidget {
 }
 
 class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
-  // Location data
-  LatLng? _fromLocation;
-  LatLng? _toLocation;
+  // Page controller
+  late PageController _pageController;
+  int _currentStep = 0;
+  // final int _totalSteps = 3; // Unused
+
+  // Step 1: Route
+  LocationPoint? _fromLocation;
   String _fromAddress = '';
+  LocationPoint? _toLocation;
   String _toAddress = '';
+  DateTime? _departureDate;
+  TimeOfDay? _departureTime;
+  // List<LocationPoint> _waypoints = []; // Unused
 
-  // Selected vehicle
-  Vehicle? _selectedVehicle;
-
-  // Ride parameters
-  DateTime _selectedDate = DateTime.now();
-  TimeOfDay _selectedTime = TimeOfDay.now();
+  // Step 2: Details
+  VehicleModel? _selectedVehicle;
   int _availableSeats = 3;
-  double _pricePerSeat = 10.0;
+  double _pricePerSeat = 15.0; // Default price
+  bool _isPriceNegotiable = false;
+  bool _acceptOnlinePayment = true;
   bool _isRecurring = false;
   List<int> _recurringDays = [];
 
-  // Preferences
+  // Step 3: Preferences
   bool _allowPets = false;
   bool _allowSmoking = false;
   bool _allowLuggage = true;
   bool _isWomenOnly = false;
-  bool _acceptOnlinePayment = false;
-  bool _isPriceNegotiable = false;
-  int _maxDetourMinutes = 10;
+  int? _maxDetourMinutes = 15;
+  // String? _notes; // Unused
 
-  // UI state
+  // State
   bool _isCreating = false;
-  int _currentStep = 0; // 0: Route, 1: Details, 2: Preferences
-  final PageController _pageController = PageController();
 
   @override
   void initState() {
     super.initState();
-    _initVehicle();
+    _pageController = PageController();
+    if (widget.existingRide != null) {
+      _initFromPrefill(widget.existingRide!);
+    }
   }
 
-  void _initVehicle() {
-    // Auto-select default vehicle if available
-    final user = ref.read(currentUserProvider).value;
-    if (user != null && user is DriverModel) {
-      final vehicles = user.vehicles;
-      if (vehicles.isNotEmpty) {
-        // Find default or first vehicle
-        final defaultVehicle = vehicles.firstWhere(
+  void _initFromPrefill(RideModel ride) {
+    _fromLocation = ride.route.origin;
+    _fromAddress = ride.route.origin.address;
+    _toLocation = ride.route.destination;
+    _toAddress = ride.route.destination.address;
+    _departureDate = ride.schedule.departureTime;
+    _departureTime = TimeOfDay.fromDateTime(ride.schedule.departureTime);
+
+    // Vehicle will be initialized when vehicles are loaded
+
+    _availableSeats = ride.capacity.available;
+    _pricePerSeat = ride.pricing.pricePerSeat.amount;
+    _isPriceNegotiable = ride.pricing.isNegotiable;
+    _acceptOnlinePayment = ride.pricing.acceptsOnlinePayment;
+
+    _allowPets = ride.preferences.allowPets;
+    _allowSmoking = ride.preferences.allowSmoking;
+    _allowLuggage = ride.preferences.allowLuggage;
+    _isWomenOnly = ride.preferences.isWomenOnly;
+    _maxDetourMinutes = ride.preferences.maxDetourMinutes;
+  }
+
+  /// Initialize vehicle selection based on available vehicles and prefill data
+  void _initVehicleFrom(List<VehicleModel> vehicles) {
+    if (vehicles.isEmpty) return;
+
+    if (widget.existingRide?.vehicleId != null) {
+      try {
+        _selectedVehicle = vehicles.firstWhere(
+          (v) => v.id == widget.existingRide!.vehicleId,
+        );
+      } catch (_) {
+        // Vehicle not found, select default
+        _selectedVehicle = vehicles.firstWhere(
           (v) => v.isDefault,
           orElse: () => vehicles.first,
         );
-        setState(() {
-          _selectedVehicle = defaultVehicle;
-          _availableSeats = defaultVehicle.seats > 1
-              ? defaultVehicle.seats - 1
-              : 1; // -1 for driver
-          _allowPets = false;
-          _allowSmoking = false;
-        });
       }
+    } else if (_selectedVehicle == null) {
+      // Auto-select default vehicle if not already selected
+      _selectedVehicle = vehicles.firstWhere(
+        (v) => v.isDefault,
+        orElse: () => vehicles.first,
+      );
     }
   }
 
@@ -93,96 +132,120 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
     super.dispose();
   }
 
-  bool get _canCreateRide =>
-      _fromLocation != null &&
-      _toLocation != null &&
-      _selectedVehicle != null &&
-      _availableSeats > 0;
+  bool get _canCreateRide {
+    return _fromLocation != null &&
+        _toLocation != null &&
+        _departureDate != null &&
+        _departureTime != null &&
+        _selectedVehicle != null &&
+        !_isCreating;
+  }
 
   @override
   Widget build(BuildContext context) {
     final userAsync = ref.watch(currentUserProvider);
 
-    return userAsync.when(
-      data: (user) {
-        if (user == null || user is! DriverModel) {
-          return _buildNotDriverState();
-        }
-        return _buildMainContent(user);
-      },
-      loading: () =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (_, __) => _buildErrorState(),
-    );
-  }
-
-  Widget _buildNotDriverState() {
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Offer a Ride'),
-        backgroundColor: AppColors.primary,
+        title: Text(widget.isEditMode ? 'Edit Ride' : 'Offer a Ride'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.pop(),
+        ),
       ),
-      body: Center(
-        child: Padding(
-          padding: EdgeInsets.all(24.w),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.car_rental_rounded,
-                size: 80.sp,
-                color: AppColors.textTertiary,
-              ),
-              SizedBox(height: 24.h),
-              Text(
-                'Driver Account Required',
-                style: TextStyle(
-                  fontSize: 20.sp,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              SizedBox(height: 12.h),
-              Text(
-                'You need to register as a driver and add a vehicle to offer rides.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              SizedBox(height: 32.h),
-              PremiumButton(
-                text: 'Become a Driver',
-                onPressed: () => context.push(AppRouter.driverOnboarding),
-                style: PremiumButtonStyle.primary,
-              ),
-            ],
-          ),
+      body: SafeArea(
+        child: userAsync.when(
+          data: (user) {
+            if (user == null || user is! DriverModel) {
+              return _buildNotDriverState(context);
+            }
+
+            // Watch vehicles for this driver
+            final vehiclesAsync = ref.watch(driverVehiclesProvider(user.uid));
+
+            return vehiclesAsync.when(
+              data: (vehicles) {
+                // Initialize vehicle selection now that we have the list
+                if (_selectedVehicle == null && vehicles.isNotEmpty) {
+                  // Schedule initialization
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) {
+                      setState(() {
+                        _initVehicleFrom(vehicles);
+                      });
+                    }
+                  });
+                }
+
+                return _buildMainContent(context, vehicles);
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) => _buildErrorState(context, err.toString()),
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, stack) => _buildErrorState(context, err.toString()),
         ),
       ),
     );
   }
 
-  Widget _buildErrorState() {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Center(
+  Widget _buildNotDriverState(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.drive_eta_rounded,
+            size: 64,
+            color: AppColors.textSecondary,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Driver Profile Required',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Complete your driver profile to offer rides.',
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          FilledButton(
+            onPressed: () {
+              // Navigate to driver verification or profile edit
+              context.push('/profile');
+            },
+            child: const Text('Become a Driver'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState(BuildContext context, String error) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline_rounded,
-              size: 64.sp,
-              color: AppColors.error,
+            const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+            const SizedBox(height: 16),
+            Text(
+              'Error loading data',
+              style: Theme.of(context).textTheme.titleMedium,
             ),
-            SizedBox(height: 16.h),
-            Text('Something went wrong', style: TextStyle(fontSize: 16.sp)),
-            SizedBox(height: 16.h),
-            TextButton(
-              onPressed: () => context.go(AppRouter.home),
-              child: const Text('Go Home'),
+            const SizedBox(height: 8),
+            Text(
+              error,
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
             ),
           ],
         ),
@@ -190,300 +253,267 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
     );
   }
 
-  Widget _buildMainContent(DriverModel driver) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Column(
-        children: [
-          _buildHeader(),
-          _buildStepIndicator(),
-          Expanded(
-            child: PageView(
-              controller: _pageController,
-              physics: const NeverScrollableScrollPhysics(),
-              onPageChanged: (index) => setState(() => _currentStep = index),
-              children: [
-                _buildRouteStep(),
-                _buildDetailsStep(driver),
-                _buildPreferencesStep(),
-              ],
-            ),
-          ),
-          _buildBottomBar(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      decoration: BoxDecoration(gradient: AppColors.heroGradient),
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 20.h),
-          child: Row(
+  Widget _buildMainContent(BuildContext context, List<VehicleModel> vehicles) {
+    return Column(
+      children: [
+        _buildHeader(context),
+        Expanded(
+          child: PageView(
+            controller: _pageController,
+            physics: const NeverScrollableScrollPhysics(),
+            onPageChanged: (index) {
+              setState(() => _currentStep = index);
+            },
             children: [
-              IconButton(
-                onPressed: () => context.canPop()
-                    ? context.pop()
-                    : context.go(AppRouter.home),
-                icon: Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: Colors.white,
-                  size: 20.sp,
-                ),
-              ),
-              Expanded(
-                child: Column(
-                  children: [
-                    Text(
-                      'Offer a Ride',
-                      style: TextStyle(
-                        fontSize: 20.sp,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    SizedBox(height: 2.h),
-                    Text(
-                      'Share your journey, earn money',
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: Colors.white.withOpacity(0.85),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(width: 48.w), // Balance for back button
+              _buildRouteStep(),
+              _buildDetailsStep(vehicles),
+              _buildPreferencesStep(),
             ],
           ),
         ),
+        _buildBottomBar(),
+      ],
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).dividerColor.withOpacity(0.1),
+          ),
+        ),
       ),
+      child: Column(children: [_buildStepIndicator()]),
     );
   }
 
   Widget _buildStepIndicator() {
-    final steps = ['Route', 'Details', 'Preferences'];
+    return Row(
+      children: [
+        _buildStepItem(0, 'Route'),
+        _buildStepConnector(0),
+        _buildStepItem(1, 'Details'),
+        _buildStepConnector(1),
+        _buildStepItem(2, 'Preferences'),
+      ],
+    );
+  }
 
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
-      color: AppColors.cardBg,
-      child: Row(
-        children: List.generate(steps.length, (index) {
-          final isActive = index <= _currentStep;
-          final isCompleted = index < _currentStep;
+  Widget _buildStepItem(int step, String label) {
+    final isActive = _currentStep >= step;
+    final isCurrent = _currentStep == step;
 
-          return Expanded(
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 32.w,
-                        height: 32.w,
-                        decoration: BoxDecoration(
-                          color: isActive
-                              ? AppColors.primary
-                              : AppColors.surfaceVariant,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: isCompleted
-                              ? Icon(
-                                  Icons.check_rounded,
-                                  size: 18.sp,
-                                  color: Colors.white,
-                                )
-                              : Text(
-                                  '${index + 1}',
-                                  style: TextStyle(
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.w600,
-                                    color: isActive
-                                        ? Colors.white
-                                        : AppColors.textTertiary,
-                                  ),
-                                ),
-                        ),
+    return Expanded(
+      child: Column(
+        children: [
+          AnimatedContainer(
+            duration: 300.ms,
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isActive ? AppColors.primary : AppColors.surface,
+              border: Border.all(
+                color: isActive ? AppColors.primary : AppColors.border,
+                width: 2,
+              ),
+              boxShadow: isActive
+                  ? [
+                      BoxShadow(
+                        color: AppColors.primary.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
-                      SizedBox(height: 6.h),
-                      Text(
-                        steps[index],
-                        style: TextStyle(
-                          fontSize: 11.sp,
-                          fontWeight: isActive
-                              ? FontWeight.w600
-                              : FontWeight.w400,
-                          color: isActive
-                              ? AppColors.primary
-                              : AppColors.textTertiary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (index < steps.length - 1)
-                  Expanded(
-                    child: Container(
-                      height: 2.h,
-                      margin: EdgeInsets.only(bottom: 20.h),
-                      decoration: BoxDecoration(
-                        color: isCompleted
-                            ? AppColors.primary
-                            : AppColors.border,
-                        borderRadius: BorderRadius.circular(1.r),
+                    ]
+                  : null,
+            ),
+            child: Center(
+              child: isActive
+                  ? const Icon(Icons.check, size: 16, color: Colors.white)
+                  : Text(
+                      '${step + 1}',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ),
-              ],
             ),
-          );
-        }),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: TextStyle(
+              color: isCurrent
+                  ? AppColors.textPrimary
+                  : AppColors.textSecondary,
+              fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
+              fontSize: 12,
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildRouteStep() {
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(16.w),
-      child: Column(
-        children: [
-          // Route Card
-          _buildRouteCard(),
-
-          SizedBox(height: 16.h),
-
-          // Date & Time Card
-          _buildDateTimeCard(),
-
-          SizedBox(height: 100.h), // Space for bottom bar
-        ],
+  Widget _buildStepConnector(int step) {
+    return Expanded(
+      child: Container(
+        height: 2,
+        color: _currentStep > step ? AppColors.primary : AppColors.border,
       ),
+    );
+  }
+
+  // --- Step 1: Route ---
+  Widget _buildRouteStep() {
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        Text(
+          'Where are you going?',
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+        ).animate().fadeIn().slideX(),
+        const SizedBox(height: 24),
+        _buildRouteCard(),
+        const SizedBox(height: 24),
+        _buildDateTimeCard(),
+        const SizedBox(height: 24),
+        _buildRecurringDaysSelector(),
+      ],
     );
   }
 
   Widget _buildRouteCard() {
     return Container(
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.cardBg,
-        borderRadius: BorderRadius.circular(20.r),
-        boxShadow: AppSpacing.shadowMd,
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _buildLocationTile(
+            title: 'From',
+            value: _fromAddress,
+            location: _fromLocation, // Provide the actual location point
+            placeholder: 'Select pickup location',
+            icon: Icons.my_location_rounded,
+            color: AppColors.primary,
+            onTap: () => _selectLocation(isFrom: true),
+          ),
           Padding(
-            padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 12.h),
+            padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Row(
               children: [
-                Icon(
-                  Icons.route_rounded,
-                  size: 20.sp,
-                  color: AppColors.primary,
+                Container(
+                  height: 40,
+                  width: 2,
+                  margin: const EdgeInsets.only(left: 11),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [AppColors.primary, AppColors.secondary],
+                    ),
+                  ),
                 ),
-                SizedBox(width: 8.w),
-                Text(
-                  'Your Route',
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                const Spacer(),
+                IconButton(
+                  onPressed: _swapLocations,
+                  icon: const Icon(
+                    Icons.swap_vert_rounded,
+                    color: AppColors.primary,
+                  ),
+                  style: IconButton.styleFrom(
+                    backgroundColor: AppColors.primary.withOpacity(0.1),
                   ),
                 ),
               ],
             ),
           ),
-          Divider(height: 1, color: AppColors.divider),
-
-          // From Location
           _buildLocationTile(
-            icon: Icons.trip_origin_rounded,
-            iconColor: AppColors.primary,
-            label: _fromAddress.isEmpty ? 'Starting Point' : _fromAddress,
-            hint: _fromAddress.isEmpty,
-            onTap: () => _selectLocation(isFrom: true),
-          ),
-
-          // Swap row
-          Row(
-            children: [
-              SizedBox(width: 26.w),
-              Container(
-                width: 2.w,
-                height: 20.h,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [AppColors.primary, AppColors.error],
-                  ),
-                ),
-              ),
-              const Spacer(),
-              IconButton(
-                onPressed: _swapLocations,
-                icon: Icon(
-                  Icons.swap_vert_rounded,
-                  color: AppColors.primary,
-                  size: 22.sp,
-                ),
-                style: IconButton.styleFrom(
-                  backgroundColor: AppColors.primarySurface,
-                ),
-              ),
-              SizedBox(width: 12.w),
-            ],
-          ),
-
-          // To Location
-          _buildLocationTile(
+            title: 'To',
+            value: _toAddress,
+            location: _toLocation, // Provide the actual location point
+            placeholder: 'Select dropoff location',
             icon: Icons.location_on_rounded,
-            iconColor: AppColors.error,
-            label: _toAddress.isEmpty ? 'Destination' : _toAddress,
-            hint: _toAddress.isEmpty,
+            color: AppColors.secondary,
             onTap: () => _selectLocation(isFrom: false),
           ),
-
-          SizedBox(height: 8.h),
         ],
       ),
-    ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.1, end: 0);
+    ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1, end: 0);
   }
 
   Widget _buildLocationTile({
+    required String title,
+    required String value,
+    LocationPoint? location, // Added location parameter
+    required String placeholder,
     required IconData icon,
-    required Color iconColor,
-    required String label,
-    required bool hint,
+    required Color color,
     required VoidCallback onTap,
   }) {
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+        padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
           children: [
-            Icon(icon, color: iconColor, size: 20.sp),
-            SizedBox(width: 12.w),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(width: 16),
             Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: hint ? FontWeight.w400 : FontWeight.w500,
-                  color: hint ? AppColors.textTertiary : AppColors.textPrimary,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    value.isNotEmpty ? value : placeholder,
+                    style: TextStyle(
+                      color: value.isNotEmpty
+                          ? AppColors.textPrimary
+                          : AppColors.textSecondary.withOpacity(0.5),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
             ),
-            Icon(
+            const Icon(
               Icons.chevron_right_rounded,
-              color: AppColors.textTertiary,
-              size: 20.sp,
+              color: AppColors.textSecondary,
             ),
           ],
         ),
@@ -493,890 +523,547 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
 
   Widget _buildDateTimeCard() {
     return Container(
-          decoration: BoxDecoration(
-            color: AppColors.cardBg,
-            borderRadius: BorderRadius.circular(20.r),
-            boxShadow: AppSpacing.shadowSm,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-          child: Column(
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Departure Time',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          Row(
             children: [
-              ListTile(
-                leading: Container(
-                  width: 40.w,
-                  height: 40.w,
-                  decoration: BoxDecoration(
-                    color: AppColors.primarySurface,
-                    borderRadius: BorderRadius.circular(10.r),
-                  ),
-                  child: Icon(
-                    Icons.calendar_today_rounded,
-                    color: AppColors.primary,
-                    size: 20.sp,
-                  ),
+              Expanded(
+                child: _buildTimeInput(
+                  label: 'Date',
+                  value: _departureDate != null
+                      ? '${_departureDate!.day}/${_departureDate!.month}/${_departureDate!.year}'
+                      : 'Select Date',
+                  icon: Icons.calendar_today_rounded,
+                  onTap: _selectDate,
                 ),
-                title: Text(
-                  'Date',
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                subtitle: Text(
-                  DateFormat('EEEE, MMM d, yyyy').format(_selectedDate),
-                  style: TextStyle(
-                    fontSize: 15.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                trailing: Icon(
-                  Icons.chevron_right_rounded,
-                  color: AppColors.textTertiary,
-                ),
-                onTap: _selectDate,
               ),
-              Divider(height: 1, indent: 68.w, color: AppColors.divider),
-              ListTile(
-                leading: Container(
-                  width: 40.w,
-                  height: 40.w,
-                  decoration: BoxDecoration(
-                    color: AppColors.primarySurface,
-                    borderRadius: BorderRadius.circular(10.r),
-                  ),
-                  child: Icon(
-                    Icons.access_time_rounded,
-                    color: AppColors.primary,
-                    size: 20.sp,
-                  ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildTimeInput(
+                  label: 'Time',
+                  value: _departureTime?.format(context) ?? 'Select Time',
+                  icon: Icons.access_time_rounded,
+                  onTap: _selectTime,
                 ),
-                title: Text(
-                  'Departure Time',
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                subtitle: Text(
-                  _selectedTime.format(context),
-                  style: TextStyle(
-                    fontSize: 15.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                trailing: Icon(
-                  Icons.chevron_right_rounded,
-                  color: AppColors.textTertiary,
-                ),
-                onTap: _selectTime,
               ),
-
-              // Recurring ride toggle
-              Divider(height: 1, indent: 68.w, color: AppColors.divider),
-              SwitchListTile(
-                secondary: Container(
-                  width: 40.w,
-                  height: 40.w,
-                  decoration: BoxDecoration(
-                    color: AppColors.primarySurface,
-                    borderRadius: BorderRadius.circular(10.r),
-                  ),
-                  child: Icon(
-                    Icons.repeat_rounded,
-                    color: AppColors.primary,
-                    size: 20.sp,
-                  ),
-                ),
-                title: Text(
-                  'Recurring Ride',
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                subtitle: Text(
-                  'Offer this ride regularly',
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                value: _isRecurring,
-                activeColor: AppColors.primary,
-                onChanged: (value) => setState(() => _isRecurring = value),
-              ),
-
-              if (_isRecurring) _buildRecurringDaysSelector(),
             ],
           ),
-        )
-        .animate()
-        .fadeIn(duration: 300.ms, delay: 100.ms)
-        .slideY(begin: 0.1, end: 0);
+        ],
+      ),
+    ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0);
+  }
+
+  Widget _buildTimeInput({
+    required String label,
+    required String value,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 16, color: AppColors.textSecondary),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildRecurringDaysSelector() {
-    final days = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+    // Implement recurring days selector if needed
+    // For now, this can be simple or empty if not implemented
+    return const SizedBox.shrink();
+  }
 
-    return Padding(
-      padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: List.generate(7, (index) {
-          final isSelected = _recurringDays.contains(index);
-          return GestureDetector(
-            onTap: () {
-              HapticFeedback.selectionClick();
-              setState(() {
-                if (isSelected) {
-                  _recurringDays.remove(index);
-                } else {
-                  _recurringDays.add(index);
-                }
-              });
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 38.w,
-              height: 38.w,
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? AppColors.primary
-                    : AppColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(10.r),
-              ),
-              child: Center(
-                child: Text(
-                  days[index],
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w600,
-                    color: isSelected ? Colors.white : AppColors.textSecondary,
-                  ),
-                ),
-              ),
-            ),
-          );
-        }),
-      ),
+  // --- Step 2: Details ---
+  Widget _buildDetailsStep(List<VehicleModel> vehicles) {
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        Text(
+          'Ride Details',
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+        ).animate().fadeIn().slideX(),
+        const SizedBox(height: 24),
+        _buildVehicleSelector(vehicles),
+        const SizedBox(height: 24),
+        _buildSeatsAndPrice(),
+      ],
     );
   }
 
-  Widget _buildDetailsStep(DriverModel driver) {
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(16.w),
-      child: Column(
-        children: [
-          // Vehicle Selection
-          _buildVehicleSelector(driver),
-
-          SizedBox(height: 16.h),
-
-          // Seats & Price
-          _buildSeatsAndPrice(),
-
-          SizedBox(height: 100.h),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildVehicleSelector(DriverModel driver) {
-    final vehicles = driver.vehicles;
-
+  Widget _buildVehicleSelector(List<VehicleModel> vehicles) {
     if (vehicles.isEmpty) {
-      return Container(
-        padding: EdgeInsets.all(20.w),
-        decoration: BoxDecoration(
-          color: AppColors.warningSurface,
-          borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(color: AppColors.warning.withOpacity(0.3)),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              Icons.directions_car_outlined,
-              size: 48.sp,
-              color: AppColors.warning,
-            ),
-            SizedBox(height: 12.h),
-            Text(
-              'No Vehicles Added',
-              style: TextStyle(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+      return Card(
+        color: AppColors.error.withOpacity(0.1),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              const Text(
+                "No vehicles found. Please add a vehicle to your profile.",
               ),
-            ),
-            SizedBox(height: 8.h),
-            Text(
-              'Add a vehicle to start offering rides',
-              style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
-            ),
-            SizedBox(height: 16.h),
-            PremiumButton(
-              text: 'Add Vehicle',
-              onPressed: () => context.push(AppRouter.vehicles),
-              style: PremiumButtonStyle.secondary,
-            ),
-          ],
+              TextButton(onPressed: () {}, child: const Text("Add Vehicle")),
+            ],
+          ),
         ),
       );
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.cardBg,
-        borderRadius: BorderRadius.circular(20.r),
-        boxShadow: AppSpacing.shadowMd,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 12.h),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.directions_car_rounded,
-                  size: 20.sp,
-                  color: AppColors.primary,
-                ),
-                SizedBox(width: 8.w),
-                Text(
-                  'Select Vehicle',
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const Spacer(),
-                TextButton.icon(
-                  onPressed: () => context.push(AppRouter.vehicles),
-                  icon: Icon(Icons.add_rounded, size: 18.sp),
-                  label: Text('Add', style: TextStyle(fontSize: 13.sp)),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.primary,
-                    padding: EdgeInsets.symmetric(horizontal: 12.w),
-                  ),
-                ),
-              ],
-            ),
-          ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Vehicle',
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 120,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: vehicles.length,
+            itemBuilder: (context, index) {
+              final vehicle = vehicles[index];
+              final isSelected = _selectedVehicle?.id == vehicle.id;
 
-          SizedBox(
-            height: 130.h,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: EdgeInsets.symmetric(horizontal: 12.w),
-              itemCount: vehicles.length,
-              itemBuilder: (context, index) {
-                final vehicle = vehicles[index];
-                final isSelected = _selectedVehicle?.id == vehicle.id;
-
-                return GestureDetector(
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    setState(() {
-                      _selectedVehicle = vehicle;
-                      _availableSeats = vehicle.seats > 1
-                          ? vehicle.seats - 1
-                          : 1;
-                    });
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    width: 140.w,
-                    margin: EdgeInsets.symmetric(
-                      horizontal: 4.w,
-                      vertical: 4.h,
-                    ),
-                    padding: EdgeInsets.all(12.w),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppColors.primarySurface
-                          : AppColors.surfaceVariant,
-                      borderRadius: BorderRadius.circular(16.r),
-                      border: Border.all(
-                        color: isSelected
-                            ? AppColors.primary
-                            : Colors.transparent,
-                        width: 2,
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.directions_car_filled_rounded,
-                              color: isSelected
-                                  ? AppColors.primary
-                                  : AppColors.textSecondary,
-                              size: 24.sp,
-                            ),
-                            const Spacer(),
-                            if (vehicle.isDefault)
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 6.w,
-                                  vertical: 2.h,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.success.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(4.r),
-                                ),
-                                child: Text(
-                                  'Default',
-                                  style: TextStyle(
-                                    fontSize: 9.sp,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.success,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                        const Spacer(),
-                        Text(
-                          '${vehicle.make} ${vehicle.model}',
-                          style: TextStyle(
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        SizedBox(height: 2.h),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.airline_seat_recline_normal_rounded,
-                              size: 14.sp,
-                              color: AppColors.textTertiary,
-                            ),
-                            SizedBox(width: 4.w),
-                            Text(
-                              '${vehicle.seats} seats',
-                              style: TextStyle(
-                                fontSize: 11.sp,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                            SizedBox(width: 8.w),
-                            Container(
-                              width: 8.w,
-                              height: 8.w,
-                              decoration: BoxDecoration(
-                                color: _getColorFromName(vehicle.color),
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: AppColors.border,
-                                  width: 1,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-
-          SizedBox(height: 12.h),
-        ],
-      ),
-    ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.1, end: 0);
-  }
-
-  Color _getColorFromName(String colorName) {
-    final colorMap = {
-      'white': Colors.white,
-      'black': Colors.black,
-      'silver': Colors.grey.shade400,
-      'gray': Colors.grey,
-      'grey': Colors.grey,
-      'red': Colors.red,
-      'blue': Colors.blue,
-      'green': Colors.green,
-      'yellow': Colors.yellow,
-      'orange': Colors.orange,
-      'brown': Colors.brown,
-      'beige': const Color(0xFFF5F5DC),
-    };
-    return colorMap[colorName.toLowerCase()] ?? Colors.grey;
-  }
-
-  Widget _buildSeatsAndPrice() {
-    return Container(
-          decoration: BoxDecoration(
-            color: AppColors.cardBg,
-            borderRadius: BorderRadius.circular(20.r),
-            boxShadow: AppSpacing.shadowSm,
-          ),
-          child: Column(
-            children: [
-              // Available Seats
-              ListTile(
-                leading: Container(
-                  width: 40.w,
-                  height: 40.w,
+              return GestureDetector(
+                onTap: () {
+                  setState(() => _selectedVehicle = vehicle);
+                },
+                child: Container(
+                  width: 160,
+                  margin: const EdgeInsets.only(right: 12),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.primarySurface,
-                    borderRadius: BorderRadius.circular(10.r),
-                  ),
-                  child: Icon(
-                    Icons.airline_seat_recline_extra_rounded,
-                    color: AppColors.primary,
-                    size: 20.sp,
-                  ),
-                ),
-                title: Text(
-                  'Available Seats',
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                subtitle: Text(
-                  _selectedVehicle != null
-                      ? 'Max ${_selectedVehicle!.seats - 1} passengers'
-                      : 'Select a vehicle first',
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                trailing: _buildSeatCounter(),
-              ),
-
-              Divider(height: 1, indent: 68.w, color: AppColors.divider),
-
-              // Price per Seat
-              Padding(
-                padding: EdgeInsets.all(16.w),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 40.w,
-                      height: 40.w,
-                      decoration: BoxDecoration(
-                        color: AppColors.primarySurface,
-                        borderRadius: BorderRadius.circular(10.r),
-                      ),
-                      child: Icon(
-                        Icons.attach_money_rounded,
-                        color: AppColors.primary,
-                        size: 20.sp,
-                      ),
+                    color: isSelected
+                        ? AppColors.primary.withOpacity(0.1)
+                        : AppColors.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isSelected ? AppColors.primary : AppColors.border,
+                      width: isSelected ? 2 : 1,
                     ),
-                    SizedBox(width: 16.w),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Price per Seat',
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          SizedBox(height: 8.h),
-                          Slider(
-                            value: _pricePerSeat,
-                            min: 0,
-                            max: 100,
-                            divisions: 100,
-                            activeColor: AppColors.primary,
-                            inactiveColor: AppColors.border,
-                            onChanged: (value) =>
-                                setState(() => _pricePerSeat = value),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12.w,
-                        vertical: 8.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primarySurface,
-                        borderRadius: BorderRadius.circular(10.r),
-                      ),
-                      child: Text(
-                        '\$${_pricePerSeat.toStringAsFixed(0)}',
-                        style: TextStyle(
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Price negotiable toggle
-              SwitchListTile(
-                secondary: Container(
-                  width: 40.w,
-                  height: 40.w,
-                  decoration: BoxDecoration(
-                    color: AppColors.primarySurface,
-                    borderRadius: BorderRadius.circular(10.r),
                   ),
-                  child: Icon(
-                    Icons.handshake_rounded,
-                    color: AppColors.primary,
-                    size: 20.sp,
-                  ),
-                ),
-                title: Text(
-                  'Price Negotiable',
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                value: _isPriceNegotiable,
-                activeColor: AppColors.primary,
-                onChanged: (value) =>
-                    setState(() => _isPriceNegotiable = value),
-              ),
-
-              // Online payment toggle
-              SwitchListTile(
-                secondary: Container(
-                  width: 40.w,
-                  height: 40.w,
-                  decoration: BoxDecoration(
-                    color: AppColors.primarySurface,
-                    borderRadius: BorderRadius.circular(10.r),
-                  ),
-                  child: Icon(
-                    Icons.credit_card_rounded,
-                    color: AppColors.primary,
-                    size: 20.sp,
-                  ),
-                ),
-                title: Text(
-                  'Accept Online Payment',
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                subtitle: Text(
-                  'Receive payments via Stripe',
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                value: _acceptOnlinePayment,
-                activeColor: AppColors.primary,
-                onChanged: (value) =>
-                    setState(() => _acceptOnlinePayment = value),
-              ),
-            ],
-          ),
-        )
-        .animate()
-        .fadeIn(duration: 300.ms, delay: 100.ms)
-        .slideY(begin: 0.1, end: 0);
-  }
-
-  Widget _buildSeatCounter() {
-    final maxSeats = _selectedVehicle != null ? _selectedVehicle!.seats - 1 : 4;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(10.r),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(
-            onPressed: _availableSeats > 1
-                ? () {
-                    HapticFeedback.lightImpact();
-                    setState(() => _availableSeats--);
-                  }
-                : null,
-            icon: Icon(
-              Icons.remove,
-              size: 18.sp,
-              color: _availableSeats > 1
-                  ? AppColors.primary
-                  : AppColors.textTertiary,
-            ),
-            constraints: BoxConstraints(minWidth: 36.w, minHeight: 36.w),
-          ),
-          Container(
-            width: 32.w,
-            alignment: Alignment.center,
-            child: Text(
-              '$_availableSeats',
-              style: TextStyle(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-          ),
-          IconButton(
-            onPressed: _availableSeats < maxSeats
-                ? () {
-                    HapticFeedback.lightImpact();
-                    setState(() => _availableSeats++);
-                  }
-                : null,
-            icon: Icon(
-              Icons.add,
-              size: 18.sp,
-              color: _availableSeats < maxSeats
-                  ? AppColors.primary
-                  : AppColors.textTertiary,
-            ),
-            constraints: BoxConstraints(minWidth: 36.w, minHeight: 36.w),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPreferencesStep() {
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(16.w),
-      child: Column(
-        children: [
-          _buildPreferencesCard(),
-          SizedBox(height: 100.h),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPreferencesCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.cardBg,
-        borderRadius: BorderRadius.circular(20.r),
-        boxShadow: AppSpacing.shadowMd,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 8.h),
-            child: Row(
-              children: [
-                Icon(Icons.tune_rounded, size: 20.sp, color: AppColors.primary),
-                SizedBox(width: 8.w),
-                Text(
-                  'Ride Preferences',
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          _buildPreferenceSwitch(
-            icon: Icons.luggage_rounded,
-            title: 'Allow Luggage',
-            subtitle: 'Passengers can bring luggage',
-            value: _allowLuggage,
-            onChanged: (v) => setState(() => _allowLuggage = v),
-          ),
-          _buildPreferenceSwitch(
-            icon: Icons.pets_rounded,
-            title: 'Allow Pets',
-            subtitle: 'Passengers can bring pets',
-            value: _allowPets,
-            onChanged: (v) => setState(() => _allowPets = v),
-          ),
-          _buildPreferenceSwitch(
-            icon: Icons.smoke_free_rounded,
-            title: 'Allow Smoking',
-            subtitle: 'Smoking is allowed in the car',
-            value: _allowSmoking,
-            onChanged: (v) => setState(() => _allowSmoking = v),
-          ),
-          _buildPreferenceSwitch(
-            icon: Icons.female_rounded,
-            title: 'Women Only',
-            subtitle: 'Only female passengers',
-            value: _isWomenOnly,
-            onChanged: (v) => setState(() => _isWomenOnly = v),
-          ),
-
-          Divider(
-            height: 1,
-            indent: 16.w,
-            endIndent: 16.w,
-            color: AppColors.divider,
-          ),
-
-          // Max detour
-          Padding(
-            padding: EdgeInsets.all(16.w),
-            child: Row(
-              children: [
-                Container(
-                  width: 40.w,
-                  height: 40.w,
-                  decoration: BoxDecoration(
-                    color: AppColors.primarySurface,
-                    borderRadius: BorderRadius.circular(10.r),
-                  ),
-                  child: Icon(
-                    Icons.alt_route_rounded,
-                    color: AppColors.primary,
-                    size: 20.sp,
-                  ),
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Row(
+                        children: [
+                          Icon(
+                            _getVehicleIcon(vehicle.type),
+                            color: isSelected
+                                ? AppColors.primary
+                                : AppColors.textSecondary,
+                          ),
+                          const Spacer(),
+                          if (isSelected)
+                            const Icon(
+                              Icons.check_circle,
+                              color: AppColors.primary,
+                              size: 20,
+                            ),
+                        ],
+                      ),
+                      const Spacer(),
                       Text(
-                        'Max Detour',
+                        '${vehicle.make} ${vehicle.model}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        vehicle.color,
                         style: TextStyle(
-                          fontSize: 14.sp,
-                          color: AppColors.textPrimary,
+                          color: AppColors.textSecondary,
+                          fontSize: 12,
                         ),
                       ),
-                      Text(
-                        'How far you\'ll go to pick up passengers',
-                        style: TextStyle(
-                          fontSize: 11.sp,
-                          color: AppColors.textSecondary,
+                      const SizedBox(height: 2),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.background,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          vehicle.licensePlate,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 10.w,
-                    vertical: 6.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primarySurface,
-                    borderRadius: BorderRadius.circular(8.r),
-                  ),
-                  child: Text(
-                    '$_maxDetourMinutes min',
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              );
+            },
           ),
-          Slider(
-            value: _maxDetourMinutes.toDouble(),
-            min: 0,
-            max: 30,
-            divisions: 6,
-            activeColor: AppColors.primary,
-            inactiveColor: AppColors.border,
-            label: '$_maxDetourMinutes min',
-            onChanged: (value) =>
-                setState(() => _maxDetourMinutes = value.round()),
-          ),
-          SizedBox(height: 8.h),
-        ],
-      ),
-    ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.1, end: 0);
-  }
-
-  Widget _buildPreferenceSwitch({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return SwitchListTile(
-      secondary: Container(
-        width: 40.w,
-        height: 40.w,
-        decoration: BoxDecoration(
-          color: AppColors.primarySurface,
-          borderRadius: BorderRadius.circular(10.r),
         ),
-        child: Icon(icon, color: AppColors.primary, size: 20.sp),
-      ),
-      title: Text(
-        title,
-        style: TextStyle(fontSize: 14.sp, color: AppColors.textPrimary),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: TextStyle(fontSize: 11.sp, color: AppColors.textSecondary),
-      ),
-      value: value,
-      activeColor: AppColors.primary,
-      onChanged: onChanged,
-    );
+      ],
+    ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1, end: 0);
   }
 
-  Widget _buildBottomBar() {
+  IconData _getVehicleIcon(VehicleType type) {
+    switch (type) {
+      case VehicleType.motorcycle:
+      case VehicleType.bicycle:
+        return Icons.two_wheeler;
+      case VehicleType.van:
+      case VehicleType.truck:
+        return Icons.local_shipping;
+      case VehicleType.car:
+      default:
+        return Icons.directions_car;
+    }
+  }
+
+  Widget _buildSeatsAndPrice() {
     return Container(
-      padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 24.h),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.cardBg,
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: const Offset(0, -5),
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildSeatCounter(),
+          const Divider(height: 32),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Price per Seat',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        if (_pricePerSeat > 0) {
+                          setState(() => _pricePerSeat -= 1);
+                        }
+                      },
+                      icon: const Icon(Icons.remove, size: 20),
+                    ),
+                    Text(
+                      '\$${_pricePerSeat.toInt()}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        setState(() => _pricePerSeat += 1);
+                      },
+                      icon: const Icon(Icons.add, size: 20),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SwitchListTile(
+            title: const Text('Price Negotiable'),
+            value: _isPriceNegotiable,
+            onChanged: (val) => setState(() => _isPriceNegotiable = val),
+            dense: false,
+            contentPadding: EdgeInsets.zero,
+          ),
+        ],
+      ),
+    ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0);
+  }
+
+  Widget _buildSeatCounter() {
+    final maxSeats = _selectedVehicle?.capacity ?? 4; // Default to 4 if unknown
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Available Seats',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            Text(
+              'Total Capacity: $maxSeats',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+            ),
+          ],
+        ),
+        Row(
+          children: [
+            for (int i = 1; i <= maxSeats; i++)
+              GestureDetector(
+                onTap: () => setState(() => _availableSeats = i),
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  margin: const EdgeInsets.only(left: 8),
+                  decoration: BoxDecoration(
+                    color: i <= _availableSeats
+                        ? AppColors.primary
+                        : AppColors.background,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: i <= _availableSeats
+                          ? AppColors.primary
+                          : AppColors.border,
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '$i',
+                      style: TextStyle(
+                        color: i <= _availableSeats
+                            ? Colors.white
+                            : AppColors.textSecondary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // --- Step 3: Preferences ---
+  Widget _buildPreferencesStep() {
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        Text(
+          'Preferences & Rules',
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+        ).animate().fadeIn().slideX(),
+        const SizedBox(height: 24),
+        _buildPreferencesCard(),
+      ],
+    );
+  }
+
+  Widget _buildPreferencesCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildPreferenceSwitch(
+            title: 'Allow Pets',
+            subtitle: 'Pets are allowed in the car',
+            icon: Icons.pets_rounded,
+            value: _allowPets,
+            onChanged: (val) => setState(() => _allowPets = val),
+          ),
+          const Divider(),
+          _buildPreferenceSwitch(
+            title: 'Allow Smoking',
+            subtitle: 'Smoking is allowed during the ride',
+            icon: Icons.smoke_free_rounded,
+            value: _allowSmoking,
+            onChanged: (val) => setState(() => _allowSmoking = val),
+          ),
+          const Divider(),
+          _buildPreferenceSwitch(
+            title: 'Allow Luggage',
+            subtitle: 'Passengers can bring luggage',
+            icon: Icons.luggage_rounded,
+            value: _allowLuggage,
+            onChanged: (val) => setState(() => _allowLuggage = val),
+          ),
+          const Divider(),
+          _buildPreferenceSwitch(
+            title: 'Women Only',
+            subtitle: 'Ride is for women only',
+            icon: Icons.female_rounded,
+            value: _isWomenOnly,
+            onChanged: (val) => setState(() => _isWomenOnly = val),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1, end: 0);
+  }
+
+  Widget _buildPreferenceSwitch({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return SwitchListTile(
+      value: value,
+      onChanged: onChanged,
+      title: Row(
+        children: [
+          Icon(icon, size: 20, color: AppColors.textPrimary),
+          const SizedBox(width: 12),
+          Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+        ],
+      ),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(left: 32),
+        child: Text(
+          subtitle,
+          style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+        ),
+      ),
+      activeColor: AppColors.primary,
+      contentPadding: EdgeInsets.zero,
+    );
+  }
+
+  Widget _buildBottomBar() {
+    final isLastStep = _currentStep == 2;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -4),
           ),
         ],
       ),
       child: SafeArea(
-        top: false,
         child: Row(
           children: [
             if (_currentStep > 0)
               Expanded(
-                child: PremiumButton(
-                  text: 'Back',
-                  onPressed: _goToPreviousStep,
-                  style: PremiumButtonStyle.secondary,
+                flex: 1,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: OutlinedButton(
+                    onPressed: _goToPreviousStep,
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('Back'),
+                  ),
                 ),
               ),
-            if (_currentStep > 0) SizedBox(width: 12.w),
             Expanded(
-              flex: _currentStep > 0 ? 2 : 1,
-              child: PremiumButton(
-                text: _currentStep == 2
-                    ? (_isCreating ? 'Creating...' : 'Create Ride')
-                    : 'Continue',
-                onPressed: _currentStep == 2
+              flex: 2,
+              child: FilledButton(
+                onPressed: isLastStep
                     ? (_canCreateRide ? _createRide : null)
-                    : _goToNextStep,
-                isLoading: _isCreating,
-                style: PremiumButtonStyle.primary,
+                    : (_canGoNext() ? _goToNextStep : null),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: _isCreating
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(isLastStep ? 'Create Ride' : 'Next'),
               ),
             ),
           ],
@@ -1385,23 +1072,60 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
     );
   }
 
-  // === Actions ===
+  // --- Actions ---
+  bool _canGoNext() {
+    if (_currentStep == 0) {
+      return _fromLocation != null &&
+          _toLocation != null &&
+          _departureDate != null &&
+          _departureTime != null;
+    }
+    if (_currentStep == 1) {
+      return _selectedVehicle != null;
+    }
+    return true;
+  }
+
+  void _goToNextStep() {
+    if (_currentStep < 2) {
+      _pageController.nextPage(duration: 300.ms, curve: Curves.easeInOut);
+    }
+  }
+
+  void _goToPreviousStep() {
+    if (_currentStep > 0) {
+      _pageController.previousPage(duration: 300.ms, curve: Curves.easeInOut);
+    }
+  }
 
   Future<void> _selectLocation({required bool isFrom}) async {
     final result = await MapLocationPicker.show(
       context,
-      title: isFrom ? 'Pickup Location' : 'Destination',
-      initialLocation: isFrom ? _fromLocation : _toLocation,
-      showQuickPicks: true,
+      title: isFrom ? 'Select Origin' : 'Select Destination',
+      initialLocation: isFrom
+          ? (_fromLocation != null
+                ? LatLng(_fromLocation!.latitude, _fromLocation!.longitude)
+                : null)
+          : (_toLocation != null
+                ? LatLng(_toLocation!.latitude, _toLocation!.longitude)
+                : null),
     );
 
     if (result != null) {
       setState(() {
         if (isFrom) {
-          _fromLocation = result.location;
+          _fromLocation = LocationPoint(
+            latitude: result.location.latitude,
+            longitude: result.location.longitude,
+            address: result.address,
+          );
           _fromAddress = result.address;
         } else {
-          _toLocation = result.location;
+          _toLocation = LocationPoint(
+            latitude: result.location.latitude,
+            longitude: result.location.longitude,
+            address: result.address,
+          );
           _toAddress = result.address;
         }
       });
@@ -1409,96 +1133,38 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   }
 
   void _swapLocations() {
-    if (_fromLocation == null && _toLocation == null) return;
-
-    HapticFeedback.lightImpact();
     setState(() {
-      final tempLocation = _fromLocation;
-      final tempAddress = _fromAddress;
+      final tempLoc = _fromLocation;
+      final tempAddr = _fromAddress;
       _fromLocation = _toLocation;
       _fromAddress = _toAddress;
-      _toLocation = tempLocation;
-      _toAddress = tempAddress;
+      _toLocation = tempLoc;
+      _toAddress = tempAddr;
     });
   }
 
-  Future<void> _selectDate() async {
-    final picked = await showDatePicker(
+  void _selectDate() async {
+    final now = DateTime.now();
+    final result = await showDatePicker(
       context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 90)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: Colors.white,
-              surface: AppColors.cardBg,
-              onSurface: AppColors.textPrimary,
-            ),
-          ),
-          child: child!,
-        );
-      },
+      initialDate: _departureDate ?? now,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 90)),
     );
 
-    if (picked != null) {
-      setState(() => _selectedDate = picked);
+    if (result != null) {
+      setState(() => _departureDate = result);
     }
   }
 
-  Future<void> _selectTime() async {
-    final picked = await showTimePicker(
+  void _selectTime() async {
+    final result = await showTimePicker(
       context: context,
-      initialTime: _selectedTime,
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: Colors.white,
-              surface: AppColors.cardBg,
-              onSurface: AppColors.textPrimary,
-            ),
-          ),
-          child: child!,
-        );
-      },
+      initialTime: _departureTime ?? TimeOfDay.now(),
     );
 
-    if (picked != null) {
-      setState(() => _selectedTime = picked);
-    }
-  }
-
-  void _goToNextStep() {
-    if (_currentStep < 2) {
-      // Validate current step
-      if (_currentStep == 0 && (_fromLocation == null || _toLocation == null)) {
-        _showValidationError(
-          'Please select both pickup and destination locations',
-        );
-        return;
-      }
-      if (_currentStep == 1 && _selectedVehicle == null) {
-        _showValidationError('Please select a vehicle');
-        return;
-      }
-
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    }
-  }
-
-  void _goToPreviousStep() {
-    if (_currentStep > 0) {
-      _pageController.previousPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+    if (result != null) {
+      setState(() => _departureTime = result);
     }
   }
 
@@ -1508,10 +1174,6 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         content: Text(message),
         backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
-        margin: EdgeInsets.all(16.w),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10.r),
-        ),
       ),
     );
   }
@@ -1519,76 +1181,78 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   Future<void> _createRide() async {
     if (!_canCreateRide) return;
 
-    HapticFeedback.mediumImpact();
     setState(() => _isCreating = true);
+    final messenger = ScaffoldMessenger.of(context);
 
     try {
       final departureDateTime = DateTime(
-        _selectedDate.year,
-        _selectedDate.month,
-        _selectedDate.day,
-        _selectedTime.hour,
-        _selectedTime.minute,
+        _departureDate!.year,
+        _departureDate!.month,
+        _departureDate!.day,
+        _departureTime!.hour,
+        _departureTime!.minute,
       );
 
       final ride = RideModel(
-        id: '', // Will be set by repository
+        id: widget.existingRide?.id ?? const Uuid().v4(),
         driverId: ref.read(currentUserProvider).value!.uid,
-        driverName: ref.read(currentUserProvider).value!.displayName,
-        driverPhotoUrl: ref.read(currentUserProvider).value!.photoUrl,
-        driverRating: ref.read(currentUserProvider).value!.rating.average,
-        origin: LocationPoint(
-          address: _fromAddress,
-          latitude: _fromLocation!.latitude,
-          longitude: _fromLocation!.longitude,
+        route: RideRoute(
+          origin: LocationPoint(
+            address: _fromAddress,
+            latitude: _fromLocation!.latitude,
+            longitude: _fromLocation!.longitude,
+          ),
+          destination: LocationPoint(
+            address: _toAddress,
+            latitude: _toLocation!.latitude,
+            longitude: _toLocation!.longitude,
+          ),
         ),
-        destination: LocationPoint(
-          address: _toAddress,
-          latitude: _toLocation!.latitude,
-          longitude: _toLocation!.longitude,
+        schedule: RideSchedule(
+          departureTime: departureDateTime,
+          isRecurring: _isRecurring,
+          recurringDays: _recurringDays,
         ),
-        departureTime: departureDateTime,
-        availableSeats: _availableSeats,
-        pricePerSeat: _pricePerSeat,
-        isPriceNegotiable: _isPriceNegotiable,
-        acceptsOnlinePayment: _acceptOnlinePayment,
-        vehicleId: _selectedVehicle!.id,
-        vehicleInfo: '${_selectedVehicle!.make} ${_selectedVehicle!.model}',
-        allowPets: _allowPets,
-        allowSmoking: _allowSmoking,
-        allowLuggage: _allowLuggage,
-        isWomenOnly: _isWomenOnly,
-        maxDetourMinutes: _maxDetourMinutes,
-        isRecurring: _isRecurring,
-        recurringDays: _recurringDays,
+        capacity: RideCapacity(available: _availableSeats, booked: 0),
+        pricing: RidePricing(
+          pricePerSeat: Money(amount: _pricePerSeat, currency: 'USD'),
+          isNegotiable: _isPriceNegotiable,
+          acceptsOnlinePayment: _acceptOnlinePayment,
+        ),
+        preferences: RidePreferences(
+          allowPets: _allowPets,
+          allowSmoking: _allowSmoking,
+          allowLuggage: _allowLuggage,
+          isWomenOnly: _isWomenOnly,
+          maxDetourMinutes: _maxDetourMinutes,
+        ),
+
         status: RideStatus.active,
+        createdAt: DateTime.now(),
+
+        // Vehicle details
+        vehicleId: _selectedVehicle?.id,
+        vehicleInfo: _selectedVehicle != null
+            ? '${_selectedVehicle!.make} ${_selectedVehicle!.model} (${_selectedVehicle!.color})'
+            : null,
       );
 
-      await ref.read(rideRepositoryProvider).createRide(ride);
+      await ref.read(rideActionsViewModelProvider).createRide(ride);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Ride created successfully!'),
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Ride created successfully!'),
             backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
           ),
         );
-        context.push(AppRouter.driverRides);
+        // Navigate
+        context.go('/my-rides');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
         setState(() => _isCreating = false);
+        _showValidationError('Failed to create ride. Please try again.');
       }
     }
   }

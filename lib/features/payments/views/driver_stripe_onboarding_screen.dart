@@ -4,12 +4,19 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
-import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/payments/view_models/payment_view_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Screen for drivers to connect their Stripe account for payouts
+///
+/// IMPLEMENTATION NOTES:
+/// - Uses InAppWebView for better UX (user stays in app)
+/// - This is SAFE for Stripe Connect (not for payment collection!)
+/// - Stripe handles all security and validation
+/// - Verifies account status after onboarding
 class DriverStripeOnboardingScreen extends ConsumerStatefulWidget {
   const DriverStripeOnboardingScreen({super.key});
 
@@ -24,6 +31,14 @@ class _DriverStripeOnboardingScreenState
   String? _errorMessage;
   String? _onboardingUrl;
   bool _showWebView = false;
+  bool _isVerifying = false;
+  double _progress = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkExistingAccount();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +50,7 @@ class _DriverStripeOnboardingScreenState
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
-          'Set Up Payouts',
+          AppLocalizations.of(context).setUpPayouts,
           style: TextStyle(
             fontSize: 18.sp,
             fontWeight: FontWeight.w700,
@@ -56,14 +71,15 @@ class _DriverStripeOnboardingScreenState
                   child: Column(
                     children: [
                       SizedBox(height: 20.h),
+
                       // Hero illustration
                       Container(
                         padding: EdgeInsets.all(30.w),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              AppColors.primary.withOpacity(0.1),
-                              AppColors.secondary.withOpacity(0.1),
+                              AppColors.primary.withValues(alpha: 0.1),
+                              AppColors.secondary.withValues(alpha: 0.1),
                             ],
                           ),
                           shape: BoxShape.circle,
@@ -81,7 +97,7 @@ class _DriverStripeOnboardingScreenState
                       SizedBox(height: 30.h),
 
                       Text(
-                        'Get Paid for Your Rides',
+                        AppLocalizations.of(context).getPaidForYourRides,
                         style: TextStyle(
                           fontSize: 24.sp,
                           fontWeight: FontWeight.w800,
@@ -93,7 +109,7 @@ class _DriverStripeOnboardingScreenState
                       SizedBox(height: 12.h),
 
                       Text(
-                        'Connect your bank account to receive payments directly from riders. Powered by Stripe for secure transactions.',
+                        AppLocalizations.of(context).connectYourBankAccountTo,
                         style: TextStyle(
                           fontSize: 15.sp,
                           color: AppColors.textSecondary,
@@ -107,25 +123,25 @@ class _DriverStripeOnboardingScreenState
                       // Benefits
                       _buildBenefitItem(
                         icon: Icons.bolt_rounded,
-                        title: 'Instant Payouts',
+                        title: AppLocalizations.of(context).instantPayouts,
                         description: 'Get your money in minutes, not days',
                         delay: 400,
                       ),
                       _buildBenefitItem(
                         icon: Icons.security_rounded,
-                        title: 'Secure & Protected',
+                        title: AppLocalizations.of(context).secureProtected,
                         description: 'Bank-level security with Stripe',
                         delay: 500,
                       ),
                       _buildBenefitItem(
                         icon: Icons.receipt_long_rounded,
-                        title: 'Clear Tracking',
+                        title: AppLocalizations.of(context).clearTracking,
                         description: 'See every ride payment in detail',
                         delay: 600,
                       ),
                       _buildBenefitItem(
                         icon: Icons.percent_rounded,
-                        title: 'Low Fees',
+                        title: AppLocalizations.of(context).lowFees,
                         description: 'Keep 85% of every ride payment',
                         delay: 700,
                       ),
@@ -135,8 +151,11 @@ class _DriverStripeOnboardingScreenState
                         Container(
                           padding: EdgeInsets.all(16.w),
                           decoration: BoxDecoration(
-                            color: AppColors.error.withOpacity(0.1),
+                            color: AppColors.error.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12.r),
+                            border: Border.all(
+                              color: AppColors.error.withValues(alpha: 0.3),
+                            ),
                           ),
                           child: Row(
                             children: [
@@ -155,6 +174,39 @@ class _DriverStripeOnboardingScreenState
                           ),
                         ),
                       ],
+
+                      if (_isVerifying) ...[
+                        SizedBox(height: 20.h),
+                        Container(
+                          padding: EdgeInsets.all(16.w),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 20.w,
+                                height: 20.w,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                              SizedBox(width: 12.w),
+                              Expanded(
+                                child: Text(
+                                  'Verifying your account...',
+                                  style: TextStyle(
+                                    color: AppColors.primary,
+                                    fontSize: 14.sp,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -163,16 +215,16 @@ class _DriverStripeOnboardingScreenState
               // CTA Button
               SizedBox(height: 20.h),
               PremiumButton(
-                text: 'Set Up Stripe Account',
-                isLoading: _isLoading,
-                onPressed: _startOnboarding,
+                text: 'Connect Stripe Account',
+                isLoading: _isLoading || _isVerifying,
+                onPressed: _isLoading || _isVerifying ? null : _startOnboarding,
                 style: PremiumButtonStyle.primary,
               ).animate().fadeIn(delay: 800.ms).slideY(begin: 0.2),
 
               SizedBox(height: 12.h),
 
               Text(
-                'You\'ll be redirected to Stripe to complete setup',
+                'Powered by Stripe • Secure and encrypted',
                 style: TextStyle(
                   fontSize: 12.sp,
                   color: AppColors.textSecondary,
@@ -198,14 +250,14 @@ class _DriverStripeOnboardingScreenState
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.border.withOpacity(0.5)),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
       ),
       child: Row(
         children: [
           Container(
             padding: EdgeInsets.all(12.w),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12.r),
             ),
             child: Icon(icon, color: AppColors.primary, size: 24.sp),
@@ -239,6 +291,29 @@ class _DriverStripeOnboardingScreenState
     ).animate().fadeIn(delay: Duration(milliseconds: delay)).slideX(begin: 0.1);
   }
 
+  /// Check if user already has a Stripe account connected
+  Future<void> _checkExistingAccount() async {
+    final user = ref.read(currentUserProvider).value;
+    if (user == null) return;
+
+    try {
+      final accountStatus = await ref
+          .read(paymentViewModelProvider.notifier)
+          .getConnectedAccountStatus(user.uid);
+
+      if (accountStatus['isConnected'] == true) {
+        // Already connected - return to previous screen
+        if (mounted) {
+          context.pop(true);
+        }
+      }
+    } catch (e) {
+      // Silent fail - user can proceed with onboarding
+      debugPrint('Error checking existing account: $e');
+    }
+  }
+
+  /// Start Stripe Connect onboarding process
   Future<void> _startOnboarding() async {
     final user = ref.read(currentUserProvider).value;
     if (user == null) {
@@ -254,15 +329,20 @@ class _DriverStripeOnboardingScreenState
     });
 
     try {
+      // Detect user's country
+      final country = await _detectUserCountry();
+
       final result = await ref
           .read(paymentViewModelProvider.notifier)
           .createConnectedAccount(
             userId: user.uid,
             email: user.email,
-            country: 'FR', // France
+            country: country,
           );
 
-      if (result != null && result['onboardingUrl'] != null) {
+      if (result != null &&
+          result['onboardingUrl'] != null &&
+          result['accountId'] != null) {
         setState(() {
           _onboardingUrl = result['onboardingUrl'];
           _showWebView = true;
@@ -276,14 +356,16 @@ class _DriverStripeOnboardingScreenState
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'Error: $e';
+        _errorMessage = 'Error: ${e.toString()}';
         _isLoading = false;
       });
     }
   }
 
+  /// Build the WebView screen for Stripe onboarding
   Widget _buildWebView() {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
           'Connect Stripe',
@@ -299,41 +381,225 @@ class _DriverStripeOnboardingScreenState
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () {
-            setState(() {
-              _showWebView = false;
-              _onboardingUrl = null;
-            });
+            // Confirm before closing
+            _showCancelConfirmation();
           },
         ),
+        bottom: _progress < 1.0
+            ? PreferredSize(
+                preferredSize: Size.fromHeight(3.h),
+                child: LinearProgressIndicator(
+                  value: _progress,
+                  backgroundColor: AppColors.border.withValues(alpha: 0.2),
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                ),
+              )
+            : null,
       ),
-      body: InAppWebView(
-        initialUrlRequest: URLRequest(url: WebUri(_onboardingUrl!)),
-        initialSettings: InAppWebViewSettings(
-          javaScriptEnabled: true,
-          domStorageEnabled: true,
-          useShouldOverrideUrlLoading: true,
-        ),
-        onLoadStop: (controller, url) {
-          // Check if we've been redirected back from Stripe
-          final urlStr = url?.toString() ?? '';
-          if (urlStr.contains('stripe-refresh') ||
-              urlStr.contains('stripe-return')) {
-            // Onboarding complete - close and refresh
-            context.pop(true);
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Stripe account connected successfully!'),
-                backgroundColor: Colors.green,
+      body: Stack(
+        children: [
+          InAppWebView(
+            initialUrlRequest: URLRequest(url: WebUri(_onboardingUrl!)),
+            initialSettings: InAppWebViewSettings(
+              javaScriptEnabled: true,
+              domStorageEnabled: true,
+              useShouldOverrideUrlLoading: true,
+              // Security settings
+              allowFileAccessFromFileURLs: false,
+              allowUniversalAccessFromFileURLs: false,
+              // UX improvements
+              supportZoom: false,
+              builtInZoomControls: false,
+              displayZoomControls: false,
+            ),
+            onWebViewCreated: (controller) {
+              // Controller available for future use if needed
+            },
+            onProgressChanged: (controller, progress) {
+              setState(() {
+                _progress = progress / 100;
+              });
+            },
+            onLoadStart: (controller, url) {
+              debugPrint('Loading: $url');
+            },
+            onLoadStop: (controller, url) async {
+              debugPrint('Loaded: $url');
+
+              final urlStr = url?.toString() ?? '';
+
+              // Check for completion URLs
+              if (urlStr.contains('stripe-refresh')) {
+                // User clicked "Refresh" - reload the page
+                await controller.reload();
+              } else if (urlStr.contains('stripe-return')) {
+                // User completed onboarding - verify and close
+                await _handleOnboardingComplete();
+              }
+            },
+            onLoadError: (controller, url, code, message) {
+              debugPrint('Error loading: $message');
+              setState(() {
+                _errorMessage = 'Failed to load page. Please try again.';
+                _showWebView = false;
+                _onboardingUrl = null;
+              });
+            },
+            shouldOverrideUrlLoading: (controller, navigationAction) async {
+              final url = navigationAction.request.url?.toString() ?? '';
+
+              // Allow Stripe URLs
+              if (url.contains('stripe.com') ||
+                  url.contains('stripe-refresh') ||
+                  url.contains('stripe-return')) {
+                return NavigationActionPolicy.ALLOW;
+              }
+
+              // Block external navigation
+              return NavigationActionPolicy.CANCEL;
+            },
+          ),
+
+          // Loading overlay (only shown initially)
+          if (_progress < 1.0 && _progress == 0.0)
+            Container(
+              color: AppColors.background,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(color: AppColors.primary),
+                    SizedBox(height: 20.h),
+                    Text(
+                      'Loading Stripe Connect...',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 14.sp,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            );
-          }
-        },
-        onLoadError: (controller, url, code, message) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error loading page: $message')),
-          );
-        },
+            ),
+        ],
       ),
     );
+  }
+
+  /// Handle successful onboarding completion
+  Future<void> _handleOnboardingComplete() async {
+    setState(() {
+      _isVerifying = true;
+    });
+
+    try {
+      // Wait for Stripe webhook to process
+      await Future.delayed(const Duration(seconds: 2));
+
+      final user = ref.read(currentUserProvider).value;
+      if (user == null) return;
+
+      final accountStatus = await ref
+          .read(paymentViewModelProvider.notifier)
+          .getConnectedAccountStatus(user.uid);
+
+      if (accountStatus['isConnected'] == true) {
+        // Success!
+        if (mounted) {
+          context.pop(true);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(context).stripeAccountConnectedSuccessfully,
+              ),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+              action: SnackBarAction(
+                label: 'OK',
+                textColor: Colors.white,
+                onPressed: () {},
+              ),
+            ),
+          );
+        }
+      } else if (accountStatus['requiresMoreInfo'] == true) {
+        // Incomplete - show message but don't close
+        setState(() {
+          _isVerifying = false;
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Additional information needed. Please complete all fields.',
+              ),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      } else {
+        // Not connected yet - keep trying
+        setState(() {
+          _isVerifying = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _isVerifying = false;
+        _errorMessage = 'Could not verify account: ${e.toString()}';
+        _showWebView = false;
+      });
+    }
+  }
+
+  /// Show confirmation dialog before canceling onboarding
+  Future<void> _showCancelConfirmation() async {
+    final shouldCancel = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cancel Setup?'),
+        content: const Text(
+          'Are you sure you want to cancel? You won\'t be able to receive payouts until you complete this setup.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Continue Setup'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldCancel == true && mounted) {
+      setState(() {
+        _showWebView = false;
+        _onboardingUrl = null;
+      });
+    }
+  }
+
+  /// Detect user's country from profile or phone number
+  Future<String> _detectUserCountry() async {
+    final user = ref.read(currentUserProvider).value;
+    if (user == null) return 'FR';
+
+    // Check phone number country code
+    if (user.phoneNumber != null) {
+      if (user.phoneNumber!.startsWith('+216')) {
+        return 'TN'; // Tunisia
+      }
+      if (user.phoneNumber!.startsWith('+33')) {
+        return 'FR'; // France
+      }
+    }
+
+    // Default to France
+    return 'FR';
   }
 }

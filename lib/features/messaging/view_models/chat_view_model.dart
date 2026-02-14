@@ -1,6 +1,8 @@
 import 'dart:async';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:io';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:sport_connect/features/messaging/models/message_model.dart';
 import 'package:sport_connect/features/messaging/repositories/chat_repository.dart';
 
@@ -40,10 +42,48 @@ class ChatListState {
   );
 }
 
+final chatActionsViewModelProvider = Provider<ChatActionsViewModel>((ref) {
+  return ChatActionsViewModel(ref);
+});
+
+class ChatActionsViewModel {
+  ChatActionsViewModel(this._ref);
+
+  final Ref _ref;
+
+  Future<String> uploadChatImage({
+    required String chatId,
+    required File imageFile,
+    required String fileName,
+  }) {
+    return _ref
+        .read(chatRepositoryProvider)
+        .uploadChatImage(
+          chatId: chatId,
+          imageFile: imageFile,
+          fileName: fileName,
+        );
+  }
+
+  Future<void> toggleMute({
+    required String chatId,
+    required String userId,
+    required bool mute,
+  }) {
+    return _ref
+        .read(chatRepositoryProvider)
+        .toggleMute(chatId: chatId, odid: userId, mute: mute);
+  }
+
+  Future<ChatModel?> getChatById(String chatId) {
+    return _ref.read(chatRepositoryProvider).getChatById(chatId);
+  }
+}
+
 /// User Chats Stream Provider
 @riverpod
 Stream<List<ChatModel>> userChats(Ref ref, String userId) {
-  final repository = ref.read(chatRepositoryProvider);
+  final repository = ref.watch(chatRepositoryProvider);
   return repository.streamUserChats(userId);
 }
 
@@ -77,13 +117,20 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
         .listen(
           (messages) {
             state = state.copyWith(messages: messages, isLoading: false);
-            // Mark as read
-            _markMessagesAsRead(messages);
           },
           onError: (e) {
             state = state.copyWith(error: e.toString(), isLoading: false);
           },
         );
+  }
+
+  /// Marks unread messages as read.
+  ///
+  /// Must be called explicitly by the consumer widget rather than
+  /// automatically during provider initialization to avoid write side effects
+  /// in `build()`.
+  Future<void> markVisibleMessagesAsRead() async {
+    await _markMessagesAsRead(state.messages);
   }
 
   void _listenToTyping() {
@@ -106,11 +153,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
     if (unreadIds.isEmpty) return;
 
     final repository = ref.read(chatRepositoryProvider);
-    await repository.markAsRead(
-      chatId: chatId,
-      odid: currentUserId,
-      messageIds: unreadIds,
-    );
+    await repository.markAsRead(chatId, currentUserId);
   }
 
   Future<bool> sendMessage({
@@ -186,6 +229,9 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
     _typingTimer?.cancel();
 
     if (isTyping) {
+      // Check if provider is still mounted before using ref
+      if (!ref.mounted) return;
+
       final repository = ref.read(chatRepositoryProvider);
       await repository.setTyping(
         chatId: chatId,
@@ -196,9 +242,15 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
 
       // Auto-stop after 5 seconds of inactivity
       _typingTimer = Timer(const Duration(seconds: 5), () {
-        setTyping(false, displayName);
+        // Check if provider is still mounted before the delayed callback
+        if (ref.mounted) {
+          setTyping(false, displayName);
+        }
       });
     } else {
+      // Check if provider is still mounted before using ref
+      if (!ref.mounted) return;
+
       final repository = ref.read(chatRepositoryProvider);
       await repository.setTyping(
         chatId: chatId,
@@ -211,7 +263,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
 
   Future<void> deleteMessage(String messageId) async {
     final repository = ref.read(chatRepositoryProvider);
-    await repository.deleteMessage(chatId: chatId, messageId: messageId);
+    await repository.deleteMessage(messageId);
   }
 
   Future<void> editMessage(String messageId, String newContent) async {

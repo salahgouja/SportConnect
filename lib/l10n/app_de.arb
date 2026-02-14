@@ -1,0 +1,3461 @@
+{
+  "@@locale": "de",
+  "@_NAVIGATION": {},
+  "navHome": "Startseite",
+  "navRides": "Fahrten",
+  "navChat": "Nachrichten",
+  "navProfile": "Profil",
+  "navSettings": "Einstellungen",
+  "@_SETTINGS_SCREEN": {},
+  "settingsTitle": "Einstellungen",
+  "settingsNotifications": "Benachrichtigungen",
+  "settingsPushNotifications": "Push-Benachrichtigungen",
+  "settingsPushNotificationsDesc": "Push-Benachrichtigungen für wichtige Updates erhalten",
+  "settingsRideReminders": "Fahrterinnerungen",
+  "settingsRideRemindersDesc": "An bevorstehende Fahrten erinnert werden",
+  "settingsChatMessages": "Chat-Nachrichten",
+  "settingsChatMessagesDesc": "Benachrichtigungen für neue Nachrichten",
+  "settingsMarketingTips": "Marketing und Tipps",
+  "settingsMarketingTipsDesc": "Tipps und Werbeangebote erhalten",
+  "settingsAppearance": "Erscheinungsbild",
+  "settingsDarkMode": "Dunkler Modus",
+  "settingsDarkModeDesc": "Zum dunklen Theme wechseln",
+  "settingsLanguage": "Sprache",
+  "settingsLanguageDesc": "App-Anzeigesprache",
+  "settingsDistanceUnit": "Entfernungseinheit",
+  "settingsDistanceUnitDesc": "Bevorzugte Entfernungsmaßeinheit",
+  "settingsPrivacySafety": "Datenschutz und Sicherheit",
+  "settingsPublicProfile": "Öffentliches Profil",
+  "settingsPublicProfileDesc": "Anderen erlauben, Ihr Profil zu sehen",
+  "settingsShowLocation": "Standort anzeigen",
+  "settingsShowLocationDesc": "Ihren Echtzeitstandort während der Fahrten teilen",
+  "settingsAutoAcceptRides": "Automatische Fahrtannahme",
+  "settingsAutoAcceptRidesDesc": "Fahrtanfragen automatisch annehmen",
+  "settingsBlockedUsers": "Blockierte Benutzer",
+  "settingsBlockedUsersDesc": "Blockierte Benutzer verwalten",
+  "settingsAccount": "Konto",
+  "settingsEditProfile": "Profil bearbeiten",
+  "settingsEditProfileDesc": "Ihre Profilinformationen aktualisieren",
+  "settingsPaymentMethods": "Zahlungsmethoden",
+  "settingsPaymentMethodsDesc": "Ihre Zahlungsoptionen verwalten",
+  "settingsVerifyAccount": "Konto verifizieren",
+  "settingsVerifyAccountDesc": "Identitätsverifizierung abschließen",
+  "settingsSupport": "Support und Rechtliches",
+  "settingsHelpCenter": "Hilfecenter",
+  "settingsHelpCenterDesc": "Hilfe und Support erhalten",
+  "settingsReportProblem": "Problem melden",
+  "settingsReportProblemDesc": "Fehler oder Probleme melden",
+  "settingsTermsConditions": "Geschäftsbedingungen",
+  "settingsPrivacyPolicy": "Datenschutzrichtlinie",
+  "settingsAbout": "Über",
+  "settingsAboutDesc": "App-Version und Informationen",
+  "settingsDangerZone": "Gefahrenzone",
+  "settingsLogout": "Abmelden",
+  "settingsLogoutDesc": "Von Ihrem Konto abmelden",
+  "settingsDeleteAccount": "Konto löschen",
+  "settingsDeleteAccountDesc": "Ihr Konto und Ihre Daten dauerhaft löschen",
+  "@_AUTH": {},
+  "authSignIn": "Anmelden",
+  "authSignUp": "Registrieren",
+  "authEmail": "E-Mail",
+  "authPassword": "Passwort",
+  "authConfirmPassword": "Passwort bestätigen",
+  "authForgotPassword": "Passwort vergessen?",
+  "authResetPassword": "Passwort zurücksetzen",
+  "authContinueWithGoogle": "Mit Google fortfahren",
+  "authContinueWithApple": "Mit Apple fortfahren",
+  "@_COMMON_ACTIONS": {},
+  "actionSave": "Speichern",
+  "actionCancel": "Abbrechen",
+  "actionDelete": "Löschen",
+  "actionEdit": "Bearbeiten",
+  "actionConfirm": "Bestätigen",
+  "actionSearch": "Suchen",
+  "actionFilter": "Filtern",
+  "actionApply": "Anwenden",
+  "actionClose": "Schließen",
+  "actionDone": "Fertig",
+  "@_ERRORS": {},
+  "errorNetwork": "Netzwerkfehler. Bitte überprüfen Sie Ihre Verbindung.",
+  "errorInvalidInput": "Ungültige Eingabe. Bitte überprüfen Sie Ihre Eingabe.",
+  "errorPermissionDenied": "Berechtigung verweigert.",
+  "errorUnexpected": "Ein unerwarteter Fehler ist aufgetreten.",
+  "errorTimeout": "Anfrage ist abgelaufen. Bitte versuchen Sie es erneut.",
+  "@_LANGUAGES": {},
+  "languageEnglish": "English",
+  "languageFrench": "Français",
+  "languageGerman": "Deutsch",
+  "languageSpanish": "Español",
+  "pageNotFound": "Seite nicht gefunden",
+  "@pageNotFound": {
+    "description": "Text from Text in app_router.dart"
+  },
+  "goHome": "Zur Startseite",
+  "@goHome": {
+    "description": "Text from Text in app_router.dart"
+  },
+  "stepValueOfValue": "Schritt {value1} von {value2}",
+  "@stepValueOfValue": {
+    "description": "Text from Text in feature_discovery_service.dart"
+  },
+  "skipTour": "Tour überspringen",
+  "@skipTour": {
+    "description": "Text from Text in feature_discovery_service.dart"
+  },
+  "logs": "Protokolle",
+  "@logs": {
+    "description": "Text from _buildMenuButton.label in debug_overlay.dart"
+  },
+  "theme": "Design",
+  "@theme": {
+    "description": "Text from _buildMenuButton.label in debug_overlay.dart"
+  },
+  "themePlayground": "Design-Spielplatz",
+  "@themePlayground": {
+    "description": "Text from Text in debug_overlay.dart"
+  },
+  "colorScheme": "Farbschema",
+  "@colorScheme": {
+    "description": "Text from _buildSection.title in debug_overlay.dart"
+  },
+  "surfaceBlendValue": "Oberflächenmischung: {value}%",
+  "@surfaceBlendValue": {
+    "description": "Text from _buildSection.title in debug_overlay.dart"
+  },
+  "useMaterial3": "Material 3 verwenden",
+  "@useMaterial3": {
+    "description": "Text from Text in debug_overlay.dart"
+  },
+  "componentPreview": "Komponentenvorschau",
+  "@componentPreview": {
+    "description": "Text from _buildSection.title in debug_overlay.dart"
+  },
+  "elevated": "Erhöht",
+  "@elevated": {
+    "description": "Text from Text in debug_overlay.dart"
+  },
+  "filled": "Gefüllt",
+  "@filled": {
+    "description": "Text from Text in debug_overlay.dart"
+  },
+  "outlined": "Umrandet",
+  "@outlined": {
+    "description": "Text from Text in debug_overlay.dart"
+  },
+  "text": "Text",
+  "@text": {
+    "description": "Text from Text in debug_overlay.dart"
+  },
+  "textField": "Textfeld",
+  "@textField": {
+    "description": "Text from InputDecoration.labelText in debug_overlay.dart"
+  },
+  "enterText": "Text eingeben...",
+  "@enterText": {
+    "description": "Text from InputDecoration.hintText in debug_overlay.dart"
+  },
+  "cardTitle": "Kartentitel",
+  "@cardTitle": {
+    "description": "Text from Text in debug_overlay.dart"
+  },
+  "cardSubtitleWithDescription": "Kartenuntertitel mit Beschreibung",
+  "@cardSubtitleWithDescription": {
+    "description": "Text from Text in debug_overlay.dart"
+  },
+  "chip1": "Chip 1",
+  "@chip1": {
+    "description": "Text from Text in debug_overlay.dart"
+  },
+  "action": "Aktion",
+  "@action": {
+    "description": "Text from Text in debug_overlay.dart"
+  },
+  "colorPalette": "Farbpalette",
+  "@colorPalette": {
+    "description": "Text from _buildSection.title in debug_overlay.dart"
+  },
+  "primary": "Primär",
+  "@primary": {
+    "description": "Text from _buildColorChip in debug_overlay.dart"
+  },
+  "secondary": "Sekundär",
+  "@secondary": {
+    "description": "Text from _buildColorChip in debug_overlay.dart"
+  },
+  "surface": "Oberfläche",
+  "@surface": {
+    "description": "Text from _buildColorChip in debug_overlay.dart"
+  },
+  "background": "Hintergrund",
+  "@background": {
+    "description": "Text from _buildColorChip in debug_overlay.dart"
+  },
+  "error": "Fehler",
+  "@error": {
+    "description": "Text from _buildColorChip in debug_overlay.dart"
+  },
+  "copyThemeCode": "Design-Code kopieren",
+  "@copyThemeCode": {
+    "description": "Text from Text in debug_overlay.dart"
+  },
+  "applyTheme": "Design anwenden",
+  "@applyTheme": {
+    "description": "Text from Text in debug_overlay.dart"
+  },
+  "themeCodeCopiedToLogs": "Design-Code in Protokolle kopiert!",
+  "@themeCodeCopiedToLogs": {
+    "description": "Text from Text in debug_overlay.dart"
+  },
+  "themeValueApplied": "Design \"{value}\" angewendet!",
+  "@themeValueApplied": {
+    "description": "Text from Text in debug_overlay.dart"
+  },
+  "lvlValue": "LVL {value}",
+  "@lvlValue": {
+    "description": "Text from Text in gamification_widgets.dart"
+  },
+  "valueValueXp": "{value1} / {value2} XP",
+  "@valueValueXp": {
+    "description": "Text from Text in gamification_widgets.dart"
+  },
+  "value": "{value}%",
+  "@value": {
+    "description": "Text from Text in gamification_widgets.dart"
+  },
+  "value2": "{value}",
+  "@value2": {
+    "description": "Text from Text in gamification_widgets.dart"
+  },
+  "dayStreak": "Tagessträhne",
+  "@dayStreak": {
+    "description": "Text from Text in gamification_widgets.dart"
+  },
+  "value3": "#{value}",
+  "@value3": {
+    "description": "Text from Text in gamification_widgets.dart"
+  },
+  "you": "Sie",
+  "@you": {
+    "description": "Text from Text in gamification_widgets.dart"
+  },
+  "valueXp": "+{value} XP",
+  "@valueXp": {
+    "description": "Text from Text in gamification_widgets.dart"
+  },
+  "valueValue": "{value1}/{value2}",
+  "@valueValue": {
+    "description": "Text from Text in gamification_widgets.dart"
+  },
+  "standard": "standard",
+  "@standard": {
+    "description": "Text from _buildMapStyleItem in map_location_picker.dart"
+  },
+  "standard2": "Standard",
+  "@standard2": {
+    "description": "Text from _buildMapStyleItem in map_location_picker.dart"
+  },
+  "terrain": "gelände",
+  "@terrain": {
+    "description": "Text from _buildMapStyleItem in map_location_picker.dart"
+  },
+  "terrain2": "Gelände",
+  "@terrain2": {
+    "description": "Text from _buildMapStyleItem in map_location_picker.dart"
+  },
+  "dark": "dunkel",
+  "@dark": {
+    "description": "Text from _buildMapStyleItem in map_location_picker.dart"
+  },
+  "light": "hell",
+  "@light": {
+    "description": "Text from _buildMapStyleItem in map_location_picker.dart"
+  },
+  "lightMode": "Heller Modus",
+  "@lightMode": {
+    "description": "Text from _buildMapStyleItem in map_location_picker.dart"
+  },
+  "humanitarian": "humanitär",
+  "@humanitarian": {
+    "description": "Text from _buildMapStyleItem in map_location_picker.dart"
+  },
+  "humanitarian2": "Humanitär",
+  "@humanitarian2": {
+    "description": "Text from _buildMapStyleItem in map_location_picker.dart"
+  },
+  "searchAddressCityOrPlace": "Adresse, Stadt oder Ort suchen...",
+  "@searchAddressCityOrPlace": {
+    "description": "Text from InputDecoration.hintText in map_location_picker.dart"
+  },
+  "popularCities": "Beliebte Städte",
+  "@popularCities": {
+    "description": "Text from Text in map_location_picker.dart"
+  },
+  "selectedLocation": "Ausgewählter Standort",
+  "@selectedLocation": {
+    "description": "Text from Text in map_location_picker.dart"
+  },
+  "confirmLocation": "Standort bestätigen",
+  "@confirmLocation": {
+    "description": "Text from Text in map_location_picker.dart"
+  },
+  "nearbyPlaces": "Orte in der Nähe",
+  "@nearbyPlaces": {
+    "description": "Text from Text in poi_search_sheet.dart"
+  },
+  "findUsefulSpotsAlongYour": "Finden Sie nützliche Orte entlang Ihrer Route",
+  "@findUsefulSpotsAlongYour": {
+    "description": "Text from Text in poi_search_sheet.dart"
+  },
+  "searchRadius": "Suchradius",
+  "@searchRadius": {
+    "description": "Text from Text in poi_search_sheet.dart"
+  },
+  "selectACategoryToSearch": "Wählen Sie eine Kategorie zum Suchen",
+  "@selectACategoryToSearch": {
+    "description": "Text from Text in poi_search_sheet.dart"
+  },
+  "tapOnAnyCategoryAbove": "Tippen Sie auf eine Kategorie oben, um Orte in der Nähe zu finden",
+  "@tapOnAnyCategoryAbove": {
+    "description": "Text from Text in poi_search_sheet.dart"
+  },
+  "noResultsFound": "Keine Ergebnisse gefunden",
+  "@noResultsFound": {
+    "description": "Text from Text in poi_search_sheet.dart"
+  },
+  "tryIncreasingTheSearchRadius": "Versuchen Sie, den Suchradius zu erhöhen",
+  "@tryIncreasingTheSearchRadius": {
+    "description": "Text from Text in poi_search_sheet.dart"
+  },
+  "lvValue": "Lv.{value}",
+  "@lvValue": {
+    "description": "Text from Text in premium_avatar.dart"
+  },
+  "value4": "+{value}",
+  "@value4": {
+    "description": "Text from Text in premium_avatar.dart"
+  },
+  "text99": "99+",
+  "@text99": {
+    "description": "Text from Text in premium_navigation.dart"
+  },
+  "text9": "9+",
+  "@text9": {
+    "description": "Text from Text in premium_navigation.dart"
+  },
+  "valueRidesValue": "{value1} Fahrten • {value2}",
+  "@valueRidesValue": {
+    "description": "Text from Text in premium_ride_card.dart"
+  },
+  "value5": "{value} €",
+  "@value5": {
+    "description": "Text from Text in premium_ride_card.dart"
+  },
+  "valueSeatsLeft": "{value} Plätze frei",
+  "@valueSeatsLeft": {
+    "description": "Text from Text in premium_ride_card.dart"
+  },
+  "fullyBooked": "Ausgebucht",
+  "@fullyBooked": {
+    "description": "Text from Text in premium_ride_card.dart"
+  },
+  "bookNow": "Jetzt buchen",
+  "@bookNow": {
+    "description": "Text from Text in premium_ride_card.dart"
+  },
+  "valueSeats": "{value} Plätze",
+  "@valueSeats": {
+    "description": "Text from Text in premium_ride_card.dart"
+  },
+  "errorSavingVehicleValue": "Fehler beim Speichern des Fahrzeugs: {value}",
+  "@errorSavingVehicleValue": {
+    "description": "Text from Text in driver_onboarding_screen.dart"
+  },
+  "driverSetup": "Fahrereinrichtung",
+  "@driverSetup": {
+    "description": "Text from Text in driver_onboarding_screen.dart"
+  },
+  "vehicle": "Fahrzeug",
+  "@vehicle": {
+    "description": "Text from _buildStepIndicator in driver_onboarding_screen.dart"
+  },
+  "payouts": "Auszahlungen",
+  "@payouts": {
+    "description": "Text from _buildStepIndicator in driver_onboarding_screen.dart"
+  },
+  "addYourVehicle": "Fügen Sie Ihr Fahrzeug hinzu",
+  "@addYourVehicle": {
+    "description": "Text from _buildStepHeader.title in driver_onboarding_screen.dart"
+  },
+  "fuelType": "Kraftstoffart",
+  "@fuelType": {
+    "description": "Text from Text in driver_onboarding_screen.dart"
+  },
+  "setupPayouts": "Auszahlungen einrichten",
+  "@setupPayouts": {
+    "description": "Text from _buildStepHeader.title in driver_onboarding_screen.dart"
+  },
+  "securePayments": "Sichere Zahlungen",
+  "@securePayments": {
+    "description": "Text from _buildBenefitItem.title in driver_onboarding_screen.dart"
+  },
+  "fastTransfers": "Schnelle Überweisungen",
+  "@fastTransfers": {
+    "description": "Text from _buildBenefitItem.title in driver_onboarding_screen.dart"
+  },
+  "easyTracking": "Einfache Nachverfolgung",
+  "@easyTracking": {
+    "description": "Text from _buildBenefitItem.title in driver_onboarding_screen.dart"
+  },
+  "skipForNowILl": "Überspringen, ich richte das später ein",
+  "@skipForNowILl": {
+    "description": "Text from Text in driver_onboarding_screen.dart"
+  },
+  "youCanStillOfferRides": "Sie können weiterhin Fahrten anbieten, ohne Auszahlungen einzurichten, aber Sie können keine Zahlungen erhalten, bis Sie diesen Schritt abgeschlossen haben.",
+  "@youCanStillOfferRides": {
+    "description": "Text from Text in driver_onboarding_screen.dart"
+  },
+  "sportconnect": "SportConnect",
+  "@sportconnect": {
+    "description": "Text from Text in login_screen.dart"
+  },
+  "welcomeBack": "Willkommen zurück",
+  "@welcomeBack": {
+    "description": "Text from Text in login_screen.dart"
+  },
+  "signInToContinueYour": "Melden Sie sich an, um Ihre Laufreise fortzusetzen",
+  "@signInToContinueYour": {
+    "description": "Text from Text in login_screen.dart"
+  },
+  "rememberMe": "Angemeldet bleiben",
+  "@rememberMe": {
+    "description": "Text from Text in login_screen.dart"
+  },
+  "donTHaveAnAccount": "Sie haben noch kein Konto? ",
+  "@donTHaveAnAccount": {
+    "description": "Text from Text in login_screen.dart"
+  },
+  "enterYourEmailAddressAnd": "Geben Sie Ihre E-Mail-Adresse ein und wir senden Ihnen Anweisungen zum Zurücksetzen Ihres Passworts.",
+  "@enterYourEmailAddressAnd": {
+    "description": "Text from Text in login_screen.dart"
+  },
+  "passwordResetEmailSentCheck": "Passwort-Zurücksetzungs-E-Mail gesendet! Überprüfen Sie Ihren Posteingang.",
+  "@passwordResetEmailSentCheck": {
+    "description": "Text from Text in login_screen.dart"
+  },
+  "pleaseAgreeToTheTerms": "Bitte stimmen Sie den Nutzungsbedingungen zu",
+  "@pleaseAgreeToTheTerms": {
+    "description": "Text from Text in register_screen.dart"
+  },
+  "createAccount": "Konto erstellen",
+  "@createAccount": {
+    "description": "Text from Text in register_screen.dart"
+  },
+  "joinOurCommunityOfEco": "Treten Sie unserer Gemeinschaft umweltfreundlicher Mitfahrer bei",
+  "@joinOurCommunityOfEco": {
+    "description": "Text from Text in register_screen.dart"
+  },
+  "welcomeBonus": "Willkommensbonus",
+  "@welcomeBonus": {
+    "description": "Text from Text in register_screen.dart"
+  },
+  "get100XpWhenYou": "Erhalten Sie 100 XP, wenn Sie Ihr Profil vervollständigen!",
+  "@get100XpWhenYou": {
+    "description": "Text from Text in register_screen.dart"
+  },
+  "iWantTo": "Ich möchte:",
+  "@iWantTo": {
+    "description": "Text from Text in register_screen.dart"
+  },
+  "alreadyHaveAnAccount": "Sie haben bereits ein Konto? ",
+  "@alreadyHaveAnAccount": {
+    "description": "Text from Text in register_screen.dart"
+  },
+  "findRides": "Fahrten finden",
+  "@findRides": {
+    "description": "Text from Text in register_screen.dart"
+  },
+  "offerRides": "Fahrten anbieten",
+  "@offerRides": {
+    "description": "Text from Text in register_screen.dart"
+  },
+  "pleaseSelectARoleTo": "Bitte wählen Sie eine Rolle, um fortzufahren",
+  "@pleaseSelectARoleTo": {
+    "description": "Text from Text in role_selection_screen.dart"
+  },
+  "errorValue": "Fehler: {value}",
+  "@errorValue": {
+    "description": "Text from Text in role_selection_screen.dart"
+  },
+  "iMARider": "Ich bin ein Mitfahrer",
+  "@iMARider": {
+    "description": "Text from _buildRoleCard.title in role_selection_screen.dart"
+  },
+  "iMADriver": "Ich bin ein Fahrer",
+  "@iMADriver": {
+    "description": "Text from _buildRoleCard.title in role_selection_screen.dart"
+  },
+  "youCanChangeYourRole": "Sie können Ihre Rolle später in den Einstellungen ändern",
+  "@youCanChangeYourRole": {
+    "description": "Text from Text in role_selection_screen.dart"
+  },
+  "howWillYouUseSportconnect": "Wie werden Sie SportConnect nutzen?",
+  "@howWillYouUseSportconnect": {
+    "description": "Text from Text in role_selection_screen.dart"
+  },
+  "chooseYourRoleToGet": "Wählen Sie Ihre Rolle, um zu beginnen.\nDies wird Ihre Erfahrung anpassen.",
+  "@chooseYourRoleToGet": {
+    "description": "Text from Text in role_selection_screen.dart"
+  },
+  "text2": "🎉",
+  "@text2": {
+    "description": "Text from Text in signup_wizard_screen.dart"
+  },
+  "join10000EcoRiders": "Treten Sie über 10.000 umweltfreundlichen Mitfahrern bei",
+  "@join10000EcoRiders": {
+    "description": "Text from Text in signup_wizard_screen.dart"
+  },
+  "get100XpWelcomeBonus": "Erhalten Sie 100 XP Willkommensbonus!",
+  "@get100XpWelcomeBonus": {
+    "description": "Text from Text in signup_wizard_screen.dart"
+  },
+  "orSignUpWith": "Oder registrieren Sie sich mit",
+  "@orSignUpWith": {
+    "description": "Text from Text in signup_wizard_screen.dart"
+  },
+  "strongPasswordTips": "Tipps für ein starkes Passwort",
+  "@strongPasswordTips": {
+    "description": "Text from Text in signup_wizard_screen.dart"
+  },
+  "use8CharactersWithLetters": "Verwenden Sie 8+ Zeichen mit Buchstaben, Zahlen und Symbolen",
+  "@use8CharactersWithLetters": {
+    "description": "Text from Text in signup_wizard_screen.dart"
+  },
+  "passwordStrength": "Passwortstärke",
+  "@passwordStrength": {
+    "description": "Text from Text in signup_wizard_screen.dart"
+  },
+  "yourInterestsOptional": "Ihre Interessen (Optional)",
+  "@yourInterestsOptional": {
+    "description": "Text from Text in signup_wizard_screen.dart"
+  },
+  "selectSportsYouReInterested": "Wählen Sie Sportarten aus, die Sie interessieren",
+  "@selectSportsYouReInterested": {
+    "description": "Text from Text in signup_wizard_screen.dart"
+  },
+  "addAProfilePhoto": "Profilfoto hinzufügen",
+  "@addAProfilePhoto": {
+    "description": "Text from Text in signup_wizard_screen.dart"
+  },
+  "thisHelpsOthersRecognizeYou": "Dies hilft anderen, Sie zu erkennen",
+  "@thisHelpsOthersRecognizeYou": {
+    "description": "Text from Text in signup_wizard_screen.dart"
+  },
+  "readyToJoin": "Bereit beizutreten!",
+  "@readyToJoin": {
+    "description": "Text from Text in signup_wizard_screen.dart"
+  },
+  "emailValue": "E-Mail: {value}",
+  "@emailValue": {
+    "description": "Text from Text in signup_wizard_screen.dart"
+  },
+  "roleValue": "Rolle: {value}",
+  "@roleValue": {
+    "description": "Text from Text in signup_wizard_screen.dart"
+  },
+  "carpoolingForRunners": "FAHRGEMEINSCHAFTEN FÜR LÄUFER",
+  "@carpoolingForRunners": {
+    "description": "Text from Text in splash_screen.dart"
+  },
+  "shareRidesRunTogetherGo": "Teilen Sie Fahrten. Laufen Sie zusammen.\nGehen Sie weiter.",
+  "@shareRidesRunTogetherGo": {
+    "description": "Text from Text in splash_screen.dart"
+  },
+  "loading": "Laden...",
+  "@loading": {
+    "description": "Text from Text in splash_screen.dart"
+  },
+  "offerRide": "Fahrt anbieten",
+  "@offerRide": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "driver": "Fahrer",
+  "@driver": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "online": "Online",
+  "@online": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "offline": "Offline",
+  "@offline": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "acceptingRideRequests": "Fahrtanfragen werden akzeptiert",
+  "@acceptingRideRequests": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "tapToGoOnlineAnd": "Tippen Sie, um online zu gehen und zu verdienen",
+  "@tapToGoOnlineAnd": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "failedToLoadStatus": "Status konnte nicht geladen werden",
+  "@failedToLoadStatus": {
+    "description": "Text from _buildErrorCard in driver_home_screen.dart"
+  },
+  "todaySEarnings": "Heutige Einnahmen",
+  "@todaySEarnings": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "live": "Live",
+  "@live": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "value6": "{value}€",
+  "@value6": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "valueRides": "{value} Fahrten",
+  "@valueRides": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "failedToLoadEarnings": "Einnahmen konnten nicht geladen werden",
+  "@failedToLoadEarnings": {
+    "description": "Text from _buildErrorCard in driver_home_screen.dart"
+  },
+  "rideRequests": "Fahrtanfragen",
+  "@rideRequests": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "viewAll": "Alle anzeigen",
+  "@viewAll": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "noPendingRequests": "Keine ausstehenden Anfragen",
+  "@noPendingRequests": {
+    "description": "Text from _buildEmptyState.title in driver_home_screen.dart"
+  },
+  "failedToLoadRequests": "Anfragen konnten nicht geladen werden",
+  "@failedToLoadRequests": {
+    "description": "Text from _buildErrorCard in driver_home_screen.dart"
+  },
+  "noAcceptedRequestsYet": "Noch keine akzeptierten Anfragen",
+  "@noAcceptedRequestsYet": {
+    "description": "Empty state title for accepted requests tab"
+  },
+  "acceptedRequestsWillAppearHere": "Akzeptierte Fahrtanfragen werden hier angezeigt",
+  "@acceptedRequestsWillAppearHere": {
+    "description": "Empty state subtitle for accepted requests tab"
+  },
+  "upcomingRides": "Bevorstehende Fahrten",
+  "@upcomingRides": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "noUpcomingRides": "Keine bevorstehenden Fahrten",
+  "@noUpcomingRides": {
+    "description": "Text from _buildEmptyState.title in driver_home_screen.dart"
+  },
+  "failedToLoadRides": "Fahrten konnten nicht geladen werden",
+  "@failedToLoadRides": {
+    "description": "Text from _buildErrorCard in driver_home_screen.dart"
+  },
+  "kNew": "Neu",
+  "@kNew": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "valueSeatValue": "{value1} Platz{value2}",
+  "@valueSeatValue": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "decline": "Ablehnen",
+  "@decline": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "accept": "Akzeptieren",
+  "@accept": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "valueValue2": "{value1} → {value2}",
+  "@valueValue2": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "earned": "verdient",
+  "@earned": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "gettingLocation": "Standort wird abgerufen...",
+  "@gettingLocation": {
+    "description": "Text from Text in home_screen.dart"
+  },
+  "loadingRoute": "Route wird geladen...",
+  "@loadingRoute": {
+    "description": "Text from Text in home_screen.dart"
+  },
+  "valueKm": "{value} km",
+  "@valueKm": {
+    "description": "Text from Text in home_screen.dart"
+  },
+  "rides": "Fahrten",
+  "@rides": {
+    "description": "Text from _buildStatItem in home_screen.dart"
+  },
+  "seats": "Plätze",
+  "@seats": {
+    "description": "Text from _buildStatItem in home_screen.dart"
+  },
+  "whereAreYouGoing": "Wohin gehen Sie?",
+  "@whereAreYouGoing": {
+    "description": "Text from Text in home_screen.dart"
+  },
+  "hotspots": "Hotspots",
+  "@hotspots": {
+    "description": "Text from _buildMapControl.tooltip in home_screen.dart"
+  },
+  "nearbyRides": "Fahrten in der Nähe",
+  "@nearbyRides": {
+    "description": "Text from _buildMapControl.tooltip in home_screen.dart"
+  },
+  "followLocation": "Standort folgen",
+  "@followLocation": {
+    "description": "Text from _buildMapControl.tooltip in home_screen.dart"
+  },
+  "valueMin": "{value} Min.",
+  "@valueMin": {
+    "description": "Text from Text in home_screen.dart"
+  },
+  "mapStyle": "Kartenstil",
+  "@mapStyle": {
+    "description": "Text from Text in home_screen.dart"
+  },
+  "dark2": "Dunkel",
+  "@dark2": {
+    "description": "Text from _buildStyleOption in home_screen.dart"
+  },
+  "findARide": "Eine Fahrt finden",
+  "@findARide": {
+    "description": "Text from Text in home_screen.dart"
+  },
+  "filters": "Filter",
+  "@filters": {
+    "description": "Text from Text in home_screen.dart"
+  },
+  "fromWhere": "Woher?",
+  "@fromWhere": {
+    "description": "Text from InputDecoration.hintText in home_screen.dart"
+  },
+  "toWhere": "Wohin?",
+  "@toWhere": {
+    "description": "Text from InputDecoration.hintText in home_screen.dart"
+  },
+  "valueAvailable": "{value} verfügbar",
+  "@valueAvailable": {
+    "description": "Text from Text in home_screen.dart"
+  },
+  "noRidesAvailableNearby": "Keine Fahrten in der Nähe verfügbar",
+  "@noRidesAvailableNearby": {
+    "description": "Text from Text in home_screen.dart"
+  },
+  "tryExpandingYourSearchRadius": "Versuchen Sie, Ihren Suchradius zu erweitern",
+  "@tryExpandingYourSearchRadius": {
+    "description": "Text from Text in home_screen.dart"
+  },
+  "pickupPoint": "Abholpunkt",
+  "@pickupPoint": {
+    "description": "Text from Text in home_screen.dart"
+  },
+  "destination": "Ziel",
+  "@destination": {
+    "description": "Text from Text in home_screen.dart"
+  },
+  "eco": "Öko",
+  "@eco": {
+    "description": "Text from _buildSearchChip in home_screen.dart"
+  },
+  "premium": "Premium",
+  "@premium": {
+    "description": "Text from _buildSearchChip in home_screen.dart"
+  },
+  "pickupLocation": "Abholort",
+  "@pickupLocation": {
+    "description": "Text from Text in home_screen.dart"
+  },
+  "bookThisRide": "Diese Fahrt buchen",
+  "@bookThisRide": {
+    "description": "Text from Text in home_screen.dart"
+  },
+  "ride": "Fahrt",
+  "@ride": {
+    "description": "Text from _buildStatItem in quick_stats_card.dart"
+  },
+  "seat": "Platz",
+  "@seat": {
+    "description": "Text from _buildStatItem in quick_stats_card.dart"
+  },
+  "sendingImage": "Bild wird gesendet...",
+  "@sendingImage": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "failedToSendImageValue": "Bild konnte nicht gesendet werden: {value}",
+  "@failedToSendImageValue": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "failedToStartCallValue": "Anruf konnte nicht gestartet werden: {value}",
+  "@failedToStartCallValue": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "viewProfile": "Profil anzeigen",
+  "@viewProfile": {
+    "description": "Text from _buildOptionItem in chat_detail_screen.dart"
+  },
+  "searchInChat": "Im Chat suchen",
+  "@searchInChat": {
+    "description": "Text from _buildOptionItem in chat_detail_screen.dart"
+  },
+  "muteNotifications": "Benachrichtigungen stummschalten",
+  "@muteNotifications": {
+    "description": "Text from _buildOptionItem in chat_detail_screen.dart"
+  },
+  "clearChat": "Chat löschen",
+  "@clearChat": {
+    "description": "Text from _buildOptionItem in chat_detail_screen.dart"
+  },
+  "notificationsMutedForThisChat": "Benachrichtigungen für diesen Chat stummgeschaltet",
+  "@notificationsMutedForThisChat": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "areYouSureYouWant": "Sind Sie sicher, dass Sie alle Nachrichten löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
+  "@areYouSureYouWant": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "chatCleared": "Chat gelöscht",
+  "@chatCleared": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "clear": "Löschen",
+  "@clear": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "noMessagesYet": "Noch keine Nachrichten",
+  "@noMessagesYet": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "sendAMessageToStart": "Senden Sie eine Nachricht, um die Unterhaltung zu starten",
+  "@sendAMessageToStart": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "typing": "tippt...",
+  "@typing": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "replyingToValue": "Antwort auf {value}",
+  "@replyingToValue": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "tapToOpenMap": "Tippen Sie, um die Karte zu öffnen",
+  "@tapToOpenMap": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "open": "Öffnen",
+  "@open": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "thisMessageWasDeleted": "Diese Nachricht wurde gelöscht",
+  "@thisMessageWasDeleted": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "edited": "bearbeitet",
+  "@edited": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "reply": "Antworten",
+  "@reply": {
+    "description": "Text from _buildOptionItem in chat_detail_screen.dart"
+  },
+  "copy": "Kopieren",
+  "@copy": {
+    "description": "Text from _buildOptionItem in chat_detail_screen.dart"
+  },
+  "messageCopied": "Nachricht kopiert",
+  "@messageCopied": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "editMessage": "Nachricht bearbeiten",
+  "@editMessage": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "typeAMessage": "Nachricht eingeben...",
+  "@typeAMessage": {
+    "description": "Text from InputDecoration.hintText in chat_detail_screen.dart"
+  },
+  "camera": "Kamera",
+  "@camera": {
+    "description": "Text from _buildAttachmentOption in chat_detail_screen.dart"
+  },
+  "gallery": "Galerie",
+  "@gallery": {
+    "description": "Text from _buildAttachmentOption in chat_detail_screen.dart"
+  },
+  "document": "Dokument",
+  "@document": {
+    "description": "Text from _buildAttachmentOption in chat_detail_screen.dart"
+  },
+  "location": "Standort",
+  "@location": {
+    "description": "Text from _buildAttachmentOption in chat_detail_screen.dart"
+  },
+  "gettingYourLocation": "Standort wird abgerufen...",
+  "@gettingYourLocation": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "locationShared": "Standort geteilt",
+  "@locationShared": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "coordinatesCopiedToClipboard": "Koordinaten in Zwischenablage kopiert",
+  "@coordinatesCopiedToClipboard": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "couldNotOpenMapsValue": "Karten konnten nicht geöffnet werden: {value}",
+  "@couldNotOpenMapsValue": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "recordingReleaseToSend": "Aufnahme... Zum Senden loslassen",
+  "@recordingReleaseToSend": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "voiceNote": "Sprachnotiz",
+  "@voiceNote": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "voiceNotesComingSoonUse": "Sprachnotizen kommen bald! Verwenden Sie vorerst Text.",
+  "@voiceNotesComingSoonUse": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "recordingCancelled": "Aufnahme abgebrochen",
+  "@recordingCancelled": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "messages": "Nachrichten",
+  "@messages": {
+    "description": "Text from Text in chat_list_screen.dart"
+  },
+  "pleaseLoginToViewChats": "Bitte melden Sie sich an, um Chats anzuzeigen",
+  "@pleaseLoginToViewChats": {
+    "description": "Text from Text in chat_list_screen.dart"
+  },
+  "failedToLoadChats": "Chats konnten nicht geladen werden",
+  "@failedToLoadChats": {
+    "description": "Text from Text in chat_list_screen.dart"
+  },
+  "retry": "Wiederholen",
+  "@retry": {
+    "description": "Text from Text in chat_list_screen.dart"
+  },
+  "noConversationsYet": "Noch keine Unterhaltungen",
+  "@noConversationsYet": {
+    "description": "Text from _buildEmptyState.title in chat_list_screen.dart"
+  },
+  "noGroupChats": "Keine Gruppen-Chats",
+  "@noGroupChats": {
+    "description": "Text from _buildEmptyState.title in chat_list_screen.dart"
+  },
+  "noRideChats": "Keine Fahrten-Chats",
+  "@noRideChats": {
+    "description": "Text from _buildEmptyState.title in chat_list_screen.dart"
+  },
+  "callHistory": "Anrufverlauf",
+  "@callHistory": {
+    "description": "Text from Text in chat_list_screen.dart"
+  },
+  "noCallHistory": "Kein Anrufverlauf",
+  "@noCallHistory": {
+    "description": "Text from Text in chat_list_screen.dart"
+  },
+  "text3": " • ",
+  "@text3": {
+    "description": "Text from Text in chat_list_screen.dart"
+  },
+  "newMessage": "Neue Nachricht",
+  "@newMessage": {
+    "description": "Text from Text in chat_list_screen.dart"
+  },
+  "searchUsersByName": "Benutzer nach Namen suchen...",
+  "@searchUsersByName": {
+    "description": "Text from InputDecoration.hintText in chat_list_screen.dart"
+  },
+  "searchForAUserTo": "Suchen Sie nach einem Benutzer, um zu chatten",
+  "@searchForAUserTo": {
+    "description": "Text from Text in chat_list_screen.dart"
+  },
+  "typeAtLeast2Characters": "Geben Sie mindestens 2 Zeichen ein",
+  "@typeAtLeast2Characters": {
+    "description": "Text from Text in chat_list_screen.dart"
+  },
+  "noUsersFoundForValue": "Keine Benutzer für \"{value}\" gefunden",
+  "@noUsersFoundForValue": {
+    "description": "Text from Text in chat_list_screen.dart"
+  },
+  "allNotificationsMarkedAsRead": "Alle Benachrichtigungen als gelesen markiert",
+  "@allNotificationsMarkedAsRead": {
+    "description": "Text from Text in notifications_screen.dart"
+  },
+  "clearAllNotifications": "Alle Benachrichtigungen löschen",
+  "@clearAllNotifications": {
+    "description": "Text from Text in notifications_screen.dart"
+  },
+  "areYouSureYouWant2": "Sind Sie sicher, dass Sie alle Benachrichtigungen löschen möchten?",
+  "@areYouSureYouWant2": {
+    "description": "Text from Text in notifications_screen.dart"
+  },
+  "allNotificationsCleared": "Alle Benachrichtigungen gelöscht",
+  "@allNotificationsCleared": {
+    "description": "Text from Text in notifications_screen.dart"
+  },
+  "failedToClearNotifications": "Benachrichtigungen konnten nicht gelöscht werden",
+  "@failedToClearNotifications": {
+    "description": "Text from Text in notifications_screen.dart"
+  },
+  "clearAll": "Alle löschen",
+  "@clearAll": {
+    "description": "Text from Text in notifications_screen.dart"
+  },
+  "pleaseSignInToView": "Bitte melden Sie sich an, um Benachrichtigungen anzuzeigen",
+  "@pleaseSignInToView": {
+    "description": "Text from Text in notifications_screen.dart"
+  },
+  "unread": "Ungelesen",
+  "@unread": {
+    "description": "Text from Text in notifications_screen.dart"
+  },
+  "valueNew": "{value} neu",
+  "@valueNew": {
+    "description": "Text from Text in notifications_screen.dart"
+  },
+  "markAllAsRead": "Alle als gelesen markieren",
+  "@markAllAsRead": {
+    "description": "Text from Text in notifications_screen.dart"
+  },
+  "clearAll2": "Alle löschen",
+  "@clearAll2": {
+    "description": "Text from Text in notifications_screen.dart"
+  },
+  "noNotifications": "Keine Benachrichtigungen",
+  "@noNotifications": {
+    "description": "Text from Text in notifications_screen.dart"
+  },
+  "youReAllCaughtUp": "Sie sind auf dem neuesten Stand!",
+  "@youReAllCaughtUp": {
+    "description": "Text from Text in notifications_screen.dart"
+  },
+  "couldNotOpenChatValue": "Chat konnte nicht geöffnet werden: {value}",
+  "@couldNotOpenChatValue": {
+    "description": "Text from Text in notifications_screen.dart"
+  },
+  "youReReadyToRun": "Sie sind bereit zu laufen",
+  "@youReReadyToRun": {
+    "description": "Text from Text in onboarding_screen.dart"
+  },
+  "createAnAccountToStart": "Erstellen Sie ein Konto, um Ihre Läufe zu verfolgen und sich mit anderen Läufern zu verbinden.",
+  "@createAnAccountToStart": {
+    "description": "Text from Text in onboarding_screen.dart"
+  },
+  "kContinue": "Fortfahren",
+  "@kContinue": {
+    "description": "Text from Text in onboarding_screen.dart"
+  },
+  "skip": "Überspringen",
+  "@skip": {
+    "description": "Text from Text in onboarding_screen.dart"
+  },
+  "getStarted": "Loslegen",
+  "@getStarted": {
+    "description": "Text from Text in onboarding_screen.dart"
+  },
+  "earnings": "Einnahmen",
+  "@earnings": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "totalEarnings": "Gesamteinnahmen",
+  "@totalEarnings": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "thisWeekValue": "Diese Woche: {value} €",
+  "@thisWeekValue": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "earningsOverview": "Einnahmenübersicht",
+  "@earningsOverview": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "active": "Aktiv",
+  "@active": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "ridesEarnings": "Fahrteneinnahmen",
+  "@ridesEarnings": {
+    "description": "Text from _buildEarningsBreakdownItem in driver_earnings_screen.dart"
+  },
+  "tipsBonuses": "Trinkgelder & Boni",
+  "@tipsBonuses": {
+    "description": "Text from _buildEarningsBreakdownItem in driver_earnings_screen.dart"
+  },
+  "environmentalImpact": "Umweltauswirkungen",
+  "@environmentalImpact": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "valueKgCoSaved": "{value} kg CO₂ eingespart",
+  "@valueKgCoSaved": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "stripeConnected": "Stripe verbunden",
+  "@stripeConnected": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "setUpPayouts": "Auszahlungen einrichten",
+  "@setUpPayouts": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "receivePaymentsFromRiders": "Zahlungen von Mitfahrern erhalten",
+  "@receivePaymentsFromRiders": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "completeVerification": "Verifizierung abschließen",
+  "@completeVerification": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "connectYourBankAccount": "Verbinden Sie Ihr Bankkonto",
+  "@connectYourBankAccount": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "availableBalance": "Verfügbares Guthaben",
+  "@availableBalance": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "confirmPayout": "Auszahlung bestätigen",
+  "@confirmPayout": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "withdrawValueToYourConnected": "{value} € auf Ihr verbundenes Bankkonto abheben?",
+  "@withdrawValueToYourConnected": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "withdraw": "Abheben",
+  "@withdraw": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "payoutOfValueInitiated": "Auszahlung von {value} € eingeleitet!",
+  "@payoutOfValueInitiated": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "payoutFailedPleaseTryAgain": "Auszahlung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+  "@payoutFailedPleaseTryAgain": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "recentTransactions": "Letzte Transaktionen",
+  "@recentTransactions": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "noTransactionsYet": "Noch keine Transaktionen",
+  "@noTransactionsYet": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "failedToLoadTransactions": "Transaktionen konnten nicht geladen werden",
+  "@failedToLoadTransactions": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "valueValue3": "{value1}{value2} €",
+  "@valueValue3": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "getPaidForYourRides": "Bezahlt werden für Ihre Fahrten",
+  "@getPaidForYourRides": {
+    "description": "Text from Text in driver_stripe_onboarding_screen.dart"
+  },
+  "connectYourBankAccountTo": "Verbinden Sie Ihr Bankkonto, um Zahlungen direkt von Mitfahrern zu erhalten. Powered by Stripe für sichere Transaktionen.",
+  "@connectYourBankAccountTo": {
+    "description": "Text from Text in driver_stripe_onboarding_screen.dart"
+  },
+  "instantPayouts": "Sofortige Auszahlungen",
+  "@instantPayouts": {
+    "description": "Text from _buildBenefitItem.title in driver_stripe_onboarding_screen.dart"
+  },
+  "secureProtected": "Sicher & geschützt",
+  "@secureProtected": {
+    "description": "Text from _buildBenefitItem.title in driver_stripe_onboarding_screen.dart"
+  },
+  "clearTracking": "Klares Tracking",
+  "@clearTracking": {
+    "description": "Text from _buildBenefitItem.title in driver_stripe_onboarding_screen.dart"
+  },
+  "lowFees": "Niedrige Gebühren",
+  "@lowFees": {
+    "description": "Text from _buildBenefitItem.title in driver_stripe_onboarding_screen.dart"
+  },
+  "youLlBeRedirectedTo": "Sie werden zu Stripe weitergeleitet, um die Einrichtung abzuschließen",
+  "@youLlBeRedirectedTo": {
+    "description": "Text from Text in driver_stripe_onboarding_screen.dart"
+  },
+  "connectStripe": "Stripe verbinden",
+  "@connectStripe": {
+    "description": "Text from Text in driver_stripe_onboarding_screen.dart"
+  },
+  "stripeAccountConnectedSuccessfully": "Stripe-Konto erfolgreich verbunden!",
+  "@stripeAccountConnectedSuccessfully": {
+    "description": "Text from Text in driver_stripe_onboarding_screen.dart"
+  },
+  "errorLoadingPageValue": "Fehler beim Laden der Seite: {value}",
+  "@errorLoadingPageValue": {
+    "description": "Text from Text in driver_stripe_onboarding_screen.dart"
+  },
+  "pleaseSignInToView2": "Bitte melden Sie sich an, um den Zahlungsverlauf anzuzeigen",
+  "@pleaseSignInToView2": {
+    "description": "Text from Text in payment_history_screen.dart"
+  },
+  "paymentHistory": "Zahlungsverlauf",
+  "@paymentHistory": {
+    "description": "Text from Text in payment_history_screen.dart"
+  },
+  "yourTransactions": "Ihre Transaktionen",
+  "@yourTransactions": {
+    "description": "Text from Text in payment_history_screen.dart"
+  },
+  "noPaymentsFound": "Keine Zahlungen gefunden",
+  "@noPaymentsFound": {
+    "description": "Text from Text in payment_history_screen.dart"
+  },
+  "yourPaymentHistoryWillAppear": "Ihr Zahlungsverlauf wird hier angezeigt",
+  "@yourPaymentHistoryWillAppear": {
+    "description": "Text from Text in payment_history_screen.dart"
+  },
+  "ridePayment": "Fahrtenzahlung",
+  "@ridePayment": {
+    "description": "Text from Text in payment_history_screen.dart"
+  },
+  "unknownDate": "Unbekanntes Datum",
+  "@unknownDate": {
+    "description": "Text from Text in payment_history_screen.dart"
+  },
+  "valueValue4": "{value1} {value2}",
+  "@valueValue4": {
+    "description": "Text from Text in payment_history_screen.dart"
+  },
+  "paymentDetails": "Zahlungsdetails",
+  "@paymentDetails": {
+    "description": "Text from Text in payment_history_screen.dart"
+  },
+  "amount": "Betrag",
+  "@amount": {
+    "description": "Text from _buildDetailRow in payment_history_screen.dart"
+  },
+  "status": "Status",
+  "@status": {
+    "description": "Text from _buildDetailRow in payment_history_screen.dart"
+  },
+  "seats2": "Sitze",
+  "@seats2": {
+    "description": "Text from _buildDetailRow in payment_history_screen.dart"
+  },
+  "platformFee": "Plattformgebühr",
+  "@platformFee": {
+    "description": "Text from _buildDetailRow in payment_history_screen.dart"
+  },
+  "card": "Karte",
+  "@card": {
+    "description": "Text from _buildDetailRow in payment_history_screen.dart"
+  },
+  "value7": "•••• {value}",
+  "@value7": {
+    "description": "Text from _buildDetailRow in payment_history_screen.dart"
+  },
+  "date": "Datum",
+  "@date": {
+    "description": "Text from _buildDetailRow in payment_history_screen.dart"
+  },
+  "transactionId": "Transaktions-ID",
+  "@transactionId": {
+    "description": "Text from _buildDetailRow in payment_history_screen.dart"
+  },
+  "requestRefund": "Rückerstattung anfordern",
+  "@requestRefund": {
+    "description": "Text from Text in payment_history_screen.dart"
+  },
+  "errorLoadingAchievements": "Fehler beim Laden der Erfolge",
+  "@errorLoadingAchievements": {
+    "description": "Text from Text in achievements_screen.dart"
+  },
+  "levelValueValue": "Stufe {value1} - {value2}",
+  "@levelValueValue": {
+    "description": "Text from Text in achievements_screen.dart"
+  },
+  "valueXp2": "{value} XP",
+  "@valueXp2": {
+    "description": "Text from Text in achievements_screen.dart"
+  },
+  "valueXpToLevelValue": "{value1} XP bis Stufe {value2}",
+  "@valueXpToLevelValue": {
+    "description": "Text from Text in achievements_screen.dart"
+  },
+  "text4": "🏆",
+  "@text4": {
+    "description": "Text from _buildStatItem in achievements_screen.dart"
+  },
+  "badges": "Abzeichen",
+  "@badges": {
+    "description": "Text from _buildStatItem in achievements_screen.dart"
+  },
+  "text5": "🎯",
+  "@text5": {
+    "description": "Text from _buildStatItem in achievements_screen.dart"
+  },
+  "challenges": "Herausforderungen",
+  "@challenges": {
+    "description": "Text from _buildStatItem in achievements_screen.dart"
+  },
+  "text6": "🚗",
+  "@text6": {
+    "description": "Text from _buildStatItem in achievements_screen.dart"
+  },
+  "text7": "🌍",
+  "@text7": {
+    "description": "Text from _buildStatItem in achievements_screen.dart"
+  },
+  "kgCo": "kg CO₂",
+  "@kgCo": {
+    "description": "Text from _buildStatItem in achievements_screen.dart"
+  },
+  "unlocked": "✓ Freigeschaltet",
+  "@unlocked": {
+    "description": "Text from Text in achievements_screen.dart"
+  },
+  "locked": "🔒 Gesperrt",
+  "@locked": {
+    "description": "Text from Text in achievements_screen.dart"
+  },
+  "valueComplete": "{value}% Abgeschlossen",
+  "@valueComplete": {
+    "description": "Text from Text in achievements_screen.dart"
+  },
+  "text8": "🥈",
+  "@text8": {
+    "description": "Text from _buildTopRanker in achievements_screen.dart"
+  },
+  "mikeC": "Mike C.",
+  "@mikeC": {
+    "description": "Text from _buildTopRanker in achievements_screen.dart"
+  },
+  "text112k": "11.2K",
+  "@text112k": {
+    "description": "Text from _buildTopRanker in achievements_screen.dart"
+  },
+  "text10": "🥇",
+  "@text10": {
+    "description": "Text from _buildTopRanker in achievements_screen.dart"
+  },
+  "sarahJ": "Sarah J.",
+  "@sarahJ": {
+    "description": "Text from _buildTopRanker in achievements_screen.dart"
+  },
+  "text124k": "12.4K",
+  "@text124k": {
+    "description": "Text from _buildTopRanker in achievements_screen.dart"
+  },
+  "text11": "🥉",
+  "@text11": {
+    "description": "Text from _buildTopRanker in achievements_screen.dart"
+  },
+  "emilyD": "Emily D.",
+  "@emilyD": {
+    "description": "Text from _buildTopRanker in achievements_screen.dart"
+  },
+  "text98k": "9.8K",
+  "@text98k": {
+    "description": "Text from _buildTopRanker in achievements_screen.dart"
+  },
+  "levelValue": "Stufe {value}",
+  "@levelValue": {
+    "description": "Text from Text in achievements_screen.dart"
+  },
+  "verifiedDriver": "Verifizierter Fahrer",
+  "@verifiedDriver": {
+    "description": "Text from Text in driver_profile_screen.dart"
+  },
+  "rating": "Bewertung",
+  "@rating": {
+    "description": "Text from _buildQuickStat in driver_profile_screen.dart"
+  },
+  "trips": "Fahrten",
+  "@trips": {
+    "description": "Text from _buildQuickStat in driver_profile_screen.dart"
+  },
+  "member": "Mitglied",
+  "@member": {
+    "description": "Text from _buildQuickStat in driver_profile_screen.dart"
+  },
+  "text12": "...",
+  "@text12": {
+    "description": "Text from _buildQuickStat in driver_profile_screen.dart"
+  },
+  "text00": "0.0",
+  "@text00": {
+    "description": "Text from _buildQuickStat in driver_profile_screen.dart"
+  },
+  "quickActions": "Schnellaktionen",
+  "@quickActions": {
+    "description": "Text from Text in driver_profile_screen.dart"
+  },
+  "performanceOverview": "Leistungsübersicht",
+  "@performanceOverview": {
+    "description": "Text from Text in driver_profile_screen.dart"
+  },
+  "totalTrips": "Gesamtfahrten",
+  "@totalTrips": {
+    "description": "Text from _buildStatCard in driver_profile_screen.dart"
+  },
+  "valueThisMonth": "+{value} diesen Monat",
+  "@valueThisMonth": {
+    "description": "Text from _buildStatCard in driver_profile_screen.dart"
+  },
+  "valueThisMonth2": "+{value} € diesen Monat",
+  "@valueThisMonth2": {
+    "description": "Text from _buildStatCard in driver_profile_screen.dart"
+  },
+  "coSaved": "CO₂ eingespart",
+  "@coSaved": {
+    "description": "Text from _buildStatCard in driver_profile_screen.dart"
+  },
+  "valueKg": "{value} kg",
+  "@valueKg": {
+    "description": "Text from _buildStatCard in driver_profile_screen.dart"
+  },
+  "sinceJoining": "Seit Beitritt",
+  "@sinceJoining": {
+    "description": "Text from _buildStatCard in driver_profile_screen.dart"
+  },
+  "avgRating": "Durchschn. Bewertung",
+  "@avgRating": {
+    "description": "Text from _buildStatCard in driver_profile_screen.dart"
+  },
+  "last100Trips": "Letzte 100 Fahrten",
+  "@last100Trips": {
+    "description": "Text from _buildStatCard in driver_profile_screen.dart"
+  },
+  "noData": "Keine Daten",
+  "@noData": {
+    "description": "Text from _buildStatCard in driver_profile_screen.dart"
+  },
+  "text0": "0 €",
+  "@text0": {
+    "description": "Text from _buildStatCard in driver_profile_screen.dart"
+  },
+  "text0Kg": "0 kg",
+  "@text0Kg": {
+    "description": "Text from _buildStatCard in driver_profile_screen.dart"
+  },
+  "weeklyActivity": "Wöchentliche Aktivität",
+  "@weeklyActivity": {
+    "description": "Text from Text in driver_profile_screen.dart"
+  },
+  "ratingBreakdown": "Bewertungsaufschlüsselung",
+  "@ratingBreakdown": {
+    "description": "Text from Text in driver_profile_screen.dart"
+  },
+  "tripsThisWeek": "Fahrten diese Woche",
+  "@tripsThisWeek": {
+    "description": "Text from Text in driver_profile_screen.dart"
+  },
+  "valueTrips": "{value} Fahrten",
+  "@valueTrips": {
+    "description": "Text from Text in driver_profile_screen.dart"
+  },
+  "driverSettings": "Fahrer-Einstellungen",
+  "@driverSettings": {
+    "description": "Text from Text in driver_settings_screen.dart"
+  },
+  "ridePreferences": "Fahrtpräferenzen",
+  "@ridePreferences": {
+    "description": "Text from _buildSectionHeader in driver_settings_screen.dart"
+  },
+  "autoAcceptRequests": "Anfragen automatisch akzeptieren",
+  "@autoAcceptRequests": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "automaticallyAcceptRideRequestsThat": "Fahrtanfragen, die Ihren Kriterien entsprechen, automatisch akzeptieren",
+  "@automaticallyAcceptRideRequestsThat": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "allowInstantBooking": "Sofortbuchung zulassen",
+  "@allowInstantBooking": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "letPassengersBookWithoutWaiting": "Passagieren erlauben, ohne Genehmigung zu buchen",
+  "@letPassengersBookWithoutWaiting": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "maximumPickupDistance": "Maximale Abholentfernung",
+  "@maximumPickupDistance": {
+    "description": "Text from _buildSliderTile in driver_settings_screen.dart"
+  },
+  "onlyReceiveRequestsWithinThis": "Nur Anfragen innerhalb dieser Entfernung erhalten",
+  "@onlyReceiveRequestsWithinThis": {
+    "description": "Text from _buildSliderTile in driver_settings_screen.dart"
+  },
+  "paymentSettings": "Zahlungseinstellungen",
+  "@paymentSettings": {
+    "description": "Text from _buildSectionHeader in driver_settings_screen.dart"
+  },
+  "acceptCashPayments": "Barzahlungen akzeptieren",
+  "@acceptCashPayments": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "allowPassengersToPayWith": "Passagieren erlauben, bar zu bezahlen",
+  "@allowPassengersToPayWith": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "acceptCardPayments": "Kartenzahlungen akzeptieren",
+  "@acceptCardPayments": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "allowPassengersToPayWith2": "Passagieren erlauben, in der App mit Karte zu bezahlen",
+  "@allowPassengersToPayWith2": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "payoutMethod": "Auszahlungsmethode",
+  "@payoutMethod": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "bankAccountEndingIn4532": "Bankkonto endend mit 4532",
+  "@bankAccountEndingIn4532": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "taxDocuments": "Steuerdokumente",
+  "@taxDocuments": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "viewAndDownloadTaxForms": "Steuerformulare ansehen und herunterladen",
+  "@viewAndDownloadTaxForms": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "navigationMap": "Navigation & Karte",
+  "@navigationMap": {
+    "description": "Text from _buildSectionHeader in driver_settings_screen.dart"
+  },
+  "showOnDriverMap": "Auf Fahrerkarte anzeigen",
+  "@showOnDriverMap": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "allowPassengersToSeeYour": "Passagieren erlauben, Ihren Standort zu sehen",
+  "@allowPassengersToSeeYour": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "preferredNavigationApp": "Bevorzugte Navigations-App",
+  "@preferredNavigationApp": {
+    "description": "Text from _buildDropdownTile in driver_settings_screen.dart"
+  },
+  "soundEffects": "Soundeffekte",
+  "@soundEffects": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "playSoundsForNewRequests": "Töne für neue Anfragen und Nachrichten abspielen",
+  "@playSoundsForNewRequests": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "vibration": "Vibration",
+  "@vibration": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "vibrateForImportantAlerts": "Für wichtige Warnungen vibrieren",
+  "@vibrateForImportantAlerts": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "notificationPreferences": "Benachrichtigungspräferenzen",
+  "@notificationPreferences": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "customizeWhatNotificationsYouReceive": "Benachrichtigungen anpassen, die Sie erhalten",
+  "@customizeWhatNotificationsYouReceive": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "nightMode": "Nachtmodus",
+  "@nightMode": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "reduceEyeStrainInLow": "Augenbelastung bei wenig Licht reduzieren",
+  "@reduceEyeStrainInLow": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "accountSecurity": "Konto & Sicherheit",
+  "@accountSecurity": {
+    "description": "Text from _buildSectionHeader in driver_settings_screen.dart"
+  },
+  "driverDocuments": "Fahrerdokumente",
+  "@driverDocuments": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "licenseInsuranceAndRegistration": "Führerschein, Versicherung und Zulassung",
+  "@licenseInsuranceAndRegistration": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "backgroundCheck": "Hintergrundüberprüfung",
+  "@backgroundCheck": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "viewYourVerificationStatus": "Ihren Verifizierungsstatus ansehen",
+  "@viewYourVerificationStatus": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "changePassword": "Passwort ändern",
+  "@changePassword": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "updateYourAccountPassword": "Ihr Kontopasswort aktualisieren",
+  "@updateYourAccountPassword": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "twoFactorAuthentication": "Zwei-Faktor-Authentifizierung",
+  "@twoFactorAuthentication": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "addExtraSecurityToYour": "Zusätzliche Sicherheit für Ihr Konto hinzufügen",
+  "@addExtraSecurityToYour": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "support": "Support",
+  "@support": {
+    "description": "Text from _buildSectionHeader in driver_settings_screen.dart"
+  },
+  "driverHelpCenter": "Fahrer-Hilfezentrum",
+  "@driverHelpCenter": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "faqsAndTroubleshootingGuides": "FAQs und Fehlerbehebungsleitfäden",
+  "@faqsAndTroubleshootingGuides": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "contactSupport": "Support kontaktieren",
+  "@contactSupport": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "chatWithOurSupportTeam": "Mit unserem Support-Team chatten",
+  "@chatWithOurSupportTeam": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "reportASafetyIssue": "Sicherheitsproblem melden",
+  "@reportASafetyIssue": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "reportIncidentsOrConcerns": "Vorfälle oder Bedenken melden",
+  "@reportIncidentsOrConcerns": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "accountActions": "Kontoaktionen",
+  "@accountActions": {
+    "description": "Text from _buildSectionHeader in driver_settings_screen.dart"
+  },
+  "switchToRiderMode": "Zum Mitfahrer-Modus wechseln",
+  "@switchToRiderMode": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "useTheAppAsA": "Die App als Passagier verwenden",
+  "@useTheAppAsA": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "signOut": "Abmelden",
+  "@signOut": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "logOutOfYourAccount": "Von Ihrem Konto abmelden",
+  "@logOutOfYourAccount": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "pauseDriverAccount": "Fahrerkonto pausieren",
+  "@pauseDriverAccount": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "temporarilyStopReceivingRequests": "Temporär keine Anfragen mehr erhalten",
+  "@temporarilyStopReceivingRequests": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "deleteDriverAccount": "Fahrerkonto löschen",
+  "@deleteDriverAccount": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "permanentlyRemoveYourDriverProfile": "Ihr Fahrerprofil dauerhaft entfernen",
+  "@permanentlyRemoveYourDriverProfile": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "sportconnectDriver": "SportConnect Fahrer",
+  "@sportconnectDriver": {
+    "description": "Text from Text in driver_settings_screen.dart"
+  },
+  "version210": "Version 2.1.0",
+  "@version210": {
+    "description": "Text from Text in driver_settings_screen.dart"
+  },
+  "areYouSureYouWant3": "Sind Sie sicher, dass Sie sich von Ihrem Konto abmelden möchten?",
+  "@areYouSureYouWant3": {
+    "description": "Text from Text in driver_settings_screen.dart"
+  },
+  "thisActionCannotBeUndone": "Diese Aktion kann nicht rückgängig gemacht werden. Alle Ihre Fahrerdaten, Ihr Einnahmenverlauf und Ihre Bewertungen werden dauerhaft gelöscht.",
+  "@thisActionCannotBeUndone": {
+    "description": "Text from Text in driver_settings_screen.dart"
+  },
+  "pleaseSignInToManage": "Bitte melden Sie sich an, um Fahrzeuge zu verwalten",
+  "@pleaseSignInToManage": {
+    "description": "Text from Text in driver_vehicle_screen.dart"
+  },
+  "myVehicles": "Meine Fahrzeuge",
+  "@myVehicles": {
+    "description": "Text from Text in driver_vehicle_screen.dart"
+  },
+  "noVehiclesAdded": "Keine Fahrzeuge hinzugefügt",
+  "@noVehiclesAdded": {
+    "description": "Text from Text in driver_vehicle_screen.dart"
+  },
+  "addYourFirstVehicleTo": "Fügen Sie Ihr erstes Fahrzeug hinzu, um\nFahrten anzubieten",
+  "@addYourFirstVehicleTo": {
+    "description": "Text from Text in driver_vehicle_screen.dart"
+  },
+  "addVehicle": "Fahrzeug hinzufügen",
+  "@addVehicle": {
+    "description": "Text from Text in driver_vehicle_screen.dart"
+  },
+  "vehicleSetAsActive": "Fahrzeug als aktiv festgelegt",
+  "@vehicleSetAsActive": {
+    "description": "Text from Text in driver_vehicle_screen.dart"
+  },
+  "deleteVehicle": "Fahrzeug löschen",
+  "@deleteVehicle": {
+    "description": "Text from Text in driver_vehicle_screen.dart"
+  },
+  "areYouSureYouWant4": "Sind Sie sicher, dass Sie {value} löschen möchten?",
+  "@areYouSureYouWant4": {
+    "description": "Text from Text in driver_vehicle_screen.dart"
+  },
+  "vehicleDeleted": "Fahrzeug gelöscht",
+  "@vehicleDeleted": {
+    "description": "Text from Text in driver_vehicle_screen.dart"
+  },
+  "setActive": "Als aktiv festlegen",
+  "@setActive": {
+    "description": "Text from Text in driver_vehicle_screen.dart"
+  },
+  "editVehicle": "Fahrzeug bearbeiten",
+  "@editVehicle": {
+    "description": "Text from Text in driver_vehicle_screen.dart"
+  },
+  "addPhoto": "Foto hinzufügen",
+  "@addPhoto": {
+    "description": "Text from Text in driver_vehicle_screen.dart"
+  },
+  "make": "Marke",
+  "@make": {
+    "description": "Text from _buildTextField.label in driver_vehicle_screen.dart"
+  },
+  "model": "Modell",
+  "@model": {
+    "description": "Text from _buildTextField.label in driver_vehicle_screen.dart"
+  },
+  "year": "Jahr",
+  "@year": {
+    "description": "Text from _buildTextField.label in driver_vehicle_screen.dart"
+  },
+  "color": "Farbe",
+  "@color": {
+    "description": "Text from _buildTextField.label in driver_vehicle_screen.dart"
+  },
+  "licensePlate": "Kennzeichen",
+  "@licensePlate": {
+    "description": "Text from _buildTextField.label in driver_vehicle_screen.dart"
+  },
+  "passengerCapacity": "Passagierkapazität",
+  "@passengerCapacity": {
+    "description": "Text from Text in driver_vehicle_screen.dart"
+  },
+  "saveChanges": "Änderungen speichern",
+  "@saveChanges": {
+    "description": "Text from Text in driver_vehicle_screen.dart"
+  },
+  "capacity": "Kapazität",
+  "@capacity": {
+    "description": "Text from _buildDetailRow in driver_vehicle_screen.dart"
+  },
+  "valuePassengers": "{value} Passagiere",
+  "@valuePassengers": {
+    "description": "Text from _buildDetailRow in driver_vehicle_screen.dart"
+  },
+  "totalRides": "Gesamtfahrten",
+  "@totalRides": {
+    "description": "Text from _buildDetailRow in driver_vehicle_screen.dart"
+  },
+  "value8": "{value} ⭐",
+  "@value8": {
+    "description": "Text from _buildDetailRow in driver_vehicle_screen.dart"
+  },
+  "features": "Funktionen",
+  "@features": {
+    "description": "Text from Text in driver_vehicle_screen.dart"
+  },
+  "changePhoto": "Foto ändern",
+  "@changePhoto": {
+    "description": "Text from Text in edit_profile_screen.dart"
+  },
+  "personalInformation": "Persönliche Informationen",
+  "@personalInformation": {
+    "description": "Text from _buildSectionLabel in edit_profile_screen.dart"
+  },
+  "aboutYou": "Über Sie",
+  "@aboutYou": {
+    "description": "Text from _buildSectionLabel in edit_profile_screen.dart"
+  },
+  "demographics": "Demografie",
+  "@demographics": {
+    "description": "Text from _buildSectionLabel in edit_profile_screen.dart"
+  },
+  "gender": "Geschlecht",
+  "@gender": {
+    "description": "Text from _buildActionTile.label in edit_profile_screen.dart"
+  },
+  "birthday": "Geburtstag",
+  "@birthday": {
+    "description": "Text from _buildActionTile.label in edit_profile_screen.dart"
+  },
+  "sportsInterests": "Sportinteressen",
+  "@sportsInterests": {
+    "description": "Text from _buildSectionLabel in edit_profile_screen.dart"
+  },
+  "add": "+ Hinzufügen",
+  "@add": {
+    "description": "Text from Text in edit_profile_screen.dart"
+  },
+  "noInterestsSelected": "Keine Interessen ausgewählt",
+  "@noInterestsSelected": {
+    "description": "Text from Text in edit_profile_screen.dart"
+  },
+  "profileUpdated": "Profil aktualisiert",
+  "@profileUpdated": {
+    "description": "Text from Text in edit_profile_screen.dart"
+  },
+  "changeProfilePhoto": "Profilfoto ändern",
+  "@changeProfilePhoto": {
+    "description": "Text from Text in edit_profile_screen.dart"
+  },
+  "takePhoto": "Foto aufnehmen",
+  "@takePhoto": {
+    "description": "Text from Text in edit_profile_screen.dart"
+  },
+  "chooseFromGallery": "Aus Galerie wählen",
+  "@chooseFromGallery": {
+    "description": "Text from Text in edit_profile_screen.dart"
+  },
+  "removePhoto": "Foto entfernen",
+  "@removePhoto": {
+    "description": "Text from Text in edit_profile_screen.dart"
+  },
+  "selectGender": "Geschlecht auswählen",
+  "@selectGender": {
+    "description": "Text from Text in edit_profile_screen.dart"
+  },
+  "selectSportsInterests": "Sportinteressen auswählen",
+  "@selectSportsInterests": {
+    "description": "Text from Text in edit_profile_screen.dart"
+  },
+  "discardChanges": "Änderungen verwerfen?",
+  "@discardChanges": {
+    "description": "Text from Text in edit_profile_screen.dart"
+  },
+  "youHaveUnsavedChanges": "Sie haben nicht gespeicherte Änderungen.",
+  "@youHaveUnsavedChanges": {
+    "description": "Text from Text in edit_profile_screen.dart"
+  },
+  "discard": "Verwerfen",
+  "@discard": {
+    "description": "Text from Text in edit_profile_screen.dart"
+  },
+  "failedToLoadProfile": "Profil konnte nicht geladen werden",
+  "@failedToLoadProfile": {
+    "description": "Text from Text in profile_screen.dart"
+  },
+  "pleaseCheckYourConnectionAnd": "Bitte überprüfen Sie Ihre Verbindung und versuchen Sie es erneut",
+  "@pleaseCheckYourConnectionAnd": {
+    "description": "Text from Text in profile_screen.dart"
+  },
+  "myProfile": "Mein Profil",
+  "@myProfile": {
+    "description": "Text from Text in profile_screen.dart"
+  },
+  "memberSinceValue": "Mitglied seit {value}",
+  "@memberSinceValue": {
+    "description": "Text from Text in profile_screen.dart"
+  },
+  "newMember": "Neues Mitglied",
+  "@newMember": {
+    "description": "Text from Text in profile_screen.dart"
+  },
+  "verifiedInfo": "Bestätigte Informationen",
+  "@verifiedInfo": {
+    "description": "Text from Text in profile_screen.dart"
+  },
+  "verified": "Bestätigt",
+  "@verified": {
+    "description": "Text from Text in profile_screen.dart"
+  },
+  "notVerified": "Nicht bestätigt",
+  "@notVerified": {
+    "description": "Text from Text in profile_screen.dart"
+  },
+  "rideStatistics": "Fahrtenstatistik",
+  "@rideStatistics": {
+    "description": "Text from Text in profile_screen.dart"
+  },
+  "saved": "Gespart",
+  "@saved": {
+    "description": "Text from _buildStatCard.label in profile_screen.dart"
+  },
+  "earned2": "Verdient",
+  "@earned2": {
+    "description": "Text from _buildStatCard.label in profile_screen.dart"
+  },
+  "profileNotFound": "Profil nicht gefunden",
+  "@profileNotFound": {
+    "description": "Text from Text in profile_screen.dart"
+  },
+  "yourProfileDataCouldNot": "Ihre Profildaten konnten nicht geladen werden.\nDies kann passieren, wenn Sie ein neuer Benutzer sind.",
+  "@yourProfileDataCouldNot": {
+    "description": "Text from Text in profile_screen.dart"
+  },
+  "signOutTryAgain": "Abmelden und erneut versuchen",
+  "@signOutTryAgain": {
+    "description": "Text from Text in profile_screen.dart"
+  },
+  "findPeople": "Personen finden",
+  "@findPeople": {
+    "description": "Text from Text in profile_search_screen.dart"
+  },
+  "searchByName": "Nach Namen suchen",
+  "@searchByName": {
+    "description": "Text from Text in profile_search_screen.dart"
+  },
+  "searchUsers": "Benutzer suchen...",
+  "@searchUsers": {
+    "description": "Text from InputDecoration.hintText in profile_search_screen.dart"
+  },
+  "findFellowRiders": "Mitfahrer finden",
+  "@findFellowRiders": {
+    "description": "Text from Text in profile_search_screen.dart"
+  },
+  "searchForUsersByTheir": "Suchen Sie nach Benutzern anhand ihres Namens,\num sich zu verbinden und Fahrten zu teilen",
+  "@searchForUsersByTheir": {
+    "description": "Text from Text in profile_search_screen.dart"
+  },
+  "popularSearches": "Beliebte Suchen",
+  "@popularSearches": {
+    "description": "Text from Text in profile_search_screen.dart"
+  },
+  "searching": "Suche läuft...",
+  "@searching": {
+    "description": "Text from Text in profile_search_screen.dart"
+  },
+  "noResultsFound2": "Keine Ergebnisse gefunden",
+  "@noResultsFound2": {
+    "description": "Text from Text in profile_search_screen.dart"
+  },
+  "noUsersFoundMatchingValue": "Keine Benutzer gefunden, die \"{value}\" entsprechen",
+  "@noUsersFoundMatchingValue": {
+    "description": "Text from Text in profile_search_screen.dart"
+  },
+  "tryADifferentSearchTerm": "Versuchen Sie einen anderen Suchbegriff",
+  "@tryADifferentSearchTerm": {
+    "description": "Text from Text in profile_search_screen.dart"
+  },
+  "somethingWentWrong": "Etwas ist schief gelaufen",
+  "@somethingWentWrong": {
+    "description": "Text from Text in profile_search_screen.dart"
+  },
+  "vehicles": "Fahrzeuge",
+  "@vehicles": {
+    "description": "Text from _buildNavigationTile.title in settings_screen.dart"
+  },
+  "legal": "Rechtliches",
+  "@legal": {
+    "description": "Text from _buildSectionHeader in settings_screen.dart"
+  },
+  "sportconnectV100": "SportConnect v1.0.0",
+  "@sportconnectV100": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "noBlockedUsers": "Keine gesperrten Benutzer",
+  "@noBlockedUsers": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "usersYouBlockWillAppear": "Benutzer, die Sie blockieren, werden hier angezeigt",
+  "@usersYouBlockWillAppear": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "comingSoon": "In Kürze",
+  "@comingSoon": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "paymentIntegrationWillBeAvailable": "Zahlungsintegration wird bald verfügbar sein",
+  "@paymentIntegrationWillBeAvailable": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "currentPassword": "Aktuelles Passwort",
+  "@currentPassword": {
+    "description": "Text from InputDecoration.labelText in settings_screen.dart"
+  },
+  "newPassword": "Neues Passwort",
+  "@newPassword": {
+    "description": "Text from InputDecoration.labelText in settings_screen.dart"
+  },
+  "confirmNewPassword": "Neues Passwort bestätigen",
+  "@confirmNewPassword": {
+    "description": "Text from InputDecoration.labelText in settings_screen.dart"
+  },
+  "passwordUpdatedSuccessfully": "Passwort erfolgreich aktualisiert",
+  "@passwordUpdatedSuccessfully": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "update": "Aktualisieren",
+  "@update": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "gettingStarted": "Erste Schritte",
+  "@gettingStarted": {
+    "description": "Text from _buildHelpSection in settings_screen.dart"
+  },
+  "ridesCarpooling": "Fahrten & Fahrgemeinschaften",
+  "@ridesCarpooling": {
+    "description": "Text from _buildHelpSection in settings_screen.dart"
+  },
+  "safetyTrust": "Sicherheit & Vertrauen",
+  "@safetyTrust": {
+    "description": "Text from _buildHelpSection in settings_screen.dart"
+  },
+  "accountSettings": "Konto & Einstellungen",
+  "@accountSettings": {
+    "description": "Text from _buildHelpSection in settings_screen.dart"
+  },
+  "openingValue": "Öffnung: {value}",
+  "@openingValue": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "weReHereToHelp": "Wir sind hier, um zu helfen! Wählen Sie aus, wie Sie uns erreichen möchten.",
+  "@weReHereToHelp": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "emailSupport": "E-Mail-Support",
+  "@emailSupport": {
+    "description": "Text from _buildContactOption.title in settings_screen.dart"
+  },
+  "couldNotOpenEmailApp": "E-Mail-App konnte nicht geöffnet werden",
+  "@couldNotOpenEmailApp": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "liveChat": "Live-Chat",
+  "@liveChat": {
+    "description": "Text from _buildContactOption.title in settings_screen.dart"
+  },
+  "liveChatWillBeAvailable": "Live-Chat wird bald verfügbar sein!",
+  "@liveChatWillBeAvailable": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "phoneSupport": "Telefonsupport",
+  "@phoneSupport": {
+    "description": "Text from _buildContactOption.title in settings_screen.dart"
+  },
+  "category": "Kategorie",
+  "@category": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "describeTheProblem": "Problem beschreiben",
+  "@describeTheProblem": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "pleaseDescribeWhatHappened": "Bitte beschreiben Sie, was passiert ist...",
+  "@pleaseDescribeWhatHappened": {
+    "description": "Text from InputDecoration.hintText in settings_screen.dart"
+  },
+  "thankYouYourReportHas": "Vielen Dank! Ihr Bericht wurde eingereicht.",
+  "@thankYouYourReportHas": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "submit": "Einreichen",
+  "@submit": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "areYouSureYouWant5": "Sind Sie sicher, dass Sie sich von SportConnect abmelden möchten?",
+  "@areYouSureYouWant5": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "thisActionCannotBeUndone2": "Diese Aktion kann nicht rückgängig gemacht werden. Alle Ihre Daten, einschließlich:",
+  "@thisActionCannotBeUndone2": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "rideHistoryAndBookings": "Fahrtverlauf und Buchungen",
+  "@rideHistoryAndBookings": {
+    "description": "Text from _buildDeleteWarningItem in settings_screen.dart"
+  },
+  "profileAndAchievements": "Profil und Erfolge",
+  "@profileAndAchievements": {
+    "description": "Text from _buildDeleteWarningItem in settings_screen.dart"
+  },
+  "messagesAndConnections": "Nachrichten und Verbindungen",
+  "@messagesAndConnections": {
+    "description": "Text from _buildDeleteWarningItem in settings_screen.dart"
+  },
+  "paymentInformation": "Zahlungsinformationen",
+  "@paymentInformation": {
+    "description": "Text from _buildDeleteWarningItem in settings_screen.dart"
+  },
+  "typeDeleteToConfirm": "Geben Sie \"DELETE\" ein, um zu bestätigen:",
+  "@typeDeleteToConfirm": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "failedToDeleteAccountValue": "Konto konnte nicht gelöscht werden: {value}",
+  "@failedToDeleteAccountValue": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "addRide": "Fahrt hinzufügen",
+  "@addRide": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "userNotFound": "Benutzer nicht gefunden",
+  "@userNotFound": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "errorLoadingVehicles": "Fehler beim Laden der Fahrzeuge",
+  "@errorLoadingVehicles": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "myGarage": "Meine Garage",
+  "@myGarage": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "valueVehicles": "{value} Fahrzeuge",
+  "@valueVehicles": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "setDefault": "Als Standard festlegen",
+  "@setDefault": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "pending": "Ausstehend",
+  "@pending": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "plate": "Kennzeichen",
+  "@plate": {
+    "description": "Text from _buildMiniInfo in vehicles_screen.dart"
+  },
+  "garageIsEmpty": "Garage ist leer",
+  "@garageIsEmpty": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "addAVehicleToStart": "Fügen Sie ein Fahrzeug hinzu, um Ihre Reise zu beginnen. Verbinden Sie sich mit anderen und teilen Sie Fahrten.",
+  "@addAVehicleToStart": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "quickTip": "Schneller Tipp",
+  "@quickTip": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "swipeRightOnAVehicle": "Wischen Sie nach rechts auf einer Fahrzeugkarte, um sie als Standard festzulegen. Wischen Sie nach links, um sie zu entfernen.",
+  "@swipeRightOnAVehicle": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "deleteRide": "Fahrt löschen?",
+  "@deleteRide": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "areYouSureYouWant6": "Sind Sie sicher, dass Sie {value} entfernen möchten? Dies kann nicht rückgängig gemacht werden.",
+  "@areYouSureYouWant6": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "keepIt": "Behalten",
+  "@keepIt": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "vehicleRemovedFromGarage": "Fahrzeug aus Garage entfernt",
+  "@vehicleRemovedFromGarage": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "editRide": "Fahrt bearbeiten",
+  "@editRide": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "newRide": "Neue Fahrt",
+  "@newRide": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "seatsCapacity": "Sitzplatzkapazität",
+  "@seatsCapacity": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "valueSReviews": "{value}s Bewertungen",
+  "@valueSReviews": {
+    "description": "Text from Text in reviews_list_screen.dart"
+  },
+  "noReviewsYet": "Noch keine Bewertungen",
+  "@noReviewsYet": {
+    "description": "Text from Text in reviews_list_screen.dart"
+  },
+  "failedToLoadReviews": "Fehler beim Laden der Bewertungen",
+  "@failedToLoadReviews": {
+    "description": "Error text when reviews fail to load"
+  },
+  "valueReviews": "{value} Bewertungen",
+  "@valueReviews": {
+    "description": "Text from Text in reviews_list_screen.dart"
+  },
+  "rider": "Mitfahrer",
+  "@rider": {
+    "description": "Text from Text in reviews_list_screen.dart"
+  },
+  "response": "Antwort",
+  "@response": {
+    "description": "Text from Text in reviews_list_screen.dart"
+  },
+  "leaveAReview": "Eine Bewertung hinterlassen",
+  "@leaveAReview": {
+    "description": "Text from Text in submit_review_screen.dart"
+  },
+  "howWasYourExperience": "Wie war Ihre Erfahrung?",
+  "@howWasYourExperience": {
+    "description": "Text from Text in submit_review_screen.dart"
+  },
+  "whatStoodOut": "Was ist Ihnen aufgefallen?",
+  "@whatStoodOut": {
+    "description": "Text from Text in submit_review_screen.dart"
+  },
+  "additionalCommentsOptional": "Zusätzliche Kommentare (optional)",
+  "@additionalCommentsOptional": {
+    "description": "Text from Text in submit_review_screen.dart"
+  },
+  "skipForNow": "Für jetzt überspringen",
+  "@skipForNow": {
+    "description": "Text from Text in submit_review_screen.dart"
+  },
+  "yourDriver": "Ihr Fahrer",
+  "@yourDriver": {
+    "description": "Text from Text in submit_review_screen.dart"
+  },
+  "yourPassenger": "Ihr Passagier",
+  "@yourPassenger": {
+    "description": "Text from Text in submit_review_screen.dart"
+  },
+  "shareYourExperience": "Teilen Sie Ihre Erfahrung...",
+  "@shareYourExperience": {
+    "description": "Text from InputDecoration.hintText in submit_review_screen.dart"
+  },
+  "thankYouForYourReview": "Vielen Dank für Ihre Bewertung!",
+  "@thankYouForYourReview": {
+    "description": "Text from Text in submit_review_screen.dart"
+  },
+  "valueValue5": "{value1}{value2}",
+  "@valueValue5": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "errorLoadingRide": "Fehler beim Laden der Fahrt",
+  "@errorLoadingRide": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "goBack": "Zurück",
+  "@goBack": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "activeRide": "Aktive Fahrt",
+  "@activeRide": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "noActiveRide": "Keine aktive Fahrt",
+  "@noActiveRide": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "startARideToSee": "Starten Sie eine Fahrt, um die Navigation zu sehen",
+  "@startARideToSee": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "headingToPickup": "Auf dem Weg zur Abholung",
+  "@headingToPickup": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "headingToDestination": "Auf dem Weg zum Ziel",
+  "@headingToDestination": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "etaValueMinValueKm": "Ankunft: {value1} min • {value2} km verbleibend",
+  "@etaValueMinValueKm": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "arrivingAtValue": "Ankunft um {value}",
+  "@arrivingAtValue": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "distance": "Entfernung",
+  "@distance": {
+    "description": "Text from _buildTripStat in active_ride_screen.dart"
+  },
+  "duration": "Dauer",
+  "@duration": {
+    "description": "Text from _buildTripStat in active_ride_screen.dart"
+  },
+  "fare": "Fahrpreis",
+  "@fare": {
+    "description": "Text from _buildTripStat in active_ride_screen.dart"
+  },
+  "call": "Anrufen",
+  "@call": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "message": "Nachricht",
+  "@message": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "text5Min": "5 min",
+  "@text5Min": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "valueMore": "+{value} mehr",
+  "@valueMore": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "valuePassengerValue": "{value1} Passagier{value2}",
+  "@valuePassengerValue": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "valueSeatValueBooked": "• {value1} Sitz{value2} gebucht",
+  "@valueSeatValueBooked": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "valueSeatValueBooked2": "{value1} Sitz{value2} gebucht",
+  "@valueSeatValueBooked2": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "passengers": "Passagiere",
+  "@passengers": {
+    "description": "Text from _buildPassengerStat in active_ride_screen.dart"
+  },
+  "seat2": "€/Sitz",
+  "@seat2": {
+    "description": "Text from _buildPassengerStat in active_ride_screen.dart"
+  },
+  "min": "min",
+  "@min": {
+    "description": "Text from _buildPassengerStat in active_ride_screen.dart"
+  },
+  "pickup": "Abholung",
+  "@pickup": {
+    "description": "Text from _buildLocationRow in active_ride_screen.dart"
+  },
+  "dropoff": "Absetzung",
+  "@dropoff": {
+    "description": "Text from _buildLocationRow in active_ride_screen.dart"
+  },
+  "valuePassengerValueBookedFor": "{value1} Passagier{value2} für diese Fahrt gebucht",
+  "@valuePassengerValueBookedFor": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "cancelRide": "Fahrt abbrechen?",
+  "@cancelRide": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "areYouSureYouWant7": "Sind Sie sicher, dass Sie diese Fahrt abbrechen möchten? Dies kann Ihre Fahrerbewertung beeinträchtigen.",
+  "@areYouSureYouWant7": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "continueRide": "Fahrt fortsetzen",
+  "@continueRide": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "cancelRide2": "Fahrt abbrechen",
+  "@cancelRide2": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "dashboard": "Dashboard",
+  "@dashboard": {
+    "description": "Text from Text in driver_my_rides_screen.dart"
+  },
+  "manageYourRidesEarnings": "Verwalten Sie Ihre Fahrten & Einnahmen",
+  "@manageYourRidesEarnings": {
+    "description": "Text from Text in driver_my_rides_screen.dart"
+  },
+  "requests": "Anfragen",
+  "@requests": {
+    "description": "Text from _buildTabWithBadge in driver_my_rides_screen.dart"
+  },
+  "thisMonth": "Dieser Monat",
+  "@thisMonth": {
+    "description": "Text from _buildEarningStat.label in driver_my_rides_screen.dart"
+  },
+  "noPendingRequests2": "Keine ausstehenden Anfragen",
+  "@noPendingRequests2": {
+    "description": "Text from _buildEmptyState.title in driver_my_rides_screen.dart"
+  },
+  "newRequest": "NEUE ANFRAGE",
+  "@newRequest": {
+    "description": "Text from Text in driver_my_rides_screen.dart"
+  },
+  "tapToRespond": "Tippen Sie, um zu antworten",
+  "@tapToRespond": {
+    "description": "Text from Text in driver_my_rides_screen.dart"
+  },
+  "value9": "+€{value}",
+  "@value9": {
+    "description": "Text from Text in driver_my_rides_screen.dart"
+  },
+  "earnings2": "Einnahmen",
+  "@earnings2": {
+    "description": "Text from Text in driver_my_rides_screen.dart"
+  },
+  "valueValue6": "{value1} • {value2}",
+  "@valueValue6": {
+    "description": "Text from Text in driver_my_rides_screen.dart"
+  },
+  "failedToLoadUser": "Benutzer konnte nicht geladen werden",
+  "@failedToLoadUser": {
+    "description": "Text from _buildErrorState in driver_my_rides_screen.dart"
+  },
+  "noActiveRides": "Keine aktiven Fahrten",
+  "@noActiveRides": {
+    "description": "Text from _buildEmptyState.title in driver_my_rides_screen.dart"
+  },
+  "rideInProgress": "FAHRT IM GANGE",
+  "@rideInProgress": {
+    "description": "Text from Text in driver_my_rides_screen.dart"
+  },
+  "valueValuePassengers": "{value1}/{value2} Passagiere",
+  "@valueValuePassengers": {
+    "description": "Text from Text in driver_my_rides_screen.dart"
+  },
+  "navigate": "Navigieren",
+  "@navigate": {
+    "description": "Text from _buildActionChip.label in driver_my_rides_screen.dart"
+  },
+  "complete": "Abschließen",
+  "@complete": {
+    "description": "Text from _buildActionChip.label in driver_my_rides_screen.dart"
+  },
+  "noScheduledRides": "Keine geplanten Fahrten",
+  "@noScheduledRides": {
+    "description": "Text from _buildEmptyState.title in driver_my_rides_screen.dart"
+  },
+  "valueSeat": "€{value}/Sitz",
+  "@valueSeat": {
+    "description": "Text from Text in driver_my_rides_screen.dart"
+  },
+  "noCompletedRides": "Keine abgeschlossenen Fahrten",
+  "@noCompletedRides": {
+    "description": "Text from _buildEmptyState.title in driver_my_rides_screen.dart"
+  },
+  "valueValuePassengers2": "{value1} • {value2} Passagiere",
+  "@valueValuePassengers2": {
+    "description": "Text from Text in driver_my_rides_screen.dart"
+  },
+  "loadingYourRides": "Ihre Fahrten werden geladen...",
+  "@loadingYourRides": {
+    "description": "Text from Text in driver_my_rides_screen.dart"
+  },
+  "signInRequired": "Anmeldung erforderlich",
+  "@signInRequired": {
+    "description": "Text from _buildEmptyState.title in driver_my_rides_screen.dart"
+  },
+  "bookingAccepted": "Buchung akzeptiert!",
+  "@bookingAccepted": {
+    "description": "Text from Text in driver_my_rides_screen.dart"
+  },
+  "bookingDeclined": "Buchung abgelehnt",
+  "@bookingDeclined": {
+    "description": "Text from Text in driver_my_rides_screen.dart"
+  },
+  "rideCompletedWellDone": "Fahrt abgeschlossen! Gut gemacht 🎉",
+  "@rideCompletedWellDone": {
+    "description": "Text from Text in driver_my_rides_screen.dart"
+  },
+  "manageVehicles": "Fahrzeuge verwalten",
+  "@manageVehicles": {
+    "description": "Text from _buildSettingsOption.label in driver_my_rides_screen.dart"
+  },
+  "earningsHistory": "Einnahmenverlauf",
+  "@earningsHistory": {
+    "description": "Text from _buildSettingsOption.label in driver_my_rides_screen.dart"
+  },
+  "preferences": "Einstellungen",
+  "@preferences": {
+    "description": "Text from _buildSettingsOption.label in driver_my_rides_screen.dart"
+  },
+  "offerARide": "Eine Fahrt anbieten",
+  "@offerARide": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "driverAccountRequired": "Fahrerkonto erforderlich",
+  "@driverAccountRequired": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "youNeedToRegisterAs": "Sie müssen sich als Fahrer registrieren und ein Fahrzeug hinzufügen, um Fahrten anzubieten.",
+  "@youNeedToRegisterAs": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "shareYourJourneyEarnMoney": "Teilen Sie Ihre Reise, verdienen Sie Geld",
+  "@shareYourJourneyEarnMoney": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "yourRoute": "Ihre Route",
+  "@yourRoute": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "startingPoint": "Startpunkt",
+  "@startingPoint": {
+    "description": "Text from _buildLocationTile.label in driver_offer_ride_screen.dart"
+  },
+  "departureTime": "Abfahrtszeit",
+  "@departureTime": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "recurringRide": "Wiederkehrende Fahrt",
+  "@recurringRide": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "offerThisRideRegularly": "Diese Fahrt regelmäßig anbieten",
+  "@offerThisRideRegularly": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "addAVehicleToStart2": "Fügen Sie ein Fahrzeug hinzu, um Fahrten anzubieten",
+  "@addAVehicleToStart2": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "selectVehicle": "Fahrzeug auswählen",
+  "@selectVehicle": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "add2": "Hinzufügen",
+  "@add2": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "availableSeats": "Verfügbare Sitzplätze",
+  "@availableSeats": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "maxValuePassengers": "Max {value} Passagiere",
+  "@maxValuePassengers": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "selectAVehicleFirst": "Wählen Sie zuerst ein Fahrzeug aus",
+  "@selectAVehicleFirst": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "pricePerSeat": "Preis pro Sitz",
+  "@pricePerSeat": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "priceNegotiable": "Preis verhandelbar",
+  "@priceNegotiable": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "acceptOnlinePayment": "Online-Zahlung akzeptieren",
+  "@acceptOnlinePayment": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "receivePaymentsViaStripe": "Zahlungen über Stripe erhalten",
+  "@receivePaymentsViaStripe": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "allowLuggage": "Gepäck erlauben",
+  "@allowLuggage": {
+    "description": "Text from _buildPreferenceSwitch.title in driver_offer_ride_screen.dart"
+  },
+  "allowPets": "Haustiere erlauben",
+  "@allowPets": {
+    "description": "Text from _buildPreferenceSwitch.title in driver_offer_ride_screen.dart"
+  },
+  "allowSmoking": "Rauchen erlauben",
+  "@allowSmoking": {
+    "description": "Text from _buildPreferenceSwitch.title in driver_offer_ride_screen.dart"
+  },
+  "womenOnly": "Nur für Frauen",
+  "@womenOnly": {
+    "description": "Text from _buildPreferenceSwitch.title in driver_offer_ride_screen.dart"
+  },
+  "maxDetour": "Maximaler Umweg",
+  "@maxDetour": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "howFarYouLlGo": "Wie weit Sie fahren, um Passagiere abzuholen",
+  "@howFarYouLlGo": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "rideCreatedSuccessfully": "Fahrt erfolgreich erstellt!",
+  "@rideCreatedSuccessfully": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "newRideRequestsWillAppear": "Neue Fahranfragen werden hier angezeigt",
+  "@newRideRequestsWillAppear": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "noDeclinedRequests": "Keine abgelehnten Anfragen",
+  "@noDeclinedRequests": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "youHavenTDeclinedAny": "Sie haben noch keine Anfragen abgelehnt",
+  "@youHavenTDeclinedAny": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "acceptRequest": "Anfrage annehmen?",
+  "@acceptRequest": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "youAreAboutToAccept": "Sie sind dabei, die Fahranfrage von {value1} für {value2} um {value3} anzunehmen.",
+  "@youAreAboutToAccept": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "requestAcceptedValueHasBeen": "Anfrage angenommen! {value} wurde benachrichtigt.",
+  "@requestAcceptedValueHasBeen": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "failedToAcceptRequest": "Anfrage konnte nicht angenommen werden",
+  "@failedToAcceptRequest": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "requestDeclined": "Anfrage abgelehnt",
+  "@requestDeclined": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "failedToDeclineRequest": "Anfrage konnte nicht abgelehnt werden",
+  "@failedToDeclineRequest": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "requestedValue": "Angefragt {value}",
+  "@requestedValue": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "valueSeatValue2": "• {value1} Sitz{value2}",
+  "@valueSeatValue2": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "valueSeatValueRequested": "{value1} Sitz{value2} angefragt",
+  "@valueSeatValueRequested": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "acceptRequest2": "Anfrage annehmen",
+  "@acceptRequest2": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "acceptedValue": "Angenommen {value}",
+  "@acceptedValue": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "valueAtValue": "{value1} um {value2}",
+  "@valueAtValue": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "viewDetails": "Details anzeigen",
+  "@viewDetails": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "declinedValue": "Abgelehnt {value}",
+  "@declinedValue": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "reasonValue": "Grund: {value}",
+  "@reasonValue": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "declineRequest": "Anfrage ablehnen",
+  "@declineRequest": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "pleaseLetValueKnowWhy": "Bitte teilen Sie {value} mit, warum Sie diese Fahrt nicht annehmen können.",
+  "@pleaseLetValueKnowWhy": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "pleaseSpecify": "Bitte angeben...",
+  "@pleaseSpecify": {
+    "description": "Text from InputDecoration.hintText in driver_requests_screen.dart"
+  },
+  "rideNotFound": "Fahrt nicht gefunden",
+  "@rideNotFound": {
+    "description": "Text from _buildErrorState in driver_view_ride_screen.dart"
+  },
+  "yourRide": "Ihre Fahrt",
+  "@yourRide": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "couldnTLoadRide": "Fahrt konnte nicht geladen werden",
+  "@couldnTLoadRide": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "seatsFilled": "Sitzplätze besetzt",
+  "@seatsFilled": {
+    "description": "Text from _buildStatItem.label in driver_view_ride_screen.dart"
+  },
+  "perSeat": "Pro Sitz",
+  "@perSeat": {
+    "description": "Text from _buildStatItem.label in driver_view_ride_screen.dart"
+  },
+  "route": "Route",
+  "@route": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "value10": "~{value}",
+  "@value10": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "valueTotalSeats": "{value} Sitzplätze insgesamt",
+  "@valueTotalSeats": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "notes": "Hinweise",
+  "@notes": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "newBookingRequestsWillAppear": "Neue Buchungsanfragen werden hier angezeigt",
+  "@newBookingRequestsWillAppear": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "noPassengersYet": "Noch keine Passagiere",
+  "@noPassengersYet": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "acceptBookingRequestsToAdd": "Akzeptieren Sie Buchungsanfragen, um Passagiere hinzuzufügen",
+  "@acceptBookingRequestsToAdd": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "shareRide": "Fahrt teilen",
+  "@shareRide": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "duplicateRide": "Fahrt duplizieren",
+  "@duplicateRide": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "callPassenger": "Passagier anrufen",
+  "@callPassenger": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "removePassenger": "Passagier entfernen",
+  "@removePassenger": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "bookingConfirmedForValue": "Buchung bestätigt für {value}",
+  "@bookingConfirmedForValue": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "declineBooking": "Buchung ablehnen",
+  "@declineBooking": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "declineBookingRequestFromValue": "Buchungsanfrage von {value} ablehnen?",
+  "@declineBookingRequestFromValue": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "removeValueFromThisRide": "{value} von dieser Fahrt entfernen?",
+  "@removeValueFromThisRide": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "remove": "Entfernen",
+  "@remove": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "startRide": "Fahrt starten",
+  "@startRide": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "markThisRideAsStarted": "Diese Fahrt als gestartet markieren? Passagiere werden benachrichtigt.",
+  "@markThisRideAsStarted": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "start": "Starten",
+  "@start": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "completeRide": "Fahrt abschließen",
+  "@completeRide": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "markThisRideAsCompleted": "Diese Fahrt als abgeschlossen markieren? Sie können dann Ihre Passagiere bewerten.",
+  "@markThisRideAsCompleted": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "areYouSureYouWant8": "Sind Sie sicher, dass Sie diese Fahrt abbrechen möchten? Alle Passagiere werden benachrichtigt und erhalten eine Rückerstattung.",
+  "@areYouSureYouWant8": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "keepRide": "Fahrt behalten",
+  "@keepRide": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "failedToLoadRide": "Fahrt konnte nicht geladen werden",
+  "@failedToLoadRide": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "thisRideMayHaveBeen": "Diese Fahrt wurde möglicherweise abgeschlossen oder storniert",
+  "@thisRideMayHaveBeen": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "rideConfirmed": "Fahrt bestätigt",
+  "@rideConfirmed": {
+    "description": "Text from _buildStatusStep in active_ride_screen.dart"
+  },
+  "driverOnTheWay": "Fahrer unterwegs",
+  "@driverOnTheWay": {
+    "description": "Text from _buildStatusStep in active_ride_screen.dart"
+  },
+  "rideCompleted": "Fahrt abgeschlossen",
+  "@rideCompleted": {
+    "description": "Text from _buildStatusStep in active_ride_screen.dart"
+  },
+  "valueRides2": "• {value} Fahrten",
+  "@valueRides2": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "routeDetails": "Routendetails",
+  "@routeDetails": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "perSeat2": "pro Sitz",
+  "@perSeat2": {
+    "description": "Text from _buildInfoItem in active_ride_screen.dart"
+  },
+  "seatsLeft": "Sitzplätze übrig",
+  "@seatsLeft": {
+    "description": "Text from _buildInfoItem in active_ride_screen.dart"
+  },
+  "departure": "Abfahrt",
+  "@departure": {
+    "description": "Text from _buildInfoItem in active_ride_screen.dart"
+  },
+  "passengersValue": "Passagiere ({value})",
+  "@passengersValue": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "phoneNumberNotAvailable": "Telefonnummer nicht verfügbar",
+  "@phoneNumberNotAvailable": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "cannotMakePhoneCalls": "Anrufe können auf diesem Gerät nicht getätigt werden",
+  "@cannotMakePhoneCalls": {
+    "description": "Shown when phone dialer is unavailable"
+  },
+  "failedToLaunchDialer": "Telefon-Wähler konnte nicht geöffnet werden",
+  "@failedToLaunchDialer": {
+    "description": "Shown when phone dialer launch fails"
+  },
+  "areYouSureYouWant9": "Sind Sie sicher, dass Sie diese Fahrt stornieren möchten? Es können Stornierungsrichtlinien gelten.",
+  "@areYouSureYouWant9": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "rideCancelledSuccessfully": "Fahrt erfolgreich storniert",
+  "@rideCancelledSuccessfully": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "failedToCancelRideValue": "Fahrt konnte nicht storniert werden: {value}",
+  "@failedToCancelRideValue": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "rateYourRide": "Bewerten Sie Ihre Fahrt",
+  "@rateYourRide": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "ratingFeatureComingSoonThank": "Bewertungsfunktion kommt bald! Vielen Dank für die Nutzung von SportConnect.",
+  "@ratingFeatureComingSoonThank": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "myTrips": "Meine Reisen",
+  "@myTrips": {
+    "description": "Text from Text in rider_my_rides_screen.dart"
+  },
+  "trackManageYourRides": "Verfolgen und verwalten Sie Ihre Fahrten",
+  "@trackManageYourRides": {
+    "description": "Text from Text in rider_my_rides_screen.dart"
+  },
+  "upcoming": "Anstehend",
+  "@upcoming": {
+    "description": "Text from _buildTab in rider_my_rides_screen.dart"
+  },
+  "history": "Verlauf",
+  "@history": {
+    "description": "Text from _buildTab in rider_my_rides_screen.dart"
+  },
+  "noActiveTrips": "Keine aktiven Reisen",
+  "@noActiveTrips": {
+    "description": "Text from _buildEmptyState.title in rider_my_rides_screen.dart"
+  },
+  "tripInProgress": "REISE IM GANGE",
+  "@tripInProgress": {
+    "description": "Text from Text in rider_my_rides_screen.dart"
+  },
+  "text49": "4.9",
+  "@text49": {
+    "description": "Text from Text in rider_my_rides_screen.dart"
+  },
+  "noUpcomingTrips": "Keine anstehenden Reisen",
+  "@noUpcomingTrips": {
+    "description": "Text from _buildEmptyState.title in rider_my_rides_screen.dart"
+  },
+  "noTripHistory": "Kein Reiseverlauf",
+  "@noTripHistory": {
+    "description": "Text from _buildEmptyState.title in rider_my_rides_screen.dart"
+  },
+  "rebook": "Neu buchen",
+  "@rebook": {
+    "description": "Text from Text in rider_my_rides_screen.dart"
+  },
+  "findRide": "Fahrt finden",
+  "@findRide": {
+    "description": "Text from Text in rider_my_rides_screen.dart"
+  },
+  "loadingYourTrips": "Ihre Reisen werden geladen...",
+  "@loadingYourTrips": {
+    "description": "Text from Text in rider_my_rides_screen.dart"
+  },
+  "cancelTrip": "Reise stornieren?",
+  "@cancelTrip": {
+    "description": "Text from Text in rider_my_rides_screen.dart"
+  },
+  "areYouSureYouWant10": "Sind Sie sicher, dass Sie Ihre Reise nach {value} stornieren möchten?",
+  "@areYouSureYouWant10": {
+    "description": "Text from Text in rider_my_rides_screen.dart"
+  },
+  "tripCancelled": "Reise storniert",
+  "@tripCancelled": {
+    "description": "Text from Text in rider_my_rides_screen.dart"
+  },
+  "openingChat": "Chat wird geöffnet...",
+  "@openingChat": {
+    "description": "Text from Text in rider_my_rides_screen.dart"
+  },
+  "failedToOpenChatValue": "Chat konnte nicht geöffnet werden: {value}",
+  "@failedToOpenChatValue": {
+    "description": "Text from Text in rider_my_rides_screen.dart"
+  },
+  "startingCall": "Anruf wird gestartet...",
+  "@startingCall": {
+    "description": "Text from Text in rider_my_rides_screen.dart"
+  },
+  "whereTo": "Wohin?",
+  "@whereTo": {
+    "description": "Text from Text in rider_request_ride_screen.dart"
+  },
+  "findThePerfectRideFor": "Finden Sie die perfekte Fahrt für Ihre Reise",
+  "@findThePerfectRideFor": {
+    "description": "Text from Text in rider_request_ride_screen.dart"
+  },
+  "whereFrom": "Von wo?",
+  "@whereFrom": {
+    "description": "Text from _buildLocationRow.label in rider_request_ride_screen.dart"
+  },
+  "when": "Wann?",
+  "@when": {
+    "description": "Text from Text in rider_request_ride_screen.dart"
+  },
+  "today": "Heute",
+  "@today": {
+    "description": "Text from _buildDateChip in rider_request_ride_screen.dart"
+  },
+  "tomorrow": "Morgen",
+  "@tomorrow": {
+    "description": "Text from _buildDateChip in rider_request_ride_screen.dart"
+  },
+  "pickDate": "Datum auswählen",
+  "@pickDate": {
+    "description": "Text from _buildDateChip in rider_request_ride_screen.dart"
+  },
+  "departureTime2": "Abfahrtszeit",
+  "@departureTime2": {
+    "description": "Text from Text in rider_request_ride_screen.dart"
+  },
+  "howManySeatsDoYou": "Wie viele Sitzplätze benötigen Sie?",
+  "@howManySeatsDoYou": {
+    "description": "Text from Text in rider_request_ride_screen.dart"
+  },
+  "availableRides": "Verfügbare Fahrten",
+  "@availableRides": {
+    "description": "Text from Text in rider_request_ride_screen.dart"
+  },
+  "sort": "Sortieren",
+  "@sort": {
+    "description": "Text from Text in rider_request_ride_screen.dart"
+  },
+  "noRidesFound": "Keine Fahrten gefunden",
+  "@noRidesFound": {
+    "description": "Text from Text in rider_request_ride_screen.dart"
+  },
+  "tryAdjustingYourSearchCriteria": "Versuchen Sie, Ihre Suchkriterien anzupassen\noder schauen Sie später wieder vorbei",
+  "@tryAdjustingYourSearchCriteria": {
+    "description": "Text from Text in rider_request_ride_screen.dart"
+  },
+  "findingRides": "Fahrten suchen...",
+  "@findingRides": {
+    "description": "Text from Text in rider_request_ride_screen.dart"
+  },
+  "sortBy": "Sortieren nach",
+  "@sortBy": {
+    "description": "Text from Text in rider_request_ride_screen.dart"
+  },
+  "recommended": "Empfohlen",
+  "@recommended": {
+    "description": "Text from _buildSortOption in rider_request_ride_screen.dart"
+  },
+  "earliestDeparture": "Früheste Abfahrt",
+  "@earliestDeparture": {
+    "description": "Text from _buildSortOption in rider_request_ride_screen.dart"
+  },
+  "lowestPrice": "Niedrigster Preis",
+  "@lowestPrice": {
+    "description": "Text from _buildSortOption in rider_request_ride_screen.dart"
+  },
+  "highestRated": "Am besten bewertet",
+  "@highestRated": {
+    "description": "Text from _buildSortOption in rider_request_ride_screen.dart"
+  },
+  "searchFailedPleaseTryAgain": "Suche fehlgeschlagen. Bitte versuchen Sie es erneut.",
+  "@searchFailedPleaseTryAgain": {
+    "description": "Text from Text in rider_request_ride_screen.dart"
+  },
+  "rideDetails": "Fahrtdetails",
+  "@rideDetails": {
+    "description": "Text from Text in rider_view_ride_screen.dart"
+  },
+  "value11": "{value} • ",
+  "@value11": {
+    "description": "Text from Text in rider_view_ride_screen.dart"
+  },
+  "valueLeft": "{value} übrig",
+  "@valueLeft": {
+    "description": "Text from Text in rider_view_ride_screen.dart"
+  },
+  "valueMin2": "~{value} Min",
+  "@valueMin2": {
+    "description": "Text from Text in rider_view_ride_screen.dart"
+  },
+  "valueKgCoSavedPer": "{value} kg CO₂ pro Person eingespart",
+  "@valueKgCoSavedPer": {
+    "description": "Text from Text in rider_view_ride_screen.dart"
+  },
+  "negotiable": "Verhandelbar",
+  "@negotiable": {
+    "description": "Text from _buildDetailChip in rider_view_ride_screen.dart"
+  },
+  "onlinePay": "Online-Zahlung",
+  "@onlinePay": {
+    "description": "Text from _buildDetailChip in rider_view_ride_screen.dart"
+  },
+  "reviews": "Bewertungen",
+  "@reviews": {
+    "description": "Text from Text in rider_view_ride_screen.dart"
+  },
+  "seeAll": "Alle anzeigen",
+  "@seeAll": {
+    "description": "Text from Text in rider_view_ride_screen.dart"
+  },
+  "seats3": "Sitzplätze:",
+  "@seats3": {
+    "description": "Text from Text in rider_view_ride_screen.dart"
+  },
+  "confirmBooking": "Buchung bestätigen",
+  "@confirmBooking": {
+    "description": "Text from Text in rider_view_ride_screen.dart"
+  },
+  "pricePerSeat2": "Preis pro Sitz",
+  "@pricePerSeat2": {
+    "description": "Text from _buildSummaryRow in rider_view_ride_screen.dart"
+  },
+  "total": "Gesamt",
+  "@total": {
+    "description": "Text from _buildSummaryRow in rider_view_ride_screen.dart"
+  },
+  "addANoteToThe": "Fügen Sie dem Fahrer eine Notiz hinzu (optional)",
+  "@addANoteToThe": {
+    "description": "Text from InputDecoration.hintText in rider_view_ride_screen.dart"
+  },
+  "bookingRequestSent": "Buchungsanfrage gesendet!",
+  "@bookingRequestSent": {
+    "description": "Text from Text in rider_view_ride_screen.dart"
+  },
+  "seatsLeft2": "Sitzplätze übrig",
+  "@seatsLeft2": {
+    "description": "Text from _buildInfoChip.label in ride_detail_screen.dart"
+  },
+  "tripDetails": "Reisedetails",
+  "@tripDetails": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "departure2": "Abfahrt",
+  "@departure2": {
+    "description": "Text from _buildDetailRow.label in ride_detail_screen.dart"
+  },
+  "amenities": "Annehmlichkeiten",
+  "@amenities": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "pets": "Haustiere",
+  "@pets": {
+    "description": "Text from _buildAmenityItem.label in ride_detail_screen.dart"
+  },
+  "smoking": "Rauchen",
+  "@smoking": {
+    "description": "Text from _buildAmenityItem.label in ride_detail_screen.dart"
+  },
+  "luggage": "Gepäck",
+  "@luggage": {
+    "description": "Text from _buildAmenityItem.label in ride_detail_screen.dart"
+  },
+  "yourPassengersValue": "Ihre Passagiere ({value})",
+  "@yourPassengersValue": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "valueValueSeats": "{value1}/{value2} Sitzplätze",
+  "@valueValueSeats": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "noPassengersAcceptedYet": "Noch keine Passagiere akzeptiert",
+  "@noPassengersAcceptedYet": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "noPassengersBookedYet": "Noch keine Passagiere gebucht",
+  "@noPassengersBookedYet": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "valueHasBookedThisRide": "{value} hat diese Fahrt gebucht",
+  "@valueHasBookedThisRide": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "valuePassengersHaveBooked": "{value} Passagiere haben gebucht",
+  "@valuePassengersHaveBooked": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "pendingRequestsValue": "Ausstehende Anfragen ({value})",
+  "@pendingRequestsValue": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "requestAccepted": "Anfrage angenommen! 🎉",
+  "@requestAccepted": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "seatsBooked": "Sitzplätze gebucht",
+  "@seatsBooked": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "editRideFeatureComingSoon": "Fahrt bearbeiten-Funktion kommt bald!",
+  "@editRideFeatureComingSoon": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "numberOfSeats": "Anzahl der Sitzplätze",
+  "@numberOfSeats": {
+    "description": "Text from _buildPriceRow in ride_detail_screen.dart"
+  },
+  "value12": "× {value}",
+  "@value12": {
+    "description": "Text from _buildPriceRow in ride_detail_screen.dart"
+  },
+  "securePaymentWithStripe": "Sichere Zahlung mit Stripe",
+  "@securePaymentWithStripe": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "pleaseLogInToBook": "Bitte melden Sie sich an, um eine Fahrt zu buchen",
+  "@pleaseLogInToBook": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "paymentSucceededButBookingFailed": "Zahlung erfolgreich, aber Buchung fehlgeschlagen. Bitte kontaktieren Sie den Support.",
+  "@paymentSucceededButBookingFailed": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "paymentCancelled": "Zahlung abgebrochen",
+  "@paymentCancelled": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "paymentFailedValue": "Zahlung fehlgeschlagen: {value}",
+  "@paymentFailedValue": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "paymentMethod": "Zahlungsmethode",
+  "@paymentMethod": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "thisDriverAcceptsCashPayment": "Dieser Fahrer akzeptiert nur Barzahlung.",
+  "@thisDriverAcceptsCashPayment": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "payWithCash": "Mit Bargeld bezahlen",
+  "@payWithCash": {
+    "description": "Text from _buildPaymentOption.title in ride_detail_screen.dart"
+  },
+  "failedToBookRidePlease": "Fahrt konnte nicht gebucht werden. Bitte versuchen Sie es erneut.",
+  "@failedToBookRidePlease": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "paymentSuccessful": "Zahlung erfolgreich!",
+  "@paymentSuccessful": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "youPaidValueValue": "Sie haben {value1} {value2} bezahlt",
+  "@youPaidValueValue": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "yourRideHasBeenBooked": "Ihre Fahrt wurde gebucht.",
+  "@yourRideHasBeenBooked": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "youEarned25Xp": "Sie haben 25 XP verdient!",
+  "@youEarned25Xp": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "backToSearch": "Zurück zur Suche",
+  "@backToSearch": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "bookingConfirmed": "Buchung bestätigt!",
+  "@bookingConfirmed": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "yourRideHasBeenBooked2": "Ihre Fahrt wurde gebucht. Bezahlen Sie den Fahrer in bar.",
+  "@yourRideHasBeenBooked2": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "pleaseEnterBothLocations": "Bitte geben Sie beide Orte ein",
+  "@pleaseEnterBothLocations": {
+    "description": "Text from Text in ride_search_screen.dart"
+  },
+  "pleaseSelectLocationsFromThe": "Bitte wählen Sie Orte aus dem Auswahlmenü",
+  "@pleaseSelectLocationsFromThe": {
+    "description": "Text from Text in ride_search_screen.dart"
+  },
+  "maxValue": "Max {value} €",
+  "@maxValue": {
+    "description": "Text from _buildFilterTag in ride_search_screen.dart"
+  },
+  "femaleOnly": "Nur für Frauen",
+  "@femaleOnly": {
+    "description": "Text from _buildFilterTag in ride_search_screen.dart"
+  },
+  "instantBook": "Sofortbuchung",
+  "@instantBook": {
+    "description": "Text from _buildFilterTag in ride_search_screen.dart"
+  },
+  "petFriendly": "Haustierfreundlich",
+  "@petFriendly": {
+    "description": "Text from _buildFilterTag in ride_search_screen.dart"
+  },
+  "valueRating": "{value}+ Bewertung",
+  "@valueRating": {
+    "description": "Text from _buildFilterTag in ride_search_screen.dart"
+  },
+  "activeFilters": "Aktive Filter",
+  "@activeFilters": {
+    "description": "Text from Text in ride_search_screen.dart"
+  },
+  "valueRidesAvailable": "{value} Fahrten verfügbar",
+  "@valueRidesAvailable": {
+    "description": "Text from Text in ride_search_screen.dart"
+  },
+  "filtersValue": "Filter{value}",
+  "@filtersValue": {
+    "description": "Text from Text in ride_search_screen.dart"
+  },
+  "reset": "Zurücksetzen",
+  "@reset": {
+    "description": "Text from Text in ride_search_screen.dart"
+  },
+  "priceRange": "Preisspanne",
+  "@priceRange": {
+    "description": "Text from _buildFilterSectionTitle in ride_search_screen.dart"
+  },
+  "text52": "5 €",
+  "@text52": {
+    "description": "Text from Text in ride_search_screen.dart"
+  },
+  "text100": "100 €",
+  "@text100": {
+    "description": "Text from Text in ride_search_screen.dart"
+  },
+  "minimumRating": "Mindestbewertung",
+  "@minimumRating": {
+    "description": "Text from _buildFilterSectionTitle in ride_search_screen.dart"
+  },
+  "any": "Beliebig",
+  "@any": {
+    "description": "Text from Text in ride_search_screen.dart"
+  },
+  "value13": "{value}+",
+  "@value13": {
+    "description": "Text from Text in ride_search_screen.dart"
+  },
+  "verifiedDriver2": "Verifizierter Fahrer",
+  "@verifiedDriver2": {
+    "description": "Text from _buildToggleChip.label in ride_search_screen.dart"
+  },
+  "musicAllowed": "Musik erlaubt",
+  "@musicAllowed": {
+    "description": "Text from _buildToggleChip.label in ride_search_screen.dart"
+  },
+  "vehicleType": "Fahrzeugtyp",
+  "@vehicleType": {
+    "description": "Text from _buildFilterSectionTitle in ride_search_screen.dart"
+  },
+  "electric": "Elektrisch",
+  "@electric": {
+    "description": "Text from _buildVehicleOption in ride_search_screen.dart"
+  },
+  "comfort": "Komfort",
+  "@comfort": {
+    "description": "Text from _buildVehicleOption in ride_search_screen.dart"
+  },
+  "book": "Buchen",
+  "@book": {
+    "description": "Text from Text in ride_search_screen.dart"
+  },
+  "sortBy2": "Sortieren nach",
+  "@sortBy2": {
+    "description": "Text from Text in ride_search_screen.dart"
+  },
+  "lowestPrice2": "Niedrigster Preis",
+  "@lowestPrice2": {
+    "description": "Text from _buildSortOption.title in ride_search_screen.dart"
+  },
+  "earliestDeparture2": "Früheste Abfahrt",
+  "@earliestDeparture2": {
+    "description": "Text from _buildSortOption.title in ride_search_screen.dart"
+  },
+  "highestRated2": "Am besten bewertet",
+  "@highestRated2": {
+    "description": "Text from _buildSortOption.title in ride_search_screen.dart"
+  },
+  "shortestDuration": "Kürzeste Dauer",
+  "@shortestDuration": {
+    "description": "Text from _buildSortOption.title in ride_search_screen.dart"
+  },
+  "signInFailedPleaseTry": "Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+  "@signInFailedPleaseTry": {
+    "description": "User-friendly error message for failed sign-in attempts"
+  },
+  "email": "E-Mail",
+  "@email": {
+    "description": "Label for email input field"
+  },
+  "enterYourEmail": "Geben Sie Ihre E-Mail ein",
+  "@enterYourEmail": {
+    "description": "Hint text for email input field"
+  },
+  "password": "Passwort",
+  "@password": {
+    "description": "Label for password input field"
+  },
+  "enterYourPassword": "Geben Sie Ihr Passwort ein",
+  "@enterYourPassword": {
+    "description": "Hint text for password input field"
+  },
+  "orSignInWithEmail": "oder mit E-Mail anmelden",
+  "@orSignInWithEmail": {
+    "description": "Divider text between social login and email login"
+  },
+  "continueWithGoogle": "Mit Google fortfahren",
+  "@continueWithGoogle": {
+    "description": "Label for Google sign-in button"
+  },
+  "continueWithApple": "Mit Apple fortfahren",
+  "@continueWithApple": {
+    "description": "Label for Apple sign-in button"
+  },
+  "tryAgain": "Erneut versuchen",
+  "@tryAgain": {
+    "description": "Label for retry button"
+  },
+  "avgPerRide": "Durchschn. pro Fahrt",
+  "@avgPerRide": {
+    "description": "Stat label for average earnings per ride"
+  },
+  "driveTime": "Fahrzeit",
+  "@driveTime": {
+    "description": "Stat label for total drive time"
+  },
+  "goodMorning": "Guten Morgen",
+  "@goodMorning": {
+    "description": "Greeting used before noon"
+  },
+  "goodAfternoon": "Guten Tag",
+  "@goodAfternoon": {
+    "description": "Greeting used between noon and evening"
+  },
+  "goodEvening": "Guten Abend",
+  "@goodEvening": {
+    "description": "Greeting used in the evening"
+  },
+  "failedToLoadNotifications": "Benachrichtigungen konnten nicht geladen werden",
+  "@failedToLoadNotifications": {
+    "description": "Error message when notifications fail to load"
+  },
+  "checkYourConnectionAndTry": "Überprüfen Sie Ihre Verbindung und versuchen Sie es erneut",
+  "@checkYourConnectionAndTry": {
+    "description": "Hint text shown below error message"
+  },
+  "couldNotOpenChat": "Chat konnte nicht geöffnet werden",
+  "@couldNotOpenChat": {
+    "description": "Error message when navigating to a chat fails"
+  },
+  "searchConversations": "Konversationen suchen...",
+  "@searchConversations": {
+    "description": "Hint text for chat search field"
+  },
+  "direct": "Direkt",
+  "@direct": {
+    "description": "Tab label for direct/private chats"
+  },
+  "groups": "Gruppen",
+  "@groups": {
+    "description": "Tab label for group chats"
+  },
+  "all": "Alle",
+  "@all": {
+    "description": "Tab label for all notifications"
+  },
+  "startAConversationWith": "Starten Sie eine Konversation mit Ihren Mitfahrern",
+  "@startAConversationWith": {
+    "description": "Empty state subtitle for direct chats"
+  },
+  "joinOrCreateAGroup": "Treten Sie einer Gruppe bei oder erstellen Sie eine, um zu chatten",
+  "@joinOrCreateAGroup": {
+    "description": "Empty state subtitle for group chats"
+  },
+  "joinARideToChat": "Nehmen Sie an einer Fahrt teil, um mit anderen Reisenden zu chatten",
+  "@joinARideToChat": {
+    "description": "Empty state subtitle for ride chats"
+  },
+  "driverCreateRide": "Fahrt erstellen",
+  "@driverCreateRide": {
+    "description": "Quick action button label to create a new ride"
+  },
+  "driverThisWeek": "Diese Woche",
+  "@driverThisWeek": {
+    "description": "Label for weekly earnings metric"
+  },
+  "driverThisMonth": "Dieser Monat",
+  "@driverThisMonth": {
+    "description": "Label for monthly earnings metric"
+  },
+  "driverCo2Saved": "CO₂ eingespart",
+  "@driverCo2Saved": {
+    "description": "Label for CO2 saved stat card"
+  },
+  "driverHoursOnline": "Online-Stunden",
+  "@driverHoursOnline": {
+    "description": "Label for hours online stat card"
+  },
+  "locationRequired": "Standort erforderlich",
+  "@locationRequired": {
+    "description": "Title for location permission banner"
+  },
+  "enableLocationForBetterExperience": "Aktivieren Sie den Standort für ein besseres Fahrerlebnis",
+  "@enableLocationForBetterExperience": {
+    "description": "Subtitle for location permission banner"
+  },
+  "openSettings": "Einstellungen öffnen",
+  "@openSettings": {
+    "description": "Button text to open app settings for location permission"
+  },
+  "enable": "Aktivieren",
+  "@enable": {
+    "description": "Button text to enable location permission"
+  },
+  "createARideToStartEarning": "Erstellen Sie eine Fahrt, um Einnahmen zu erzielen",
+  "@createARideToStartEarning": {
+    "description": "Subtitle for empty upcoming rides state"
+  }
+}

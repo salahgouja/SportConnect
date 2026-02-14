@@ -2,12 +2,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
+import 'package:sport_connect/core/interfaces/repositories/i_home_repository.dart';
 import 'package:sport_connect/features/home/models/home_models.dart';
 
 part 'home_repository.g.dart';
 
 /// Repository for home screen data
-class HomeRepository {
+class HomeRepository implements IHomeRepository {
   final FirebaseFirestore _firestore;
 
   HomeRepository(this._firestore);
@@ -23,10 +24,10 @@ class HomeRepository {
         .collection(AppConstants.ridesCollection)
         .where('status', isEqualTo: 'active')
         .where(
-          'departureTime',
+          'schedule.departureTime',
           isGreaterThan: Timestamp.fromDate(DateTime.now()),
         )
-        .orderBy('departureTime')
+        .orderBy('schedule.departureTime')
         .limit(limit)
         .snapshots()
         .map((snapshot) {

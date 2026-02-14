@@ -181,3 +181,89 @@ final class UserStreamFamily extends $Family
   @override
   String toString() => r'userStreamProvider';
 }
+
+/// Provider to load VehicleModel objects for a driver
+
+@ProviderFor(driverVehicles)
+final driverVehiclesProvider = DriverVehiclesFamily._();
+
+/// Provider to load VehicleModel objects for a driver
+
+final class DriverVehiclesProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<VehicleModel>>,
+          List<VehicleModel>,
+          FutureOr<List<VehicleModel>>
+        >
+    with
+        $FutureModifier<List<VehicleModel>>,
+        $FutureProvider<List<VehicleModel>> {
+  /// Provider to load VehicleModel objects for a driver
+  DriverVehiclesProvider._({
+    required DriverVehiclesFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'driverVehiclesProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$driverVehiclesHash();
+
+  @override
+  String toString() {
+    return r'driverVehiclesProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<List<VehicleModel>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<VehicleModel>> create(Ref ref) {
+    final argument = this.argument as String;
+    return driverVehicles(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is DriverVehiclesProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$driverVehiclesHash() => r'fc8fc17dd9127f0379ff035ca6b8ce35f1adcd79';
+
+/// Provider to load VehicleModel objects for a driver
+
+final class DriverVehiclesFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<List<VehicleModel>>, String> {
+  DriverVehiclesFamily._()
+    : super(
+        retry: null,
+        name: r'driverVehiclesProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Provider to load VehicleModel objects for a driver
+
+  DriverVehiclesProvider call(String uid) =>
+      DriverVehiclesProvider._(argument: uid, from: this);
+
+  @override
+  String toString() => r'driverVehiclesProvider';
+}

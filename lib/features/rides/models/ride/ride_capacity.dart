@@ -1,0 +1,42 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'ride_capacity.freezed.dart';
+part 'ride_capacity.g.dart';
+
+/// Ride capacity management
+@freezed
+abstract class RideCapacity with _$RideCapacity {
+  const RideCapacity._();
+
+  const factory RideCapacity({
+    @Default(3) int available,
+    @Default(0) int booked,
+  }) = _RideCapacity;
+
+  factory RideCapacity.fromJson(Map<String, dynamic> json) =>
+      _$RideCapacityFromJson(json);
+
+  /// Remaining seats
+  int get remaining => available - booked;
+
+  /// Is ride full
+  bool get isFull => remaining <= 0;
+
+  /// Can book requested seats
+  bool canBook(int seats) => remaining >= seats && seats > 0;
+
+  /// Percentage filled
+  double get percentageFilled => available > 0 ? (booked / available) * 100 : 0;
+
+  /// Book seats (returns new capacity or null if not possible)
+  RideCapacity? bookSeats(int seats) {
+    if (!canBook(seats)) return null;
+    return copyWith(booked: booked + seats);
+  }
+
+  /// Release seats
+  RideCapacity releaseSeats(int seats) {
+    final newBooked = (booked - seats).clamp(0, available);
+    return copyWith(booked: newBooked);
+  }
+}

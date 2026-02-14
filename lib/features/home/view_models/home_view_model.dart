@@ -1,22 +1,63 @@
+import 'dart:async';
+import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sport_connect/core/services/routing_service.dart';
+import 'package:sport_connect/core/services/talker_service.dart';
 
 part 'home_view_model.g.dart';
 
-/// State for the home screen
+/// State for the home screen with comprehensive map and location management
 class HomeState {
+  // Navigation state
   final int selectedTabIndex;
   final bool isMapExpanded;
-  final LatLng? currentLocation;
+
+  // Location state
+  final LatLng currentLocation;
   final bool isLoadingLocation;
   final String? locationError;
+  final double userHeading;
+  final bool isFollowingUser;
+
+  // Map state
+  final double currentZoom;
+  final String selectedMapStyle;
+  final bool showNearbyDrivers;
+  final bool showHotspots;
+  final bool showDistanceRadius;
+  final double searchRadius;
+
+  // Filter state
+  final String selectedFilter;
+
+  // Route state
+  final RouteInfo? activeRoute;
+  final List<RouteInfo> alternativeRoutes;
+  final bool isLoadingRoute;
+  final bool showRouteInfo;
+  final int selectedRouteIndex;
 
   const HomeState({
     this.selectedTabIndex = 0,
     this.isMapExpanded = true,
-    this.currentLocation,
-    this.isLoadingLocation = false,
+    this.currentLocation = const LatLng(37.7749, -122.4194),
+    this.isLoadingLocation = true,
     this.locationError,
+    this.userHeading = 0.0,
+    this.isFollowingUser = true,
+    this.currentZoom = 14,
+    this.selectedMapStyle = 'standard',
+    this.showNearbyDrivers = true,
+    this.showHotspots = true,
+    this.showDistanceRadius = false,
+    this.searchRadius = 5.0,
+    this.selectedFilter = 'all',
+    this.activeRoute,
+    this.alternativeRoutes = const [],
+    this.isLoadingRoute = false,
+    this.showRouteInfo = false,
+    this.selectedRouteIndex = 0,
   });
 
   HomeState copyWith({
@@ -25,6 +66,20 @@ class HomeState {
     LatLng? currentLocation,
     bool? isLoadingLocation,
     String? locationError,
+    double? userHeading,
+    bool? isFollowingUser,
+    double? currentZoom,
+    String? selectedMapStyle,
+    bool? showNearbyDrivers,
+    bool? showHotspots,
+    bool? showDistanceRadius,
+    double? searchRadius,
+    String? selectedFilter,
+    RouteInfo? activeRoute,
+    List<RouteInfo>? alternativeRoutes,
+    bool? isLoadingRoute,
+    bool? showRouteInfo,
+    int? selectedRouteIndex,
   }) {
     return HomeState(
       selectedTabIndex: selectedTabIndex ?? this.selectedTabIndex,
@@ -32,18 +87,53 @@ class HomeState {
       currentLocation: currentLocation ?? this.currentLocation,
       isLoadingLocation: isLoadingLocation ?? this.isLoadingLocation,
       locationError: locationError,
+      userHeading: userHeading ?? this.userHeading,
+      isFollowingUser: isFollowingUser ?? this.isFollowingUser,
+      currentZoom: currentZoom ?? this.currentZoom,
+      selectedMapStyle: selectedMapStyle ?? this.selectedMapStyle,
+      showNearbyDrivers: showNearbyDrivers ?? this.showNearbyDrivers,
+      showHotspots: showHotspots ?? this.showHotspots,
+      showDistanceRadius: showDistanceRadius ?? this.showDistanceRadius,
+      searchRadius: searchRadius ?? this.searchRadius,
+      selectedFilter: selectedFilter ?? this.selectedFilter,
+      activeRoute: activeRoute ?? this.activeRoute,
+      alternativeRoutes: alternativeRoutes ?? this.alternativeRoutes,
+      isLoadingRoute: isLoadingRoute ?? this.isLoadingRoute,
+      showRouteInfo: showRouteInfo ?? this.showRouteInfo,
+      selectedRouteIndex: selectedRouteIndex ?? this.selectedRouteIndex,
     );
   }
 }
 
-/// ViewModel for the home screen
-/// Manages navigation state, map expansion, and location
+/// ViewModel for the home screen with full business logic extraction
+/// Manages navigation, map state, location tracking, and routing
 @riverpod
 class HomeViewModel extends _$HomeViewModel {
+  StreamSubscription<Position>? _positionStreamSubscription;
+
   @override
   HomeState build() {
+    // Cancel subscription on dispose
+    ref.onDispose(() {
+      _positionStreamSubscription?.cancel();
+    });
+
     return const HomeState();
   }
+
+  /// Initializes location services and starts tracking.
+  ///
+  /// Must be called explicitly by the consumer widget (e.g. in a
+  /// post-frame callback or button handler) to avoid side effects during
+  /// provider initialization.
+  Future<void> initializeLocation() async {
+    await getCurrentLocation();
+    startLocationTracking();
+  }
+
+  // ============================================================================
+  // Navigation Methods
+  // ============================================================================
 
   /// Set the current tab index
   void setTabIndex(int index) {
@@ -55,7 +145,107 @@ class HomeViewModel extends _$HomeViewModel {
     state = state.copyWith(isMapExpanded: !state.isMapExpanded);
   }
 
-  /// Set current location
+  // ============================================================================
+  // Location Methods
+  // ============================================================================
+
+  /// Get current device location with permission handling
+  Future<void> getCurrentLocation() async {
+    try {
+      // Check if location services are enabled
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        TalkerService.debug('Location services are disabled');
+        state = state.copyWith(
+          isLoadingLocation: false,
+          locationError: 'Location services are disabled',
+        );
+        return;
+      }
+
+      // Check and request permissions
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          TalkerService.debug('Location permission denied');
+          state = state.copyWith(
+            isLoadingLocation: false,
+            locationError: 'Location permission denied',
+          );
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        TalkerService.debug('Location permission denied forever');
+        state = state.copyWith(
+          isLoadingLocation: false,
+          locationError:
+              'Location permission denied forever. Please enable in settings.',
+        );
+        return;
+      }
+
+      // Get current position
+      TalkerService.debug('Getting current position...');
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+
+      TalkerService.debug(
+        'Got position: ${position.latitude}, ${position.longitude}',
+      );
+
+      state = state.copyWith(
+        currentLocation: LatLng(position.latitude, position.longitude),
+        isLoadingLocation: false,
+        locationError: null,
+        userHeading: position.heading,
+      );
+    } catch (e) {
+      TalkerService.error('Error getting location: $e');
+      state = state.copyWith(
+        isLoadingLocation: false,
+        locationError: 'Error getting location: $e',
+      );
+    }
+  }
+
+  /// Start continuous location tracking stream
+  void startLocationTracking() {
+    const locationSettings = LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 10, // Update every 10 meters
+    );
+
+    _positionStreamSubscription =
+        Geolocator.getPositionStream(locationSettings: locationSettings).listen(
+          (Position position) {
+            final newLocation = LatLng(position.latitude, position.longitude);
+            state = state.copyWith(
+              currentLocation: newLocation,
+              userHeading: position.heading,
+              locationError: null,
+            );
+          },
+          onError: (error) {
+            TalkerService.error('Location tracking error: $error');
+            state = state.copyWith(locationError: 'Location tracking error');
+          },
+        );
+  }
+
+  /// Stop location tracking
+  void stopLocationTracking() {
+    _positionStreamSubscription?.cancel();
+    _positionStreamSubscription = null;
+  }
+
+  /// Manually set location (for testing or manual input)
   void setCurrentLocation(LatLng location) {
     state = state.copyWith(
       currentLocation: location,
@@ -64,16 +254,121 @@ class HomeViewModel extends _$HomeViewModel {
     );
   }
 
-  /// Set location loading state
-  void setLocationLoading(bool isLoading) {
-    state = state.copyWith(isLoadingLocation: isLoading);
+  /// Toggle user following mode (map centers on user)
+  void toggleFollowingUser() {
+    state = state.copyWith(isFollowingUser: !state.isFollowingUser);
   }
 
-  /// Set location error
-  void setLocationError(String error) {
-    state = state.copyWith(locationError: error, isLoadingLocation: false);
+  // ============================================================================
+  // Map State Methods
+  // ============================================================================
+
+  /// Update map zoom level
+  void updateZoom(double zoom) {
+    state = state.copyWith(currentZoom: zoom);
+  }
+
+  /// Change map style
+  void setMapStyle(String style) {
+    if (availableMapStyles.containsKey(style)) {
+      state = state.copyWith(selectedMapStyle: style);
+    }
+  }
+
+  /// Toggle nearby drivers/riders visibility on map
+  void toggleNearbyDrivers() {
+    state = state.copyWith(showNearbyDrivers: !state.showNearbyDrivers);
+  }
+
+  /// Toggle hotspots visibility on map
+  void toggleHotspots() {
+    state = state.copyWith(showHotspots: !state.showHotspots);
+  }
+
+  /// Toggle distance radius circle visibility
+  void toggleDistanceRadius() {
+    state = state.copyWith(showDistanceRadius: !state.showDistanceRadius);
+  }
+
+  /// Update search radius in kilometers
+  void updateSearchRadius(double radius) {
+    if (radius >= 1.0 && radius <= 50.0) {
+      state = state.copyWith(searchRadius: radius);
+    }
+  }
+
+  // ============================================================================
+  // Filter Methods
+  // ============================================================================
+
+  /// Set ride filter (all, carpool, rideshare, etc.)
+  void setFilter(String filter) {
+    state = state.copyWith(selectedFilter: filter);
+  }
+
+  // ============================================================================
+  // Route Methods
+  // ============================================================================
+
+  /// Set active route for navigation
+  void setActiveRoute(RouteInfo? route) {
+    state = state.copyWith(activeRoute: route, showRouteInfo: route != null);
+  }
+
+  /// Set alternative routes
+  void setAlternativeRoutes(List<RouteInfo> routes) {
+    state = state.copyWith(alternativeRoutes: routes);
+  }
+
+  /// Select route by index from alternatives
+  void selectRoute(int index) {
+    if (index >= 0 && index < state.alternativeRoutes.length) {
+      state = state.copyWith(
+        selectedRouteIndex: index,
+        activeRoute: state.alternativeRoutes[index],
+      );
+    }
+  }
+
+  /// Toggle route info panel visibility
+  void toggleRouteInfo() {
+    state = state.copyWith(showRouteInfo: !state.showRouteInfo);
+  }
+
+  /// Set route loading state
+  void setLoadingRoute(bool loading) {
+    state = state.copyWith(isLoadingRoute: loading);
+  }
+
+  /// Clear active route and alternatives
+  void clearRoutes() {
+    state = state.copyWith(
+      activeRoute: null,
+      alternativeRoutes: [],
+      selectedRouteIndex: 0,
+      showRouteInfo: false,
+    );
+  }
+
+  // ============================================================================
+  // Error Handling
+  // ============================================================================
+
+  /// Clear location error
+  void clearLocationError() {
+    state = state.copyWith(locationError: null);
   }
 }
 
+/// Available map styles with their tile URLs
+const Map<String, String> availableMapStyles = {
+  'standard': 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  'terrain': 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+  'dark':
+      'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png',
+  'satellite':
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+};
+
 // Note: Use nearbyRidesStreamProvider and hotspotsStreamProvider from home_repository.dart
-// instead of the old Map-based providers that were here before.
+// instead of creating duplicate providers here.

@@ -1,571 +1,474 @@
-/**
- * SportConnect Firebase Cloud Functions
- *
- * Stripe payment processing functions for the SportConnect app.
- *
- * Available Functions:
- * - createPaymentIntent - Create payment intent for ride booking
- * - getOrCreateCustomer - Get or create Stripe customer
- * - createConnectedAccount - Create driver's Stripe Connect account
- * - createAccountLink - Create Stripe onboarding link
- * - createInstantPayout - Instant payout to driver
- * - refundPayment - Refund a payment
- * - stripeWebhook - Handle Stripe webhooks
- *
- * Environment Variables Required (set with firebase functions:config:set):
- * - stripe.secret_key - Stripe secret key
- * - stripe.webhook_secret - Stripe webhook signing secret
- */
+// ============================================
+// SportConnect Cloud Functions
+// Stripe Payments + Push Notification Triggers
+// ============================================
 
+import {
+  onDocumentCreated,
+  onDocumentUpdated,
+} from "firebase-functions/v2/firestore";
 import {onRequest, onCall, HttpsError} from "firebase-functions/v2/https";
 import {defineSecret} from "firebase-functions/params";
 import * as admin from "firebase-admin";
 import Stripe from "stripe";
 
-// Initialize Firebase Admin
 admin.initializeApp();
 
-// Define secrets
 const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
 const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 
-// Platform fee configuration
 const PLATFORM_FEE_PERCENT = 0.15; // 15%
-const STRIPE_FEE_PERCENT = 0.029; // 2.9%
-const STRIPE_FIXED_FEE = 30; // $0.30 in cents
+
+// ============================================
+// Helper: Send FCM Push Notification
+// ============================================
 
 /**
- * Create and return a configured Stripe client.
- *
- * @param {string} secretKey - Stripe secret key.
- * @return {Stripe} Initialized Stripe client.
+ * Look up a user's FCM token and send a push notification.
  */
+async function sendPushToUser(
+  userId: string,
+  title: string,
+  body: string,
+  data: Record<string, string>,
+): Promise<void> {
+  try {
+    const userDoc = await admin
+      .firestore()
+      .collection("users")
+      .doc(userId)
+      .get();
+    const fcmToken = userDoc.data()?.fcmToken as string | undefined;
+
+    if (!fcmToken) {
+      console.log(`No FCM token for user ${userId}, skipping push`);
+      return;
+    }
+
+    await admin.messaging().send({
+      token: fcmToken,
+      notification: {title, body},
+      data,
+      android: {
+        priority: "high",
+        notification: {
+          channelId:
+            data.type === "message"
+              ? "sport_connect_messages"
+              : data.type === "ride_request" || data.type === "ride_update"
+                ? "sport_connect_rides"
+                : "sport_connect_general",
+          sound: "default",
+        },
+      },
+      apns: {
+        payload: {
+          aps: {
+            sound: "default",
+            badge: 1,
+          },
+        },
+      },
+    });
+
+    console.log(`Push sent to ${userId}: "${title}"`);
+  } catch (error: unknown) {
+    const e = error as {code?: string};
+    // Token may be stale — clean it up
+    if (
+      e.code === "messaging/invalid-registration-token" ||
+      e.code === "messaging/registration-token-not-registered"
+    ) {
+      console.log(`Removing stale FCM token for user ${userId}`);
+      await admin
+        .firestore()
+        .collection("users")
+        .doc(userId)
+        .update({
+          fcmToken: admin.firestore.FieldValue.delete(),
+        });
+    } else {
+      console.error(`Failed to send push to ${userId}:`, error);
+    }
+  }
+}
+
+// ============================================
+// Trigger: New Chat Message
+// ============================================
+
+export const onNewMessage = onDocumentCreated(
+  "chats/{chatId}/messages/{messageId}",
+  async (event) => {
+    const message = event.data?.data();
+    if (!message) return;
+
+    const senderId = message.senderId as string;
+    const senderName = message.senderName as string;
+    const content = message.content as string;
+    const chatId = event.params.chatId;
+
+    // Get chat document to find other participants
+    const chatDoc = await admin
+      .firestore()
+      .collection("chats")
+      .doc(chatId)
+      .get();
+    const chatData = chatDoc.data();
+    if (!chatData) return;
+
+    const participantIds = (chatData.participantIds as string[]) || [];
+
+    // Send push to all participants except the sender
+    const pushPromises = participantIds
+      .filter((id: string) => id !== senderId)
+      .map((recipientId: string) =>
+        sendPushToUser(
+          recipientId,
+          senderName,
+          content.length > 100
+            ? content.substring(0, 100) + "..."
+            : content,
+          {
+            type: "message",
+            referenceId: chatId,
+            senderId,
+          },
+        ),
+      );
+
+    await Promise.all(pushPromises);
+  },
+);
+
+// ============================================
+// Trigger: New Ride Request
+// ============================================
+
+export const onNewRideRequest = onDocumentCreated(
+  "rideRequests/{requestId}",
+  async (event) => {
+    const request = event.data?.data();
+    if (!request) return;
+
+    const driverId = request.driverId as string;
+    const riderName = (request.riderName as string) || "A rider";
+    const rideId = request.rideId as string;
+    const pickup = (request.pickupAddress as string) || "";
+
+    await sendPushToUser(
+      driverId,
+      "New Ride Request",
+      `${riderName} wants to join your ride${
+        pickup ? " from " + pickup : ""
+      }`,
+      {
+        type: "ride_request",
+        referenceId: rideId,
+        requestId: event.params.requestId,
+      },
+    );
+  },
+);
+
+// ============================================
+// Trigger: Ride Request Status Changed
+// ============================================
+
+export const onRideRequestUpdated = onDocumentUpdated(
+  "rideRequests/{requestId}",
+  async (event) => {
+    const before = event.data?.before.data();
+    const after = event.data?.after.data();
+    if (!before || !after) return;
+
+    // Only trigger on status changes
+    if (before.status === after.status) return;
+
+    const riderId = after.riderId as string;
+    const newStatus = after.status as string;
+    const rideId = after.rideId as string;
+
+    let title = "";
+    let body = "";
+
+    switch (newStatus) {
+    case "accepted":
+      title = "Ride Request Accepted! 🎉";
+      body = "Your ride request has been accepted. Get ready!";
+      break;
+    case "rejected":
+      title = "Ride Request Declined";
+      body = "Unfortunately, your ride request was not accepted.";
+      break;
+    case "cancelled":
+      title = "Ride Cancelled";
+      body = "A ride you were part of has been cancelled.";
+      break;
+    default:
+      return; // No push for other statuses
+    }
+
+    await sendPushToUser(riderId, title, body, {
+      type: "ride_update",
+      referenceId: rideId,
+      status: newStatus,
+    });
+  },
+);
+
+// ============================================
+// Trigger: Ride Status Changes (started, completed)
+// ============================================
+
+export const onRideStatusChanged = onDocumentUpdated(
+  "rides/{rideId}",
+  async (event) => {
+    const before = event.data?.before.data();
+    const after = event.data?.after.data();
+    if (!before || !after) return;
+
+    // Notify passengers when ride starts
+    if (before.status !== "active" && after.status === "active") {
+      const passengerIds = (after.passengerIds as string[]) || [];
+      const driverName = (after.driverName as string) || "Your driver";
+
+      const pushPromises = passengerIds.map((passengerId: string) =>
+        sendPushToUser(
+          passengerId,
+          "Your Ride Has Started! 🚗",
+          `${driverName} has started the ride. Track your trip in the app.`,
+          {
+            type: "ride_update",
+            referenceId: event.params.rideId,
+            status: "active",
+          },
+        ),
+      );
+
+      await Promise.all(pushPromises);
+    }
+
+    // Notify passengers when ride is completed
+    if (before.status !== "completed" && after.status === "completed") {
+      const passengerIds = (after.passengerIds as string[]) || [];
+
+      const pushPromises = passengerIds.map((passengerId: string) =>
+        sendPushToUser(
+          passengerId,
+          "Ride Completed ✅",
+          "Your ride is complete. Don't forget to rate your driver!",
+          {
+            type: "ride_update",
+            referenceId: event.params.rideId,
+            status: "completed",
+          },
+        ),
+      );
+
+      await Promise.all(pushPromises);
+    }
+  },
+);
+
+// ============================================
+// Stripe Helpers
+// ============================================
+
 function getStripeClient(secretKey: string): Stripe {
   return new Stripe(secretKey, {
     apiVersion: "2025-12-15.clover",
   });
 }
 
-/**
- * Calculate payment fees and the driver's share.
- *
- * @param {number} amount - Amount in cents.
- * @return {{
- *   platformFee: number,
- *   stripeFee: number,
- *   driverAmount: number
- * }} Fee breakdown in cents.
- */
 function calculateFees(amount: number) {
   const platformFee = Math.round(amount * PLATFORM_FEE_PERCENT);
-  const stripeFee = Math.round(amount * STRIPE_FEE_PERCENT + STRIPE_FIXED_FEE);
-  const driverAmount = amount - platformFee - stripeFee;
-
-  return {platformFee, stripeFee, driverAmount};
+  const driverAmount = amount - platformFee;
+  return {platformFee, driverAmount};
 }
 
-// =============================================================================
-// CALLABLE FUNCTIONS (for Flutter client)
-// =============================================================================
+// ============================================
+// Stripe: Create Connected Account
+// ============================================
 
-/**
- * Create Payment Intent for ride booking
- *
- * Request data:
- * - rideId: string
- * - riderId: string
- * - riderName: string
- * - driverId: string
- * - driverName: string
- * - driverStripeAccountId?: string (driver's connected account)
- * - amount: number (in cents)
- * - currency: string
- * - customerId?: string
- * - description?: string
- */
-export const createPaymentIntent = onCall(
-  {
-    secrets: [stripeSecretKey],
-    cors: true,
-  },
-  async (request) => {
-    // Verify authentication
-    if (!request.auth) {
-      throw new HttpsError("unauthenticated", "User must be authenticated");
-    }
-
-    const data = request.data;
-    const {
-      rideId,
-      riderId,
-      driverId,
-      driverStripeAccountId,
-      amount,
-      currency = "usd",
-      customerId,
-      description,
-      riderName,
-      driverName,
-    } = data;
-
-    // Validate required fields
-    if (!rideId || !riderId || !driverId || !amount) {
-      throw new HttpsError(
-        "invalid-argument",
-        "Missing required fields: rideId, riderId, driverId, amount",
-      );
-    }
-
-    // Security: Verify caller is the rider
-    if (request.auth.uid !== riderId) {
-      throw new HttpsError(
-        "permission-denied",
-        "Cannot create payment for another user",
-      );
-    }
-
-    const stripe = getStripeClient(stripeSecretKey.value());
-    const fees = calculateFees(amount);
-    const hasDriverAccount = driverStripeAccountId?.startsWith("acct_");
-
-    try {
-      // Build payment intent options
-      const paymentIntentOptions: Stripe.PaymentIntentCreateParams = {
-        amount: Math.round(amount),
-        currency: currency.toLowerCase(),
-        customer: customerId || undefined,
-        description: description || `Ride booking #${rideId}`,
-        metadata: {
-          rideId,
-          driverId,
-          riderId,
-          platformFee: fees.platformFee.toString(),
-          stripeFee: fees.stripeFee.toString(),
-          driverAmount: fees.driverAmount.toString(),
-        },
-        automatic_payment_methods: {
-          enabled: true,
-        },
-      };
-
-      // Add destination charges if driver has Stripe account
-      if (hasDriverAccount && driverStripeAccountId) {
-        paymentIntentOptions.transfer_data = {
-          destination: driverStripeAccountId,
-          amount: fees.driverAmount,
-        };
-        paymentIntentOptions.application_fee_amount = fees.platformFee;
-      }
-
-      const paymentIntent =
-        await stripe.paymentIntents.create(paymentIntentOptions);
-
-      console.log(
-        `Created payment intent ${paymentIntent.id} for ride ${rideId}`,
-      );
-
-      return {
-        paymentIntentId: paymentIntent.id,
-        clientSecret: paymentIntent.client_secret,
-        amount: Math.round(amount),
-        driverAmount: fees.driverAmount,
-        platformFee: fees.platformFee,
-        stripeFee: fees.stripeFee,
-        hasDriverAccount,
-        firestoreData: {
-          rideId,
-          riderId,
-          riderName: riderName || "Rider",
-          driverId,
-          driverName: driverName || "Driver",
-          amount: Math.round(amount),
-          currency,
-          status: "pending",
-          stripePaymentIntentId: paymentIntent.id,
-          stripeCustomerId: customerId || null,
-          platformFee: fees.platformFee,
-          stripeFee: fees.stripeFee,
-          driverAmount: fees.driverAmount,
-          hasDriverStripeAccount: hasDriverAccount,
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        },
-      };
-    } catch (error) {
-      console.error("Error creating payment intent:", error);
-      throw new HttpsError("internal", `Failed to create payment: ${error}`);
-    }
-  },
-);
-
-/**
- * Get or Create Stripe Customer
- *
- * Request data:
- * - email: string
- * - name?: string
- * - phone?: string
- * - existingCustomerId?: string
- */
-export const getOrCreateCustomer = onCall(
-  {
-    secrets: [stripeSecretKey],
-    cors: true,
-  },
-  async (request) => {
-    if (!request.auth) {
-      throw new HttpsError("unauthenticated", "User must be authenticated");
-    }
-
-    const data = request.data;
-    const {email, name, phone, existingCustomerId} = data;
-
-    if (!email) {
-      throw new HttpsError("invalid-argument", "Email is required");
-    }
-
-    const stripe = getStripeClient(stripeSecretKey.value());
-    const userId = request.auth.uid;
-
-    try {
-      // Check if existing customer
-      if (existingCustomerId) {
-        try {
-          const existing = await stripe.customers.retrieve(existingCustomerId);
-          if (existing && !existing.deleted) {
-            return {
-              customerId: existing.id,
-              email: (existing as Stripe.Customer).email,
-              isNew: false,
-            };
-          }
-        } catch {
-          // Customer doesn't exist, create new one
-        }
-      }
-
-      // Create new customer
-      const customer = await stripe.customers.create({
-        email,
-        name,
-        phone,
-        metadata: {userId},
-      });
-
-      console.log(`Created Stripe customer ${customer.id} for user ${userId}`);
-
-      return {
-        customerId: customer.id,
-        email: customer.email,
-        isNew: true,
-      };
-    } catch (error) {
-      console.error("Error creating customer:", error);
-      throw new HttpsError("internal", `Failed to create customer: ${error}`);
-    }
-  },
-);
-
-/**
- * Create Connected Account for Driver
- *
- * Request data:
- * - email: string
- * - country?: string (default: US)
- */
 export const createConnectedAccount = onCall(
-  {
-    secrets: [stripeSecretKey],
-    cors: true,
-  },
+  {secrets: [stripeSecretKey], cors: true},
   async (request) => {
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "User must be authenticated");
     }
 
-    const data = request.data;
-    const {email, country = "US"} = data;
-
+    const {userId, email, country = "FR"} = request.data;
     if (!email) {
       throw new HttpsError("invalid-argument", "Email is required");
     }
 
     const stripe = getStripeClient(stripeSecretKey.value());
-    const userId = request.auth.uid;
+    const db = admin.firestore();
 
-    try {
+    const userDoc = await db.collection("drivers").doc(userId).get();
+    let accountId = userDoc.data()?.stripeAccountId;
+
+    if (!accountId) {
       const account = await stripe.accounts.create({
         type: "express",
         country,
         email,
         capabilities: {
+          card_payments: {requested: true},
           transfers: {requested: true},
         },
-        metadata: {userId},
+        business_type: "individual",
+        metadata: {userId, userType: "driver"},
       });
 
-      console.log(`Created connected account ${account.id} for user ${userId}`);
+      accountId = account.id;
 
-      return {
-        accountId: account.id,
-        email: account.email,
-      };
-    } catch (error) {
-      console.error("Error creating connected account:", error);
-      throw new HttpsError(
-        "internal",
-        `Failed to create connected account: ${error}`,
-      );
-    }
-  },
-);
-
-/**
- * Create Account Link for Stripe Onboarding
- *
- * Request data:
- * - accountId: string
- * - refreshUrl: string
- * - returnUrl: string
- */
-export const createAccountLink = onCall(
-  {
-    secrets: [stripeSecretKey],
-    cors: true,
-  },
-  async (request) => {
-    if (!request.auth) {
-      throw new HttpsError("unauthenticated", "User must be authenticated");
-    }
-
-    const data = request.data;
-    const {accountId, refreshUrl, returnUrl} = data;
-
-    if (!accountId || !refreshUrl || !returnUrl) {
-      throw new HttpsError(
-        "invalid-argument",
-        "Missing required fields: accountId, refreshUrl, returnUrl",
-      );
-    }
-
-    const stripe = getStripeClient(stripeSecretKey.value());
-
-    try {
-      const accountLink = await stripe.accountLinks.create({
-        account: accountId,
-        refresh_url: refreshUrl,
-        return_url: returnUrl,
-        type: "account_onboarding",
-      });
-
-      return {
-        url: accountLink.url,
-        expiresAt: accountLink.expires_at,
-      };
-    } catch (error) {
-      console.error("Error creating account link:", error);
-      throw new HttpsError(
-        "internal",
-        `Failed to create account link: ${error}`,
-      );
-    }
-  },
-);
-
-/**
- * Create Instant Payout for Driver
- *
- * Request data:
- * - stripeAccountId: string
- * - amount: number (in cents)
- * - currency: string
- */
-export const createInstantPayout = onCall(
-  {
-    secrets: [stripeSecretKey],
-    cors: true,
-  },
-  async (request) => {
-    if (!request.auth) {
-      throw new HttpsError("unauthenticated", "User must be authenticated");
-    }
-
-    const data = request.data;
-    const {stripeAccountId, amount, currency = "usd"} = data;
-
-    if (!stripeAccountId || !amount) {
-      throw new HttpsError(
-        "invalid-argument",
-        "Missing required fields: stripeAccountId, amount",
-      );
-    }
-
-    const stripe = getStripeClient(stripeSecretKey.value());
-    const driverId = request.auth.uid;
-
-    try {
-      const payout = await stripe.payouts.create(
+      await db.collection("drivers").doc(userId).set(
         {
-          amount,
-          currency: currency.toLowerCase(),
-          method: "instant",
-          description: `Instant payout for driver ${driverId}`,
+          stripeAccountId: accountId,
+          stripeAccountStatus: "pending",
+          email,
+          country,
+          chargesEnabled: false,
+          payoutsEnabled: false,
+          detailsSubmitted: false,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         },
-        {
-          stripeAccount: stripeAccountId,
-        },
+        {merge: true},
       );
+    }
 
-      console.log(`Created instant payout ${payout.id} for driver ${driverId}`);
+    const accountLink = await stripe.accountLinks.create({
+      account: accountId,
+      refresh_url: `sportconnect://stripe-refresh?userId=${userId}`,
+      return_url: `sportconnect://stripe-return?userId=${userId}`,
+      type: "account_onboarding",
+    });
 
-      return {
-        payoutId: payout.id,
-        amount: payout.amount,
-        status: payout.status,
-        arrivalDate: payout.arrival_date,
-      };
-    } catch (error) {
-      console.error("Error creating instant payout:", error);
+    return {accountId, onboardingUrl: accountLink.url};
+  },
+);
+
+// ============================================
+// Stripe: Create Payment Intent
+// ============================================
+
+export const createPaymentIntent = onCall(
+  {secrets: [stripeSecretKey], cors: true},
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "User must be authenticated");
+    }
+
+    const {
+      amount,
+      currency = "eur",
+      rideId,
+      driverId,
+      riderId,
+      driverStripeAccountId,
+    } = request.data;
+
+    if (!amount || !rideId || !driverId || !riderId) {
+      throw new HttpsError("invalid-argument", "Missing required fields");
+    }
+
+    // Check if driver's Stripe account ID was provided
+    if (!driverStripeAccountId) {
       throw new HttpsError(
-        "internal",
-        `Failed to create instant payout: ${error}`,
+        "failed-precondition",
+        "Driver has not set up Stripe Connect account. Payment cannot be processed.",
       );
     }
-  },
-);
-
-/**
- * Refund Payment
- *
- * Request data:
- * - paymentIntentId: string
- * - amount?: number (partial refund, full if not provided)
- * - reason?: string
- */
-export const refundPayment = onCall(
-  {
-    secrets: [stripeSecretKey],
-    cors: true,
-  },
-  async (request) => {
-    if (!request.auth) {
-      throw new HttpsError("unauthenticated", "User must be authenticated");
-    }
-
-    const data = request.data;
-    const {paymentIntentId, amount, reason} = data;
-
-    if (!paymentIntentId) {
-      throw new HttpsError("invalid-argument", "paymentIntentId is required");
-    }
 
     const stripe = getStripeClient(stripeSecretKey.value());
-    const refundedBy = request.auth.uid;
+    const db = admin.firestore();
 
+    // Verify the Stripe account exists and is active
     try {
-      const refund = await stripe.refunds.create({
-        payment_intent: paymentIntentId,
-        amount: amount || undefined,
-        reason:
-          (reason as Stripe.RefundCreateParams.Reason) ||
-          "requested_by_customer",
-        metadata: {refundedBy},
-      });
+      const account = await stripe.accounts.retrieve(driverStripeAccountId);
+      
+      if (!account.charges_enabled) {
+        throw new HttpsError(
+          "failed-precondition",
+          "Driver's Stripe account is not fully activated. Charges are not enabled.",
+        );
+      }
 
-      console.log(`Created refund ${refund.id} for payment ${paymentIntentId}`);
-
-      return {
-        refundId: refund.id,
-        amount: refund.amount,
-        status: refund.status,
-      };
-    } catch (error) {
-      console.error("Error creating refund:", error);
-      throw new HttpsError("internal", `Failed to create refund: ${error}`);
+      if (!account.payouts_enabled) {
+        console.warn(
+          `Driver ${driverId} has charges enabled but payouts disabled`,
+        );
+      }
+    } catch (error: any) {
+      console.error("Error verifying Stripe account:", error);
+      throw new HttpsError(
+        "failed-precondition",
+        `Driver's Stripe account verification failed: ${error.message}`,
+      );
     }
+
+    const amountInCents = Math.round(amount * 100);
+    const {platformFee} = calculateFees(amountInCents);
+
+    // Create payment intent with destination charge
+    // Funds are transferred to driver's connected account after platform fee
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amountInCents,
+      currency,
+      application_fee_amount: platformFee,
+      transfer_data: {destination: driverStripeAccountId},
+      metadata: {rideId, driverId, riderId},
+    });
+
+    // Save payment record to Firestore
+    await db.collection("payments").add({
+      paymentIntentId: paymentIntent.id,
+      rideId,
+      driverId,
+      riderId,
+      driverStripeAccountId,
+      amount: amountInCents,
+      currency,
+      platformFee,
+      status: "pending",
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    return {
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
+    };
   },
 );
 
-/**
- * Get Connected Account Status
- *
- * Request data:
- * - accountId: string
- */
-export const getAccountStatus = onCall(
-  {
-    secrets: [stripeSecretKey],
-    cors: true,
-  },
-  async (request) => {
-    if (!request.auth) {
-      throw new HttpsError("unauthenticated", "User must be authenticated");
-    }
+// ============================================
+// Stripe: Webhook Handler
+// ============================================
 
-    const data = request.data;
-    const {accountId} = data;
-
-    if (!accountId) {
-      throw new HttpsError("invalid-argument", "accountId is required");
-    }
-
-    const stripe = getStripeClient(stripeSecretKey.value());
-
-    try {
-      const account = await stripe.accounts.retrieve(accountId);
-
-      return {
-        accountId: account.id,
-        chargesEnabled: account.charges_enabled,
-        payoutsEnabled: account.payouts_enabled,
-        detailsSubmitted: account.details_submitted,
-        email: account.email,
-      };
-    } catch (error) {
-      console.error("Error retrieving account:", error);
-      throw new HttpsError("internal", `Failed to retrieve account: ${error}`);
-    }
-  },
-);
-
-// =============================================================================
-// HTTP ENDPOINT FOR WEBHOOKS
-// =============================================================================
-
-/**
- * Stripe Webhook Handler
- *
- * Handles Stripe events:
- * - payment_intent.succeeded
- * - payment_intent.payment_failed
- * - account.updated
- * - payout.paid
- * - payout.failed
- */
 export const stripeWebhook = onRequest(
-  {
-    secrets: [stripeSecretKey, stripeWebhookSecret],
-  },
+  {secrets: [stripeSecretKey, stripeWebhookSecret], cors: true},
   async (req, res) => {
-    if (req.method !== "POST") {
-      res.status(405).send("Method Not Allowed");
+    const stripe = getStripeClient(stripeSecretKey.value());
+    const sig = req.headers["stripe-signature"];
+
+    if (!sig) {
+      res.status(400).json({error: "Missing Stripe signature"});
       return;
     }
 
-    const stripe = getStripeClient(stripeSecretKey.value());
-    const sig = req.headers["stripe-signature"];
-    const webhookSecret = stripeWebhookSecret.value();
-
     let event: Stripe.Event;
-
     try {
       event = stripe.webhooks.constructEvent(
         req.rawBody,
-        sig as string,
-        webhookSecret,
+        sig,
+        stripeWebhookSecret.value(),
       );
     } catch (err) {
       console.error("Webhook signature verification failed:", err);
-      res.status(400).send(`Webhook Error: ${err}`);
+      res.status(400).json({error: "Invalid signature"});
       return;
     }
 
@@ -574,72 +477,65 @@ export const stripeWebhook = onRequest(
     try {
       switch (event.type) {
       case "payment_intent.succeeded": {
-        const paymentIntent = event.data.object as Stripe.PaymentIntent;
-        const rideId = paymentIntent.metadata.rideId;
+        const pi = event.data.object as Stripe.PaymentIntent;
+        const payments = await db
+          .collection("payments")
+          .where("paymentIntentId", "==", pi.id)
+          .get();
 
-        if (rideId) {
-          await db.collection("payments").doc(paymentIntent.id).update({
-            status: "succeeded",
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          });
-
-          // Update ride status
-          await db.collection("rides").doc(rideId).update({
-            paymentStatus: "paid",
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        for (const doc of payments.docs) {
+          await doc.ref.update({
+            status: "completed",
+            completedAt: admin.firestore.FieldValue.serverTimestamp(),
           });
         }
-        console.log(`Payment succeeded: ${paymentIntent.id}`);
         break;
       }
 
       case "payment_intent.payment_failed": {
-        const paymentIntent = event.data.object as Stripe.PaymentIntent;
-        const rideId = paymentIntent.metadata.rideId;
+        const pi = event.data.object as Stripe.PaymentIntent;
+        const payments = await db
+          .collection("payments")
+          .where("paymentIntentId", "==", pi.id)
+          .get();
 
-        if (rideId) {
-          await db
-            .collection("payments")
-            .doc(paymentIntent.id)
-            .update({
-              status: "failed",
-              failureMessage:
-                  paymentIntent.last_payment_error?.message || "Payment failed",
-              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            });
+        for (const doc of payments.docs) {
+          await doc.ref.update({
+            status: "failed",
+            failedAt: admin.firestore.FieldValue.serverTimestamp(),
+            failureMessage:
+              pi.last_payment_error?.message || "Payment failed",
+          });
         }
-        console.log(`Payment failed: ${paymentIntent.id}`);
         break;
       }
 
       case "account.updated": {
         const account = event.data.object as Stripe.Account;
         const userId = account.metadata?.userId;
+        if (!userId) break;
 
-        if (userId) {
-          await db.collection("users").doc(userId).update({
-            "stripeConnect.chargesEnabled": account.charges_enabled,
-            "stripeConnect.payoutsEnabled": account.payouts_enabled,
-            "stripeConnect.detailsSubmitted": account.details_submitted,
-            "stripeConnect.updatedAt":
-                admin.firestore.FieldValue.serverTimestamp(),
-          });
+        const isActive =
+          account.charges_enabled &&
+          account.payouts_enabled &&
+          account.details_submitted;
+
+        await db.collection("drivers").doc(userId).update({
+          stripeAccountStatus: isActive ? "active" : "pending",
+          chargesEnabled: account.charges_enabled,
+          payoutsEnabled: account.payouts_enabled,
+          detailsSubmitted: account.details_submitted,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        if (isActive) {
+          await sendPushToUser(
+            userId,
+            "Stripe Account Active 🎉",
+            "Your Stripe account is now active!",
+            {type: "stripe", referenceId: userId},
+          );
         }
-        console.log(`Account updated: ${account.id}`);
-        break;
-      }
-
-      case "payout.paid": {
-        const payout = event.data.object as Stripe.Payout;
-        console.log(`Payout paid: ${payout.id}`);
-        break;
-      }
-
-      case "payout.failed": {
-        const payout = event.data.object as Stripe.Payout;
-        console.log(
-          `Payout failed: ${payout.id} - ${payout.failure_message}`,
-        );
         break;
       }
 

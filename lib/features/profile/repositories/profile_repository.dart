@@ -3,13 +3,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
-import 'package:sport_connect/features/auth/models/user_model.dart';
-import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
+import 'package:sport_connect/core/interfaces/repositories/i_user_repository.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 
 part 'profile_repository.g.dart';
 
 /// Profile Repository for user operations - Firebase only
-class ProfileRepository {
+class ProfileRepository implements IUserRepository {
   final FirebaseFirestore _firestore;
   final FirebaseStorage _storage;
 
@@ -147,34 +149,31 @@ class ProfileRepository {
 
   // ==================== VEHICLES (Driver Only) ====================
 
+  CollectionReference<Map<String, dynamic>> get _vehiclesCollection =>
+      _firestore.collection('vehicles');
+
   /// Add a vehicle (only for drivers)
-  Future<void> addVehicle(String uid, Vehicle vehicle) async {
+  Future<void> addVehicle(String uid, VehicleModel vehicle) async {
     final user = await getUserById(uid);
     if (user == null || user is! DriverModel) return;
 
-    final driver = user;
-    final isDefault = driver.vehicles.isEmpty;
-    final vehicleWithDefault = vehicle.copyWith(isDefault: isDefault);
+    // Store vehicle in its own collection
+    final vehicleRef = _vehiclesCollection.doc(vehicle.id);
+    await vehicleRef.set(vehicle.toJson());
 
+    // Add vehicle ID to driver's vehicleIds list
     await _usersCollection.doc(uid).update({
-      'vehicles': FieldValue.arrayUnion([vehicleWithDefault.toJson()]),
+      'vehicleIds': FieldValue.arrayUnion([vehicle.id]),
     });
   }
 
   /// Update a vehicle (only for drivers)
-  Future<void> updateVehicle(String uid, Vehicle vehicle) async {
+  Future<void> updateVehicle(String uid, VehicleModel vehicle) async {
     final user = await getUserById(uid);
     if (user == null || user is! DriverModel) return;
 
-    final driver = user;
-    final updatedVehicles = driver.vehicles.map((v) {
-      if (v.id == vehicle.id) return vehicle;
-      return v;
-    }).toList();
-
-    await _usersCollection.doc(uid).update({
-      'vehicles': updatedVehicles.map((v) => v.toJson()).toList(),
-    });
+    // Update vehicle in its own collection
+    await _vehiclesCollection.doc(vehicle.id).update(vehicle.toJson());
   }
 
   /// Remove a vehicle (only for drivers)
@@ -182,13 +181,12 @@ class ProfileRepository {
     final user = await getUserById(uid);
     if (user == null || user is! DriverModel) return;
 
-    final driver = user;
-    final updatedVehicles = driver.vehicles
-        .where((v) => v.id != vehicleId)
-        .toList();
+    // Remove from vehicles collection
+    await _vehiclesCollection.doc(vehicleId).delete();
 
+    // Remove vehicle ID from driver's vehicleIds list
     await _usersCollection.doc(uid).update({
-      'vehicles': updatedVehicles.map((v) => v.toJson()).toList(),
+      'vehicleIds': FieldValue.arrayRemove([vehicleId]),
     });
   }
 
@@ -198,13 +196,32 @@ class ProfileRepository {
     if (user == null || user is! DriverModel) return;
 
     final driver = user;
-    final updatedVehicles = driver.vehicles.map((v) {
-      return v.copyWith(isDefault: v.id == vehicleId);
-    }).toList();
+    // Deactivate all vehicles, activate the selected one
+    final batch = _firestore.batch();
+    for (final vId in driver.vehicleIds) {
+      batch.update(_vehiclesCollection.doc(vId), {
+        'isActive': vId == vehicleId,
+      });
+    }
+    await batch.commit();
+  }
 
-    await _usersCollection.doc(uid).update({
-      'vehicles': updatedVehicles.map((v) => v.toJson()).toList(),
-    });
+  /// Get vehicles for a driver
+  Future<List<VehicleModel>> getDriverVehicles(String uid) async {
+    final user = await getUserById(uid);
+    if (user == null || user is! DriverModel) return [];
+
+    final driver = user;
+    if (driver.vehicleIds.isEmpty) return [];
+
+    final vehicles = <VehicleModel>[];
+    for (final vId in driver.vehicleIds) {
+      final doc = await _vehiclesCollection.doc(vId).get();
+      if (doc.exists) {
+        vehicles.add(VehicleModel.fromJson(doc.data()!));
+      }
+    }
+    return vehicles;
   }
 
   // ==================== GAMIFICATION ====================
@@ -424,16 +441,64 @@ class ProfileRepository {
   // ==================== SEARCH ====================
 
   /// Search users
-  Future<List<UserModel>> searchUsers(String query, {int limit = 20}) async {
-    if (query.isEmpty) return [];
+  @override
+  Future<List<UserModel>> searchUsers({
+    String? query,
+    UserRole? role,
+    int? limit,
+  }) async {
+    if (query == null || query.isEmpty) return [];
 
-    final results = await _usersCollection
+    Query<Map<String, dynamic>> queryRef = _usersCollection
         .where('displayName', isGreaterThanOrEqualTo: query)
-        .where('displayName', isLessThanOrEqualTo: '$query\uf8ff')
-        .limit(limit)
-        .get();
+        .where('displayName', isLessThanOrEqualTo: '$query\uf8ff');
+
+    if (role != null) {
+      queryRef = queryRef.where('role', isEqualTo: role.name);
+    }
+
+    final results = await queryRef.limit(limit ?? 20).get();
 
     return results.docs.map((doc) => UserModel.fromJson(doc.data())).toList();
+  }
+
+  // ==================== INTERFACE METHODS ====================
+
+  @override
+  Future<void> updateUser(UserModel user) async {
+    await _usersCollection.doc(user.uid).update({
+      ...user.toJson(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  @override
+  Future<void> updateUserField(
+    String userId,
+    String field,
+    dynamic value,
+  ) async {
+    await _usersCollection.doc(userId).update({
+      field: value,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  @override
+  Future<void> updateOnlineStatus(String userId, bool isOnline) async {
+    await _usersCollection.doc(userId).update({
+      'isOnline': isOnline,
+      'lastSeenAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  @override
+  Stream<bool> getUserOnlineStatus(String userId) {
+    return _usersCollection.doc(userId).snapshots().map((doc) {
+      if (!doc.exists) return false;
+      final data = doc.data();
+      return data?['isOnline'] as bool? ?? false;
+    });
   }
 }
 
@@ -459,4 +524,11 @@ Stream<UserModel?> currentUserStream(Ref ref) {
 Stream<UserModel?> userStream(Ref ref, String userId) {
   final repository = ref.watch(profileRepositoryProvider);
   return repository.streamUser(userId);
+}
+
+/// Provider to load VehicleModel objects for a driver
+@riverpod
+Future<List<VehicleModel>> driverVehicles(Ref ref, String uid) {
+  final repository = ref.watch(profileRepositoryProvider);
+  return repository.getDriverVehicles(uid);
 }

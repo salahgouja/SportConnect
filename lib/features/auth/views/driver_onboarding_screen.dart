@@ -3,13 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/premium_text_field.dart';
-import 'package:sport_connect/core/config/app_router.dart';
-import 'package:sport_connect/features/auth/models/user_model.dart';
+import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
-import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
+import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
+import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Driver Onboarding Screen - Multi-step wizard for new drivers
 /// Step 1: Add vehicle information
@@ -36,14 +39,14 @@ class _DriverOnboardingScreenState
   final _colorController = TextEditingController();
   final _licensePlateController = TextEditingController();
   final _seatsController = TextEditingController(text: '4');
-  String _selectedFuelType = 'Petrol';
+  FuelType _selectedFuelType = FuelType.gasoline;
 
-  final List<String> _fuelTypes = [
-    'Petrol',
-    'Diesel',
-    'Electric',
-    'Hybrid',
-    'LPG',
+  final List<FuelType> _fuelTypes = [
+    FuelType.gasoline,
+    FuelType.diesel,
+    FuelType.electric,
+    FuelType.hybrid,
+    FuelType.hydrogen,
   ];
 
   @override
@@ -88,27 +91,33 @@ class _DriverOnboardingScreenState
     setState(() => _isLoading = true);
 
     try {
-      final authRepo = ref.read(authRepositoryProvider);
-      final profileRepo = ref.read(profileRepositoryProvider);
-      final currentUser = authRepo.currentUser;
+      final currentUser = ref.read(currentUserProvider).value;
 
       if (currentUser != null) {
+        final driver = currentUser.asDriver!;
+
         // Create vehicle object
-        final vehicle = Vehicle(
+        final vehicle = VehicleModel(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
+          ownerId: driver.uid,
+          ownerName: driver.displayName,
+          ownerPhotoUrl: driver.photoUrl,
           make: _makeController.text.trim(),
           model: _modelController.text.trim(),
           year: int.parse(_yearController.text.trim()),
           color: _colorController.text.trim(),
           licensePlate: _licensePlateController.text.trim().toUpperCase(),
-          seats: int.parse(_seatsController.text.trim()),
+          capacity: int.parse(_seatsController.text.trim()),
           fuelType: _selectedFuelType,
-          isDefault: true,
-          isVerified: false,
+          isActive: true,
+          verificationStatus: VehicleVerificationStatus.pending,
         );
 
         // Add vehicle to user's profile
-        await profileRepo.addVehicle(currentUser.uid, vehicle);
+        final vehicleViewModel = ref.read(
+          vehicleViewModelProvider(currentUser.uid).notifier,
+        );
+        await vehicleViewModel.addVehicle(vehicle);
 
         _nextStep();
       }
@@ -116,7 +125,11 @@ class _DriverOnboardingScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error saving vehicle: ${e.toString()}'),
+            content: Text(
+              AppLocalizations.of(
+                context,
+              ).errorSavingVehicleValue(e.toString()),
+            ),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -133,14 +146,23 @@ class _DriverOnboardingScreenState
   }
 
   Future<void> _setupStripe() async {
-    // Navigate to Stripe onboarding
-    context.go(AppRouter.driverStripeOnboarding);
+    // Clear the needsRoleSelection flag — driver setup is complete
+    final authActions = ref.read(authActionsViewModelProvider);
+    final uid = authActions.currentUser?.uid;
+    if (uid != null) {
+      await authActions.clearNeedsRoleSelection(uid);
+    }
+    if (mounted) context.go(AppRoutes.driverStripeOnboarding.path);
   }
 
-  void _skipStripeForNow() {
-    // Allow driver to skip Stripe setup and go to home
-    // They can set it up later in settings
-    context.go(AppRouter.driverHome);
+  Future<void> _skipStripeForNow() async {
+    // Clear the needsRoleSelection flag — driver setup is complete
+    final authActions = ref.read(authActionsViewModelProvider);
+    final uid = authActions.currentUser?.uid;
+    if (uid != null) {
+      await authActions.clearNeedsRoleSelection(uid);
+    }
+    if (mounted) context.go(AppRoutes.driverHome.path);
   }
 
   @override
@@ -159,9 +181,16 @@ class _DriverOnboardingScreenState
                   size: 20.sp,
                 ),
               )
-            : null,
+            : IconButton(
+                onPressed: () => context.go(AppRoutes.roleSelection.path),
+                icon: Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: AppColors.textPrimary,
+                  size: 20.sp,
+                ),
+              ),
         title: Text(
-          'Driver Setup',
+          AppLocalizations.of(context).driverSetup,
           style: TextStyle(
             fontSize: 18.sp,
             fontWeight: FontWeight.w700,
@@ -193,7 +222,11 @@ class _DriverOnboardingScreenState
       padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
       child: Row(
         children: [
-          _buildStepIndicator(0, 'Vehicle', Icons.directions_car_outlined),
+          _buildStepIndicator(
+            0,
+            AppLocalizations.of(context).vehicle,
+            Icons.directions_car_outlined,
+          ),
           Expanded(
             child: Container(
               height: 2,
@@ -204,7 +237,11 @@ class _DriverOnboardingScreenState
               ),
             ),
           ),
-          _buildStepIndicator(1, 'Payouts', Icons.account_balance_outlined),
+          _buildStepIndicator(
+            1,
+            AppLocalizations.of(context).payouts,
+            Icons.account_balance_outlined,
+          ),
         ],
       ),
     );
@@ -256,7 +293,7 @@ class _DriverOnboardingScreenState
             // Header
             _buildStepHeader(
               icon: Icons.directions_car_rounded,
-              title: 'Add Your Vehicle',
+              title: AppLocalizations.of(context).addYourVehicle,
               subtitle: 'Tell us about your car so riders know what to expect.',
             ).animate().fadeIn(duration: 400.ms),
 
@@ -378,7 +415,7 @@ class _DriverOnboardingScreenState
 
             // Fuel Type dropdown
             Text(
-              'Fuel Type',
+              AppLocalizations.of(context).fuelType,
               style: TextStyle(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w600,
@@ -394,7 +431,7 @@ class _DriverOnboardingScreenState
                 border: Border.all(color: AppColors.inputBorder),
               ),
               child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
+                child: DropdownButton<FuelType>(
                   value: _selectedFuelType,
                   isExpanded: true,
                   icon: Icon(
@@ -405,7 +442,7 @@ class _DriverOnboardingScreenState
                     return DropdownMenuItem(
                       value: fuel,
                       child: Text(
-                        fuel,
+                        fuel.displayName,
                         style: TextStyle(
                           fontSize: 15.sp,
                           color: AppColors.textPrimary,
@@ -451,7 +488,7 @@ class _DriverOnboardingScreenState
           // Header
           _buildStepHeader(
             icon: Icons.account_balance_rounded,
-            title: 'Setup Payouts',
+            title: AppLocalizations.of(context).setupPayouts,
             subtitle:
                 'Connect your bank account to receive payments from your rides.',
           ).animate().fadeIn(duration: 400.ms),
@@ -477,19 +514,19 @@ class _DriverOnboardingScreenState
               children: [
                 _buildBenefitItem(
                   icon: Icons.security_rounded,
-                  title: 'Secure Payments',
+                  title: AppLocalizations.of(context).securePayments,
                   description: 'Powered by Stripe, trusted by millions',
                 ),
                 SizedBox(height: 16.h),
                 _buildBenefitItem(
                   icon: Icons.flash_on_rounded,
-                  title: 'Fast Transfers',
+                  title: AppLocalizations.of(context).fastTransfers,
                   description: 'Get paid within 2-3 business days',
                 ),
                 SizedBox(height: 16.h),
                 _buildBenefitItem(
                   icon: Icons.receipt_long_rounded,
-                  title: 'Easy Tracking',
+                  title: AppLocalizations.of(context).easyTracking,
                   description: 'View all your earnings in one place',
                 ),
               ],
@@ -518,7 +555,7 @@ class _DriverOnboardingScreenState
             child: TextButton(
               onPressed: _skipStripeForNow,
               child: Text(
-                'Skip for now, I\'ll set this up later',
+                AppLocalizations.of(context).skipForNowILl,
                 style: TextStyle(
                   fontSize: 14.sp,
                   color: AppColors.textSecondary,
@@ -549,7 +586,7 @@ class _DriverOnboardingScreenState
                 SizedBox(width: 12.w),
                 Expanded(
                   child: Text(
-                    'You can still offer rides without setting up payouts, but you won\'t be able to receive payments until you complete this step.',
+                    AppLocalizations.of(context).youCanStillOfferRides,
                     style: TextStyle(
                       fontSize: 13.sp,
                       color: AppColors.textSecondary,

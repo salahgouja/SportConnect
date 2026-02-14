@@ -1,5 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:sport_connect/features/auth/models/user_model.dart';
+import 'package:sport_connect/core/converters/timestamp_converter.dart';
 
 part 'vehicle_model.freezed.dart';
 part 'vehicle_model.g.dart';
@@ -12,7 +12,26 @@ enum FuelType {
   hybrid,
   pluginHybrid,
   hydrogen,
-  other,
+  other;
+
+  String get displayName {
+    switch (this) {
+      case FuelType.gasoline:
+        return 'Gasoline';
+      case FuelType.diesel:
+        return 'Diesel';
+      case FuelType.electric:
+        return 'Electric';
+      case FuelType.hybrid:
+        return 'Hybrid';
+      case FuelType.pluginHybrid:
+        return 'Plug-in Hybrid';
+      case FuelType.hydrogen:
+        return 'Hydrogen';
+      case FuelType.other:
+        return 'Other';
+    }
+  }
 }
 
 /// Vehicle verification status
@@ -28,7 +47,7 @@ abstract class VehicleModel with _$VehicleModel {
     required String ownerId,
     required String make,
     required String model,
-    required String year,
+    required int year,
     required String color,
     required String licensePlate,
     @Default(4) int capacity,
@@ -71,26 +90,6 @@ abstract class VehicleModel with _$VehicleModel {
 
   /// Get display name
   String get displayName => '$year $make $model';
-
-  /// Get fuel type display name
-  String get fuelTypeDisplayName {
-    switch (fuelType) {
-      case FuelType.gasoline:
-        return 'Gasoline';
-      case FuelType.diesel:
-        return 'Diesel';
-      case FuelType.electric:
-        return 'Electric';
-      case FuelType.hybrid:
-        return 'Hybrid';
-      case FuelType.pluginHybrid:
-        return 'Plug-in Hybrid';
-      case FuelType.hydrogen:
-        return 'Hydrogen';
-      case FuelType.other:
-        return 'Other';
-    }
-  }
 
   /// Get list of enabled features
   List<String> get enabledFeatures {

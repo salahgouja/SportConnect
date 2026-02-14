@@ -1,7 +1,17 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sport_connect/features/rides/models/ride_model.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_route.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_schedule.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_capacity.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_pricing.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_preferences.dart';
+import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
+import 'package:sport_connect/features/rides/models/ride_search_filters.dart';
 import 'package:sport_connect/features/rides/repositories/ride_repository.dart';
+import 'package:sport_connect/core/models/location/location_point.dart';
+import 'package:sport_connect/core/models/value_objects/money.dart';
 
 part 'ride_view_model.g.dart';
 
@@ -49,6 +59,68 @@ class RideFormState {
       origin != null && destination != null && departureTime != null;
 }
 
+final rideActionsViewModelProvider = Provider<RideActionsViewModel>((ref) {
+  return RideActionsViewModel(ref);
+});
+
+class RideActionsViewModel {
+  RideActionsViewModel(this._ref);
+
+  final Ref _ref;
+
+  Future<String> createRide(RideModel ride) {
+    return _ref.read(rideRepositoryProvider).createRide(ride);
+  }
+
+  Future<void> cancelRide(String rideId, String reason) {
+    return _ref.read(rideRepositoryProvider).cancelRide(rideId, reason);
+  }
+
+  Future<void> startRide(String rideId) {
+    return _ref.read(rideRepositoryProvider).startRide(rideId);
+  }
+
+  Future<void> completeRide(String rideId) {
+    return _ref.read(rideRepositoryProvider).completeRide(rideId);
+  }
+
+  Future<void> updateBookingStatus({
+    required String rideId,
+    required String bookingId,
+    required BookingStatus newStatus,
+  }) {
+    return _ref
+        .read(rideRepositoryProvider)
+        .updateBookingStatus(
+          rideId: rideId,
+          bookingId: bookingId,
+          newStatus: newStatus,
+        );
+  }
+
+  Future<void> bookRide({
+    required String rideId,
+    required RideBooking booking,
+  }) {
+    return _ref
+        .read(rideRepositoryProvider)
+        .bookRide(rideId: rideId, booking: booking);
+  }
+
+  Future<void> cancelBooking({
+    required String rideId,
+    required String bookingId,
+  }) {
+    return _ref
+        .read(rideRepositoryProvider)
+        .cancelBooking(rideId: rideId, bookingId: bookingId);
+  }
+
+  Stream<RideModel?> streamRideById(String rideId) {
+    return _ref.read(rideRepositoryProvider).streamRideById(rideId);
+  }
+}
+
 /// Ride Form View Model
 @riverpod
 class RideFormViewModel extends _$RideFormViewModel {
@@ -77,9 +149,12 @@ class RideFormViewModel extends _$RideFormViewModel {
 
   Future<String?> createRide({
     required String driverId,
-    required String driverName,
-    String? driverPhotoUrl,
-    double? driverRating,
+    required LocationPoint origin,
+    required LocationPoint destination,
+    required DateTime departureTime,
+    required int availableSeats,
+    required double pricePerSeat,
+    String currency = 'USD',
   }) async {
     if (!state.isValid) {
       state = state.copyWith(error: 'Please fill all required fields');
@@ -94,14 +169,13 @@ class RideFormViewModel extends _$RideFormViewModel {
       final ride = RideModel(
         id: '',
         driverId: driverId,
-        driverName: driverName,
-        driverPhotoUrl: driverPhotoUrl,
-        driverRating: driverRating,
-        origin: state.origin!,
-        destination: state.destination!,
-        departureTime: state.departureTime!,
-        availableSeats: state.availableSeats,
-        pricePerSeat: state.pricePerSeat,
+        route: RideRoute(origin: origin, destination: destination),
+        schedule: RideSchedule(departureTime: departureTime),
+        capacity: RideCapacity(available: availableSeats),
+        pricing: RidePricing(
+          pricePerSeat: Money(amount: pricePerSeat, currency: currency),
+        ),
+        preferences: const RidePreferences(),
         status: RideStatus.active,
       );
 
@@ -180,7 +254,7 @@ class RideSearchViewModel extends _$RideSearchViewModel {
         originLng: filters.origin!.longitude,
         destLat: filters.destination!.latitude,
         destLng: filters.destination!.longitude,
-        departureDate: filters.departureDate ?? DateTime.now(),
+        date: filters.departureDate ?? DateTime.now(),
         minSeats: filters.minSeats,
         maxPrice: filters.maxPrice,
       );
@@ -193,7 +267,7 @@ class RideSearchViewModel extends _$RideSearchViewModel {
         isLoading: false,
         hasMore: rides.length >= 20,
       );
-    } catch (e, st) {
+    } catch (e, _) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, error: e.toString());
       rethrow;
@@ -205,19 +279,17 @@ class RideSearchViewModel extends _$RideSearchViewModel {
   }
 }
 
-/// Single Ride Detail View Model
+/// Single Ride Detail View Model (real-time updates)
 @riverpod
 class RideDetailViewModel extends _$RideDetailViewModel {
   @override
-  Future<RideModel?> build(String rideId) async {
+  Stream<RideModel?> build(String rideId) {
     final repository = ref.read(rideRepositoryProvider);
-    return repository.getRideById(rideId);
+    return repository.streamRideById(rideId);
   }
 
   Future<bool> bookRide({
     required String passengerId,
-    required String passengerName,
-    String? passengerPhotoUrl,
     int seats = 1,
     String? note,
   }) async {
@@ -229,9 +301,8 @@ class RideDetailViewModel extends _$RideDetailViewModel {
 
       final booking = RideBooking(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
+        rideId: ride.id,
         passengerId: passengerId,
-        passengerName: passengerName,
-        passengerPhotoUrl: passengerPhotoUrl,
         seatsBooked: seats,
         status: BookingStatus.pending,
         note: note,
@@ -316,7 +387,7 @@ class RideDetailViewModel extends _$RideDetailViewModel {
 
     try {
       final repository = ref.read(rideRepositoryProvider);
-      await repository.cancelRide(ride.id);
+      await repository.cancelRide(ride.id, 'Cancelled by user');
       ref.invalidateSelf();
       return true;
     } catch (e) {

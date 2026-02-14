@@ -3,13 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
-import 'package:sport_connect/features/auth/models/user_model.dart';
+import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
-import 'package:sport_connect/core/config/app_router.dart';
+import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Profile Screen - Clean carpooling-style design
 class ProfileScreen extends ConsumerWidget {
@@ -47,7 +49,7 @@ class ProfileScreen extends ConsumerWidget {
             Container(
               padding: EdgeInsets.all(20.w),
               decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.1),
+                color: AppColors.error.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -58,7 +60,7 @@ class ProfileScreen extends ConsumerWidget {
             ),
             SizedBox(height: 20.h),
             Text(
-              'Failed to load profile',
+              AppLocalizations.of(context).failedToLoadProfile,
               style: TextStyle(
                 fontSize: 18.sp,
                 fontWeight: FontWeight.w700,
@@ -67,9 +69,28 @@ class ProfileScreen extends ConsumerWidget {
             ),
             SizedBox(height: 8.h),
             Text(
-              'Please check your connection and try again',
+              AppLocalizations.of(context).pleaseCheckYourConnectionAnd,
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
+            ),
+            SizedBox(height: 24.h),
+            ElevatedButton.icon(
+              onPressed: () {
+                if (userId != null) {
+                  // ignore: unused_result
+                  // Invalidate the provider to trigger a re-fetch
+                }
+              },
+              icon: const Icon(Icons.refresh_rounded),
+              label: Text(AppLocalizations.of(context).tryAgain),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+              ),
             ),
           ],
         ),
@@ -101,7 +122,9 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 ),
           title: Text(
-            _isOwnProfile ? 'My Profile' : 'Profile',
+            _isOwnProfile
+                ? AppLocalizations.of(context).myProfile
+                : AppLocalizations.of(context).navProfile,
             style: TextStyle(
               fontSize: 18.sp,
               fontWeight: FontWeight.w700,
@@ -111,7 +134,7 @@ class ProfileScreen extends ConsumerWidget {
           actions: [
             if (_isOwnProfile)
               IconButton(
-                onPressed: () => context.push(AppRouter.settings),
+                onPressed: () => context.push(AppRoutes.settings.path),
                 icon: Icon(
                   Icons.settings_outlined,
                   color: AppColors.textPrimary,
@@ -198,7 +221,7 @@ class ProfileScreen extends ConsumerWidget {
               ),
               if (_isOwnProfile)
                 GestureDetector(
-                  onTap: () => context.push(AppRouter.editProfile),
+                  onTap: () => context.push(AppRoutes.editProfile.path),
                   child: Container(
                     padding: EdgeInsets.all(8.w),
                     decoration: BoxDecoration(
@@ -242,7 +265,7 @@ class ProfileScreen extends ConsumerWidget {
                     vertical: 4.h,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.xpGold.withOpacity(0.15),
+                    color: AppColors.xpGold.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                   child: Row(
@@ -275,8 +298,10 @@ class ProfileScreen extends ConsumerWidget {
               SizedBox(width: 4.w),
               Text(
                 memberSince != null
-                    ? 'Member since ${_formatDate(memberSince)}'
-                    : 'New member',
+                    ? AppLocalizations.of(
+                        context,
+                      ).memberSinceValue(_formatDate(memberSince))
+                    : AppLocalizations.of(context).newMember,
                 style: TextStyle(
                   fontSize: 13.sp,
                   color: AppColors.textSecondary,
@@ -320,7 +345,7 @@ class ProfileScreen extends ConsumerWidget {
               child: PremiumButton(
                 text: 'Edit Profile',
                 icon: Icons.edit_outlined,
-                onPressed: () => context.push(AppRouter.editProfile),
+                onPressed: () => context.push(AppRoutes.editProfile.path),
                 style: PremiumButtonStyle.outline,
                 size: ButtonSize.medium,
               ),
@@ -375,7 +400,7 @@ class ProfileScreen extends ConsumerWidget {
         decoration: BoxDecoration(
           color: AppColors.cardBg,
           borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(color: AppColors.border.withOpacity(0.5)),
+          border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -389,7 +414,7 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 SizedBox(width: 8.w),
                 Text(
-                  'Verified Info',
+                  AppLocalizations.of(context).verifiedInfo,
                   style: TextStyle(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w700,
@@ -401,7 +426,7 @@ class ProfileScreen extends ConsumerWidget {
             SizedBox(height: 16.h),
             Row(
               children: verifications.map((item) {
-                return Expanded(child: _buildVerificationBadge(item));
+                return Expanded(child: _buildVerificationBadge(context, item));
               }).toList(),
             ),
           ],
@@ -410,14 +435,14 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildVerificationBadge(_VerificationItem item) {
+  Widget _buildVerificationBadge(BuildContext context, _VerificationItem item) {
     return Column(
       children: [
         Container(
           padding: EdgeInsets.all(12.w),
           decoration: BoxDecoration(
             color: item.isVerified
-                ? AppColors.success.withOpacity(0.1)
+                ? AppColors.success.withValues(alpha: 0.1)
                 : AppColors.surfaceVariant,
             shape: BoxShape.circle,
           ),
@@ -440,7 +465,9 @@ class ProfileScreen extends ConsumerWidget {
         ),
         SizedBox(height: 2.h),
         Text(
-          item.isVerified ? 'Verified' : 'Not verified',
+          item.isVerified
+              ? AppLocalizations.of(context).verified
+              : AppLocalizations.of(context).notVerified,
           style: TextStyle(
             fontSize: 10.sp,
             color: item.isVerified ? AppColors.success : AppColors.textTertiary,
@@ -462,7 +489,7 @@ class ProfileScreen extends ConsumerWidget {
       case RiderModel(:final gamification):
         co2Saved = gamification.co2Saved;
         currentStreak = gamification.currentStreak;
-        moneySaved = gamification.moneySaved;
+        moneySaved = null;
       case DriverModel(:final gamification):
         co2Saved = gamification.co2Saved;
         currentStreak = gamification.currentStreak;
@@ -476,7 +503,7 @@ class ProfileScreen extends ConsumerWidget {
         decoration: BoxDecoration(
           color: AppColors.cardBg,
           borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(color: AppColors.border.withOpacity(0.5)),
+          border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -490,7 +517,7 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 SizedBox(width: 8.w),
                 Text(
-                  'Ride Statistics',
+                  AppLocalizations.of(context).rideStatistics,
                   style: TextStyle(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w700,
@@ -506,7 +533,7 @@ class ProfileScreen extends ConsumerWidget {
                   child: _buildStatCard(
                     icon: Icons.route_rounded,
                     value: totalRides.toString(),
-                    label: 'Total Rides',
+                    label: AppLocalizations.of(context).totalRides,
                     color: AppColors.primary,
                   ),
                 ),
@@ -515,7 +542,7 @@ class ProfileScreen extends ConsumerWidget {
                   child: _buildStatCard(
                     icon: Icons.eco_rounded,
                     value: '${co2Saved.toStringAsFixed(0)}kg',
-                    label: 'CO₂ Saved',
+                    label: AppLocalizations.of(context).coSaved,
                     color: AppColors.success,
                   ),
                 ),
@@ -528,7 +555,7 @@ class ProfileScreen extends ConsumerWidget {
                   child: _buildStatCard(
                     icon: Icons.local_fire_department_rounded,
                     value: '$currentStreak',
-                    label: 'Day Streak',
+                    label: AppLocalizations.of(context).dayStreak,
                     color: AppColors.warning,
                   ),
                 ),
@@ -540,10 +567,12 @@ class ProfileScreen extends ConsumerWidget {
                         : Icons.attach_money_rounded,
                     value: moneySaved != null
                         ? '€${moneySaved.toStringAsFixed(0)}'
-                        : user.maybeDriver != null
-                        ? '€${user.asDriver.gamification.totalEarnings.toStringAsFixed(0)}'
+                        : user.asDriver != null
+                        ? '€${user.asDriver!.totalEarnings.toStringAsFixed(0)}'
                         : '€0',
-                    label: moneySaved != null ? 'Saved' : 'Earned',
+                    label: moneySaved != null
+                        ? AppLocalizations.of(context).saved
+                        : AppLocalizations.of(context).earned2,
                     color: AppColors.info,
                   ),
                 ),
@@ -564,7 +593,7 @@ class ProfileScreen extends ConsumerWidget {
     return Container(
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12.r),
       ),
       child: Row(
@@ -572,7 +601,7 @@ class ProfileScreen extends ConsumerWidget {
           Container(
             padding: EdgeInsets.all(8.w),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
+              color: color.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(8.r),
             ),
             child: Icon(icon, color: color, size: 18.sp),
@@ -614,7 +643,7 @@ class ProfileScreen extends ConsumerWidget {
         decoration: BoxDecoration(
           color: AppColors.cardBg,
           borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(color: AppColors.border.withOpacity(0.5)),
+          border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -628,7 +657,7 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 SizedBox(width: 8.w),
                 Text(
-                  'About',
+                  AppLocalizations.of(context).settingsAbout,
                   style: TextStyle(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w700,
@@ -661,7 +690,7 @@ class ProfileScreen extends ConsumerWidget {
         title: 'My Vehicles',
         subtitle: 'Manage your vehicles',
         color: AppColors.primary,
-        onTap: () => context.push(AppRouter.vehicles),
+        onTap: () => context.push(AppRoutes.vehicles.path),
       ),
       _MenuItem(
         icon: Icons.history_rounded,
@@ -669,7 +698,7 @@ class ProfileScreen extends ConsumerWidget {
         subtitle: 'View your ride history',
         color: AppColors.info,
         onTap: () => context.push(
-          isDriver ? AppRouter.driverMyRides : AppRouter.riderMyRides,
+          isDriver ? AppRoutes.driverMyRides.path : AppRoutes.riderMyRides.path,
         ),
       ),
       _MenuItem(
@@ -677,21 +706,21 @@ class ProfileScreen extends ConsumerWidget {
         title: 'Achievements',
         subtitle: 'View your badges & rewards',
         color: AppColors.xpGold,
-        onTap: () => context.push(AppRouter.achievements),
+        onTap: () => context.push(AppRoutes.achievements.path),
       ),
       _MenuItem(
         icon: Icons.notifications_outlined,
         title: 'Notifications',
         subtitle: 'View your notifications',
         color: AppColors.warning,
-        onTap: () => context.push(AppRouter.notifications),
+        onTap: () => context.push(AppRoutes.notifications.path),
       ),
       _MenuItem(
         icon: Icons.settings_outlined,
         title: 'Settings',
         subtitle: 'App preferences & privacy',
         color: AppColors.textSecondary,
-        onTap: () => context.push(AppRouter.settings),
+        onTap: () => context.push(AppRoutes.settings.path),
       ),
     ];
 
@@ -701,7 +730,7 @@ class ProfileScreen extends ConsumerWidget {
         decoration: BoxDecoration(
           color: AppColors.cardBg,
           borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(color: AppColors.border.withOpacity(0.5)),
+          border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
         ),
         child: Column(
           children: menuItems.asMap().entries.map((entry) {
@@ -729,7 +758,7 @@ class ProfileScreen extends ConsumerWidget {
                           Container(
                             padding: EdgeInsets.all(10.w),
                             decoration: BoxDecoration(
-                              color: item.color.withOpacity(0.1),
+                              color: item.color.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(10.r),
                             ),
                             child: Icon(
@@ -777,7 +806,7 @@ class ProfileScreen extends ConsumerWidget {
                     height: 1,
                     indent: 60.w,
                     endIndent: 16.w,
-                    color: AppColors.border.withOpacity(0.5),
+                    color: AppColors.border.withValues(alpha: 0.5),
                   ),
               ],
             );
@@ -798,7 +827,7 @@ class ProfileScreen extends ConsumerWidget {
             Container(
               padding: EdgeInsets.all(24.w),
               decoration: BoxDecoration(
-                color: AppColors.warning.withOpacity(0.1),
+                color: AppColors.warning.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -809,7 +838,7 @@ class ProfileScreen extends ConsumerWidget {
             ),
             SizedBox(height: 24.h),
             Text(
-              'Profile Not Found',
+              AppLocalizations.of(context).profileNotFound,
               style: TextStyle(
                 fontSize: 22.sp,
                 fontWeight: FontWeight.w700,
@@ -818,7 +847,7 @@ class ProfileScreen extends ConsumerWidget {
             ),
             SizedBox(height: 12.h),
             Text(
-              'Your profile data could not be loaded.\nThis may happen if you\'re a new user.',
+              AppLocalizations.of(context).yourProfileDataCouldNot,
               style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
@@ -827,16 +856,18 @@ class ProfileScreen extends ConsumerWidget {
               text: 'Sync Profile',
               icon: Icons.refresh_rounded,
               onPressed: () async {
-                final authRepo = ref.read(authRepositoryProvider);
-                final currentUser = authRepo.currentUser;
+                final authActions = ref.read(authActionsViewModelProvider);
+                final currentUser = authActions.currentUser;
                 if (currentUser != null) {
-                  final profileRepo = ref.read(profileRepositoryProvider);
-                  final existingUser = await profileRepo.getUserById(
+                  final profileActions = ref.read(
+                    profileActionsViewModelProvider,
+                  );
+                  final existingUser = await profileActions.getUserById(
                     currentUser.uid,
                   );
                   if (existingUser == null) {
                     // Create new user as rider by default
-                    await authRepo.createUserDocument(
+                    await authActions.createUserDocument(
                       RiderModel(
                         uid: currentUser.uid,
                         email: currentUser.email ?? '',
@@ -855,13 +886,13 @@ class ProfileScreen extends ConsumerWidget {
             SizedBox(height: 16.h),
             TextButton(
               onPressed: () async {
-                await ref.read(authRepositoryProvider).signOut();
+                await ref.read(authActionsViewModelProvider).signOut();
                 if (context.mounted) {
-                  context.go(AppRouter.login);
+                  context.go(AppRoutes.login.path);
                 }
               },
               child: Text(
-                'Sign out & try again',
+                AppLocalizations.of(context).signOutTryAgain,
                 style: TextStyle(fontSize: 14.sp, color: AppColors.primary),
               ),
             ),

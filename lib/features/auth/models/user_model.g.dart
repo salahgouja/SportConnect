@@ -6,253 +6,188 @@ part of 'user_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_Achievement _$AchievementFromJson(Map json) => _Achievement(
-  id: json['id'] as String,
-  title: json['title'] as String,
-  description: json['description'] as String,
-  iconName: json['iconName'] as String,
-  xpReward: (json['xpReward'] as num).toInt(),
-  isUnlocked: json['isUnlocked'] as bool? ?? false,
-  unlockedAt: const TimestampConverter().fromJson(json['unlockedAt']),
-);
-
-Map<String, dynamic> _$AchievementToJson(_Achievement instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'title': instance.title,
-      'description': instance.description,
-      'iconName': instance.iconName,
-      'xpReward': instance.xpReward,
-      'isUnlocked': instance.isUnlocked,
-      'unlockedAt': const TimestampConverter().toJson(instance.unlockedAt),
-    };
-
-_GamificationStats _$GamificationStatsFromJson(Map json) => _GamificationStats(
-  totalXP: (json['totalXP'] as num?)?.toInt() ?? 0,
-  level: (json['level'] as num?)?.toInt() ?? 1,
-  currentLevelXP: (json['currentLevelXP'] as num?)?.toInt() ?? 0,
-  xpToNextLevel: (json['xpToNextLevel'] as num?)?.toInt() ?? 1000,
-  totalRides: (json['totalRides'] as num?)?.toInt() ?? 0,
-  currentStreak: (json['currentStreak'] as num?)?.toInt() ?? 0,
-  longestStreak: (json['longestStreak'] as num?)?.toInt() ?? 0,
-  co2Saved: (json['co2Saved'] as num?)?.toDouble() ?? 0.0,
-  totalDistance: (json['totalDistance'] as num?)?.toDouble() ?? 0.0,
-  unlockedBadges:
-      (json['unlockedBadges'] as List<dynamic>?)
+RiderModel _$RiderModelFromJson(Map json) => RiderModel(
+  uid: json['uid'] as String,
+  email: json['email'] as String,
+  displayName: json['displayName'] as String,
+  photoUrl: json['photoUrl'] as String?,
+  phoneNumber: json['phoneNumber'] as String?,
+  bio: json['bio'] as String?,
+  dateOfBirth: const TimestampConverter().fromJson(json['dateOfBirth']),
+  gender: json['gender'] as String?,
+  interests:
+      (json['interests'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+      const [],
+  address: json['address'] as String?,
+  latitude: (json['latitude'] as num?)?.toDouble(),
+  longitude: (json['longitude'] as num?)?.toDouble(),
+  city: json['city'] as String?,
+  country: json['country'] as String?,
+  isEmailVerified: json['isEmailVerified'] as bool? ?? false,
+  isPhoneVerified: json['isPhoneVerified'] as bool? ?? false,
+  isIdVerified: json['isIdVerified'] as bool? ?? false,
+  isActive: json['isActive'] as bool? ?? true,
+  isOnline: json['isOnline'] as bool? ?? false,
+  isPremium: json['isPremium'] as bool? ?? false,
+  blockedUsers:
+      (json['blockedUsers'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList() ??
       const [],
-  achievements:
-      (json['achievements'] as List<dynamic>?)
+  favoriteRoutes:
+      (json['favoriteRoutes'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const [],
+  rating: json['rating'] == null
+      ? const RatingBreakdown()
+      : RatingBreakdown.fromJson(
+          Map<String, dynamic>.from(json['rating'] as Map),
+        ),
+  gamification: json['gamification'] == null
+      ? const GamificationStats.rider()
+      : GamificationStats.fromJson(
+          Map<String, dynamic>.from(json['gamification'] as Map),
+        ),
+  needsRoleSelection: json['needsRoleSelection'] as bool? ?? false,
+  preferences: json['preferences'] == null
+      ? const UserPreferences()
+      : UserPreferences.fromJson(
+          Map<String, dynamic>.from(json['preferences'] as Map),
+        ),
+  createdAt: const TimestampConverter().fromJson(json['createdAt']),
+  updatedAt: const TimestampConverter().fromJson(json['updatedAt']),
+  lastSeenAt: const TimestampConverter().fromJson(json['lastSeenAt']),
+  $type: json['role'] as String?,
+);
+
+Map<String, dynamic> _$RiderModelToJson(RiderModel instance) =>
+    <String, dynamic>{
+      'uid': instance.uid,
+      'email': instance.email,
+      'displayName': instance.displayName,
+      'photoUrl': instance.photoUrl,
+      'phoneNumber': instance.phoneNumber,
+      'bio': instance.bio,
+      'dateOfBirth': const TimestampConverter().toJson(instance.dateOfBirth),
+      'gender': instance.gender,
+      'interests': instance.interests,
+      'address': instance.address,
+      'latitude': instance.latitude,
+      'longitude': instance.longitude,
+      'city': instance.city,
+      'country': instance.country,
+      'isEmailVerified': instance.isEmailVerified,
+      'isPhoneVerified': instance.isPhoneVerified,
+      'isIdVerified': instance.isIdVerified,
+      'isActive': instance.isActive,
+      'isOnline': instance.isOnline,
+      'isPremium': instance.isPremium,
+      'blockedUsers': instance.blockedUsers,
+      'favoriteRoutes': instance.favoriteRoutes,
+      'rating': instance.rating.toJson(),
+      'gamification': instance.gamification.toJson(),
+      'needsRoleSelection': instance.needsRoleSelection,
+      'preferences': instance.preferences.toJson(),
+      'createdAt': const TimestampConverter().toJson(instance.createdAt),
+      'updatedAt': const TimestampConverter().toJson(instance.updatedAt),
+      'lastSeenAt': const TimestampConverter().toJson(instance.lastSeenAt),
+      'role': instance.$type,
+    };
+
+DriverModel _$DriverModelFromJson(Map json) => DriverModel(
+  uid: json['uid'] as String,
+  email: json['email'] as String,
+  displayName: json['displayName'] as String,
+  photoUrl: json['photoUrl'] as String?,
+  phoneNumber: json['phoneNumber'] as String?,
+  bio: json['bio'] as String?,
+  dateOfBirth: const TimestampConverter().fromJson(json['dateOfBirth']),
+  gender: json['gender'] as String?,
+  interests:
+      (json['interests'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+      const [],
+  address: json['address'] as String?,
+  latitude: (json['latitude'] as num?)?.toDouble(),
+  longitude: (json['longitude'] as num?)?.toDouble(),
+  city: json['city'] as String?,
+  country: json['country'] as String?,
+  isEmailVerified: json['isEmailVerified'] as bool? ?? false,
+  isPhoneVerified: json['isPhoneVerified'] as bool? ?? false,
+  isIdVerified: json['isIdVerified'] as bool? ?? false,
+  isActive: json['isActive'] as bool? ?? true,
+  isOnline: json['isOnline'] as bool? ?? false,
+  isPremium: json['isPremium'] as bool? ?? false,
+  blockedUsers:
+      (json['blockedUsers'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const [],
+  vehicles:
+      (json['vehicles'] as List<dynamic>?)
           ?.map(
-            (e) => Achievement.fromJson(Map<String, dynamic>.from(e as Map)),
+            (e) => VehicleModel.fromJson(Map<String, dynamic>.from(e as Map)),
           )
           .toList() ??
       const [],
-  lastRideDate: const TimestampConverter().fromJson(json['lastRideDate']),
+  rating: json['rating'] == null
+      ? const RatingBreakdown()
+      : RatingBreakdown.fromJson(
+          Map<String, dynamic>.from(json['rating'] as Map),
+        ),
+  gamification: json['gamification'] == null
+      ? const GamificationStats.driver()
+      : GamificationStats.fromJson(
+          Map<String, dynamic>.from(json['gamification'] as Map),
+        ),
+  stripeAccountId: json['stripeAccountId'] as String?,
+  isStripeEnabled: json['isStripeEnabled'] as bool? ?? false,
+  isStripeOnboarded: json['isStripeOnboarded'] as bool? ?? false,
+  needsRoleSelection: json['needsRoleSelection'] as bool? ?? false,
+  preferences: json['preferences'] == null
+      ? const UserPreferences()
+      : UserPreferences.fromJson(
+          Map<String, dynamic>.from(json['preferences'] as Map),
+        ),
+  createdAt: const TimestampConverter().fromJson(json['createdAt']),
+  updatedAt: const TimestampConverter().fromJson(json['updatedAt']),
+  lastSeenAt: const TimestampConverter().fromJson(json['lastSeenAt']),
+  $type: json['role'] as String?,
 );
 
-Map<String, dynamic> _$GamificationStatsToJson(_GamificationStats instance) =>
+Map<String, dynamic> _$DriverModelToJson(DriverModel instance) =>
     <String, dynamic>{
-      'totalXP': instance.totalXP,
-      'level': instance.level,
-      'currentLevelXP': instance.currentLevelXP,
-      'xpToNextLevel': instance.xpToNextLevel,
-      'totalRides': instance.totalRides,
-      'currentStreak': instance.currentStreak,
-      'longestStreak': instance.longestStreak,
-      'co2Saved': instance.co2Saved,
-      'totalDistance': instance.totalDistance,
-      'unlockedBadges': instance.unlockedBadges,
-      'achievements': instance.achievements.map((e) => e.toJson()).toList(),
-      'lastRideDate': const TimestampConverter().toJson(instance.lastRideDate),
-    };
-
-_RiderGamificationStats _$RiderGamificationStatsFromJson(Map json) =>
-    _RiderGamificationStats(
-      totalXP: (json['totalXP'] as num?)?.toInt() ?? 0,
-      level: (json['level'] as num?)?.toInt() ?? 1,
-      currentLevelXP: (json['currentLevelXP'] as num?)?.toInt() ?? 0,
-      xpToNextLevel: (json['xpToNextLevel'] as num?)?.toInt() ?? 1000,
-      totalRides: (json['totalRides'] as num?)?.toInt() ?? 0,
-      currentStreak: (json['currentStreak'] as num?)?.toInt() ?? 0,
-      longestStreak: (json['longestStreak'] as num?)?.toInt() ?? 0,
-      co2Saved: (json['co2Saved'] as num?)?.toDouble() ?? 0.0,
-      moneySaved: (json['moneySaved'] as num?)?.toDouble() ?? 0.0,
-      totalDistance: (json['totalDistance'] as num?)?.toDouble() ?? 0.0,
-      unlockedBadges:
-          (json['unlockedBadges'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
-          const [],
-      achievements:
-          (json['achievements'] as List<dynamic>?)
-              ?.map(
-                (e) =>
-                    Achievement.fromJson(Map<String, dynamic>.from(e as Map)),
-              )
-              .toList() ??
-          const [],
-      lastRideDate: const TimestampConverter().fromJson(json['lastRideDate']),
-    );
-
-Map<String, dynamic> _$RiderGamificationStatsToJson(
-  _RiderGamificationStats instance,
-) => <String, dynamic>{
-  'totalXP': instance.totalXP,
-  'level': instance.level,
-  'currentLevelXP': instance.currentLevelXP,
-  'xpToNextLevel': instance.xpToNextLevel,
-  'totalRides': instance.totalRides,
-  'currentStreak': instance.currentStreak,
-  'longestStreak': instance.longestStreak,
-  'co2Saved': instance.co2Saved,
-  'moneySaved': instance.moneySaved,
-  'totalDistance': instance.totalDistance,
-  'unlockedBadges': instance.unlockedBadges,
-  'achievements': instance.achievements.map((e) => e.toJson()).toList(),
-  'lastRideDate': const TimestampConverter().toJson(instance.lastRideDate),
-};
-
-_DriverGamificationStats _$DriverGamificationStatsFromJson(Map json) =>
-    _DriverGamificationStats(
-      totalXP: (json['totalXP'] as num?)?.toInt() ?? 0,
-      level: (json['level'] as num?)?.toInt() ?? 1,
-      currentLevelXP: (json['currentLevelXP'] as num?)?.toInt() ?? 0,
-      xpToNextLevel: (json['xpToNextLevel'] as num?)?.toInt() ?? 1000,
-      totalRides: (json['totalRides'] as num?)?.toInt() ?? 0,
-      currentStreak: (json['currentStreak'] as num?)?.toInt() ?? 0,
-      longestStreak: (json['longestStreak'] as num?)?.toInt() ?? 0,
-      co2Saved: (json['co2Saved'] as num?)?.toDouble() ?? 0.0,
-      totalEarnings: (json['totalEarnings'] as num?)?.toDouble() ?? 0.0,
-      totalDistance: (json['totalDistance'] as num?)?.toDouble() ?? 0.0,
-      unlockedBadges:
-          (json['unlockedBadges'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
-          const [],
-      achievements:
-          (json['achievements'] as List<dynamic>?)
-              ?.map(
-                (e) =>
-                    Achievement.fromJson(Map<String, dynamic>.from(e as Map)),
-              )
-              .toList() ??
-          const [],
-      lastRideDate: const TimestampConverter().fromJson(json['lastRideDate']),
-    );
-
-Map<String, dynamic> _$DriverGamificationStatsToJson(
-  _DriverGamificationStats instance,
-) => <String, dynamic>{
-  'totalXP': instance.totalXP,
-  'level': instance.level,
-  'currentLevelXP': instance.currentLevelXP,
-  'xpToNextLevel': instance.xpToNextLevel,
-  'totalRides': instance.totalRides,
-  'currentStreak': instance.currentStreak,
-  'longestStreak': instance.longestStreak,
-  'co2Saved': instance.co2Saved,
-  'totalEarnings': instance.totalEarnings,
-  'totalDistance': instance.totalDistance,
-  'unlockedBadges': instance.unlockedBadges,
-  'achievements': instance.achievements.map((e) => e.toJson()).toList(),
-  'lastRideDate': const TimestampConverter().toJson(instance.lastRideDate),
-};
-
-_UserPreferences _$UserPreferencesFromJson(Map json) => _UserPreferences(
-  notificationsEnabled: json['notificationsEnabled'] as bool? ?? true,
-  emailNotifications: json['emailNotifications'] as bool? ?? true,
-  rideReminders: json['rideReminders'] as bool? ?? true,
-  chatNotifications: json['chatNotifications'] as bool? ?? true,
-  marketingEmails: json['marketingEmails'] as bool? ?? true,
-  language: json['language'] as String? ?? 'en',
-  theme: json['theme'] as String? ?? 'system',
-  maxPickupRadius: (json['maxPickupRadius'] as num?)?.toDouble() ?? 5.0,
-  showOnlineStatus: json['showOnlineStatus'] as bool? ?? true,
-  allowMessages: json['allowMessages'] as bool? ?? true,
-);
-
-Map<String, dynamic> _$UserPreferencesToJson(_UserPreferences instance) =>
-    <String, dynamic>{
-      'notificationsEnabled': instance.notificationsEnabled,
-      'emailNotifications': instance.emailNotifications,
-      'rideReminders': instance.rideReminders,
-      'chatNotifications': instance.chatNotifications,
-      'marketingEmails': instance.marketingEmails,
-      'language': instance.language,
-      'theme': instance.theme,
-      'maxPickupRadius': instance.maxPickupRadius,
-      'showOnlineStatus': instance.showOnlineStatus,
-      'allowMessages': instance.allowMessages,
-    };
-
-_Vehicle _$VehicleFromJson(Map json) => _Vehicle(
-  id: json['id'] as String,
-  make: json['make'] as String,
-  model: json['model'] as String,
-  fuelType: json['fuelType'] as String,
-  year: (json['year'] as num).toInt(),
-  color: json['color'] as String,
-  licensePlate: json['licensePlate'] as String,
-  seats: (json['seats'] as num?)?.toInt() ?? 4,
-  imageUrl: json['imageUrl'] as String?,
-  isDefault: json['isDefault'] as bool? ?? false,
-  isVerified: json['isVerified'] as bool? ?? false,
-);
-
-Map<String, dynamic> _$VehicleToJson(_Vehicle instance) => <String, dynamic>{
-  'id': instance.id,
-  'make': instance.make,
-  'model': instance.model,
-  'fuelType': instance.fuelType,
-  'year': instance.year,
-  'color': instance.color,
-  'licensePlate': instance.licensePlate,
-  'seats': instance.seats,
-  'imageUrl': instance.imageUrl,
-  'isDefault': instance.isDefault,
-  'isVerified': instance.isVerified,
-};
-
-_RatingBreakdown _$RatingBreakdownFromJson(Map json) => _RatingBreakdown(
-  total: (json['total'] as num?)?.toInt() ?? 0,
-  average: (json['average'] as num?)?.toDouble() ?? 0.0,
-  fiveStars: (json['fiveStars'] as num?)?.toInt() ?? 0,
-  fourStars: (json['fourStars'] as num?)?.toInt() ?? 0,
-  threeStars: (json['threeStars'] as num?)?.toInt() ?? 0,
-  twoStars: (json['twoStars'] as num?)?.toInt() ?? 0,
-  oneStars: (json['oneStars'] as num?)?.toInt() ?? 0,
-);
-
-Map<String, dynamic> _$RatingBreakdownToJson(_RatingBreakdown instance) =>
-    <String, dynamic>{
-      'total': instance.total,
-      'average': instance.average,
-      'fiveStars': instance.fiveStars,
-      'fourStars': instance.fourStars,
-      'threeStars': instance.threeStars,
-      'twoStars': instance.twoStars,
-      'oneStars': instance.oneStars,
-    };
-
-_LeaderboardEntry _$LeaderboardEntryFromJson(Map json) => _LeaderboardEntry(
-  odid: json['odid'] as String,
-  displayName: json['displayName'] as String,
-  photoUrl: json['photoUrl'] as String?,
-  totalXP: (json['totalXP'] as num).toInt(),
-  level: (json['level'] as num).toInt(),
-  rank: (json['rank'] as num).toInt(),
-  ridesThisMonth: (json['ridesThisMonth'] as num?)?.toInt() ?? 0,
-);
-
-Map<String, dynamic> _$LeaderboardEntryToJson(_LeaderboardEntry instance) =>
-    <String, dynamic>{
-      'odid': instance.odid,
+      'uid': instance.uid,
+      'email': instance.email,
       'displayName': instance.displayName,
       'photoUrl': instance.photoUrl,
-      'totalXP': instance.totalXP,
-      'level': instance.level,
-      'rank': instance.rank,
-      'ridesThisMonth': instance.ridesThisMonth,
+      'phoneNumber': instance.phoneNumber,
+      'bio': instance.bio,
+      'dateOfBirth': const TimestampConverter().toJson(instance.dateOfBirth),
+      'gender': instance.gender,
+      'interests': instance.interests,
+      'address': instance.address,
+      'latitude': instance.latitude,
+      'longitude': instance.longitude,
+      'city': instance.city,
+      'country': instance.country,
+      'isEmailVerified': instance.isEmailVerified,
+      'isPhoneVerified': instance.isPhoneVerified,
+      'isIdVerified': instance.isIdVerified,
+      'isActive': instance.isActive,
+      'isOnline': instance.isOnline,
+      'isPremium': instance.isPremium,
+      'blockedUsers': instance.blockedUsers,
+      'vehicles': instance.vehicles.map((e) => e.toJson()).toList(),
+      'rating': instance.rating.toJson(),
+      'gamification': instance.gamification.toJson(),
+      'stripeAccountId': instance.stripeAccountId,
+      'isStripeEnabled': instance.isStripeEnabled,
+      'isStripeOnboarded': instance.isStripeOnboarded,
+      'needsRoleSelection': instance.needsRoleSelection,
+      'preferences': instance.preferences.toJson(),
+      'createdAt': const TimestampConverter().toJson(instance.createdAt),
+      'updatedAt': const TimestampConverter().toJson(instance.updatedAt),
+      'lastSeenAt': const TimestampConverter().toJson(instance.lastSeenAt),
+      'role': instance.$type,
     };

@@ -7,14 +7,15 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:sport_connect/core/config/app_router.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/utils/validators.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/core/widgets/premium_text_field.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
-import 'package:sport_connect/features/auth/models/user_model.dart';
+import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Wizard step data
 class _WizardStep {
@@ -218,26 +219,6 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Listen for auth state changes
-    ref.listen<AsyncValue<void>>(registerViewModelProvider, (previous, state) {
-      state.when(
-        data: (_) async {
-          // Navigate based on the registered user type
-          final authRepository = ref.read(authRepositoryProvider);
-          final currentUser = authRepository.currentUser;
-          if (currentUser != null) {
-            final userData = await authRepository.getUserData(currentUser.uid);
-            if (mounted && userData != null) {
-              final route = getHomeRouteForRole(userData);
-              context.go(route);
-            }
-          }
-        },
-        loading: () {},
-        error: (error, _) => _showError(error.toString()),
-      );
-    });
-
     return PopScope(
       canPop: _currentStep == 0,
       onPopInvokedWithResult: (didPop, result) {
@@ -468,7 +449,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             boxShadow: isCurrent
                 ? [
                     BoxShadow(
-                      color: step.color.withOpacity(0.4),
+                      color: step.color.withValues(alpha: 0.4),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -479,7 +460,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             child: isCompleted
                 ? Icon(Icons.check_rounded, size: 18.sp, color: Colors.white)
                 : Text(
-                    '${index + 1}',
+                    AppLocalizations.of(context).value2(index + 1),
                     style: TextStyle(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w700,
@@ -539,10 +520,13 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
               ),
               child: Column(
                 children: [
-                  Text('🎉', style: TextStyle(fontSize: 48.sp)),
+                  Text(
+                    AppLocalizations.of(context).text2,
+                    style: TextStyle(fontSize: 48.sp),
+                  ),
                   SizedBox(height: 12.h),
                   Text(
-                    'Join 10,000+ eco-riders',
+                    AppLocalizations.of(context).join10000EcoRiders,
                     style: TextStyle(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.w700,
@@ -551,7 +535,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                   ),
                   SizedBox(height: 4.h),
                   Text(
-                    'Get 100 XP welcome bonus!',
+                    AppLocalizations.of(context).get100XpWelcomeBonus,
                     style: TextStyle(
                       fontSize: 14.sp,
                       color: AppColors.primary,
@@ -601,7 +585,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
 
             // Social signup options
             Text(
-              'Or sign up with',
+              AppLocalizations.of(context).orSignUpWith,
               style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ).animate().fadeIn(delay: 500.ms),
@@ -632,16 +616,9 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
 
   Future<void> _handleGoogleSignIn() async {
     try {
-      final authRepository = ref.read(authRepositoryProvider);
-      final result = await authRepository.signInWithGoogle();
-      if (mounted && result != null && result.user != null) {
-        if (result.isNewUser) {
-          context.go(AppRouter.roleSelection);
-        } else {
-          final route = getHomeRouteForRole(result.user!);
-          context.go(route);
-        }
-      }
+      final authActions = ref.read(authActionsViewModelProvider);
+      await authActions.signInWithGoogle();
+      // Route guard handles redirect based on needsRoleSelection field in Firestore
     } catch (e) {
       _showError(e.toString());
     }
@@ -649,16 +626,9 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
 
   Future<void> _handleAppleSignIn() async {
     try {
-      final authRepository = ref.read(authRepositoryProvider);
-      final result = await authRepository.signInWithApple();
-      if (mounted && result != null && result.user != null) {
-        if (result.isNewUser) {
-          context.go(AppRouter.roleSelection);
-        } else {
-          final route = getHomeRouteForRole(result.user!);
-          context.go(route);
-        }
-      }
+      final authActions = ref.read(authActionsViewModelProvider);
+      await authActions.signInWithApple();
+      // Route guard handles redirect based on needsRoleSelection field in Firestore
     } catch (e) {
       _showError(e.toString());
     }
@@ -697,7 +667,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Strong Password Tips',
+                          AppLocalizations.of(context).strongPasswordTips,
                           style: TextStyle(
                             fontSize: 14.sp,
                             fontWeight: FontWeight.w600,
@@ -705,7 +675,9 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                           ),
                         ),
                         Text(
-                          'Use 8+ characters with letters, numbers & symbols',
+                          AppLocalizations.of(
+                            context,
+                          ).use8CharactersWithLetters,
                           style: TextStyle(
                             fontSize: 12.sp,
                             color: AppColors.textSecondary,
@@ -805,7 +777,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Password Strength',
+              AppLocalizations.of(context).passwordStrength,
               style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
             ),
             SizedBox(height: 8.h),
@@ -923,7 +895,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             SizedBox(height: 8.h),
 
             Text(
-              'I want to:',
+              AppLocalizations.of(context).iWantTo,
               style: TextStyle(
                 fontSize: 18.sp,
                 fontWeight: FontWeight.w700,
@@ -967,7 +939,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
 
             // Interests section
             Text(
-              'Your Interests (Optional)',
+              AppLocalizations.of(context).yourInterestsOptional,
               style: TextStyle(
                 fontSize: 16.sp,
                 fontWeight: FontWeight.w600,
@@ -978,7 +950,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             SizedBox(height: 4.h),
 
             Text(
-              'Select sports you\'re interested in',
+              AppLocalizations.of(context).selectSportsYouReInterested,
               style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
             ).animate().fadeIn(delay: 500.ms),
 
@@ -1122,7 +1094,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             SizedBox(height: 12.h),
 
             Text(
-              'Add a Profile Photo',
+              AppLocalizations.of(context).addAProfilePhoto,
               style: TextStyle(
                 fontSize: 16.sp,
                 fontWeight: FontWeight.w600,
@@ -1132,7 +1104,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             ).animate().fadeIn(delay: 200.ms),
 
             Text(
-              'This helps others recognize you',
+              AppLocalizations.of(context).thisHelpsOthersRecognizeYou,
               style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ).animate().fadeIn(delay: 200.ms),
@@ -1169,7 +1141,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                   ),
                   SizedBox(height: 12.h),
                   Text(
-                    'Ready to Join!',
+                    AppLocalizations.of(context).readyToJoin,
                     style: TextStyle(
                       fontSize: 20.sp,
                       fontWeight: FontWeight.w700,
@@ -1178,14 +1150,18 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                   ),
                   SizedBox(height: 8.h),
                   Text(
-                    'Email: ${_emailController.text}',
+                    AppLocalizations.of(
+                      context,
+                    ).emailValue(_emailController.text),
                     style: TextStyle(
                       fontSize: 14.sp,
                       color: AppColors.textSecondary,
                     ),
                   ),
                   Text(
-                    'Role: ${_selectedRole.displayName}',
+                    AppLocalizations.of(
+                      context,
+                    ).roleValue(_selectedRole.displayName),
                     style: TextStyle(
                       fontSize: 14.sp,
                       color: AppColors.textSecondary,

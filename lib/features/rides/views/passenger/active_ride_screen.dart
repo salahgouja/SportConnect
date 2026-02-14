@@ -4,13 +4,18 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
-import 'package:sport_connect/features/auth/models/user_model.dart';
+import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
-import 'package:sport_connect/features/rides/models/ride_model.dart';
-import 'package:sport_connect/features/rides/repositories/ride_repository.dart';
-import 'package:sport_connect/core/config/app_router.dart';
+import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
+import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 part 'active_ride_screen.g.dart';
 
@@ -42,7 +47,10 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
             children: [
               Icon(Icons.error_outline, size: 48.sp, color: AppColors.error),
               SizedBox(height: 16.h),
-              Text('Failed to load ride', style: TextStyle(fontSize: 16.sp)),
+              Text(
+                AppLocalizations.of(context).failedToLoadRide,
+                style: TextStyle(fontSize: 16.sp),
+              ),
               SizedBox(height: 8.h),
               Text(
                 e.toString(),
@@ -70,7 +78,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
           ),
           SizedBox(height: 16.h),
           Text(
-            'Ride not found',
+            AppLocalizations.of(context).rideNotFound,
             style: TextStyle(
               fontSize: 20.sp,
               fontWeight: FontWeight.w600,
@@ -79,13 +87,13 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
           ),
           SizedBox(height: 8.h),
           Text(
-            'This ride may have been completed or cancelled',
+            AppLocalizations.of(context).thisRideMayHaveBeen,
             style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
           ),
           SizedBox(height: 24.h),
           PremiumButton(
             text: 'Go Home',
-            onPressed: () => context.go(AppRouter.splash),
+            onPressed: () => context.go(AppRoutes.splash.path),
           ),
         ],
       ),
@@ -163,7 +171,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
               ),
               SizedBox(height: 16.h),
               Text(
-                'Active Ride',
+                AppLocalizations.of(context).activeRide,
                 style: TextStyle(
                   fontSize: 28.sp,
                   fontWeight: FontWeight.w700,
@@ -215,13 +223,13 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
         icon = Icons.directions_car;
         break;
       case RideStatus.completed:
-        bgColor = AppColors.success.withOpacity(0.2);
+        bgColor = AppColors.success.withValues(alpha: 0.2);
         textColor = AppColors.success;
         label = 'Completed';
         icon = Icons.done_all;
         break;
       case RideStatus.cancelled:
-        bgColor = AppColors.error.withOpacity(0.2);
+        bgColor = AppColors.error.withValues(alpha: 0.2);
         textColor = AppColors.error;
         label = 'Cancelled';
         icon = Icons.cancel_outlined;
@@ -261,7 +269,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
         borderRadius: BorderRadius.circular(20.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -270,19 +278,19 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
       child: Column(
         children: [
           _buildStatusStep(
-            'Ride Confirmed',
+            AppLocalizations.of(context).rideConfirmed,
             ride.status.index >= RideStatus.active.index,
             Icons.check_circle,
           ),
           _buildStatusDivider(ride.status.index >= RideStatus.inProgress.index),
           _buildStatusStep(
-            'Driver on the way',
+            AppLocalizations.of(context).driverOnTheWay,
             ride.status.index >= RideStatus.inProgress.index,
             Icons.directions_car,
           ),
           _buildStatusDivider(ride.status == RideStatus.completed),
           _buildStatusStep(
-            'Ride Completed',
+            AppLocalizations.of(context).rideCompleted,
             ride.status == RideStatus.completed,
             Icons.flag,
           ),
@@ -358,7 +366,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -416,7 +424,9 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                     ),
                     SizedBox(width: 8.w),
                     Text(
-                      '• ${driver.rating.total} rides',
+                      AppLocalizations.of(
+                        context,
+                      ).valueRides2(driver.rating.total),
                       style: TextStyle(
                         fontSize: 14.sp,
                         color: AppColors.textTertiary,
@@ -434,7 +444,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                 icon: Container(
                   padding: EdgeInsets.all(10.w),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                   child: Icon(
@@ -449,7 +459,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                 icon: Container(
                   padding: EdgeInsets.all(10.w),
                   decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
+                    color: Colors.green.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                   child: Icon(Icons.phone, color: Colors.green, size: 20.sp),
@@ -471,7 +481,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -481,7 +491,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Route Details',
+            AppLocalizations.of(context).routeDetails,
             style: TextStyle(
               fontSize: 16.sp,
               fontWeight: FontWeight.w600,
@@ -496,7 +506,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
               Container(
                 padding: EdgeInsets.all(8.w),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
+                  color: Colors.green.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8.r),
                 ),
                 child: Icon(
@@ -511,7 +521,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Pickup',
+                      AppLocalizations.of(context).pickup,
                       style: TextStyle(
                         fontSize: 12.sp,
                         color: AppColors.textTertiary,
@@ -532,19 +542,17 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
             ],
           ),
           // Dotted line
-          Padding(
+          Container(
             padding: EdgeInsets.only(left: 16.w),
-            child: Container(
-              height: 24.h,
-              width: 2,
-              margin: EdgeInsets.symmetric(vertical: 4.h),
-              decoration: BoxDecoration(
-                border: Border(
-                  left: BorderSide(
-                    color: AppColors.border,
-                    width: 2,
-                    style: BorderStyle.solid,
-                  ),
+            height: 24.h,
+            width: 2,
+            margin: EdgeInsets.symmetric(vertical: 4.h),
+            decoration: BoxDecoration(
+              border: Border(
+                left: BorderSide(
+                  color: AppColors.border,
+                  width: 2,
+                  style: BorderStyle.solid,
                 ),
               ),
             ),
@@ -556,7 +564,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
               Container(
                 padding: EdgeInsets.all(8.w),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8.r),
                 ),
                 child: Icon(
@@ -571,7 +579,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Destination',
+                      AppLocalizations.of(context).destination,
                       style: TextStyle(
                         fontSize: 12.sp,
                         color: AppColors.textTertiary,
@@ -598,20 +606,24 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildInfoItem(
-                Icons.attach_money,
-                '${ride.pricePerSeat.toStringAsFixed(0)} €',
-                'per seat',
+              InfoItem(
+                icon: Icons.attach_money,
+                value: AppLocalizations.of(
+                  context,
+                ).value5(ride.pricePerSeat.toStringAsFixed(0)),
+                label: AppLocalizations.of(context).perSeat2,
               ),
-              _buildInfoItem(
-                Icons.event_seat,
-                '${ride.remainingSeats}/${ride.availableSeats}',
-                'seats left',
+              InfoItem(
+                icon: Icons.event_seat,
+                value: AppLocalizations.of(
+                  context,
+                ).valueValue(ride.remainingSeats, ride.availableSeats),
+                label: AppLocalizations.of(context).seatsLeft,
               ),
-              _buildInfoItem(
-                Icons.access_time,
-                _formatTime(ride.departureTime),
-                'departure',
+              InfoItem(
+                icon: Icons.access_time,
+                value: _formatTime(ride.departureTime),
+                label: AppLocalizations.of(context).departure,
               ),
             ],
           ),
@@ -620,56 +632,29 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
     );
   }
 
-  Widget _buildInfoItem(IconData icon, String value, String label) {
-    return Column(
-      children: [
-        Icon(icon, size: 22.sp, color: AppColors.primary),
-        SizedBox(height: 6.h),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(fontSize: 12.sp, color: AppColors.textTertiary),
-        ),
-      ],
-    );
-  }
-
   Widget _buildPassengersList(BuildContext context, RideModel ride) {
     final passengers = ride.acceptedBookings;
 
     if (passengers.isEmpty) {
-      return Padding(
-        padding: EdgeInsets.symmetric(horizontal: 20.w),
-        child: Container(
-          padding: EdgeInsets.all(20.w),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(16.r),
-          ),
-          child: Column(
-            children: [
-              Icon(
-                Icons.people_outline,
-                size: 40.sp,
-                color: AppColors.textTertiary,
-              ),
-              SizedBox(height: 12.h),
-              Text(
-                'No passengers yet',
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
+      return Container(
+        padding: EdgeInsets.all(20.w),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16.r),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              Icons.people_outline,
+              size: 40.sp,
+              color: AppColors.textTertiary,
+            ),
+            SizedBox(height: 12.h),
+            Text(
+              AppLocalizations.of(context).noPassengersYet,
+              style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
+            ),
+          ],
         ),
       );
     }
@@ -685,7 +670,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Passengers (${passengers.length})',
+            AppLocalizations.of(context).passengersValue(passengers.length),
             style: TextStyle(
               fontSize: 16.sp,
               fontWeight: FontWeight.w600,
@@ -805,32 +790,92 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
     );
   }
 
-  void _sendMessage(String recipientId) {
-    context.push(AppRouter.chatPath(recipientId));
+  Future<void> _sendMessage(String recipientId) async {
+    final currentUser = ref.read(currentUserProvider).value;
+    if (currentUser == null) return;
+
+    try {
+      final chat = await ref.read(
+        getOrCreateChatProvider(
+          userId1: currentUser.uid,
+          userId2: recipientId,
+          userName1: currentUser.displayName,
+          userName2: 'Driver',
+        ).future,
+      );
+
+      if (!mounted) return;
+
+      final receiverUser = UserModel.driver(
+        uid: recipientId,
+        email: '',
+        displayName: 'Driver',
+      );
+
+      context.pushNamed(
+        AppRoutes.chatDetail.name,
+        pathParameters: {'id': chat.id},
+        extra: receiverUser,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to open chat: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 
-  void _callDriver(String? phoneNumber) {
+  void _callDriver(String? phoneNumber) async {
     if (phoneNumber == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Phone number not available')),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).phoneNumberNotAvailable),
+        ),
       );
       return;
     }
-    // TODO: Launch phone dialer
+    
+    final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
+    try {
+      if (await canLaunchUrl(phoneUri)) {
+        await launchUrl(phoneUri);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(context).cannotMakePhoneCalls,
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context).failedToLaunchDialer,
+            ),
+          ),
+        );
+      }
+    }
   }
 
   void _showCancelDialog(BuildContext context, RideModel ride) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Cancel Ride'),
-        content: const Text(
-          'Are you sure you want to cancel this ride? Cancellation policies may apply.',
-        ),
+        title: Text(AppLocalizations.of(context).cancelRide2),
+        content: Text(AppLocalizations.of(context).areYouSureYouWant9),
         actions: [
           TextButton(
             onPressed: () => ctx.pop(),
-            child: const Text('Keep Ride'),
+            child: Text(AppLocalizations.of(context).keepRide),
           ),
           TextButton(
             onPressed: () {
@@ -838,7 +883,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
               _cancelRide(ride);
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Cancel Ride'),
+            child: Text(AppLocalizations.of(context).cancelRide2),
           ),
         ],
       ),
@@ -847,38 +892,47 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
 
   void _cancelRide(RideModel ride) async {
     try {
-      await ref.read(rideRepositoryProvider).cancelRide(ride.id);
+      await ref
+          .read(rideActionsViewModelProvider)
+          .cancelRide(ride.id, 'Cancelled by passenger');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Ride cancelled successfully')),
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context).rideCancelledSuccessfully,
+            ),
+          ),
         );
         context.pop();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to cancel ride: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context).failedToCancelRideValue(e),
+            ),
+          ),
+        );
       }
     }
   }
 
-  void _showRatingDialog(BuildContext context, RideModel ride) {
-    // TODO: Implement rating screen - for now show a dialog
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Rate Your Ride'),
-        content: const Text(
-          'Rating feature coming soon! Thank you for using SportConnect.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
+  Future<void> _showRatingDialog(BuildContext context, RideModel ride) async {
+    // Fetch driver profile to get name for review screen
+    final driverProfile = await ref.read(
+      userProfileProvider(ride.driverId).future,
+    );
+    
+    if (!mounted) return;
+
+    // Navigate to the submit review screen for the driver
+    context.push(
+      '${AppRoutes.submitReview.path}'
+      '?rideId=${ride.id}'
+      '&revieweeId=${ride.driverId}'
+      '&revieweeName=${Uri.encodeComponent(driverProfile?.displayName ?? 'Driver')}'
+      '&reviewType=driverReview',
     );
   }
 
@@ -905,5 +959,38 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
 /// Stream provider for active ride - uses repository (MVVM pattern)
 @riverpod
 Stream<RideModel?> activeRideStream(Ref ref, String rideId) {
-  return ref.watch(rideRepositoryProvider).streamRideById(rideId);
+  return ref.watch(rideActionsViewModelProvider).streamRideById(rideId);
+}
+
+class InfoItem extends StatelessWidget {
+  const InfoItem({
+    super.key,
+    required this.icon,
+    required this.value,
+    required this.label,
+  });
+  final IconData icon;
+  final String value;
+  final String label;
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Icon(icon, size: 22.sp, color: AppColors.primary),
+        SizedBox(height: 6.h),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(fontSize: 12.sp, color: AppColors.textTertiary),
+        ),
+      ],
+    );
+  }
 }

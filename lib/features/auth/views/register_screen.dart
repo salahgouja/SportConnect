@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sport_connect/core/config/app_router.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/utils/validators.dart';
@@ -11,7 +11,8 @@ import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/core/widgets/premium_text_field.dart';
 import 'package:sport_connect/core/widgets/utility_widgets.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
-import 'package:sport_connect/features/auth/models/user_model.dart';
+import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -72,7 +73,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     if (!_agreedToTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please agree to the Terms of Service'),
+          content: Text(AppLocalizations.of(context).pleaseAgreeToTheTerms),
           backgroundColor: AppColors.warning,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -97,16 +98,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
 
   Future<void> _handleGoogleSignIn() async {
     try {
-      final authRepository = ref.read(authRepositoryProvider);
-      final result = await authRepository.signInWithGoogle();
-      if (mounted && result != null && result.user != null) {
-        if (result.isNewUser) {
-          context.go(AppRouter.roleSelection);
-        } else {
-          final route = getHomeRouteForRole(result.user!);
-          context.go(route);
-        }
-      }
+      final authActions = ref.read(authActionsViewModelProvider);
+      await authActions.signInWithGoogle();
+      // Route guard handles redirect based on needsRoleSelection field in Firestore
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -125,16 +119,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
 
   Future<void> _handleAppleSignIn() async {
     try {
-      final authRepository = ref.read(authRepositoryProvider);
-      final result = await authRepository.signInWithApple();
-      if (mounted && result != null && result.user != null) {
-        if (result.isNewUser) {
-          context.go(AppRouter.roleSelection);
-        } else {
-          final route = getHomeRouteForRole(result.user!);
-          context.go(route);
-        }
-      }
+      final authActions = ref.read(authActionsViewModelProvider);
+      await authActions.signInWithApple();
+      // Route guard handles redirect based on needsRoleSelection field in Firestore
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -154,37 +141,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
   @override
   Widget build(BuildContext context) {
     final registerState = ref.watch(registerViewModelProvider);
-
-    // Listen for auth state changes
-    ref.listen<AsyncValue<void>>(registerViewModelProvider, (previous, state) {
-      state.when(
-        data: (_) async {
-          // Navigate based on the registered user type
-          final authRepository = ref.read(authRepositoryProvider);
-          final currentUser = authRepository.currentUser;
-          if (currentUser != null) {
-            final userData = await authRepository.getUserData(currentUser.uid);
-            if (mounted && userData != null) {
-              final route = getHomeRouteForRole(userData);
-              context.go(route);
-            }
-          }
-        },
-        loading: () {},
-        error: (error, _) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(error.toString()),
-              backgroundColor: AppColors.error,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.r),
-              ),
-            ),
-          );
-        },
-      );
-    });
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -229,7 +185,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
 
                     // Header
                     Text(
-                      'Create Account',
+                      AppLocalizations.of(context).createAccount,
                       style: TextStyle(
                         fontSize: 32.sp,
                         fontWeight: FontWeight.w700,
@@ -239,7 +195,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                     ),
                     SizedBox(height: 8.h),
                     Text(
-                      'Join our community of eco-friendly riders',
+                      AppLocalizations.of(context).joinOurCommunityOfEco,
                       style: TextStyle(
                         fontSize: 16.sp,
                         color: AppColors.textSecondary,
@@ -254,13 +210,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            AppColors.primary.withOpacity(0.1),
-                            AppColors.secondary.withOpacity(0.1),
+                            AppColors.primary.withValues(alpha: 0.12),
+                            AppColors.secondary.withValues(alpha: 0.08),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(16.r),
                         border: Border.all(
-                          color: AppColors.primary.withOpacity(0.2),
+                          color: AppColors.primary.withValues(alpha: 0.2),
                         ),
                       ),
                       child: Row(
@@ -283,7 +239,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Welcome Bonus',
+                                  AppLocalizations.of(context).welcomeBonus,
                                   style: TextStyle(
                                     fontSize: 14.sp,
                                     fontWeight: FontWeight.w600,
@@ -291,7 +247,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                                   ),
                                 ),
                                 Text(
-                                  'Get 100 XP when you complete your profile!',
+                                  AppLocalizations.of(context).get100XpWhenYou,
                                   style: TextStyle(
                                     fontSize: 12.sp,
                                     color: AppColors.textSecondary,
@@ -308,7 +264,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
 
                     // Role Selection
                     Text(
-                      'I want to:',
+                      AppLocalizations.of(context).iWantTo,
                       style: TextStyle(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.w600,
@@ -528,7 +484,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Already have an account? ',
+                          AppLocalizations.of(context).alreadyHaveAnAccount,
                           style: TextStyle(
                             fontSize: 14.sp,
                             color: AppColors.textSecondary,
@@ -537,7 +493,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                         GestureDetector(
                           onTap: () => context.pop(),
                           child: Text(
-                            'Sign In',
+                            AppLocalizations.of(context).authSignIn,
                             style: TextStyle(
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w600,
@@ -589,7 +545,7 @@ class _RoleCard extends StatelessWidget {
         padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.primary.withOpacity(0.1)
+              ? AppColors.primary.withValues(alpha: 0.1)
               : AppColors.cardBg,
           borderRadius: BorderRadius.circular(16.r),
           border: Border.all(
@@ -599,7 +555,7 @@ class _RoleCard extends StatelessWidget {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.2),
+                    color: AppColors.primary.withValues(alpha: 0.2),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -632,7 +588,9 @@ class _RoleCard extends StatelessWidget {
             ),
             SizedBox(height: 4.h),
             Text(
-              role == UserRole.rider ? 'Find rides' : 'Offer rides',
+              role == UserRole.rider
+                  ? AppLocalizations.of(context).findRides
+                  : AppLocalizations.of(context).offerRides,
               style: TextStyle(fontSize: 11.sp, color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),

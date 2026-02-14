@@ -3,11 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
-import 'package:sport_connect/features/auth/models/user_model.dart';
+import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
-import 'package:sport_connect/core/config/app_router.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Role Selection Screen - Shown after social sign-in for new users
 /// Allows users to choose between being a Rider or Driver
@@ -27,7 +28,7 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
     if (_selectedRole == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please select a role to continue'),
+          content: Text(AppLocalizations.of(context).pleaseSelectARoleTo),
           backgroundColor: AppColors.warning,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -41,18 +42,22 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final authRepo = ref.read(authRepositoryProvider);
-      final currentUser = authRepo.currentUser;
+      final authActions = ref.read(authActionsViewModelProvider);
+      final currentUser = authActions.currentUser;
 
       if (currentUser != null) {
         // Update the user's role in Firestore
-        await authRepo.updateUserRole(currentUser.uid, _selectedRole!);
+        // needsRoleSelection stays true so user can go back during setup
+        await authActions.updateUserRole(currentUser.uid, _selectedRole!);
 
         if (mounted) {
           if (_selectedRole == UserRole.driver) {
-            context.go(AppRouter.driverOnboarding);
+            context.go(AppRoutes.driverOnboarding.path);
           } else {
-            context.go(AppRouter.home);
+            // Rider has no setup — navigate to home
+            // needsRoleSelection stays true so system back works
+            // It will be cleared in the home screen
+            if (mounted) context.go(AppRoutes.home.path);
           }
         }
       }
@@ -60,7 +65,9 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'),
+            content: Text(
+              AppLocalizations.of(context).errorValue(e.toString()),
+            ),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -99,7 +106,7 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
               _buildRoleCard(
                     role: UserRole.rider,
                     icon: Icons.person_rounded,
-                    title: 'I\'m a Rider',
+                    title: AppLocalizations.of(context).iMARider,
                     description:
                         'Find and book rides to sporting events. Save money and reduce your carbon footprint.',
                     features: [
@@ -118,7 +125,7 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
               _buildRoleCard(
                     role: UserRole.driver,
                     icon: Icons.directions_car_rounded,
-                    title: 'I\'m a Driver',
+                    title: AppLocalizations.of(context).iMADriver,
                     description:
                         'Offer rides and earn money while going to events. Help others get there safely.',
                     features: [
@@ -136,7 +143,7 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
 
               // Info text
               Text(
-                'You can change your role later in settings',
+                AppLocalizations.of(context).youCanChangeYourRole,
                 style: TextStyle(
                   fontSize: 13.sp,
                   color: AppColors.textSecondary,
@@ -194,7 +201,7 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
         ),
         SizedBox(height: 24.h),
         Text(
-          'How will you use SportConnect?',
+          AppLocalizations.of(context).howWillYouUseSportconnect,
           style: TextStyle(
             fontSize: 24.sp,
             fontWeight: FontWeight.w800,
@@ -205,7 +212,7 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
         ),
         SizedBox(height: 12.h),
         Text(
-          'Choose your role to get started.\nThis will customize your experience.',
+          AppLocalizations.of(context).chooseYourRoleToGet,
           style: TextStyle(
             fontSize: 14.sp,
             color: AppColors.textSecondary,

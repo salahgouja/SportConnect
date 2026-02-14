@@ -55,6 +55,12 @@ service firebase.storage {
       allow write: if isDevMode() || (isAuthenticated() && request.resource.size < 10 * 1024 * 1024);
     }
     
+    // Chat audio messages (voice notes)
+    match /chats/{chatId}/audio/{fileName} {
+      allow read: if isDevMode() || isAuthenticated();
+      allow write: if isDevMode() || (isAuthenticated() && request.resource.contentType.matches('audio/.*') && request.resource.size < 10 * 1024 * 1024);
+    }
+    
     // Ride photos (for drop-off/pick-up verification)
     match /rides/{rideId}/photos/{fileName} {
       allow read: if isDevMode() || isAuthenticated();

@@ -1,0 +1,52 @@
+# Flutter Native Splash Configuration
+# Generated configuration for native splash screens
+# This file is referenced in pubspec.yaml's flutter_native_splash section
+
+color: "#FFFFFF"
+color_dark: "#1A1A1A"
+image: "assets/images/splash_icon.png"
+image_dark: "assets/images/splash_icon_dark.png"
+branding: "assets/images/branding.png"
+branding_dark: "assets/images/branding_dark.png"
+
+fullscreen: true
+
+# Android 12+ specific splash screen configuration
+android_12:
+  image: "assets/images/splash_icon_android12.png"
+  image_dark: "assets/images/splash_icon_android12_dark.png"
+  icon_background_color: "#FFFFFF"
+  icon_background_color_dark: "#1A1A1A"
+
+# Platform-specific options
+android:
+  color: "#FFFFFF"
+  color_dark: "#1A1A1A"
+  brightness_mode: "light"
+
+ios:
+  color: "#FFFFFF"
+  color_dark: "#1A1A1A"
+  image: "assets/images/splash_icon.png"
+  image_dark: "assets/images/splash_icon_dark.png"
+
+web:
+  background_color: "#FFFFFF"
+  image: "assets/images/splash_icon.png"
+  image_dark: "assets/images/splash_icon_dark.png"
+
+windows:
+  background_color: "#FFFFFF"
+  image: "assets/images/splash_icon.png"
+
+macos:
+  background_color: "#FFFFFF"
+  image: "assets/images/splash_icon.png"
+  image_dark: "assets/images/splash_icon_dark.png"
+
+linux:
+  background_color: "#FFFFFF"
+  image: "assets/images/splash_icon.png"
+
+# Additional options
+info_block: true

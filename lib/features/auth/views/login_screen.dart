@@ -4,15 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sport_connect/core/config/app_router.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/utils/validators.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/core/widgets/premium_text_field.dart';
 import 'package:sport_connect/core/widgets/utility_widgets.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
-import 'package:sport_connect/features/auth/models/user_model.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Professional Login Screen with clean, modern design
 /// No animated characters - just elegant branding and smooth UX
@@ -33,6 +33,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   late Animation<double> _fadeAnimation;
 
   bool _rememberMe = false;
+  bool _isSocialLoading = false;
   final FocusNode _emailFocus = FocusNode();
   final FocusNode _passwordFocus = FocusNode();
 
@@ -110,24 +111,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Future<void> _handleGoogleSignIn() async {
+    if (_isSocialLoading) return;
+    setState(() => _isSocialLoading = true);
     try {
-      final authRepository = ref.read(authRepositoryProvider);
-      final result = await authRepository.signInWithGoogle();
-      if (mounted && result != null && result.user != null) {
-        if (result.isNewUser) {
-          // New user - redirect to role selection
-          context.go(AppRouter.roleSelection);
-        } else {
-          // Existing user - go to appropriate home
-          final route = getHomeRouteForRole(result.user!);
-          context.go(route);
-        }
-      }
+      final authActions = ref.read(authActionsViewModelProvider);
+      await authActions.signInWithGoogle();
+      // Route guard handles redirect based on needsRoleSelection field in Firestore
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString()),
+            content: Text(AppLocalizations.of(context).signInFailedPleaseTry),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -136,28 +130,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           ),
         );
       }
+    } finally {
+      if (mounted) setState(() => _isSocialLoading = false);
     }
   }
 
   Future<void> _handleAppleSignIn() async {
+    if (_isSocialLoading) return;
+    setState(() => _isSocialLoading = true);
     try {
-      final authRepository = ref.read(authRepositoryProvider);
-      final result = await authRepository.signInWithApple();
-      if (mounted && result != null && result.user != null) {
-        if (result.isNewUser) {
-          // New user - redirect to role selection
-          context.go(AppRouter.roleSelection);
-        } else {
-          // Existing user - go to appropriate home
-          final route = getHomeRouteForRole(result.user!);
-          context.go(route);
-        }
-      }
+      final authActions = ref.read(authActionsViewModelProvider);
+      await authActions.signInWithApple();
+      // Route guard handles redirect based on needsRoleSelection field in Firestore
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString()),
+            content: Text(AppLocalizations.of(context).signInFailedPleaseTry),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -166,45 +155,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           ),
         );
       }
+    } finally {
+      if (mounted) setState(() => _isSocialLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final loginState = ref.watch(loginViewModelProvider);
-
-    ref.listen<AsyncValue<void>>(loginViewModelProvider, (previous, state) {
-      state.when(
-        data: (_) async {
-          final authRepository = ref.read(authRepositoryProvider);
-          final currentUser = authRepository.currentUser;
-          if (currentUser != null) {
-            final userData = await authRepository.getUserData(currentUser.uid);
-            if (mounted && userData != null) {
-              final route = getHomeRouteForRole(userData);
-              context.go(route);
-            } else if (mounted) {
-              context.go(AppRouter.home);
-            }
-          } else {
-            if (mounted) context.go(AppRouter.home);
-          }
-        },
-        loading: () {},
-        error: (error, _) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(error.toString()),
-              backgroundColor: AppColors.error,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.r),
-              ),
-            ),
-          );
-        },
-      );
-    });
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -318,7 +276,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
         // App name
         Text(
-          'SportConnect',
+          AppLocalizations.of(context).sportconnect,
           style: TextStyle(
             fontSize: 28.sp,
             fontWeight: FontWeight.w700,
@@ -334,7 +292,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     return Column(
       children: [
         Text(
-              'Welcome Back',
+              AppLocalizations.of(context).welcomeBack,
               style: TextStyle(
                 fontSize: 24.sp,
                 fontWeight: FontWeight.w700,
@@ -347,7 +305,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             .slideY(begin: 0.2, curve: Curves.easeOutCubic),
         SizedBox(height: 8.h),
         Text(
-          'Sign in to continue your running journey',
+          AppLocalizations.of(context).signInToContinueYour,
           style: TextStyle(fontSize: 15.sp, color: AppColors.textSecondary),
           textAlign: TextAlign.center,
         ).animate().fadeIn(duration: 400.ms, delay: 200.ms),
@@ -359,8 +317,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     return PremiumTextField(
       controller: _emailController,
       focusNode: _emailFocus,
-      label: 'Email',
-      hint: 'Enter your email',
+      label: AppLocalizations.of(context).email,
+      hint: AppLocalizations.of(context).enterYourEmail,
       prefixIcon: Icons.email_outlined,
       keyboardType: TextInputType.emailAddress,
       textInputAction: TextInputAction.next,
@@ -372,8 +330,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     return PremiumTextField(
       controller: _passwordController,
       focusNode: _passwordFocus,
-      label: 'Password',
-      hint: 'Enter your password',
+      label: AppLocalizations.of(context).password,
+      hint: AppLocalizations.of(context).enterYourPassword,
       prefixIcon: Icons.lock_outline_rounded,
       obscureText: true,
       textInputAction: TextInputAction.done,
@@ -418,7 +376,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               ),
               SizedBox(width: 8.w),
               Text(
-                'Remember me',
+                AppLocalizations.of(context).rememberMe,
                 style: TextStyle(
                   fontSize: 13.sp,
                   color: AppColors.textSecondary,
@@ -436,7 +394,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             padding: EdgeInsets.zero,
           ),
           child: Text(
-            'Forgot Password?',
+            AppLocalizations.of(context).authForgotPassword,
             style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
           ),
         ),
@@ -446,40 +404,56 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   Widget _buildSignInButton(AsyncValue<void> loginState) {
     return PremiumButton(
-      text: 'Sign In',
+      text: AppLocalizations.of(context).authSignIn,
       onPressed: _handleLogin,
-      isLoading: loginState.isLoading,
+      isLoading: loginState.isLoading || _isSocialLoading,
       style: PremiumButtonStyle.gradient,
       size: ButtonSize.large,
     ).animate().fadeIn(duration: 400.ms, delay: 500.ms);
   }
 
   Widget _buildDivider() {
-    return const TextDivider(
-      text: 'or sign in with email',
+    return TextDivider(
+      text: AppLocalizations.of(context).orSignInWithEmail,
     ).animate().fadeIn(duration: 400.ms, delay: 300.ms);
   }
 
   Widget _buildSocialButtons() {
-    return Column(
+    return Stack(
       children: [
-        // Google button - theme-consistent subtle styling
-        _ThemeSocialButton(
-          icon: Icons.g_mobiledata_rounded,
-          label: 'Continue with Google',
-          isApple: false,
-          onPressed: _handleGoogleSignIn,
-        ).animate().fadeIn(duration: 300.ms, delay: 250.ms),
+        Column(
+          children: [
+            // Google button - theme-consistent subtle styling
+            _ThemeSocialButton(
+              icon: Icons.g_mobiledata_rounded,
+              label: AppLocalizations.of(context).continueWithGoogle,
+              isApple: false,
+              onPressed: _handleGoogleSignIn,
+            ).animate().fadeIn(duration: 300.ms, delay: 250.ms),
 
-        SizedBox(height: 12.h),
+            SizedBox(height: 12.h),
 
-        // Apple button - theme-consistent subtle styling
-        _ThemeSocialButton(
-          icon: Icons.apple_rounded,
-          label: 'Continue with Apple',
-          isApple: true,
-          onPressed: _handleAppleSignIn,
-        ).animate().fadeIn(duration: 300.ms, delay: 300.ms),
+            // Apple button - theme-consistent subtle styling
+            _ThemeSocialButton(
+              icon: Icons.apple_rounded,
+              label: AppLocalizations.of(context).continueWithApple,
+              isApple: true,
+              onPressed: _handleAppleSignIn,
+            ).animate().fadeIn(duration: 300.ms, delay: 300.ms),
+          ],
+        ),
+        if (_isSocialLoading)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.7),
+                borderRadius: BorderRadius.circular(14.r),
+              ),
+              child: const Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -489,13 +463,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          "Don't have an account? ",
+          AppLocalizations.of(context).donTHaveAnAccount,
           style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
         ),
         GestureDetector(
-          onTap: () => context.push(AppRouter.signupWizard),
+          onTap: () => context.push(AppRoutes.signupWizard.path),
           child: Text(
-            'Sign Up',
+            AppLocalizations.of(context).authSignUp,
             style: TextStyle(
               fontSize: 14.sp,
               fontWeight: FontWeight.w700,
@@ -561,7 +535,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               SizedBox(height: 20.h),
 
               Text(
-                'Reset Password',
+                AppLocalizations.of(context).authResetPassword,
                 style: TextStyle(
                   fontSize: 22.sp,
                   fontWeight: FontWeight.w700,
@@ -572,7 +546,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               SizedBox(height: 8.h),
 
               Text(
-                'Enter your email address and we\'ll send you instructions to reset your password.',
+                AppLocalizations.of(context).enterYourEmailAddressAnd,
                 style: TextStyle(
                   fontSize: 14.sp,
                   color: AppColors.textSecondary,
@@ -599,8 +573,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     context.pop();
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: const Text(
-                          'Password reset email sent! Check your inbox.',
+                        content: Text(
+                          AppLocalizations.of(
+                            context,
+                          ).passwordResetEmailSentCheck,
                         ),
                         backgroundColor: AppColors.success,
                         behavior: SnackBarBehavior.floating,

@@ -10,7 +10,8 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
-import 'package:sport_connect/features/auth/models/user_model.dart';
+import 'package:sport_connect/core/interfaces/repositories/i_auth_repository.dart';
+import 'package:sport_connect/features/auth/models/models.dart';
 
 /// Result of a social sign-in operation
 class SocialSignInResult {
@@ -21,10 +22,11 @@ class SocialSignInResult {
 }
 
 /// Repository for authentication operations - Firebase only
-class AuthRepository {
+class AuthRepository implements IAuthRepository {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
   /// Get current user stream
   Stream<User?> get authStateChanges => _auth.authStateChanges();
@@ -196,6 +198,19 @@ class AuthRepository {
     return null;
   }
 
+  Stream<UserModel?> getUserDataStream(String uid) {
+    return _firestore
+        .collection(AppConstants.usersCollection)
+        .doc(uid)
+        .snapshots()
+        .map((doc) {
+          if (doc.exists && doc.data() != null) {
+            return UserModel.fromJson(doc.data()!);
+          }
+          return null;
+        });
+  }
+
   /// Sign out
   Future<void> signOut() async {
     try {
@@ -280,12 +295,18 @@ class AuthRepository {
   }
 
   /// Sign in with Google
-  Future<SocialSignInResult?> signInWithGoogle() async {
+  @override
+  Future<SocialSignInResult> signInWithGoogle() async {
     try {
-      await GoogleSignIn.instance.initialize();
-      final GoogleSignInAccount googleUser = await GoogleSignIn.instance
-          .authenticate();
-      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+      // Initialize GoogleSignIn if needed (required in v7.x+)
+      await _googleSignIn.initialize();
+
+      // Use authenticate() instead of signIn() in v7.x+
+      // authenticate() returns non-nullable account, throws on cancellation
+      final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
       final credential = GoogleAuthProvider.credential(
         idToken: googleAuth.idToken,
       );
@@ -302,12 +323,13 @@ class AuthRepository {
               .update({'lastSeenAt': FieldValue.serverTimestamp()});
           return SocialSignInResult(user: existingUser, isNewUser: false);
         } else {
-          // New users default to riders
+          // New users default to riders with pending role selection
           final newUser = RiderModel(
             uid: userCredential.user!.uid,
             email: userCredential.user!.email ?? '',
             displayName: userCredential.user!.displayName ?? 'User',
             photoUrl: userCredential.user!.photoURL,
+            needsRoleSelection: true,
             createdAt: DateTime.now(),
             lastSeenAt: DateTime.now(),
           );
@@ -321,12 +343,14 @@ class AuthRepository {
           return SocialSignInResult(user: newUser, isNewUser: true);
         }
       }
+
+      throw Exception('Google sign-in failed: no user returned');
     } on GoogleSignInException catch (e) {
-      TalkerService.error('Google sign in error: ${e.code}');
-      if (e.code == GoogleSignInExceptionCode.canceled) {
-        return null;
-      }
-      rethrow;
+      // GoogleSignIn v7.x throws GoogleSignInException instead of returning null
+      TalkerService.error(
+        'Google sign in cancelled or failed: ${e.description}',
+      );
+      throw Exception('Google sign-in cancelled by user: ${e.description}');
     } on FirebaseAuthException catch (e) {
       TalkerService.error('Google sign in error: ${e.message}');
       throw _handleAuthException(e);
@@ -334,11 +358,11 @@ class AuthRepository {
       TalkerService.error('Google sign in error', e);
       rethrow;
     }
-    return null;
   }
 
   /// Sign in with Apple
-  Future<SocialSignInResult?> signInWithApple() async {
+  @override
+  Future<SocialSignInResult> signInWithApple() async {
     try {
       final rawNonce = _generateNonce();
       final nonce = _sha256ofString(rawNonce);
@@ -376,11 +400,12 @@ class AuthRepository {
             displayName = userCredential.user!.displayName!;
           }
 
-          // New users default to riders
+          // New users default to riders with pending role selection
           final newUser = RiderModel(
             uid: userCredential.user!.uid,
             email: userCredential.user!.email ?? appleCredential.email ?? '',
             displayName: displayName,
+            needsRoleSelection: true,
             createdAt: DateTime.now(),
             lastSeenAt: DateTime.now(),
           );
@@ -394,6 +419,8 @@ class AuthRepository {
           return SocialSignInResult(user: newUser, isNewUser: true);
         }
       }
+
+      throw Exception('Apple sign-in failed: no user returned');
     } on SignInWithAppleAuthorizationException catch (e) {
       TalkerService.error('Apple sign in error: ${e.message}');
       throw e.message;
@@ -404,9 +431,9 @@ class AuthRepository {
       TalkerService.error('Apple sign in error', e);
       rethrow;
     }
-    return null;
   }
 
+  /// Helpers
   String _generateNonce([int length = 32]) {
     const charset =
         '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
@@ -504,6 +531,78 @@ class AuthRepository {
       TalkerService.error('Update user role error', e);
       rethrow;
     }
+  }
+
+  /// Clear the needsRoleSelection flag after onboarding is complete
+  Future<void> clearNeedsRoleSelection(String userId) async {
+    try {
+      await _firestore
+          .collection(AppConstants.usersCollection)
+          .doc(userId)
+          .update({
+            'needsRoleSelection': false,
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+      TalkerService.info('Cleared needsRoleSelection for $userId');
+    } catch (e) {
+      TalkerService.error('Clear needsRoleSelection error', e);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email.trim());
+      TalkerService.info('Password reset email sent to $email');
+    } on FirebaseAuthException catch (e) {
+      TalkerService.error('Password reset error: ${e.message}');
+      throw _handleAuthException(e);
+    } catch (e) {
+      TalkerService.error('Password reset error', e);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> updatePassword(String newPassword) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        throw Exception('No user logged in');
+      }
+
+      await user.updatePassword(newPassword);
+      TalkerService.info('Password updated successfully');
+    } on FirebaseAuthException catch (e) {
+      TalkerService.error('Update password error: ${e.message}');
+      throw _handleAuthException(e);
+    } catch (e) {
+      TalkerService.error('Update password error', e);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> updateUserData(UserModel user) async {
+    try {
+      await _firestore
+          .collection(AppConstants.usersCollection)
+          .doc(user.uid)
+          .update({
+            ...user.toJson(),
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+      TalkerService.info('User data updated for ${user.uid}');
+    } catch (e) {
+      TalkerService.error('Update user data error', e);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<String?> uploadProfileImage(File image, String uid) async {
+    return await _uploadProfileImage(image, uid);
   }
 
   String _handleAuthException(FirebaseAuthException e) {

@@ -1,5 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:sport_connect/features/auth/models/user_model.dart';
+import 'package:sport_connect/core/converters/timestamp_converter.dart';
 
 part 'message_model.freezed.dart';
 part 'message_model.g.dart';

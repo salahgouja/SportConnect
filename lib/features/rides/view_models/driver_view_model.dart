@@ -1,6 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/features/rides/repositories/driver_stats_repository.dart';
-import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 
 part 'driver_view_model.g.dart';
 
@@ -42,8 +42,7 @@ class DriverViewModel extends _$DriverViewModel {
     // Listen to driver stats to sync online status
     final statsAsync = ref.watch(driverStatsProvider);
     final isOnline =
-        statsAsync.whenOrNull(data: (stats) => stats?.isOnline ?? false) ??
-        false;
+        statsAsync.whenOrNull(data: (stats) => stats.isOnline) ?? false;
 
     return DriverState(isOnline: isOnline);
   }
@@ -136,16 +135,5 @@ class DriverViewModel extends _$DriverViewModel {
       );
       return false;
     }
-  }
-}
-
-/// Provider for the current driver tab index
-@riverpod
-class DriverTabIndex extends _$DriverTabIndex {
-  @override
-  int build() => 0;
-
-  void setIndex(int index) {
-    state = index;
   }
 }

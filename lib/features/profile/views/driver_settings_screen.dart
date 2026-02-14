@@ -4,9 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
-import 'package:sport_connect/core/config/app_router.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Driver Settings Screen - Configure driver preferences and app settings
 class DriverSettingsScreen extends ConsumerStatefulWidget {
@@ -66,7 +67,7 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'Driver Settings',
+          AppLocalizations.of(context).driverSettings,
           style: TextStyle(
             fontSize: 20.sp,
             fontWeight: FontWeight.bold,
@@ -81,27 +82,32 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Ride Preferences
-            _buildSectionHeader('Ride Preferences', Icons.directions_car),
+            _buildSectionHeader(
+              AppLocalizations.of(context).ridePreferences,
+              Icons.directions_car,
+            ),
             _buildSettingsCard([
               _buildSwitchTile(
-                'Auto-Accept Requests',
-                'Automatically accept ride requests that match your criteria',
+                AppLocalizations.of(context).autoAcceptRequests,
+                AppLocalizations.of(
+                  context,
+                ).automaticallyAcceptRideRequestsThat,
                 Icons.flash_on,
                 _autoAcceptRequests,
                 (value) => setState(() => _autoAcceptRequests = value),
               ),
               _buildDivider(),
               _buildSwitchTile(
-                'Allow Instant Booking',
-                'Let passengers book without waiting for approval',
+                AppLocalizations.of(context).allowInstantBooking,
+                AppLocalizations.of(context).letPassengersBookWithoutWaiting,
                 Icons.bolt,
                 _allowInstantBooking,
                 (value) => setState(() => _allowInstantBooking = value),
               ),
               _buildDivider(),
               _buildSliderTile(
-                'Maximum Pickup Distance',
-                'Only receive requests within this distance',
+                AppLocalizations.of(context).maximumPickupDistance,
+                AppLocalizations.of(context).onlyReceiveRequestsWithinThis,
                 Icons.social_distance,
                 _maxDistance,
                 (value) => setState(() => _maxDistance = value),
@@ -114,34 +120,37 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
             SizedBox(height: 24.h),
 
             // Payment Settings
-            _buildSectionHeader('Payment Settings', Icons.payment),
+            _buildSectionHeader(
+              AppLocalizations.of(context).paymentSettings,
+              Icons.payment,
+            ),
             _buildSettingsCard([
               _buildSwitchTile(
-                'Accept Cash Payments',
-                'Allow passengers to pay with cash',
+                AppLocalizations.of(context).acceptCashPayments,
+                AppLocalizations.of(context).allowPassengersToPayWith,
                 Icons.money,
                 _acceptCashPayments,
                 (value) => setState(() => _acceptCashPayments = value),
               ),
               _buildDivider(),
               _buildSwitchTile(
-                'Accept Card Payments',
-                'Allow passengers to pay with card in-app',
+                AppLocalizations.of(context).acceptCardPayments,
+                AppLocalizations.of(context).allowPassengersToPayWith2,
                 Icons.credit_card,
                 _acceptCardPayments,
                 (value) => setState(() => _acceptCardPayments = value),
               ),
               _buildDivider(),
               _buildNavigationTile(
-                'Payout Method',
-                'Bank Account ending in 4532',
+                AppLocalizations.of(context).payoutMethod,
+                AppLocalizations.of(context).bankAccountEndingIn4532,
                 Icons.account_balance,
                 () {},
               ),
               _buildDivider(),
               _buildNavigationTile(
-                'Tax Documents',
-                'View and download tax forms',
+                AppLocalizations.of(context).taxDocuments,
+                AppLocalizations.of(context).viewAndDownloadTaxForms,
                 Icons.description,
                 () {},
               ),
@@ -150,18 +159,21 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
             SizedBox(height: 24.h),
 
             // Navigation & Map
-            _buildSectionHeader('Navigation & Map', Icons.map),
+            _buildSectionHeader(
+              AppLocalizations.of(context).navigationMap,
+              Icons.map,
+            ),
             _buildSettingsCard([
               _buildSwitchTile(
-                'Show on Driver Map',
-                'Allow passengers to see your location',
+                AppLocalizations.of(context).showOnDriverMap,
+                AppLocalizations.of(context).allowPassengersToSeeYour,
                 Icons.visibility,
                 _showOnMap,
                 (value) => setState(() => _showOnMap = value),
               ),
               _buildDivider(),
               _buildDropdownTile(
-                'Preferred Navigation App',
+                AppLocalizations.of(context).preferredNavigationApp,
                 Icons.navigation,
                 _navigationApp,
                 ['In-App', 'Google Maps', 'Waze', 'Apple Maps'],
@@ -172,27 +184,32 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
             SizedBox(height: 24.h),
 
             // Notifications
-            _buildSectionHeader('Notifications', Icons.notifications),
+            _buildSectionHeader(
+              AppLocalizations.of(context).settingsNotifications,
+              Icons.notifications,
+            ),
             _buildSettingsCard([
               _buildSwitchTile(
-                'Sound Effects',
-                'Play sounds for new requests and messages',
+                AppLocalizations.of(context).soundEffects,
+                AppLocalizations.of(context).playSoundsForNewRequests,
                 Icons.volume_up,
                 _soundEffects,
                 (value) => setState(() => _soundEffects = value),
               ),
               _buildDivider(),
               _buildSwitchTile(
-                'Vibration',
-                'Vibrate for important alerts',
+                AppLocalizations.of(context).vibration,
+                AppLocalizations.of(context).vibrateForImportantAlerts,
                 Icons.vibration,
                 _vibration,
                 (value) => setState(() => _vibration = value),
               ),
               _buildDivider(),
               _buildNavigationTile(
-                'Notification Preferences',
-                'Customize what notifications you receive',
+                AppLocalizations.of(context).notificationPreferences,
+                AppLocalizations.of(
+                  context,
+                ).customizeWhatNotificationsYouReceive,
                 Icons.tune,
                 () {},
               ),
@@ -201,18 +218,21 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
             SizedBox(height: 24.h),
 
             // Appearance
-            _buildSectionHeader('Appearance', Icons.palette),
+            _buildSectionHeader(
+              AppLocalizations.of(context).settingsAppearance,
+              Icons.palette,
+            ),
             _buildSettingsCard([
               _buildSwitchTile(
-                'Night Mode',
-                'Reduce eye strain in low light',
+                AppLocalizations.of(context).nightMode,
+                AppLocalizations.of(context).reduceEyeStrainInLow,
                 Icons.dark_mode,
                 _nightMode,
                 (value) => setState(() => _nightMode = value),
               ),
               _buildDivider(),
               _buildDropdownTile(
-                'Language',
+                AppLocalizations.of(context).settingsLanguage,
                 Icons.language,
                 _selectedLanguage,
                 ['English', 'Spanish', 'French', 'German', 'Chinese'],
@@ -223,32 +243,35 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
             SizedBox(height: 24.h),
 
             // Account & Security
-            _buildSectionHeader('Account & Security', Icons.security),
+            _buildSectionHeader(
+              AppLocalizations.of(context).accountSecurity,
+              Icons.security,
+            ),
             _buildSettingsCard([
               _buildNavigationTile(
-                'Driver Documents',
-                'License, insurance, and registration',
+                AppLocalizations.of(context).driverDocuments,
+                AppLocalizations.of(context).licenseInsuranceAndRegistration,
                 Icons.folder,
                 () {},
               ),
               _buildDivider(),
               _buildNavigationTile(
-                'Background Check',
-                'View your verification status',
+                AppLocalizations.of(context).backgroundCheck,
+                AppLocalizations.of(context).viewYourVerificationStatus,
                 Icons.verified_user,
                 () {},
               ),
               _buildDivider(),
               _buildNavigationTile(
-                'Change Password',
-                'Update your account password',
+                AppLocalizations.of(context).changePassword,
+                AppLocalizations.of(context).updateYourAccountPassword,
                 Icons.lock,
                 () {},
               ),
               _buildDivider(),
               _buildNavigationTile(
-                'Two-Factor Authentication',
-                'Add extra security to your account',
+                AppLocalizations.of(context).twoFactorAuthentication,
+                AppLocalizations.of(context).addExtraSecurityToYour,
                 Icons.security,
                 () {},
               ),
@@ -257,27 +280,30 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
             SizedBox(height: 24.h),
 
             // Support
-            _buildSectionHeader('Support', Icons.help),
+            _buildSectionHeader(
+              AppLocalizations.of(context).support,
+              Icons.help,
+            ),
             _buildSettingsCard([
               _buildNavigationTile(
-                'Driver Help Center',
-                'FAQs and troubleshooting guides',
+                AppLocalizations.of(context).driverHelpCenter,
+                AppLocalizations.of(context).faqsAndTroubleshootingGuides,
                 Icons.help_center,
-                () {},
+                () => context.push(AppRoutes.helpCenter.path),
               ),
               _buildDivider(),
               _buildNavigationTile(
-                'Contact Support',
-                'Chat with our support team',
+                AppLocalizations.of(context).contactSupport,
+                AppLocalizations.of(context).chatWithOurSupportTeam,
                 Icons.chat,
-                () {},
+                () => context.push(AppRoutes.contactSupport.path),
               ),
               _buildDivider(),
               _buildNavigationTile(
-                'Report a Safety Issue',
-                'Report incidents or concerns',
+                AppLocalizations.of(context).reportASafetyIssue,
+                AppLocalizations.of(context).reportIncidentsOrConcerns,
                 Icons.report,
-                () {},
+                () => context.push(AppRoutes.reportIssue.path),
                 isDestructive: true,
               ),
             ]).animate().fadeIn(delay: 700.ms).slideX(begin: 0.1),
@@ -286,37 +312,37 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
 
             // Danger Zone
             _buildSectionHeader(
-              'Account Actions',
+              AppLocalizations.of(context).accountActions,
               Icons.warning,
               isDestructive: true,
             ),
             _buildSettingsCard([
               _buildNavigationTile(
-                'Switch to Rider Mode',
-                'Use the app as a passenger',
+                AppLocalizations.of(context).switchToRiderMode,
+                AppLocalizations.of(context).useTheAppAsA,
                 Icons.swap_horiz,
-                () => context.go(AppRouter.home),
+                () => context.go(AppRoutes.home.path),
               ),
               _buildDivider(),
               _buildNavigationTile(
-                'Sign Out',
-                'Log out of your account',
+                AppLocalizations.of(context).signOut,
+                AppLocalizations.of(context).logOutOfYourAccount,
                 Icons.logout,
                 () => _showSignOutDialog(),
                 isWarning: true,
               ),
               _buildDivider(),
               _buildNavigationTile(
-                'Pause Driver Account',
-                'Temporarily stop receiving requests',
+                AppLocalizations.of(context).pauseDriverAccount,
+                AppLocalizations.of(context).temporarilyStopReceivingRequests,
                 Icons.pause_circle,
                 () {},
                 isWarning: true,
               ),
               _buildDivider(),
               _buildNavigationTile(
-                'Delete Driver Account',
-                'Permanently remove your driver profile',
+                AppLocalizations.of(context).deleteDriverAccount,
+                AppLocalizations.of(context).permanentlyRemoveYourDriverProfile,
                 Icons.delete_forever,
                 () => _showDeleteAccountDialog(),
                 isDestructive: true,
@@ -330,7 +356,7 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
               child: Column(
                 children: [
                   Text(
-                    'SportConnect Driver',
+                    AppLocalizations.of(context).sportconnectDriver,
                     style: TextStyle(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
@@ -339,7 +365,7 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
                   ),
                   SizedBox(height: 4.h),
                   Text(
-                    'Version 2.1.0',
+                    AppLocalizations.of(context).version210,
                     style: TextStyle(
                       fontSize: 12.sp,
                       color: AppColors.textSecondary,
@@ -572,7 +598,9 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
                   borderRadius: BorderRadius.circular(8.r),
                 ),
                 child: Text(
-                  '${value.round()} $suffix',
+                  AppLocalizations.of(
+                    context,
+                  ).valueValue4(value.round(), suffix),
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.bold,
@@ -667,26 +695,27 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
           children: [
             Icon(Icons.logout, color: AppColors.warning),
             SizedBox(width: 8.w),
-            const Text('Sign Out'),
+            Text(AppLocalizations.of(context).signOut),
           ],
         ),
-        content: const Text(
-          'Are you sure you want to sign out of your account?',
-        ),
+        content: Text(AppLocalizations.of(context).areYouSureYouWant3),
         actions: [
           TextButton(
             onPressed: () => ctx.pop(),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           TextButton(
             onPressed: () async {
               ctx.pop();
-              await ref.read(authRepositoryProvider).signOut();
+              await ref.read(authActionsViewModelProvider).signOut();
               if (mounted) {
-                context.go(AppRouter.login);
+                context.go(AppRoutes.login.path);
               }
             },
-            child: Text('Sign Out', style: TextStyle(color: AppColors.warning)),
+            child: Text(
+              AppLocalizations.of(context).signOut,
+              style: TextStyle(color: AppColors.warning),
+            ),
           ),
         ],
       ),
@@ -701,26 +730,50 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
           children: [
             Icon(Icons.warning, color: AppColors.error),
             SizedBox(width: 8.w),
-            const Text('Delete Account'),
+            Text(AppLocalizations.of(context).settingsDeleteAccount),
           ],
         ),
-        content: const Text(
-          'This action cannot be undone. All your driver data, earnings history, and ratings will be permanently deleted.',
-        ),
+        content: Text(AppLocalizations.of(context).thisActionCannotBeUndone),
         actions: [
           TextButton(
             onPressed: () => context.pop(),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           TextButton(
             onPressed: () {
               context.pop();
-              // TODO: Implement account deletion
+              _confirmAndDeleteAccount();
             },
-            child: Text('Delete', style: TextStyle(color: AppColors.error)),
+            child: Text(
+              AppLocalizations.of(context).actionDelete,
+              style: TextStyle(color: AppColors.error),
+            ),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _confirmAndDeleteAccount() async {
+    try {
+      await ref.read(authActionsViewModelProvider).deleteAccount();
+      if (mounted) {
+        context.go(AppRoutes.login.path);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(
+                context,
+              ).failedToDeleteAccountValue(e.toString()),
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 }

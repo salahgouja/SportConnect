@@ -1,0 +1,3469 @@
+{
+  "@@locale": "en",
+  "@_NAVIGATION": {},
+  "navHome": "Home",
+  "navRides": "Rides",
+  "navChat": "Chat",
+  "navProfile": "Profile",
+  "navSettings": "Settings",
+  "@_SETTINGS_SCREEN": {},
+  "settingsTitle": "Settings",
+  "settingsNotifications": "Notifications",
+  "settingsPushNotifications": "Push Notifications",
+  "settingsPushNotificationsDesc": "Receive push notifications for important updates",
+  "settingsRideReminders": "Ride Reminders",
+  "settingsRideRemindersDesc": "Get reminded about upcoming rides",
+  "settingsChatMessages": "Chat Messages",
+  "settingsChatMessagesDesc": "Notifications for new messages",
+  "settingsMarketingTips": "Marketing & Tips",
+  "settingsMarketingTipsDesc": "Receive tips and promotional offers",
+  "settingsAppearance": "Appearance",
+  "settingsDarkMode": "Dark Mode",
+  "settingsDarkModeDesc": "Switch to dark theme",
+  "settingsLanguage": "Language",
+  "settingsLanguageDesc": "App display language",
+  "settingsDistanceUnit": "Distance Unit",
+  "settingsDistanceUnitDesc": "Preferred distance measurement",
+  "settingsPrivacySafety": "Privacy & Safety",
+  "settingsPublicProfile": "Public Profile",
+  "settingsPublicProfileDesc": "Allow others to see your profile",
+  "settingsShowLocation": "Show Location",
+  "settingsShowLocationDesc": "Share your live location during rides",
+  "settingsAutoAcceptRides": "Auto-Accept Rides",
+  "settingsAutoAcceptRidesDesc": "Automatically accept ride requests",
+  "settingsBlockedUsers": "Blocked Users",
+  "settingsBlockedUsersDesc": "Manage blocked users",
+  "settingsAccount": "Account",
+  "settingsEditProfile": "Edit Profile",
+  "settingsEditProfileDesc": "Update your profile information",
+  "settingsPaymentMethods": "Payment Methods",
+  "settingsPaymentMethodsDesc": "Manage your payment options",
+  "settingsVerifyAccount": "Verify Account",
+  "settingsVerifyAccountDesc": "Complete identity verification",
+  "settingsSupport": "Support & Legal",
+  "settingsHelpCenter": "Help Center",
+  "settingsHelpCenterDesc": "Get help and support",
+  "settingsReportProblem": "Report a Problem",
+  "settingsReportProblemDesc": "Report bugs or issues",
+  "settingsTermsConditions": "Terms & Conditions",
+  "settingsPrivacyPolicy": "Privacy Policy",
+  "settingsAbout": "About",
+  "settingsAboutDesc": "App version and information",
+  "settingsDangerZone": "Danger Zone",
+  "settingsLogout": "Log Out",
+  "settingsLogoutDesc": "Sign out of your account",
+  "settingsDeleteAccount": "Delete Account",
+  "settingsDeleteAccountDesc": "Permanently delete your account and data",
+  "@_AUTH": {},
+  "authSignIn": "Sign In",
+  "authSignUp": "Sign Up",
+  "authEmail": "Email",
+  "authPassword": "Password",
+  "authConfirmPassword": "Confirm Password",
+  "authForgotPassword": "Forgot Password?",
+  "authResetPassword": "Reset Password",
+  "authContinueWithGoogle": "Continue with Google",
+  "authContinueWithApple": "Continue with Apple",
+  "@_COMMON_ACTIONS": {},
+  "actionSave": "Save",
+  "actionCancel": "Cancel",
+  "actionDelete": "Delete",
+  "actionEdit": "Edit",
+  "actionConfirm": "Confirm",
+  "actionSearch": "Search",
+  "actionFilter": "Filter",
+  "actionApply": "Apply",
+  "actionClose": "Close",
+  "actionDone": "Done",
+  "@_ERRORS": {},
+  "errorNetwork": "Network error. Please check your connection.",
+  "errorInvalidInput": "Invalid input. Please check your entry.",
+  "errorPermissionDenied": "Permission denied.",
+  "errorUnexpected": "An unexpected error occurred.",
+  "errorTimeout": "Request timed out. Please try again.",
+  "@_LANGUAGES": {},
+  "languageEnglish": "English",
+  "languageFrench": "Français",
+  "languageGerman": "Deutsch",
+  "languageSpanish": "Español",
+  "pageNotFound": "Page not found",
+  "@pageNotFound": {
+    "description": "Text from Text in app_router.dart"
+  },
+  "goHome": "Go Home",
+  "@goHome": {
+    "description": "Text from Text in app_router.dart"
+  },
+  "stepValueOfValue": "Step {value1} of {value2}",
+  "@stepValueOfValue": {
+    "description": "Text from Text in feature_discovery_service.dart"
+  },
+  "skipTour": "Skip tour",
+  "@skipTour": {
+    "description": "Text from Text in feature_discovery_service.dart"
+  },
+  "logs": "Logs",
+  "@logs": {
+    "description": "Text from _buildMenuButton.label in debug_overlay.dart"
+  },
+  "theme": "Theme",
+  "@theme": {
+    "description": "Text from _buildMenuButton.label in debug_overlay.dart"
+  },
+  "themePlayground": "Theme Playground",
+  "@themePlayground": {
+    "description": "Text from Text in debug_overlay.dart"
+  },
+  "colorScheme": "Color Scheme",
+  "@colorScheme": {
+    "description": "Text from _buildSection.title in debug_overlay.dart"
+  },
+  "surfaceBlendValue": "Surface Blend: {value}%",
+  "@surfaceBlendValue": {
+    "description": "Text from _buildSection.title in debug_overlay.dart"
+  },
+  "useMaterial3": "Use Material 3",
+  "@useMaterial3": {
+    "description": "Text from Text in debug_overlay.dart"
+  },
+  "componentPreview": "Component Preview",
+  "@componentPreview": {
+    "description": "Text from _buildSection.title in debug_overlay.dart"
+  },
+  "elevated": "Elevated",
+  "@elevated": {
+    "description": "Text from Text in debug_overlay.dart"
+  },
+  "filled": "Filled",
+  "@filled": {
+    "description": "Text from Text in debug_overlay.dart"
+  },
+  "outlined": "Outlined",
+  "@outlined": {
+    "description": "Text from Text in debug_overlay.dart"
+  },
+  "text": "Text",
+  "@text": {
+    "description": "Text from Text in debug_overlay.dart"
+  },
+  "textField": "Text Field",
+  "@textField": {
+    "description": "Text from InputDecoration.labelText in debug_overlay.dart"
+  },
+  "enterText": "Enter text...",
+  "@enterText": {
+    "description": "Text from InputDecoration.hintText in debug_overlay.dart"
+  },
+  "cardTitle": "Card Title",
+  "@cardTitle": {
+    "description": "Text from Text in debug_overlay.dart"
+  },
+  "cardSubtitleWithDescription": "Card subtitle with description",
+  "@cardSubtitleWithDescription": {
+    "description": "Text from Text in debug_overlay.dart"
+  },
+  "chip1": "Chip 1",
+  "@chip1": {
+    "description": "Text from Text in debug_overlay.dart"
+  },
+  "action": "Action",
+  "@action": {
+    "description": "Text from Text in debug_overlay.dart"
+  },
+  "colorPalette": "Color Palette",
+  "@colorPalette": {
+    "description": "Text from _buildSection.title in debug_overlay.dart"
+  },
+  "primary": "Primary",
+  "@primary": {
+    "description": "Text from _buildColorChip in debug_overlay.dart"
+  },
+  "secondary": "Secondary",
+  "@secondary": {
+    "description": "Text from _buildColorChip in debug_overlay.dart"
+  },
+  "surface": "Surface",
+  "@surface": {
+    "description": "Text from _buildColorChip in debug_overlay.dart"
+  },
+  "background": "Background",
+  "@background": {
+    "description": "Text from _buildColorChip in debug_overlay.dart"
+  },
+  "error": "Error",
+  "@error": {
+    "description": "Text from _buildColorChip in debug_overlay.dart"
+  },
+  "copyThemeCode": "Copy Theme Code",
+  "@copyThemeCode": {
+    "description": "Text from Text in debug_overlay.dart"
+  },
+  "applyTheme": "Apply Theme",
+  "@applyTheme": {
+    "description": "Text from Text in debug_overlay.dart"
+  },
+  "themeCodeCopiedToLogs": "Theme code copied to logs!",
+  "@themeCodeCopiedToLogs": {
+    "description": "Text from Text in debug_overlay.dart"
+  },
+  "themeValueApplied": "Theme \"{value}\" applied!",
+  "@themeValueApplied": {
+    "description": "Text from Text in debug_overlay.dart"
+  },
+  "lvlValue": "LVL {value}",
+  "@lvlValue": {
+    "description": "Text from Text in gamification_widgets.dart"
+  },
+  "valueValueXp": "{value1} / {value2} XP",
+  "@valueValueXp": {
+    "description": "Text from Text in gamification_widgets.dart"
+  },
+  "value": "{value}%",
+  "@value": {
+    "description": "Text from Text in gamification_widgets.dart"
+  },
+  "value2": "{value}",
+  "@value2": {
+    "description": "Text from Text in gamification_widgets.dart"
+  },
+  "dayStreak": "Day Streak",
+  "@dayStreak": {
+    "description": "Text from Text in gamification_widgets.dart"
+  },
+  "value3": "#{value}",
+  "@value3": {
+    "description": "Text from Text in gamification_widgets.dart"
+  },
+  "you": "You",
+  "@you": {
+    "description": "Text from Text in gamification_widgets.dart"
+  },
+  "valueXp": "+{value} XP",
+  "@valueXp": {
+    "description": "Text from Text in gamification_widgets.dart"
+  },
+  "valueValue": "{value1}/{value2}",
+  "@valueValue": {
+    "description": "Text from Text in gamification_widgets.dart"
+  },
+  "standard": "standard",
+  "@standard": {
+    "description": "Text from _buildMapStyleItem in map_location_picker.dart"
+  },
+  "standard2": "Standard",
+  "@standard2": {
+    "description": "Text from _buildMapStyleItem in map_location_picker.dart"
+  },
+  "terrain": "terrain",
+  "@terrain": {
+    "description": "Text from _buildMapStyleItem in map_location_picker.dart"
+  },
+  "terrain2": "Terrain",
+  "@terrain2": {
+    "description": "Text from _buildMapStyleItem in map_location_picker.dart"
+  },
+  "dark": "dark",
+  "@dark": {
+    "description": "Text from _buildMapStyleItem in map_location_picker.dart"
+  },
+  "light": "light",
+  "@light": {
+    "description": "Text from _buildMapStyleItem in map_location_picker.dart"
+  },
+  "lightMode": "Light Mode",
+  "@lightMode": {
+    "description": "Text from _buildMapStyleItem in map_location_picker.dart"
+  },
+  "humanitarian": "humanitarian",
+  "@humanitarian": {
+    "description": "Text from _buildMapStyleItem in map_location_picker.dart"
+  },
+  "humanitarian2": "Humanitarian",
+  "@humanitarian2": {
+    "description": "Text from _buildMapStyleItem in map_location_picker.dart"
+  },
+  "searchAddressCityOrPlace": "Search address, city, or place...",
+  "@searchAddressCityOrPlace": {
+    "description": "Text from InputDecoration.hintText in map_location_picker.dart"
+  },
+  "popularCities": "Popular Cities",
+  "@popularCities": {
+    "description": "Text from Text in map_location_picker.dart"
+  },
+  "selectedLocation": "Selected Location",
+  "@selectedLocation": {
+    "description": "Text from Text in map_location_picker.dart"
+  },
+  "confirmLocation": "Confirm Location",
+  "@confirmLocation": {
+    "description": "Text from Text in map_location_picker.dart"
+  },
+  "nearbyPlaces": "Nearby Places",
+  "@nearbyPlaces": {
+    "description": "Text from Text in poi_search_sheet.dart"
+  },
+  "findUsefulSpotsAlongYour": "Find useful spots along your route",
+  "@findUsefulSpotsAlongYour": {
+    "description": "Text from Text in poi_search_sheet.dart"
+  },
+  "searchRadius": "Search Radius",
+  "@searchRadius": {
+    "description": "Text from Text in poi_search_sheet.dart"
+  },
+  "selectACategoryToSearch": "Select a category to search",
+  "@selectACategoryToSearch": {
+    "description": "Text from Text in poi_search_sheet.dart"
+  },
+  "tapOnAnyCategoryAbove": "Tap on any category above to find nearby places",
+  "@tapOnAnyCategoryAbove": {
+    "description": "Text from Text in poi_search_sheet.dart"
+  },
+  "noResultsFound": "No results found",
+  "@noResultsFound": {
+    "description": "Text from Text in poi_search_sheet.dart"
+  },
+  "tryIncreasingTheSearchRadius": "Try increasing the search radius",
+  "@tryIncreasingTheSearchRadius": {
+    "description": "Text from Text in poi_search_sheet.dart"
+  },
+  "lvValue": "Lv.{value}",
+  "@lvValue": {
+    "description": "Text from Text in premium_avatar.dart"
+  },
+  "value4": "+{value}",
+  "@value4": {
+    "description": "Text from Text in premium_avatar.dart"
+  },
+  "text99": "99+",
+  "@text99": {
+    "description": "Text from Text in premium_navigation.dart"
+  },
+  "text9": "9+",
+  "@text9": {
+    "description": "Text from Text in premium_navigation.dart"
+  },
+  "valueRidesValue": "{value1} rides • {value2}",
+  "@valueRidesValue": {
+    "description": "Text from Text in premium_ride_card.dart"
+  },
+  "value5": "{value} €",
+  "@value5": {
+    "description": "Text from Text in premium_ride_card.dart"
+  },
+  "valueSeatsLeft": "{value} seats left",
+  "@valueSeatsLeft": {
+    "description": "Text from Text in premium_ride_card.dart"
+  },
+  "fullyBooked": "Fully booked",
+  "@fullyBooked": {
+    "description": "Text from Text in premium_ride_card.dart"
+  },
+  "bookNow": "Book Now",
+  "@bookNow": {
+    "description": "Text from Text in premium_ride_card.dart"
+  },
+  "valueSeats": "{value} seats",
+  "@valueSeats": {
+    "description": "Text from Text in premium_ride_card.dart"
+  },
+  "errorSavingVehicleValue": "Error saving vehicle: {value}",
+  "@errorSavingVehicleValue": {
+    "description": "Text from Text in driver_onboarding_screen.dart"
+  },
+  "driverSetup": "Driver Setup",
+  "@driverSetup": {
+    "description": "Text from Text in driver_onboarding_screen.dart"
+  },
+  "vehicle": "Vehicle",
+  "@vehicle": {
+    "description": "Text from _buildStepIndicator in driver_onboarding_screen.dart"
+  },
+  "payouts": "Payouts",
+  "@payouts": {
+    "description": "Text from _buildStepIndicator in driver_onboarding_screen.dart"
+  },
+  "addYourVehicle": "Add Your Vehicle",
+  "@addYourVehicle": {
+    "description": "Text from _buildStepHeader.title in driver_onboarding_screen.dart"
+  },
+  "fuelType": "Fuel Type",
+  "@fuelType": {
+    "description": "Text from Text in driver_onboarding_screen.dart"
+  },
+  "setupPayouts": "Setup Payouts",
+  "@setupPayouts": {
+    "description": "Text from _buildStepHeader.title in driver_onboarding_screen.dart"
+  },
+  "securePayments": "Secure Payments",
+  "@securePayments": {
+    "description": "Text from _buildBenefitItem.title in driver_onboarding_screen.dart"
+  },
+  "fastTransfers": "Fast Transfers",
+  "@fastTransfers": {
+    "description": "Text from _buildBenefitItem.title in driver_onboarding_screen.dart"
+  },
+  "easyTracking": "Easy Tracking",
+  "@easyTracking": {
+    "description": "Text from _buildBenefitItem.title in driver_onboarding_screen.dart"
+  },
+  "skipForNowILl": "Skip for now, I'll set this up later",
+  "@skipForNowILl": {
+    "description": "Text from Text in driver_onboarding_screen.dart"
+  },
+  "youCanStillOfferRides": "You can still offer rides without setting up payouts, but you won't be able to receive payments until you complete this step.",
+  "@youCanStillOfferRides": {
+    "description": "Text from Text in driver_onboarding_screen.dart"
+  },
+  "sportconnect": "SportConnect",
+  "@sportconnect": {
+    "description": "Text from Text in login_screen.dart"
+  },
+  "welcomeBack": "Welcome Back",
+  "@welcomeBack": {
+    "description": "Text from Text in login_screen.dart"
+  },
+  "signInToContinueYour": "Sign in to continue your running journey",
+  "@signInToContinueYour": {
+    "description": "Text from Text in login_screen.dart"
+  },
+  "rememberMe": "Remember me",
+  "@rememberMe": {
+    "description": "Text from Text in login_screen.dart"
+  },
+  "donTHaveAnAccount": "Don't have an account? ",
+  "@donTHaveAnAccount": {
+    "description": "Text from Text in login_screen.dart"
+  },
+  "enterYourEmailAddressAnd": "Enter your email address and we'll send you instructions to reset your password.",
+  "@enterYourEmailAddressAnd": {
+    "description": "Text from Text in login_screen.dart"
+  },
+  "passwordResetEmailSentCheck": "Password reset email sent! Check your inbox.",
+  "@passwordResetEmailSentCheck": {
+    "description": "Text from Text in login_screen.dart"
+  },
+  "pleaseAgreeToTheTerms": "Please agree to the Terms of Service",
+  "@pleaseAgreeToTheTerms": {
+    "description": "Text from Text in register_screen.dart"
+  },
+  "createAccount": "Create Account",
+  "@createAccount": {
+    "description": "Text from Text in register_screen.dart"
+  },
+  "joinOurCommunityOfEco": "Join our community of eco-friendly riders",
+  "@joinOurCommunityOfEco": {
+    "description": "Text from Text in register_screen.dart"
+  },
+  "welcomeBonus": "Welcome Bonus",
+  "@welcomeBonus": {
+    "description": "Text from Text in register_screen.dart"
+  },
+  "get100XpWhenYou": "Get 100 XP when you complete your profile!",
+  "@get100XpWhenYou": {
+    "description": "Text from Text in register_screen.dart"
+  },
+  "iWantTo": "I want to:",
+  "@iWantTo": {
+    "description": "Text from Text in register_screen.dart"
+  },
+  "alreadyHaveAnAccount": "Already have an account? ",
+  "@alreadyHaveAnAccount": {
+    "description": "Text from Text in register_screen.dart"
+  },
+  "findRides": "Find rides",
+  "@findRides": {
+    "description": "Text from Text in register_screen.dart"
+  },
+  "offerRides": "Offer rides",
+  "@offerRides": {
+    "description": "Text from Text in register_screen.dart"
+  },
+  "pleaseSelectARoleTo": "Please select a role to continue",
+  "@pleaseSelectARoleTo": {
+    "description": "Text from Text in role_selection_screen.dart"
+  },
+  "errorValue": "Error: {value}",
+  "@errorValue": {
+    "description": "Text from Text in role_selection_screen.dart"
+  },
+  "iMARider": "I'm a Rider",
+  "@iMARider": {
+    "description": "Text from _buildRoleCard.title in role_selection_screen.dart"
+  },
+  "iMADriver": "I'm a Driver",
+  "@iMADriver": {
+    "description": "Text from _buildRoleCard.title in role_selection_screen.dart"
+  },
+  "youCanChangeYourRole": "You can change your role later in settings",
+  "@youCanChangeYourRole": {
+    "description": "Text from Text in role_selection_screen.dart"
+  },
+  "howWillYouUseSportconnect": "How will you use SportConnect?",
+  "@howWillYouUseSportconnect": {
+    "description": "Text from Text in role_selection_screen.dart"
+  },
+  "chooseYourRoleToGet": "Choose your role to get started.\nThis will customize your experience.",
+  "@chooseYourRoleToGet": {
+    "description": "Text from Text in role_selection_screen.dart"
+  },
+  "text2": "🎉",
+  "@text2": {
+    "description": "Text from Text in signup_wizard_screen.dart"
+  },
+  "join10000EcoRiders": "Join 10,000+ eco-riders",
+  "@join10000EcoRiders": {
+    "description": "Text from Text in signup_wizard_screen.dart"
+  },
+  "get100XpWelcomeBonus": "Get 100 XP welcome bonus!",
+  "@get100XpWelcomeBonus": {
+    "description": "Text from Text in signup_wizard_screen.dart"
+  },
+  "orSignUpWith": "Or sign up with",
+  "@orSignUpWith": {
+    "description": "Text from Text in signup_wizard_screen.dart"
+  },
+  "strongPasswordTips": "Strong Password Tips",
+  "@strongPasswordTips": {
+    "description": "Text from Text in signup_wizard_screen.dart"
+  },
+  "use8CharactersWithLetters": "Use 8+ characters with letters, numbers & symbols",
+  "@use8CharactersWithLetters": {
+    "description": "Text from Text in signup_wizard_screen.dart"
+  },
+  "passwordStrength": "Password Strength",
+  "@passwordStrength": {
+    "description": "Text from Text in signup_wizard_screen.dart"
+  },
+  "yourInterestsOptional": "Your Interests (Optional)",
+  "@yourInterestsOptional": {
+    "description": "Text from Text in signup_wizard_screen.dart"
+  },
+  "selectSportsYouReInterested": "Select sports you're interested in",
+  "@selectSportsYouReInterested": {
+    "description": "Text from Text in signup_wizard_screen.dart"
+  },
+  "addAProfilePhoto": "Add a Profile Photo",
+  "@addAProfilePhoto": {
+    "description": "Text from Text in signup_wizard_screen.dart"
+  },
+  "thisHelpsOthersRecognizeYou": "This helps others recognize you",
+  "@thisHelpsOthersRecognizeYou": {
+    "description": "Text from Text in signup_wizard_screen.dart"
+  },
+  "readyToJoin": "Ready to Join!",
+  "@readyToJoin": {
+    "description": "Text from Text in signup_wizard_screen.dart"
+  },
+  "emailValue": "Email: {value}",
+  "@emailValue": {
+    "description": "Text from Text in signup_wizard_screen.dart"
+  },
+  "roleValue": "Role: {value}",
+  "@roleValue": {
+    "description": "Text from Text in signup_wizard_screen.dart"
+  },
+  "carpoolingForRunners": "CARPOOLING FOR RUNNERS",
+  "@carpoolingForRunners": {
+    "description": "Text from Text in splash_screen.dart"
+  },
+  "shareRidesRunTogetherGo": "Share rides. Run together.\nGo further.",
+  "@shareRidesRunTogetherGo": {
+    "description": "Text from Text in splash_screen.dart"
+  },
+  "loading": "Loading...",
+  "@loading": {
+    "description": "Text from Text in splash_screen.dart"
+  },
+  "offerRide": "Offer Ride",
+  "@offerRide": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "driver": "Driver",
+  "@driver": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "online": "Online",
+  "@online": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "offline": "Offline",
+  "@offline": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "acceptingRideRequests": "Accepting ride requests",
+  "@acceptingRideRequests": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "tapToGoOnlineAnd": "Tap to go online and start earning",
+  "@tapToGoOnlineAnd": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "failedToLoadStatus": "Failed to load status",
+  "@failedToLoadStatus": {
+    "description": "Text from _buildErrorCard in driver_home_screen.dart"
+  },
+  "todaySEarnings": "Today's Earnings",
+  "@todaySEarnings": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "live": "Live",
+  "@live": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "value6": "€{value}",
+  "@value6": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "valueRides": "{value} rides",
+  "@valueRides": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "failedToLoadEarnings": "Failed to load earnings",
+  "@failedToLoadEarnings": {
+    "description": "Text from _buildErrorCard in driver_home_screen.dart"
+  },
+  "rideRequests": "Ride Requests",
+  "@rideRequests": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "viewAll": "View All",
+  "@viewAll": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "noPendingRequests": "No pending requests",
+  "@noPendingRequests": {
+    "description": "Text from _buildEmptyState.title in driver_home_screen.dart"
+  },
+  "failedToLoadRequests": "Failed to load requests",
+  "@failedToLoadRequests": {
+    "description": "Text from _buildErrorCard in driver_home_screen.dart"
+  },
+  "noAcceptedRequestsYet": "No accepted requests yet",
+  "@noAcceptedRequestsYet": {
+    "description": "Empty state title for accepted requests tab"
+  },
+  "acceptedRequestsWillAppearHere": "Accepted ride requests will appear here",
+  "@acceptedRequestsWillAppearHere": {
+    "description": "Empty state subtitle for accepted requests tab"
+  },
+  "upcomingRides": "Upcoming Rides",
+  "@upcomingRides": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "noUpcomingRides": "No upcoming rides",
+  "@noUpcomingRides": {
+    "description": "Text from _buildEmptyState.title in driver_home_screen.dart"
+  },
+  "failedToLoadRides": "Failed to load rides",
+  "@failedToLoadRides": {
+    "description": "Text from _buildErrorCard in driver_home_screen.dart"
+  },
+  "kNew": "New",
+  "@kNew": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "valueSeatValue": "{value1} seat{value2}",
+  "@valueSeatValue": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "decline": "Decline",
+  "@decline": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "accept": "Accept",
+  "@accept": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "valueValue2": "{value1} → {value2}",
+  "@valueValue2": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "earned": "earned",
+  "@earned": {
+    "description": "Text from Text in driver_home_screen.dart"
+  },
+  "gettingLocation": "Getting location...",
+  "@gettingLocation": {
+    "description": "Text from Text in home_screen.dart"
+  },
+  "loadingRoute": "Loading route...",
+  "@loadingRoute": {
+    "description": "Text from Text in home_screen.dart"
+  },
+  "valueKm": "{value} km",
+  "@valueKm": {
+    "description": "Text from Text in home_screen.dart"
+  },
+  "rides": "rides",
+  "@rides": {
+    "description": "Text from _buildStatItem in home_screen.dart"
+  },
+  "seats": "seats",
+  "@seats": {
+    "description": "Text from _buildStatItem in home_screen.dart"
+  },
+  "whereAreYouGoing": "Where are you going?",
+  "@whereAreYouGoing": {
+    "description": "Text from Text in home_screen.dart"
+  },
+  "hotspots": "Hotspots",
+  "@hotspots": {
+    "description": "Text from _buildMapControl.tooltip in home_screen.dart"
+  },
+  "nearbyRides": "Nearby Rides",
+  "@nearbyRides": {
+    "description": "Text from _buildMapControl.tooltip in home_screen.dart"
+  },
+  "followLocation": "Follow Location",
+  "@followLocation": {
+    "description": "Text from _buildMapControl.tooltip in home_screen.dart"
+  },
+  "valueMin": "{value} min",
+  "@valueMin": {
+    "description": "Text from Text in home_screen.dart"
+  },
+  "mapStyle": "Map Style",
+  "@mapStyle": {
+    "description": "Text from Text in home_screen.dart"
+  },
+  "dark2": "Dark",
+  "@dark2": {
+    "description": "Text from _buildStyleOption in home_screen.dart"
+  },
+  "findARide": "Find a Ride",
+  "@findARide": {
+    "description": "Text from Text in home_screen.dart"
+  },
+  "filters": "Filters",
+  "@filters": {
+    "description": "Text from Text in home_screen.dart"
+  },
+  "fromWhere": "From where?",
+  "@fromWhere": {
+    "description": "Text from InputDecoration.hintText in home_screen.dart"
+  },
+  "toWhere": "To where?",
+  "@toWhere": {
+    "description": "Text from InputDecoration.hintText in home_screen.dart"
+  },
+  "valueAvailable": "{value} available",
+  "@valueAvailable": {
+    "description": "Text from Text in home_screen.dart"
+  },
+  "noRidesAvailableNearby": "No rides available nearby",
+  "@noRidesAvailableNearby": {
+    "description": "Text from Text in home_screen.dart"
+  },
+  "tryExpandingYourSearchRadius": "Try expanding your search radius",
+  "@tryExpandingYourSearchRadius": {
+    "description": "Text from Text in home_screen.dart"
+  },
+  "pickupPoint": "Pickup point",
+  "@pickupPoint": {
+    "description": "Text from Text in home_screen.dart"
+  },
+  "destination": "Destination",
+  "@destination": {
+    "description": "Text from Text in home_screen.dart"
+  },
+  "eco": "Eco",
+  "@eco": {
+    "description": "Text from _buildSearchChip in home_screen.dart"
+  },
+  "premium": "Premium",
+  "@premium": {
+    "description": "Text from _buildSearchChip in home_screen.dart"
+  },
+  "pickupLocation": "Pickup location",
+  "@pickupLocation": {
+    "description": "Text from Text in home_screen.dart"
+  },
+  "bookThisRide": "Book This Ride",
+  "@bookThisRide": {
+    "description": "Text from Text in home_screen.dart"
+  },
+  "ride": "ride",
+  "@ride": {
+    "description": "Text from _buildStatItem in quick_stats_card.dart"
+  },
+  "seat": "seat",
+  "@seat": {
+    "description": "Text from _buildStatItem in quick_stats_card.dart"
+  },
+  "sendingImage": "Sending image...",
+  "@sendingImage": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "failedToSendImageValue": "Failed to send image: {value}",
+  "@failedToSendImageValue": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "failedToStartCallValue": "Failed to start call: {value}",
+  "@failedToStartCallValue": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "viewProfile": "View Profile",
+  "@viewProfile": {
+    "description": "Text from _buildOptionItem in chat_detail_screen.dart"
+  },
+  "searchInChat": "Search in Chat",
+  "@searchInChat": {
+    "description": "Text from _buildOptionItem in chat_detail_screen.dart"
+  },
+  "muteNotifications": "Mute Notifications",
+  "@muteNotifications": {
+    "description": "Text from _buildOptionItem in chat_detail_screen.dart"
+  },
+  "clearChat": "Clear Chat",
+  "@clearChat": {
+    "description": "Text from _buildOptionItem in chat_detail_screen.dart"
+  },
+  "notificationsMutedForThisChat": "Notifications muted for this chat",
+  "@notificationsMutedForThisChat": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "areYouSureYouWant": "Are you sure you want to delete all messages? This action cannot be undone.",
+  "@areYouSureYouWant": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "chatCleared": "Chat cleared",
+  "@chatCleared": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "clear": "Clear",
+  "@clear": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "noMessagesYet": "No messages yet",
+  "@noMessagesYet": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "sendAMessageToStart": "Send a message to start the conversation",
+  "@sendAMessageToStart": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "typing": "typing...",
+  "@typing": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "replyingToValue": "Replying to {value}",
+  "@replyingToValue": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "tapToOpenMap": "Tap to open map",
+  "@tapToOpenMap": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "open": "Open",
+  "@open": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "thisMessageWasDeleted": "This message was deleted",
+  "@thisMessageWasDeleted": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "edited": "edited",
+  "@edited": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "reply": "Reply",
+  "@reply": {
+    "description": "Text from _buildOptionItem in chat_detail_screen.dart"
+  },
+  "copy": "Copy",
+  "@copy": {
+    "description": "Text from _buildOptionItem in chat_detail_screen.dart"
+  },
+  "messageCopied": "Message copied",
+  "@messageCopied": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "editMessage": "Edit Message",
+  "@editMessage": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "typeAMessage": "Type a message...",
+  "@typeAMessage": {
+    "description": "Text from InputDecoration.hintText in chat_detail_screen.dart"
+  },
+  "camera": "Camera",
+  "@camera": {
+    "description": "Text from _buildAttachmentOption in chat_detail_screen.dart"
+  },
+  "gallery": "Gallery",
+  "@gallery": {
+    "description": "Text from _buildAttachmentOption in chat_detail_screen.dart"
+  },
+  "document": "Document",
+  "@document": {
+    "description": "Text from _buildAttachmentOption in chat_detail_screen.dart"
+  },
+  "location": "Location",
+  "@location": {
+    "description": "Text from _buildAttachmentOption in chat_detail_screen.dart"
+  },
+  "gettingYourLocation": "Getting your location...",
+  "@gettingYourLocation": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "locationShared": "Location shared",
+  "@locationShared": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "coordinatesCopiedToClipboard": "Coordinates copied to clipboard",
+  "@coordinatesCopiedToClipboard": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "couldNotOpenMapsValue": "Could not open maps: {value}",
+  "@couldNotOpenMapsValue": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "recordingReleaseToSend": "Recording... Release to send",
+  "@recordingReleaseToSend": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "voiceNote": "Voice note",
+  "@voiceNote": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "voiceNotesComingSoonUse": "Voice notes coming soon! Use text for now.",
+  "@voiceNotesComingSoonUse": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "recordingCancelled": "Recording cancelled",
+  "@recordingCancelled": {
+    "description": "Text from Text in chat_detail_screen.dart"
+  },
+  "messages": "Messages",
+  "@messages": {
+    "description": "Text from Text in chat_list_screen.dart"
+  },
+  "pleaseLoginToViewChats": "Please login to view chats",
+  "@pleaseLoginToViewChats": {
+    "description": "Text from Text in chat_list_screen.dart"
+  },
+  "failedToLoadChats": "Failed to load chats",
+  "@failedToLoadChats": {
+    "description": "Text from Text in chat_list_screen.dart"
+  },
+  "retry": "Retry",
+  "@retry": {
+    "description": "Text from Text in chat_list_screen.dart"
+  },
+  "noConversationsYet": "No conversations yet",
+  "@noConversationsYet": {
+    "description": "Text from _buildEmptyState.title in chat_list_screen.dart"
+  },
+  "noGroupChats": "No group chats",
+  "@noGroupChats": {
+    "description": "Text from _buildEmptyState.title in chat_list_screen.dart"
+  },
+  "noRideChats": "No ride chats",
+  "@noRideChats": {
+    "description": "Text from _buildEmptyState.title in chat_list_screen.dart"
+  },
+  "callHistory": "Call History",
+  "@callHistory": {
+    "description": "Text from Text in chat_list_screen.dart"
+  },
+  "noCallHistory": "No call history",
+  "@noCallHistory": {
+    "description": "Text from Text in chat_list_screen.dart"
+  },
+  "videoCall": "Video call",
+  "@videoCall": {
+    "description": "Text from Text in chat_list_screen.dart"
+  },
+  "voiceCall": "Voice call",
+  "@voiceCall": {
+    "description": "Text from Text in chat_list_screen.dart"
+  },
+  "text3": " • ",
+  "@text3": {
+    "description": "Text from Text in chat_list_screen.dart"
+  },
+  "newMessage": "New Message",
+  "@newMessage": {
+    "description": "Text from Text in chat_list_screen.dart"
+  },
+  "searchUsersByName": "Search users by name...",
+  "@searchUsersByName": {
+    "description": "Text from InputDecoration.hintText in chat_list_screen.dart"
+  },
+  "searchForAUserTo": "Search for a user to start chatting",
+  "@searchForAUserTo": {
+    "description": "Text from Text in chat_list_screen.dart"
+  },
+  "typeAtLeast2Characters": "Type at least 2 characters",
+  "@typeAtLeast2Characters": {
+    "description": "Text from Text in chat_list_screen.dart"
+  },
+  "noUsersFoundForValue": "No users found for \"{value}\"",
+  "@noUsersFoundForValue": {
+    "description": "Text from Text in chat_list_screen.dart"
+  },
+  "allNotificationsMarkedAsRead": "All notifications marked as read",
+  "@allNotificationsMarkedAsRead": {
+    "description": "Text from Text in notifications_screen.dart"
+  },
+  "clearAllNotifications": "Clear All Notifications",
+  "@clearAllNotifications": {
+    "description": "Text from Text in notifications_screen.dart"
+  },
+  "areYouSureYouWant2": "Are you sure you want to clear all notifications?",
+  "@areYouSureYouWant2": {
+    "description": "Text from Text in notifications_screen.dart"
+  },
+  "allNotificationsCleared": "All notifications cleared",
+  "@allNotificationsCleared": {
+    "description": "Text from Text in notifications_screen.dart"
+  },
+  "failedToClearNotifications": "Failed to clear notifications",
+  "@failedToClearNotifications": {
+    "description": "Text from Text in notifications_screen.dart"
+  },
+  "clearAll": "Clear All",
+  "@clearAll": {
+    "description": "Text from Text in notifications_screen.dart"
+  },
+  "pleaseSignInToView": "Please sign in to view notifications",
+  "@pleaseSignInToView": {
+    "description": "Text from Text in notifications_screen.dart"
+  },
+  "unread": "Unread",
+  "@unread": {
+    "description": "Text from Text in notifications_screen.dart"
+  },
+  "valueNew": "{value} new",
+  "@valueNew": {
+    "description": "Text from Text in notifications_screen.dart"
+  },
+  "markAllAsRead": "Mark all as read",
+  "@markAllAsRead": {
+    "description": "Text from Text in notifications_screen.dart"
+  },
+  "clearAll2": "Clear all",
+  "@clearAll2": {
+    "description": "Text from Text in notifications_screen.dart"
+  },
+  "noNotifications": "No notifications",
+  "@noNotifications": {
+    "description": "Text from Text in notifications_screen.dart"
+  },
+  "youReAllCaughtUp": "You're all caught up!",
+  "@youReAllCaughtUp": {
+    "description": "Text from Text in notifications_screen.dart"
+  },
+  "couldNotOpenChatValue": "Could not open chat: {value}",
+  "@couldNotOpenChatValue": {
+    "description": "Text from Text in notifications_screen.dart"
+  },
+  "youReReadyToRun": "You're Ready to Run",
+  "@youReReadyToRun": {
+    "description": "Text from Text in onboarding_screen.dart"
+  },
+  "createAnAccountToStart": "Create an account to start tracking your runs and connect with other runners.",
+  "@createAnAccountToStart": {
+    "description": "Text from Text in onboarding_screen.dart"
+  },
+  "kContinue": "Continue",
+  "@kContinue": {
+    "description": "Text from Text in onboarding_screen.dart"
+  },
+  "skip": "Skip",
+  "@skip": {
+    "description": "Text from Text in onboarding_screen.dart"
+  },
+  "getStarted": "Get Started",
+  "@getStarted": {
+    "description": "Text from Text in onboarding_screen.dart"
+  },
+  "earnings": "Earnings",
+  "@earnings": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "totalEarnings": "Total Earnings",
+  "@totalEarnings": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "thisWeekValue": "This week: {value} €",
+  "@thisWeekValue": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "earningsOverview": "Earnings Overview",
+  "@earningsOverview": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "active": "Active",
+  "@active": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "ridesEarnings": "Rides Earnings",
+  "@ridesEarnings": {
+    "description": "Text from _buildEarningsBreakdownItem in driver_earnings_screen.dart"
+  },
+  "tipsBonuses": "Tips & Bonuses",
+  "@tipsBonuses": {
+    "description": "Text from _buildEarningsBreakdownItem in driver_earnings_screen.dart"
+  },
+  "environmentalImpact": "Environmental Impact",
+  "@environmentalImpact": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "valueKgCoSaved": "{value} kg CO₂ saved",
+  "@valueKgCoSaved": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "stripeConnected": "Stripe Connected",
+  "@stripeConnected": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "setUpPayouts": "Set Up Payouts",
+  "@setUpPayouts": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "receivePaymentsFromRiders": "Receive payments from riders",
+  "@receivePaymentsFromRiders": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "completeVerification": "Complete verification",
+  "@completeVerification": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "connectYourBankAccount": "Connect your bank account",
+  "@connectYourBankAccount": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "availableBalance": "Available Balance",
+  "@availableBalance": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "confirmPayout": "Confirm Payout",
+  "@confirmPayout": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "withdrawValueToYourConnected": "Withdraw {value} € to your connected bank account?",
+  "@withdrawValueToYourConnected": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "withdraw": "Withdraw",
+  "@withdraw": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "payoutOfValueInitiated": "Payout of {value} € initiated!",
+  "@payoutOfValueInitiated": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "payoutFailedPleaseTryAgain": "Payout failed. Please try again.",
+  "@payoutFailedPleaseTryAgain": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "recentTransactions": "Recent Transactions",
+  "@recentTransactions": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "noTransactionsYet": "No transactions yet",
+  "@noTransactionsYet": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "failedToLoadTransactions": "Failed to load transactions",
+  "@failedToLoadTransactions": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "valueValue3": "{value1}{value2} €",
+  "@valueValue3": {
+    "description": "Text from Text in driver_earnings_screen.dart"
+  },
+  "getPaidForYourRides": "Get Paid for Your Rides",
+  "@getPaidForYourRides": {
+    "description": "Text from Text in driver_stripe_onboarding_screen.dart"
+  },
+  "connectYourBankAccountTo": "Connect your bank account to receive payments directly from riders. Powered by Stripe for secure transactions.",
+  "@connectYourBankAccountTo": {
+    "description": "Text from Text in driver_stripe_onboarding_screen.dart"
+  },
+  "instantPayouts": "Instant Payouts",
+  "@instantPayouts": {
+    "description": "Text from _buildBenefitItem.title in driver_stripe_onboarding_screen.dart"
+  },
+  "secureProtected": "Secure & Protected",
+  "@secureProtected": {
+    "description": "Text from _buildBenefitItem.title in driver_stripe_onboarding_screen.dart"
+  },
+  "clearTracking": "Clear Tracking",
+  "@clearTracking": {
+    "description": "Text from _buildBenefitItem.title in driver_stripe_onboarding_screen.dart"
+  },
+  "lowFees": "Low Fees",
+  "@lowFees": {
+    "description": "Text from _buildBenefitItem.title in driver_stripe_onboarding_screen.dart"
+  },
+  "youLlBeRedirectedTo": "You'll be redirected to Stripe to complete setup",
+  "@youLlBeRedirectedTo": {
+    "description": "Text from Text in driver_stripe_onboarding_screen.dart"
+  },
+  "connectStripe": "Connect Stripe",
+  "@connectStripe": {
+    "description": "Text from Text in driver_stripe_onboarding_screen.dart"
+  },
+  "stripeAccountConnectedSuccessfully": "Stripe account connected successfully!",
+  "@stripeAccountConnectedSuccessfully": {
+    "description": "Text from Text in driver_stripe_onboarding_screen.dart"
+  },
+  "errorLoadingPageValue": "Error loading page: {value}",
+  "@errorLoadingPageValue": {
+    "description": "Text from Text in driver_stripe_onboarding_screen.dart"
+  },
+  "pleaseSignInToView2": "Please sign in to view payment history",
+  "@pleaseSignInToView2": {
+    "description": "Text from Text in payment_history_screen.dart"
+  },
+  "paymentHistory": "Payment History",
+  "@paymentHistory": {
+    "description": "Text from Text in payment_history_screen.dart"
+  },
+  "yourTransactions": "Your Transactions",
+  "@yourTransactions": {
+    "description": "Text from Text in payment_history_screen.dart"
+  },
+  "noPaymentsFound": "No payments found",
+  "@noPaymentsFound": {
+    "description": "Text from Text in payment_history_screen.dart"
+  },
+  "yourPaymentHistoryWillAppear": "Your payment history will appear here",
+  "@yourPaymentHistoryWillAppear": {
+    "description": "Text from Text in payment_history_screen.dart"
+  },
+  "ridePayment": "Ride Payment",
+  "@ridePayment": {
+    "description": "Text from Text in payment_history_screen.dart"
+  },
+  "unknownDate": "Unknown date",
+  "@unknownDate": {
+    "description": "Text from Text in payment_history_screen.dart"
+  },
+  "valueValue4": "{value1} {value2}",
+  "@valueValue4": {
+    "description": "Text from Text in payment_history_screen.dart"
+  },
+  "paymentDetails": "Payment Details",
+  "@paymentDetails": {
+    "description": "Text from Text in payment_history_screen.dart"
+  },
+  "amount": "Amount",
+  "@amount": {
+    "description": "Text from _buildDetailRow in payment_history_screen.dart"
+  },
+  "status": "Status",
+  "@status": {
+    "description": "Text from _buildDetailRow in payment_history_screen.dart"
+  },
+  "seats2": "Seats",
+  "@seats2": {
+    "description": "Text from _buildDetailRow in payment_history_screen.dart"
+  },
+  "platformFee": "Platform Fee",
+  "@platformFee": {
+    "description": "Text from _buildDetailRow in payment_history_screen.dart"
+  },
+  "card": "Card",
+  "@card": {
+    "description": "Text from _buildDetailRow in payment_history_screen.dart"
+  },
+  "value7": "•••• {value}",
+  "@value7": {
+    "description": "Text from _buildDetailRow in payment_history_screen.dart"
+  },
+  "date": "Date",
+  "@date": {
+    "description": "Text from _buildDetailRow in payment_history_screen.dart"
+  },
+  "transactionId": "Transaction ID",
+  "@transactionId": {
+    "description": "Text from _buildDetailRow in payment_history_screen.dart"
+  },
+  "requestRefund": "Request Refund",
+  "@requestRefund": {
+    "description": "Text from Text in payment_history_screen.dart"
+  },
+  "errorLoadingAchievements": "Error loading achievements",
+  "@errorLoadingAchievements": {
+    "description": "Text from Text in achievements_screen.dart"
+  },
+  "levelValueValue": "Level {value1} - {value2}",
+  "@levelValueValue": {
+    "description": "Text from Text in achievements_screen.dart"
+  },
+  "valueXp2": "{value} XP",
+  "@valueXp2": {
+    "description": "Text from Text in achievements_screen.dart"
+  },
+  "valueXpToLevelValue": "{value1} XP to Level {value2}",
+  "@valueXpToLevelValue": {
+    "description": "Text from Text in achievements_screen.dart"
+  },
+  "text4": "🏆",
+  "@text4": {
+    "description": "Text from _buildStatItem in achievements_screen.dart"
+  },
+  "badges": "Badges",
+  "@badges": {
+    "description": "Text from _buildStatItem in achievements_screen.dart"
+  },
+  "text5": "🎯",
+  "@text5": {
+    "description": "Text from _buildStatItem in achievements_screen.dart"
+  },
+  "challenges": "Challenges",
+  "@challenges": {
+    "description": "Text from _buildStatItem in achievements_screen.dart"
+  },
+  "text6": "🚗",
+  "@text6": {
+    "description": "Text from _buildStatItem in achievements_screen.dart"
+  },
+  "text7": "🌍",
+  "@text7": {
+    "description": "Text from _buildStatItem in achievements_screen.dart"
+  },
+  "kgCo": "kg CO₂",
+  "@kgCo": {
+    "description": "Text from _buildStatItem in achievements_screen.dart"
+  },
+  "unlocked": "✓ Unlocked",
+  "@unlocked": {
+    "description": "Text from Text in achievements_screen.dart"
+  },
+  "locked": "🔒 Locked",
+  "@locked": {
+    "description": "Text from Text in achievements_screen.dart"
+  },
+  "valueComplete": "{value}% Complete",
+  "@valueComplete": {
+    "description": "Text from Text in achievements_screen.dart"
+  },
+  "text8": "🥈",
+  "@text8": {
+    "description": "Text from _buildTopRanker in achievements_screen.dart"
+  },
+  "mikeC": "Mike C.",
+  "@mikeC": {
+    "description": "Text from _buildTopRanker in achievements_screen.dart"
+  },
+  "text112k": "11.2K",
+  "@text112k": {
+    "description": "Text from _buildTopRanker in achievements_screen.dart"
+  },
+  "text10": "🥇",
+  "@text10": {
+    "description": "Text from _buildTopRanker in achievements_screen.dart"
+  },
+  "sarahJ": "Sarah J.",
+  "@sarahJ": {
+    "description": "Text from _buildTopRanker in achievements_screen.dart"
+  },
+  "text124k": "12.4K",
+  "@text124k": {
+    "description": "Text from _buildTopRanker in achievements_screen.dart"
+  },
+  "text11": "🥉",
+  "@text11": {
+    "description": "Text from _buildTopRanker in achievements_screen.dart"
+  },
+  "emilyD": "Emily D.",
+  "@emilyD": {
+    "description": "Text from _buildTopRanker in achievements_screen.dart"
+  },
+  "text98k": "9.8K",
+  "@text98k": {
+    "description": "Text from _buildTopRanker in achievements_screen.dart"
+  },
+  "levelValue": "Level {value}",
+  "@levelValue": {
+    "description": "Text from Text in achievements_screen.dart"
+  },
+  "verifiedDriver": "Verified Driver",
+  "@verifiedDriver": {
+    "description": "Text from Text in driver_profile_screen.dart"
+  },
+  "rating": "Rating",
+  "@rating": {
+    "description": "Text from _buildQuickStat in driver_profile_screen.dart"
+  },
+  "trips": "Trips",
+  "@trips": {
+    "description": "Text from _buildQuickStat in driver_profile_screen.dart"
+  },
+  "member": "Member",
+  "@member": {
+    "description": "Text from _buildQuickStat in driver_profile_screen.dart"
+  },
+  "text12": "...",
+  "@text12": {
+    "description": "Text from _buildQuickStat in driver_profile_screen.dart"
+  },
+  "text00": "0.0",
+  "@text00": {
+    "description": "Text from _buildQuickStat in driver_profile_screen.dart"
+  },
+  "quickActions": "Quick Actions",
+  "@quickActions": {
+    "description": "Text from Text in driver_profile_screen.dart"
+  },
+  "performanceOverview": "Performance Overview",
+  "@performanceOverview": {
+    "description": "Text from Text in driver_profile_screen.dart"
+  },
+  "totalTrips": "Total Trips",
+  "@totalTrips": {
+    "description": "Text from _buildStatCard in driver_profile_screen.dart"
+  },
+  "valueThisMonth": "+{value} this month",
+  "@valueThisMonth": {
+    "description": "Text from _buildStatCard in driver_profile_screen.dart"
+  },
+  "valueThisMonth2": "+{value} € this month",
+  "@valueThisMonth2": {
+    "description": "Text from _buildStatCard in driver_profile_screen.dart"
+  },
+  "coSaved": "CO₂ Saved",
+  "@coSaved": {
+    "description": "Text from _buildStatCard in driver_profile_screen.dart"
+  },
+  "valueKg": "{value} kg",
+  "@valueKg": {
+    "description": "Text from _buildStatCard in driver_profile_screen.dart"
+  },
+  "sinceJoining": "Since joining",
+  "@sinceJoining": {
+    "description": "Text from _buildStatCard in driver_profile_screen.dart"
+  },
+  "avgRating": "Avg Rating",
+  "@avgRating": {
+    "description": "Text from _buildStatCard in driver_profile_screen.dart"
+  },
+  "last100Trips": "Last 100 trips",
+  "@last100Trips": {
+    "description": "Text from _buildStatCard in driver_profile_screen.dart"
+  },
+  "noData": "No data",
+  "@noData": {
+    "description": "Text from _buildStatCard in driver_profile_screen.dart"
+  },
+  "text0": "0 €",
+  "@text0": {
+    "description": "Text from _buildStatCard in driver_profile_screen.dart"
+  },
+  "text0Kg": "0 kg",
+  "@text0Kg": {
+    "description": "Text from _buildStatCard in driver_profile_screen.dart"
+  },
+  "weeklyActivity": "Weekly Activity",
+  "@weeklyActivity": {
+    "description": "Text from Text in driver_profile_screen.dart"
+  },
+  "ratingBreakdown": "Rating Breakdown",
+  "@ratingBreakdown": {
+    "description": "Text from Text in driver_profile_screen.dart"
+  },
+  "tripsThisWeek": "Trips this week",
+  "@tripsThisWeek": {
+    "description": "Text from Text in driver_profile_screen.dart"
+  },
+  "valueTrips": "{value} trips",
+  "@valueTrips": {
+    "description": "Text from Text in driver_profile_screen.dart"
+  },
+  "driverSettings": "Driver Settings",
+  "@driverSettings": {
+    "description": "Text from Text in driver_settings_screen.dart"
+  },
+  "ridePreferences": "Ride Preferences",
+  "@ridePreferences": {
+    "description": "Text from _buildSectionHeader in driver_settings_screen.dart"
+  },
+  "autoAcceptRequests": "Auto-Accept Requests",
+  "@autoAcceptRequests": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "automaticallyAcceptRideRequestsThat": "Automatically accept ride requests that match your criteria",
+  "@automaticallyAcceptRideRequestsThat": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "allowInstantBooking": "Allow Instant Booking",
+  "@allowInstantBooking": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "letPassengersBookWithoutWaiting": "Let passengers book without waiting for approval",
+  "@letPassengersBookWithoutWaiting": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "maximumPickupDistance": "Maximum Pickup Distance",
+  "@maximumPickupDistance": {
+    "description": "Text from _buildSliderTile in driver_settings_screen.dart"
+  },
+  "onlyReceiveRequestsWithinThis": "Only receive requests within this distance",
+  "@onlyReceiveRequestsWithinThis": {
+    "description": "Text from _buildSliderTile in driver_settings_screen.dart"
+  },
+  "paymentSettings": "Payment Settings",
+  "@paymentSettings": {
+    "description": "Text from _buildSectionHeader in driver_settings_screen.dart"
+  },
+  "acceptCashPayments": "Accept Cash Payments",
+  "@acceptCashPayments": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "allowPassengersToPayWith": "Allow passengers to pay with cash",
+  "@allowPassengersToPayWith": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "acceptCardPayments": "Accept Card Payments",
+  "@acceptCardPayments": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "allowPassengersToPayWith2": "Allow passengers to pay with card in-app",
+  "@allowPassengersToPayWith2": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "payoutMethod": "Payout Method",
+  "@payoutMethod": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "bankAccountEndingIn4532": "Bank Account ending in 4532",
+  "@bankAccountEndingIn4532": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "taxDocuments": "Tax Documents",
+  "@taxDocuments": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "viewAndDownloadTaxForms": "View and download tax forms",
+  "@viewAndDownloadTaxForms": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "navigationMap": "Navigation & Map",
+  "@navigationMap": {
+    "description": "Text from _buildSectionHeader in driver_settings_screen.dart"
+  },
+  "showOnDriverMap": "Show on Driver Map",
+  "@showOnDriverMap": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "allowPassengersToSeeYour": "Allow passengers to see your location",
+  "@allowPassengersToSeeYour": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "preferredNavigationApp": "Preferred Navigation App",
+  "@preferredNavigationApp": {
+    "description": "Text from _buildDropdownTile in driver_settings_screen.dart"
+  },
+  "soundEffects": "Sound Effects",
+  "@soundEffects": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "playSoundsForNewRequests": "Play sounds for new requests and messages",
+  "@playSoundsForNewRequests": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "vibration": "Vibration",
+  "@vibration": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "vibrateForImportantAlerts": "Vibrate for important alerts",
+  "@vibrateForImportantAlerts": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "notificationPreferences": "Notification Preferences",
+  "@notificationPreferences": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "customizeWhatNotificationsYouReceive": "Customize what notifications you receive",
+  "@customizeWhatNotificationsYouReceive": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "nightMode": "Night Mode",
+  "@nightMode": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "reduceEyeStrainInLow": "Reduce eye strain in low light",
+  "@reduceEyeStrainInLow": {
+    "description": "Text from _buildSwitchTile in driver_settings_screen.dart"
+  },
+  "accountSecurity": "Account & Security",
+  "@accountSecurity": {
+    "description": "Text from _buildSectionHeader in driver_settings_screen.dart"
+  },
+  "driverDocuments": "Driver Documents",
+  "@driverDocuments": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "licenseInsuranceAndRegistration": "License, insurance, and registration",
+  "@licenseInsuranceAndRegistration": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "backgroundCheck": "Background Check",
+  "@backgroundCheck": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "viewYourVerificationStatus": "View your verification status",
+  "@viewYourVerificationStatus": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "changePassword": "Change Password",
+  "@changePassword": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "updateYourAccountPassword": "Update your account password",
+  "@updateYourAccountPassword": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "twoFactorAuthentication": "Two-Factor Authentication",
+  "@twoFactorAuthentication": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "addExtraSecurityToYour": "Add extra security to your account",
+  "@addExtraSecurityToYour": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "support": "Support",
+  "@support": {
+    "description": "Text from _buildSectionHeader in driver_settings_screen.dart"
+  },
+  "driverHelpCenter": "Driver Help Center",
+  "@driverHelpCenter": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "faqsAndTroubleshootingGuides": "FAQs and troubleshooting guides",
+  "@faqsAndTroubleshootingGuides": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "contactSupport": "Contact Support",
+  "@contactSupport": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "chatWithOurSupportTeam": "Chat with our support team",
+  "@chatWithOurSupportTeam": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "reportASafetyIssue": "Report a Safety Issue",
+  "@reportASafetyIssue": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "reportIncidentsOrConcerns": "Report incidents or concerns",
+  "@reportIncidentsOrConcerns": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "accountActions": "Account Actions",
+  "@accountActions": {
+    "description": "Text from _buildSectionHeader in driver_settings_screen.dart"
+  },
+  "switchToRiderMode": "Switch to Rider Mode",
+  "@switchToRiderMode": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "useTheAppAsA": "Use the app as a passenger",
+  "@useTheAppAsA": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "signOut": "Sign Out",
+  "@signOut": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "logOutOfYourAccount": "Log out of your account",
+  "@logOutOfYourAccount": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "pauseDriverAccount": "Pause Driver Account",
+  "@pauseDriverAccount": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "temporarilyStopReceivingRequests": "Temporarily stop receiving requests",
+  "@temporarilyStopReceivingRequests": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "deleteDriverAccount": "Delete Driver Account",
+  "@deleteDriverAccount": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "permanentlyRemoveYourDriverProfile": "Permanently remove your driver profile",
+  "@permanentlyRemoveYourDriverProfile": {
+    "description": "Text from _buildNavigationTile in driver_settings_screen.dart"
+  },
+  "sportconnectDriver": "SportConnect Driver",
+  "@sportconnectDriver": {
+    "description": "Text from Text in driver_settings_screen.dart"
+  },
+  "version210": "Version 2.1.0",
+  "@version210": {
+    "description": "Text from Text in driver_settings_screen.dart"
+  },
+  "areYouSureYouWant3": "Are you sure you want to sign out of your account?",
+  "@areYouSureYouWant3": {
+    "description": "Text from Text in driver_settings_screen.dart"
+  },
+  "thisActionCannotBeUndone": "This action cannot be undone. All your driver data, earnings history, and ratings will be permanently deleted.",
+  "@thisActionCannotBeUndone": {
+    "description": "Text from Text in driver_settings_screen.dart"
+  },
+  "pleaseSignInToManage": "Please sign in to manage vehicles",
+  "@pleaseSignInToManage": {
+    "description": "Text from Text in driver_vehicle_screen.dart"
+  },
+  "myVehicles": "My Vehicles",
+  "@myVehicles": {
+    "description": "Text from Text in driver_vehicle_screen.dart"
+  },
+  "noVehiclesAdded": "No Vehicles Added",
+  "@noVehiclesAdded": {
+    "description": "Text from Text in driver_vehicle_screen.dart"
+  },
+  "addYourFirstVehicleTo": "Add your first vehicle to start\noffering rides",
+  "@addYourFirstVehicleTo": {
+    "description": "Text from Text in driver_vehicle_screen.dart"
+  },
+  "addVehicle": "Add Vehicle",
+  "@addVehicle": {
+    "description": "Text from Text in driver_vehicle_screen.dart"
+  },
+  "vehicleSetAsActive": "Vehicle set as active",
+  "@vehicleSetAsActive": {
+    "description": "Text from Text in driver_vehicle_screen.dart"
+  },
+  "deleteVehicle": "Delete Vehicle",
+  "@deleteVehicle": {
+    "description": "Text from Text in driver_vehicle_screen.dart"
+  },
+  "areYouSureYouWant4": "Are you sure you want to delete {value}?",
+  "@areYouSureYouWant4": {
+    "description": "Text from Text in driver_vehicle_screen.dart"
+  },
+  "vehicleDeleted": "Vehicle deleted",
+  "@vehicleDeleted": {
+    "description": "Text from Text in driver_vehicle_screen.dart"
+  },
+  "setActive": "Set Active",
+  "@setActive": {
+    "description": "Text from Text in driver_vehicle_screen.dart"
+  },
+  "editVehicle": "Edit Vehicle",
+  "@editVehicle": {
+    "description": "Text from Text in driver_vehicle_screen.dart"
+  },
+  "addPhoto": "Add Photo",
+  "@addPhoto": {
+    "description": "Text from Text in driver_vehicle_screen.dart"
+  },
+  "make": "Make",
+  "@make": {
+    "description": "Text from _buildTextField.label in driver_vehicle_screen.dart"
+  },
+  "model": "Model",
+  "@model": {
+    "description": "Text from _buildTextField.label in driver_vehicle_screen.dart"
+  },
+  "year": "Year",
+  "@year": {
+    "description": "Text from _buildTextField.label in driver_vehicle_screen.dart"
+  },
+  "color": "Color",
+  "@color": {
+    "description": "Text from _buildTextField.label in driver_vehicle_screen.dart"
+  },
+  "licensePlate": "License Plate",
+  "@licensePlate": {
+    "description": "Text from _buildTextField.label in driver_vehicle_screen.dart"
+  },
+  "passengerCapacity": "Passenger Capacity",
+  "@passengerCapacity": {
+    "description": "Text from Text in driver_vehicle_screen.dart"
+  },
+  "saveChanges": "Save Changes",
+  "@saveChanges": {
+    "description": "Text from Text in driver_vehicle_screen.dart"
+  },
+  "capacity": "Capacity",
+  "@capacity": {
+    "description": "Text from _buildDetailRow in driver_vehicle_screen.dart"
+  },
+  "valuePassengers": "{value} passengers",
+  "@valuePassengers": {
+    "description": "Text from _buildDetailRow in driver_vehicle_screen.dart"
+  },
+  "totalRides": "Total Rides",
+  "@totalRides": {
+    "description": "Text from _buildDetailRow in driver_vehicle_screen.dart"
+  },
+  "value8": "{value} ⭐",
+  "@value8": {
+    "description": "Text from _buildDetailRow in driver_vehicle_screen.dart"
+  },
+  "features": "Features",
+  "@features": {
+    "description": "Text from Text in driver_vehicle_screen.dart"
+  },
+  "changePhoto": "Change Photo",
+  "@changePhoto": {
+    "description": "Text from Text in edit_profile_screen.dart"
+  },
+  "personalInformation": "Personal Information",
+  "@personalInformation": {
+    "description": "Text from _buildSectionLabel in edit_profile_screen.dart"
+  },
+  "aboutYou": "About You",
+  "@aboutYou": {
+    "description": "Text from _buildSectionLabel in edit_profile_screen.dart"
+  },
+  "demographics": "Demographics",
+  "@demographics": {
+    "description": "Text from _buildSectionLabel in edit_profile_screen.dart"
+  },
+  "gender": "Gender",
+  "@gender": {
+    "description": "Text from _buildActionTile.label in edit_profile_screen.dart"
+  },
+  "birthday": "Birthday",
+  "@birthday": {
+    "description": "Text from _buildActionTile.label in edit_profile_screen.dart"
+  },
+  "sportsInterests": "Sports Interests",
+  "@sportsInterests": {
+    "description": "Text from _buildSectionLabel in edit_profile_screen.dart"
+  },
+  "add": "+ Add",
+  "@add": {
+    "description": "Text from Text in edit_profile_screen.dart"
+  },
+  "noInterestsSelected": "No interests selected",
+  "@noInterestsSelected": {
+    "description": "Text from Text in edit_profile_screen.dart"
+  },
+  "profileUpdated": "Profile updated",
+  "@profileUpdated": {
+    "description": "Text from Text in edit_profile_screen.dart"
+  },
+  "changeProfilePhoto": "Change Profile Photo",
+  "@changeProfilePhoto": {
+    "description": "Text from Text in edit_profile_screen.dart"
+  },
+  "takePhoto": "Take Photo",
+  "@takePhoto": {
+    "description": "Text from Text in edit_profile_screen.dart"
+  },
+  "chooseFromGallery": "Choose from Gallery",
+  "@chooseFromGallery": {
+    "description": "Text from Text in edit_profile_screen.dart"
+  },
+  "removePhoto": "Remove Photo",
+  "@removePhoto": {
+    "description": "Text from Text in edit_profile_screen.dart"
+  },
+  "selectGender": "Select Gender",
+  "@selectGender": {
+    "description": "Text from Text in edit_profile_screen.dart"
+  },
+  "selectSportsInterests": "Select Sports Interests",
+  "@selectSportsInterests": {
+    "description": "Text from Text in edit_profile_screen.dart"
+  },
+  "discardChanges": "Discard Changes?",
+  "@discardChanges": {
+    "description": "Text from Text in edit_profile_screen.dart"
+  },
+  "youHaveUnsavedChanges": "You have unsaved changes.",
+  "@youHaveUnsavedChanges": {
+    "description": "Text from Text in edit_profile_screen.dart"
+  },
+  "discard": "Discard",
+  "@discard": {
+    "description": "Text from Text in edit_profile_screen.dart"
+  },
+  "failedToLoadProfile": "Failed to load profile",
+  "@failedToLoadProfile": {
+    "description": "Text from Text in profile_screen.dart"
+  },
+  "pleaseCheckYourConnectionAnd": "Please check your connection and try again",
+  "@pleaseCheckYourConnectionAnd": {
+    "description": "Text from Text in profile_screen.dart"
+  },
+  "myProfile": "My Profile",
+  "@myProfile": {
+    "description": "Text from Text in profile_screen.dart"
+  },
+  "memberSinceValue": "Member since {value}",
+  "@memberSinceValue": {
+    "description": "Text from Text in profile_screen.dart"
+  },
+  "newMember": "New member",
+  "@newMember": {
+    "description": "Text from Text in profile_screen.dart"
+  },
+  "verifiedInfo": "Verified Info",
+  "@verifiedInfo": {
+    "description": "Text from Text in profile_screen.dart"
+  },
+  "verified": "Verified",
+  "@verified": {
+    "description": "Text from Text in profile_screen.dart"
+  },
+  "notVerified": "Not verified",
+  "@notVerified": {
+    "description": "Text from Text in profile_screen.dart"
+  },
+  "rideStatistics": "Ride Statistics",
+  "@rideStatistics": {
+    "description": "Text from Text in profile_screen.dart"
+  },
+  "saved": "Saved",
+  "@saved": {
+    "description": "Text from _buildStatCard.label in profile_screen.dart"
+  },
+  "earned2": "Earned",
+  "@earned2": {
+    "description": "Text from _buildStatCard.label in profile_screen.dart"
+  },
+  "profileNotFound": "Profile Not Found",
+  "@profileNotFound": {
+    "description": "Text from Text in profile_screen.dart"
+  },
+  "yourProfileDataCouldNot": "Your profile data could not be loaded.\nThis may happen if you're a new user.",
+  "@yourProfileDataCouldNot": {
+    "description": "Text from Text in profile_screen.dart"
+  },
+  "signOutTryAgain": "Sign out & try again",
+  "@signOutTryAgain": {
+    "description": "Text from Text in profile_screen.dart"
+  },
+  "findPeople": "Find People",
+  "@findPeople": {
+    "description": "Text from Text in profile_search_screen.dart"
+  },
+  "searchByName": "Search by name",
+  "@searchByName": {
+    "description": "Text from Text in profile_search_screen.dart"
+  },
+  "searchUsers": "Search users...",
+  "@searchUsers": {
+    "description": "Text from InputDecoration.hintText in profile_search_screen.dart"
+  },
+  "findFellowRiders": "Find Fellow Riders",
+  "@findFellowRiders": {
+    "description": "Text from Text in profile_search_screen.dart"
+  },
+  "searchForUsersByTheir": "Search for users by their name\nto connect and share rides",
+  "@searchForUsersByTheir": {
+    "description": "Text from Text in profile_search_screen.dart"
+  },
+  "popularSearches": "Popular Searches",
+  "@popularSearches": {
+    "description": "Text from Text in profile_search_screen.dart"
+  },
+  "searching": "Searching...",
+  "@searching": {
+    "description": "Text from Text in profile_search_screen.dart"
+  },
+  "noResultsFound2": "No Results Found",
+  "@noResultsFound2": {
+    "description": "Text from Text in profile_search_screen.dart"
+  },
+  "noUsersFoundMatchingValue": "No users found matching \"{value}\"",
+  "@noUsersFoundMatchingValue": {
+    "description": "Text from Text in profile_search_screen.dart"
+  },
+  "tryADifferentSearchTerm": "Try a different search term",
+  "@tryADifferentSearchTerm": {
+    "description": "Text from Text in profile_search_screen.dart"
+  },
+  "somethingWentWrong": "Something went wrong",
+  "@somethingWentWrong": {
+    "description": "Text from Text in profile_search_screen.dart"
+  },
+  "vehicles": "Vehicles",
+  "@vehicles": {
+    "description": "Text from _buildNavigationTile.title in settings_screen.dart"
+  },
+  "legal": "Legal",
+  "@legal": {
+    "description": "Text from _buildSectionHeader in settings_screen.dart"
+  },
+  "sportconnectV100": "SportConnect v1.0.0",
+  "@sportconnectV100": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "noBlockedUsers": "No Blocked Users",
+  "@noBlockedUsers": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "usersYouBlockWillAppear": "Users you block will appear here",
+  "@usersYouBlockWillAppear": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "comingSoon": "Coming Soon",
+  "@comingSoon": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "paymentIntegrationWillBeAvailable": "Payment integration will be available soon",
+  "@paymentIntegrationWillBeAvailable": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "currentPassword": "Current Password",
+  "@currentPassword": {
+    "description": "Text from InputDecoration.labelText in settings_screen.dart"
+  },
+  "newPassword": "New Password",
+  "@newPassword": {
+    "description": "Text from InputDecoration.labelText in settings_screen.dart"
+  },
+  "confirmNewPassword": "Confirm New Password",
+  "@confirmNewPassword": {
+    "description": "Text from InputDecoration.labelText in settings_screen.dart"
+  },
+  "passwordUpdatedSuccessfully": "Password updated successfully",
+  "@passwordUpdatedSuccessfully": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "update": "Update",
+  "@update": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "gettingStarted": "Getting Started",
+  "@gettingStarted": {
+    "description": "Text from _buildHelpSection in settings_screen.dart"
+  },
+  "ridesCarpooling": "Rides & Carpooling",
+  "@ridesCarpooling": {
+    "description": "Text from _buildHelpSection in settings_screen.dart"
+  },
+  "safetyTrust": "Safety & Trust",
+  "@safetyTrust": {
+    "description": "Text from _buildHelpSection in settings_screen.dart"
+  },
+  "accountSettings": "Account & Settings",
+  "@accountSettings": {
+    "description": "Text from _buildHelpSection in settings_screen.dart"
+  },
+  "openingValue": "Opening: {value}",
+  "@openingValue": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "weReHereToHelp": "We're here to help! Choose how you'd like to reach us.",
+  "@weReHereToHelp": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "emailSupport": "Email Support",
+  "@emailSupport": {
+    "description": "Text from _buildContactOption.title in settings_screen.dart"
+  },
+  "couldNotOpenEmailApp": "Could not open email app",
+  "@couldNotOpenEmailApp": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "liveChat": "Live Chat",
+  "@liveChat": {
+    "description": "Text from _buildContactOption.title in settings_screen.dart"
+  },
+  "liveChatWillBeAvailable": "Live chat will be available soon!",
+  "@liveChatWillBeAvailable": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "phoneSupport": "Phone Support",
+  "@phoneSupport": {
+    "description": "Text from _buildContactOption.title in settings_screen.dart"
+  },
+  "category": "Category",
+  "@category": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "describeTheProblem": "Describe the problem",
+  "@describeTheProblem": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "pleaseDescribeWhatHappened": "Please describe what happened...",
+  "@pleaseDescribeWhatHappened": {
+    "description": "Text from InputDecoration.hintText in settings_screen.dart"
+  },
+  "thankYouYourReportHas": "Thank you! Your report has been submitted.",
+  "@thankYouYourReportHas": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "submit": "Submit",
+  "@submit": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "areYouSureYouWant5": "Are you sure you want to log out of SportConnect?",
+  "@areYouSureYouWant5": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "thisActionCannotBeUndone2": "This action cannot be undone. All your data, including:",
+  "@thisActionCannotBeUndone2": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "rideHistoryAndBookings": "Ride history and bookings",
+  "@rideHistoryAndBookings": {
+    "description": "Text from _buildDeleteWarningItem in settings_screen.dart"
+  },
+  "profileAndAchievements": "Profile and achievements",
+  "@profileAndAchievements": {
+    "description": "Text from _buildDeleteWarningItem in settings_screen.dart"
+  },
+  "messagesAndConnections": "Messages and connections",
+  "@messagesAndConnections": {
+    "description": "Text from _buildDeleteWarningItem in settings_screen.dart"
+  },
+  "paymentInformation": "Payment information",
+  "@paymentInformation": {
+    "description": "Text from _buildDeleteWarningItem in settings_screen.dart"
+  },
+  "typeDeleteToConfirm": "Type \"DELETE\" to confirm:",
+  "@typeDeleteToConfirm": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "failedToDeleteAccountValue": "Failed to delete account: {value}",
+  "@failedToDeleteAccountValue": {
+    "description": "Text from Text in settings_screen.dart"
+  },
+  "addRide": "Add Ride",
+  "@addRide": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "userNotFound": "User not found",
+  "@userNotFound": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "errorLoadingVehicles": "Error loading vehicles",
+  "@errorLoadingVehicles": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "myGarage": "My Garage",
+  "@myGarage": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "valueVehicles": "{value} Vehicles",
+  "@valueVehicles": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "setDefault": "Set Default",
+  "@setDefault": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "pending": "Pending",
+  "@pending": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "plate": "Plate",
+  "@plate": {
+    "description": "Text from _buildMiniInfo in vehicles_screen.dart"
+  },
+  "garageIsEmpty": "Garage is Empty",
+  "@garageIsEmpty": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "addAVehicleToStart": "Add a vehicle to start your journey. Connect with others and share rides.",
+  "@addAVehicleToStart": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "quickTip": "Quick Tip",
+  "@quickTip": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "swipeRightOnAVehicle": "Swipe right on a vehicle card to set it as default. Swipe left to remove it.",
+  "@swipeRightOnAVehicle": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "deleteRide": "Delete Ride?",
+  "@deleteRide": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "areYouSureYouWant6": "Are you sure you want to remove {value}? This cannot be undone.",
+  "@areYouSureYouWant6": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "keepIt": "Keep It",
+  "@keepIt": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "vehicleRemovedFromGarage": "Vehicle removed from garage",
+  "@vehicleRemovedFromGarage": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "editRide": "Edit Ride",
+  "@editRide": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "newRide": "New Ride",
+  "@newRide": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "seatsCapacity": "Seats Capacity",
+  "@seatsCapacity": {
+    "description": "Text from Text in vehicles_screen.dart"
+  },
+  "valueSReviews": "{value}'s Reviews",
+  "@valueSReviews": {
+    "description": "Text from Text in reviews_list_screen.dart"
+  },
+  "noReviewsYet": "No reviews yet",
+  "@noReviewsYet": {
+    "description": "Text from Text in reviews_list_screen.dart"
+  },
+  "failedToLoadReviews": "Failed to load reviews",
+  "@failedToLoadReviews": {
+    "description": "Error text when reviews fail to load"
+  },
+  "valueReviews": "{value} reviews",
+  "@valueReviews": {
+    "description": "Text from Text in reviews_list_screen.dart"
+  },
+  "rider": "Rider",
+  "@rider": {
+    "description": "Text from Text in reviews_list_screen.dart"
+  },
+  "response": "Response",
+  "@response": {
+    "description": "Text from Text in reviews_list_screen.dart"
+  },
+  "leaveAReview": "Leave a Review",
+  "@leaveAReview": {
+    "description": "Text from Text in submit_review_screen.dart"
+  },
+  "howWasYourExperience": "How was your experience?",
+  "@howWasYourExperience": {
+    "description": "Text from Text in submit_review_screen.dart"
+  },
+  "whatStoodOut": "What stood out?",
+  "@whatStoodOut": {
+    "description": "Text from Text in submit_review_screen.dart"
+  },
+  "additionalCommentsOptional": "Additional comments (optional)",
+  "@additionalCommentsOptional": {
+    "description": "Text from Text in submit_review_screen.dart"
+  },
+  "skipForNow": "Skip for now",
+  "@skipForNow": {
+    "description": "Text from Text in submit_review_screen.dart"
+  },
+  "yourDriver": "Your Driver",
+  "@yourDriver": {
+    "description": "Text from Text in submit_review_screen.dart"
+  },
+  "yourPassenger": "Your Passenger",
+  "@yourPassenger": {
+    "description": "Text from Text in submit_review_screen.dart"
+  },
+  "shareYourExperience": "Share your experience...",
+  "@shareYourExperience": {
+    "description": "Text from InputDecoration.hintText in submit_review_screen.dart"
+  },
+  "thankYouForYourReview": "Thank you for your review!",
+  "@thankYouForYourReview": {
+    "description": "Text from Text in submit_review_screen.dart"
+  },
+  "valueValue5": "{value1}{value2}",
+  "@valueValue5": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "errorLoadingRide": "Error loading ride",
+  "@errorLoadingRide": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "goBack": "Go Back",
+  "@goBack": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "activeRide": "Active Ride",
+  "@activeRide": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "noActiveRide": "No active ride",
+  "@noActiveRide": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "startARideToSee": "Start a ride to see navigation",
+  "@startARideToSee": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "headingToPickup": "Heading to pickup",
+  "@headingToPickup": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "headingToDestination": "Heading to destination",
+  "@headingToDestination": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "etaValueMinValueKm": "ETA: {value1} min • {value2} km remaining",
+  "@etaValueMinValueKm": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "arrivingAtValue": "Arriving at {value}",
+  "@arrivingAtValue": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "distance": "Distance",
+  "@distance": {
+    "description": "Text from _buildTripStat in active_ride_screen.dart"
+  },
+  "duration": "Duration",
+  "@duration": {
+    "description": "Text from _buildTripStat in active_ride_screen.dart"
+  },
+  "fare": "Fare",
+  "@fare": {
+    "description": "Text from _buildTripStat in active_ride_screen.dart"
+  },
+  "call": "Call",
+  "@call": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "message": "Message",
+  "@message": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "text5Min": "5 min",
+  "@text5Min": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "valueMore": "+{value} more",
+  "@valueMore": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "valuePassengerValue": "{value1} passenger{value2}",
+  "@valuePassengerValue": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "valueSeatValueBooked": "• {value1} seat{value2} booked",
+  "@valueSeatValueBooked": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "valueSeatValueBooked2": "{value1} seat{value2} booked",
+  "@valueSeatValueBooked2": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "passengers": "Passengers",
+  "@passengers": {
+    "description": "Text from _buildPassengerStat in active_ride_screen.dart"
+  },
+  "seat2": "€/seat",
+  "@seat2": {
+    "description": "Text from _buildPassengerStat in active_ride_screen.dart"
+  },
+  "min": "min",
+  "@min": {
+    "description": "Text from _buildPassengerStat in active_ride_screen.dart"
+  },
+  "pickup": "Pickup",
+  "@pickup": {
+    "description": "Text from _buildLocationRow in active_ride_screen.dart"
+  },
+  "dropoff": "Dropoff",
+  "@dropoff": {
+    "description": "Text from _buildLocationRow in active_ride_screen.dart"
+  },
+  "valuePassengerValueBookedFor": "{value1} passenger{value2} booked for this ride",
+  "@valuePassengerValueBookedFor": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "cancelRide": "Cancel Ride?",
+  "@cancelRide": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "areYouSureYouWant7": "Are you sure you want to cancel this ride? This may affect your driver rating.",
+  "@areYouSureYouWant7": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "continueRide": "Continue Ride",
+  "@continueRide": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "cancelRide2": "Cancel Ride",
+  "@cancelRide2": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "dashboard": "Dashboard",
+  "@dashboard": {
+    "description": "Text from Text in driver_my_rides_screen.dart"
+  },
+  "manageYourRidesEarnings": "Manage your rides & earnings",
+  "@manageYourRidesEarnings": {
+    "description": "Text from Text in driver_my_rides_screen.dart"
+  },
+  "requests": "Requests",
+  "@requests": {
+    "description": "Text from _buildTabWithBadge in driver_my_rides_screen.dart"
+  },
+  "thisMonth": "This Month",
+  "@thisMonth": {
+    "description": "Text from _buildEarningStat.label in driver_my_rides_screen.dart"
+  },
+  "noPendingRequests2": "No Pending Requests",
+  "@noPendingRequests2": {
+    "description": "Text from _buildEmptyState.title in driver_my_rides_screen.dart"
+  },
+  "newRequest": "NEW REQUEST",
+  "@newRequest": {
+    "description": "Text from Text in driver_my_rides_screen.dart"
+  },
+  "tapToRespond": "Tap to respond",
+  "@tapToRespond": {
+    "description": "Text from Text in driver_my_rides_screen.dart"
+  },
+  "value9": "+€{value}",
+  "@value9": {
+    "description": "Text from Text in driver_my_rides_screen.dart"
+  },
+  "earnings2": "earnings",
+  "@earnings2": {
+    "description": "Text from Text in driver_my_rides_screen.dart"
+  },
+  "valueValue6": "{value1} • {value2}",
+  "@valueValue6": {
+    "description": "Text from Text in driver_my_rides_screen.dart"
+  },
+  "failedToLoadUser": "Failed to load user",
+  "@failedToLoadUser": {
+    "description": "Text from _buildErrorState in driver_my_rides_screen.dart"
+  },
+  "noActiveRides": "No Active Rides",
+  "@noActiveRides": {
+    "description": "Text from _buildEmptyState.title in driver_my_rides_screen.dart"
+  },
+  "rideInProgress": "RIDE IN PROGRESS",
+  "@rideInProgress": {
+    "description": "Text from Text in driver_my_rides_screen.dart"
+  },
+  "valueValuePassengers": "{value1}/{value2} passengers",
+  "@valueValuePassengers": {
+    "description": "Text from Text in driver_my_rides_screen.dart"
+  },
+  "navigate": "Navigate",
+  "@navigate": {
+    "description": "Text from _buildActionChip.label in driver_my_rides_screen.dart"
+  },
+  "complete": "Complete",
+  "@complete": {
+    "description": "Text from _buildActionChip.label in driver_my_rides_screen.dart"
+  },
+  "noScheduledRides": "No Scheduled Rides",
+  "@noScheduledRides": {
+    "description": "Text from _buildEmptyState.title in driver_my_rides_screen.dart"
+  },
+  "valueSeat": "€{value}/seat",
+  "@valueSeat": {
+    "description": "Text from Text in driver_my_rides_screen.dart"
+  },
+  "noCompletedRides": "No Completed Rides",
+  "@noCompletedRides": {
+    "description": "Text from _buildEmptyState.title in driver_my_rides_screen.dart"
+  },
+  "valueValuePassengers2": "{value1} • {value2} passengers",
+  "@valueValuePassengers2": {
+    "description": "Text from Text in driver_my_rides_screen.dart"
+  },
+  "loadingYourRides": "Loading your rides...",
+  "@loadingYourRides": {
+    "description": "Text from Text in driver_my_rides_screen.dart"
+  },
+  "signInRequired": "Sign In Required",
+  "@signInRequired": {
+    "description": "Text from _buildEmptyState.title in driver_my_rides_screen.dart"
+  },
+  "bookingAccepted": "Booking accepted!",
+  "@bookingAccepted": {
+    "description": "Text from Text in driver_my_rides_screen.dart"
+  },
+  "bookingDeclined": "Booking declined",
+  "@bookingDeclined": {
+    "description": "Text from Text in driver_my_rides_screen.dart"
+  },
+  "rideCompletedWellDone": "Ride completed! Well done 🎉",
+  "@rideCompletedWellDone": {
+    "description": "Text from Text in driver_my_rides_screen.dart"
+  },
+  "manageVehicles": "Manage Vehicles",
+  "@manageVehicles": {
+    "description": "Text from _buildSettingsOption.label in driver_my_rides_screen.dart"
+  },
+  "earningsHistory": "Earnings History",
+  "@earningsHistory": {
+    "description": "Text from _buildSettingsOption.label in driver_my_rides_screen.dart"
+  },
+  "preferences": "Preferences",
+  "@preferences": {
+    "description": "Text from _buildSettingsOption.label in driver_my_rides_screen.dart"
+  },
+  "offerARide": "Offer a Ride",
+  "@offerARide": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "driverAccountRequired": "Driver Account Required",
+  "@driverAccountRequired": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "youNeedToRegisterAs": "You need to register as a driver and add a vehicle to offer rides.",
+  "@youNeedToRegisterAs": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "shareYourJourneyEarnMoney": "Share your journey, earn money",
+  "@shareYourJourneyEarnMoney": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "yourRoute": "Your Route",
+  "@yourRoute": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "startingPoint": "Starting Point",
+  "@startingPoint": {
+    "description": "Text from _buildLocationTile.label in driver_offer_ride_screen.dart"
+  },
+  "departureTime": "Departure Time",
+  "@departureTime": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "recurringRide": "Recurring Ride",
+  "@recurringRide": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "offerThisRideRegularly": "Offer this ride regularly",
+  "@offerThisRideRegularly": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "addAVehicleToStart2": "Add a vehicle to start offering rides",
+  "@addAVehicleToStart2": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "selectVehicle": "Select Vehicle",
+  "@selectVehicle": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "add2": "Add",
+  "@add2": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "availableSeats": "Available Seats",
+  "@availableSeats": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "maxValuePassengers": "Max {value} passengers",
+  "@maxValuePassengers": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "selectAVehicleFirst": "Select a vehicle first",
+  "@selectAVehicleFirst": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "pricePerSeat": "Price per Seat",
+  "@pricePerSeat": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "priceNegotiable": "Price Negotiable",
+  "@priceNegotiable": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "acceptOnlinePayment": "Accept Online Payment",
+  "@acceptOnlinePayment": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "receivePaymentsViaStripe": "Receive payments via Stripe",
+  "@receivePaymentsViaStripe": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "allowLuggage": "Allow Luggage",
+  "@allowLuggage": {
+    "description": "Text from _buildPreferenceSwitch.title in driver_offer_ride_screen.dart"
+  },
+  "allowPets": "Allow Pets",
+  "@allowPets": {
+    "description": "Text from _buildPreferenceSwitch.title in driver_offer_ride_screen.dart"
+  },
+  "allowSmoking": "Allow Smoking",
+  "@allowSmoking": {
+    "description": "Text from _buildPreferenceSwitch.title in driver_offer_ride_screen.dart"
+  },
+  "womenOnly": "Women Only",
+  "@womenOnly": {
+    "description": "Text from _buildPreferenceSwitch.title in driver_offer_ride_screen.dart"
+  },
+  "maxDetour": "Max Detour",
+  "@maxDetour": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "howFarYouLlGo": "How far you'll go to pick up passengers",
+  "@howFarYouLlGo": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "rideCreatedSuccessfully": "Ride created successfully!",
+  "@rideCreatedSuccessfully": {
+    "description": "Text from Text in driver_offer_ride_screen.dart"
+  },
+  "newRideRequestsWillAppear": "New ride requests will appear here",
+  "@newRideRequestsWillAppear": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "noDeclinedRequests": "No Declined Requests",
+  "@noDeclinedRequests": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "youHavenTDeclinedAny": "You haven't declined any requests yet",
+  "@youHavenTDeclinedAny": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "acceptRequest": "Accept Request?",
+  "@acceptRequest": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "youAreAboutToAccept": "You are about to accept {value1}'s ride request for {value2} at {value3}.",
+  "@youAreAboutToAccept": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "requestAcceptedValueHasBeen": "Request accepted! {value} has been notified.",
+  "@requestAcceptedValueHasBeen": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "failedToAcceptRequest": "Failed to accept request",
+  "@failedToAcceptRequest": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "requestDeclined": "Request declined",
+  "@requestDeclined": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "failedToDeclineRequest": "Failed to decline request",
+  "@failedToDeclineRequest": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "requestedValue": "Requested {value}",
+  "@requestedValue": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "valueSeatValue2": "• {value1} seat{value2}",
+  "@valueSeatValue2": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "valueSeatValueRequested": "{value1} seat{value2} requested",
+  "@valueSeatValueRequested": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "acceptRequest2": "Accept Request",
+  "@acceptRequest2": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "acceptedValue": "Accepted {value}",
+  "@acceptedValue": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "valueAtValue": "{value1} at {value2}",
+  "@valueAtValue": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "viewDetails": "View Details",
+  "@viewDetails": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "declinedValue": "Declined {value}",
+  "@declinedValue": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "reasonValue": "Reason: {value}",
+  "@reasonValue": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "declineRequest": "Decline Request",
+  "@declineRequest": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "pleaseLetValueKnowWhy": "Please let {value} know why you can't accept this ride.",
+  "@pleaseLetValueKnowWhy": {
+    "description": "Text from Text in driver_requests_screen.dart"
+  },
+  "pleaseSpecify": "Please specify...",
+  "@pleaseSpecify": {
+    "description": "Text from InputDecoration.hintText in driver_requests_screen.dart"
+  },
+  "rideNotFound": "Ride not found",
+  "@rideNotFound": {
+    "description": "Text from _buildErrorState in driver_view_ride_screen.dart"
+  },
+  "yourRide": "Your Ride",
+  "@yourRide": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "couldnTLoadRide": "Couldn't load ride",
+  "@couldnTLoadRide": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "seatsFilled": "Seats filled",
+  "@seatsFilled": {
+    "description": "Text from _buildStatItem.label in driver_view_ride_screen.dart"
+  },
+  "perSeat": "Per seat",
+  "@perSeat": {
+    "description": "Text from _buildStatItem.label in driver_view_ride_screen.dart"
+  },
+  "route": "Route",
+  "@route": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "value10": "~{value}",
+  "@value10": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "valueTotalSeats": "{value} total seats",
+  "@valueTotalSeats": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "notes": "Notes",
+  "@notes": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "newBookingRequestsWillAppear": "New booking requests will appear here",
+  "@newBookingRequestsWillAppear": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "noPassengersYet": "No passengers yet",
+  "@noPassengersYet": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "acceptBookingRequestsToAdd": "Accept booking requests to add passengers",
+  "@acceptBookingRequestsToAdd": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "shareRide": "Share Ride",
+  "@shareRide": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "duplicateRide": "Duplicate Ride",
+  "@duplicateRide": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "callPassenger": "Call Passenger",
+  "@callPassenger": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "removePassenger": "Remove Passenger",
+  "@removePassenger": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "bookingConfirmedForValue": "Booking confirmed for {value}",
+  "@bookingConfirmedForValue": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "declineBooking": "Decline Booking",
+  "@declineBooking": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "declineBookingRequestFromValue": "Decline booking request from {value}?",
+  "@declineBookingRequestFromValue": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "removeValueFromThisRide": "Remove {value} from this ride?",
+  "@removeValueFromThisRide": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "remove": "Remove",
+  "@remove": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "startRide": "Start Ride",
+  "@startRide": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "markThisRideAsStarted": "Mark this ride as started? Passengers will be notified.",
+  "@markThisRideAsStarted": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "start": "Start",
+  "@start": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "completeRide": "Complete Ride",
+  "@completeRide": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "markThisRideAsCompleted": "Mark this ride as completed? You can then rate your passengers.",
+  "@markThisRideAsCompleted": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "areYouSureYouWant8": "Are you sure you want to cancel this ride? All passengers will be notified and refunded.",
+  "@areYouSureYouWant8": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "keepRide": "Keep Ride",
+  "@keepRide": {
+    "description": "Text from Text in driver_view_ride_screen.dart"
+  },
+  "failedToLoadRide": "Failed to load ride",
+  "@failedToLoadRide": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "thisRideMayHaveBeen": "This ride may have been completed or cancelled",
+  "@thisRideMayHaveBeen": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "rideConfirmed": "Ride Confirmed",
+  "@rideConfirmed": {
+    "description": "Text from _buildStatusStep in active_ride_screen.dart"
+  },
+  "driverOnTheWay": "Driver on the way",
+  "@driverOnTheWay": {
+    "description": "Text from _buildStatusStep in active_ride_screen.dart"
+  },
+  "rideCompleted": "Ride Completed",
+  "@rideCompleted": {
+    "description": "Text from _buildStatusStep in active_ride_screen.dart"
+  },
+  "valueRides2": "• {value} rides",
+  "@valueRides2": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "routeDetails": "Route Details",
+  "@routeDetails": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "perSeat2": "per seat",
+  "@perSeat2": {
+    "description": "Text from _buildInfoItem in active_ride_screen.dart"
+  },
+  "seatsLeft": "seats left",
+  "@seatsLeft": {
+    "description": "Text from _buildInfoItem in active_ride_screen.dart"
+  },
+  "departure": "departure",
+  "@departure": {
+    "description": "Text from _buildInfoItem in active_ride_screen.dart"
+  },
+  "passengersValue": "Passengers ({value})",
+  "@passengersValue": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "phoneNumberNotAvailable": "Phone number not available",
+  "@phoneNumberNotAvailable": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "cannotMakePhoneCalls": "Cannot make phone calls on this device",
+  "@cannotMakePhoneCalls": {
+    "description": "Shown when phone dialer is unavailable"
+  },
+  "failedToLaunchDialer": "Failed to launch phone dialer",
+  "@failedToLaunchDialer": {
+    "description": "Shown when phone dialer launch fails"
+  },
+  "areYouSureYouWant9": "Are you sure you want to cancel this ride? Cancellation policies may apply.",
+  "@areYouSureYouWant9": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "rideCancelledSuccessfully": "Ride cancelled successfully",
+  "@rideCancelledSuccessfully": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "failedToCancelRideValue": "Failed to cancel ride: {value}",
+  "@failedToCancelRideValue": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "rateYourRide": "Rate Your Ride",
+  "@rateYourRide": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "ratingFeatureComingSoonThank": "Rating feature coming soon! Thank you for using SportConnect.",
+  "@ratingFeatureComingSoonThank": {
+    "description": "Text from Text in active_ride_screen.dart"
+  },
+  "myTrips": "My Trips",
+  "@myTrips": {
+    "description": "Text from Text in rider_my_rides_screen.dart"
+  },
+  "trackManageYourRides": "Track & manage your rides",
+  "@trackManageYourRides": {
+    "description": "Text from Text in rider_my_rides_screen.dart"
+  },
+  "upcoming": "Upcoming",
+  "@upcoming": {
+    "description": "Text from _buildTab in rider_my_rides_screen.dart"
+  },
+  "history": "History",
+  "@history": {
+    "description": "Text from _buildTab in rider_my_rides_screen.dart"
+  },
+  "noActiveTrips": "No Active Trips",
+  "@noActiveTrips": {
+    "description": "Text from _buildEmptyState.title in rider_my_rides_screen.dart"
+  },
+  "tripInProgress": "TRIP IN PROGRESS",
+  "@tripInProgress": {
+    "description": "Text from Text in rider_my_rides_screen.dart"
+  },
+  "text49": "4.9",
+  "@text49": {
+    "description": "Text from Text in rider_my_rides_screen.dart"
+  },
+  "noUpcomingTrips": "No Upcoming Trips",
+  "@noUpcomingTrips": {
+    "description": "Text from _buildEmptyState.title in rider_my_rides_screen.dart"
+  },
+  "noTripHistory": "No Trip History",
+  "@noTripHistory": {
+    "description": "Text from _buildEmptyState.title in rider_my_rides_screen.dart"
+  },
+  "rebook": "Rebook",
+  "@rebook": {
+    "description": "Text from Text in rider_my_rides_screen.dart"
+  },
+  "findRide": "Find Ride",
+  "@findRide": {
+    "description": "Text from Text in rider_my_rides_screen.dart"
+  },
+  "loadingYourTrips": "Loading your trips...",
+  "@loadingYourTrips": {
+    "description": "Text from Text in rider_my_rides_screen.dart"
+  },
+  "cancelTrip": "Cancel Trip?",
+  "@cancelTrip": {
+    "description": "Text from Text in rider_my_rides_screen.dart"
+  },
+  "areYouSureYouWant10": "Are you sure you want to cancel your trip to {value}?",
+  "@areYouSureYouWant10": {
+    "description": "Text from Text in rider_my_rides_screen.dart"
+  },
+  "tripCancelled": "Trip cancelled",
+  "@tripCancelled": {
+    "description": "Text from Text in rider_my_rides_screen.dart"
+  },
+  "openingChat": "Opening chat...",
+  "@openingChat": {
+    "description": "Text from Text in rider_my_rides_screen.dart"
+  },
+  "failedToOpenChatValue": "Failed to open chat: {value}",
+  "@failedToOpenChatValue": {
+    "description": "Text from Text in rider_my_rides_screen.dart"
+  },
+  "startingCall": "Starting call...",
+  "@startingCall": {
+    "description": "Text from Text in rider_my_rides_screen.dart"
+  },
+  "whereTo": "Where to?",
+  "@whereTo": {
+    "description": "Text from Text in rider_request_ride_screen.dart"
+  },
+  "findThePerfectRideFor": "Find the perfect ride for your journey",
+  "@findThePerfectRideFor": {
+    "description": "Text from Text in rider_request_ride_screen.dart"
+  },
+  "whereFrom": "Where from?",
+  "@whereFrom": {
+    "description": "Text from _buildLocationRow.label in rider_request_ride_screen.dart"
+  },
+  "when": "When?",
+  "@when": {
+    "description": "Text from Text in rider_request_ride_screen.dart"
+  },
+  "today": "Today",
+  "@today": {
+    "description": "Text from _buildDateChip in rider_request_ride_screen.dart"
+  },
+  "tomorrow": "Tomorrow",
+  "@tomorrow": {
+    "description": "Text from _buildDateChip in rider_request_ride_screen.dart"
+  },
+  "pickDate": "Pick Date",
+  "@pickDate": {
+    "description": "Text from _buildDateChip in rider_request_ride_screen.dart"
+  },
+  "departureTime2": "Departure time",
+  "@departureTime2": {
+    "description": "Text from Text in rider_request_ride_screen.dart"
+  },
+  "howManySeatsDoYou": "How many seats do you need?",
+  "@howManySeatsDoYou": {
+    "description": "Text from Text in rider_request_ride_screen.dart"
+  },
+  "availableRides": "Available Rides",
+  "@availableRides": {
+    "description": "Text from Text in rider_request_ride_screen.dart"
+  },
+  "sort": "Sort",
+  "@sort": {
+    "description": "Text from Text in rider_request_ride_screen.dart"
+  },
+  "noRidesFound": "No rides found",
+  "@noRidesFound": {
+    "description": "Text from Text in rider_request_ride_screen.dart"
+  },
+  "tryAdjustingYourSearchCriteria": "Try adjusting your search criteria\nor check back later",
+  "@tryAdjustingYourSearchCriteria": {
+    "description": "Text from Text in rider_request_ride_screen.dart"
+  },
+  "findingRides": "Finding rides...",
+  "@findingRides": {
+    "description": "Text from Text in rider_request_ride_screen.dart"
+  },
+  "sortBy": "Sort by",
+  "@sortBy": {
+    "description": "Text from Text in rider_request_ride_screen.dart"
+  },
+  "recommended": "Recommended",
+  "@recommended": {
+    "description": "Text from _buildSortOption in rider_request_ride_screen.dart"
+  },
+  "earliestDeparture": "Earliest departure",
+  "@earliestDeparture": {
+    "description": "Text from _buildSortOption in rider_request_ride_screen.dart"
+  },
+  "lowestPrice": "Lowest price",
+  "@lowestPrice": {
+    "description": "Text from _buildSortOption in rider_request_ride_screen.dart"
+  },
+  "highestRated": "Highest rated",
+  "@highestRated": {
+    "description": "Text from _buildSortOption in rider_request_ride_screen.dart"
+  },
+  "searchFailedPleaseTryAgain": "Search failed. Please try again.",
+  "@searchFailedPleaseTryAgain": {
+    "description": "Text from Text in rider_request_ride_screen.dart"
+  },
+  "rideDetails": "Ride Details",
+  "@rideDetails": {
+    "description": "Text from Text in rider_view_ride_screen.dart"
+  },
+  "value11": "{value} • ",
+  "@value11": {
+    "description": "Text from Text in rider_view_ride_screen.dart"
+  },
+  "valueLeft": "{value} left",
+  "@valueLeft": {
+    "description": "Text from Text in rider_view_ride_screen.dart"
+  },
+  "valueMin2": "~{value} min",
+  "@valueMin2": {
+    "description": "Text from Text in rider_view_ride_screen.dart"
+  },
+  "valueKgCoSavedPer": "{value} kg CO₂ saved per person",
+  "@valueKgCoSavedPer": {
+    "description": "Text from Text in rider_view_ride_screen.dart"
+  },
+  "negotiable": "Negotiable",
+  "@negotiable": {
+    "description": "Text from _buildDetailChip in rider_view_ride_screen.dart"
+  },
+  "onlinePay": "Online Pay",
+  "@onlinePay": {
+    "description": "Text from _buildDetailChip in rider_view_ride_screen.dart"
+  },
+  "reviews": "Reviews",
+  "@reviews": {
+    "description": "Text from Text in rider_view_ride_screen.dart"
+  },
+  "seeAll": "See all",
+  "@seeAll": {
+    "description": "Text from Text in rider_view_ride_screen.dart"
+  },
+  "seats3": "Seats:",
+  "@seats3": {
+    "description": "Text from Text in rider_view_ride_screen.dart"
+  },
+  "confirmBooking": "Confirm Booking",
+  "@confirmBooking": {
+    "description": "Text from Text in rider_view_ride_screen.dart"
+  },
+  "pricePerSeat2": "Price per seat",
+  "@pricePerSeat2": {
+    "description": "Text from _buildSummaryRow in rider_view_ride_screen.dart"
+  },
+  "total": "Total",
+  "@total": {
+    "description": "Text from _buildSummaryRow in rider_view_ride_screen.dart"
+  },
+  "addANoteToThe": "Add a note to the driver (optional)",
+  "@addANoteToThe": {
+    "description": "Text from InputDecoration.hintText in rider_view_ride_screen.dart"
+  },
+  "bookingRequestSent": "Booking request sent!",
+  "@bookingRequestSent": {
+    "description": "Text from Text in rider_view_ride_screen.dart"
+  },
+  "seatsLeft2": "Seats left",
+  "@seatsLeft2": {
+    "description": "Text from _buildInfoChip.label in ride_detail_screen.dart"
+  },
+  "tripDetails": "Trip Details",
+  "@tripDetails": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "departure2": "Departure",
+  "@departure2": {
+    "description": "Text from _buildDetailRow.label in ride_detail_screen.dart"
+  },
+  "amenities": "Amenities",
+  "@amenities": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "pets": "Pets",
+  "@pets": {
+    "description": "Text from _buildAmenityItem.label in ride_detail_screen.dart"
+  },
+  "smoking": "Smoking",
+  "@smoking": {
+    "description": "Text from _buildAmenityItem.label in ride_detail_screen.dart"
+  },
+  "luggage": "Luggage",
+  "@luggage": {
+    "description": "Text from _buildAmenityItem.label in ride_detail_screen.dart"
+  },
+  "yourPassengersValue": "Your Passengers ({value})",
+  "@yourPassengersValue": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "valueValueSeats": "{value1}/{value2} seats",
+  "@valueValueSeats": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "noPassengersAcceptedYet": "No passengers accepted yet",
+  "@noPassengersAcceptedYet": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "noPassengersBookedYet": "No passengers booked yet",
+  "@noPassengersBookedYet": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "valueHasBookedThisRide": "{value} has booked this ride",
+  "@valueHasBookedThisRide": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "valuePassengersHaveBooked": "{value} passengers have booked",
+  "@valuePassengersHaveBooked": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "pendingRequestsValue": "Pending Requests ({value})",
+  "@pendingRequestsValue": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "requestAccepted": "Request accepted! 🎉",
+  "@requestAccepted": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "seatsBooked": "Seats Booked",
+  "@seatsBooked": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "editRideFeatureComingSoon": "Edit ride feature coming soon!",
+  "@editRideFeatureComingSoon": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "numberOfSeats": "Number of seats",
+  "@numberOfSeats": {
+    "description": "Text from _buildPriceRow in ride_detail_screen.dart"
+  },
+  "value12": "× {value}",
+  "@value12": {
+    "description": "Text from _buildPriceRow in ride_detail_screen.dart"
+  },
+  "securePaymentWithStripe": "Secure payment with Stripe",
+  "@securePaymentWithStripe": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "pleaseLogInToBook": "Please log in to book a ride",
+  "@pleaseLogInToBook": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "paymentSucceededButBookingFailed": "Payment succeeded but booking failed. Please contact support.",
+  "@paymentSucceededButBookingFailed": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "paymentCancelled": "Payment cancelled",
+  "@paymentCancelled": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "paymentFailedValue": "Payment failed: {value}",
+  "@paymentFailedValue": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "paymentMethod": "Payment Method",
+  "@paymentMethod": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "thisDriverAcceptsCashPayment": "This driver accepts cash payment only.",
+  "@thisDriverAcceptsCashPayment": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "payWithCash": "Pay with Cash",
+  "@payWithCash": {
+    "description": "Text from _buildPaymentOption.title in ride_detail_screen.dart"
+  },
+  "failedToBookRidePlease": "Failed to book ride. Please try again.",
+  "@failedToBookRidePlease": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "paymentSuccessful": "Payment Successful!",
+  "@paymentSuccessful": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "youPaidValueValue": "You paid {value1} {value2}",
+  "@youPaidValueValue": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "yourRideHasBeenBooked": "Your ride has been booked.",
+  "@yourRideHasBeenBooked": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "youEarned25Xp": "You earned 25 XP!",
+  "@youEarned25Xp": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "backToSearch": "Back to Search",
+  "@backToSearch": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "bookingConfirmed": "Booking Confirmed!",
+  "@bookingConfirmed": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "yourRideHasBeenBooked2": "Your ride has been booked. Pay the driver in cash.",
+  "@yourRideHasBeenBooked2": {
+    "description": "Text from Text in ride_detail_screen.dart"
+  },
+  "pleaseEnterBothLocations": "Please enter both locations",
+  "@pleaseEnterBothLocations": {
+    "description": "Text from Text in ride_search_screen.dart"
+  },
+  "pleaseSelectLocationsFromThe": "Please select locations from the picker",
+  "@pleaseSelectLocationsFromThe": {
+    "description": "Text from Text in ride_search_screen.dart"
+  },
+  "maxValue": "Max {value} €",
+  "@maxValue": {
+    "description": "Text from _buildFilterTag in ride_search_screen.dart"
+  },
+  "femaleOnly": "Female only",
+  "@femaleOnly": {
+    "description": "Text from _buildFilterTag in ride_search_screen.dart"
+  },
+  "instantBook": "Instant book",
+  "@instantBook": {
+    "description": "Text from _buildFilterTag in ride_search_screen.dart"
+  },
+  "petFriendly": "Pet friendly",
+  "@petFriendly": {
+    "description": "Text from _buildFilterTag in ride_search_screen.dart"
+  },
+  "valueRating": "{value}+ rating",
+  "@valueRating": {
+    "description": "Text from _buildFilterTag in ride_search_screen.dart"
+  },
+  "activeFilters": "Active Filters",
+  "@activeFilters": {
+    "description": "Text from Text in ride_search_screen.dart"
+  },
+  "valueRidesAvailable": "{value} rides available",
+  "@valueRidesAvailable": {
+    "description": "Text from Text in ride_search_screen.dart"
+  },
+  "filtersValue": "Filters{value}",
+  "@filtersValue": {
+    "description": "Text from Text in ride_search_screen.dart"
+  },
+  "reset": "Reset",
+  "@reset": {
+    "description": "Text from Text in ride_search_screen.dart"
+  },
+  "priceRange": "Price Range",
+  "@priceRange": {
+    "description": "Text from _buildFilterSectionTitle in ride_search_screen.dart"
+  },
+  "text52": "5 €",
+  "@text52": {
+    "description": "Text from Text in ride_search_screen.dart"
+  },
+  "text100": "100 €",
+  "@text100": {
+    "description": "Text from Text in ride_search_screen.dart"
+  },
+  "minimumRating": "Minimum Rating",
+  "@minimumRating": {
+    "description": "Text from _buildFilterSectionTitle in ride_search_screen.dart"
+  },
+  "any": "Any",
+  "@any": {
+    "description": "Text from Text in ride_search_screen.dart"
+  },
+  "value13": "{value}+",
+  "@value13": {
+    "description": "Text from Text in ride_search_screen.dart"
+  },
+  "verifiedDriver2": "Verified driver",
+  "@verifiedDriver2": {
+    "description": "Text from _buildToggleChip.label in ride_search_screen.dart"
+  },
+  "musicAllowed": "Music allowed",
+  "@musicAllowed": {
+    "description": "Text from _buildToggleChip.label in ride_search_screen.dart"
+  },
+  "vehicleType": "Vehicle Type",
+  "@vehicleType": {
+    "description": "Text from _buildFilterSectionTitle in ride_search_screen.dart"
+  },
+  "electric": "Electric",
+  "@electric": {
+    "description": "Text from _buildVehicleOption in ride_search_screen.dart"
+  },
+  "comfort": "Comfort",
+  "@comfort": {
+    "description": "Text from _buildVehicleOption in ride_search_screen.dart"
+  },
+  "book": "Book",
+  "@book": {
+    "description": "Text from Text in ride_search_screen.dart"
+  },
+  "sortBy2": "Sort By",
+  "@sortBy2": {
+    "description": "Text from Text in ride_search_screen.dart"
+  },
+  "lowestPrice2": "Lowest Price",
+  "@lowestPrice2": {
+    "description": "Text from _buildSortOption.title in ride_search_screen.dart"
+  },
+  "earliestDeparture2": "Earliest Departure",
+  "@earliestDeparture2": {
+    "description": "Text from _buildSortOption.title in ride_search_screen.dart"
+  },
+  "highestRated2": "Highest Rated",
+  "@highestRated2": {
+    "description": "Text from _buildSortOption.title in ride_search_screen.dart"
+  },
+  "shortestDuration": "Shortest Duration",
+  "@shortestDuration": {
+    "description": "Text from _buildSortOption.title in ride_search_screen.dart"
+  },
+  "signInFailedPleaseTry": "Sign in failed. Please try again.",
+  "@signInFailedPleaseTry": {
+    "description": "User-friendly error message for failed sign-in attempts"
+  },
+  "email": "Email",
+  "@email": {
+    "description": "Label for email input field"
+  },
+  "enterYourEmail": "Enter your email",
+  "@enterYourEmail": {
+    "description": "Hint text for email input field"
+  },
+  "password": "Password",
+  "@password": {
+    "description": "Label for password input field"
+  },
+  "enterYourPassword": "Enter your password",
+  "@enterYourPassword": {
+    "description": "Hint text for password input field"
+  },
+  "orSignInWithEmail": "or sign in with email",
+  "@orSignInWithEmail": {
+    "description": "Divider text between social login and email login"
+  },
+  "continueWithGoogle": "Continue with Google",
+  "@continueWithGoogle": {
+    "description": "Label for Google sign-in button"
+  },
+  "continueWithApple": "Continue with Apple",
+  "@continueWithApple": {
+    "description": "Label for Apple sign-in button"
+  },
+  "tryAgain": "Try Again",
+  "@tryAgain": {
+    "description": "Label for retry button"
+  },
+  "avgPerRide": "Avg per Ride",
+  "@avgPerRide": {
+    "description": "Stat label for average earnings per ride"
+  },
+  "driveTime": "Drive Time",
+  "@driveTime": {
+    "description": "Stat label for total drive time"
+  },
+  "goodMorning": "Good morning",
+  "@goodMorning": {
+    "description": "Greeting used before noon"
+  },
+  "goodAfternoon": "Good afternoon",
+  "@goodAfternoon": {
+    "description": "Greeting used between noon and evening"
+  },
+  "goodEvening": "Good evening",
+  "@goodEvening": {
+    "description": "Greeting used in the evening"
+  },
+  "failedToLoadNotifications": "Failed to load notifications",
+  "@failedToLoadNotifications": {
+    "description": "Error message when notifications fail to load"
+  },
+  "checkYourConnectionAndTry": "Check your connection and try again",
+  "@checkYourConnectionAndTry": {
+    "description": "Hint text shown below error message"
+  },
+  "couldNotOpenChat": "Could not open chat",
+  "@couldNotOpenChat": {
+    "description": "Error message when navigating to a chat fails"
+  },
+  "searchConversations": "Search conversations...",
+  "@searchConversations": {
+    "description": "Hint text for chat search field"
+  },
+  "direct": "Direct",
+  "@direct": {
+    "description": "Tab label for direct/private chats"
+  },
+  "groups": "Groups",
+  "@groups": {
+    "description": "Tab label for group chats"
+  },
+  "all": "All",
+  "@all": {
+    "description": "Tab label for all notifications"
+  },
+  "startAConversationWith": "Start a conversation with your ride partners",
+  "@startAConversationWith": {
+    "description": "Empty state subtitle for direct chats"
+  },
+  "joinOrCreateAGroup": "Join or create a group to start chatting",
+  "@joinOrCreateAGroup": {
+    "description": "Empty state subtitle for group chats"
+  },
+  "joinARideToChat": "Join a ride to chat with fellow travelers",
+  "@joinARideToChat": {
+    "description": "Empty state subtitle for ride chats"
+  },
+  "driverCreateRide": "Create Ride",
+  "@driverCreateRide": {
+    "description": "Quick action button label to create a new ride"
+  },
+  "driverThisWeek": "This Week",
+  "@driverThisWeek": {
+    "description": "Label for weekly earnings metric"
+  },
+  "driverThisMonth": "This Month",
+  "@driverThisMonth": {
+    "description": "Label for monthly earnings metric"
+  },
+  "driverCo2Saved": "CO\u2082 Saved",
+  "@driverCo2Saved": {
+    "description": "Label for CO2 saved stat card"
+  },
+  "driverHoursOnline": "Hours Online",
+  "@driverHoursOnline": {
+    "description": "Label for hours online stat card"
+  },
+  "locationRequired": "Location Required",
+  "@locationRequired": {
+    "description": "Title for location permission banner"
+  },
+  "enableLocationForBetterExperience": "Enable location for a better driving experience",
+  "@enableLocationForBetterExperience": {
+    "description": "Subtitle for location permission banner"
+  },
+  "openSettings": "Open Settings",
+  "@openSettings": {
+    "description": "Button text to open app settings for location permission"
+  },
+  "enable": "Enable",
+  "@enable": {
+    "description": "Button text to enable location permission"
+  },
+  "createARideToStartEarning": "Create a ride to start earning",
+  "@createARideToStartEarning": {
+    "description": "Subtitle for empty upcoming rides state"
+  }
+}

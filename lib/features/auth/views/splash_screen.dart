@@ -3,10 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -26,7 +25,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   void initState() {
     super.initState();
     _initAnimations();
-    _startLoading();
 
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
@@ -58,18 +56,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       duration: const Duration(milliseconds: 2500),
       vsync: this,
     )..forward();
-  }
-
-  Future<void> _startLoading() async {
-    final results = await Future.wait([
-      Future.delayed(const Duration(milliseconds: 3200)), // Animation
-      ref.read(initialRouteProvider.future), // Logic via MVVM
-    ]);
-
-    if (!mounted) return;
-
-    final targetRoute = results[1] as String;
-    context.go(targetRoute);
   }
 
   @override
@@ -290,7 +276,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
         // App name with elegant typography
         Text(
-              'SportConnect',
+              AppLocalizations.of(context).sportconnect,
               style: TextStyle(
                 fontSize: 36.sp,
                 fontWeight: FontWeight.w700,
@@ -313,7 +299,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                 color: AppColors.primary.withValues(alpha: 0.08),
               ),
               child: Text(
-                'CARPOOLING FOR RUNNERS',
+                AppLocalizations.of(context).carpoolingForRunners,
                 style: TextStyle(
                   fontSize: 11.sp,
                   fontWeight: FontWeight.w600,
@@ -333,7 +319,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     return Padding(
           padding: EdgeInsets.symmetric(horizontal: 50.w),
           child: Text(
-            'Share rides. Run together.\nGo further.',
+            AppLocalizations.of(context).shareRidesRunTogetherGo,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 17.sp,
@@ -386,7 +372,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
         // Loading text
         Text(
-              'Loading...',
+              AppLocalizations.of(context).loading,
               style: TextStyle(
                 fontSize: 12.sp,
                 fontWeight: FontWeight.w400,

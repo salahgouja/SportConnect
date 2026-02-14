@@ -3,8 +3,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/features/auth/models/user_model.dart';
+import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Premium Achievements Screen with gamification UI
 class AchievementsScreen extends ConsumerStatefulWidget {
@@ -35,59 +36,55 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
     final userAsync = ref.watch(currentUserStreamProvider);
 
     return userAsync.when(
-      data: (user) => _buildContent(context, user),
+      data: (user) => _buildContent(context, user!),
       loading: () => const Scaffold(
         backgroundColor: AppColors.background,
         body: Center(child: CircularProgressIndicator()),
       ),
       error: (e, _) => Scaffold(
         backgroundColor: AppColors.background,
-        body: Center(child: Text('Error loading achievements')),
+        body: Center(
+          child: Text(AppLocalizations.of(context).errorLoadingAchievements),
+        ),
       ),
     );
   }
 
-  Widget _buildContent(BuildContext context, UserModel? user) {
+  Widget _buildContent(BuildContext context, UserModel user) {
     // Get gamification stats based on user type
     final GamificationStats gamification;
-    if (user == null) {
-      gamification = const GamificationStats();
-    } else {
-      // Both RiderGamificationStats and DriverGamificationStats share the same base properties
-      // We use switch to extract the correct gamification and convert to base GamificationStats
-      gamification = switch (user) {
-        RiderModel(:final gamification as RiderGamificationStats) =>
-          GamificationStats(
-            totalXP: gamification.totalXP,
-            level: gamification.level,
-            currentLevelXP: gamification.currentLevelXP,
-            xpToNextLevel: gamification.xpToNextLevel,
-            totalRides: gamification.totalRides,
-            currentStreak: gamification.currentStreak,
-            longestStreak: gamification.longestStreak,
-            co2Saved: gamification.co2Saved,
-            totalDistance: gamification.totalDistance,
-            unlockedBadges: gamification.unlockedBadges,
-            achievements: gamification.achievements,
-            lastRideDate: gamification.lastRideDate,
-          ),
-        DriverModel(:final gamification as DriverGamificationStats) =>
-          GamificationStats(
-            totalXP: gamification.totalXP,
-            level: gamification.level,
-            currentLevelXP: gamification.currentLevelXP,
-            xpToNextLevel: gamification.xpToNextLevel,
-            totalRides: gamification.totalRides,
-            currentStreak: gamification.currentStreak,
-            longestStreak: gamification.longestStreak,
-            co2Saved: gamification.co2Saved,
-            totalDistance: gamification.totalDistance,
-            unlockedBadges: gamification.unlockedBadges,
-            achievements: gamification.achievements,
-            lastRideDate: gamification.lastRideDate,
-          ),
-      };
-    }
+    gamification = switch (user) {
+      RiderModel(:final gamification as RiderGamificationStats) =>
+        RiderGamificationStats(
+          totalXP: gamification.totalXP,
+          level: gamification.level,
+          currentLevelXP: gamification.currentLevelXP,
+          xpToNextLevel: gamification.xpToNextLevel,
+          totalRides: gamification.totalRides,
+          currentStreak: gamification.currentStreak,
+          longestStreak: gamification.longestStreak,
+          co2Saved: gamification.co2Saved,
+          totalDistance: gamification.totalDistance,
+          unlockedBadges: gamification.unlockedBadges,
+          achievements: gamification.achievements,
+          lastRideDate: gamification.lastRideDate,
+        ),
+      DriverModel(:final gamification as DriverGamificationStats) =>
+        DriverGamificationStats(
+          totalXP: gamification.totalXP,
+          level: gamification.level,
+          currentLevelXP: gamification.currentLevelXP,
+          xpToNextLevel: gamification.xpToNextLevel,
+          totalRides: gamification.totalRides,
+          currentStreak: gamification.currentStreak,
+          longestStreak: gamification.longestStreak,
+          co2Saved: gamification.co2Saved,
+          totalDistance: gamification.totalDistance,
+          unlockedBadges: gamification.unlockedBadges,
+          achievements: gamification.achievements,
+          lastRideDate: gamification.lastRideDate,
+        ),
+    };
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -205,7 +202,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
           Icon(Icons.star_rounded, color: Colors.white, size: 24.sp),
           SizedBox(width: 8.w),
           Text(
-            'Level $level - $levelName',
+            AppLocalizations.of(context).levelValueValue(level, levelName),
             style: TextStyle(
               fontSize: 18.sp,
               fontWeight: FontWeight.w700,
@@ -232,7 +229,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '${_formatNumber(currentXP)} XP',
+                AppLocalizations.of(context).valueXp2(_formatNumber(currentXP)),
                 style: TextStyle(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w600,
@@ -240,7 +237,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
                 ),
               ),
               Text(
-                '${_formatNumber(maxXP)} XP',
+                AppLocalizations.of(context).valueXp2(_formatNumber(maxXP)),
                 style: TextStyle(
                   fontSize: 14.sp,
                   color: Colors.white.withValues(alpha: 0.8),
@@ -274,7 +271,9 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
           ),
           SizedBox(height: 6.h),
           Text(
-            '${_formatNumber(xpNeeded)} XP to Level ${level + 1}',
+            AppLocalizations.of(
+              context,
+            ).valueXpToLevelValue(_formatNumber(xpNeeded), level + 1),
             style: TextStyle(
               fontSize: 12.sp,
               color: Colors.white.withValues(alpha: 0.9),
@@ -298,13 +297,29 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildStatItem('🏆', '$badges', 'Badges'),
+          _buildStatItem(
+            AppLocalizations.of(context).text4,
+            AppLocalizations.of(context).value2(badges),
+            AppLocalizations.of(context).badges,
+          ),
           _buildStatDivider(),
-          _buildStatItem('🎯', '$challenges', 'Challenges'),
+          _buildStatItem(
+            AppLocalizations.of(context).text5,
+            AppLocalizations.of(context).value2(challenges),
+            AppLocalizations.of(context).challenges,
+          ),
           _buildStatDivider(),
-          _buildStatItem('🚗', '$rides', 'Rides'),
+          _buildStatItem(
+            AppLocalizations.of(context).text6,
+            AppLocalizations.of(context).value2(rides),
+            AppLocalizations.of(context).navRides,
+          ),
           _buildStatDivider(),
-          _buildStatItem('🌍', _formatCO2(co2), 'kg CO₂'),
+          _buildStatItem(
+            AppLocalizations.of(context).text7,
+            _formatCO2(co2),
+            AppLocalizations.of(context).kgCo,
+          ),
         ],
       ),
     );
@@ -521,7 +536,9 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
                 borderRadius: BorderRadius.circular(20.r),
               ),
               child: Text(
-                badge.unlocked ? '✓ Unlocked' : '🔒 Locked',
+                badge.unlocked
+                    ? AppLocalizations.of(context).unlocked
+                    : AppLocalizations.of(context).locked,
                 style: TextStyle(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w600,
@@ -542,7 +559,9 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
                   ),
                   SizedBox(height: 8.h),
                   Text(
-                    '${(badge.progress! * 100).toInt()}% Complete',
+                    AppLocalizations.of(
+                      context,
+                    ).valueComplete((badge.progress! * 100).toInt()),
                     style: TextStyle(
                       fontSize: 13.sp,
                       color: AppColors.textSecondary,
@@ -701,7 +720,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
                       borderRadius: BorderRadius.circular(8.r),
                     ),
                     child: Text(
-                      '+${challenge.xpReward} XP',
+                      AppLocalizations.of(context).valueXp(challenge.xpReward),
                       style: TextStyle(
                         fontSize: 12.sp,
                         fontWeight: FontWeight.w700,
@@ -797,9 +816,25 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildTopRanker('🥈', 'Mike C.', '11.2K', 2),
-          _buildTopRanker('🥇', 'Sarah J.', '12.4K', 1, isFirst: true),
-          _buildTopRanker('🥉', 'Emily D.', '9.8K', 3),
+          _buildTopRanker(
+            AppLocalizations.of(context).text8,
+            AppLocalizations.of(context).mikeC,
+            AppLocalizations.of(context).text112k,
+            2,
+          ),
+          _buildTopRanker(
+            AppLocalizations.of(context).text10,
+            AppLocalizations.of(context).sarahJ,
+            AppLocalizations.of(context).text124k,
+            1,
+            isFirst: true,
+          ),
+          _buildTopRanker(
+            AppLocalizations.of(context).text11,
+            AppLocalizations.of(context).emilyD,
+            AppLocalizations.of(context).text98k,
+            3,
+          ),
         ],
       ),
     );
@@ -877,7 +912,9 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
           SizedBox(
             width: 32.w,
             child: Text(
-              isTop3 ? ['🥇', '🥈', '🥉'][entry.rank - 1] : '#${entry.rank}',
+              isTop3
+                  ? ['🥇', '🥈', '🥉'][entry.rank - 1]
+                  : AppLocalizations.of(context).value3(entry.rank),
               style: TextStyle(
                 fontSize: isTop3 ? 18.sp : 14.sp,
                 fontWeight: FontWeight.w700,
@@ -920,7 +957,9 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
                   ),
                 ),
                 Text(
-                  'Level ${10 + (10 - entry.rank)}',
+                  AppLocalizations.of(
+                    context,
+                  ).levelValue(10 + (10 - entry.rank)),
                   style: TextStyle(
                     fontSize: 12.sp,
                     color: AppColors.textSecondary,
@@ -933,7 +972,12 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '${entry.xp.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')} XP',
+                AppLocalizations.of(context).valueXp2(
+                  entry.xp.toString().replaceAllMapped(
+                    RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                    (m) => '${m[1]},',
+                  ),
+                ),
                 style: TextStyle(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w700,

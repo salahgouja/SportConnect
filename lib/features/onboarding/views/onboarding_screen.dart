@@ -6,8 +6,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lottie/lottie.dart';
-import 'package:sport_connect/core/config/app_router.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Data model for onboarding pages
 class OnboardingPage {
@@ -132,7 +133,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('onboarding_completed', true);
     if (mounted) {
-      context.go(AppRouter.login);
+      context.go(AppRoutes.login.path);
     }
   }
 
@@ -183,7 +184,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
               // Title - professional, no emoji
               Text(
-                "You're Ready to Run",
+                AppLocalizations.of(context).youReReadyToRun,
                 style: TextStyle(
                   fontSize: 22.sp,
                   fontWeight: FontWeight.w700,
@@ -195,7 +196,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               SizedBox(height: 10.h),
 
               Text(
-                'Create an account to start tracking your runs and connect with other runners.',
+                AppLocalizations.of(context).createAnAccountToStart,
                 style: TextStyle(
                   fontSize: 14.sp,
                   color: AppColors.textSecondary,
@@ -217,7 +218,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                   child: Text(
-                    'Continue',
+                    AppLocalizations.of(context).kContinue,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 16.sp,
@@ -291,7 +292,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   ],
                 ),
                 child: Text(
-                  'Step ${_currentPage + 1} of ${_pages.length}',
+                  AppLocalizations.of(
+                    context,
+                  ).stepValueOfValue(_currentPage + 1, _pages.length),
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
@@ -317,7 +320,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              'Skip',
+                              AppLocalizations.of(context).skip,
                               style: TextStyle(
                                 fontSize: 14.sp,
                                 fontWeight: FontWeight.w600,
@@ -377,7 +380,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           ? [
                               BoxShadow(
                                 color: _pages[index].gradientColors[0]
-                                    .withOpacity(0.4),
+                                    .withValues(alpha: 0.4),
                                 blurRadius: 8,
                                 spreadRadius: 2,
                               ),
@@ -392,7 +395,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                               color: Colors.white,
                             )
                           : Text(
-                              '${index + 1}',
+                              AppLocalizations.of(context).value2(index + 1),
                               style: TextStyle(
                                 fontSize: isCurrent ? 14.sp : 11.sp,
                                 fontWeight: FontWeight.w700,
@@ -781,7 +784,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          isLastPage ? 'Get Started' : 'Continue',
+                          isLastPage
+                              ? AppLocalizations.of(context).getStarted
+                              : AppLocalizations.of(context).kContinue,
                           style: TextStyle(
                             fontSize: 18.sp,
                             fontWeight: FontWeight.w700,

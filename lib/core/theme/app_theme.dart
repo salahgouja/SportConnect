@@ -221,7 +221,7 @@ class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.surface,
-        indicatorColor: AppColors.primary.withOpacity(0.1),
+        indicatorColor: AppColors.primary.withValues(alpha: 0.1),
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         height: 70.h,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
@@ -247,7 +247,7 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.surfaceVariant,
-        selectedColor: AppColors.primary.withOpacity(0.15),
+        selectedColor: AppColors.primary.withValues(alpha: 0.15),
         labelStyle: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500),
         padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
         shape: RoundedRectangleBorder(
@@ -282,70 +282,6 @@ class AppTheme {
           fontSize: 20.sp,
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
-        ),
-      ),
-    );
-  }
-
-  static ThemeData get darkTheme {
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.dark,
-      fontFamily: 'Inter',
-      colorScheme: ColorScheme.dark(
-        primary: AppColors.primaryLight,
-        primaryContainer: AppColors.primary,
-        secondary: AppColors.secondaryLight,
-        secondaryContainer: AppColors.secondary,
-        tertiary: AppColors.accentLight,
-        tertiaryContainer: AppColors.accent,
-        error: AppColors.errorLight,
-        surface: AppColors.darkSurface,
-        background: AppColors.darkBackground,
-        onPrimary: AppColors.darkBackground,
-        onSecondary: AppColors.darkBackground,
-        onSurface: AppColors.darkTextPrimary,
-        onBackground: AppColors.darkTextPrimary,
-        outline: AppColors.darkBorder,
-        surfaceVariant: AppColors.darkSurfaceVariant,
-      ),
-      scaffoldBackgroundColor: AppColors.darkBackground,
-      appBarTheme: AppBarTheme(
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        foregroundColor: AppColors.darkTextPrimary,
-        systemOverlayStyle: SystemUiOverlayStyle.light,
-        titleTextStyle: TextStyle(
-          color: AppColors.darkTextPrimary,
-          fontSize: 18.sp,
-          fontWeight: FontWeight.w600,
-          fontFamily: 'Inter',
-        ),
-      ),
-      cardTheme: CardThemeData(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.r),
-        ),
-        color: AppColors.darkCardBg,
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: AppColors.darkSurfaceVariant,
-        contentPadding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 18.h),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16.r),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16.r),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16.r),
-          borderSide: BorderSide(color: AppColors.primaryLight, width: 2),
         ),
       ),
     );

@@ -4,13 +4,13 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
+import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Premium Ride Card - Modern, animated ride listing card
 /// Used throughout the app for consistent ride display
 class PremiumRideCard extends StatefulWidget {
-  final String driverName;
-  final double driverRating;
-  final int driverRides;
+  final DriverModel driver;
   final String from;
   final String to;
   final String departureTime;
@@ -28,9 +28,7 @@ class PremiumRideCard extends StatefulWidget {
 
   const PremiumRideCard({
     super.key,
-    required this.driverName,
-    required this.driverRating,
-    required this.driverRides,
+    required this.driver,
     required this.from,
     required this.to,
     required this.departureTime,
@@ -171,9 +169,9 @@ class _PremiumRideCardState extends State<PremiumRideCard>
                 ],
               ),
               child: LevelAvatar(
-                name: widget.driverName,
-                imageUrl: widget.driverImageUrl,
-                level: (widget.driverRides / 10).floor(),
+                name: widget.driver.displayName,
+                imageUrl: widget.driver.photoUrl,
+                level: (widget.driver.totalRides / 10).floor(),
                 size: 56,
               ),
             ),
@@ -214,7 +212,7 @@ class _PremiumRideCardState extends State<PremiumRideCard>
                 children: [
                   Flexible(
                     child: Text(
-                      widget.driverName,
+                      widget.driver.displayName,
                       style: TextStyle(
                         fontSize: 17.sp,
                         fontWeight: FontWeight.w700,
@@ -240,7 +238,10 @@ class _PremiumRideCardState extends State<PremiumRideCard>
                   SizedBox(width: 4.w),
                   Flexible(
                     child: Text(
-                      '${widget.driverRides} rides • ${widget.carModel}',
+                      AppLocalizations.of(context).valueRidesValue(
+                        widget.driver.totalRides,
+                        widget.carModel,
+                      ),
                       style: TextStyle(
                         fontSize: 13.sp,
                         color: AppColors.textSecondary,
@@ -279,7 +280,7 @@ class _PremiumRideCardState extends State<PremiumRideCard>
           Icon(Icons.star_rounded, color: AppColors.xpGold, size: 14.sp),
           SizedBox(width: 3.w),
           Text(
-            widget.driverRating.toStringAsFixed(1),
+            widget.driver.rating.average.toStringAsFixed(1),
             style: TextStyle(
               fontSize: 13.sp,
               fontWeight: FontWeight.w700,
@@ -308,7 +309,9 @@ class _PremiumRideCardState extends State<PremiumRideCard>
       child: Column(
         children: [
           Text(
-            '${widget.price.toStringAsFixed(0)} €',
+            AppLocalizations.of(
+              context,
+            ).value5(widget.price.toStringAsFixed(0)),
             style: TextStyle(
               fontSize: 20.sp,
               fontWeight: FontWeight.w800,
@@ -610,8 +613,10 @@ class _PremiumRideCardState extends State<PremiumRideCard>
                 SizedBox(width: 6.w),
                 Text(
                   widget.availableSeats > 0
-                      ? '${widget.availableSeats} seats left'
-                      : 'Fully booked',
+                      ? AppLocalizations.of(
+                          context,
+                        ).valueSeatsLeft(widget.availableSeats)
+                      : AppLocalizations.of(context).fullyBooked,
                   style: TextStyle(
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w600,
@@ -656,7 +661,7 @@ class _PremiumRideCardState extends State<PremiumRideCard>
                         ),
                         SizedBox(width: 6.w),
                         Text(
-                          'Book Now',
+                          AppLocalizations.of(context).bookNow,
                           style: TextStyle(
                             fontSize: 14.sp,
                             fontWeight: FontWeight.w700,
@@ -800,7 +805,7 @@ class CompactRideCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      '$price €',
+                      AppLocalizations.of(context).value5(price),
                       style: TextStyle(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.w700,
@@ -818,7 +823,7 @@ class CompactRideCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(6.r),
                       ),
                       child: Text(
-                        '$seats seats',
+                        AppLocalizations.of(context).valueSeats(seats),
                         style: TextStyle(
                           fontSize: 11.sp,
                           fontWeight: FontWeight.w600,

@@ -8,6 +8,81 @@ part of 'auth_view_model.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// Tracks whether a new social sign-in user needs to pick a role.
+///
+/// Set to `true` right after Google/Apple sign-in creates a new account.
+/// The route guard reads this to redirect to role-selection instead of home.
+/// Cleared when the user selects a role on the RoleSelectionScreen.
+
+@ProviderFor(PendingRoleSelection)
+final pendingRoleSelectionProvider = PendingRoleSelectionProvider._();
+
+/// Tracks whether a new social sign-in user needs to pick a role.
+///
+/// Set to `true` right after Google/Apple sign-in creates a new account.
+/// The route guard reads this to redirect to role-selection instead of home.
+/// Cleared when the user selects a role on the RoleSelectionScreen.
+final class PendingRoleSelectionProvider
+    extends $NotifierProvider<PendingRoleSelection, bool> {
+  /// Tracks whether a new social sign-in user needs to pick a role.
+  ///
+  /// Set to `true` right after Google/Apple sign-in creates a new account.
+  /// The route guard reads this to redirect to role-selection instead of home.
+  /// Cleared when the user selects a role on the RoleSelectionScreen.
+  PendingRoleSelectionProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'pendingRoleSelectionProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$pendingRoleSelectionHash();
+
+  @$internal
+  @override
+  PendingRoleSelection create() => PendingRoleSelection();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(bool value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<bool>(value),
+    );
+  }
+}
+
+String _$pendingRoleSelectionHash() =>
+    r'9ec496bd1ecc82dc2a4aa365c9c47bbe5393b9a8';
+
+/// Tracks whether a new social sign-in user needs to pick a role.
+///
+/// Set to `true` right after Google/Apple sign-in creates a new account.
+/// The route guard reads this to redirect to role-selection instead of home.
+/// Cleared when the user selects a role on the RoleSelectionScreen.
+
+abstract class _$PendingRoleSelection extends $Notifier<bool> {
+  bool build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<bool, bool>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<bool, bool>,
+              bool,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
+
 /// Auth repository provider
 
 @ProviderFor(authRepository)
@@ -54,134 +129,15 @@ final class AuthRepositoryProvider
 
 String _$authRepositoryHash() => r'19a3485653561ac2f781b997131430c5659286d1';
 
-/// Auth state changes provider
-
-@ProviderFor(authState)
-final authStateProvider = AuthStateProvider._();
-
-/// Auth state changes provider
-
-final class AuthStateProvider
-    extends $FunctionalProvider<AsyncValue<User?>, User?, Stream<User?>>
-    with $FutureModifier<User?>, $StreamProvider<User?> {
-  /// Auth state changes provider
-  AuthStateProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'authStateProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$authStateHash();
-
-  @$internal
-  @override
-  $StreamProviderElement<User?> $createElement($ProviderPointer pointer) =>
-      $StreamProviderElement(pointer);
-
-  @override
-  Stream<User?> create(Ref ref) {
-    return authState(ref);
-  }
-}
-
-String _$authStateHash() => r'c88cb36d6c93a5c7df685b2918f2d0f0710965a0';
-
-/// Current user data provider
-
-@ProviderFor(currentUser)
-final currentUserProvider = CurrentUserProvider._();
-
-/// Current user data provider
-
-final class CurrentUserProvider
-    extends
-        $FunctionalProvider<
-          AsyncValue<UserModel?>,
-          UserModel?,
-          FutureOr<UserModel?>
-        >
-    with $FutureModifier<UserModel?>, $FutureProvider<UserModel?> {
-  /// Current user data provider
-  CurrentUserProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'currentUserProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$currentUserHash();
-
-  @$internal
-  @override
-  $FutureProviderElement<UserModel?> $createElement($ProviderPointer pointer) =>
-      $FutureProviderElement(pointer);
-
-  @override
-  FutureOr<UserModel?> create(Ref ref) {
-    return currentUser(ref);
-  }
-}
-
-String _$currentUserHash() => r'896dc32e1e0ab3ebccb2217fdbf79728b39739bf';
-
-/// Initial route determination provider - follows MVVM by using repository
-
-@ProviderFor(initialRoute)
-final initialRouteProvider = InitialRouteProvider._();
-
-/// Initial route determination provider - follows MVVM by using repository
-
-final class InitialRouteProvider
-    extends $FunctionalProvider<AsyncValue<String>, String, FutureOr<String>>
-    with $FutureModifier<String>, $FutureProvider<String> {
-  /// Initial route determination provider - follows MVVM by using repository
-  InitialRouteProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'initialRouteProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$initialRouteHash();
-
-  @$internal
-  @override
-  $FutureProviderElement<String> $createElement($ProviderPointer pointer) =>
-      $FutureProviderElement(pointer);
-
-  @override
-  FutureOr<String> create(Ref ref) {
-    return initialRoute(ref);
-  }
-}
-
-String _$initialRouteHash() => r'57a78dd838beecabaec8f0057873c480148e941e';
-
-/// Login view model using modern Riverpod Notifier
+/// Login view model
 
 @ProviderFor(LoginViewModel)
 final loginViewModelProvider = LoginViewModelProvider._();
 
-/// Login view model using modern Riverpod Notifier
+/// Login view model
 final class LoginViewModelProvider
     extends $NotifierProvider<LoginViewModel, AsyncValue<void>> {
-  /// Login view model using modern Riverpod Notifier
+  /// Login view model
   LoginViewModelProvider._()
     : super(
         from: null,
@@ -209,9 +165,9 @@ final class LoginViewModelProvider
   }
 }
 
-String _$loginViewModelHash() => r'12e38b54e55e1a2e26f5ded043d077728236b7a4';
+String _$loginViewModelHash() => r'49b4453fe6de023677c0876822699a017d427676';
 
-/// Login view model using modern Riverpod Notifier
+/// Login view model
 
 abstract class _$LoginViewModel extends $Notifier<AsyncValue<void>> {
   AsyncValue<void> build();
@@ -231,15 +187,15 @@ abstract class _$LoginViewModel extends $Notifier<AsyncValue<void>> {
   }
 }
 
-/// Register view model using modern Riverpod Notifier
+/// Register view model
 
 @ProviderFor(RegisterViewModel)
 final registerViewModelProvider = RegisterViewModelProvider._();
 
-/// Register view model using modern Riverpod Notifier
+/// Register view model
 final class RegisterViewModelProvider
     extends $NotifierProvider<RegisterViewModel, AsyncValue<void>> {
-  /// Register view model using modern Riverpod Notifier
+  /// Register view model
   RegisterViewModelProvider._()
     : super(
         from: null,
@@ -269,7 +225,7 @@ final class RegisterViewModelProvider
 
 String _$registerViewModelHash() => r'c1139a5db50cde5dc9f3706ca4116304e5987a32';
 
-/// Register view model using modern Riverpod Notifier
+/// Register view model
 
 abstract class _$RegisterViewModel extends $Notifier<AsyncValue<void>> {
   AsyncValue<void> build();

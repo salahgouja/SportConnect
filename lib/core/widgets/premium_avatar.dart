@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Premium Avatar with border, badge, and online indicator
 class PremiumAvatar extends StatelessWidget {
@@ -94,7 +95,7 @@ class PremiumAvatar extends StatelessWidget {
 
   Widget _buildPlaceholder() {
     return Container(
-      color: AppColors.primary.withOpacity(0.2),
+      color: AppColors.primary.withValues(alpha: 0.2),
       child: Center(
         child: name != null && name!.isNotEmpty
             ? Text(
@@ -163,7 +164,7 @@ class LevelAvatar extends StatelessWidget {
                 boxShadow: AppSpacing.shadowSm,
               ),
               child: Text(
-                'Lv.$level',
+                AppLocalizations.of(context).lvValue(level),
                 style: TextStyle(
                   fontSize: 10.sp,
                   fontWeight: FontWeight.w800,
@@ -244,7 +245,7 @@ class AvatarGroup extends StatelessWidget {
                   ),
                   child: Center(
                     child: Text(
-                      '+$extra',
+                      AppLocalizations.of(context).value4(extra),
                       style: TextStyle(
                         fontSize: (size * 0.35).sp,
                         fontWeight: FontWeight.w700,

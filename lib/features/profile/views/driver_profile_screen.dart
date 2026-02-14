@@ -4,11 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
-import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
-import 'package:sport_connect/core/config/app_router.dart';
+import 'package:sport_connect/features/rides/models/driver_stats.dart';
 import 'package:sport_connect/features/rides/repositories/driver_stats_repository.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Driver Profile Screen - Shows driver stats, ratings, and achievements
 class DriverProfileScreen extends ConsumerStatefulWidget {
@@ -146,7 +148,7 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen>
                             ),
                             SizedBox(width: 6.w),
                             Text(
-                              'Verified Driver',
+                              AppLocalizations.of(context).verifiedDriver,
                               style: TextStyle(
                                 fontSize: 12.sp,
                                 color: Colors.white,
@@ -165,18 +167,18 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen>
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
                               _buildQuickStat(
-                                stats?.rating.toStringAsFixed(1) ?? '0.0',
-                                'Rating',
+                                stats.rating.toStringAsFixed(1),
+                                AppLocalizations.of(context).rating,
                                 Icons.star,
                               ),
                               _buildQuickStat(
-                                _formatNumber(stats?.totalRides ?? 0),
-                                'Trips',
+                                _formatNumber(stats.totalRides),
+                                AppLocalizations.of(context).trips,
                                 Icons.directions_car,
                               ),
                               _buildQuickStat(
                                 _getMembershipDuration(user.value?.createdAt),
-                                'Member',
+                                AppLocalizations.of(context).member,
                                 Icons.calendar_today,
                               ),
                             ],
@@ -184,15 +186,19 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen>
                           loading: () => Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
-                              _buildQuickStat('...', 'Rating', Icons.star),
                               _buildQuickStat(
-                                '...',
-                                'Trips',
+                                AppLocalizations.of(context).text12,
+                                AppLocalizations.of(context).rating,
+                                Icons.star,
+                              ),
+                              _buildQuickStat(
+                                AppLocalizations.of(context).text12,
+                                AppLocalizations.of(context).trips,
                                 Icons.directions_car,
                               ),
                               _buildQuickStat(
-                                '...',
-                                'Member',
+                                AppLocalizations.of(context).text12,
+                                AppLocalizations.of(context).member,
                                 Icons.calendar_today,
                               ),
                             ],
@@ -200,15 +206,19 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen>
                           error: (_, _) => Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
-                              _buildQuickStat('0.0', 'Rating', Icons.star),
+                              _buildQuickStat(
+                                AppLocalizations.of(context).text00,
+                                AppLocalizations.of(context).rating,
+                                Icons.star,
+                              ),
                               _buildQuickStat(
                                 '0',
-                                'Trips',
+                                AppLocalizations.of(context).trips,
                                 Icons.directions_car,
                               ),
                               _buildQuickStat(
-                                'New',
-                                'Member',
+                                AppLocalizations.of(context).kNew,
+                                AppLocalizations.of(context).member,
                                 Icons.calendar_today,
                               ),
                             ],
@@ -313,7 +323,7 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen>
         children: [
           // Quick Actions
           Text(
-            'Quick Actions',
+            AppLocalizations.of(context).quickActions,
             style: TextStyle(
               fontSize: 18.sp,
               fontWeight: FontWeight.bold,
@@ -327,7 +337,7 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen>
                 child: _QuickActionButton(
                   icon: Icons.directions_car,
                   label: 'My Vehicles',
-                  onTap: () => context.push(AppRouter.driverVehicles),
+                  onTap: () => context.push(AppRoutes.driverVehicles.path),
                 ),
               ),
               SizedBox(width: 12.w),
@@ -335,7 +345,7 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen>
                 child: _QuickActionButton(
                   icon: Icons.settings,
                   label: 'Settings',
-                  onTap: () => context.push(AppRouter.driverSettings),
+                  onTap: () => context.push(AppRoutes.driverSettings.path),
                 ),
               ),
               SizedBox(width: 12.w),
@@ -343,7 +353,7 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen>
                 child: _QuickActionButton(
                   icon: Icons.account_balance_wallet,
                   label: 'Earnings',
-                  onTap: () => context.push(AppRouter.driverEarnings),
+                  onTap: () => context.go(AppRoutes.driverEarnings.path),
                 ),
               ),
             ],
@@ -353,7 +363,7 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen>
 
           // Performance Overview
           Text(
-            'Performance Overview',
+            AppLocalizations.of(context).performanceOverview,
             style: TextStyle(
               fontSize: 18.sp,
               fontWeight: FontWeight.bold,
@@ -373,32 +383,40 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen>
               childAspectRatio: 1.2,
               children: [
                 _buildStatCard(
-                  'Total Trips',
+                  AppLocalizations.of(context).totalTrips,
                   _formatNumber(stats?.totalRides ?? 0),
                   Icons.directions_car,
                   AppColors.primary,
-                  '+${stats?.ridesThisMonth ?? 0} this month',
+                  AppLocalizations.of(
+                    context,
+                  ).valueThisMonth(stats?.ridesThisMonth ?? 0),
                 ),
                 _buildStatCard(
-                  'Total Earnings',
-                  '${(stats?.totalEarnings ?? 0).toStringAsFixed(0)} €',
+                  AppLocalizations.of(context).totalEarnings,
+                  AppLocalizations.of(
+                    context,
+                  ).value5((stats?.totalEarnings ?? 0).toStringAsFixed(0)),
                   Icons.attach_money,
                   AppColors.success,
-                  '+${(stats?.earningsThisMonth ?? 0).toStringAsFixed(0)} € this month',
+                  AppLocalizations.of(context).valueThisMonth2(
+                    (stats?.earningsThisMonth ?? 0).toStringAsFixed(0),
+                  ),
                 ),
                 _buildStatCard(
-                  'CO₂ Saved',
-                  '${(stats?.co2Saved ?? 0).toStringAsFixed(0)} kg',
+                  AppLocalizations.of(context).coSaved,
+                  AppLocalizations.of(
+                    context,
+                  ).valueKg((stats?.co2Saved ?? 0).toStringAsFixed(0)),
                   Icons.eco,
                   AppColors.secondary,
-                  'Since joining',
+                  AppLocalizations.of(context).sinceJoining,
                 ),
                 _buildStatCard(
-                  'Avg Rating',
+                  AppLocalizations.of(context).avgRating,
                   (stats?.rating ?? 0).toStringAsFixed(2),
                   Icons.star,
                   AppColors.warning,
-                  'Last 100 trips',
+                  AppLocalizations.of(context).last100Trips,
                 ),
               ],
             ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1),
@@ -411,32 +429,32 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen>
               childAspectRatio: 1.2,
               children: [
                 _buildStatCard(
-                  'Total Trips',
-                  '...',
+                  AppLocalizations.of(context).totalTrips,
+                  AppLocalizations.of(context).text12,
                   Icons.directions_car,
                   AppColors.primary,
-                  'Loading...',
+                  AppLocalizations.of(context).loading,
                 ),
                 _buildStatCard(
-                  'Total Earnings',
-                  '...',
+                  AppLocalizations.of(context).totalEarnings,
+                  AppLocalizations.of(context).text12,
                   Icons.attach_money,
                   AppColors.success,
-                  'Loading...',
+                  AppLocalizations.of(context).loading,
                 ),
                 _buildStatCard(
-                  'CO₂ Saved',
-                  '...',
+                  AppLocalizations.of(context).coSaved,
+                  AppLocalizations.of(context).text12,
                   Icons.eco,
                   AppColors.secondary,
-                  'Loading...',
+                  AppLocalizations.of(context).loading,
                 ),
                 _buildStatCard(
-                  'Avg Rating',
-                  '...',
+                  AppLocalizations.of(context).avgRating,
+                  AppLocalizations.of(context).text12,
                   Icons.star,
                   AppColors.warning,
-                  'Loading...',
+                  AppLocalizations.of(context).loading,
                 ),
               ],
             ),
@@ -449,32 +467,32 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen>
               childAspectRatio: 1.2,
               children: [
                 _buildStatCard(
-                  'Total Trips',
+                  AppLocalizations.of(context).totalTrips,
                   '0',
                   Icons.directions_car,
                   AppColors.primary,
-                  'No data',
+                  AppLocalizations.of(context).noData,
                 ),
                 _buildStatCard(
-                  'Total Earnings',
-                  '0 €',
+                  AppLocalizations.of(context).totalEarnings,
+                  AppLocalizations.of(context).text0,
                   Icons.attach_money,
                   AppColors.success,
-                  'No data',
+                  AppLocalizations.of(context).noData,
                 ),
                 _buildStatCard(
-                  'CO₂ Saved',
-                  '0 kg',
+                  AppLocalizations.of(context).coSaved,
+                  AppLocalizations.of(context).text0Kg,
                   Icons.eco,
                   AppColors.secondary,
-                  'No data',
+                  AppLocalizations.of(context).noData,
                 ),
                 _buildStatCard(
-                  'Avg Rating',
-                  '0.0',
+                  AppLocalizations.of(context).avgRating,
+                  AppLocalizations.of(context).text00,
                   Icons.star,
                   AppColors.warning,
-                  'No data',
+                  AppLocalizations.of(context).noData,
                 ),
               ],
             ),
@@ -484,7 +502,7 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen>
 
           // Weekly Activity
           Text(
-            'Weekly Activity',
+            AppLocalizations.of(context).weeklyActivity,
             style: TextStyle(
               fontSize: 18.sp,
               fontWeight: FontWeight.bold,
@@ -498,7 +516,7 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen>
 
           // Rating Breakdown
           Text(
-            'Rating Breakdown',
+            AppLocalizations.of(context).ratingBreakdown,
             style: TextStyle(
               fontSize: 18.sp,
               fontWeight: FontWeight.bold,
@@ -609,7 +627,7 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Trips this week',
+                AppLocalizations.of(context).tripsThisWeek,
                 style: TextStyle(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w600,
@@ -617,7 +635,7 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen>
                 ),
               ),
               Text(
-                '$ridesThisWeek trips',
+                AppLocalizations.of(context).valueTrips(ridesThisWeek),
                 style: TextStyle(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.bold,
@@ -693,7 +711,7 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen>
                 SizedBox(
                   width: 24.w,
                   child: Text(
-                    '${rating['stars']}',
+                    AppLocalizations.of(context).value2(rating['stars'] ?? 0),
                     style: TextStyle(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
@@ -728,7 +746,9 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen>
                 ),
                 SizedBox(width: 12.w),
                 Text(
-                  '${((rating['percentage'] as double) * 100).toInt()}%',
+                  AppLocalizations.of(
+                    context,
+                  ).value(((rating['percentage'] as double) * 100).toInt()),
                   style: TextStyle(
                     fontSize: 12.sp,
                     color: AppColors.textSecondary,

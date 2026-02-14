@@ -8,69 +8,14 @@ part of 'profile_search_screen.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Search query state provider
-
-@ProviderFor(SearchQuery)
-final searchQueryProvider = SearchQueryProvider._();
-
-/// Search query state provider
-final class SearchQueryProvider extends $NotifierProvider<SearchQuery, String> {
-  /// Search query state provider
-  SearchQueryProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'searchQueryProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$searchQueryHash();
-
-  @$internal
-  @override
-  SearchQuery create() => SearchQuery();
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(String value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<String>(value),
-    );
-  }
-}
-
-String _$searchQueryHash() => r'2c146927785523a0ddf51b23b777a9be4afdc092';
-
-/// Search query state provider
-
-abstract class _$SearchQuery extends $Notifier<String> {
-  String build();
-  @$mustCallSuper
-  @override
-  void runBuild() {
-    final ref = this.ref as $Ref<String, String>;
-    final element =
-        ref.element
-            as $ClassProviderElement<
-              AnyNotifier<String, String>,
-              String,
-              Object?,
-              Object?
-            >;
-    element.handleCreate(ref, build);
-  }
-}
-
-/// Search results provider
+/// Search results provider — accepts the query as a family parameter
+/// so ephemeral search state stays local to the widget.
 
 @ProviderFor(searchResults)
-final searchResultsProvider = SearchResultsProvider._();
+final searchResultsProvider = SearchResultsFamily._();
 
-/// Search results provider
+/// Search results provider — accepts the query as a family parameter
+/// so ephemeral search state stays local to the widget.
 
 final class SearchResultsProvider
     extends
@@ -80,20 +25,28 @@ final class SearchResultsProvider
           FutureOr<List<UserModel>>
         >
     with $FutureModifier<List<UserModel>>, $FutureProvider<List<UserModel>> {
-  /// Search results provider
-  SearchResultsProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'searchResultsProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
+  /// Search results provider — accepts the query as a family parameter
+  /// so ephemeral search state stays local to the widget.
+  SearchResultsProvider._({
+    required SearchResultsFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'searchResultsProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
 
   @override
   String debugGetCreateSourceHash() => _$searchResultsHash();
+
+  @override
+  String toString() {
+    return r'searchResultsProvider'
+        ''
+        '($argument)';
+  }
 
   @$internal
   @override
@@ -103,8 +56,43 @@ final class SearchResultsProvider
 
   @override
   FutureOr<List<UserModel>> create(Ref ref) {
-    return searchResults(ref);
+    final argument = this.argument as String;
+    return searchResults(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is SearchResultsProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
   }
 }
 
-String _$searchResultsHash() => r'7d2472875c7b9bf58c9760c270637e7e5de998df';
+String _$searchResultsHash() => r'83b8c25d11d61301a840186e8098f81bff203aab';
+
+/// Search results provider — accepts the query as a family parameter
+/// so ephemeral search state stays local to the widget.
+
+final class SearchResultsFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<List<UserModel>>, String> {
+  SearchResultsFamily._()
+    : super(
+        retry: null,
+        name: r'searchResultsProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Search results provider — accepts the query as a family parameter
+  /// so ephemeral search state stays local to the widget.
+
+  SearchResultsProvider call(String query) =>
+      SearchResultsProvider._(argument: query, from: this);
+
+  @override
+  String toString() => r'searchResultsProvider';
+}

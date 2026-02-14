@@ -102,13 +102,13 @@ final pendingRideRequestsProvider = PendingRideRequestsProvider._();
 final class PendingRideRequestsProvider
     extends
         $FunctionalProvider<
-          AsyncValue<List<RideRequest>>,
-          List<RideRequest>,
-          Stream<List<RideRequest>>
+          AsyncValue<List<RideRequestModel>>,
+          List<RideRequestModel>,
+          Stream<List<RideRequestModel>>
         >
     with
-        $FutureModifier<List<RideRequest>>,
-        $StreamProvider<List<RideRequest>> {
+        $FutureModifier<List<RideRequestModel>>,
+        $StreamProvider<List<RideRequestModel>> {
   PendingRideRequestsProvider._()
     : super(
         from: null,
@@ -125,18 +125,102 @@ final class PendingRideRequestsProvider
 
   @$internal
   @override
-  $StreamProviderElement<List<RideRequest>> $createElement(
+  $StreamProviderElement<List<RideRequestModel>> $createElement(
     $ProviderPointer pointer,
   ) => $StreamProviderElement(pointer);
 
   @override
-  Stream<List<RideRequest>> create(Ref ref) {
+  Stream<List<RideRequestModel>> create(Ref ref) {
     return pendingRideRequests(ref);
   }
 }
 
 String _$pendingRideRequestsHash() =>
-    r'a86ba77ff85bcad9a7d4a320549e0980098aa3da';
+    r'77aefe6b60673c0853b7063520fcb8fbed6bb03b';
+
+@ProviderFor(acceptedRideRequests)
+final acceptedRideRequestsProvider = AcceptedRideRequestsProvider._();
+
+final class AcceptedRideRequestsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<RideRequestModel>>,
+          List<RideRequestModel>,
+          Stream<List<RideRequestModel>>
+        >
+    with
+        $FutureModifier<List<RideRequestModel>>,
+        $StreamProvider<List<RideRequestModel>> {
+  AcceptedRideRequestsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'acceptedRideRequestsProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$acceptedRideRequestsHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<RideRequestModel>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<RideRequestModel>> create(Ref ref) {
+    return acceptedRideRequests(ref);
+  }
+}
+
+String _$acceptedRideRequestsHash() =>
+    r'e6a883fedd14bdcbbaaae32413dfde4daf5d44e2';
+
+@ProviderFor(rejectedRideRequests)
+final rejectedRideRequestsProvider = RejectedRideRequestsProvider._();
+
+final class RejectedRideRequestsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<RideRequestModel>>,
+          List<RideRequestModel>,
+          Stream<List<RideRequestModel>>
+        >
+    with
+        $FutureModifier<List<RideRequestModel>>,
+        $StreamProvider<List<RideRequestModel>> {
+  RejectedRideRequestsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'rejectedRideRequestsProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$rejectedRideRequestsHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<RideRequestModel>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<RideRequestModel>> create(Ref ref) {
+    return rejectedRideRequests(ref);
+  }
+}
+
+String _$rejectedRideRequestsHash() =>
+    r'23599351633ece364e914e7607d66589586bd210';
 
 @ProviderFor(upcomingDriverRides)
 final upcomingDriverRidesProvider = UpcomingDriverRidesProvider._();

@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/services/map_service.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// POI (Points of Interest) Search Widget
 ///
@@ -206,7 +207,7 @@ class _POISearchSheetState extends State<POISearchSheet> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Nearby Places',
+                  AppLocalizations.of(context).nearbyPlaces,
                   style: TextStyle(
                     fontSize: 20.sp,
                     fontWeight: FontWeight.w700,
@@ -214,7 +215,7 @@ class _POISearchSheetState extends State<POISearchSheet> {
                   ),
                 ),
                 Text(
-                  'Find useful spots along your route',
+                  AppLocalizations.of(context).findUsefulSpotsAlongYour,
                   style: TextStyle(
                     fontSize: 12.sp,
                     color: AppColors.textSecondary,
@@ -253,7 +254,7 @@ class _POISearchSheetState extends State<POISearchSheet> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Search Radius',
+                AppLocalizations.of(context).searchRadius,
                 style: TextStyle(
                   fontSize: 13.sp,
                   fontWeight: FontWeight.w600,
@@ -419,7 +420,7 @@ class _POISearchSheetState extends State<POISearchSheet> {
                 ),
             SizedBox(height: 20.h),
             Text(
-              'Select a category to search',
+              AppLocalizations.of(context).selectACategoryToSearch,
               style: TextStyle(
                 fontSize: 17.sp,
                 fontWeight: FontWeight.w700,
@@ -428,7 +429,7 @@ class _POISearchSheetState extends State<POISearchSheet> {
             ),
             SizedBox(height: 8.h),
             Text(
-              'Tap on any category above to find nearby places',
+              AppLocalizations.of(context).tapOnAnyCategoryAbove,
               style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
@@ -456,7 +457,7 @@ class _POISearchSheetState extends State<POISearchSheet> {
             ),
             SizedBox(height: 20.h),
             Text(
-              'No results found',
+              AppLocalizations.of(context).noResultsFound,
               style: TextStyle(
                 fontSize: 17.sp,
                 fontWeight: FontWeight.w700,
@@ -465,7 +466,7 @@ class _POISearchSheetState extends State<POISearchSheet> {
             ),
             SizedBox(height: 8.h),
             Text(
-              'Try increasing the search radius',
+              AppLocalizations.of(context).tryIncreasingTheSearchRadius,
               style: TextStyle(fontSize: 13.sp, color: AppColors.textTertiary),
             ),
           ],

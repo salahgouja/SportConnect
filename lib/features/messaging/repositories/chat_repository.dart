@@ -3,12 +3,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
+import 'package:sport_connect/core/interfaces/repositories/i_chat_repository.dart';
 import 'package:sport_connect/features/messaging/models/message_model.dart';
 
 part 'chat_repository.g.dart';
 
 /// Chat Repository for Firestore operations
-class ChatRepository {
+class ChatRepository implements IChatRepository {
   final FirebaseFirestore _firestore;
   final FirebaseStorage _storage;
 
@@ -27,10 +28,13 @@ class ChatRepository {
   /// Create a new chat
   Future<String> createChat(ChatModel chat) async {
     final docRef = _chatsCollection.doc();
+    final now = DateTime.now();
     final chatWithId = chat.copyWith(
       id: docRef.id,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
+      createdAt: now,
+      updatedAt: now,
+      // Initialize lastMessageAt so chat appears in queries ordered by this field
+      lastMessageAt: chat.lastMessageAt ?? now,
     );
     await docRef.set(chatWithId.toJson());
     return docRef.id;
@@ -123,7 +127,7 @@ class ChatRepository {
   Stream<List<ChatModel>> streamUserChats(String userId) {
     return _chatsCollection
         .where('participantIds', arrayContains: userId)
-        .where('isActive', isEqualTo: true)
+        // .where('isActive', isEqualTo: true)
         .orderBy('lastMessageAt', descending: true)
         .snapshots()
         .map(
@@ -205,15 +209,16 @@ class ChatRepository {
     // Add message
     batch.set(docRef, messageWithId.toJson());
 
-    // Update chat's last message
-    batch.update(_chatsCollection.doc(message.chatId), {
+    // Update or create chat's last message info
+    // Using set with merge to handle cases where chat might not exist yet
+    batch.set(_chatsCollection.doc(message.chatId), {
       'lastMessageContent': message.content,
       'lastMessageSenderId': message.senderId,
       'lastMessageSenderName': message.senderName,
       'lastMessageType': message.type.name,
       'lastMessageAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
-    });
+    }, SetOptions(merge: true));
 
     await batch.commit();
     return docRef.id;
@@ -250,7 +255,140 @@ class ChatRepository {
   }
 
   /// Mark messages as read
-  Future<void> markAsRead({
+  @override
+  Future<void> markAsRead(String chatId, String userId) async {
+    // Update all unread messages
+    final unreadMessages = await _messagesCollection(
+      chatId,
+    ).where('readBy', whereNotIn: [userId]).get();
+
+    final batch = _firestore.batch();
+
+    for (final doc in unreadMessages.docs) {
+      batch.update(doc.reference, {
+        'readBy': FieldValue.arrayUnion([userId]),
+        'status': MessageStatus.read.name,
+      });
+    }
+
+    // Reset unread count
+    batch.update(_chatsCollection.doc(chatId), {'unreadCounts.$userId': 0});
+
+    await batch.commit();
+  }
+
+  /// Delete message (soft delete)
+  @override
+  Future<void> deleteMessage(String messageId) async {
+    // Find the message across all chats (this is inefficient, better to pass chatId)
+    // For now, we'll need to query or change interface to include chatId
+    // Implementing a version that requires knowing the chatId
+    throw UnimplementedError(
+      'deleteMessage requires chatId parameter. Use deleteChatMessage instead.',
+    );
+  }
+
+  /// Delete message with chatId (helper method)
+  Future<void> deleteChatMessage({
+    required String chatId,
+    required String messageId,
+  }) async {
+    await _messagesCollection(chatId).doc(messageId).update({
+      'isDeleted': true,
+      'content': 'This message was deleted',
+    });
+  }
+
+  // ==================== INTERFACE IMPLEMENTATIONS ====================
+
+  @override
+  Stream<List<ChatModel>> getUserChats(String userId) {
+    return _chatsCollection
+        .where('participantIds', arrayContains: userId)
+        .orderBy('lastMessageAt', descending: true)
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => ChatModel.fromJson(doc.data()))
+              .toList(),
+        );
+  }
+
+  @override
+  Future<ChatModel?> getOrCreateDirectChat(
+    String userId1,
+    String userId2,
+  ) async {
+    // Check if chat already exists
+    final query = await _chatsCollection
+        .where('type', isEqualTo: ChatType.private.name)
+        .where('participantIds', arrayContains: userId1)
+        .get();
+
+    for (final doc in query.docs) {
+      final chat = ChatModel.fromJson(doc.data());
+      if (chat.participantIds.contains(userId2)) {
+        return chat;
+      }
+    }
+
+    // Chat doesn't exist, return null (caller should create it with proper user info)
+    return null;
+  }
+
+  @override
+  Stream<List<MessageModel>> getChatMessages(String chatId, {int limit = 50}) {
+    return _messagesCollection(chatId)
+        .orderBy('timestamp', descending: true)
+        .limit(limit)
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => MessageModel.fromJson(doc.data()))
+              .toList(),
+        );
+  }
+
+  @override
+  Future<void> setTypingStatus(
+    String chatId,
+    String userId,
+    bool isTyping,
+  ) async {
+    final typingRef = _chatsCollection
+        .doc(chatId)
+        .collection('typing')
+        .doc(userId);
+
+    if (isTyping) {
+      await typingRef.set({
+        'odid': userId,
+        'chatId': chatId,
+        'displayName': '', // Would need to pass this
+        'startedAt': FieldValue.serverTimestamp(),
+      });
+    } else {
+      await typingRef.delete();
+    }
+  }
+
+  @override
+  Stream<Map<String, bool>> getTypingStatus(String chatId) {
+    return _chatsCollection.doc(chatId).collection('typing').snapshots().map((
+      snapshot,
+    ) {
+      final Map<String, bool> typingUsers = {};
+      for (final doc in snapshot.docs) {
+        typingUsers[doc.id] = true;
+      }
+      return typingUsers;
+    });
+  }
+
+  // ==================== EXISTING HELPER METHODS ====================
+
+  /// Mark messages as read (original helper method with list)
+  Future<void> markMessagesAsRead({
     required String chatId,
     required String odid,
     required List<String> messageIds,
@@ -268,17 +406,6 @@ class ChatRepository {
     batch.update(_chatsCollection.doc(chatId), {'unreadCounts.$odid': 0});
 
     await batch.commit();
-  }
-
-  /// Delete message (soft delete)
-  Future<void> deleteMessage({
-    required String chatId,
-    required String messageId,
-  }) async {
-    await _messagesCollection(chatId).doc(messageId).update({
-      'isDeleted': true,
-      'content': 'This message was deleted',
-    });
   }
 
   /// Edit message

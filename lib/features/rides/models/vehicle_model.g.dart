@@ -11,7 +11,7 @@ _VehicleModel _$VehicleModelFromJson(Map json) => _VehicleModel(
   ownerId: json['ownerId'] as String,
   make: json['make'] as String,
   model: json['model'] as String,
-  year: json['year'] as String,
+  year: (json['year'] as num).toInt(),
   color: json['color'] as String,
   licensePlate: json['licensePlate'] as String,
   capacity: (json['capacity'] as num?)?.toInt() ?? 4,

@@ -1,10 +1,10 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+
 import 'package:sport_connect/core/services/stripe_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/payments/models/payment_model.dart';
 import 'package:sport_connect/features/payments/repositories/payment_repository.dart';
-import 'package:sport_connect/features/rides/models/ride_model.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 
 part 'payment_view_model.g.dart';
 
@@ -30,8 +30,8 @@ class PaymentViewModel extends _$PaymentViewModel {
       final paymentRepo = ref.read(paymentRepositoryProvider);
 
       // Calculate total amount
-      final totalAmount = ride.pricePerSeat * seatsBooked;
-      final currency = ride.currency ?? 'usd';
+      final totalAmount = ride.pricing.pricePerSeat.amount * seatsBooked;
+      final currency = ride.pricing.pricePerSeat.currency;
 
       // Create Stripe Payment Intent via Firebase Cloud Function
       // This automatically handles:
@@ -44,11 +44,12 @@ class PaymentViewModel extends _$PaymentViewModel {
         riderId: riderId,
         riderName: riderName,
         driverId: ride.driverId,
-        driverName: ride.driverName,
+        driverName: '', // Resolved at view layer
         amount: totalAmount * 100, // Convert to cents
         currency: currency,
         customerId: customerId,
-        description: '${ride.origin.address} → ${ride.destination.address}',
+        description:
+            '${ride.route.origin.address} → ${ride.route.destination.address}',
       );
 
       // Process payment with Payment Sheet
@@ -64,6 +65,9 @@ class PaymentViewModel extends _$PaymentViewModel {
           paymentIntentData['paymentIntentId'],
         );
 
+        // Check if provider is still mounted after async operation
+        if (!ref.mounted) return payment!;
+
         state = const AsyncValue.data(null);
         return payment!;
       } else {
@@ -71,7 +75,11 @@ class PaymentViewModel extends _$PaymentViewModel {
       }
     } catch (e, stack) {
       TalkerService.error('Error processing payment: $e');
-      state = AsyncValue.error(e, stack);
+      
+      // Check if provider is still mounted before setting error state
+      if (ref.mounted) {
+        state = AsyncValue.error(e, stack);
+      }
       rethrow;
     }
   }
@@ -116,10 +124,17 @@ class PaymentViewModel extends _$PaymentViewModel {
         reason: reason,
       );
 
+      // Check if provider is still mounted after async operation
+      if (!ref.mounted) return;
+
       state = const AsyncValue.data(null);
     } catch (e, stack) {
       TalkerService.error('Error processing refund: $e');
-      state = AsyncValue.error(e, stack);
+      
+      // Check if provider is still mounted before setting error state
+      if (ref.mounted) {
+        state = AsyncValue.error(e, stack);
+      }
       rethrow;
     }
   }
@@ -143,10 +158,17 @@ class PaymentViewModel extends _$PaymentViewModel {
         returnUrl: 'sportconnect://driver/onboarding/complete',
       );
 
+      // Check if provider is still mounted after async operation
+      if (!ref.mounted) return result;
+      
       state = const AsyncValue.data(null);
       return result;
     } catch (e, stack) {
       TalkerService.error('Error creating connected account: $e');
+      
+      // Check if provider is still mounted before setting error state
+      if (!ref.mounted) return null;
+      
       state = AsyncValue.error(e, stack);
       return null;
     }
@@ -174,12 +196,42 @@ class PaymentViewModel extends _$PaymentViewModel {
         isFullySetup: isFullySetup,
       );
 
+      // Check if provider is still mounted after async operation
+      if (!ref.mounted) return true;
+
       state = const AsyncValue.data(null);
       return true;
     } catch (e, stack) {
       TalkerService.error('Error requesting payout: $e');
-      state = AsyncValue.error(e, stack);
+      
+      // Check if provider is still mounted before setting error state
+      if (ref.mounted) {
+        state = AsyncValue.error(e, stack);
+      }
       return false;
+    }
+  }
+
+  /// Get connected account status for a driver
+  Future<Map<String, dynamic>> getConnectedAccountStatus(String userId) async {
+    try {
+      final repo = ref.read(paymentRepositoryProvider);
+      final account = await repo.getConnectedAccount(userId);
+
+      if (account == null) {
+        return {'isConnected': false, 'requiresMoreInfo': false};
+      }
+
+      return {
+        'isConnected': account.onboardingCompleted,
+        'requiresMoreInfo': !account.detailsSubmitted,
+        'chargesEnabled': account.chargesEnabled,
+        'payoutsEnabled': account.payoutsEnabled,
+        'accountId': account.stripeAccountId,
+      };
+    } catch (e) {
+      TalkerService.error('Error getting connected account status: $e');
+      return {'isConnected': false, 'requiresMoreInfo': false};
     }
   }
 }
@@ -344,6 +396,24 @@ class DriverPayoutViewModel extends _$DriverPayoutViewModel {
       // Payout record created by Cloud Function, just refresh
       ref.invalidateSelf();
 
+      // Check if provider is still mounted after async operation
+      if (!ref.mounted) {
+        return DriverPayout(
+          id: payoutData['payoutId'],
+          driverId: driverId,
+          driverName: '',
+          connectedAccountId: connectedAccount.stripeAccountId,
+          amount: amount,
+          currency: currency,
+          status: PayoutStatus.inTransit,
+          stripePayoutId: payoutData['payoutId'],
+          isInstantPayout: true,
+          expectedArrivalDate: DateTime.fromMillisecondsSinceEpoch(
+            payoutData['arrivalDate'] * 1000,
+          ),
+        );
+      }
+
       state = const AsyncValue.data(null);
 
       return DriverPayout(
@@ -362,7 +432,11 @@ class DriverPayoutViewModel extends _$DriverPayoutViewModel {
       );
     } catch (e, stack) {
       TalkerService.error('Error requesting instant payout: $e');
-      state = AsyncValue.error(e, stack);
+      
+      // Check if provider is still mounted before setting error state
+      if (ref.mounted) {
+        state = AsyncValue.error(e, stack);
+      }
       rethrow;
     }
   }

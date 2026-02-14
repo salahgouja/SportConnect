@@ -6,10 +6,12 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
-import 'package:sport_connect/features/rides/models/vehicle_model.dart';
+import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 import 'package:sport_connect/features/rides/repositories/vehicle_repository.dart';
+import 'package:sport_connect/features/rides/view_models/vehicle_view_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Driver Vehicle Management Screen with Firestore
 class DriverVehicleScreen extends ConsumerStatefulWidget {
@@ -53,7 +55,7 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
                   ),
                   SizedBox(height: 16.h),
                   Text(
-                    'Please sign in to manage vehicles',
+                    AppLocalizations.of(context).pleaseSignInToManage,
                     style: TextStyle(
                       fontSize: 16.sp,
                       color: AppColors.textSecondary,
@@ -78,7 +80,9 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
           error: (e, _) => Scaffold(
             backgroundColor: AppColors.background,
             appBar: _buildAppBar(),
-            body: Center(child: Text('Error: $e')),
+            body: Center(
+              child: Text(AppLocalizations.of(context).errorValue(e)),
+            ),
           ),
         );
       },
@@ -90,7 +94,7 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
       error: (e, _) => Scaffold(
         backgroundColor: AppColors.background,
         appBar: _buildAppBar(),
-        body: Center(child: Text('Error: $e')),
+        body: Center(child: Text(AppLocalizations.of(context).errorValue(e))),
       ),
     );
   }
@@ -116,7 +120,7 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
         onPressed: () => context.pop(),
       ),
       title: Text(
-        'My Vehicles',
+        AppLocalizations.of(context).myVehicles,
         style: TextStyle(
           fontSize: 20.sp,
           fontWeight: FontWeight.bold,
@@ -189,7 +193,7 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
           ),
           SizedBox(height: 24.h),
           Text(
-            'No Vehicles Added',
+            AppLocalizations.of(context).noVehiclesAdded,
             style: TextStyle(
               fontSize: 20.sp,
               fontWeight: FontWeight.bold,
@@ -198,7 +202,7 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
           ),
           SizedBox(height: 8.h),
           Text(
-            'Add your first vehicle to start\noffering rides',
+            AppLocalizations.of(context).addYourFirstVehicleTo,
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
           ),
@@ -206,7 +210,7 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
           ElevatedButton.icon(
             onPressed: () => _showAddVehicleSheet(context),
             icon: const Icon(Icons.add),
-            label: const Text('Add Vehicle'),
+            label: Text(AppLocalizations.of(context).addVehicle),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
@@ -232,7 +236,9 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
           if (user == null) return;
 
           final newVehicle = vehicle.copyWith(ownerId: user.uid);
-          await ref.read(vehicleRepositoryProvider).createVehicle(newVehicle);
+          await ref
+              .read(vehicleViewModelProvider.notifier)
+              .createVehicle(newVehicle);
           if (mounted) context.pop();
         },
       ),
@@ -248,7 +254,7 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
         vehicle: vehicle,
         onSave: (updatedVehicle) async {
           await ref
-              .read(vehicleRepositoryProvider)
+              .read(vehicleViewModelProvider.notifier)
               .updateVehicle(updatedVehicle);
           if (mounted) context.pop();
         },
@@ -267,12 +273,12 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
 
   void _setActiveVehicle(String userId, String vehicleId) async {
     await ref
-        .read(vehicleRepositoryProvider)
-        .setActiveVehicle(userId, vehicleId);
+        .read(vehicleViewModelProvider.notifier)
+        .setActiveVehicle(vehicleId);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Vehicle set as active'),
+          content: Text(AppLocalizations.of(context).vehicleSetAsActive),
           backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
         ),
@@ -287,25 +293,25 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16.r),
         ),
-        title: const Text('Delete Vehicle'),
+        title: Text(AppLocalizations.of(context).deleteVehicle),
         content: Text(
-          'Are you sure you want to delete ${vehicle.displayName}?',
+          AppLocalizations.of(context).areYouSureYouWant4(vehicle.displayName),
         ),
         actions: [
           TextButton(
             onPressed: () => context.pop(),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           ElevatedButton(
             onPressed: () async {
               context.pop();
               await ref
-                  .read(vehicleRepositoryProvider)
+                  .read(vehicleViewModelProvider.notifier)
                   .deleteVehicle(vehicle.id);
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: const Text('Vehicle deleted'),
+                    content: Text(AppLocalizations.of(context).vehicleDeleted),
                     backgroundColor: AppColors.success,
                     behavior: SnackBarBehavior.floating,
                   ),
@@ -313,7 +319,10 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+            child: Text(
+              AppLocalizations.of(context).actionDelete,
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -423,7 +432,7 @@ class _VehicleCard extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(8.r),
                                   ),
                                   child: Text(
-                                    'Active',
+                                    AppLocalizations.of(context).active,
                                     style: TextStyle(
                                       fontSize: 10.sp,
                                       fontWeight: FontWeight.bold,
@@ -451,7 +460,7 @@ class _VehicleCard extends StatelessWidget {
                               SizedBox(width: 8.w),
                               _InfoChip(
                                 icon: Icons.local_gas_station,
-                                label: vehicle.fuelTypeDisplayName,
+                                label: vehicle.fuelType.displayName,
                               ),
                             ],
                           ),
@@ -503,7 +512,7 @@ class _VehicleCard extends StatelessWidget {
                       TextButton.icon(
                         onPressed: onSetActive,
                         icon: Icon(Icons.check_circle_outline, size: 16.sp),
-                        label: const Text('Set Active'),
+                        label: Text(AppLocalizations.of(context).setActive),
                         style: TextButton.styleFrom(
                           foregroundColor: AppColors.primary,
                         ),
@@ -624,7 +633,9 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
     super.initState();
     _makeController = TextEditingController(text: widget.vehicle?.make ?? '');
     _modelController = TextEditingController(text: widget.vehicle?.model ?? '');
-    _yearController = TextEditingController(text: widget.vehicle?.year ?? '');
+    _yearController = TextEditingController(
+      text: widget.vehicle?.year.toString() ?? '',
+    );
     _colorController = TextEditingController(text: widget.vehicle?.color ?? '');
     _licensePlateController = TextEditingController(
       text: widget.vehicle?.licensePlate ?? '',
@@ -660,10 +671,10 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
 
     final vehicle = VehicleModel(
       id: widget.vehicle?.id ?? '',
-      ownerId: widget.vehicle?.ownerId ?? '',
+      ownerId: widget.vehicle!.ownerId,
       make: _makeController.text.trim(),
       model: _modelController.text.trim(),
-      year: _yearController.text.trim(),
+      year: int.parse(_yearController.text.trim()),
       color: _colorController.text.trim(),
       licensePlate: _licensePlateController.text.trim().toUpperCase(),
       capacity: _capacity,
@@ -713,7 +724,9 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
                 ),
                 SizedBox(width: 12.w),
                 Text(
-                  isEditing ? 'Edit Vehicle' : 'Add Vehicle',
+                  isEditing
+                      ? AppLocalizations.of(context).editVehicle
+                      : AppLocalizations.of(context).addVehicle,
                   style: TextStyle(
                     fontSize: 20.sp,
                     fontWeight: FontWeight.bold,
@@ -768,7 +781,7 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
                                     ),
                                     SizedBox(height: 8.h),
                                     Text(
-                                      'Add Photo',
+                                      AppLocalizations.of(context).addPhoto,
                                       style: TextStyle(
                                         fontSize: 12.sp,
                                         color: AppColors.textSecondary,
@@ -784,7 +797,7 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
                     // Make
                     _buildTextField(
                       controller: _makeController,
-                      label: 'Make',
+                      label: AppLocalizations.of(context).make,
                       hint: 'e.g., Toyota',
                       icon: Icons.business,
                     ),
@@ -793,7 +806,7 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
                     // Model
                     _buildTextField(
                       controller: _modelController,
-                      label: 'Model',
+                      label: AppLocalizations.of(context).model,
                       hint: 'e.g., Camry',
                       icon: Icons.directions_car,
                     ),
@@ -805,7 +818,7 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
                         Expanded(
                           child: _buildTextField(
                             controller: _yearController,
-                            label: 'Year',
+                            label: AppLocalizations.of(context).year,
                             hint: 'e.g., 2022',
                             icon: Icons.calendar_today,
                             keyboardType: TextInputType.number,
@@ -815,7 +828,7 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
                         Expanded(
                           child: _buildTextField(
                             controller: _colorController,
-                            label: 'Color',
+                            label: AppLocalizations.of(context).color,
                             hint: 'e.g., Silver',
                             icon: Icons.color_lens,
                           ),
@@ -827,7 +840,7 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
                     // License plate
                     _buildTextField(
                       controller: _licensePlateController,
-                      label: 'License Plate',
+                      label: AppLocalizations.of(context).licensePlate,
                       hint: 'e.g., ABC 1234',
                       icon: Icons.credit_card,
                     ),
@@ -835,7 +848,7 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
 
                     // Capacity
                     Text(
-                      'Passenger Capacity',
+                      AppLocalizations.of(context).passengerCapacity,
                       style: TextStyle(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w500,
@@ -868,7 +881,7 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
                               ),
                               child: Center(
                                 child: Text(
-                                  '$seats',
+                                  AppLocalizations.of(context).value2(seats),
                                   style: TextStyle(
                                     fontSize: 16.sp,
                                     fontWeight: FontWeight.bold,
@@ -887,7 +900,7 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
 
                     // Fuel type
                     Text(
-                      'Fuel Type',
+                      AppLocalizations.of(context).fuelType,
                       style: TextStyle(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w500,
@@ -973,7 +986,9 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
                           ),
                         )
                       : Text(
-                          isEditing ? 'Save Changes' : 'Add Vehicle',
+                          isEditing
+                              ? AppLocalizations.of(context).saveChanges
+                              : AppLocalizations.of(context).addVehicle,
                           style: TextStyle(
                             fontSize: 16.sp,
                             fontWeight: FontWeight.bold,
@@ -1141,21 +1156,37 @@ class _VehicleDetailsSheet extends StatelessWidget {
                   SizedBox(height: 24.h),
 
                   // Details grid
-                  _buildDetailRow('Color', vehicle.color),
-                  _buildDetailRow('Capacity', '${vehicle.capacity} passengers'),
-                  _buildDetailRow('Fuel Type', vehicle.fuelTypeDisplayName),
-                  _buildDetailRow('Total Rides', '${vehicle.totalRides}'),
+                  _buildDetailRow(
+                    AppLocalizations.of(context).color,
+                    vehicle.color,
+                  ),
+                  _buildDetailRow(
+                    AppLocalizations.of(context).capacity,
+                    AppLocalizations.of(
+                      context,
+                    ).valuePassengers(vehicle.capacity),
+                  ),
+                  _buildDetailRow(
+                    AppLocalizations.of(context).fuelType,
+                    vehicle.fuelType.displayName,
+                  ),
+                  _buildDetailRow(
+                    AppLocalizations.of(context).totalRides,
+                    AppLocalizations.of(context).value2(vehicle.totalRides),
+                  ),
                   if (vehicle.averageRating > 0)
                     _buildDetailRow(
-                      'Rating',
-                      '${vehicle.averageRating.toStringAsFixed(1)} ⭐',
+                      AppLocalizations.of(context).rating,
+                      AppLocalizations.of(
+                        context,
+                      ).value8(vehicle.averageRating.toStringAsFixed(1)),
                     ),
                   SizedBox(height: 16.h),
 
                   // Features
                   if (vehicle.enabledFeatures.isNotEmpty) ...[
                     Text(
-                      'Features',
+                      AppLocalizations.of(context).features,
                       style: TextStyle(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.bold,

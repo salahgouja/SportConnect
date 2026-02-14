@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Service for managing feature discovery and app tours
 /// Similar to driver.js for Flutter - Updated for showcaseview 5.x
@@ -177,7 +178,9 @@ class PremiumShowcaseTooltip extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                   child: Text(
-                    'Step $currentStep of $totalSteps',
+                    AppLocalizations.of(
+                      context,
+                    ).stepValueOfValue(currentStep ?? 0, totalSteps ?? 0),
                     style: TextStyle(
                       fontSize: 11.sp,
                       fontWeight: FontWeight.w600,
@@ -190,7 +193,7 @@ class PremiumShowcaseTooltip extends StatelessWidget {
                   GestureDetector(
                     onTap: onSkip,
                     child: Text(
-                      'Skip tour',
+                      AppLocalizations.of(context).skipTour,
                       style: TextStyle(
                         fontSize: 12.sp,
                         fontWeight: FontWeight.w500,

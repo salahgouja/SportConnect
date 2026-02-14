@@ -1,5 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/features/notifications/models/notification_model.dart';
 import 'package:sport_connect/features/notifications/repositories/notification_repository.dart';
 
@@ -90,6 +90,25 @@ class NotificationViewModel extends _$NotificationViewModel {
       state = state.copyWith(
         isLoading: false,
         errorMessage: 'Failed to mark all as read: $e',
+      );
+    }
+  }
+
+  /// Archive all notifications for current user
+  Future<void> archiveAll() async {
+    final userId = _getCurrentUserId();
+    if (userId == null) return;
+
+    state = state.copyWith(isLoading: true, errorMessage: null);
+
+    try {
+      final repository = ref.read(notificationRepositoryProvider);
+      await repository.archiveAll(userId);
+      state = state.copyWith(isLoading: false);
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Failed to clear notifications: $e',
       );
     }
   }

@@ -67,7 +67,7 @@ final class ActiveRideStreamProvider
   }
 }
 
-String _$activeRideStreamHash() => r'6e06066d1fde31eee10dccb07e12a2cf5adf68b8';
+String _$activeRideStreamHash() => r'a4986e747470308caf43b5df861eff7736ca989d';
 
 /// Stream provider for active ride - uses repository (MVVM pattern)
 

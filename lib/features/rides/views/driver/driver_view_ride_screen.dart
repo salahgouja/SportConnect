@@ -7,15 +7,23 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
-import 'package:sport_connect/core/widgets/premium_avatar.dart';
-import 'package:sport_connect/core/config/app_router.dart';
-import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
-import 'package:sport_connect/features/rides/models/ride_model.dart';
+import 'package:sport_connect/core/widgets/passenger_info_widget.dart';
+
+import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
+import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
+import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
-import 'package:sport_connect/features/rides/repositories/ride_repository.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sport_connect/core/utils/distance_formatter.dart';
 
 /// Driver's dedicated screen for managing their ride and viewing booking requests
 /// Features: ride stats, booking management, passenger list, ride controls
@@ -53,7 +61,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
     return rideAsync.when(
       data: (ride) => ride != null
           ? _buildContent(ride)
-          : _buildErrorState('Ride not found'),
+          : _buildErrorState(AppLocalizations.of(context).rideNotFound),
       loading: () => _buildLoadingState(),
       error: (error, _) => _buildErrorState(error.toString()),
     );
@@ -64,7 +72,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.primary,
-        title: const Text('Your Ride'),
+        title: Text(AppLocalizations.of(context).yourRide),
       ),
       body: const Center(child: CircularProgressIndicator()),
     );
@@ -75,7 +83,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.primary,
-        title: const Text('Your Ride'),
+        title: Text(AppLocalizations.of(context).yourRide),
       ),
       body: Center(
         child: Padding(
@@ -90,7 +98,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
               ),
               SizedBox(height: 16.h),
               Text(
-                'Couldn\'t load ride',
+                AppLocalizations.of(context).couldnTLoadRide,
                 style: TextStyle(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.w600,
@@ -151,7 +159,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text('Requests'),
+                          Text(AppLocalizations.of(context).requests),
                           if (pendingBookings.isNotEmpty) ...[
                             SizedBox(width: 6.w),
                             Container(
@@ -164,7 +172,9 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                                 borderRadius: BorderRadius.circular(10.r),
                               ),
                               child: Text(
-                                '${pendingBookings.length}',
+                                AppLocalizations.of(
+                                  context,
+                                ).value2(pendingBookings.length),
                                 style: TextStyle(
                                   fontSize: 10.sp,
                                   fontWeight: FontWeight.bold,
@@ -180,7 +190,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text('Passengers'),
+                          Text(AppLocalizations.of(context).passengers),
                           if (confirmedBookings.isNotEmpty) ...[
                             SizedBox(width: 6.w),
                             Container(
@@ -193,7 +203,9 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                                 borderRadius: BorderRadius.circular(10.r),
                               ),
                               child: Text(
-                                '${confirmedBookings.length}',
+                                AppLocalizations.of(
+                                  context,
+                                ).value2(confirmedBookings.length),
                                 style: TextStyle(
                                   fontSize: 10.sp,
                                   fontWeight: FontWeight.bold,
@@ -235,7 +247,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
         icon: Container(
           padding: EdgeInsets.all(8.w),
           decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             shape: BoxShape.circle,
           ),
           child: Icon(
@@ -251,7 +263,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
           icon: Container(
             padding: EdgeInsets.all(8.w),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.2),
+              color: Colors.black.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -323,7 +335,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                   end: Alignment.bottomCenter,
                   colors: [
                     Colors.transparent,
-                    AppColors.primary.withOpacity(0.95),
+                    AppColors.primary.withValues(alpha: 0.95),
                   ],
                 ),
               ),
@@ -368,7 +380,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            'Earnings',
+                            AppLocalizations.of(context).earnings,
                             style: TextStyle(
                               fontSize: 11.sp,
                               color: Colors.white70,
@@ -470,7 +482,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
             child: _buildStatItem(
               icon: Icons.event_seat_rounded,
               value: '$confirmedSeats/${ride.availableSeats}',
-              label: 'Seats filled',
+              label: AppLocalizations.of(context).seatsFilled,
             ),
           ),
           Container(width: 1.w, height: 40.h, color: Colors.white30),
@@ -478,7 +490,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
             child: _buildStatItem(
               icon: Icons.pending_actions_rounded,
               value: '$pendingCount',
-              label: 'Pending',
+              label: AppLocalizations.of(context).pending,
               highlight: pendingCount > 0,
             ),
           ),
@@ -487,7 +499,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
             child: _buildStatItem(
               icon: Icons.attach_money_rounded,
               value: '\$${ride.pricePerSeat.toStringAsFixed(0)}',
-              label: 'Per seat',
+              label: AppLocalizations.of(context).perSeat,
             ),
           ),
         ],
@@ -559,7 +571,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
               Icon(Icons.route_rounded, size: 18.sp, color: AppColors.primary),
               SizedBox(width: 8.w),
               Text(
-                'Route',
+                AppLocalizations.of(context).route,
                 style: TextStyle(
                   fontSize: 15.sp,
                   fontWeight: FontWeight.w600,
@@ -578,7 +590,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                     borderRadius: BorderRadius.circular(8.r),
                   ),
                   child: Text(
-                    '${ride.distanceKm!.toStringAsFixed(1)} km',
+                    ref.watch(distanceFormatterProvider)(ride.distanceKm!),
                     style: TextStyle(
                       fontSize: 12.sp,
                       fontWeight: FontWeight.w500,
@@ -660,7 +672,9 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                   children: [
                     if (ride.arrivalTime != null)
                       Text(
-                        '~${DateFormat('HH:mm').format(ride.arrivalTime!)}',
+                        AppLocalizations.of(context).value10(
+                          DateFormat('HH:mm').format(ride.arrivalTime!),
+                        ),
                         style: TextStyle(
                           fontSize: 16.sp,
                           fontWeight: FontWeight.bold,
@@ -722,7 +736,9 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                 ),
                 SizedBox(height: 4.h),
                 Text(
-                  '${ride.availableSeats} total seats',
+                  AppLocalizations.of(
+                    context,
+                  ).valueTotalSeats(ride.availableSeats),
                   style: TextStyle(
                     fontSize: 13.sp,
                     color: AppColors.textSecondary,
@@ -766,7 +782,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
               Icon(Icons.tune_rounded, size: 18.sp, color: AppColors.primary),
               SizedBox(width: 8.w),
               Text(
-                'Preferences',
+                AppLocalizations.of(context).preferences,
                 style: TextStyle(
                   fontSize: 15.sp,
                   fontWeight: FontWeight.w600,
@@ -830,7 +846,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
               Icon(Icons.notes_rounded, size: 18.sp, color: AppColors.primary),
               SizedBox(width: 8.w),
               Text(
-                'Notes',
+                AppLocalizations.of(context).notes,
                 style: TextStyle(
                   fontSize: 15.sp,
                   fontWeight: FontWeight.w600,
@@ -866,7 +882,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
             ),
             SizedBox(height: 16.h),
             Text(
-              'No pending requests',
+              AppLocalizations.of(context).noPendingRequests,
               style: TextStyle(
                 fontSize: 16.sp,
                 fontWeight: FontWeight.w500,
@@ -875,7 +891,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
             ),
             SizedBox(height: 8.h),
             Text(
-              'New booking requests will appear here',
+              AppLocalizations.of(context).newBookingRequestsWillAppear,
               style: TextStyle(fontSize: 13.sp, color: AppColors.textTertiary),
             ),
           ],
@@ -903,24 +919,23 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
         color: AppColors.cardBg,
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: AppSpacing.shadowSm,
-        border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
           Row(
             children: [
-              PremiumAvatar(
-                imageUrl: booking.passengerPhotoUrl,
-                name: booking.passengerName,
-                size: 50.w,
+              PassengerAvatarWidget(
+                passengerId: booking.passengerId,
+                radius: 25,
               ),
               SizedBox(width: 12.w),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      booking.passengerName,
+                    PassengerNameWidget(
+                      passengerId: booking.passengerId,
                       style: TextStyle(
                         fontSize: 15.sp,
                         fontWeight: FontWeight.w600,
@@ -937,7 +952,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                         ),
                         SizedBox(width: 4.w),
                         Text(
-                          '${booking.seatsBooked} ${booking.seatsBooked == 1 ? 'seat' : 'seats'}',
+                          '${booking.seatsBooked} ${booking.seatsBooked == 1 ? AppLocalizations.of(context).seat : AppLocalizations.of(context).seats}',
                           style: TextStyle(
                             fontSize: 13.sp,
                             color: AppColors.textSecondary,
@@ -965,7 +980,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
                 decoration: BoxDecoration(
-                  color: AppColors.warning.withOpacity(0.15),
+                  color: AppColors.warning.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8.r),
                 ),
                 child: Text(
@@ -1023,10 +1038,12 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                       ? null
                       : () => _rejectBooking(ride, booking),
                   icon: Icon(Icons.close_rounded, size: 18.sp),
-                  label: const Text('Decline'),
+                  label: Text(AppLocalizations.of(context).decline),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.error,
-                    side: BorderSide(color: AppColors.error.withOpacity(0.5)),
+                    side: BorderSide(
+                      color: AppColors.error.withValues(alpha: 0.5),
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10.r),
                     ),
@@ -1046,7 +1063,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                     size: 18.sp,
                     color: Colors.white,
                   ),
-                  label: const Text('Accept'),
+                  label: Text(AppLocalizations.of(context).accept),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.success,
                     foregroundColor: Colors.white,
@@ -1077,7 +1094,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
             ),
             SizedBox(height: 16.h),
             Text(
-              'No passengers yet',
+              AppLocalizations.of(context).noPassengersYet,
               style: TextStyle(
                 fontSize: 16.sp,
                 fontWeight: FontWeight.w500,
@@ -1086,7 +1103,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
             ),
             SizedBox(height: 8.h),
             Text(
-              'Accept booking requests to add passengers',
+              AppLocalizations.of(context).acceptBookingRequestsToAdd,
               style: TextStyle(fontSize: 13.sp, color: AppColors.textTertiary),
             ),
           ],
@@ -1117,11 +1134,9 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       ),
       child: Row(
         children: [
-          PremiumAvatar(
-            imageUrl: booking.passengerPhotoUrl,
-            name: booking.passengerName,
-            size: 50.w,
-            hasBorder: true,
+          PassengerAvatarWidget(
+            passengerId: booking.passengerId,
+            radius: 25,
           ),
           SizedBox(width: 12.w),
           Expanded(
@@ -1131,8 +1146,8 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                 Row(
                   children: [
                     Flexible(
-                      child: Text(
-                        booking.passengerName,
+                      child: PassengerNameWidget(
+                        passengerId: booking.passengerId,
                         style: TextStyle(
                           fontSize: 15.sp,
                           fontWeight: FontWeight.w600,
@@ -1163,7 +1178,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                         borderRadius: BorderRadius.circular(6.r),
                       ),
                       child: Text(
-                        '${booking.seatsBooked} ${booking.seatsBooked == 1 ? 'seat' : 'seats'}',
+                        '${booking.seatsBooked} ${booking.seatsBooked == 1 ? AppLocalizations.of(context).seat : AppLocalizations.of(context).seats}',
                         style: TextStyle(
                           fontSize: 11.sp,
                           fontWeight: FontWeight.w500,
@@ -1222,7 +1237,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
         color: AppColors.cardBg,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 15,
             offset: const Offset(0, -5),
           ),
@@ -1306,7 +1321,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
             SizedBox(height: 20.h),
             ListTile(
               leading: Icon(Icons.share_rounded, color: AppColors.primary),
-              title: const Text('Share Ride'),
+              title: Text(AppLocalizations.of(context).shareRide),
               onTap: () {
                 Navigator.pop(context);
                 _shareRide(ride);
@@ -1314,7 +1329,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
             ),
             ListTile(
               leading: Icon(Icons.copy_rounded, color: AppColors.info),
-              title: const Text('Duplicate Ride'),
+              title: Text(AppLocalizations.of(context).duplicateRide),
               onTap: () {
                 Navigator.pop(context);
                 _duplicateRide(ride);
@@ -1324,7 +1339,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
               ListTile(
                 leading: Icon(Icons.cancel_rounded, color: AppColors.error),
                 title: Text(
-                  'Cancel Ride',
+                  AppLocalizations.of(context).cancelRide2,
                   style: TextStyle(color: AppColors.error),
                 ),
                 onTap: () {
@@ -1362,24 +1377,26 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
             SizedBox(height: 20.h),
             ListTile(
               leading: Icon(Icons.person_rounded, color: AppColors.primary),
-              title: const Text('View Profile'),
+              title: Text(AppLocalizations.of(context).viewProfile),
               onTap: () {
                 Navigator.pop(context);
-                context.push('${AppRouter.profile}/${booking.passengerId}');
+                context.push(
+                  '${AppRoutes.profile.path}/${booking.passengerId}',
+                );
               },
             ),
             ListTile(
               leading: Icon(Icons.call_rounded, color: AppColors.success),
-              title: const Text('Call Passenger'),
+              title: Text(AppLocalizations.of(context).callPassenger),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Implement call
+                _callPassenger(booking);
               },
             ),
             ListTile(
               leading: Icon(Icons.cancel_rounded, color: AppColors.error),
               title: Text(
-                'Remove Passenger',
+                AppLocalizations.of(context).removePassenger,
                 style: TextStyle(color: AppColors.error),
               ),
               onTap: () {
@@ -1399,8 +1416,18 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
     setState(() => _isProcessing = true);
 
     try {
+      // Fetch passenger profile for confirmation message
+      final passengerProfile = await ref.read(
+        userProfileProvider(booking.passengerId).future,
+      );
+
+      if (!mounted) return;
+
+      // Use fallback if profile is null
+      final passengerName = passengerProfile?.displayName ?? 'Passenger';
+
       await ref
-          .read(rideRepositoryProvider)
+          .read(rideActionsViewModelProvider)
           .updateBookingStatus(
             rideId: ride.id,
             bookingId: booking.id,
@@ -1414,7 +1441,11 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
               children: [
                 const Icon(Icons.check_circle_rounded, color: Colors.white),
                 SizedBox(width: 8.w),
-                Text('Booking confirmed for ${booking.passengerName}'),
+                Text(
+                  AppLocalizations.of(context).bookingConfirmedForValue(
+                    passengerName,
+                  ),
+                ),
               ],
             ),
             backgroundColor: AppColors.success,
@@ -1426,7 +1457,9 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'),
+            content: Text(
+              AppLocalizations.of(context).errorValue(e.toString()),
+            ),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),
@@ -1438,19 +1471,36 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
   }
 
   Future<void> _rejectBooking(RideModel ride, RideBooking booking) async {
+    // Fetch passenger profile for dialog message
+    final passengerProfile = await ref.read(
+      userProfileProvider(booking.passengerId).future,
+    );
+
+    if (!mounted) return;
+
+    // Use fallback if profile is null
+    final passengerName = passengerProfile?.displayName ?? 'Passenger';
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Decline Booking'),
-        content: Text('Decline booking request from ${booking.passengerName}?'),
+        title: Text(AppLocalizations.of(context).declineBooking),
+        content: Text(
+          AppLocalizations.of(context).declineBookingRequestFromValue(
+            passengerName,
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Decline', style: TextStyle(color: AppColors.error)),
+            child: Text(
+              AppLocalizations.of(context).decline,
+              style: TextStyle(color: AppColors.error),
+            ),
           ),
         ],
       ),
@@ -1463,7 +1513,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
 
     try {
       await ref
-          .read(rideRepositoryProvider)
+          .read(rideActionsViewModelProvider)
           .updateBookingStatus(
             rideId: ride.id,
             bookingId: booking.id,
@@ -1473,7 +1523,9 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'),
+            content: Text(
+              AppLocalizations.of(context).errorValue(e.toString()),
+            ),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),
@@ -1484,20 +1536,82 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
     }
   }
 
+  /// Calls a passenger using the device phone dialer.
+  Future<void> _callPassenger(RideBooking booking) async {
+    try {
+      final passenger = await ref.read(
+        userProfileProvider(booking.passengerId).future,
+      );
+      final phoneNumber = passenger?.phoneNumber;
+
+      if (phoneNumber == null || phoneNumber.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context).phoneNumberNotAvailable,
+            ),
+          ),
+        );
+        return;
+      }
+
+      final phoneUri = Uri(scheme: 'tel', path: phoneNumber);
+      if (await canLaunchUrl(phoneUri)) {
+        await launchUrl(phoneUri);
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context).cannotMakePhoneCalls,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).failedToLaunchDialer,
+          ),
+        ),
+      );
+    }
+  }
+
   Future<void> _removePassenger(RideModel ride, RideBooking booking) async {
+    // Fetch passenger profile for dialog message
+    final passengerProfile = await ref.read(
+      userProfileProvider(booking.passengerId).future,
+    );
+
+    if (!mounted) return;
+
+    // Use fallback if profile is null
+    final passengerName = passengerProfile?.displayName ?? 'Passenger';
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Remove Passenger'),
-        content: Text('Remove ${booking.passengerName} from this ride?'),
+        title: Text(AppLocalizations.of(context).removePassenger),
+        content: Text(
+          AppLocalizations.of(
+            context,
+          ).removeValueFromThisRide(passengerName),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Remove', style: TextStyle(color: AppColors.error)),
+            child: Text(
+              AppLocalizations.of(context).remove,
+              style: TextStyle(color: AppColors.error),
+            ),
           ),
         ],
       ),
@@ -1507,7 +1621,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
 
     try {
       await ref
-          .read(rideRepositoryProvider)
+          .read(rideActionsViewModelProvider)
           .updateBookingStatus(
             rideId: ride.id,
             bookingId: booking.id,
@@ -1517,7 +1631,9 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'),
+            content: Text(
+              AppLocalizations.of(context).errorValue(e.toString()),
+            ),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),
@@ -1526,42 +1642,105 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
     }
   }
 
-  void _openPassengerChat(RideBooking booking) {
+  Future<void> _openPassengerChat(RideBooking booking) async {
     HapticFeedback.lightImpact();
-    context.push('${AppRouter.chat}/${booking.passengerId}');
+
+    final currentUser = ref.read(currentUserProvider).value;
+    if (currentUser == null) return;
+
+    try {
+      // Fetch passenger profile for chat
+      final passengerProfile = await ref.read(
+        userProfileProvider(booking.passengerId).future,
+      );
+
+      if (!mounted) return;
+
+      // If profile doesn't exist, show error and return
+      if (passengerProfile == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Passenger profile not found'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        return;
+      }
+
+      final chat = await ref.read(
+        getOrCreateChatProvider(
+          userId1: currentUser.uid,
+          userId2: booking.passengerId,
+          userName1: currentUser.displayName,
+          userName2: passengerProfile.displayName,
+          userPhoto1: currentUser.photoUrl,
+          userPhoto2: passengerProfile.photoUrl,
+        ).future,
+      );
+
+      if (!mounted) return;
+
+      final passengerUser = UserModel.rider(
+        uid: booking.passengerId,
+        email: '',
+        displayName: passengerProfile.displayName,
+        photoUrl: passengerProfile.photoUrl,
+      );
+
+      context.pushNamed(
+        AppRoutes.chatDetail.name,
+        pathParameters: {'id': chat.id},
+        extra: passengerUser,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to open chat: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 
   void _editRide(RideModel ride) {
     HapticFeedback.lightImpact();
-    // TODO: Navigate to edit ride screen
+    context.push(AppRoutes.driverOfferRide.path, extra: ride);
   }
 
   void _shareRide(RideModel ride) {
     HapticFeedback.lightImpact();
-    // TODO: Implement share
+    Share.share(
+      '🚗 Check out this ride on SportConnect!\n\n'
+      '📍 ${ride.origin.city ?? ride.origin.address} → ${ride.destination.city ?? ride.destination.address}\n'
+      '📅 ${DateFormat('MMM d, h:mm a').format(ride.departureTime)}\n'
+      '💰 ${ride.pricePerSeat.toStringAsFixed(0)} € per seat\n'
+      '🪑 ${ride.remainingSeats} seats available\n\n'
+      'Join me for a comfortable ride! 🌱\n\n'
+      'Check out this ride on SportConnect: sportconnect://ride/${ride.id}',
+      subject: 'Carpool ride on SportConnect',
+    );
   }
 
   void _duplicateRide(RideModel ride) {
     HapticFeedback.lightImpact();
-    // TODO: Navigate to create ride with pre-filled data
+    context.push(AppRoutes.driverOfferRide.path, extra: ride);
   }
 
   Future<void> _startRide(RideModel ride) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Start Ride'),
-        content: const Text(
-          'Mark this ride as started? Passengers will be notified.',
-        ),
+        title: Text(AppLocalizations.of(context).startRide),
+        content: Text(AppLocalizations.of(context).markThisRideAsStarted),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Start'),
+            child: Text(AppLocalizations.of(context).start),
           ),
         ],
       ),
@@ -1570,12 +1749,14 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
     if (confirmed != true) return;
 
     try {
-      await ref.read(rideRepositoryProvider).startRide(ride.id);
+      await ref.read(rideActionsViewModelProvider).startRide(ride.id);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'),
+            content: Text(
+              AppLocalizations.of(context).errorValue(e.toString()),
+            ),
             backgroundColor: AppColors.error,
           ),
         );
@@ -1587,18 +1768,16 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Complete Ride'),
-        content: const Text(
-          'Mark this ride as completed? You can then rate your passengers.',
-        ),
+        title: Text(AppLocalizations.of(context).completeRide),
+        content: Text(AppLocalizations.of(context).markThisRideAsCompleted),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Complete'),
+            child: Text(AppLocalizations.of(context).complete),
           ),
         ],
       ),
@@ -1607,13 +1786,22 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
     if (confirmed != true) return;
 
     try {
-      await ref.read(rideRepositoryProvider).completeRide(ride.id);
-      // TODO: Navigate to rate passengers screen
+      await ref.read(rideActionsViewModelProvider).completeRide(ride.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context).rideCompleted),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'),
+            content: Text(
+              AppLocalizations.of(context).errorValue(e.toString()),
+            ),
             backgroundColor: AppColors.error,
           ),
         );
@@ -1625,19 +1813,17 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Cancel Ride'),
-        content: const Text(
-          'Are you sure you want to cancel this ride? All passengers will be notified and refunded.',
-        ),
+        title: Text(AppLocalizations.of(context).cancelRide2),
+        content: Text(AppLocalizations.of(context).areYouSureYouWant8),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Keep Ride'),
+            child: Text(AppLocalizations.of(context).keepRide),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: Text(
-              'Cancel Ride',
+              AppLocalizations.of(context).cancelRide2,
               style: TextStyle(color: AppColors.error),
             ),
           ),
@@ -1648,13 +1834,17 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
     if (confirmed != true) return;
 
     try {
-      await ref.read(rideRepositoryProvider).cancelRide(ride.id);
+      await ref
+          .read(rideActionsViewModelProvider)
+          .cancelRide(ride.id, 'Cancelled by driver');
       if (mounted) context.pop();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'),
+            content: Text(
+              AppLocalizations.of(context).errorValue(e.toString()),
+            ),
             backgroundColor: AppColors.error,
           ),
         );

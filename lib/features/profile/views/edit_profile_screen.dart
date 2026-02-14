@@ -4,12 +4,14 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/core/widgets/premium_text_field.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
-import 'package:sport_connect/features/auth/models/user_model.dart';
-import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
+import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
@@ -29,11 +31,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _locationController = TextEditingController(); // Maps to city/country
 
   // State
-  bool _populated = false;
   String _selectedGender = 'Male';
   DateTime _dateOfBirth = DateTime(1990, 1, 1);
   bool _isLoading = false;
   bool _hasChanges = false;
+  bool _isPopulated = false;
   UserModel? _currentUser; // Keep a reference to the actual model for mapping
 
   // Image picker
@@ -63,7 +65,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   @override
   void initState() {
     super.initState();
-    // listeners to track changes
+    // Listeners to track changes (no provider reads here).
     _nameController.addListener(_onFieldChanged);
     _phoneController.addListener(_onFieldChanged);
     _bioController.addListener(_onFieldChanged);
@@ -73,8 +75,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   void _onFieldChanged() {
     if (!_hasChanges) setState(() => _hasChanges = true);
   }
-
-  // ... [Image Picker methods: _pickImageFromCamera, _pickImageFromGallery, _removePhoto keep same as before] ...
 
   Future<void> _pickImageFromGallery() async {
     final XFile? image = await _imagePicker.pickImage(
@@ -99,17 +99,15 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Listen to the user stream to populate data
-    ref.listen<AsyncValue<UserModel?>>(currentUserStreamProvider, (prev, next) {
-      next.whenData((user) {
-        if (user != null) {
-          _currentUser = user; // Store for saving later
-          if (!_populated && !_hasChanges) _populateFromUser(user);
-        }
-      });
-    });
+    // Populate form from user data reactively, only once.
+    final userAsync = ref.watch(currentUserProvider);
+    final user = userAsync.value;
+    if (user != null && !_isPopulated) {
+      _currentUser = user;
+      _populateFromUser(user);
+      _isPopulated = true;
+    }
 
-    // Check if user is driver for specific UI
     final isDriver = _currentUser?.isDriver ?? false;
 
     return PopScope(
@@ -130,7 +128,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             color: AppColors.surface,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, -5),
               ),
@@ -161,7 +159,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               ),
               centerTitle: true,
               title: Text(
-                'Edit Profile',
+                AppLocalizations.of(context).settingsEditProfile,
                 style: TextStyle(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.w700,
@@ -191,7 +189,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
+                                    color: Colors.black.withValues(alpha: 0.1),
                                     blurRadius: 15,
                                     offset: const Offset(0, 5),
                                   ),
@@ -219,7 +217,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         ),
                         SizedBox(height: 12.h),
                         Text(
-                          'Change Photo',
+                          AppLocalizations.of(context).changePhoto,
                           style: TextStyle(
                             fontSize: 14.sp,
                             fontWeight: FontWeight.w600,
@@ -242,7 +240,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildSectionLabel('Personal Information'),
+                      _buildSectionLabel(
+                        AppLocalizations.of(context).personalInformation,
+                      ),
                       _buildContainer(
                         children: [
                           PremiumTextField(
@@ -276,13 +276,15 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
                       // Driver Specific Section
                       if (isDriver) ...[
-                        _buildSectionLabel('Driver Settings'),
+                        _buildSectionLabel(
+                          AppLocalizations.of(context).driverSettings,
+                        ),
                         _buildContainer(
                           children: [
                             _buildActionTile(
-                              label: 'My Vehicles',
+                              label: AppLocalizations.of(context).myVehicles,
                               value:
-                                  '${_currentUser?.asDriver.vehicles.length ?? 0} Active',
+                                  '${_currentUser?.asDriver!.vehicles.length ?? 0} Active',
                               icon: Icons.directions_car_rounded,
                               onTap: () {
                                 context.push('/driver/vehicles');
@@ -293,7 +295,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         SizedBox(height: 24.h),
                       ],
 
-                      _buildSectionLabel('About You'),
+                      _buildSectionLabel(AppLocalizations.of(context).aboutYou),
                       _buildContainer(
                         children: [
                           PremiumTextField(
@@ -314,16 +316,18 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
                       SizedBox(height: 24.h),
 
-                      _buildSectionLabel('Demographics'),
+                      _buildSectionLabel(
+                        AppLocalizations.of(context).demographics,
+                      ),
                       _buildActionTile(
-                        label: 'Gender',
+                        label: AppLocalizations.of(context).gender,
                         value: _selectedGender,
                         icon: Icons.wc_rounded,
                         onTap: _showGenderPicker,
                       ),
                       SizedBox(height: 12.h),
                       _buildActionTile(
-                        label: 'Birthday',
+                        label: AppLocalizations.of(context).birthday,
                         value:
                             '${_dateOfBirth.day}/${_dateOfBirth.month}/${_dateOfBirth.year}',
                         icon: Icons.cake_rounded,
@@ -335,13 +339,15 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          _buildSectionLabel('Sports Interests'),
+                          _buildSectionLabel(
+                            AppLocalizations.of(context).sportsInterests,
+                          ),
                           GestureDetector(
                             onTap: _showInterestsDialog,
                             child: Padding(
                               padding: EdgeInsets.only(bottom: 12.h),
                               child: Text(
-                                '+ Add',
+                                AppLocalizations.of(context).add,
                                 style: TextStyle(
                                   fontSize: 14.sp,
                                   fontWeight: FontWeight.w600,
@@ -365,7 +371,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         child: _interests.isEmpty
                             ? Center(
                                 child: Text(
-                                  'No interests selected',
+                                  AppLocalizations.of(
+                                    context,
+                                  ).noInterestsSelected,
                                   style: TextStyle(
                                     color: AppColors.textSecondary,
                                   ),
@@ -385,7 +393,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                       ),
                                     ),
                                     backgroundColor: AppColors.primary
-                                        .withOpacity(0.1),
+                                        .withValues(alpha: 0.1),
                                     side: BorderSide.none,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8.r),
@@ -471,12 +479,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         borderRadius: BorderRadius.circular(20.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(color: AppColors.border.withOpacity(0.5)),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
       ),
       child: Column(children: children),
     );
@@ -502,7 +510,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             Container(
               padding: EdgeInsets.all(8.w),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8.r),
               ),
               child: Icon(icon, color: AppColors.primary, size: 20.sp),
@@ -556,7 +564,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       _dateOfBirth = user.dateOfBirth ?? DateTime(1990);
       _interests.clear();
       _interests.addAll(user.interests);
-      _populated = true;
     });
   }
 
@@ -589,15 +596,15 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         ),
       );
 
-      // 2. Call repository
+      // 2. Call view model action
       await ref
-          .read(profileRepositoryProvider)
+          .read(profileActionsViewModelProvider)
           .updateProfile(updatedUser.uid, updatedUser.toJson());
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Profile updated'),
+            content: Text(AppLocalizations.of(context).profileUpdated),
             backgroundColor: AppColors.success,
           ),
         );
@@ -611,7 +618,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: $e'),
+            content: Text(AppLocalizations.of(context).errorValue(e)),
             backgroundColor: AppColors.error,
           ),
         );
@@ -645,7 +652,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               ),
               SizedBox(height: 20.h),
               Text(
-                'Change Profile Photo',
+                AppLocalizations.of(context).changeProfilePhoto,
                 style: TextStyle(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.w700,
@@ -657,7 +664,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 leading: Container(
                   padding: EdgeInsets.all(10.w),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                   child: Icon(
@@ -666,7 +673,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   ),
                 ),
                 title: Text(
-                  'Take Photo',
+                  AppLocalizations.of(context).takePhoto,
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary,
@@ -690,7 +697,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 leading: Container(
                   padding: EdgeInsets.all(10.w),
                   decoration: BoxDecoration(
-                    color: AppColors.secondary.withOpacity(0.1),
+                    color: AppColors.secondary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                   child: Icon(
@@ -699,7 +706,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   ),
                 ),
                 title: Text(
-                  'Choose from Gallery',
+                  AppLocalizations.of(context).chooseFromGallery,
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary,
@@ -715,13 +722,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   leading: Container(
                     padding: EdgeInsets.all(10.w),
                     decoration: BoxDecoration(
-                      color: AppColors.error.withOpacity(0.1),
+                      color: AppColors.error.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12.r),
                     ),
                     child: Icon(Icons.delete_rounded, color: AppColors.error),
                   ),
                   title: Text(
-                    'Remove Photo',
+                    AppLocalizations.of(context).removePhoto,
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       color: AppColors.error,
@@ -763,7 +770,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               ),
               SizedBox(height: 20.h),
               Text(
-                'Select Gender',
+                AppLocalizations.of(context).selectGender,
                 style: TextStyle(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.w700,
@@ -867,7 +874,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   ),
                   SizedBox(height: 20.h),
                   Text(
-                    'Select Sports Interests',
+                    AppLocalizations.of(context).selectSportsInterests,
                     style: TextStyle(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.w700,
@@ -920,7 +927,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         ),
                       ),
                       child: Text(
-                        'Done',
+                        AppLocalizations.of(context).actionDone,
                         style: TextStyle(
                           fontSize: 16.sp,
                           fontWeight: FontWeight.w600,
@@ -941,16 +948,16 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Discard Changes?'),
-        content: const Text('You have unsaved changes.'),
+        title: Text(AppLocalizations.of(context).discardChanges),
+        content: Text(AppLocalizations.of(context).youHaveUnsavedChanges),
         actions: [
           TextButton(
             onPressed: () => context.pop(false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           TextButton(
             onPressed: () => context.pop(true),
-            child: const Text('Discard'),
+            child: Text(AppLocalizations.of(context).discard),
           ),
         ],
       ),

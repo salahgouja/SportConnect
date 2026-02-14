@@ -1,0 +1,59 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'ride_service.dart';
+
+// **************************************************************************
+// RiverpodGenerator
+// **************************************************************************
+
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
+/// Ride service - handles ride business logic
+
+@ProviderFor(RideService)
+final rideServiceProvider = RideServiceProvider._();
+
+/// Ride service - handles ride business logic
+final class RideServiceProvider
+    extends $AsyncNotifierProvider<RideService, void> {
+  /// Ride service - handles ride business logic
+  RideServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'rideServiceProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$rideServiceHash();
+
+  @$internal
+  @override
+  RideService create() => RideService();
+}
+
+String _$rideServiceHash() => r'81a5d2185a616d40f5d7480d862727a0e58fe9d0';
+
+/// Ride service - handles ride business logic
+
+abstract class _$RideService extends $AsyncNotifier<void> {
+  FutureOr<void> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<void>, void>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<void>, void>,
+              AsyncValue<void>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}

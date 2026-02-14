@@ -68,7 +68,7 @@ final class UserChatsProvider
   }
 }
 
-String _$userChatsHash() => r'b306549dfe2a541102c552caf2598a532bd04206';
+String _$userChatsHash() => r'f8cd7fee8280fc23f8f921e5810dc51c631bc22b';
 
 /// User Chats Stream Provider
 
@@ -146,7 +146,7 @@ final class ChatDetailViewModelProvider
 }
 
 String _$chatDetailViewModelHash() =>
-    r'd88556deba3de3bea2f9154eba445c2ab065b92f';
+    r'0729ea2f5ff74a180073d6690dda0ed2afb6c151';
 
 /// Chat Detail View Model
 

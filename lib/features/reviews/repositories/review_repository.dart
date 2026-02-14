@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
+import 'package:sport_connect/core/interfaces/repositories/i_review_repository.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/features/reviews/models/review_model.dart';
 import 'package:uuid/uuid.dart';
 
@@ -86,7 +87,7 @@ final userReviewsStreamProvider =
       return repo.watchReviewsForUser(userId);
     });
 
-class ReviewRepository {
+class ReviewRepository implements IReviewRepository {
   final FirebaseFirestore _firestore;
   final Ref _ref;
   final _uuid = const Uuid();

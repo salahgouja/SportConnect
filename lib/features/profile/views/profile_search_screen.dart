@@ -7,33 +7,23 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sport_connect/core/config/app_router.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
-import 'package:sport_connect/features/auth/models/user_model.dart';
+import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 part 'profile_search_screen.g.dart';
 
-/// Search query state provider
+/// Search results provider — accepts the query as a family parameter
+/// so ephemeral search state stays local to the widget.
 @riverpod
-class SearchQuery extends _$SearchQuery {
-  @override
-  String build() => '';
-
-  void setQuery(String query) {
-    state = query;
-  }
-}
-
-/// Search results provider
-@riverpod
-Future<List<UserModel>> searchResults(Ref ref) async {
-  final query = ref.watch(searchQueryProvider);
+Future<List<UserModel>> searchResults(Ref ref, String query) async {
   if (query.isEmpty || query.length < 2) return [];
 
   final repository = ref.watch(profileRepositoryProvider);
-  return repository.searchUsers(query);
+  return repository.searchUsers(query: query);
 }
 
 /// Premium Profile Search Screen with autocomplete
@@ -50,6 +40,7 @@ class _ProfileSearchScreenState extends ConsumerState<ProfileSearchScreen>
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocus = FocusNode();
   Timer? _debounceTimer;
+  String _searchQuery = '';
 
   late AnimationController _animationController;
 
@@ -79,20 +70,20 @@ class _ProfileSearchScreenState extends ConsumerState<ProfileSearchScreen>
   void _onSearchChanged(String query) {
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 400), () {
-      ref.read(searchQueryProvider.notifier).setQuery(query);
+      setState(() => _searchQuery = query);
     });
   }
 
   void _clearSearch() {
     _searchController.clear();
-    ref.read(searchQueryProvider.notifier).setQuery('');
+    setState(() => _searchQuery = '');
     HapticFeedback.lightImpact();
   }
 
   @override
   Widget build(BuildContext context) {
-    final searchResults = ref.watch(searchResultsProvider);
-    final query = ref.watch(searchQueryProvider);
+    final searchResults = ref.watch(searchResultsProvider(_searchQuery));
+    final query = _searchQuery;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -145,7 +136,7 @@ class _ProfileSearchScreenState extends ConsumerState<ProfileSearchScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Find People',
+                  AppLocalizations.of(context).findPeople,
                   style: TextStyle(
                     fontSize: 22.sp,
                     fontWeight: FontWeight.w700,
@@ -153,7 +144,7 @@ class _ProfileSearchScreenState extends ConsumerState<ProfileSearchScreen>
                   ),
                 ),
                 Text(
-                  'Search by name',
+                  AppLocalizations.of(context).searchByName,
                   style: TextStyle(
                     fontSize: 13.sp,
                     color: AppColors.textSecondary,
@@ -186,7 +177,7 @@ class _ProfileSearchScreenState extends ConsumerState<ProfileSearchScreen>
           onChanged: _onSearchChanged,
           style: TextStyle(fontSize: 16.sp, color: AppColors.textPrimary),
           decoration: InputDecoration(
-            hintText: 'Search users...',
+            hintText: AppLocalizations.of(context).searchUsers,
             hintStyle: TextStyle(
               fontSize: 16.sp,
               color: AppColors.textTertiary,
@@ -231,7 +222,7 @@ class _ProfileSearchScreenState extends ConsumerState<ProfileSearchScreen>
           Container(
             padding: EdgeInsets.all(24.w),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -242,7 +233,7 @@ class _ProfileSearchScreenState extends ConsumerState<ProfileSearchScreen>
           ),
           SizedBox(height: 24.h),
           Text(
-            'Find Fellow Riders',
+            AppLocalizations.of(context).findFellowRiders,
             style: TextStyle(
               fontSize: 20.sp,
               fontWeight: FontWeight.w700,
@@ -251,7 +242,7 @@ class _ProfileSearchScreenState extends ConsumerState<ProfileSearchScreen>
           ),
           SizedBox(height: 8.h),
           Text(
-            'Search for users by their name\nto connect and share rides',
+            AppLocalizations.of(context).searchForUsersByTheir,
             style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
             textAlign: TextAlign.center,
           ),
@@ -259,7 +250,7 @@ class _ProfileSearchScreenState extends ConsumerState<ProfileSearchScreen>
 
           // Quick suggestions
           Text(
-            'Popular Searches',
+            AppLocalizations.of(context).popularSearches,
             style: TextStyle(
               fontSize: 14.sp,
               fontWeight: FontWeight.w600,
@@ -319,7 +310,7 @@ class _ProfileSearchScreenState extends ConsumerState<ProfileSearchScreen>
           ),
           SizedBox(height: 16.h),
           Text(
-            'Searching...',
+            AppLocalizations.of(context).searching,
             style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
           ),
         ],
@@ -335,7 +326,7 @@ class _ProfileSearchScreenState extends ConsumerState<ProfileSearchScreen>
           Container(
             padding: EdgeInsets.all(24.w),
             decoration: BoxDecoration(
-              color: AppColors.warning.withOpacity(0.1),
+              color: AppColors.warning.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -346,7 +337,7 @@ class _ProfileSearchScreenState extends ConsumerState<ProfileSearchScreen>
           ),
           SizedBox(height: 24.h),
           Text(
-            'No Results Found',
+            AppLocalizations.of(context).noResultsFound2,
             style: TextStyle(
               fontSize: 20.sp,
               fontWeight: FontWeight.w700,
@@ -355,13 +346,13 @@ class _ProfileSearchScreenState extends ConsumerState<ProfileSearchScreen>
           ),
           SizedBox(height: 8.h),
           Text(
-            'No users found matching "$query"',
+            AppLocalizations.of(context).noUsersFoundMatchingValue(query),
             style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
             textAlign: TextAlign.center,
           ),
           SizedBox(height: 8.h),
           Text(
-            'Try a different search term',
+            AppLocalizations.of(context).tryADifferentSearchTerm,
             style: TextStyle(fontSize: 13.sp, color: AppColors.textTertiary),
           ),
         ],
@@ -377,7 +368,7 @@ class _ProfileSearchScreenState extends ConsumerState<ProfileSearchScreen>
           Container(
             padding: EdgeInsets.all(24.w),
             decoration: BoxDecoration(
-              color: AppColors.error.withOpacity(0.1),
+              color: AppColors.error.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -388,7 +379,7 @@ class _ProfileSearchScreenState extends ConsumerState<ProfileSearchScreen>
           ),
           SizedBox(height: 24.h),
           Text(
-            'Something went wrong',
+            AppLocalizations.of(context).somethingWentWrong,
             style: TextStyle(
               fontSize: 20.sp,
               fontWeight: FontWeight.w700,
@@ -418,9 +409,15 @@ class _ProfileSearchScreenState extends ConsumerState<ProfileSearchScreen>
                 // Navigate to user profile
                 HapticFeedback.lightImpact();
                 if (user.role == UserRole.driver) {
-                  context.push(AppRouter.driverProfilePath(user.uid));
+                  context.pushNamed(
+                    AppRoutes.driverProfile.path,
+                    pathParameters: {'userId': user.uid},
+                  );
                 } else {
-                  context.push(AppRouter.userProfilePath(user.uid));
+                  context.pushNamed(
+                    AppRoutes.profile.path,
+                    pathParameters: {'userId': user.uid},
+                  );
                 }
                 // You could navigate to a user detail screen here
               },
@@ -513,7 +510,7 @@ class _UserCard extends StatelessWidget {
                             Container(
                               padding: EdgeInsets.all(4.w),
                               decoration: BoxDecoration(
-                                color: AppColors.info.withOpacity(0.1),
+                                color: AppColors.info.withValues(alpha: 0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
@@ -598,7 +595,7 @@ class _UserCard extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
       decoration: BoxDecoration(
-        color: badgeColor.withOpacity(0.1),
+        color: badgeColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8.r),
       ),
       child: Row(

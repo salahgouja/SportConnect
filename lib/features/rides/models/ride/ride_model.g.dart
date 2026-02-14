@@ -1,0 +1,83 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'ride_model.dart';
+
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+_RideModel _$RideModelFromJson(Map json) => _RideModel(
+  id: json['id'] as String,
+  driverId: json['driverId'] as String,
+  route: RideRoute.fromJson(Map<String, dynamic>.from(json['route'] as Map)),
+  schedule: RideSchedule.fromJson(
+    Map<String, dynamic>.from(json['schedule'] as Map),
+  ),
+  capacity: RideCapacity.fromJson(
+    Map<String, dynamic>.from(json['capacity'] as Map),
+  ),
+  pricing: RidePricing.fromJson(
+    Map<String, dynamic>.from(json['pricing'] as Map),
+  ),
+  preferences: RidePreferences.fromJson(
+    Map<String, dynamic>.from(json['preferences'] as Map),
+  ),
+  status:
+      $enumDecodeNullable(_$RideStatusEnumMap, json['status']) ??
+      RideStatus.draft,
+  vehicleId: json['vehicleId'] as String?,
+  vehicleInfo: json['vehicleInfo'] as String?,
+  bookingIds:
+      (json['bookingIds'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const [],
+  bookings:
+      (json['bookings'] as List<dynamic>?)
+          ?.map(
+            (e) => RideBooking.fromJson(Map<String, dynamic>.from(e as Map)),
+          )
+          .toList() ??
+      const [],
+  reviewCount: (json['reviewCount'] as num?)?.toInt() ?? 0,
+  averageRating: (json['averageRating'] as num?)?.toDouble() ?? 0.0,
+  xpReward: (json['xpReward'] as num?)?.toInt() ?? 50,
+  notes: json['notes'] as String?,
+  tags:
+      (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+      const [],
+  createdAt: const TimestampConverter().fromJson(json['createdAt']),
+  updatedAt: const TimestampConverter().fromJson(json['updatedAt']),
+);
+
+Map<String, dynamic> _$RideModelToJson(_RideModel instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'driverId': instance.driverId,
+      'route': instance.route.toJson(),
+      'schedule': instance.schedule.toJson(),
+      'capacity': instance.capacity.toJson(),
+      'pricing': instance.pricing.toJson(),
+      'preferences': instance.preferences.toJson(),
+      'status': _$RideStatusEnumMap[instance.status]!,
+      'vehicleId': instance.vehicleId,
+      'vehicleInfo': instance.vehicleInfo,
+      'bookingIds': instance.bookingIds,
+      'bookings': instance.bookings.map((e) => e.toJson()).toList(),
+      'reviewCount': instance.reviewCount,
+      'averageRating': instance.averageRating,
+      'xpReward': instance.xpReward,
+      'notes': instance.notes,
+      'tags': instance.tags,
+      'createdAt': const TimestampConverter().toJson(instance.createdAt),
+      'updatedAt': const TimestampConverter().toJson(instance.updatedAt),
+    };
+
+const _$RideStatusEnumMap = {
+  RideStatus.draft: 'draft',
+  RideStatus.active: 'active',
+  RideStatus.full: 'full',
+  RideStatus.inProgress: 'inProgress',
+  RideStatus.completed: 'completed',
+  RideStatus.cancelled: 'cancelled',
+};

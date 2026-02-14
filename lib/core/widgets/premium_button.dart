@@ -265,13 +265,17 @@ class _PremiumButtonState extends State<PremiumButton>
           Icon(widget.icon, color: _textColor, size: _iconSize),
           SizedBox(width: 8.w),
         ],
-        Text(
-          widget.text,
-          style: TextStyle(
-            fontSize: _fontSize,
-            fontWeight: FontWeight.w700,
-            color: _textColor,
-            letterSpacing: 0.3,
+        Flexible(
+          child: Text(
+            widget.text,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+            style: TextStyle(
+              fontSize: _fontSize,
+              fontWeight: FontWeight.w700,
+              color: _textColor,
+              letterSpacing: 0.3,
+            ),
           ),
         ),
         if (widget.trailingIcon != null) ...[

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// XP Progress Bar
 class XPProgressBar extends StatelessWidget {
@@ -43,14 +44,14 @@ class XPProgressBar extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12.r),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.xpGold.withOpacity(0.3),
+                          color: AppColors.xpGold.withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
                       ],
                     ),
                     child: Text(
-                      'LVL $level',
+                      AppLocalizations.of(context).lvlValue(level),
                       style: TextStyle(
                         fontSize: 12.sp,
                         fontWeight: FontWeight.w800,
@@ -61,7 +62,7 @@ class XPProgressBar extends StatelessWidget {
                   ),
                   SizedBox(width: 8.w),
                   Text(
-                    '$currentXP / $maxXP XP',
+                    AppLocalizations.of(context).valueValueXp(currentXP, maxXP),
                     style: TextStyle(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
@@ -71,7 +72,7 @@ class XPProgressBar extends StatelessWidget {
                 ],
               ),
               Text(
-                '${(progress * 100).toInt()}%',
+                AppLocalizations.of(context).value((progress * 100).toInt()),
                 style: TextStyle(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w700,
@@ -113,7 +114,7 @@ class XPProgressBar extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10.r),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.xpGold.withOpacity(0.4),
+                          color: AppColors.xpGold.withValues(alpha: 0.4),
                           blurRadius: 8,
                           offset: const Offset(0, 0),
                         ),
@@ -157,12 +158,12 @@ class AchievementBadge extends StatelessWidget {
         padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
           color: isUnlocked
-              ? (color ?? AppColors.primary).withOpacity(0.1)
+              ? (color ?? AppColors.primary).withValues(alpha: 0.1)
               : AppColors.surfaceVariant,
           borderRadius: BorderRadius.circular(16.r),
           border: isUnlocked
               ? Border.all(
-                  color: (color ?? AppColors.primary).withOpacity(0.3),
+                  color: (color ?? AppColors.primary).withValues(alpha: 0.3),
                   width: 2,
                 )
               : null,
@@ -177,13 +178,13 @@ class AchievementBadge extends StatelessWidget {
                     ? LinearGradient(
                         colors: [
                           color ?? AppColors.primary,
-                          (color ?? AppColors.primary).withOpacity(0.7),
+                          (color ?? AppColors.primary).withValues(alpha: 0.7),
                         ],
                       )
                     : null,
                 color: isUnlocked
                     ? null
-                    : AppColors.textTertiary.withOpacity(0.3),
+                    : AppColors.textTertiary.withValues(alpha: 0.3),
                 shape: BoxShape.circle,
                 boxShadow: isUnlocked
                     ? AppSpacing.primaryShadow(color ?? AppColors.primary)
@@ -252,7 +253,7 @@ class StreakCounter extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '$days',
+                AppLocalizations.of(context).value2(days),
                 style: TextStyle(
                   fontSize: 24.sp,
                   fontWeight: FontWeight.w800,
@@ -260,12 +261,12 @@ class StreakCounter extends StatelessWidget {
                 ),
               ),
               Text(
-                'Day Streak',
+                AppLocalizations.of(context).dayStreak,
                 style: TextStyle(
                   fontSize: 12.sp,
                   fontWeight: FontWeight.w500,
                   color: isActive
-                      ? Colors.white.withOpacity(0.8)
+                      ? Colors.white.withValues(alpha: 0.8)
                       : AppColors.textTertiary,
                 ),
               ),
@@ -293,7 +294,7 @@ class PointsBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(20.r),
         boxShadow: [
           BoxShadow(
-            color: AppColors.xpGold.withOpacity(0.3),
+            color: AppColors.xpGold.withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -305,7 +306,7 @@ class PointsBadge extends StatelessWidget {
           Icon(Icons.star_rounded, color: Colors.amber.shade900, size: 18.sp),
           SizedBox(width: 4.w),
           Text(
-            '$points',
+            AppLocalizations.of(context).value2(points),
             style: TextStyle(
               fontSize: 14.sp,
               fontWeight: FontWeight.w800,
@@ -354,11 +355,14 @@ class LeaderboardPosition extends StatelessWidget {
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
         color: isCurrentUser
-            ? AppColors.primary.withOpacity(0.1)
+            ? AppColors.primary.withValues(alpha: 0.1)
             : AppColors.cardBg,
         borderRadius: BorderRadius.circular(16.r),
         border: isCurrentUser
-            ? Border.all(color: AppColors.primary.withOpacity(0.3), width: 2)
+            ? Border.all(
+                color: AppColors.primary.withValues(alpha: 0.3),
+                width: 2,
+              )
             : null,
         boxShadow: AppSpacing.shadowSm,
       ),
@@ -368,7 +372,7 @@ class LeaderboardPosition extends StatelessWidget {
             width: 36.w,
             height: 36.w,
             decoration: BoxDecoration(
-              color: _positionColor.withOpacity(0.2),
+              color: _positionColor.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -379,7 +383,7 @@ class LeaderboardPosition extends StatelessWidget {
                       size: 20.sp,
                     )
                   : Text(
-                      '#$position',
+                      AppLocalizations.of(context).value3(position),
                       style: TextStyle(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w700,
@@ -391,7 +395,7 @@ class LeaderboardPosition extends StatelessWidget {
           SizedBox(width: 12.w),
           CircleAvatar(
             radius: 20.r,
-            backgroundColor: AppColors.primary.withOpacity(0.2),
+            backgroundColor: AppColors.primary.withValues(alpha: 0.2),
             child: Text(
               name.isNotEmpty ? name[0].toUpperCase() : '?',
               style: TextStyle(
@@ -416,7 +420,7 @@ class LeaderboardPosition extends StatelessWidget {
                 ),
                 if (isCurrentUser)
                   Text(
-                    'You',
+                    AppLocalizations.of(context).you,
                     style: TextStyle(
                       fontSize: 12.sp,
                       color: AppColors.primary,
@@ -466,11 +470,14 @@ class DailyChallengeCard extends StatelessWidget {
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: isCompleted
-            ? AppColors.success.withOpacity(0.1)
+            ? AppColors.success.withValues(alpha: 0.1)
             : AppColors.cardBg,
         borderRadius: BorderRadius.circular(20.r),
         border: isCompleted
-            ? Border.all(color: AppColors.success.withOpacity(0.3), width: 2)
+            ? Border.all(
+                color: AppColors.success.withValues(alpha: 0.3),
+                width: 2,
+              )
             : null,
         boxShadow: AppSpacing.shadowSm,
       ),
@@ -483,8 +490,8 @@ class DailyChallengeCard extends StatelessWidget {
                 padding: EdgeInsets.all(10.w),
                 decoration: BoxDecoration(
                   color: isCompleted
-                      ? AppColors.success.withOpacity(0.2)
-                      : AppColors.primary.withOpacity(0.1),
+                      ? AppColors.success.withValues(alpha: 0.2)
+                      : AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12.r),
                 ),
                 child: Icon(
@@ -523,7 +530,7 @@ class DailyChallengeCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12.r),
                 ),
                 child: Text(
-                  '+$xpReward XP',
+                  AppLocalizations.of(context).valueXp(xpReward),
                   style: TextStyle(
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w700,
@@ -551,7 +558,9 @@ class DailyChallengeCard extends StatelessWidget {
               ),
               SizedBox(width: 12.w),
               Text(
-                '$currentProgress/$targetProgress',
+                AppLocalizations.of(
+                  context,
+                ).valueValue(currentProgress, targetProgress),
                 style: TextStyle(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w600,

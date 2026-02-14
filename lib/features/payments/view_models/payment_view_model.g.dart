@@ -36,7 +36,7 @@ final class PaymentViewModelProvider
   PaymentViewModel create() => PaymentViewModel();
 }
 
-String _$paymentViewModelHash() => r'77f937219221b7e5eeaef26da6cd2683aee2c876';
+String _$paymentViewModelHash() => r'7273838d17d853afe1a1052616a7e2af89098c47';
 
 /// Payment Processing View Model
 
@@ -652,7 +652,7 @@ final class DriverPayoutViewModelProvider
 }
 
 String _$driverPayoutViewModelHash() =>
-    r'58df7fe0f7c9ff0a3f7ad92c2ff87f988a35d7b9';
+    r'44e7c0ac0b20dfa5720362756d383912ff8e5fa9';
 
 /// Driver Payout View Model
 

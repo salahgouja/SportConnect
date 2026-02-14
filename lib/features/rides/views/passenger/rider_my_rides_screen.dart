@@ -5,13 +5,19 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
-import 'package:sport_connect/core/config/app_router.dart';
-import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
-import 'package:sport_connect/features/rides/models/ride_model.dart';
+import 'package:sport_connect/core/widgets/driver_info_widget.dart';
+import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
+import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
+import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Rider My Rides Screen - Uber/Bolt inspired ride history and bookings
 /// Focused on the passenger experience with quick rebooking and trip status
@@ -106,7 +112,7 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'My Trips',
+                    AppLocalizations.of(context).myTrips,
                     style: TextStyle(
                       fontSize: 24.sp,
                       fontWeight: FontWeight.w800,
@@ -115,7 +121,7 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
                   ),
                   SizedBox(height: 2.h),
                   Text(
-                    'Track & manage your rides',
+                    AppLocalizations.of(context).trackManageYourRides,
                     style: TextStyle(
                       fontSize: 13.sp,
                       color: Colors.white.withValues(alpha: 0.85),
@@ -130,7 +136,7 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
         ),
         title: _isHeaderCollapsed
             ? Text(
-                'My Trips',
+                AppLocalizations.of(context).myTrips,
                 style: TextStyle(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.w700,
@@ -166,9 +172,21 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
             unselectedLabelColor: AppColors.textSecondary,
             labelStyle: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
             tabs: [
-              _buildTab('Active', Icons.directions_car_filled_rounded, 0),
-              _buildTab('Upcoming', Icons.schedule_rounded, 1),
-              _buildTab('History', Icons.history_rounded, 2),
+              _buildTab(
+                AppLocalizations.of(context).active,
+                Icons.directions_car_filled_rounded,
+                0,
+              ),
+              _buildTab(
+                AppLocalizations.of(context).upcoming,
+                Icons.schedule_rounded,
+                1,
+              ),
+              _buildTab(
+                AppLocalizations.of(context).history,
+                Icons.history_rounded,
+                2,
+              ),
             ],
           ),
         ),
@@ -177,7 +195,6 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
   }
 
   Widget _buildTab(String label, IconData icon, int index) {
-    final isSelected = _tabController.index == index;
     return Tab(
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -221,13 +238,13 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
                 _buildStatChip(
                   icon: Icons.route_rounded,
                   value: '$totalRides',
-                  label: 'Total Trips',
+                  label: AppLocalizations.of(context).totalTrips,
                 ),
                 SizedBox(width: 12.w),
                 _buildStatChip(
                   icon: Icons.local_taxi_rounded,
                   value: '$activeRides',
-                  label: 'Active',
+                  label: AppLocalizations.of(context).active,
                   highlighted: activeRides > 0,
                 ),
               ],
@@ -315,15 +332,16 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
 
     return user.when(
       loading: () => _buildLoadingState(),
-      error: (_, __) => _buildErrorState('Failed to load user'),
+      error: (_, __) =>
+          _buildErrorState(AppLocalizations.of(context).failedToLoadUser),
       data: (userData) {
         if (userData == null) {
           return _buildEmptyState(
             icon: Icons.login_rounded,
-            title: 'Sign In Required',
+            title: AppLocalizations.of(context).signInRequired,
             subtitle: 'Please sign in to view your trips',
             actionText: 'Sign In',
-            onAction: () => context.go(AppRouter.login),
+            onAction: () => context.go(AppRoutes.login.path),
           );
         }
 
@@ -346,10 +364,10 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
             if (activeRides.isEmpty) {
               return _buildEmptyState(
                 icon: Icons.directions_car_outlined,
-                title: 'No Active Trips',
+                title: AppLocalizations.of(context).noActiveTrips,
                 subtitle: 'You don\'t have any trips in progress',
                 actionText: 'Find a Ride',
-                onAction: () => context.push(AppRouter.riderRequestRide),
+                onAction: () => context.go(AppRoutes.riderRequestRide.path),
               );
             }
 
@@ -374,8 +392,9 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
     final isInProgress = ride.status == RideStatus.inProgress;
 
     return GestureDetector(
-      onTap: () => context.push(
-        AppRouter.riderViewRide.replaceFirst(':rideId', ride.id),
+      onTap: () => context.pushNamed(
+        AppRoutes.riderViewRide.name,
+        pathParameters: {'id': ride.id},
       ),
       child: Container(
         margin: EdgeInsets.only(bottom: 16.h),
@@ -429,7 +448,7 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
                         .fadeOut(duration: 600.ms),
                     SizedBox(width: 8.w),
                     Text(
-                      'TRIP IN PROGRESS',
+                      AppLocalizations.of(context).tripInProgress,
                       style: TextStyle(
                         fontSize: 11.sp,
                         fontWeight: FontWeight.w700,
@@ -515,19 +534,17 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
                   // Driver info and time
                   Row(
                     children: [
-                      PremiumAvatar(
-                        imageUrl: null,
-                        name: ride.driverName,
-                        size: 44.w,
-                        hasBorder: true,
+                      DriverAvatarWidget(
+                        driverId: ride.driverId,
+                        radius: 22,
                       ),
                       SizedBox(width: 12.w),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              ride.driverName,
+                            DriverNameWidget(
+                              driverId: ride.driverId,
                               style: TextStyle(
                                 fontSize: 14.sp,
                                 fontWeight: FontWeight.w600,
@@ -536,14 +553,9 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
                             ),
                             Row(
                               children: [
-                                Icon(
-                                  Icons.star_rounded,
-                                  color: AppColors.warning,
-                                  size: 14.sp,
-                                ),
-                                SizedBox(width: 4.w),
-                                Text(
-                                  '4.9',
+                                DriverRatingWidget(
+                                  driverId: ride.driverId,
+                                  showIcon: true,
                                   style: TextStyle(
                                     fontSize: 12.sp,
                                     color: AppColors.textSecondary,
@@ -602,27 +614,23 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
                         Expanded(
                           child: _buildQuickActionButton(
                             icon: Icons.chat_bubble_outline_rounded,
-                            label: 'Message',
-                            onTap: () {
-                              // Open chat
-                            },
+                            label: AppLocalizations.of(context).message,
+                            onTap: () => _openChat(ride),
                           ),
                         ),
                         SizedBox(width: 8.w),
                         Expanded(
                           child: _buildQuickActionButton(
                             icon: Icons.phone_outlined,
-                            label: 'Call',
-                            onTap: () {
-                              // Call driver
-                            },
+                            label: AppLocalizations.of(context).call,
+                            onTap: () => _callDriver(ride),
                           ),
                         ),
                         SizedBox(width: 8.w),
                         Expanded(
                           child: _buildQuickActionButton(
                             icon: Icons.close_rounded,
-                            label: 'Cancel',
+                            label: AppLocalizations.of(context).actionCancel,
                             onTap: () => _showCancelDialog(ride),
                             isDestructive: true,
                           ),
@@ -678,15 +686,16 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
 
     return user.when(
       loading: () => _buildLoadingState(),
-      error: (_, __) => _buildErrorState('Failed to load user'),
+      error: (_, __) =>
+          _buildErrorState(AppLocalizations.of(context).failedToLoadUser),
       data: (userData) {
         if (userData == null) {
           return _buildEmptyState(
             icon: Icons.login_rounded,
-            title: 'Sign In Required',
+            title: AppLocalizations.of(context).signInRequired,
             subtitle: 'Please sign in to view your trips',
             actionText: 'Sign In',
-            onAction: () => context.go(AppRouter.login),
+            onAction: () => context.go(AppRoutes.login.path),
           );
         }
 
@@ -708,10 +717,10 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
             if (upcomingRides.isEmpty) {
               return _buildEmptyState(
                 icon: Icons.event_available_rounded,
-                title: 'No Upcoming Trips',
+                title: AppLocalizations.of(context).noUpcomingTrips,
                 subtitle: 'Book a ride to see it here',
                 actionText: 'Find a Ride',
-                onAction: () => context.push(AppRouter.riderRequestRide),
+                onAction: () => context.go(AppRoutes.riderRequestRide.path),
               );
             }
 
@@ -744,8 +753,9 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
     }
 
     return GestureDetector(
-      onTap: () => context.push(
-        AppRouter.riderViewRide.replaceFirst(':rideId', ride.id),
+      onTap: () => context.pushNamed(
+        AppRoutes.riderViewRide.name,
+        pathParameters: {'id': ride.id},
       ),
       child: Container(
         margin: EdgeInsets.only(bottom: 12.h),
@@ -801,7 +811,10 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
                     children: [
                       Expanded(
                         child: Text(
-                          '${ride.origin.address.split(',').first} → ${ride.destination.address.split(',').first}',
+                          AppLocalizations.of(context).valueValue2(
+                            ride.origin.address.split(',').first,
+                            ride.destination.address.split(',').first,
+                          ),
                           style: TextStyle(
                             fontSize: 14.sp,
                             fontWeight: FontWeight.w600,
@@ -854,8 +867,8 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
                         color: AppColors.textTertiary,
                       ),
                       SizedBox(width: 4.w),
-                      Text(
-                        ride.driverName,
+                      DriverNameWidget(
+                        driverId: ride.driverId,
                         style: TextStyle(
                           fontSize: 12.sp,
                           color: AppColors.textSecondary,
@@ -882,15 +895,16 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
 
     return user.when(
       loading: () => _buildLoadingState(),
-      error: (_, __) => _buildErrorState('Failed to load user'),
+      error: (_, __) =>
+          _buildErrorState(AppLocalizations.of(context).failedToLoadUser),
       data: (userData) {
         if (userData == null) {
           return _buildEmptyState(
             icon: Icons.login_rounded,
-            title: 'Sign In Required',
+            title: AppLocalizations.of(context).signInRequired,
             subtitle: 'Please sign in to view your trip history',
             actionText: 'Sign In',
-            onAction: () => context.go(AppRouter.login),
+            onAction: () => context.go(AppRoutes.login.path),
           );
         }
 
@@ -915,10 +929,10 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
             if (pastRides.isEmpty) {
               return _buildEmptyState(
                 icon: Icons.history_rounded,
-                title: 'No Trip History',
+                title: AppLocalizations.of(context).noTripHistory,
                 subtitle: 'Your completed trips will appear here',
                 actionText: 'Find a Ride',
-                onAction: () => context.push(AppRouter.riderRequestRide),
+                onAction: () => context.go(AppRoutes.riderRequestRide.path),
               );
             }
 
@@ -974,8 +988,9 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
     final isCancelled = ride.status == RideStatus.cancelled;
 
     return GestureDetector(
-      onTap: () => context.push(
-        AppRouter.riderViewRide.replaceFirst(':rideId', ride.id),
+      onTap: () => context.pushNamed(
+        AppRoutes.riderViewRide.name,
+        pathParameters: {'id': ride.id},
       ),
       child: Container(
         margin: EdgeInsets.only(bottom: 10.h),
@@ -1013,7 +1028,10 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${ride.origin.address.split(',').first} → ${ride.destination.address.split(',').first}',
+                    AppLocalizations.of(context).valueValue2(
+                      ride.origin.address.split(',').first,
+                      ride.destination.address.split(',').first,
+                    ),
                     style: TextStyle(
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w600,
@@ -1023,12 +1041,33 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
                     overflow: TextOverflow.ellipsis,
                   ),
                   SizedBox(height: 4.h),
-                  Text(
-                    '${DateFormat('MMM d, h:mm a').format(ride.departureTime)} • ${ride.driverName}',
-                    style: TextStyle(
-                      fontSize: 11.sp,
-                      color: AppColors.textSecondary,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        DateFormat('MMM d, h:mm a').format(ride.departureTime),
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 6.w),
+                        child: Text(
+                          '•',
+                          style: TextStyle(
+                            fontSize: 11.sp,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                      DriverNameWidget(
+                        driverId: ride.driverId,
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -1037,7 +1076,9 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  '€${ride.pricePerSeat.toStringAsFixed(0)}',
+                  AppLocalizations.of(
+                    context,
+                  ).value6(ride.pricePerSeat.toStringAsFixed(0)),
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w700,
@@ -1048,7 +1089,7 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
                   GestureDetector(
                     onTap: () => _showRebookDialog(ride),
                     child: Text(
-                      'Rebook',
+                      AppLocalizations.of(context).rebook,
                       style: TextStyle(
                         fontSize: 11.sp,
                         fontWeight: FontWeight.w600,
@@ -1066,12 +1107,13 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
 
   Widget _buildQuickActionFab() {
     return FloatingActionButton.extended(
-      onPressed: () => context.push(AppRouter.riderRequestRide),
+      heroTag: 'rider_my_rides_fab',
+      onPressed: () => context.go(AppRoutes.riderRequestRide.path),
       backgroundColor: AppColors.primary,
       elevation: 4,
       icon: Icon(Icons.search_rounded, size: 22.sp),
       label: Text(
-        'Find Ride',
+        AppLocalizations.of(context).findRide,
         style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
       ),
     );
@@ -1085,7 +1127,7 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
           CircularProgressIndicator(color: AppColors.primary),
           SizedBox(height: 16.h),
           Text(
-            'Loading your trips...',
+            AppLocalizations.of(context).loadingYourTrips,
             style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
           ),
         ],
@@ -1107,7 +1149,7 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
             ),
             SizedBox(height: 16.h),
             Text(
-              'Something went wrong',
+              AppLocalizations.of(context).somethingWentWrong,
               style: TextStyle(
                 fontSize: 18.sp,
                 fontWeight: FontWeight.w600,
@@ -1135,36 +1177,37 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
   }) {
     return Center(
       child: Padding(
-        padding: EdgeInsets.all(32.w),
+        padding: EdgeInsets.all(16.w),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 100.w,
-              height: 100.w,
+              width: 80.w,
+              height: 80.w,
               decoration: BoxDecoration(
                 color: AppColors.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 48.sp, color: AppColors.primary),
+              child: Icon(icon, size: 40.sp, color: AppColors.primary),
             ),
-            SizedBox(height: 24.h),
+            SizedBox(height: 16.h),
             Text(
               title,
               style: TextStyle(
-                fontSize: 20.sp,
+                fontSize: 18.sp,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
               ),
             ),
-            SizedBox(height: 8.h),
+            SizedBox(height: 4.h),
             Text(
               subtitle,
-              style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
             if (actionText != null && onAction != null) ...[
-              SizedBox(height: 24.h),
+              SizedBox(height: 16.h),
               PremiumButton(
                 text: actionText,
                 onPressed: onAction,
@@ -1207,7 +1250,7 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
             ),
             SizedBox(height: 16.h),
             Text(
-              'Cancel Trip?',
+              AppLocalizations.of(context).cancelTrip,
               style: TextStyle(
                 fontSize: 20.sp,
                 fontWeight: FontWeight.w700,
@@ -1216,7 +1259,9 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
             ),
             SizedBox(height: 8.h),
             Text(
-              'Are you sure you want to cancel your trip to ${ride.destination.address.split(',').first}?',
+              AppLocalizations.of(
+                context,
+              ).areYouSureYouWant10(ride.destination.address.split(',').first),
               style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
@@ -1234,15 +1279,46 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
                 Expanded(
                   child: PremiumButton(
                     text: 'Cancel Trip',
-                    onPressed: () {
+                    onPressed: () async {
                       Navigator.pop(context);
-                      // TODO: Implement cancel booking
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Trip cancelled'),
-                          backgroundColor: AppColors.error,
-                        ),
-                      );
+                      final currentUser = ref.read(currentUserProvider).value;
+                      if (currentUser == null) return;
+                      RideBooking? booking;
+                      try {
+                        booking = ride.bookings.firstWhere(
+                          (b) => b.passengerId == currentUser.uid,
+                        );
+                      } catch (e) {
+                        booking = null;
+                      }
+                      if (booking == null) return;
+                      try {
+                        await ref
+                            .read(rideActionsViewModelProvider)
+                            .cancelBooking(
+                              rideId: ride.id,
+                              bookingId: booking.id,
+                            );
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                AppLocalizations.of(context).tripCancelled,
+                              ),
+                              backgroundColor: AppColors.error,
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Failed to cancel: $e'),
+                              backgroundColor: AppColors.error,
+                            ),
+                          );
+                        }
+                      }
                     },
                     style: PremiumButtonStyle.primary,
                   ),
@@ -1259,6 +1335,127 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
   void _showRebookDialog(RideModel ride) {
     HapticFeedback.lightImpact();
     // Navigate to request ride with pre-filled locations
-    context.push(AppRouter.riderRequestRide);
+    context.go(AppRoutes.riderRequestRide.path);
+  }
+
+  /// Opens chat with the driver
+  Future<void> _openChat(RideModel ride) async {
+    HapticFeedback.lightImpact();
+
+    final currentUser = ref.read(currentUserProvider).value;
+    if (currentUser == null) return;
+
+    // Show loading indicator
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            SizedBox(
+              width: 16.w,
+              height: 16.h,
+              child: const CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            ),
+            SizedBox(width: 12.w),
+            Text(AppLocalizations.of(context).openingChat),
+          ],
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+
+    try {
+      // Fetch driver profile to get name and photo
+      final driverProfile = await ref.read(
+        userProfileProvider(ride.driverId).future,
+      );
+
+      if (driverProfile == null) {
+        throw Exception('Driver profile not found');
+      }
+
+      // Create or get existing chat - this ensures the Firestore document exists
+      final chat = await ref.read(
+        getOrCreateChatProvider(
+          userId1: currentUser.uid,
+          userId2: ride.driverId,
+          userName1: currentUser.displayName,
+          userName2: driverProfile.displayName,
+          userPhoto1: currentUser.photoUrl,
+          userPhoto2: driverProfile.photoUrl,
+        ).future,
+      );
+
+      if (!mounted) return;
+
+      // Hide loading indicator
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+      context.pushNamed(
+        AppRoutes.chatDetail.name,
+        pathParameters: {'id': chat.id},
+        extra: driverProfile,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).failedToOpenChatValue(e.toString()),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// Calls the driver using the device phone dialer.
+  Future<void> _callDriver(RideModel ride) async {
+    HapticFeedback.lightImpact();
+
+    try {
+      final driver = await ref.read(
+        userProfileProvider(ride.driverId).future,
+      );
+      final phoneNumber = driver?.phoneNumber;
+
+      if (phoneNumber == null || phoneNumber.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context).phoneNumberNotAvailable,
+            ),
+          ),
+        );
+        return;
+      }
+
+      final phoneUri = Uri(scheme: 'tel', path: phoneNumber);
+      if (await canLaunchUrl(phoneUri)) {
+        await launchUrl(phoneUri);
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context).cannotMakePhoneCalls,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).failedToLaunchDialer,
+          ),
+        ),
+      );
+    }
   }
 }

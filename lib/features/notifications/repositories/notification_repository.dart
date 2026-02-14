@@ -1,12 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
+import 'package:sport_connect/core/interfaces/repositories/i_notification_repository.dart';
 import 'package:sport_connect/features/notifications/models/notification_model.dart';
 
 part 'notification_repository.g.dart';
 
 /// Notification Repository for Firestore operations
-class NotificationRepository {
+class NotificationRepository implements INotificationRepository {
   final FirebaseFirestore _firestore;
 
   NotificationRepository(this._firestore);
@@ -180,6 +181,64 @@ class NotificationRepository {
         referenceId: rideId,
         referenceType: 'ride',
         priority: NotificationPriority.high,
+      ),
+    );
+  }
+
+  /// Send ride booking rejected notification
+  Future<void> sendRideBookingRejected({
+    required String toUserId,
+    required String driverName,
+    String? driverPhoto,
+    required String rideId,
+    required String rideName,
+    String? reason,
+  }) async {
+    final body = reason != null && reason.isNotEmpty
+        ? '$driverName declined your request for "$rideName": $reason'
+        : '$driverName declined your request for "$rideName"';
+
+    await createNotification(
+      NotificationModel(
+        id: '',
+        userId: toUserId,
+        type: NotificationType.rideBookingRejected,
+        title: 'Booking Declined',
+        body: body,
+        senderName: driverName,
+        senderPhotoUrl: driverPhoto,
+        referenceId: rideId,
+        referenceType: 'ride',
+        priority: NotificationPriority.high,
+      ),
+    );
+  }
+
+  /// Send ride cancelled notification to a passenger
+  Future<void> sendRideCancelled({
+    required String toUserId,
+    required String driverName,
+    String? driverPhoto,
+    required String rideId,
+    required String rideName,
+    String? reason,
+  }) async {
+    final body = reason != null && reason.isNotEmpty
+        ? '$driverName cancelled the ride "$rideName": $reason'
+        : '$driverName cancelled the ride "$rideName"';
+
+    await createNotification(
+      NotificationModel(
+        id: '',
+        userId: toUserId,
+        type: NotificationType.rideCancelled,
+        title: 'Ride Cancelled',
+        body: body,
+        senderName: driverName,
+        senderPhotoUrl: driverPhoto,
+        referenceId: rideId,
+        referenceType: 'ride',
+        priority: NotificationPriority.urgent,
       ),
     );
   }
