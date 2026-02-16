@@ -28,6 +28,7 @@ import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/features/payments/view_models/payment_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/core/utils/distance_formatter.dart';
+import 'package:sport_connect/core/services/deep_link_service.dart';
 
 /// Ride Detail Screen with booking functionality - Uses Firestore data
 class RideDetailScreen extends ConsumerStatefulWidget {
@@ -292,17 +293,50 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
       ),
       actions: [
         IconButton(
-          onPressed: () {
-            Share.share(
-              '🚗 Check out this ride on SportConnect!\n\n'
-              '📍 ${ride.origin.city ?? ride.origin.address} → ${ride.destination.city ?? ride.destination.address}\n'
-              '📅 ${DateFormat('MMM d, h:mm a').format(ride.departureTime)}\n'
-              '💰 ${ride.pricePerSeat.toStringAsFixed(0)} € per seat\n'
-              '🪑 ${ride.remainingSeats} seats available\n\n'
-              'Join me for a comfortable ride! 🌱\n\n'
-              'Check out this ride on SportConnect: sportconnect://ride/${widget.rideId}',
-              subject: 'Carpool ride on SportConnect',
-            );
+          onPressed: () async {
+            try {
+              // Generate shareable HTTPS link via app_links
+              final dynamicLink = await DeepLinkService.instance
+                  .generateRideLink(
+                    rideId: ride.id,
+                    fromCity: ride.origin.city ?? ride.origin.address,
+                    toCity: ride.destination.city ?? ride.destination.address,
+                    price: ride.pricePerSeat,
+                    seats: ride.remainingSeats,
+                    departureTime: ride.departureTime,
+                  );
+
+              final shareText =
+                  '🚗 Check out this ride on SportConnect!\n\n'
+                  '📍 ${ride.origin.city ?? ride.origin.address} → ${ride.destination.city ?? ride.destination.address}\n'
+                  '📅 ${DateFormat('MMM d, h:mm a').format(ride.departureTime)}\n'
+                  '💰 ${ride.pricePerSeat.toStringAsFixed(0)} € per seat\n'
+                  '🪑 ${ride.remainingSeats} seats available\n\n'
+                  'Join me for a comfortable ride! 🌱\n\n'
+                  '🔗 $dynamicLink';
+
+              await SharePlus.instance.share(
+                ShareParams(
+                  text: shareText,
+                  subject: 'Carpool ride on SportConnect',
+                ),
+              );
+            } catch (e) {
+              // Fallback
+              await SharePlus.instance.share(
+                ShareParams(
+                  text:
+                      '🚗 Check out this ride on SportConnect!\n\n'
+                      '📍 ${ride.origin.city ?? ride.origin.address} → ${ride.destination.city ?? ride.destination.address}\n'
+                      '📅 ${DateFormat('MMM d, h:mm a').format(ride.departureTime)}\n'
+                      '💰 ${ride.pricePerSeat.toStringAsFixed(0)} € per seat\n'
+                      '🪑 ${ride.remainingSeats} seats available\n\n'
+                      'Join me for a comfortable ride! 🌱\n\n'
+                      '🔗 https://${DeepLinkService.hostingDomain}/ride/${widget.rideId}',
+                  subject: 'Carpool ride on SportConnect',
+                ),
+              );
+            }
           },
           icon: Container(
             padding: EdgeInsets.all(8.w),
@@ -1070,9 +1104,9 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                   Expanded(
                     child: Text(
                       acceptedBookings.length == 1
-                          ? AppLocalizations.of(context).valueHasBookedThisRide(
-                              'A passenger',
-                            )
+                          ? AppLocalizations.of(
+                              context,
+                            ).valueHasBookedThisRide('A passenger')
                           : AppLocalizations.of(
                               context,
                             ).valuePassengersHaveBooked(
@@ -1102,10 +1136,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
       ),
       child: Row(
         children: [
-          PassengerAvatarWidget(
-            passengerId: booking.passengerId,
-            radius: 22,
-          ),
+          PassengerAvatarWidget(passengerId: booking.passengerId, radius: 22),
           SizedBox(width: 12.w),
           Expanded(
             child: Column(
@@ -2074,7 +2105,8 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
         amount: amountInSmallestUnit.toDouble(),
         currency: currencyIso,
         customerId: customerId,
-        driverStripeAccountId: driverStripeAccountId, // Pass driver's Stripe account
+        driverStripeAccountId:
+            driverStripeAccountId, // Pass driver's Stripe account
         description: '${ride.origin.address} → ${ride.destination.address}',
       );
 
@@ -2082,6 +2114,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
       final paymentSuccess = await StripeService().processPaymentWithSheet(
         paymentIntentClientSecret: paymentData['clientSecret'],
         customerId: customerId,
+        ephemeralKeySecret: paymentData['ephemeralKey'],
       );
 
       if (paymentSuccess) {

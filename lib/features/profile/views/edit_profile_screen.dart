@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/core/widgets/premium_text_field.dart';
@@ -287,7 +288,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                   '${_currentUser?.asDriver!.vehicles.length ?? 0} Active',
                               icon: Icons.directions_car_rounded,
                               onTap: () {
-                                context.push('/driver/vehicles');
+                                context.push(AppRoutes.driverVehicles.path);
                               },
                             ),
                           ],

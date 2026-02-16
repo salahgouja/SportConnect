@@ -24,6 +24,7 @@ import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/core/utils/distance_formatter.dart';
+import 'package:sport_connect/core/services/deep_link_service.dart';
 
 /// Driver's dedicated screen for managing their ride and viewing booking requests
 /// Features: ride stats, booking management, passenger list, ride controls
@@ -1134,10 +1135,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       ),
       child: Row(
         children: [
-          PassengerAvatarWidget(
-            passengerId: booking.passengerId,
-            radius: 25,
-          ),
+          PassengerAvatarWidget(passengerId: booking.passengerId, radius: 25),
           SizedBox(width: 12.w),
           Expanded(
             child: Column(
@@ -1442,9 +1440,9 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                 const Icon(Icons.check_circle_rounded, color: Colors.white),
                 SizedBox(width: 8.w),
                 Text(
-                  AppLocalizations.of(context).bookingConfirmedForValue(
-                    passengerName,
-                  ),
+                  AppLocalizations.of(
+                    context,
+                  ).bookingConfirmedForValue(passengerName),
                 ),
               ],
             ),
@@ -1486,9 +1484,9 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       builder: (context) => AlertDialog(
         title: Text(AppLocalizations.of(context).declineBooking),
         content: Text(
-          AppLocalizations.of(context).declineBookingRequestFromValue(
-            passengerName,
-          ),
+          AppLocalizations.of(
+            context,
+          ).declineBookingRequestFromValue(passengerName),
         ),
         actions: [
           TextButton(
@@ -1548,9 +1546,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              AppLocalizations.of(context).phoneNumberNotAvailable,
-            ),
+            content: Text(AppLocalizations.of(context).phoneNumberNotAvailable),
           ),
         );
         return;
@@ -1563,9 +1559,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              AppLocalizations.of(context).cannotMakePhoneCalls,
-            ),
+            content: Text(AppLocalizations.of(context).cannotMakePhoneCalls),
           ),
         );
       }
@@ -1573,9 +1567,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            AppLocalizations.of(context).failedToLaunchDialer,
-          ),
+          content: Text(AppLocalizations.of(context).failedToLaunchDialer),
         ),
       );
     }
@@ -1597,9 +1589,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       builder: (context) => AlertDialog(
         title: Text(AppLocalizations.of(context).removePassenger),
         content: Text(
-          AppLocalizations.of(
-            context,
-          ).removeValueFromThisRide(passengerName),
+          AppLocalizations.of(context).removeValueFromThisRide(passengerName),
         ),
         actions: [
           TextButton(
@@ -1708,18 +1698,48 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
     context.push(AppRoutes.driverOfferRide.path, extra: ride);
   }
 
-  void _shareRide(RideModel ride) {
+  Future<void> _shareRide(RideModel ride) async {
     HapticFeedback.lightImpact();
-    Share.share(
-      '🚗 Check out this ride on SportConnect!\n\n'
-      '📍 ${ride.origin.city ?? ride.origin.address} → ${ride.destination.city ?? ride.destination.address}\n'
-      '📅 ${DateFormat('MMM d, h:mm a').format(ride.departureTime)}\n'
-      '💰 ${ride.pricePerSeat.toStringAsFixed(0)} € per seat\n'
-      '🪑 ${ride.remainingSeats} seats available\n\n'
-      'Join me for a comfortable ride! 🌱\n\n'
-      'Check out this ride on SportConnect: sportconnect://ride/${ride.id}',
-      subject: 'Carpool ride on SportConnect',
-    );
+
+    try {
+      // Generate shareable HTTPS link via app_links
+      final dynamicLink = await DeepLinkService.instance.generateRideLink(
+        rideId: ride.id,
+        fromCity: ride.origin.city ?? ride.origin.address,
+        toCity: ride.destination.city ?? ride.destination.address,
+        price: ride.pricePerSeat,
+        seats: ride.remainingSeats,
+        departureTime: ride.departureTime,
+      );
+
+      final shareText =
+          '🚗 Check out this ride on SportConnect!\n\n'
+          '📍 ${ride.origin.city ?? ride.origin.address} → ${ride.destination.city ?? ride.destination.address}\n'
+          '📅 ${DateFormat('MMM d, h:mm a').format(ride.departureTime)}\n'
+          '💰 ${ride.pricePerSeat.toStringAsFixed(0)} € per seat\n'
+          '🪑 ${ride.remainingSeats} seats available\n\n'
+          'Join me for a comfortable ride! 🌱\n\n'
+          '🔗 $dynamicLink';
+
+      await SharePlus.instance.share(
+        ShareParams(text: shareText, subject: 'Carpool ride on SportConnect'),
+      );
+    } catch (e) {
+      // Fallback to basic share with HTTPS link
+      await SharePlus.instance.share(
+        ShareParams(
+          text:
+              '🚗 Check out this ride on SportConnect!\n\n'
+              '📍 ${ride.origin.city ?? ride.origin.address} → ${ride.destination.city ?? ride.destination.address}\n'
+              '📅 ${DateFormat('MMM d, h:mm a').format(ride.departureTime)}\n'
+              '💰 ${ride.pricePerSeat.toStringAsFixed(0)} € per seat\n'
+              '🪑 ${ride.remainingSeats} seats available\n\n'
+              'Join me for a comfortable ride! 🌱\n\n'
+              '🔗 https://${DeepLinkService.hostingDomain}/ride/${ride.id}',
+          subject: 'Carpool ride on SportConnect',
+        ),
+      );
+    }
   }
 
   void _duplicateRide(RideModel ride) {

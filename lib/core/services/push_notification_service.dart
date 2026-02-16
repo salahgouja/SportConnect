@@ -256,12 +256,12 @@ class PushNotificationService {
 
     switch (type) {
       case 'message':
-        context.push('/chat/$referenceId');
+        context.push(AppRoutes.chatDetail.path.replaceFirst(':id', referenceId));
       case 'ride_request':
       case 'ride_update':
-        context.push('/ride/$referenceId');
+        context.push(AppRoutes.rideDetail.path.replaceFirst(':id', referenceId));
       default:
-        context.push('/notifications');
+        context.push(AppRoutes.notifications.path);
     }
   }
 

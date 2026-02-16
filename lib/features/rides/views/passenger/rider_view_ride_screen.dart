@@ -25,6 +25,7 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/features/reviews/repositories/review_repository.dart';
 import 'package:sport_connect/features/reviews/models/review_model.dart';
 import 'package:sport_connect/core/utils/distance_formatter.dart';
+import 'package:sport_connect/core/services/deep_link_service.dart';
 
 /// Rider's dedicated screen for viewing ride details and booking
 /// Clean, informative UI with easy booking flow
@@ -324,10 +325,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
         children: [
           Row(
             children: [
-              DriverAvatarWidget(
-                driverId: ride.driverId,
-                radius: 28,
-              ),
+              DriverAvatarWidget(driverId: ride.driverId, radius: 28),
               SizedBox(width: 14.w),
               Expanded(
                 child: Column(
@@ -957,10 +955,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
                 ),
                 error: (_, __) => Text(
                   AppLocalizations.of(context).failedToLoadReviews,
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: AppColors.error,
-                  ),
+                  style: TextStyle(fontSize: 12.sp, color: AppColors.error),
                 ),
               ),
             ],
@@ -1040,10 +1035,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
             SizedBox(height: 8.h),
             Text(
               review.comment!,
-              style: TextStyle(
-                fontSize: 13.sp,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),
@@ -1055,10 +1047,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
               runSpacing: 4.h,
               children: review.tags.map((tag) {
                 return Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 8.w,
-                    vertical: 3.h,
-                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
                   decoration: BoxDecoration(
                     color: AppColors.primarySurface,
                     borderRadius: BorderRadius.circular(6.r),
@@ -1194,18 +1183,48 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
 
   // === Actions ===
 
-  void _shareRide(RideModel ride) {
+  Future<void> _shareRide(RideModel ride) async {
     HapticFeedback.lightImpact();
-    Share.share(
-      '🚗 Check out this ride on SportConnect!\n\n'
-      '📍 ${ride.origin.city ?? ride.origin.address} → ${ride.destination.city ?? ride.destination.address}\n'
-      '📅 ${DateFormat('MMM d, h:mm a').format(ride.departureTime)}\n'
-      '💰 ${ride.pricePerSeat.toStringAsFixed(0)} € per seat\n'
-      '🪑 ${ride.remainingSeats} seats available\n\n'
-      'Join me for a comfortable ride! 🌱\n\n'
-      'Check out this ride on SportConnect: sportconnect://ride/${widget.rideId}',
-      subject: 'Carpool ride on SportConnect',
-    );
+
+    try {
+      // Generate shareable HTTPS link via app_links
+      final dynamicLink = await DeepLinkService.instance.generateRideLink(
+        rideId: ride.id,
+        fromCity: ride.origin.city ?? ride.origin.address,
+        toCity: ride.destination.city ?? ride.destination.address,
+        price: ride.pricePerSeat,
+        seats: ride.remainingSeats,
+        departureTime: ride.departureTime,
+      );
+
+      final shareText =
+          '🚗 Check out this ride on SportConnect!\n\n'
+          '📍 ${ride.origin.city ?? ride.origin.address} → ${ride.destination.city ?? ride.destination.address}\n'
+          '📅 ${DateFormat('MMM d, h:mm a').format(ride.departureTime)}\n'
+          '💰 ${ride.pricePerSeat.toStringAsFixed(0)} € per seat\n'
+          '🪑 ${ride.remainingSeats} seats available\n\n'
+          'Join me for a comfortable ride! 🌱\n\n'
+          '🔗 $dynamicLink';
+
+      await SharePlus.instance.share(
+        ShareParams(text: shareText, subject: 'Carpool ride on SportConnect'),
+      );
+    } catch (e) {
+      // Fallback to basic share with HTTPS link
+      await SharePlus.instance.share(
+        ShareParams(
+          text:
+              '🚗 Check out this ride on SportConnect!\n\n'
+              '📍 ${ride.origin.city ?? ride.origin.address} → ${ride.destination.city ?? ride.destination.address}\n'
+              '📅 ${DateFormat('MMM d, h:mm a').format(ride.departureTime)}\n'
+              '💰 ${ride.pricePerSeat.toStringAsFixed(0)} € per seat\n'
+              '🪑 ${ride.remainingSeats} seats available\n\n'
+              'Join me for a comfortable ride! 🌱\n\n'
+              '🔗 https://${DeepLinkService.hostingDomain}/ride/${widget.rideId}',
+          subject: 'Carpool ride on SportConnect',
+        ),
+      );
+    }
   }
 
   Future<void> _openChat(RideModel ride) async {

@@ -5,7 +5,7 @@
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>
-		<string>Sport Connect</string>
+		<string>SportConnect</string>
 		<key>CFBundleExecutable</key>
 		<string>$(EXECUTABLE_NAME)</string>
 		<key>CFBundleIdentifier</key>
@@ -13,7 +13,7 @@
 		<key>CFBundleInfoDictionaryVersion</key>
 		<string>6.0</string>
 		<key>CFBundleName</key>
-		<string>sport_connect</string>
+		<string>SportConnect</string>
 		<key>CFBundlePackageType</key>
 		<string>APPL</string>
 		<key>CFBundleShortVersionString</key>
@@ -33,12 +33,15 @@
 		<key>CFBundleURLTypes</key>
 		<array>
 			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
 				<key>CFBundleURLSchemes</key>
 				<array>
 					<string>sportconnect</string>
+					<string>sc</string>
 				</array>
 				<key>CFBundleURLName</key>
-				<string>com.sportconnect.sport_connect</string>
+				<string>com.sportconnect.app</string>
 			</dict>
 		</array>
 		<!-- Location permissions -->

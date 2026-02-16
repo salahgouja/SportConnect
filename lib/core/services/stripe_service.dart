@@ -104,23 +104,45 @@ class StripeService {
   }
 
   /// Process payment using Payment Sheet (Recommended for mobile)
+  ///
+  /// Uses Stripe's conversion-optimized Payment Sheet UI which supports
+  /// saved cards, Apple Pay, Google Pay, and localized payment methods.
   Future<bool> processPaymentWithSheet({
     required String paymentIntentClientSecret,
     required String customerId,
     String? ephemeralKeySecret,
   }) async {
     try {
-      // Initialize Payment Sheet
+
+      // Initialize Payment Sheet with branded appearance
       await Stripe.instance.initPaymentSheet(
         paymentSheetParameters: SetupPaymentSheetParameters(
           paymentIntentClientSecret: paymentIntentClientSecret,
           merchantDisplayName: 'SportConnect',
           customerId: customerId,
           customerEphemeralKeySecret: ephemeralKeySecret,
+          // Enable Apple Pay / Google Pay for faster checkout
+          applePay: const PaymentSheetApplePay(
+            merchantCountryCode: 'FR',
+          ),
+          googlePay: const PaymentSheetGooglePay(
+            merchantCountryCode: 'FR',
+            testEnv: true, // Set to false in production
+          ),
+          // Allow delayed payment methods (e.g., SEPA direct debit)
+          allowsDelayedPaymentMethods: true,
           appearance: const PaymentSheetAppearance(
             colors: PaymentSheetAppearanceColors(
               primary: Color(0xFF1E88E5),
               background: Color(0xFFFFFFFF),
+              componentBackground: Color(0xFFF5F5F5),
+              componentBorder: Color(0xFFE0E0E0),
+            ),
+            shapes: PaymentSheetShape(
+              borderWidth: 1,
+            ),
+            primaryButton: PaymentSheetPrimaryButtonAppearance(
+              shapes: PaymentSheetPrimaryButtonShape(),
             ),
           ),
         ),
@@ -171,10 +193,19 @@ class StripeService {
 
   /// Create Connected Account for driver (Stripe Connect)
   /// Uses Firebase Cloud Functions - Express accounts for easy onboarding
+  ///
+  /// Prefills individual info (name, phone, DOB, address) from user profile
+  /// to reduce onboarding friction. Stripe won't ask for prefilled fields.
   Future<Map<String, dynamic>> createDriverConnectedAccount({
     required String userId,
     required String email,
     required String country, // ISO country code (e.g., 'US', 'FR', 'TN')
+    String? firstName,
+    String? lastName,
+    String? phone,
+    DateTime? dateOfBirth,
+    String? addressLine1,
+    String? city,
     String? existingStripeAccountId,
     String? refreshUrl,
     String? returnUrl,
@@ -184,6 +215,12 @@ class StripeService {
         'userId': userId,
         'email': email,
         'country': country,
+        if (firstName != null) 'firstName': firstName,
+        if (lastName != null) 'lastName': lastName,
+        if (phone != null) 'phone': phone,
+        if (dateOfBirth != null) 'dateOfBirth': dateOfBirth.toIso8601String(),
+        if (addressLine1 != null) 'addressLine1': addressLine1,
+        if (city != null) 'city': city,
       });
 
       return response;

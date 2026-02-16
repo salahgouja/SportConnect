@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +9,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
@@ -47,6 +49,12 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
   String _distanceRemaining = '--';
   double _speedKmh = 0;
   late AnimationController _pulseController;
+
+  // Real ETA calculation state
+  double? _totalDistanceKm;
+  int? _totalDurationMinutes;
+  LatLng? _originLatLng;
+  LatLng? _destinationLatLng;
 
   @override
   void initState() {
@@ -106,18 +114,107 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
   }
 
   void _calculateProgress(Position position) {
-    // Geolocator speed is in m/s — convert to km/h
-    final speedKmh = position.speed * 3.6;
+    // Speed from GPS (m/s → km/h)
+    final speedKmh = (position.speed * 3.6).clamp(0.0, 200.0);
+
+    // Lazy-initialize ride data from the current ride stream value
+    if (_originLatLng == null || _destinationLatLng == null) {
+      final rideAsync = ref.read(rideStreamProvider(widget.rideId));
+      final ride = rideAsync.value;
+      if (ride != null) {
+        _originLatLng = LatLng(
+          ride.origin.latitude,
+          ride.origin.longitude,
+        );
+        _destinationLatLng = LatLng(
+          ride.destination.latitude,
+          ride.destination.longitude,
+        );
+        _totalDistanceKm = ride.distanceKm;
+        _totalDurationMinutes = ride.durationMinutes;
+      }
+    }
+
+    if (_originLatLng == null || _destinationLatLng == null) {
+      // No ride data yet - show placeholder
+      setState(() {
+        _speedKmh = speedKmh;
+        _eta = 'Calculating...';
+        _distanceRemaining = '--';
+      });
+      return;
+    }
+
+    final currentLatLng = LatLng(position.latitude, position.longitude);
+
+    // Calculate distances using Haversine
+    final totalDistKm =
+        _totalDistanceKm ?? _haversineKm(_originLatLng!, _destinationLatLng!);
+    final distToDest = _haversineKm(currentLatLng, _destinationLatLng!);
+    final distFromOrigin = _haversineKm(_originLatLng!, currentLatLng);
+
+    // Calculate progress (0.0 to 1.0)
+    final progress = totalDistKm > 0
+        ? (distFromOrigin / (distFromOrigin + distToDest)).clamp(0.0, 1.0)
+        : 0.0;
+
+    // Calculate ETA: prefer speed-based if moving, else use duration ratio
+    int remainingMinutes;
+    if (speedKmh > 5) {
+      // Moving - use current speed for ETA
+      remainingMinutes = (distToDest / speedKmh * 60).round();
+    } else if (_totalDurationMinutes != null) {
+      // Stationary - estimate from total duration and progress
+      remainingMinutes = ((1 - progress) * _totalDurationMinutes!).round();
+    } else {
+      // Fallback: assume 40 km/h average
+      remainingMinutes = (distToDest / 40 * 60).round();
+    }
+
+    // Format remaining distance
+    String distStr;
+    if (distToDest < 1) {
+      distStr = '${(distToDest * 1000).toInt()} m';
+    } else {
+      distStr = '${distToDest.toStringAsFixed(1)} km';
+    }
+
+    // Format ETA
+    String etaStr;
+    if (remainingMinutes < 1) {
+      etaStr = 'Arriving';
+    } else if (remainingMinutes >= 60) {
+      final h = remainingMinutes ~/ 60;
+      final m = remainingMinutes % 60;
+      etaStr = '${h}h ${m}m';
+    } else {
+      etaStr = '$remainingMinutes min';
+    }
 
     setState(() {
-      _speedKmh = speedKmh.clamp(0, 200);
-      _progress = (_progress + 0.01).clamp(0.0, 1.0);
-      final remainingMinutes = ((1 - _progress) * 30).round();
-      _eta = '$remainingMinutes min';
-      final remainingKm = ((1 - _progress) * 15).toStringAsFixed(1);
-      _distanceRemaining = '$remainingKm km';
+      _speedKmh = speedKmh;
+      _progress = progress;
+      _eta = etaStr;
+      _distanceRemaining = distStr;
     });
   }
+
+  /// Calculates distance in km between two points using the Haversine formula.
+  double _haversineKm(LatLng a, LatLng b) {
+    const r = 6371.0; // Earth radius in km
+    final dLat = _degToRad(b.latitude - a.latitude);
+    final dLon = _degToRad(b.longitude - a.longitude);
+    final sinLat = math.sin(dLat / 2);
+    final sinLon = math.sin(dLon / 2);
+    final h = sinLat * sinLat +
+        math.cos(_degToRad(a.latitude)) *
+            math.cos(_degToRad(b.latitude)) *
+            sinLon *
+            sinLon;
+    return 2 * r * math.asin(math.sqrt(h));
+  }
+
+  double _degToRad(double deg) => deg * math.pi / 180;
 
   @override
   Widget build(BuildContext context) {
@@ -613,6 +710,16 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
                   AppColors.success,
                   ride.origin.address,
                 ),
+                // Show intermediate waypoints
+                for (final wp in ride.route.waypoints)
+                  Padding(
+                    padding: EdgeInsets.only(top: 8.h),
+                    child: _buildMiniRouteRow(
+                      Icons.circle,
+                      AppColors.warning,
+                      wp.location.address,
+                    ),
+                  ),
                 SizedBox(height: 8.h),
                 _buildMiniRouteRow(
                   Icons.location_on_rounded,

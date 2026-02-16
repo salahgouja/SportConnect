@@ -6,8 +6,10 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:printing/printing.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/core/services/pdf_receipt_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
@@ -29,14 +31,21 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 /// - Driver/rider info with avatar and rating
 /// - Share receipt
 /// - Rating & review CTA
-class RideCompletionScreen extends ConsumerWidget {
+class RideCompletionScreen extends ConsumerStatefulWidget {
   final String rideId;
 
   const RideCompletionScreen({super.key, required this.rideId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final rideAsync = ref.watch(rideStreamProvider(rideId));
+  ConsumerState<RideCompletionScreen> createState() => _RideCompletionScreenState();
+}
+
+class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
+  bool _isGeneratingPdf = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final rideAsync = ref.watch(rideStreamProvider(widget.rideId));
     final l10n = AppLocalizations.of(context);
 
     return Scaffold(
@@ -136,7 +145,7 @@ class RideCompletionScreen extends ConsumerWidget {
 
                         context.push(
                           '${AppRoutes.submitReview.path}'
-                          '?rideId=$rideId'
+                          '?rideId=${widget.rideId}'
                           '&revieweeId=${ride.driverId}'
                           '&revieweeName=${Uri.encodeComponent(driverProfile?.displayName ?? 'Driver')}'
                           '&type=driver',
@@ -151,15 +160,26 @@ class RideCompletionScreen extends ConsumerWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: PremiumButton(
-                          text: 'Share Receipt',
-                          onPressed: () async {
-                            HapticFeedback.lightImpact();
-                            await _shareReceipt(ref, ride);
-                          },
-                          style: PremiumButtonStyle.secondary,
-                          icon: Icons.share_rounded,
-                        ),
+                        child: _isGeneratingPdf
+                            ? const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(12),
+                                  child: SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  ),
+                                ),
+                              )
+                            : PremiumButton(
+                                text: 'Share Receipt',
+                                onPressed: () async {
+                                  HapticFeedback.lightImpact();
+                                  await _shareReceipt(context, ref, ride);
+                                },
+                                style: PremiumButtonStyle.secondary,
+                                icon: Icons.receipt_long_rounded,
+                              ),
                       ),
                       SizedBox(width: 12.w),
                       Expanded(
@@ -167,7 +187,7 @@ class RideCompletionScreen extends ConsumerWidget {
                           text: 'Report Issue',
                           onPressed: () {
                             context.push(
-                              '${AppRoutes.reportIssue.path}?rideId=$rideId',
+                              '${AppRoutes.reportIssue.path}?rideId=${widget.rideId}',
                             );
                           },
                           style: PremiumButtonStyle.ghost,
@@ -201,33 +221,73 @@ class RideCompletionScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _shareReceipt(WidgetRef ref, RideModel ride) async {
-    // Fetch driver profile to get name
-    final driverProfile = await ref.read(
-      userProfileProvider(ride.driverId).future,
-    );
-    
-    final driverName = driverProfile?.displayName ?? 'Driver';
-    
-    final baseFare = ride.pricePerSeat;
-    final serviceFee = (baseFare * 0.10).roundToDouble();
-    final total = baseFare + serviceFee;
-    final receipt =
-        '''
-SportConnect - Trip Receipt
+  Future<void> _shareReceipt(BuildContext context, WidgetRef ref, RideModel ride) async {
+    // Show loading indicator
+    setState(() => _isGeneratingPdf = true);
+
+    try {
+      // Fetch driver profile to get name
+      final driverProfile = await ref.read(
+        userProfileProvider(ride.driverId).future,
+      );
+
+      final driverName = driverProfile?.displayName ?? 'Driver';
+      final driverPhone = driverProfile?.phoneNumber;
+
+      // Get current user for passenger name
+      final currentUser = ref.read(currentUserProvider).value;
+      final passengerName = currentUser?.displayName;
+
+      final baseFare = ride.pricePerSeat;
+      final serviceFee = (baseFare * 0.10).roundToDouble();
+
+      // Generate PDF receipt
+      final pdfBytes = await PdfReceiptService.instance.generateRideReceipt(
+        rideId: ride.id,
+        fromAddress: ride.origin.address,
+        toAddress: ride.destination.address,
+        departureTime: ride.departureTime,
+        completedTime: DateTime.now(),
+        driverName: driverName,
+        driverPhone: driverPhone,
+        pricePerSeat: ride.pricePerSeat,
+        seatsBooked: 1,
+        serviceFee: serviceFee,
+        passengerName: passengerName,
+      );
+
+      // Share the PDF
+      await Printing.sharePdf(
+        bytes: pdfBytes,
+        filename: 'SportConnect_Receipt_${ride.id.substring(0, 8)}.pdf',
+      );
+    } catch (e) {
+      // Fallback to text receipt
+      final driverProfile = await ref.read(
+        userProfileProvider(ride.driverId).future,
+      );
+      final driverName = driverProfile?.displayName ?? 'Driver';
+      final baseFare = ride.pricePerSeat;
+      final serviceFee = (baseFare * 0.10).roundToDouble();
+      final total = baseFare + serviceFee;
+
+      final receipt = '''SportConnect - Trip Receipt
 ${'=' * 30}
 From: ${ride.origin.address}
 To: ${ride.destination.address}
 Date: ${DateFormat('MMM d, yyyy h:mm a').format(ride.departureTime)}
 Driver: $driverName
 
-Base Fare: \$${baseFare.toStringAsFixed(2)}
-Service Fee: \$${serviceFee.toStringAsFixed(2)}
-Total: \$${total.toStringAsFixed(2)}
+Base Fare: €${baseFare.toStringAsFixed(2)}
+Service Fee: €${serviceFee.toStringAsFixed(2)}
+Total: €${total.toStringAsFixed(2)}
 ${'=' * 30}
-Ride ID: ${ride.id}
-''';
-    SharePlus.instance.share(ShareParams(text: receipt));
+Ride ID: ${ride.id}''';
+
+      await SharePlus.instance.share(ShareParams(text: receipt));
+    } finally {
+      if (mounted) setState(() => _isGeneratingPdf = false);
+    }
   }
 
   Widget _buildSuccessHeader(BuildContext context) {

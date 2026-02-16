@@ -36,7 +36,7 @@ final class PaymentViewModelProvider
   PaymentViewModel create() => PaymentViewModel();
 }
 
-String _$paymentViewModelHash() => r'7273838d17d853afe1a1052616a7e2af89098c47';
+String _$paymentViewModelHash() => r'afed9d600ff6ab2047fac07f256678be2e233eb3';
 
 /// Payment Processing View Model
 

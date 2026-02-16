@@ -37,7 +37,7 @@ class VehicleState {
 
 /// ViewModel for vehicle-related operations
 /// Manages vehicle CRUD operations, active vehicle selection, and verification
-@Riverpod(keepAlive: true)
+@riverpod
 class VehicleViewModel extends _$VehicleViewModel {
   @override
   VehicleState build() {

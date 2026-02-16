@@ -55,7 +55,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
     final GamificationStats gamification;
     gamification = switch (user) {
       RiderModel(:final gamification as RiderGamificationStats) =>
-        RiderGamificationStats(
+        GamificationStats.rider(
           totalXP: gamification.totalXP,
           level: gamification.level,
           currentLevelXP: gamification.currentLevelXP,
@@ -70,7 +70,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
           lastRideDate: gamification.lastRideDate,
         ),
       DriverModel(:final gamification as DriverGamificationStats) =>
-        DriverGamificationStats(
+        GamificationStats.driver(
           totalXP: gamification.totalXP,
           level: gamification.level,
           currentLevelXP: gamification.currentLevelXP,

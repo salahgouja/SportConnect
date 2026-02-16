@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_pricing.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_capacity.dart';
@@ -16,9 +18,10 @@ import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 import 'package:sport_connect/core/models/value_objects/money.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:uuid/uuid.dart';
-import 'package:sport_connect/features/profile/repositories/profile_repository.dart'; // Added for driverVehiclesProvider
+import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class DriverOfferRideScreen extends ConsumerStatefulWidget {
   final RideModel? existingRide;
@@ -48,7 +51,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   String _toAddress = '';
   DateTime? _departureDate;
   TimeOfDay? _departureTime;
-  // List<LocationPoint> _waypoints = []; // Unused
+  List<LocationPoint> _waypoints = [];
 
   // Step 2: Details
   VehicleModel? _selectedVehicle;
@@ -99,6 +102,8 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
     _allowLuggage = ride.preferences.allowLuggage;
     _isWomenOnly = ride.preferences.isWomenOnly;
     _maxDetourMinutes = ride.preferences.maxDetourMinutes;
+    _waypoints =
+        ride.route.waypoints.map((wp) => wp.location).toList();
   }
 
   /// Initialize vehicle selection based on available vehicles and prefill data
@@ -217,7 +222,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
           FilledButton(
             onPressed: () {
               // Navigate to driver verification or profile edit
-              context.push('/profile');
+              context.push(AppRoutes.profile.path);
             },
             child: const Text('Become a Driver'),
           ),
@@ -381,6 +386,8 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         ).animate().fadeIn().slideX(),
         const SizedBox(height: 24),
         _buildRouteCard(),
+        const SizedBox(height: 16),
+        _buildWaypointsSection(),
         const SizedBox(height: 24),
         _buildDateTimeCard(),
         const SizedBox(height: 24),
@@ -620,6 +627,213 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
     // Implement recurring days selector if needed
     // For now, this can be simple or empty if not implemented
     return const SizedBox.shrink();
+  }
+
+  // --- Waypoints ---
+  Widget _buildWaypointsSection() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.route_rounded,
+                color: AppColors.primary,
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Intermediate Stops',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              if (_waypoints.length < 5)
+                TextButton.icon(
+                  onPressed: _addWaypoint,
+                  icon: const Icon(Icons.add_circle_outline, size: 18),
+                  label: const Text('Add Stop'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    textStyle: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          if (_waypoints.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Text(
+                'Add stops along your route to pick up more passengers',
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 13,
+                ),
+              ),
+            )
+          else
+            ReorderableListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _waypoints.length,
+              onReorder: (oldIndex, newIndex) {
+                setState(() {
+                  if (newIndex > oldIndex) newIndex -= 1;
+                  final item = _waypoints.removeAt(oldIndex);
+                  _waypoints.insert(newIndex, item);
+                });
+              },
+              itemBuilder: (context, index) {
+                final wp = _waypoints[index];
+                return _buildWaypointTile(wp, index);
+              },
+            ),
+        ],
+      ),
+    ).animate().fadeIn(delay: 150.ms).slideY(begin: 0.1, end: 0);
+  }
+
+  Widget _buildWaypointTile(LocationPoint wp, int index) {
+    return Container(
+      key: ValueKey('waypoint_$index'),
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.drag_indicator_rounded,
+            color: AppColors.textSecondary.withOpacity(0.5),
+            size: 20,
+          ),
+          const SizedBox(width: 8),
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: AppColors.warning.withOpacity(0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                '${index + 1}',
+                style: TextStyle(
+                  color: AppColors.warning,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Stop ${index + 1}',
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  wp.address.isNotEmpty ? wp.address : 'Tap to set location',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: () => _editWaypoint(index),
+            icon: const Icon(
+              Icons.edit_location_alt_rounded,
+              size: 20,
+            ),
+            color: AppColors.primary,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+          ),
+          IconButton(
+            onPressed: () => _removeWaypoint(index),
+            icon: const Icon(Icons.remove_circle_outline, size: 20),
+            color: AppColors.error,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _addWaypoint() async {
+    final result = await MapLocationPicker.show(
+      context,
+      title: 'Select Stop ${_waypoints.length + 1}',
+    );
+    if (result != null) {
+      setState(() {
+        _waypoints.add(
+          LocationPoint(
+            latitude: result.location.latitude,
+            longitude: result.location.longitude,
+            address: result.address,
+          ),
+        );
+      });
+    }
+  }
+
+  Future<void> _editWaypoint(int index) async {
+    final wp = _waypoints[index];
+    final result = await MapLocationPicker.show(
+      context,
+      title: 'Edit Stop ${index + 1}',
+      initialLocation: LatLng(wp.latitude, wp.longitude),
+    );
+    if (result != null) {
+      setState(() {
+        _waypoints[index] = LocationPoint(
+          latitude: result.location.latitude,
+          longitude: result.location.longitude,
+          address: result.address,
+        );
+      });
+    }
+  }
+
+  void _removeWaypoint(int index) {
+    setState(() {
+      _waypoints.removeAt(index);
+    });
   }
 
   // --- Step 2: Details ---
@@ -1207,6 +1421,13 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
             latitude: _toLocation!.latitude,
             longitude: _toLocation!.longitude,
           ),
+          waypoints: _waypoints
+              .asMap()
+              .entries
+              .map(
+                (e) => RouteWaypoint(location: e.value, order: e.key),
+              )
+              .toList(),
         ),
         schedule: RideSchedule(
           departureTime: departureDateTime,
@@ -1247,7 +1468,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
           ),
         );
         // Navigate
-        context.go('/my-rides');
+        context.go(AppRoutes.driverMyRides.path);
       }
     } catch (e) {
       if (mounted) {

@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.sportconnect.sport_connect",
+      "sha256_cert_fingerprints": [
+        "1C:B9:0E:A8:9F:4F:40:14:3B:33:A4:BC:03:BE:69:AD:59:09:CE:23:49:B3:2D:C5:3A:DF:E3:8F:56:BC:E1:F6"
+      ]
+    }
+  }
+]

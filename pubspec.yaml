@@ -1,6 +1,6 @@
 name: sport_connect
 description: "SportConnect - Social carpooling app for students and sports enthusiasts"
-publish_to: 'none'
+publish_to: "none"
 
 version: 1.0.0+1
 
@@ -10,7 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  
+
   # Localization
   flutter_localizations:
     sdk: flutter
@@ -20,65 +20,55 @@ dependencies:
   flutter_screenutil: ^5.9.3
   cached_network_image: ^3.4.1
   shimmer: ^3.0.0
-  flutter_svg: ^2.0.17
-    
+  # flutter_svg: ^2.0.17
+
   # State Management (MVVM)
   flutter_riverpod: ^3.1.0
   riverpod_annotation: ^4.0.0
-  
-  # Firebase (Free Tier - Spark Plan)
-  firebase_core: ^4.3.0
-  firebase_auth: ^6.1.3
-  cloud_firestore: ^6.1.1
-  firebase_storage: ^13.0.5
-  firebase_messaging: ^16.1.0
-  firebase_analytics: ^12.1.2
-  firebase_performance: ^0.11.1+4
-  cloud_functions: ^6.0.6
-  
-  # 🔴 NEW - Critical Additions
-  
+
+  # Firebase (Latest compatible versions)
+  firebase_core: ^3.15.2
+  firebase_auth: ^5.7.0
+  cloud_firestore: ^5.6.2
+  firebase_storage: ^12.4.10
+  firebase_messaging: ^15.2.10
+
   # Deep Linking & Notifications
-  app_links: ^7.0.0  # Deep linking for ride sharing (1.13M downloads)
-  flutter_local_notifications: ^20.0.0  # Foreground notifications (1.27M!)
-  
-  # Real-time Communication
-  socket_io_client: ^3.1.4  # Real-time chat (1.1M downloads)
-  
+  app_links: ^7.0.0
+  flutter_local_notifications: ^20.0.0
+
   # Maps & Route Visualization
-  flutter_map: ^8.2.2  # OpenStreetMap (free!)
+  flutter_map: ^8.2.2
   latlong2: ^0.9.1
   geolocator: ^14.0.2
   geocoding: ^4.0.0
-  flutter_map_marker_cluster: ^8.2.2
-  flutter_map_animations: ^0.9.0
-  flutter_map_marker_popup: ^8.1.0
-  flutter_polyline_points: ^3.1.0  # 🔴 NEW - Draw routes on map
-  
+  # flutter_map_marker_cluster: ^8.2.2
+  # flutter_map_animations: ^0.9.0
+  # flutter_map_marker_popup: ^8.1.0
+  # flutter_polyline_points: ^3.1.0
+
   # Networking & HTTP
-  dio: ^5.9.0  # Advanced HTTP (keep this, remove 'http' package)
-  
+  dio: ^5.9.0
+
   # WebView (Stripe onboarding)
   flutter_inappwebview: ^6.1.5
 
   # Permissions
   permission_handler: ^12.0.1
-  
+
   # Navigation
   go_router: ^17.0.1
-  
+
   # Local Storage
   shared_preferences: ^2.3.3
-  hive: ^2.2.3
-  hive_flutter: ^1.1.0
-  
+
   # Data Models
   freezed_annotation: ^3.1.0
   json_annotation: ^4.9.0
-  
+
   # Payments (Stripe)
   flutter_stripe: ^12.1.1
-  
+
   # Core Utilities
   intl: ^0.20.1
   logger: ^2.5.0
@@ -89,52 +79,52 @@ dependencies:
   url_launcher: ^6.3.2
   crypto: ^3.0.7
   path_provider: ^2.1.5
-  
+
   # Audio
-  record: ^6.2.0  # Audio recording
-  audioplayers: ^6.1.0  # Audio playback
-  
+  record: ^6.2.0
+  audioplayers: ^6.1.0
+
   # Authentication
   google_sign_in: ^7.2.0
   sign_in_with_apple: ^7.0.1
-  
+
   # App Features
   in_app_review: ^2.0.10
   showcaseview: ^5.0.1
   smooth_page_indicator: ^2.0.1
   emoji_picker_flutter: ^4.4.0
-  
-  # Essential Animations (reduced from 8 to 3)
+
+  # Essential Animations
   lottie: ^3.3.2
   flutter_animate: ^4.5.2
-  animations: ^2.0.11
-  
-  # Charts & Visualization
-  fl_chart: ^1.1.1
-  
-  # Development Tools (keep for debugging)
+  # animations: ^2.0.11
+
+  # Development Tools
   talker_flutter: ^5.1.12
   talker_riverpod_logger: ^5.1.12
   talker_dio_logger: ^5.1.12
   device_preview: ^1.3.1
   riverpod_devtools_tracker: ^1.0.7
-  
-  # UI Components
-  table_calendar: ^3.2.0
-  badges: ^3.1.2
-  percent_indicator: ^4.2.5
-  flutter_slidable: ^4.0.3
-  card_swiper: ^3.0.1
-  carousel_slider: ^5.1.2
 
-  # Secrets Management (runtime annotation)
+  # UI Components
+  # table_calendar: ^3.2.0
+  # badges: ^3.1.2
+  # percent_indicator: ^4.2.5
+  # flutter_slidable: ^4.0.3
+  # card_swiper: ^3.0.1
+  # carousel_slider: ^5.1.2
+
+  # Secrets Management
   envied: ^1.3.3
+  pdf: ^3.11.3
+  printing: ^5.14.2
+  cloud_functions: ^5.6.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-  
+
   # Code Generation
   build_runner: ^2.10.4
   freezed: ^3.1.0
@@ -142,17 +132,17 @@ dev_dependencies:
   riverpod_generator: ^4.0.0
   riverpod_lint: ^3.1.0
   custom_lint: ^0.8.1
-  
-  # Secrets Management (code generation only)
+
+  # Secrets Management
   envied_generator: ^1.3.3
-  
+
   # Testing
   mockito: ^5.4.4
-  
+
   # Seed Tool
   faker: ^2.2.0
   args: ^2.6.0
-  
+
   # Production UI
   flutter_native_splash: ^2.4.7
   flutter_launcher_icons: ^0.14.4

@@ -332,12 +332,25 @@ class _DriverStripeOnboardingScreenState
       // Detect user's country
       final country = await _detectUserCountry();
 
+      // Split display name into first and last name for Stripe prefilling
+      final nameParts = user.displayName.trim().split(RegExp(r'\s+'));
+      final firstName = nameParts.first;
+      final lastName = nameParts.length > 1
+          ? nameParts.sublist(1).join(' ')
+          : null;
+
       final result = await ref
           .read(paymentViewModelProvider.notifier)
           .createConnectedAccount(
             userId: user.uid,
             email: user.email,
             country: country,
+            firstName: firstName,
+            lastName: lastName,
+            phone: user.phoneNumber,
+            dateOfBirth: user.dateOfBirth,
+            addressLine1: user.address,
+            city: user.city,
           );
 
       if (result != null &&
@@ -448,10 +461,15 @@ class _DriverStripeOnboardingScreenState
             shouldOverrideUrlLoading: (controller, navigationAction) async {
               final url = navigationAction.request.url?.toString() ?? '';
 
-              // Allow Stripe URLs
+              // Allow Stripe and related verification/onboarding domains
               if (url.contains('stripe.com') ||
                   url.contains('stripe-refresh') ||
-                  url.contains('stripe-return')) {
+                  url.contains('stripe-return') ||
+                  url.contains('connect.stripe.com') ||
+                  url.contains('verify.stripe.com') ||
+                  url.contains('uploads.stripe.com') ||
+                  url.contains('hooks.stripe.com') ||
+                  url.contains('marathon-connect.web.app')) {
                 return NavigationActionPolicy.ALLOW;
               }
 
@@ -589,13 +607,36 @@ class _DriverStripeOnboardingScreenState
     final user = ref.read(currentUserProvider).value;
     if (user == null) return 'FR';
 
-    // Check phone number country code
+    // Use explicit country from profile if available
+    if (user.country != null && user.country!.isNotEmpty) {
+      return user.country!.toUpperCase();
+    }
+
+    // Fall back to phone number country code detection
     if (user.phoneNumber != null) {
-      if (user.phoneNumber!.startsWith('+216')) {
-        return 'TN'; // Tunisia
-      }
-      if (user.phoneNumber!.startsWith('+33')) {
-        return 'FR'; // France
+      final phone = user.phoneNumber!;
+      const phoneCountryMap = {
+        '+216': 'TN', // Tunisia
+        '+33': 'FR', // France
+        '+49': 'DE', // Germany
+        '+34': 'ES', // Spain
+        '+39': 'IT', // Italy
+        '+44': 'GB', // United Kingdom
+        '+1': 'US', // United States
+        '+32': 'BE', // Belgium
+        '+41': 'CH', // Switzerland
+        '+352': 'LU', // Luxembourg
+        '+31': 'NL', // Netherlands
+        '+351': 'PT', // Portugal
+        '+43': 'AT', // Austria
+        '+212': 'MA', // Morocco
+        '+213': 'DZ', // Algeria
+      };
+
+      for (final entry in phoneCountryMap.entries) {
+        if (phone.startsWith(entry.key)) {
+          return entry.value;
+        }
       }
     }
 

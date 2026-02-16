@@ -140,10 +140,18 @@ class PaymentViewModel extends _$PaymentViewModel {
   }
 
   /// Create connected account for driver
+  ///
+  /// Prefills individual info to reduce onboarding friction.
   Future<Map<String, dynamic>?> createConnectedAccount({
     required String userId,
     required String email,
     required String country,
+    String? firstName,
+    String? lastName,
+    String? phone,
+    DateTime? dateOfBirth,
+    String? addressLine1,
+    String? city,
   }) async {
     state = const AsyncValue.loading();
 
@@ -154,6 +162,12 @@ class PaymentViewModel extends _$PaymentViewModel {
         userId: userId,
         email: email,
         country: country,
+        firstName: firstName,
+        lastName: lastName,
+        phone: phone,
+        dateOfBirth: dateOfBirth,
+        addressLine1: addressLine1,
+        city: city,
         refreshUrl: 'sportconnect://driver/onboarding/refresh',
         returnUrl: 'sportconnect://driver/onboarding/complete',
       );

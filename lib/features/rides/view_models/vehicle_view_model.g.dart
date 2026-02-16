@@ -26,7 +26,7 @@ final class VehicleViewModelProvider
         argument: null,
         retry: null,
         name: r'vehicleViewModelProvider',
-        isAutoDispose: false,
+        isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -47,7 +47,7 @@ final class VehicleViewModelProvider
   }
 }
 
-String _$vehicleViewModelHash() => r'86210c8f8ef7b624986fbbee806799c792982244';
+String _$vehicleViewModelHash() => r'd513b90e6fd4fe65cfe677a76f237085b96e09f0';
 
 /// ViewModel for vehicle-related operations
 /// Manages vehicle CRUD operations, active vehicle selection, and verification

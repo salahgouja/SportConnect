@@ -868,7 +868,7 @@ class ProfileScreen extends ConsumerWidget {
                   if (existingUser == null) {
                     // Create new user as rider by default
                     await authActions.createUserDocument(
-                      RiderModel(
+                      UserModel.rider(
                         uid: currentUser.uid,
                         email: currentUser.email ?? '',
                         displayName: currentUser.displayName ?? 'User',

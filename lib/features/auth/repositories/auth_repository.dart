@@ -100,7 +100,7 @@ class AuthRepository implements IAuthRepository {
         // 3. Create User Model with the new Photo URL
         final UserModel userModel;
         if (role == UserRole.driver) {
-          userModel = DriverModel(
+          userModel = UserModel.driver(
             uid: uid,
             email: email.trim(),
             displayName: displayName.trim(),
@@ -109,13 +109,13 @@ class AuthRepository implements IAuthRepository {
             interests: interests,
             photoUrl: photoUrl,
             rating: const RatingBreakdown(),
-            gamification: const DriverGamificationStats(),
+            gamification: const GamificationStats.driver(),
             preferences: const UserPreferences(),
             createdAt: DateTime.now(),
             lastSeenAt: DateTime.now(),
           );
         } else {
-          userModel = RiderModel(
+          userModel = UserModel.rider(
             uid: uid,
             email: email.trim(),
             displayName: displayName.trim(),
@@ -124,7 +124,7 @@ class AuthRepository implements IAuthRepository {
             interests: interests,
             photoUrl: photoUrl,
             rating: const RatingBreakdown(),
-            gamification: const RiderGamificationStats(),
+            gamification: const GamificationStats.rider(),
             preferences: const UserPreferences(),
             createdAt: DateTime.now(),
             lastSeenAt: DateTime.now(),
@@ -324,7 +324,7 @@ class AuthRepository implements IAuthRepository {
           return SocialSignInResult(user: existingUser, isNewUser: false);
         } else {
           // New users default to riders with pending role selection
-          final newUser = RiderModel(
+          final newUser = UserModel.rider(
             uid: userCredential.user!.uid,
             email: userCredential.user!.email ?? '',
             displayName: userCredential.user!.displayName ?? 'User',
@@ -401,7 +401,7 @@ class AuthRepository implements IAuthRepository {
           }
 
           // New users default to riders with pending role selection
-          final newUser = RiderModel(
+          final newUser = UserModel.rider(
             uid: userCredential.user!.uid,
             email: userCredential.user!.email ?? appleCredential.email ?? '',
             displayName: displayName,

@@ -19,10 +19,11 @@
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     
     <application
-        android:label="sport_connect"
+        android:label="SportConnect"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon"
-        android:usesCleartextTraffic="true"> <activity
+        android:usesCleartextTraffic="true">
+        <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
@@ -39,21 +40,32 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-            <!-- Deep link: https://sportconnect.app/ride/{id} -->
+
+            <!-- Custom URL Scheme - sportconnect:// -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="sportconnect"/>
+            </intent-filter>
+
+            <!-- Short custom scheme - sc:// -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="sc"/>
+            </intent-filter>
+
+            <!-- HTTPS App Links - marathon-connect.web.app -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data
                     android:scheme="https"
-                    android:host="sportconnect.app"/>
-            </intent-filter>
-            <!-- Custom scheme: sportconnect://ride/{id} -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="sportconnect"/>
+                    android:host="marathon-connect.web.app"
+                    android:pathPrefix="/ride"/>
             </intent-filter>
         </activity>
         <meta-data

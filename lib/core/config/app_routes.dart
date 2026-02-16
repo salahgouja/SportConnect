@@ -108,6 +108,8 @@ class AppRoutes {
   static const contactSupport = AppRoute('/support', 'contact-support');
   static const reportIssue = AppRoute('/report', 'report-issue');
   static const termsPrivacy = AppRoute('/legal/:type', 'terms-privacy');
+  static const terms = AppRoute('/legal/terms', 'terms');
+  static const privacy = AppRoute('/legal/privacy', 'privacy');
   static const about = AppRoute('/about', 'about');
 
   // Payment Details

@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_devtools_tracker/riverpod_devtools_tracker.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:device_preview/device_preview.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -39,7 +38,6 @@ void main() async {
 /// 2. Logging (for debugging other initializations)
 /// 3. Firebase (core infrastructure)
 /// 4. Push notifications (FCM + local)
-/// 5. Local storage (Hive)
 /// 6. Payments (Stripe)
 Future<void> _initializeApp() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -55,10 +53,6 @@ Future<void> _initializeApp() async {
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   await PushNotificationService.instance.initialize();
   TalkerService.info('✅ Push notifications initialized');
-
-  // 4. Local Storage
-  await Hive.initFlutter();
-  TalkerService.info('✅ Hive initialized');
 
   // 5. Payments
   await _initializeStripe();
@@ -98,7 +92,7 @@ void _runApp() {
         ),
       ],
       child: DevicePreview(
-        enabled: kDebugMode == false, // Enable only in debug mode
+        enabled: kDebugMode, // Enable only in debug mode
         builder: (context) => const SportConnectApp(),
       ),
     ),

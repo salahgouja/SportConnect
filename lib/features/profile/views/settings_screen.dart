@@ -313,14 +313,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     title: l10n.settingsTermsConditions,
                     subtitle: '', // No description in ARB
                     icon: Icons.description_outlined,
-                    onTap: () => context.push('/legal/terms'),
+                    onTap: () => context.push(AppRoutes.terms.path),
                   ),
                   _buildDivider(),
                   _buildNavigationTile(
                     title: l10n.settingsPrivacyPolicy,
                     subtitle: '', // No description in ARB
                     icon: Icons.privacy_tip_outlined,
-                    onTap: () => context.push('/legal/privacy'),
+                    onTap: () => context.push(AppRoutes.privacy.path),
                   ),
                   _buildDivider(),
                   _buildNavigationTile(
