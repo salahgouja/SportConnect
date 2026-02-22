@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/utils/validators.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
@@ -101,13 +102,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
     await _saveCredentials();
-    await ref
-        .read(loginViewModelProvider.notifier)
-        .login(
-          _emailController.text.trim(),
-          _passwordController.text,
-          _rememberMe,
-        );
+    try {
+      await ref
+          .read(loginViewModelProvider.notifier)
+          .login(
+            _emailController.text.trim(),
+            _passwordController.text,
+            _rememberMe,
+          );
+    } catch (e) {
+      if (!mounted) return;
+      final errorMessage = _getAuthErrorMessage(e);
+      TalkerService.error('Login failed: $errorMessage');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red.shade600,
+          duration: const Duration(seconds: 5),
+          margin: EdgeInsets.all(16.w),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _handleGoogleSignIn() async {
@@ -479,6 +498,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         ),
       ],
     ).animate().fadeIn(duration: 400.ms, delay: 550.ms);
+  }
+
+  String _getAuthErrorMessage(Object? error) {
+    final errorStr = error.toString().toLowerCase();
+    if (errorStr.contains('user-not-found') ||
+        errorStr.contains('no user found')) {
+      return 'No account found with this email';
+    } else if (errorStr.contains('wrong-password') ||
+        errorStr.contains('wrong password') ||
+        errorStr.contains('invalid-credential') ||
+        errorStr.contains('incorrect')) {
+      return 'Incorrect email or password. Please try again.';
+    } else if (errorStr.contains('too-many-requests') ||
+        errorStr.contains('too many')) {
+      return 'Too many login attempts. Please try again later.';
+    } else if (errorStr.contains('network')) {
+      return 'Network error. Please check your connection.';
+    } else if (errorStr.contains('invalid-email') ||
+        errorStr.contains('invalid email')) {
+      return 'Invalid email address.';
+    } else {
+      return AppLocalizations.of(context).signInFailedPleaseTry;
+    }
   }
 
   void _showForgotPasswordDialog() {

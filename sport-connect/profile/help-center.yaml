@@ -1,0 +1,100 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Profile Journey: Help Center
+# ============================================
+# Tests the FAQ / Help Center screen
+# Verifies: search, categories, expandable Q&A
+# ============================================
+
+# Login first
+- runFlow: ../common/login-helper.yaml
+
+# Navigate to Profile -> Settings -> Help Center
+- tapOn: Profile
+- runFlow:
+    when:
+      visible: "Settings"
+    commands:
+      - tapOn: "Settings"
+
+- scrollUntilVisible:
+    element:
+      text: "Help Center|Help & Support"
+    direction: DOWN
+    timeout: 5000
+
+- tapOn:
+    text: "Help Center"
+    label: Open Help Center
+
+# Step 1: Verify Help Center screen
+- extendedWaitUntil:
+    visible:
+      text: "Help Center|FAQ|How can we help"
+    timeout: 5000
+
+- takeScreenshot: help-center-screen
+
+# Step 2: Verify FAQ categories
+- assertVisible: "Getting Started"
+- assertVisible: "Rides & Booking"
+
+- runFlow:
+    when:
+      visible: "Payments"
+    commands:
+      - assertVisible: "Payments"
+
+# Step 3: Expand a FAQ question
+- runFlow:
+    when:
+      visible: "How do I create an account?"
+    commands:
+      - tapOn:
+          text: "How do I create an account?"
+          label: Expand FAQ answer
+      - takeScreenshot: help-center-faq-expanded
+
+- runFlow:
+    when:
+      visible: "How do I book a ride?"
+    commands:
+      - tapOn:
+          text: "How do I book a ride?"
+          label: Expand booking FAQ
+
+# Step 4: Test search functionality
+- runFlow:
+    when:
+      visible:
+        text: "Search|Search FAQ|Search help"
+    commands:
+      - tapOn:
+          text: "Search"
+          label: Search help articles
+      - inputText: "payment"
+      - extendedWaitUntil:
+          visible:
+            text: "Payment|pay"
+          timeout: 5000
+      - takeScreenshot: help-center-search-results
+
+# Step 5: Check links to Contact Support
+- runFlow:
+    when:
+      visible: "Contact Support"
+    commands:
+      - assertVisible: "Contact Support"
+
+- runFlow:
+    when:
+      visible: "Report Issue"
+    commands:
+      - assertVisible: "Report Issue"
+
+- takeScreenshot: help-center-complete
+
+- back:
+    label: Return from help center
+

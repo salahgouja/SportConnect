@@ -1,0 +1,84 @@
+appId: com.sportconnect.sport_connect
+---
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd
+- takeScreenshot: screen-state-1
+
+# Try various texts that might be on the login screen
+- assertVisible:
+    text: "Welcome Back"
+    optional: true
+    label: Check Welcome Back
+- assertVisible:
+    text: "Welcome"
+    optional: true
+    label: Check Welcome
+- assertVisible:
+    text: "Sign In"
+    optional: true
+    label: Check Sign In
+- assertVisible:
+    text: "Sign in"
+    optional: true
+    label: Check Sign in lowercase
+- assertVisible:
+    text: "Email"
+    optional: true
+    label: Check Email
+- assertVisible:
+    text: "Password"
+    optional: true
+    label: Check Password
+- assertVisible:
+    text: "Log in"
+    optional: true
+    label: Check Log in
+- assertVisible:
+    text: "Login"
+    optional: true
+    label: Check Login
+- assertVisible:
+    text: "Continue"
+    optional: true
+    label: Check Continue
+- assertVisible:
+    text: "Google"
+    optional: true
+    label: Check Google
+- assertVisible:
+    text: "Get Started"
+    optional: true
+    label: Check Get Started
+- assertVisible:
+    text: "SportConnect"
+    optional: true
+    label: Check SportConnect
+- assertVisible:
+    text: "CARPOOLING"
+    optional: true
+    label: Check CARPOOLING
+- assertVisible:
+    text: "Allow"
+    optional: true
+    label: Check Allow permission
+- assertVisible:
+    text: "ALLOW"
+    optional: true
+    label: Check ALLOW permission
+- assertVisible:
+    text: "DENY"
+    optional: true
+    label: Check DENY
+- assertVisible:
+    text: "While using"
+    optional: true
+    label: Check While using
+- assertVisible:
+    text: "permission"
+    optional: true
+    label: Check permission
+- assertVisible:
+    text: "Notification"
+    optional: true
+    label: Check Notification

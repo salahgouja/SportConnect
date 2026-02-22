@@ -1,0 +1,71 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Settings Journey: Privacy Settings
+# ============================================
+# Tests privacy and safety toggles
+# Journey: Settings -> Privacy & Safety -> Toggle All
+# ============================================
+
+# Login first
+- runFlow: ../common/login-helper.yaml
+
+# Step 1: Navigate to Profile -> Settings
+- tapOn: Profile
+- scrollUntilVisible:
+    element: "Settings"
+    direction: DOWN
+    timeout: 5000
+- tapOn: "Settings"
+
+# Step 2: Scroll to Privacy & Safety
+- scrollUntilVisible:
+    element: "Privacy & Safety"
+    direction: DOWN
+    timeout: 5000
+
+# Step 3: Verify privacy toggles
+- assertVisible: "Privacy & Safety"
+- assertVisible: "Public Profile"
+- assertVisible: "Show Location"
+- takeScreenshot: privacy-settings
+
+# Step 4: Toggle Public Profile
+- tapOn:
+    text: "Public Profile"
+    label: Toggle public profile off
+- tapOn:
+    text: "Public Profile"
+    label: Toggle public profile back on
+
+# Step 5: Toggle Show Location
+- tapOn:
+    text: "Show Location"
+    label: Toggle location visibility off
+- tapOn:
+    text: "Show Location"
+    label: Toggle location visibility back on
+
+# Step 6: Toggle Auto Accept Rides
+- runFlow:
+    when:
+      visible: "Auto Accept Rides"
+    commands:
+      - tapOn:
+          text: "Auto Accept Rides"
+          label: Toggle auto accept
+
+# Step 7: Test Blocked Users
+- runFlow:
+    when:
+      visible: "Blocked Users"
+    commands:
+      - tapOn:
+          text: "Blocked Users"
+          label: Open blocked users
+      - assertVisible: "No Blocked Users"
+      - assertVisible: "Users you block will appear"
+      - takeScreenshot: privacy-blocked-users
+      - back
+
+- takeScreenshot: privacy-settings-complete

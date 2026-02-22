@@ -1,0 +1,71 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Auth Journey: Role Selection
+# ============================================
+# Tests the role selection screen
+# Journey: Login/Register -> Role Selection -> Home
+# ============================================
+
+- launchApp:
+    clearState: true
+    label: Launch SportConnect fresh
+
+# Wait for splash to complete and login screen to appear
+- extendedWaitUntil:
+    visible: "Welcome Back"
+    timeout: 10000
+
+# Login first
+- tapOn: "Enter your email"
+- inputText: "testuser@sportconnect.com"
+- tapOn: "Enter your password"
+- inputText: "Test@12345"
+- tapOn: "Sign In"
+
+# Wait for role selection or home
+- extendedWaitUntil:
+    visible:
+      text: "How will you use SportConnect?|Where are you going?"
+    timeout: 15000
+
+# If role selection screen appears, test it
+- runFlow:
+    when:
+      visible: "How will you use SportConnect?"
+    commands:
+      # Verify role selection screen elements
+      - assertVisible: "How will you use SportConnect?"
+      - assertVisible: "Choose your role to get started."
+      - assertVisible: "I'm a Rider"
+      - assertVisible: "I'm a Driver"
+      - assertVisible: "You can change your role later in settings"
+      - takeScreenshot: role-selection-screen
+
+      # Verify Rider option details
+      - assertVisible: "Search available rides"
+      - assertVisible: "Book seats instantly"
+      - assertVisible: "Chat with drivers"
+      - assertVisible: "Track your ride"
+
+      # Verify Driver option details
+      - assertVisible: "Create ride offers"
+      - assertVisible: "Set your own price"
+      - assertVisible: "Accept ride requests"
+      - assertVisible: "Earn with each trip"
+
+      # Try Continue without selecting (should show error)
+      - tapOn: Continue
+      - assertVisible: "Please select a role to continue"
+
+      # Select Rider role
+      - tapOn:
+          text: "I'm a Rider"
+          label: Select Rider role
+      - tapOn:
+          text: Continue
+          label: Confirm role selection
+
+      - takeScreenshot: role-selection-complete
+
+- takeScreenshot: role-selection-journey-done

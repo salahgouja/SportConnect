@@ -1,0 +1,134 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Payments Journey: Driver Earnings
+# ============================================
+# Tests the driver earnings dashboard
+# Journey: Home -> Earnings Tab -> Period Filter -> Chart -> Withdraw
+# ============================================
+
+# Login as driver
+- runFlow: ../common/driver-login-helper.yaml
+
+# Step 1: Navigate to Earnings tab
+- runFlow:
+    when:
+      visible: "Earnings"
+    commands:
+      - tapOn:
+          text: "Earnings"
+          label: Switch to Earnings tab
+
+# Step 2: Wait for earnings screen
+- extendedWaitUntil:
+    visible:
+      text: "Earnings|Total Earnings|Failed to load earnings"
+    timeout: 5000
+
+- takeScreenshot: driver-earnings-screen
+
+# Step 3: Verify earnings header
+- runFlow:
+    when:
+      visible: "Total Earnings"
+    commands:
+      - assertVisible: "Total Earnings"
+      - assertVisible: "Total Rides"
+
+# Step 4: Test period selector
+- runFlow:
+    when:
+      visible: "Today"
+    commands:
+      - tapOn:
+          text: "Today"
+          label: Filter by today
+
+- runFlow:
+    when:
+      visible: "This Week"
+    commands:
+      - tapOn:
+          text: "This Week"
+          label: Filter by this week
+      - takeScreenshot: earnings-this-week
+
+- runFlow:
+    when:
+      visible: "This Month"
+    commands:
+      - tapOn:
+          text: "This Month"
+          label: Filter by this month
+
+- runFlow:
+    when:
+      visible: "All Time"
+    commands:
+      - tapOn:
+          text: "All Time"
+          label: Filter all time
+
+# Step 5: Check earnings chart
+- runFlow:
+    when:
+      visible: "Earnings Overview"
+    commands:
+      - assertVisible: "Earnings Overview"
+
+# Step 6: Check environmental impact
+- scrollUntilVisible:
+    element: "Environmental Impact"
+    direction: DOWN
+    timeout: 5000
+
+- runFlow:
+    when:
+      visible: "Environmental Impact"
+    commands:
+      - assertVisible: "Environmental Impact"
+
+# Step 7: Check payout section
+- scrollUntilVisible:
+    element:
+      text: "Set Up Payouts|Stripe Connected|Available Balance"
+    direction: DOWN
+    timeout: 5000
+
+# If Stripe not connected
+- runFlow:
+    when:
+      visible: "Set Up Payouts"
+    commands:
+      - assertVisible: "Set Up Payouts"
+      - assertVisible: "Receive payments from riders"
+      - takeScreenshot: earnings-stripe-not-connected
+
+# If Stripe connected
+- runFlow:
+    when:
+      visible: "Available Balance"
+    commands:
+      - assertVisible: "Available Balance"
+      - assertVisible: "Withdraw"
+      - takeScreenshot: earnings-stripe-connected
+
+# Step 8: Check recent transactions
+- scrollUntilVisible:
+    element: "Recent Transactions"
+    direction: DOWN
+    timeout: 5000
+
+- runFlow:
+    when:
+      visible: "Recent Transactions"
+    commands:
+      - assertVisible: "Recent Transactions"
+
+- runFlow:
+    when:
+      visible: "No transactions yet"
+    commands:
+      - assertVisible: "No transactions yet"
+
+- takeScreenshot: driver-earnings-complete

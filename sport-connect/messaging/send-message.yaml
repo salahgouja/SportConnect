@@ -1,0 +1,100 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Messaging Journey: Send Message
+# ============================================
+# Tests sending messages in a chat
+# Journey: Chat List -> Open Chat -> Type -> Send -> Verify
+# ============================================
+
+# Login first
+- runFlow: ../common/login-helper.yaml
+
+# Step 1: Navigate to Chat tab
+- tapOn:
+    text: Chat
+    label: Switch to Chat tab
+
+# Step 2: Wait for chat list
+- extendedWaitUntil:
+    visible:
+      text: "Messages|No conversations yet"
+    timeout: 5000
+
+# Step 3: Open an existing chat or create new
+- runFlow:
+    when:
+      visible: "No conversations yet"
+    commands:
+      # Start new conversation
+      - tapOn: "New Message"
+      - tapOn: "Search users by name..."
+      - inputText: "Test"
+      - extendedWaitUntil:
+          visible: "Test"
+          timeout: 5000
+      - tapOn:
+          text: "Test"
+          index: 0
+          label: Select user to chat with
+
+# If there's an existing chat, tap the first one
+- runFlow:
+    when:
+      notVisible: "No conversations yet"
+    commands:
+      - swipe:
+          direction: DOWN
+          duration: 300
+
+# Step 4: Wait for chat detail screen
+- extendedWaitUntil:
+    visible:
+      text: "Type a message...|No messages yet"
+    timeout: 5000
+
+- takeScreenshot: chat-detail-screen
+
+# Step 5: Check empty chat state
+- runFlow:
+    when:
+      visible: "No messages yet"
+    commands:
+      - assertVisible: "No messages yet"
+      - assertVisible: "Send a message to start the conversation"
+
+# Step 6: Type and send a message
+- tapOn: "Type a message..."
+- inputText: "Hello from Maestro test! 🏃"
+- takeScreenshot: chat-message-typed
+
+# Step 7: Send the message (tap send button)
+- tapOn:
+    point: "90%,95%"
+    label: Tap send button
+
+# Step 8: Verify message appears
+- extendedWaitUntil:
+    visible: "Hello from Maestro test!"
+    timeout: 5000
+
+- takeScreenshot: chat-message-sent
+
+# Step 9: Test chat menu options
+- runFlow:
+    when:
+      visible: "View Profile"
+    commands:
+      - assertVisible: "View Profile"
+
+- runFlow:
+    when:
+      visible: "Search in Chat"
+    commands:
+      - assertVisible: "Search in Chat"
+
+# Step 10: Go back
+- back:
+    label: Return to chat list
+
+- takeScreenshot: send-message-complete

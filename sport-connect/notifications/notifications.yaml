@@ -1,0 +1,91 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Notifications Journey
+# ============================================
+# Tests the notifications screen
+# Journey: Profile -> Notifications -> Tabs -> Mark Read -> Clear
+# ============================================
+
+# Login first
+- runFlow: ../common/login-helper.yaml
+
+# Step 1: Navigate to Profile tab
+- tapOn:
+    text: Profile
+    label: Switch to Profile tab
+
+# Step 2: Navigate to Notifications
+- scrollUntilVisible:
+    element: "Notifications"
+    direction: DOWN
+    timeout: 5000
+
+- tapOn:
+    text: "Notifications"
+    label: Open Notifications
+
+# Step 3: Wait for notifications screen
+- extendedWaitUntil:
+    visible:
+      text: "Notifications|No Notifications"
+    timeout: 5000
+
+- takeScreenshot: notifications-screen
+
+# Step 4: Test tabs
+- runFlow:
+    when:
+      visible: "Unread"
+    commands:
+      - tapOn:
+          text: "Unread"
+          label: View unread notifications
+      - takeScreenshot: notifications-unread-tab
+
+- runFlow:
+    when:
+      visible: "All"
+    commands:
+      - tapOn:
+          text: "All"
+          label: View all notifications
+      - takeScreenshot: notifications-all-tab
+
+# Step 5: Test menu actions
+- runFlow:
+    when:
+      visible: "Mark All as Read"
+    commands:
+      - tapOn:
+          text: "Mark All as Read"
+          label: Mark all notifications as read
+      - assertVisible: "All notifications marked as read"
+
+# Step 6: Test clear all
+- runFlow:
+    when:
+      visible: "Clear All"
+    commands:
+      - tapOn:
+          text: "Clear All"
+          label: Open clear all dialog
+      - assertVisible: "Clear All Notifications"
+      - assertVisible: "Are you sure you want"
+      - tapOn:
+          text: Cancel
+          label: Dismiss clear dialog
+
+# Step 7: Handle empty state
+- runFlow:
+    when:
+      visible: "No Notifications"
+    commands:
+      - assertVisible: "No Notifications"
+      - assertVisible: "You're all caught up"
+      - takeScreenshot: notifications-empty
+
+- back:
+    label: Return to profile
+
+- takeScreenshot: notifications-complete

@@ -1,0 +1,108 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Rides Journey: Rider - Request Ride
+# ============================================
+# Tests the ride request flow
+# Journey: Home -> Request -> Location -> Date -> Search -> Results
+# ============================================
+
+# Login first
+- runFlow: ../../common/login-helper.yaml
+
+# Step 1: Navigate to Rides tab
+- tapOn:
+    text: Rides
+    label: Switch to Rides tab
+
+# Step 2: Wait for rides screen
+- extendedWaitUntil:
+    visible:
+      text: "My Trips|Where to|Find a Ride"
+    timeout: 5000
+
+# Step 3: Look for request/search ride option
+- runFlow:
+    when:
+      visible: "Find a Ride"
+    commands:
+      - tapOn:
+          text: "Find a Ride"
+          label: Start ride request flow
+
+- runFlow:
+    when:
+      visible: "Find Ride"
+    commands:
+      - tapOn:
+          text: "Find Ride"
+          label: Start ride request flow
+
+# Step 4: Fill ride request details
+- runFlow:
+    when:
+      visible: "Where from"
+    commands:
+      - tapOn: "Where from"
+      - inputText: "University Campus"
+      - extendedWaitUntil:
+          visible: "University"
+          timeout: 5000
+      - tapOn:
+          text: "University"
+          index: 0
+          label: Select pickup
+
+- runFlow:
+    when:
+      visible: "Where to"
+    commands:
+      - tapOn: "Where to"
+      - inputText: "Stadium"
+      - extendedWaitUntil:
+          visible: "Stadium"
+          timeout: 5000
+      - tapOn:
+          text: "Stadium"
+          index: 0
+          label: Select destination
+
+# Step 5: Select travel date
+- runFlow:
+    when:
+      visible: "Today"
+    commands:
+      - tapOn: "Today"
+
+# Step 6: Set passengers
+- runFlow:
+    when:
+      visible: "Passengers"
+    commands:
+      - assertVisible: "Passengers"
+
+# Step 7: Search rides
+- runFlow:
+    when:
+      visible: "Search Rides"
+    commands:
+      - tapOn:
+          text: "Search Rides"
+          label: Execute ride search
+      - takeScreenshot: rider-request-search-results
+
+# Step 8: Check results
+- runFlow:
+    when:
+      visible: "Available Rides"
+    commands:
+      - assertVisible: "Available Rides"
+
+- runFlow:
+    when:
+      visible: "No rides found"
+    commands:
+      - assertVisible: "No rides found"
+      - assertVisible: "Try adjusting your search criteria"
+
+- takeScreenshot: rider-request-ride-complete

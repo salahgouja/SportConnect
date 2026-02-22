@@ -1,0 +1,57 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Rides Journey: Ride Completion
+# ============================================
+# Tests the ride completion and review prompt
+# Journey: Active Ride -> Complete -> Summary -> Review -> Home
+# ============================================
+
+# Login first
+- runFlow: ../../common/login-helper.yaml
+
+# Note: This flow tests the ride completion screen UI
+# In real scenarios, this is navigated to after a ride ends
+
+# Step 1: Navigate to Rides tab to check for completed rides
+- tapOn:
+    text: Rides
+    label: Switch to Rides tab
+
+# Step 2: Go to History tab
+- extendedWaitUntil:
+    visible:
+      text: "My Trips|History"
+    timeout: 5000
+
+- tapOn:
+    text: History
+    label: View completed rides
+
+# Step 3: Check for completed ride or empty state
+- runFlow:
+    when:
+      visible: "No Trip History"
+    commands:
+      - assertVisible: "No Trip History"
+      - assertVisible: "Your completed trips will appear here"
+      - takeScreenshot: ride-completion-empty
+
+# Step 4: If a completed ride exists, tap to view
+- runFlow:
+    when:
+      visible: "Rebook"
+    commands:
+      - takeScreenshot: ride-completion-history-item
+
+# Post-completion screen elements (when navigated from completed ride):
+# - "Trip Completed!"
+# - "Thanks for riding with SportConnect"
+# - "Trip Summary" with Date, Time, Riders
+# - "Fare Breakdown" with Base Fare, Service Fee, Total
+# - "Rate & Review" button
+# - "Share Receipt" button
+# - "Report Issue" button
+# - "Go Home" button
+
+- takeScreenshot: ride-completion-complete

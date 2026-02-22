@@ -1,0 +1,60 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Home Journey: Bottom Navigation
+# ============================================
+# Tests navigating between all bottom nav tabs
+# Journey: Home -> Rides -> Chat -> Profile -> Home
+# ============================================
+
+# Login first
+- runFlow: ../common/login-helper.yaml
+
+# Step 1: Verify on Home tab
+- assertVisible: "Where are you going?"
+- takeScreenshot: nav-home-tab
+
+# Step 2: Navigate to Rides tab
+- tapOn:
+    text: Rides
+    label: Switch to Rides tab
+- extendedWaitUntil:
+    visible:
+      text: "My Trips|Find a Ride|My Rides"
+    timeout: 5000
+- takeScreenshot: nav-rides-tab
+
+# Step 3: Navigate to Chat tab
+- tapOn:
+    text: Chat
+    label: Switch to Chat tab
+- extendedWaitUntil:
+    visible:
+      text: "Messages|No conversations yet|Please login to view chats"
+    timeout: 5000
+- takeScreenshot: nav-chat-tab
+
+# Step 4: Navigate to Profile tab
+- tapOn:
+    text: Profile
+    label: Switch to Profile tab
+- extendedWaitUntil:
+    visible:
+      text: "My Profile|Profile"
+    timeout: 5000
+- takeScreenshot: nav-profile-tab
+
+# Step 5: Navigate back to Home
+- tapOn:
+    text: Home
+    label: Switch back to Home tab
+- assertVisible: "Where are you going?"
+- takeScreenshot: nav-back-to-home
+
+# Step 6: Rapid tab switching test
+- tapOn: Rides
+- tapOn: Chat
+- tapOn: Profile
+- tapOn: Home
+- assertVisible: "Where are you going?"
+- takeScreenshot: nav-rapid-switching-complete

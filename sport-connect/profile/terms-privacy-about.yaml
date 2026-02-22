@@ -1,0 +1,102 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Profile Journey: Terms & Privacy / About
+# ============================================
+# Tests the legal documents and about screens
+# ============================================
+
+# Login first
+- runFlow: ../common/login-helper.yaml
+
+# Navigate to Profile -> Settings
+- tapOn: Profile
+- runFlow:
+    when:
+      visible: "Settings"
+    commands:
+      - tapOn: "Settings"
+
+# -----------------------------------------------
+# Test 1: Terms of Service
+# -----------------------------------------------
+- scrollUntilVisible:
+    element:
+      text: "Terms & Conditions|Terms of Service"
+    direction: DOWN
+    timeout: 5000
+
+- runFlow:
+    when:
+      visible: "Terms & Conditions"
+    commands:
+      - tapOn:
+          text: "Terms & Conditions"
+          label: Open terms of service
+      - extendedWaitUntil:
+          visible:
+            text: "Terms|Last updated"
+          timeout: 5000
+      - takeScreenshot: terms-screen
+      - back:
+          label: Return from terms
+
+# -----------------------------------------------
+# Test 2: Privacy Policy
+# -----------------------------------------------
+- scrollUntilVisible:
+    element: "Privacy Policy"
+    direction: DOWN
+    timeout: 5000
+
+- runFlow:
+    when:
+      visible: "Privacy Policy"
+    commands:
+      - tapOn:
+          text: "Privacy Policy"
+          label: Open privacy policy
+      - extendedWaitUntil:
+          visible:
+            text: "Privacy|Last updated"
+          timeout: 5000
+      - takeScreenshot: privacy-policy-screen
+      - back:
+          label: Return from privacy policy
+
+# -----------------------------------------------
+# Test 3: About Screen
+# -----------------------------------------------
+- scrollUntilVisible:
+    element: "About"
+    direction: DOWN
+    timeout: 5000
+
+- runFlow:
+    when:
+      visible: "About"
+    commands:
+      - tapOn:
+          text: "About"
+          label: Open about screen
+      - extendedWaitUntil:
+          visible:
+            text: "SportConnect|Version"
+          timeout: 5000
+      - assertVisible: "SportConnect"
+      - runFlow:
+          when:
+            visible: "Version"
+          commands:
+            - assertVisible: "Version"
+      - runFlow:
+          when:
+            visible: "Built with Flutter"
+          commands:
+            - assertVisible: "Built with Flutter"
+      - takeScreenshot: about-screen
+      - back:
+          label: Return from about
+
+- takeScreenshot: legal-and-about-complete
+

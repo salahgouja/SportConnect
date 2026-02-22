@@ -1,0 +1,72 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Messaging Journey: Chat List
+# ============================================
+# Tests the chat list screen and tabs
+# Journey: Home -> Chat Tab -> Chat List -> New Message
+# ============================================
+
+# Login first
+- runFlow: ../common/login-helper.yaml
+
+# Step 1: Navigate to Chat tab
+- tapOn:
+    text: Chat
+    label: Switch to Chat tab
+
+# Step 2: Wait for chat list screen
+- extendedWaitUntil:
+    visible:
+      text: "Messages|No conversations yet"
+    timeout: 5000
+
+- assertVisible: "Messages"
+- takeScreenshot: chat-list-screen
+
+# Step 3: Check chat state
+- runFlow:
+    when:
+      visible: "No conversations yet"
+    commands:
+      - assertVisible: "No conversations yet"
+      - takeScreenshot: chat-list-empty
+
+# Step 4: Test new message button
+- runFlow:
+    when:
+      visible: "New Message"
+    commands:
+      - tapOn:
+          text: "New Message"
+          label: Open new message dialog
+      - assertVisible: "Search users by name..."
+      - takeScreenshot: chat-new-message-search
+
+      # Test search
+      - tapOn: "Search users by name..."
+      - inputText: "Te"
+      - assertVisible: "Type at least 2 characters"
+      - inputText: "st"
+      - takeScreenshot: chat-user-search-results
+
+      - back:
+          label: Close new message
+
+# Step 5: Test call history tab if visible
+- runFlow:
+    when:
+      visible: "Call History"
+    commands:
+      - tapOn:
+          text: "Call History"
+          label: View call history
+      - takeScreenshot: chat-call-history
+
+- runFlow:
+    when:
+      visible: "No call history"
+    commands:
+      - assertVisible: "No call history"
+
+- takeScreenshot: chat-list-complete

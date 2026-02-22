@@ -1,0 +1,66 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Auth Journey: Email Verification
+# ============================================
+# Tests the email verification screen
+# Journey: Register -> Email Verification -> Verify/Skip
+# ============================================
+
+- launchApp:
+    clearState: true
+    label: Launch SportConnect fresh
+
+# Wait for splash to complete and login screen to appear
+- extendedWaitUntil:
+    visible: "Welcome Back"
+    timeout: 10000
+
+# Step 1: Navigate to Sign Up
+- tapOn: "Sign Up"
+
+# Step 2: Fill minimal registration
+- tapOn: "Enter your full name"
+- inputText: "Email Verify Test"
+
+- tapOn: "Enter your email"
+- inputText: "verifytest@sportconnect.com"
+
+- tapOn: "Create a strong password"
+- inputText: "Test@12345"
+
+- tapOn: "Re-enter your password"
+- inputText: "Test@12345"
+
+- tapOn: "I agree to the "
+- tapOn: "Create Account"
+
+# Step 3: Wait for verification screen
+- extendedWaitUntil:
+    visible:
+      text: "Verify Your Email|Verify Email"
+    timeout: 15000
+
+# Step 4: Verify email verification screen elements
+- assertVisible: "Verify Your Email"
+- assertVisible: "We've sent a verification link to:"
+- takeScreenshot: email-verification-screen
+
+# Step 5: Test resend button (should show countdown)
+- runFlow:
+    when:
+      visible: "Resend Verification Email"
+    commands:
+      - tapOn: "Resend Verification Email"
+      - assertVisible: "Verification email sent!"
+
+# Step 6: Test skip option
+- runFlow:
+    when:
+      visible: "Skip for now"
+    commands:
+      - tapOn:
+          text: "Skip for now"
+          label: Skip email verification for now
+
+- takeScreenshot: email-verification-complete

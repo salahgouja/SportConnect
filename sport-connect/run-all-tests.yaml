@@ -1,0 +1,122 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# SportConnect - Master Test Runner
+# ============================================
+# Runs all user journey test flows (60+ tests)
+# Usage: maestro test run-all-tests.yaml
+# ============================================
+
+# =====================
+# Auth Journeys
+# =====================
+- runFlow: auth/onboarding.yaml
+- runFlow: auth/signup-rider.yaml
+- runFlow: auth/signup-driver.yaml
+- runFlow: auth/login.yaml
+- runFlow: auth/forgot-password.yaml
+- runFlow: auth/email-verification.yaml
+- runFlow: auth/role-selection.yaml
+- runFlow: auth/social-login.yaml
+- runFlow: auth/logout.yaml
+
+# Auth - Input Validation
+- runFlow: auth/login-validation.yaml
+- runFlow: auth/signup-validation.yaml
+- runFlow: auth/forgot-password-validation.yaml
+- runFlow: auth/password-strength.yaml
+- runFlow: auth/driver-onboarding-validation.yaml
+
+# =====================
+# Home & Navigation
+# =====================
+- runFlow: home/rider-home-explore.yaml
+- runFlow: home/driver-home-dashboard.yaml
+- runFlow: home/map-interaction.yaml
+- runFlow: home/bottom-navigation.yaml
+
+# =====================
+# Ride Journeys - Rider
+# =====================
+- runFlow: rides/rider/search-ride.yaml
+- runFlow: rides/rider/request-ride.yaml
+- runFlow: rides/rider/book-ride.yaml
+- runFlow: rides/rider/my-rides.yaml
+- runFlow: rides/rider/active-ride.yaml
+- runFlow: rides/rider/cancel-ride.yaml
+- runFlow: rides/rider/rider-view-ride.yaml
+
+# =====================
+# Ride Journeys - Driver
+# =====================
+- runFlow: rides/driver/offer-ride.yaml
+- runFlow: rides/driver/manage-requests.yaml
+- runFlow: rides/driver/my-rides.yaml
+- runFlow: rides/driver/active-ride.yaml
+- runFlow: rides/driver/ride-completion.yaml
+- runFlow: rides/driver/driver-view-ride.yaml
+
+# =====================
+# Ride Journeys - Shared
+# =====================
+- runFlow: rides/shared/ride-navigation.yaml
+- runFlow: rides/shared/ride-completion-summary.yaml
+- runFlow: rides/shared/cancellation-reason.yaml
+- runFlow: rides/shared/dispute.yaml
+- runFlow: rides/shared/ride-detail-booking.yaml
+- runFlow: rides/ride-search-validation.yaml
+
+# =====================
+# Messaging Journeys
+# =====================
+- runFlow: messaging/chat-list.yaml
+- runFlow: messaging/send-message.yaml
+- runFlow: messaging/media-sharing.yaml
+- runFlow: messaging/chat-advanced.yaml
+
+# =====================
+# Profile Journeys
+# =====================
+- runFlow: profile/view-profile.yaml
+- runFlow: profile/edit-profile.yaml
+- runFlow: profile/achievements.yaml
+- runFlow: profile/driver-profile.yaml
+- runFlow: profile/profile-search.yaml
+- runFlow: profile/help-center.yaml
+- runFlow: profile/contact-support.yaml
+- runFlow: profile/report-issue.yaml
+- runFlow: profile/terms-privacy-about.yaml
+
+# =====================
+# Settings Journeys
+# =====================
+- runFlow: settings/app-settings.yaml
+- runFlow: settings/notifications-settings.yaml
+- runFlow: settings/privacy-settings.yaml
+- runFlow: settings/change-password.yaml
+- runFlow: settings/change-password-validation.yaml
+- runFlow: settings/driver-settings.yaml
+
+# =====================
+# Payments Journeys
+# =====================
+- runFlow: payments/driver-earnings.yaml
+- runFlow: payments/payment-history.yaml
+- runFlow: payments/stripe-onboarding.yaml
+- runFlow: payments/payout-detail.yaml
+
+# =====================
+# Reviews Journeys
+# =====================
+- runFlow: reviews/submit-review.yaml
+- runFlow: reviews/view-reviews.yaml
+
+# =====================
+# Notifications Journey
+# =====================
+- runFlow: notifications/notifications.yaml
+
+# =====================
+# Vehicle Management
+# =====================
+- runFlow: vehicles/manage-vehicles.yaml

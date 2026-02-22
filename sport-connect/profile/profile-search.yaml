@@ -1,0 +1,75 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Profile Journey: Profile Search
+# ============================================
+# Tests searching for other users by name
+# Verifies: search, debounce, results, empty state
+# ============================================
+
+# Login first
+- runFlow: ../common/login-helper.yaml
+
+# Navigate to Profile Search
+- tapOn: Profile
+
+# Find search option
+- runFlow:
+    when:
+      visible:
+        text: "Search Users|Find People|Search"
+    commands:
+      - tapOn:
+          text: "Search"
+          label: Open profile search
+
+# Step 1: Verify search screen
+- extendedWaitUntil:
+    visible:
+      text: "Search|Find People|Search Users"
+    timeout: 5000
+
+- takeScreenshot: profile-search-screen
+
+# Step 2: Test empty search results
+- runFlow:
+    when:
+      visible:
+        text: "Search for users|Type to search"
+    commands:
+      - tapOn: "Search for users"
+      - inputText: "zzzznonexistent12345"
+      - extendedWaitUntil:
+          visible:
+            text: "No results|No users found|empty"
+          timeout: 5000
+      - takeScreenshot: profile-search-no-results
+
+# Clear search
+- eraseText:
+    charactersToErase: 50
+
+# Step 3: Test valid search
+- inputText: "Test"
+- extendedWaitUntil:
+    visible:
+      text: "Test|No results"
+    timeout: 5000
+
+- takeScreenshot: profile-search-results
+
+# Step 4: Tap on a result (if available)
+- runFlow:
+    when:
+      visible: "Test"
+    commands:
+      - tapOn:
+          text: "Test"
+          index: 0
+          label: Open user profile
+      - takeScreenshot: profile-search-opened-user
+      - back:
+          label: Return to search
+
+- takeScreenshot: profile-search-complete
+

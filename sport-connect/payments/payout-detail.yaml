@@ -1,0 +1,87 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Payments Journey: Payout Detail
+# ============================================
+# Tests viewing a detailed payout breakdown
+# ============================================
+
+# Login as driver
+- runFlow: ../common/driver-login-helper.yaml
+
+# Navigate to earnings
+- tapOn: Profile
+
+- scrollUntilVisible:
+    element:
+      text: "Earnings|My Earnings"
+    direction: DOWN
+    timeout: 5000
+
+- runFlow:
+    when:
+      visible: "Earnings"
+    commands:
+      - tapOn:
+          text: "Earnings"
+          label: Open earnings screen
+
+# Step 1: Verify earnings screen
+- extendedWaitUntil:
+    visible:
+      text: "Earnings|Total Earnings|Payouts"
+    timeout: 5000
+
+- takeScreenshot: payout-earnings-screen
+
+# Step 2: Navigate to payout history
+- runFlow:
+    when:
+      visible: "Payouts"
+    commands:
+      - tapOn:
+          text: "Payouts"
+          label: View payout history
+
+# Step 3: Open a specific payout detail
+- runFlow:
+    when:
+      visible:
+        text: "Payout|Completed|Pending"
+    commands:
+      - tapOn:
+          index: 0
+          label: Open first payout detail
+
+# Step 4: Verify payout detail screen
+- extendedWaitUntil:
+    visible:
+      text: "Payout Details|Transaction|Payout not found"
+    timeout: 5000
+
+- takeScreenshot: payout-detail-screen
+
+# Step 5: Check transaction breakdown
+- runFlow:
+    when:
+      visible: "Transaction"
+    commands:
+      - assertVisible: "Transaction"
+
+- runFlow:
+    when:
+      visible: "Amount"
+    commands:
+      - assertVisible: "Amount"
+
+- runFlow:
+    when:
+      visible: "Status"
+    commands:
+      - assertVisible: "Status"
+
+- takeScreenshot: payout-detail-complete
+
+- back:
+    label: Return from payout detail
+

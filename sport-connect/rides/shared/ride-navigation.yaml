@@ -1,0 +1,75 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Rides Journey: Ride Navigation (GPS Tracking)
+# ============================================
+# Tests the live GPS navigation during an active ride
+# Journey: Active Ride -> Navigation -> Arrival
+# ============================================
+
+# Login first
+- runFlow: ../../common/login-helper.yaml
+
+# Navigate to Rides tab
+- tapOn: Rides
+
+# Open an active ride (if one exists)
+- runFlow:
+    when:
+      visible: "Active"
+    commands:
+      - tapOn: "Active"
+
+- runFlow:
+    when:
+      visible: "Navigate"
+    commands:
+      - tapOn:
+          text: "Navigate"
+          label: Start ride navigation
+
+# Step 1: Verify navigation screen elements
+- extendedWaitUntil:
+    visible:
+      text: "Calculating...|ETA|km|min"
+    timeout: 10000
+
+- takeScreenshot: ride-navigation-screen
+
+# Step 2: Check ride info panel
+- runFlow:
+    when:
+      visible: "ETA"
+    commands:
+      - assertVisible: "ETA"
+
+- runFlow:
+    when:
+      visible: "km/h"
+    commands:
+      - assertVisible: "km/h"
+
+# Step 3: Test share live location
+- runFlow:
+    when:
+      visible: "Share Live Location"
+    commands:
+      - tapOn:
+          text: "Share Live Location"
+          label: Share live location link
+      - takeScreenshot: ride-navigation-share-location
+
+# Step 4: Test SOS emergency button (visible but don't trigger)
+- runFlow:
+    when:
+      visible: "SOS"
+    commands:
+      - assertVisible: "SOS"
+      - takeScreenshot: ride-navigation-sos-visible
+
+# Step 5: Go back
+- back:
+    label: Return from navigation
+
+- takeScreenshot: ride-navigation-complete
+

@@ -1,0 +1,66 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Home Journey: Rider Home Explore
+# ============================================
+# Tests the rider home screen with map and search
+# Journey: Login -> Home Map -> Search -> Filter -> Ride Details
+# ============================================
+
+# Login first
+- runFlow: ../common/login-helper.yaml
+
+# Step 1: Verify home screen elements
+- assertVisible: "Where are you going?"
+- takeScreenshot: rider-home-map
+
+# Step 2: Test filter chips
+- runFlow:
+    when:
+      visible: "All"
+    commands:
+      - tapOn: "All"
+      - tapOn: "Available"
+      - tapOn: "Premium"
+      - tapOn: "Eco"
+      - tapOn:
+          text: "All"
+          label: Reset to All filter
+
+# Step 3: Test map controls
+- runFlow:
+    when:
+      visible: "Follow Location"
+    commands:
+      - tapOn:
+          text: "Follow Location"
+          label: Center map on user location
+
+# Step 4: Open Find a Ride bottom sheet
+- tapOn:
+    text: "Where are you going?"
+    label: Open search/find a ride
+
+# Step 5: Verify Find a Ride sheet elements
+- extendedWaitUntil:
+    visible:
+      text: "Find a Ride|From where?"
+    timeout: 5000
+
+- takeScreenshot: rider-home-find-ride
+
+# Step 6: Test date chips
+- runFlow:
+    when:
+      visible: "Today"
+    commands:
+      - tapOn: "Today"
+
+# Step 7: Check nearby rides section
+- runFlow:
+    when:
+      visible: "Nearby Rides"
+    commands:
+      - assertVisible: "Nearby Rides"
+
+- takeScreenshot: rider-home-explore-complete

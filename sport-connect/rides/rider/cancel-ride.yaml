@@ -1,0 +1,65 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Rides Journey: Rider - Cancel Ride
+# ============================================
+# Tests the ride cancellation flow
+# Journey: My Rides -> Upcoming Ride -> Cancel -> Confirm -> Reason
+# ============================================
+
+# Login first
+- runFlow: ../../common/login-helper.yaml
+
+# Step 1: Navigate to Rides tab
+- tapOn:
+    text: Rides
+    label: Switch to Rides tab
+
+# Step 2: Go to active or upcoming tab
+- extendedWaitUntil:
+    visible:
+      text: "My Trips|Active"
+    timeout: 5000
+
+# Step 3: Try cancel from active rides
+- tapOn:
+    text: Active
+    label: View active rides
+
+- runFlow:
+    when:
+      visible: "Cancel"
+    commands:
+      - tapOn:
+          text: "Cancel"
+          label: Initiate ride cancellation
+
+      # Verify cancel dialog
+      - assertVisible: "Cancel Trip"
+      - assertVisible: "Are you sure you want"
+      - takeScreenshot: rider-cancel-dialog
+
+      # Keep the trip (don't actually cancel)
+      - tapOn:
+          text: "Keep Trip"
+          label: Dismiss cancel dialog
+
+# Step 4: Try cancel from upcoming rides
+- tapOn:
+    text: Upcoming
+    label: View upcoming rides
+
+# Test cancel on an upcoming ride if available
+- runFlow:
+    when:
+      visible: "Cancel"
+    commands:
+      - tapOn:
+          text: "Cancel"
+          label: Initiate cancellation of upcoming ride
+      - assertVisible: "Cancel Trip"
+      - tapOn:
+          text: "Keep Trip"
+          label: Dismiss cancel dialog
+
+- takeScreenshot: rider-cancel-ride-complete

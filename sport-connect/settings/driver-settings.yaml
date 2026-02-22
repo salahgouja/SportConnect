@@ -1,0 +1,138 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Profile Journey: Driver Settings
+# ============================================
+# Tests the driver-specific settings screen
+# Verifies: ride preferences, payment toggles, visibility
+# ============================================
+
+# Login as driver
+- runFlow: ../common/driver-login-helper.yaml
+
+# Navigate to Profile
+- tapOn: Profile
+
+# Open Driver Settings
+- scrollUntilVisible:
+    element:
+      text: "Driver Settings|Settings"
+    direction: DOWN
+    timeout: 5000
+
+- runFlow:
+    when:
+      visible: "Driver Settings"
+    commands:
+      - tapOn:
+          text: "Driver Settings"
+          label: Open driver settings
+
+- runFlow:
+    when:
+      visible: "Settings"
+    commands:
+      - tapOn:
+          text: "Settings"
+          label: Open settings
+
+# Step 1: Verify driver settings screen
+- extendedWaitUntil:
+    visible:
+      text: "Driver Settings|Ride Preferences"
+    timeout: 5000
+
+- takeScreenshot: driver-settings-screen
+
+# Step 2: Check ride preferences section
+- runFlow:
+    when:
+      visible: "Ride Preferences"
+    commands:
+      - assertVisible: "Ride Preferences"
+
+# Step 3: Toggle auto-accept requests
+- runFlow:
+    when:
+      visible: "Auto Accept Requests"
+    commands:
+      - tapOn:
+          text: "Auto Accept Requests"
+          label: Toggle auto accept requests
+      - takeScreenshot: driver-settings-auto-accept-toggled
+      - tapOn:
+          text: "Auto Accept Requests"
+          label: Toggle back auto accept
+
+# Step 4: Toggle show on map
+- runFlow:
+    when:
+      visible: "Show on Map"
+    commands:
+      - tapOn:
+          text: "Show on Map"
+          label: Toggle map visibility
+      - takeScreenshot: driver-settings-map-toggle
+      - tapOn:
+          text: "Show on Map"
+          label: Toggle back map visibility
+
+# Step 5: Toggle instant booking
+- runFlow:
+    when:
+      visible: "Instant Booking"
+    commands:
+      - tapOn:
+          text: "Instant Booking"
+          label: Toggle instant booking
+      - takeScreenshot: driver-settings-instant-booking
+
+# Step 6: Check max distance slider
+- runFlow:
+    when:
+      visible: "Max Distance"
+    commands:
+      - assertVisible: "Max Distance"
+      - takeScreenshot: driver-settings-max-distance
+
+# Step 7: Notification preferences
+- scrollUntilVisible:
+    element:
+      text: "Sound Effects|Vibration|Night Mode"
+    direction: DOWN
+    timeout: 5000
+
+- runFlow:
+    when:
+      visible: "Sound Effects"
+    commands:
+      - tapOn:
+          text: "Sound Effects"
+          label: Toggle sound effects
+      - tapOn: "Sound Effects"
+
+- runFlow:
+    when:
+      visible: "Vibration"
+    commands:
+      - tapOn:
+          text: "Vibration"
+          label: Toggle vibration
+      - tapOn: "Vibration"
+
+# Step 8: Night mode toggle
+- runFlow:
+    when:
+      visible: "Night Mode"
+    commands:
+      - tapOn:
+          text: "Night Mode"
+          label: Toggle night mode
+      - takeScreenshot: driver-settings-night-mode
+      - tapOn: "Night Mode"
+
+- takeScreenshot: driver-settings-complete
+
+- back:
+    label: Return from driver settings
+

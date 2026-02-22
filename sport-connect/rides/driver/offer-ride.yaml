@@ -1,0 +1,163 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Rides Journey: Driver - Offer Ride
+# ============================================
+# Tests the complete ride offer creation flow
+# Journey: Home -> Offer Ride -> Route -> Details -> Preferences -> Create
+# ============================================
+
+# Login as driver
+- runFlow: ../../common/driver-login-helper.yaml
+
+# Step 1: Navigate to Offer a Ride
+- runFlow:
+    when:
+      visible: "Offer a Ride"
+    commands:
+      - tapOn:
+          text: "Offer a Ride"
+          label: Start creating ride offer
+
+- extendedWaitUntil:
+    visible:
+      text: "Offer a Ride|Where are you going?|Route"
+    timeout: 5000
+
+- takeScreenshot: driver-offer-ride-screen
+
+# Step 2: Step 1 - Route
+- assertVisible: "Route"
+
+# Set pickup location
+- runFlow:
+    when:
+      visible: "From"
+    commands:
+      - tapOn: "From"
+      - assertVisible: "Select pickup location"
+
+- runFlow:
+    when:
+      visible: "Select pickup location"
+    commands:
+      - tapOn: "Select pickup location"
+      - inputText: "City Center"
+      - extendedWaitUntil:
+          visible: "City"
+          timeout: 5000
+      - tapOn:
+          text: "City"
+          index: 0
+
+# Set destination
+- runFlow:
+    when:
+      visible: "To"
+    commands:
+      - tapOn: "To"
+
+- runFlow:
+    when:
+      visible: "Select dropoff location"
+    commands:
+      - tapOn: "Select dropoff location"
+      - inputText: "Sports Complex"
+      - extendedWaitUntil:
+          visible: "Sports"
+          timeout: 5000
+      - tapOn:
+          text: "Sports"
+          index: 0
+
+# Set date and time
+- runFlow:
+    when:
+      visible: "Select Date"
+    commands:
+      - tapOn:
+          text: "Select Date"
+          label: Pick departure date
+      - tapOn: "OK"
+
+- runFlow:
+    when:
+      visible: "Select Time"
+    commands:
+      - tapOn:
+          text: "Select Time"
+          label: Pick departure time
+      - tapOn: "OK"
+
+# Step 3: Go to next step - Details
+- tapOn:
+    text: "Next"
+    label: Move to Details step
+- takeScreenshot: driver-offer-ride-details
+
+# Step 4: Set available seats
+- runFlow:
+    when:
+      visible: "Available Seats"
+    commands:
+      - assertVisible: "Available Seats"
+
+# Step 5: Set price
+- runFlow:
+    when:
+      visible: "Price per Seat"
+    commands:
+      - assertVisible: "Price per Seat"
+
+# Step 6: Go to Preferences step
+- tapOn:
+    text: "Next"
+    label: Move to Preferences step
+- takeScreenshot: driver-offer-ride-preferences
+
+# Step 7: Set preferences
+- runFlow:
+    when:
+      visible: "Preferences & Rules"
+    commands:
+      - assertVisible: "Preferences & Rules"
+      - assertVisible: "Allow Pets"
+      - assertVisible: "Allow Smoking"
+      - assertVisible: "Allow Luggage"
+      - assertVisible: "Women Only"
+
+# Toggle some preferences
+- runFlow:
+    when:
+      visible: "Allow Pets"
+    commands:
+      - tapOn:
+          text: "Allow Pets"
+          label: Toggle pets preference
+
+- runFlow:
+    when:
+      visible: "Allow Luggage"
+    commands:
+      - tapOn:
+          text: "Allow Luggage"
+          label: Toggle luggage preference
+
+- takeScreenshot: driver-offer-ride-preferences-set
+
+# Step 8: Create ride
+- runFlow:
+    when:
+      visible: "Create Ride"
+    commands:
+      - tapOn:
+          text: "Create Ride"
+          label: Submit ride offer
+
+# Step 9: Verify success
+- extendedWaitUntil:
+    visible:
+      text: "Ride created successfully!|Home|My Rides"
+    timeout: 10000
+
+- takeScreenshot: driver-offer-ride-complete

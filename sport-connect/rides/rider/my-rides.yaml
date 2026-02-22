@@ -1,0 +1,91 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Rides Journey: Rider - My Rides
+# ============================================
+# Tests viewing and managing rider's rides
+# Journey: Home -> Rides Tab -> Active/Upcoming/History
+# ============================================
+
+# Login first
+- runFlow: ../../common/login-helper.yaml
+
+# Step 1: Navigate to Rides tab
+- tapOn:
+    text: Rides
+    label: Switch to Rides tab
+
+# Step 2: Wait for My Trips screen
+- extendedWaitUntil:
+    visible:
+      text: "My Trips|My Rides"
+    timeout: 5000
+
+- assertVisible: "My Trips"
+- assertVisible: "Track & manage your rides"
+- takeScreenshot: rider-my-rides-screen
+
+# Step 3: Test Active tab
+- tapOn:
+    text: Active
+    label: View active rides
+- takeScreenshot: rider-my-rides-active
+
+# Step 4: Check active ride state
+- runFlow:
+    when:
+      visible: "Trip in Progress"
+    commands:
+      - assertVisible: "Trip in Progress"
+      - assertVisible: "Message"
+      - assertVisible: "Call"
+
+- runFlow:
+    when:
+      visible: "No Active Trips"
+    commands:
+      - assertVisible: "No Active Trips"
+
+# Step 5: Test Upcoming tab
+- tapOn:
+    text: Upcoming
+    label: View upcoming rides
+- takeScreenshot: rider-my-rides-upcoming
+
+- runFlow:
+    when:
+      visible: "No Upcoming Trips"
+    commands:
+      - assertVisible: "No Upcoming Trips"
+
+# Step 6: Test History tab
+- tapOn:
+    text: History
+    label: View ride history
+- takeScreenshot: rider-my-rides-history
+
+- runFlow:
+    when:
+      visible: "No Trip History"
+    commands:
+      - assertVisible: "No Trip History"
+
+# Step 7: Check stats
+- runFlow:
+    when:
+      visible: "Total Trips"
+    commands:
+      - assertVisible: "Total Trips"
+
+# Step 8: Test FAB
+- runFlow:
+    when:
+      visible: "Find Ride"
+    commands:
+      - tapOn:
+          text: "Find Ride"
+          label: Open find ride from FAB
+      - back:
+          label: Go back to My Rides
+
+- takeScreenshot: rider-my-rides-complete

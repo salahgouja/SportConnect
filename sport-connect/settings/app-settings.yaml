@@ -1,0 +1,162 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Settings Journey: App Settings
+# ============================================
+# Tests all settings screen sections
+# Journey: Profile -> Settings -> All Sections
+# ============================================
+
+# Login first
+- runFlow: ../common/login-helper.yaml
+
+# Step 1: Navigate to Profile tab
+- tapOn:
+    text: Profile
+    label: Switch to Profile tab
+
+# Step 2: Navigate to Settings
+- scrollUntilVisible:
+    element: "Settings"
+    direction: DOWN
+    timeout: 5000
+
+- tapOn:
+    text: "Settings"
+    label: Open Settings
+
+# Step 3: Wait for settings screen
+- extendedWaitUntil:
+    visible: "Settings"
+    timeout: 5000
+
+- assertVisible: "Settings"
+- takeScreenshot: settings-screen
+
+# Step 4: Verify Notifications section
+- assertVisible: "Notifications"
+- assertVisible: "Push Notifications"
+- assertVisible: "Ride Reminders"
+- assertVisible: "Chat Messages"
+
+# Step 5: Verify Appearance section
+- scrollUntilVisible:
+    element: "Appearance"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "Appearance"
+- assertVisible: "Language"
+- assertVisible: "Distance Unit"
+- takeScreenshot: settings-appearance
+
+# Step 6: Test Language picker
+- tapOn:
+    text: "Language"
+    label: Open language picker
+- runFlow:
+    when:
+      visible: "English"
+    commands:
+      - assertVisible: "English"
+      - assertVisible: "French"
+      - assertVisible: "German"
+      - assertVisible: "Spanish"
+      - tapOn:
+          text: "English"
+          label: Select English language
+- takeScreenshot: settings-language
+
+# Step 7: Verify Privacy & Safety section
+- scrollUntilVisible:
+    element: "Privacy & Safety"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "Privacy & Safety"
+- assertVisible: "Public Profile"
+- assertVisible: "Show Location"
+
+# Step 8: Verify Account section
+- scrollUntilVisible:
+    element: "Account"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "Account"
+- assertVisible: "Edit Profile"
+- assertVisible: "Vehicles"
+- takeScreenshot: settings-account
+
+# Step 9: Verify Support section
+- scrollUntilVisible:
+    element: "Support"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "Support"
+- assertVisible: "Help Center"
+- assertVisible: "Contact Support"
+
+# Step 10: Verify Legal section
+- scrollUntilVisible:
+    element: "Legal"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "Legal"
+- assertVisible: "Terms & Conditions"
+- assertVisible: "Privacy Policy"
+- assertVisible: "About"
+
+# Step 11: Test Help Center navigation
+- tapOn:
+    text: "Help Center"
+    label: Open Help Center
+- extendedWaitUntil:
+    visible:
+      text: "Help Center|FAQ"
+    timeout: 5000
+- takeScreenshot: settings-help-center
+- back
+
+# Step 12: Test About navigation
+- scrollUntilVisible:
+    element: "About"
+    direction: DOWN
+    timeout: 5000
+- tapOn:
+    text: "About"
+    label: Open About screen
+- extendedWaitUntil:
+    visible:
+      text: "About|SportConnect"
+    timeout: 5000
+- takeScreenshot: settings-about
+- back
+
+# Step 13: Verify version info
+- scrollUntilVisible:
+    element: "SportConnect v1.0.0"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "SportConnect v1.0.0"
+
+# Step 14: Verify delete account option
+- scrollUntilVisible:
+    element: "Delete Account"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "Delete Account"
+
+# Step 15: Test delete account dialog (don't actually delete)
+- tapOn:
+    text: "Delete Account"
+    label: Open delete account dialog
+- assertVisible: "This action cannot be undone"
+- assertVisible: "Ride history and bookings"
+- assertVisible: "Profile and achievements"
+- assertVisible: "Messages and connections"
+- assertVisible: "Payment information"
+- assertVisible: "Type DELETE to confirm"
+- takeScreenshot: settings-delete-account-dialog
+- tapOn:
+    text: Cancel
+    label: Close delete account dialog
+
+- takeScreenshot: settings-complete

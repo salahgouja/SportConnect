@@ -1,0 +1,68 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Auth Journey: Onboarding Flow
+# ============================================
+# Tests the complete onboarding experience
+# NOTE: Onboarding doesn't appear automatically (app goes splash -> login).
+# This test navigates to onboarding via deep link.
+# Journey: Launch -> Deep Link -> Page 1 -> 2 -> 3 -> 4 -> Get Started -> Login
+# ============================================
+
+- launchApp:
+    clearState: true
+    label: Launch SportConnect fresh
+
+# Wait for app to fully initialize (splash -> login)
+- extendedWaitUntil:
+    visible: "Welcome Back"
+    timeout: 10000
+
+# Navigate to onboarding via deep link
+- openLink: "sportconnect:///onboarding"
+
+# Wait for onboarding to appear
+- extendedWaitUntil:
+    visible: "Find Running"
+    timeout: 10000
+
+# Step 1: Verify Page 1 - Find Running Partners
+- assertVisible: "Find Running"
+- assertVisible: "Run Together"
+- assertVisible: Continue
+- assertVisible: Skip
+- takeScreenshot: onboarding-page1
+
+# Step 2: Navigate to Page 2
+- tapOn: Continue
+- assertVisible: "Join Running"
+- assertVisible: "Train With Community"
+- takeScreenshot: onboarding-page2
+
+# Step 3: Navigate to Page 3
+- tapOn: Continue
+- assertVisible: "Track Your"
+- assertVisible: "Monitor Performance"
+- takeScreenshot: onboarding-page3
+
+# Step 4: Navigate to Page 4
+- tapOn: Continue
+- assertVisible: "Achieve Your"
+- assertVisible: "Personal Best Awaits"
+- assertVisible: "Get Started"
+- takeScreenshot: onboarding-page4
+
+# Step 5: Tap Get Started
+- tapOn: "Get Started"
+
+# Step 6: Verify welcome dialog and complete
+- extendedWaitUntil:
+    visible: "You're Ready to Run"
+    timeout: 5000
+- tapOn: Continue
+- takeScreenshot: onboarding-complete
+
+# Step 7: Verify landed on login screen
+- extendedWaitUntil:
+    visible: "Welcome Back"
+    timeout: 10000

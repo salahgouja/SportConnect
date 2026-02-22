@@ -1,0 +1,78 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Reviews Journey: View Reviews
+# ============================================
+# Tests viewing reviews for a user
+# Journey: Profile -> Reviews List -> Filter -> Details
+# ============================================
+
+# Login first
+- runFlow: ../common/login-helper.yaml
+
+# Step 1: Navigate to Profile tab
+- tapOn:
+    text: Profile
+    label: Switch to Profile tab
+
+# Step 2: Wait for profile
+- extendedWaitUntil:
+    visible:
+      text: "My Profile|reviews"
+    timeout: 5000
+
+# Step 3: Check for reviews section on profile
+- runFlow:
+    when:
+      visible: "reviews"
+    commands:
+      - tapOn:
+          text: "reviews"
+          label: Open reviews list
+
+# Step 4: Wait for reviews screen
+- extendedWaitUntil:
+    visible:
+      text: "Reviews|No reviews yet"
+    timeout: 5000
+
+- takeScreenshot: reviews-list-screen
+
+# Step 5: Test filter chips
+- runFlow:
+    when:
+      visible: "All"
+    commands:
+      - tapOn:
+          text: "All"
+          label: Show all reviews
+      - tapOn:
+          text: "As Driver"
+          label: Filter driver reviews
+      - tapOn:
+          text: "As Rider"
+          label: Filter rider reviews
+      - tapOn:
+          text: "All"
+          label: Reset to all reviews
+
+# Step 6: Handle empty state
+- runFlow:
+    when:
+      visible: "No reviews yet"
+    commands:
+      - assertVisible: "No reviews yet"
+      - takeScreenshot: reviews-empty
+
+# Step 7: Check review details if available
+- runFlow:
+    when:
+      visible: "Response"
+    commands:
+      - assertVisible: "Response"
+      - takeScreenshot: reviews-with-response
+
+- back:
+    label: Return to profile
+
+- takeScreenshot: view-reviews-complete

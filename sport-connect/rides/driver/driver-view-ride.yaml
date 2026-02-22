@@ -1,0 +1,78 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Rides Journey: Driver View Ride Screen
+# ============================================
+# Tests the driver's dedicated ride management screen
+# Verifies: 3-tab layout (details, bookings, passengers)
+# ============================================
+
+# Login as driver
+- runFlow: ../../common/driver-login-helper.yaml
+
+# Navigate to Rides
+- tapOn: Rides
+
+# Open a ride from the driver's ride list
+- runFlow:
+    when:
+      visible:
+        text: "My Rides|Upcoming"
+    commands:
+      - tapOn:
+          text: "Upcoming"
+          label: View upcoming rides
+
+# Open a specific ride
+- runFlow:
+    when:
+      visible:
+        text: "View|Details"
+    commands:
+      - tapOn:
+          index: 0
+          label: Open ride details
+
+# Step 1: Verify driver ride view
+- extendedWaitUntil:
+    visible:
+      text: "Your Ride|Ride Details|Ride not found"
+    timeout: 5000
+
+- takeScreenshot: driver-view-ride-screen
+
+# Step 2: Check Details tab
+- runFlow:
+    when:
+      visible: "Details"
+    commands:
+      - tapOn:
+          text: "Details"
+          label: View ride details tab
+      - takeScreenshot: driver-view-ride-details
+
+# Step 3: Check Bookings tab
+- runFlow:
+    when:
+      visible: "Bookings"
+    commands:
+      - tapOn:
+          text: "Bookings"
+          label: View bookings tab
+      - takeScreenshot: driver-view-ride-bookings
+
+# Step 4: Check Passengers tab
+- runFlow:
+    when:
+      visible: "Passengers"
+    commands:
+      - tapOn:
+          text: "Passengers"
+          label: View passengers tab
+      - takeScreenshot: driver-view-ride-passengers
+
+- takeScreenshot: driver-view-ride-complete
+
+- back:
+    label: Return from ride view
+

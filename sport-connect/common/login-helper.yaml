@@ -1,0 +1,29 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Common: Login Helper Flow
+# ============================================
+# Reusable subflow to log in with test credentials
+# Used by other tests as a prerequisite
+# ============================================
+
+- launchApp:
+    clearState: true
+    label: Launch app fresh
+
+# Wait for splash to complete and login screen to appear
+- extendedWaitUntil:
+    visible: "Welcome Back"
+    timeout: 10000
+
+# Fill login form
+- tapOn: "Enter your email"
+- inputText: "testuser@sportconnect.com"
+- tapOn: "Enter your password"
+- inputText: "Test@12345"
+- tapOn: "Sign In"
+
+# Wait for home screen
+- extendedWaitUntil:
+    visible: "Where are you going?"
+    timeout: 15000

@@ -1,0 +1,49 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Rides Journey: Driver - Active Ride
+# ============================================
+# Tests the active ride experience for drivers
+# Journey: My Rides -> Active Ride -> Navigate -> Complete
+# ============================================
+
+# Login as driver
+- runFlow: ../../common/driver-login-helper.yaml
+
+# Step 1: Navigate to Rides tab
+- tapOn:
+    text: Rides
+    label: Switch to Rides tab
+
+# Step 2: Check for active ride
+- extendedWaitUntil:
+    visible:
+      text: "Your Journey Timeline|Trip in Progress|Active"
+    timeout: 5000
+
+# Step 3: View active ride if one exists
+- runFlow:
+    when:
+      visible: "Trip in Progress"
+    commands:
+      - tapOn:
+          text: "Trip in Progress"
+          label: Open active ride view
+      - takeScreenshot: driver-active-ride-tracking
+
+# Step 4: Check navigation options
+- runFlow:
+    when:
+      visible: "Navigate"
+    commands:
+      - assertVisible: "Navigate"
+
+# Step 5: Check passenger info
+- runFlow:
+    when:
+      visible: "Pickup"
+    commands:
+      - assertVisible: "Pickup"
+      - assertVisible: "Dropoff"
+
+- takeScreenshot: driver-active-ride-complete

@@ -1,0 +1,130 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Rides Journey: Dispute Filing
+# ============================================
+# Tests filing a dispute for a completed ride
+# Verifies: type selection, description, photo evidence
+# ============================================
+
+# Login first
+- runFlow: ../../common/login-helper.yaml
+
+# Navigate to Rides tab
+- tapOn: Rides
+
+# Navigate to ride history
+- runFlow:
+    when:
+      visible: "History"
+    commands:
+      - tapOn: "History"
+
+# Open a completed ride
+- runFlow:
+    when:
+      visible: "Completed"
+    commands:
+      - tapOn:
+          text: "Completed"
+          index: 0
+
+# Find the dispute/report option
+- runFlow:
+    when:
+      visible:
+        text: "Report Issue|Dispute|File Dispute"
+    commands:
+      - tapOn:
+          text: "Report Issue"
+          label: Open dispute form
+
+# Step 1: Verify dispute screen
+- extendedWaitUntil:
+    visible:
+      text: "Dispute|Report Issue|File a Dispute"
+    timeout: 5000
+
+- takeScreenshot: dispute-screen
+
+# Step 2: Verify dispute types
+- assertVisible: "Incorrect Fare"
+- assertVisible: "Incomplete Ride"
+
+- runFlow:
+    when:
+      visible: "Unauthorized Charge"
+    commands:
+      - assertVisible: "Unauthorized Charge"
+
+- runFlow:
+    when:
+      visible: "Poor Service"
+    commands:
+      - assertVisible: "Poor Service"
+
+- runFlow:
+    when:
+      visible: "Safety Concern"
+    commands:
+      - assertVisible: "Safety Concern"
+
+# Step 3: Select dispute type
+- tapOn:
+    text: "Incorrect Fare"
+    label: Select dispute type
+
+- takeScreenshot: dispute-type-selected
+
+# Step 4: Enter description
+- runFlow:
+    when:
+      visible:
+        text: "Description|Tell us what happened|Describe the issue"
+    commands:
+      - tapOn:
+          text: "Description"
+          label: Enter dispute description
+      - inputText: "The fare charged was higher than the amount shown before booking"
+
+- takeScreenshot: dispute-description-filled
+
+# Step 5: Check photo upload option
+- runFlow:
+    when:
+      visible:
+        text: "Add Evidence|Attach Photos|Choose from Gallery|Maximum 5 files allowed"
+    commands:
+      - assertVisible:
+          text: "Maximum 5 files allowed|Add Evidence"
+      - takeScreenshot: dispute-photo-upload
+
+# Step 6: Verify file limit text
+- runFlow:
+    when:
+      visible: "Maximum 5 files allowed"
+    commands:
+      - assertVisible: "Maximum 5 files allowed"
+
+# Step 7: Submit dispute
+- scrollUntilVisible:
+    element:
+      text: "Submit|File Dispute|Submit Dispute"
+    direction: DOWN
+    timeout: 5000
+
+- runFlow:
+    when:
+      visible: "Submit"
+    commands:
+      - tapOn:
+          text: "Submit"
+          label: Submit dispute
+
+- extendedWaitUntil:
+    visible:
+      text: "Dispute Filed|Submitted|We'll review your dispute|My Rides"
+    timeout: 10000
+
+- takeScreenshot: dispute-submitted
+

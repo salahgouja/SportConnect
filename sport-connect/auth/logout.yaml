@@ -1,0 +1,54 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Auth Journey: Logout
+# ============================================
+# Tests the logout flow from Settings
+# Journey: Home -> Profile -> Settings -> Logout -> Login
+# ============================================
+
+# Login first
+- runFlow: ../common/login-helper.yaml
+
+# Step 1: Navigate to Profile tab
+- tapOn:
+    text: Profile
+    label: Go to Profile tab
+
+# Step 2: Verify Profile screen
+- assertVisible: "My Profile"
+- takeScreenshot: logout-profile-screen
+
+# Step 3: Navigate to Settings
+- tapOn:
+    text: "Settings"
+    label: Open Settings
+
+# Step 4: Verify Settings screen
+- assertVisible: Settings
+- takeScreenshot: logout-settings-screen
+
+# Step 5: Scroll to Log Out
+- scrollUntilVisible:
+    element: "Log Out"
+    direction: DOWN
+    timeout: 5000
+
+# Step 6: Tap Log Out
+- tapOn:
+    text: "Log Out"
+    label: Tap logout button
+
+# Step 7: Confirm logout dialog
+- assertVisible: "Are you sure you want"
+- tapOn:
+    text: "Log Out"
+    label: Confirm logout
+
+# Step 8: Verify returned to login screen
+- extendedWaitUntil:
+    visible: "Welcome Back"
+    timeout: 10000
+
+- assertVisible: "Welcome Back"
+- takeScreenshot: logout-complete

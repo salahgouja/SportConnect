@@ -1,0 +1,123 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Profile Journey: Report Issue
+# ============================================
+# Tests the issue/safety reporting flow
+# Verifies: issue types, severity, evidence, submission
+# ============================================
+
+# Login first
+- runFlow: ../common/login-helper.yaml
+
+# Navigate to Profile -> Settings -> Report Issue
+- tapOn: Profile
+- runFlow:
+    when:
+      visible: "Settings"
+    commands:
+      - tapOn: "Settings"
+
+- scrollUntilVisible:
+    element:
+      text: "Report Issue|Report a Problem"
+    direction: DOWN
+    timeout: 5000
+
+- runFlow:
+    when:
+      visible: "Report Issue"
+    commands:
+      - tapOn:
+          text: "Report Issue"
+          label: Open report issue screen
+
+# Step 1: Verify report issue screen
+- extendedWaitUntil:
+    visible:
+      text: "Report Issue|Report a Problem"
+    timeout: 5000
+
+- takeScreenshot: report-issue-screen
+
+# Step 2: Verify issue types
+- runFlow:
+    when:
+      visible: "Safety"
+    commands:
+      - assertVisible: "Safety"
+
+- runFlow:
+    when:
+      visible: "Payment"
+    commands:
+      - assertVisible: "Payment"
+
+- runFlow:
+    when:
+      visible: "Behavior"
+    commands:
+      - assertVisible: "Behavior"
+
+- runFlow:
+    when:
+      visible: "Technical"
+    commands:
+      - assertVisible: "Technical"
+
+# Step 3: Select issue type
+- tapOn:
+    text: "Safety"
+    label: Select safety issue type
+
+- takeScreenshot: report-issue-type-selected
+
+# Step 4: Check severity levels (if visible)
+- runFlow:
+    when:
+      visible: "Severity"
+    commands:
+      - assertVisible: "Severity"
+      - takeScreenshot: report-issue-severity
+
+# Step 5: Enter description
+- runFlow:
+    when:
+      visible:
+        text: "Description|Describe the issue"
+    commands:
+      - tapOn: "Description"
+      - inputText: "Unsafe driving behavior during the ride. Driver was using phone while driving."
+
+- takeScreenshot: report-issue-description-filled
+
+# Step 6: Photo evidence section
+- runFlow:
+    when:
+      visible: "Maximum 5 files allowed"
+    commands:
+      - assertVisible: "Maximum 5 files allowed"
+      - takeScreenshot: report-issue-photo-upload
+
+# Step 7: Submit report
+- scrollUntilVisible:
+    element:
+      text: "Submit|Report"
+    direction: DOWN
+    timeout: 5000
+
+- runFlow:
+    when:
+      visible: "Submit"
+    commands:
+      - tapOn:
+          text: "Submit"
+          label: Submit issue report
+
+- extendedWaitUntil:
+    visible:
+      text: "Report Submitted|Thank you|We'll review"
+    timeout: 10000
+
+- takeScreenshot: report-issue-submitted
+

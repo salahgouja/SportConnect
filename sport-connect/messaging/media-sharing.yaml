@@ -1,0 +1,76 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Messaging Journey: Media Sharing
+# ============================================
+# Tests media attachment options in chat
+# Journey: Chat -> Attachment -> Camera/Gallery/Document/Location
+# ============================================
+
+# Login first
+- runFlow: ../common/login-helper.yaml
+
+# Step 1: Navigate to Chat tab
+- tapOn:
+    text: Chat
+    label: Switch to Chat tab
+
+# Step 2: Wait for chat list
+- extendedWaitUntil:
+    visible:
+      text: "Messages|No conversations yet"
+    timeout: 5000
+
+# Step 3: Open a chat (or create one)
+- runFlow:
+    when:
+      visible: "New Message"
+    commands:
+      - tapOn: "New Message"
+      - tapOn: "Search users by name..."
+      - inputText: "Test"
+      - extendedWaitUntil:
+          visible: "Test"
+          timeout: 5000
+      - tapOn:
+          text: "Test"
+          index: 0
+
+# Step 4: Wait for chat detail
+- extendedWaitUntil:
+    visible:
+      text: "Type a message...|No messages yet"
+    timeout: 5000
+
+# Step 5: Test attachment button (usually + or clip icon)
+# Look for attachment options
+- runFlow:
+    when:
+      visible: "Camera"
+    commands:
+      - assertVisible: "Camera"
+      - assertVisible: "Gallery"
+      - assertVisible: "Document"
+      - assertVisible: "Location"
+      - takeScreenshot: chat-media-options
+
+# Step 6: Test location sharing option
+- runFlow:
+    when:
+      visible: "Location"
+    commands:
+      - tapOn:
+          text: "Location"
+          label: Test location sharing
+
+# Step 7: Test voice note
+- runFlow:
+    when:
+      visible: "Voice note"
+    commands:
+      - assertVisible: "Voice note"
+
+- takeScreenshot: chat-media-sharing-complete
+
+- back:
+    label: Return to chat list

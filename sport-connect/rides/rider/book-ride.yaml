@@ -1,0 +1,78 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Rides Journey: Rider - Book Ride
+# ============================================
+# Tests the ride booking flow from search to confirmation
+# Journey: Search -> Ride Card -> Details -> Book
+# ============================================
+
+# Login first
+- runFlow: ../../common/login-helper.yaml
+
+# Step 1: Open search
+- tapOn:
+    text: "Where are you going?"
+    label: Open ride search
+
+# Step 2: Enter locations
+- extendedWaitUntil:
+    visible:
+      text: "Find a Ride|From where?|Pickup location"
+    timeout: 5000
+
+- runFlow:
+    when:
+      visible: "From where?"
+    commands:
+      - tapOn: "From where?"
+      - inputText: "Downtown"
+      - extendedWaitUntil:
+          visible: "Downtown"
+          timeout: 5000
+      - tapOn:
+          text: "Downtown"
+          index: 0
+
+- runFlow:
+    when:
+      visible: "To where?"
+    commands:
+      - tapOn: "To where?"
+      - inputText: "Beach Park"
+      - extendedWaitUntil:
+          visible: "Beach"
+          timeout: 5000
+      - tapOn:
+          text: "Beach"
+          index: 0
+
+# Step 3: Wait for results
+- extendedWaitUntil:
+    visible:
+      text: "Book|Book This Ride|available|No rides available"
+    timeout: 10000
+
+- takeScreenshot: ride-book-search-results
+
+# Step 4: Book ride if available
+- runFlow:
+    when:
+      visible: "Book This Ride"
+    commands:
+      - tapOn:
+          text: "Book This Ride"
+          label: Book the ride
+      - takeScreenshot: ride-booking-confirmation
+
+- runFlow:
+    when:
+      visible: "Book"
+    commands:
+      - tapOn:
+          text: "Book"
+          index: 0
+          label: Book the ride
+      - takeScreenshot: ride-booking-confirmation
+
+- takeScreenshot: ride-book-complete

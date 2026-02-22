@@ -1,0 +1,73 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Home Journey: Map Interaction
+# ============================================
+# Tests map features: style, zoom, location
+# Journey: Home -> Map Style -> Zoom -> Hotspots
+# ============================================
+
+# Login first
+- runFlow: ../common/login-helper.yaml
+
+# Step 1: Verify map is visible on home screen
+- assertVisible: "Where are you going?"
+- takeScreenshot: map-initial
+
+# Step 2: Test map style picker (if available)
+- runFlow:
+    when:
+      visible: "Map Style"
+    commands:
+      - tapOn: "Map Style"
+      - assertVisible: "Standard"
+      - assertVisible: "Terrain"
+      - assertVisible: "Dark"
+      - tapOn:
+          text: "Dark"
+          label: Switch to dark map style
+      - takeScreenshot: map-dark-style
+      - tapOn: "Map Style"
+      - tapOn:
+          text: "Standard"
+          label: Switch back to standard
+
+# Step 3: Test zoom controls
+- swipe:
+    direction: UP
+    duration: 500
+    label: Swipe up on map
+
+- swipe:
+    direction: DOWN
+    duration: 500
+    label: Swipe down on map
+
+# Step 4: Test hotspots button
+- runFlow:
+    when:
+      visible: "Hotspots"
+    commands:
+      - tapOn:
+          text: "Hotspots"
+          label: Toggle hotspots layer
+
+# Step 5: Test search radius button
+- runFlow:
+    when:
+      visible: "Search Radius"
+    commands:
+      - tapOn:
+          text: "Search Radius"
+          label: Toggle search radius
+
+# Step 6: Test follow location
+- runFlow:
+    when:
+      visible: "Follow Location"
+    commands:
+      - tapOn:
+          text: "Follow Location"
+          label: Center on user location
+
+- takeScreenshot: map-interaction-complete

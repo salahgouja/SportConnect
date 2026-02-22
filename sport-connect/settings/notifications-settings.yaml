@@ -1,0 +1,65 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Settings Journey: Notifications Settings
+# ============================================
+# Tests toggling notification preferences
+# Journey: Settings -> Notifications -> Toggle All Switches
+# ============================================
+
+# Login first
+- runFlow: ../common/login-helper.yaml
+
+# Step 1: Navigate to Profile -> Settings
+- tapOn: Profile
+- scrollUntilVisible:
+    element: "Settings"
+    direction: DOWN
+    timeout: 5000
+- tapOn: "Settings"
+
+# Step 2: Wait for settings
+- extendedWaitUntil:
+    visible: "Notifications"
+    timeout: 5000
+
+# Step 3: Verify notification toggles
+- assertVisible: "Push Notifications"
+- assertVisible: "Ride Reminders"
+- assertVisible: "Chat Messages"
+- takeScreenshot: notifications-settings
+
+# Step 4: Toggle Push Notifications
+- tapOn:
+    text: "Push Notifications"
+    label: Toggle push notifications off
+- tapOn:
+    text: "Push Notifications"
+    label: Toggle push notifications back on
+
+# Step 5: Toggle Ride Reminders
+- tapOn:
+    text: "Ride Reminders"
+    label: Toggle ride reminders off
+- tapOn:
+    text: "Ride Reminders"
+    label: Toggle ride reminders back on
+
+# Step 6: Toggle Chat Messages
+- tapOn:
+    text: "Chat Messages"
+    label: Toggle chat messages off
+- tapOn:
+    text: "Chat Messages"
+    label: Toggle chat messages back on
+
+# Step 7: Toggle Marketing & Tips
+- runFlow:
+    when:
+      visible: "Marketing & Tips"
+    commands:
+      - tapOn:
+          text: "Marketing & Tips"
+          label: Toggle marketing off
+
+- takeScreenshot: notifications-settings-complete

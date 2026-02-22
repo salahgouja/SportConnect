@@ -1,0 +1,142 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Profile Journey: Edit Profile
+# ============================================
+# Tests editing profile information
+# Journey: Profile -> Edit -> Change Fields -> Save
+# ============================================
+
+# Login first
+- runFlow: ../common/login-helper.yaml
+
+# Step 1: Navigate to Profile tab
+- tapOn:
+    text: Profile
+    label: Switch to Profile tab
+
+# Step 2: Wait for profile screen
+- extendedWaitUntil:
+    visible:
+      text: "My Profile|Edit Profile"
+    timeout: 5000
+
+# Step 3: Tap Edit Profile
+- tapOn:
+    text: "Edit Profile"
+    label: Open edit profile
+
+# Step 4: Wait for edit profile screen
+- extendedWaitUntil:
+    visible: "Edit Profile"
+    timeout: 5000
+
+- assertVisible: "Edit Profile"
+- assertVisible: "Personal Information"
+- takeScreenshot: edit-profile-screen
+
+# Step 5: Edit Full Name
+- tapOn: "Full Name"
+- eraseText:
+    charactersToErase: 50
+- inputText: "Updated Test User"
+
+# Step 6: Edit Bio
+- scrollUntilVisible:
+    element: "Bio"
+    direction: DOWN
+    timeout: 5000
+
+- tapOn: "Bio"
+- eraseText:
+    charactersToErase: 50
+- inputText: "Running enthusiast and eco-friendly rider!"
+
+# Step 7: Edit City
+- runFlow:
+    when:
+      visible: "City"
+    commands:
+      - tapOn: "City"
+      - eraseText:
+          charactersToErase: 50
+      - inputText: "New York"
+
+# Step 8: Check demographics section
+- scrollUntilVisible:
+    element: "Demographics"
+    direction: DOWN
+    timeout: 5000
+
+- runFlow:
+    when:
+      visible: "Demographics"
+    commands:
+      - assertVisible: "Demographics"
+      - assertVisible: "Gender"
+      - assertVisible: "Birthday"
+
+# Step 9: Check sports interests
+- scrollUntilVisible:
+    element: "Sports Interests"
+    direction: DOWN
+    timeout: 5000
+
+- runFlow:
+    when:
+      visible: "Sports Interests"
+    commands:
+      - assertVisible: "Sports Interests"
+      - tapOn:
+          text: "Add"
+          label: Open interests picker
+      - assertVisible: "Select Sports Interests"
+      - tapOn: "Running"
+      - tapOn: "Cycling"
+      - tapOn:
+          text: "Done"
+          label: Confirm selected interests
+
+- takeScreenshot: edit-profile-filled
+
+# Step 10: Save changes
+- scrollUntilVisible:
+    element: "Save Changes"
+    direction: DOWN
+    timeout: 5000
+
+- tapOn:
+    text: "Save Changes"
+    label: Save profile changes
+
+# Step 11: Verify success
+- extendedWaitUntil:
+    visible:
+      text: "Profile Updated|My Profile"
+    timeout: 5000
+
+- takeScreenshot: edit-profile-complete
+
+# Step 12: Test discard flow (navigate back without saving)
+- tapOn:
+    text: "Edit Profile"
+    label: Open edit profile again
+
+- tapOn: "Full Name"
+- eraseText:
+    charactersToErase: 50
+- inputText: "Temp Name"
+- back:
+    label: Try to go back with unsaved changes
+
+- runFlow:
+    when:
+      visible: "Discard Changes"
+    commands:
+      - assertVisible: "Discard Changes"
+      - assertVisible: "You have unsaved changes"
+      - tapOn:
+          text: "Discard"
+          label: Discard unsaved changes
+
+- takeScreenshot: edit-profile-discard-complete

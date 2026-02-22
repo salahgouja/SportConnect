@@ -1,0 +1,60 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Auth Journey: Signup as Driver
+# ============================================
+# Tests complete signup flow for a new driver
+# Journey: Login -> Sign Up -> Select Driver -> Register -> Verify
+# ============================================
+
+- launchApp:
+    clearState: true
+    label: Launch SportConnect fresh
+
+# Step 1: Navigate to Sign Up
+- extendedWaitUntil:
+    visible: "Welcome Back"
+    timeout: 10000
+- tapOn:
+    text: "Sign Up"
+    label: Navigate to registration
+
+# Step 2: Verify Register screen
+- assertVisible: "Create Account"
+- takeScreenshot: signup-driver-start
+
+# Step 3: Select Driver role
+- tapOn:
+    text: "Offer rides"
+    label: Select Driver role
+
+# Step 4: Fill in registration form
+- tapOn: "Enter your full name"
+- inputText: "Test Driver User"
+
+- tapOn: "Enter your email"
+- inputText: "newdriver@sportconnect.com"
+
+- tapOn: "Create a strong password"
+- inputText: "SecurePass@123"
+
+- tapOn: "Re-enter your password"
+- inputText: "SecurePass@123"
+
+# Step 5: Agree to terms
+- tapOn:
+    text: "I agree to the "
+    label: Accept Terms of Service
+
+# Step 6: Submit registration
+- tapOn:
+    text: "Create Account"
+    label: Submit registration form
+
+# Step 7: Wait for next screen
+- extendedWaitUntil:
+    visible:
+      text: "Verify Your Email|Verify Email|Where are you going?|How will you use SportConnect?"
+    timeout: 15000
+
+- takeScreenshot: signup-driver-complete

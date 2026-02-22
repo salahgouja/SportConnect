@@ -1,0 +1,77 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Reviews Journey: Submit Review
+# ============================================
+# Tests submitting a review after ride completion
+# Journey: Ride Complete -> Leave a Review -> Rate -> Comment -> Submit
+# ============================================
+
+# Login first
+- runFlow: ../common/login-helper.yaml
+
+# Note: Reviews are typically submitted after ride completion
+# This test verifies the review screen UI elements
+
+# Step 1: Navigate to Rides tab
+- tapOn:
+    text: Rides
+    label: Switch to Rides tab
+
+# Step 2: Go to History
+- extendedWaitUntil:
+    visible:
+      text: "My Trips|History"
+    timeout: 5000
+
+- tapOn:
+    text: History
+    label: View ride history
+
+# Step 3: Check for completed rides
+- runFlow:
+    when:
+      visible: "Rebook"
+    commands:
+      # Open a completed ride to access review
+      - takeScreenshot: reviews-ride-history
+
+# Step 4: If on review screen (navigated from ride completion)
+- runFlow:
+    when:
+      visible: "Leave a Review"
+    commands:
+      - assertVisible: "Leave a Review"
+      - assertVisible: "How was your experience?"
+      - assertVisible: "What stood out?"
+      - takeScreenshot: submit-review-screen
+
+      # Rate the experience (tap star rating)
+      - assertVisible: "Additional comments (optional)"
+
+      # Type a review comment
+      - tapOn: "Share your experience..."
+      - inputText: "Great ride! The driver was punctual and the car was very clean. Would definitely ride again!"
+
+      - takeScreenshot: submit-review-filled
+
+      # Submit review
+      - tapOn:
+          text: "Submit Review"
+          label: Submit the review
+
+      - extendedWaitUntil:
+          visible:
+              text: "Thank you for your review!|Home"
+          timeout: 5000
+
+      - takeScreenshot: submit-review-success
+
+# Step 5: Test skip option
+- runFlow:
+    when:
+      visible: "Skip for now"
+    commands:
+      - assertVisible: "Skip for now"
+
+- takeScreenshot: submit-review-complete

@@ -1,0 +1,158 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Messaging Journey: Chat Features (Advanced)
+# ============================================
+# Tests advanced chat features not in basic tests
+# Covers: emoji picker, voice notes, reply, chat options
+# ============================================
+
+# Login first
+- runFlow: ../common/login-helper.yaml
+
+# Navigate to Chat tab
+- tapOn: Chat
+
+# Open an existing conversation (or first one)
+- extendedWaitUntil:
+    visible:
+      text: "Messages|No conversations yet"
+    timeout: 5000
+
+- runFlow:
+    when:
+      visible: "Messages"
+    commands:
+      - tapOn:
+          index: 0
+          label: Open first conversation
+
+# Wait for chat detail to load
+- extendedWaitUntil:
+    visible:
+      text: "Type a message|Send|online|offline"
+    timeout: 5000
+
+- takeScreenshot: chat-detail-screen
+
+# -----------------------------------------------
+# Test 1: Emoji Picker
+# -----------------------------------------------
+- runFlow:
+    when:
+      visible:
+        text: "😊|Emoji"
+    commands:
+      - tapOn:
+          text: "😊"
+          label: Open emoji picker
+      - extendedWaitUntil:
+          visible:
+            text: "😀|Smileys|Recent"
+          timeout: 3000
+      - takeScreenshot: chat-emoji-picker-open
+      - tapOn: "😀"
+      - takeScreenshot: chat-emoji-selected
+      # Close emoji picker
+      - tapOn:
+          text: "😊"
+          label: Close emoji picker
+
+# -----------------------------------------------
+# Test 2: Voice Note Recording
+# -----------------------------------------------
+- runFlow:
+    when:
+      visible:
+        text: "🎤|Voice|Record"
+    commands:
+      - tapOn:
+          text: "🎤"
+          label: Start voice recording
+      - takeScreenshot: chat-voice-recording
+      # Cancel recording by going back
+      - runFlow:
+          when:
+            visible: "Cancel"
+          commands:
+            - tapOn:
+                text: "Cancel"
+                label: Cancel voice recording
+      - takeScreenshot: chat-voice-cancelled
+
+# -----------------------------------------------
+# Test 3: Chat Options (More menu)
+# -----------------------------------------------
+- runFlow:
+    when:
+      visible:
+        text: "⋮|More"
+    commands:
+      - tapOn:
+          text: "⋮"
+          label: Open chat options menu
+      - extendedWaitUntil:
+          visible:
+            text: "Clear Chat|Mute|Block|Search"
+          timeout: 3000
+      - takeScreenshot: chat-options-menu
+
+# Check Clear Chat option
+- runFlow:
+    when:
+      visible: "Clear Chat"
+    commands:
+      - tapOn:
+          text: "Clear Chat"
+          label: Open clear chat confirmation
+      - extendedWaitUntil:
+          visible:
+            text: "Are you sure|Clear|Cancel"
+          timeout: 3000
+      - tapOn:
+          text: "Cancel"
+          label: Cancel clear chat
+      - takeScreenshot: chat-clear-cancelled
+
+# -----------------------------------------------
+# Test 4: Typing indicator (type and verify)
+# -----------------------------------------------
+- tapOn: "Type a message"
+- inputText: "Testing typing indicator..."
+- takeScreenshot: chat-typing
+
+# Clear without sending
+- eraseText:
+    charactersToErase: 50
+
+# -----------------------------------------------
+# Test 5: Send a text message
+# -----------------------------------------------
+- tapOn: "Type a message"
+- inputText: "Hello from Maestro E2E test!"
+- runFlow:
+    when:
+      visible: "Send"
+    commands:
+      - tapOn:
+          text: "Send"
+          label: Send test message
+
+- extendedWaitUntil:
+    visible: "Hello from Maestro E2E test!"
+    timeout: 5000
+
+- takeScreenshot: chat-message-sent
+
+# -----------------------------------------------
+# Test 6: Scroll to load older messages
+# -----------------------------------------------
+- swipe:
+    direction: UP
+    duration: 400
+
+- takeScreenshot: chat-scrolled-up
+
+- back:
+    label: Return to chat list
+

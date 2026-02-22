@@ -1,0 +1,64 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Auth Journey: Signup as Rider (Wizard Flow)
+# ============================================
+# Tests complete signup wizard for a new rider
+# Journey: Login -> Sign Up -> Wizard Steps -> Home
+# ============================================
+
+- launchApp:
+    clearState: true
+    label: Launch SportConnect fresh
+
+# Step 1: Navigate to Sign Up from Login
+- extendedWaitUntil:
+    visible: "Welcome Back"
+    timeout: 10000
+- tapOn:
+    text: "Sign Up"
+    label: Navigate to registration
+
+# Step 2: Verify Register screen
+- assertVisible: "Create Account"
+- assertVisible: "Join our community of eco-friendly riders"
+- assertVisible: "Welcome Bonus"
+- assertVisible: "Get 100 XP when you complete your profile!"
+- takeScreenshot: signup-register-screen
+
+# Step 3: Select Rider role
+- tapOn:
+    text: "Find rides"
+    label: Select Rider role
+
+# Step 4: Fill in registration form
+- tapOn: "Enter your full name"
+- inputText: "Test Rider User"
+
+- tapOn: "Enter your email"
+- inputText: "newrider@sportconnect.com"
+
+- tapOn: "Create a strong password"
+- inputText: "SecurePass@123"
+
+- tapOn: "Re-enter your password"
+- inputText: "SecurePass@123"
+
+# Step 5: Agree to terms
+- tapOn:
+    text: "I agree to the "
+    label: Accept Terms of Service
+
+# Step 6: Submit registration
+- tapOn:
+    text: "Create Account"
+    label: Submit registration form
+- takeScreenshot: signup-submitted
+
+# Step 7: Wait for next screen (email verification or role selection)
+- extendedWaitUntil:
+    visible:
+      text: "Verify Your Email|Verify Email|Where are you going?|How will you use SportConnect?"
+    timeout: 15000
+
+- takeScreenshot: signup-rider-complete

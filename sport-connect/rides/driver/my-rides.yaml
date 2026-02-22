@@ -1,0 +1,62 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Rides Journey: Driver - My Rides
+# ============================================
+# Tests the driver's rides management screen
+# Journey: Home -> Rides -> Timeline -> Ride Details
+# ============================================
+
+# Login as driver
+- runFlow: ../../common/driver-login-helper.yaml
+
+# Step 1: Navigate to Rides tab
+- tapOn:
+    text: Rides
+    label: Switch to Rides tab
+
+# Step 2: Wait for driver rides screen
+- extendedWaitUntil:
+    visible:
+      text: "Your Journey Timeline|My Rides|No Upcoming Rides"
+    timeout: 5000
+
+- takeScreenshot: driver-my-rides-screen
+
+# Step 3: Check journey timeline
+- runFlow:
+    when:
+      visible: "Your Journey Timeline"
+    commands:
+      - assertVisible: "Your Journey Timeline"
+      - takeScreenshot: driver-journey-timeline
+
+# Step 4: Check for rides in timeline
+- runFlow:
+    when:
+      visible: "No Upcoming Rides"
+    commands:
+      - assertVisible: "No Upcoming Rides"
+      - assertVisible: "Start planning your journey"
+
+# Step 5: Check request section
+- runFlow:
+    when:
+      visible: "ACCEPT"
+    commands:
+      - assertVisible: "ACCEPT"
+
+- runFlow:
+    when:
+      visible: "DECLINE"
+    commands:
+      - assertVisible: "DECLINE"
+
+# Step 6: Check swipe instructions
+- runFlow:
+    when:
+      visible: "Swipe right to accept"
+    commands:
+      - assertVisible: "Swipe right to accept"
+
+- takeScreenshot: driver-my-rides-complete

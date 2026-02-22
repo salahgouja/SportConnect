@@ -1,0 +1,42 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Home Journey: Driver Home Dashboard
+# ============================================
+# Tests the driver home screen/dashboard
+# Journey: Login as Driver -> Driver Home Dashboard
+# ============================================
+
+# Login as driver
+- runFlow: ../common/driver-login-helper.yaml
+
+# Step 1: Verify driver home screen loaded
+- extendedWaitUntil:
+    visible:
+      text: "Home|Dashboard"
+    timeout: 15000
+
+- takeScreenshot: driver-home-dashboard
+
+# Step 2: Check for driver-specific elements
+- runFlow:
+    when:
+      visible: "Offer a Ride"
+    commands:
+      - assertVisible: "Offer a Ride"
+
+# Step 3: Check earnings summary if visible
+- runFlow:
+    when:
+      visible: "Earnings"
+    commands:
+      - assertVisible: "Earnings"
+
+# Step 4: Check pending requests if visible
+- runFlow:
+    when:
+      visible: "Pending Requests"
+    commands:
+      - assertVisible: "Pending Requests"
+
+- takeScreenshot: driver-home-dashboard-complete

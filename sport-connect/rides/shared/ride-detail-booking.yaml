@@ -1,0 +1,114 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Rides Journey: Ride Detail & Booking Flow
+# ============================================
+# Tests viewing ride details and booking with payment
+# Verifies: map, driver info, seat selection, booking CTA
+# ============================================
+
+# Login first
+- runFlow: ../../common/login-helper.yaml
+
+# Navigate to find a ride
+- tapOn:
+    text: "Where are you going?"
+    label: Open ride search
+
+# Search for a ride
+- runFlow:
+    when:
+      visible: "From"
+    commands:
+      - tapOn: "From"
+      - inputText: "City Center"
+      - extendedWaitUntil:
+          visible: "City"
+          timeout: 5000
+      - tapOn:
+          text: "City"
+          index: 0
+
+- runFlow:
+    when:
+      visible: "To"
+    commands:
+      - tapOn: "To"
+      - inputText: "Sports Complex"
+      - extendedWaitUntil:
+          visible: "Sports"
+          timeout: 5000
+      - tapOn:
+          text: "Sports"
+          index: 0
+
+- runFlow:
+    when:
+      visible: "Search"
+    commands:
+      - tapOn: "Search"
+
+# Wait for results
+- extendedWaitUntil:
+    visible:
+      text: "Available Rides|rides found|No rides found"
+    timeout: 10000
+
+# Step 1: Open a ride detail
+- runFlow:
+    when:
+      visible: "Available Rides"
+    commands:
+      - tapOn:
+          index: 0
+          label: Open first ride result
+
+# Step 2: Verify ride detail screen
+- extendedWaitUntil:
+    visible:
+      text: "Ride Details|Book Ride|Seats"
+    timeout: 5000
+
+- takeScreenshot: ride-detail-screen
+
+# Step 3: Check driver info
+- runFlow:
+    when:
+      visible: "Driver"
+    commands:
+      - assertVisible: "Driver"
+
+# Step 4: Check fare display
+- runFlow:
+    when:
+      visible:
+        text: "per seat|Price|Fare"
+    commands:
+      - takeScreenshot: ride-detail-fare
+
+# Step 5: Check seat selector
+- runFlow:
+    when:
+      visible: "Seats"
+    commands:
+      - assertVisible: "Seats"
+      - takeScreenshot: ride-detail-seats
+
+# Step 6: Book ride button
+- runFlow:
+    when:
+      visible: "Book Ride"
+    commands:
+      - tapOn:
+          text: "Book Ride"
+          label: Initiate ride booking
+      - takeScreenshot: ride-detail-booking-initiated
+
+# Step 7: Verify booking confirmation or payment
+- extendedWaitUntil:
+    visible:
+      text: "Booking Confirmed|Payment|Confirm Booking|Processing"
+    timeout: 10000
+
+- takeScreenshot: ride-detail-booking-complete
+

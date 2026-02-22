@@ -1,0 +1,94 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Rides Journey: Rider View Ride Screen
+# ============================================
+# Tests the rider's ride detail with booking controls
+# Verifies: ride info, driver info, share link, booking
+# ============================================
+
+# Login first
+- runFlow: ../../common/login-helper.yaml
+
+# Navigate to Rides
+- tapOn: Rides
+
+# Open a booked ride
+- runFlow:
+    when:
+      visible: "Upcoming"
+    commands:
+      - tapOn: "Upcoming"
+
+- runFlow:
+    when:
+      visible:
+        text: "View|Details"
+    commands:
+      - tapOn:
+          index: 0
+          label: Open booked ride
+
+# Step 1: Verify rider view ride screen
+- extendedWaitUntil:
+    visible:
+      text: "Ride Details|Couldn't load ride|Booking"
+    timeout: 5000
+
+- takeScreenshot: rider-view-ride-screen
+
+# Step 2: Check ride info
+- runFlow:
+    when:
+      visible: "From"
+    commands:
+      - assertVisible: "From"
+
+- runFlow:
+    when:
+      visible: "To"
+    commands:
+      - assertVisible: "To"
+
+# Step 3: Check driver info
+- runFlow:
+    when:
+      visible: "Driver"
+    commands:
+      - assertVisible: "Driver"
+      - takeScreenshot: rider-view-ride-driver-info
+
+# Step 4: Check booking note field
+- runFlow:
+    when:
+      visible:
+        text: "Note|Add a note|Booking Note"
+    commands:
+      - tapOn: "Add a note"
+      - inputText: "I'll be carrying a sports bag"
+      - takeScreenshot: rider-view-ride-note
+
+# Step 5: Check share ride link
+- runFlow:
+    when:
+      visible:
+        text: "Share|Share Ride"
+    commands:
+      - tapOn:
+          text: "Share"
+          label: Share ride link
+      - takeScreenshot: rider-view-share-link
+
+# Step 6: Seat selector
+- runFlow:
+    when:
+      visible: "Seats"
+    commands:
+      - assertVisible: "Seats"
+      - takeScreenshot: rider-view-seat-selector
+
+- takeScreenshot: rider-view-ride-complete
+
+- back:
+    label: Return from ride view
+

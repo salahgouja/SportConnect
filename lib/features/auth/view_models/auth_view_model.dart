@@ -43,6 +43,7 @@ class LoginViewModel extends _$LoginViewModel {
       state = const AsyncValue.data(null);
     } catch (e, stackTrace) {
       state = AsyncValue.error(e, stackTrace);
+      rethrow;
     }
   }
 

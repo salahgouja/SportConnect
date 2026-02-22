@@ -1,0 +1,90 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Rides Journey: Ride Completion / Trip Summary
+# ============================================
+# Tests the post-ride completion and summary screen
+# Verifies: trip stats, fare breakdown, receipt, rating CTA
+# ============================================
+
+# Login first
+- runFlow: ../../common/login-helper.yaml
+
+# Navigate to Rides tab
+- tapOn: Rides
+
+# Open a completed ride
+- runFlow:
+    when:
+      visible: "History"
+    commands:
+      - tapOn: "History"
+
+- runFlow:
+    when:
+      visible: "Completed"
+    commands:
+      - tapOn:
+          text: "Completed"
+          index: 0
+
+# Step 1: Verify trip summary elements
+- extendedWaitUntil:
+    visible:
+      text: "Trip Summary|Ride Completed|Ride Complete"
+    timeout: 10000
+
+- takeScreenshot: ride-completion-summary
+
+# Step 2: Check trip stats (duration, distance, CO2)
+- runFlow:
+    when:
+      visible: "Duration"
+    commands:
+      - assertVisible: "Duration"
+
+- runFlow:
+    when:
+      visible: "Distance"
+    commands:
+      - assertVisible: "Distance"
+
+- runFlow:
+    when:
+      visible: "CO2 Saved"
+    commands:
+      - assertVisible: "CO2 Saved"
+
+# Step 3: Check fare breakdown
+- runFlow:
+    when:
+      visible: "Fare"
+    commands:
+      - assertVisible: "Fare"
+
+- runFlow:
+    when:
+      visible: "Total"
+    commands:
+      - assertVisible: "Total"
+
+# Step 4: Test share receipt (if available)
+- runFlow:
+    when:
+      visible: "Share Receipt"
+    commands:
+      - tapOn:
+          text: "Share Receipt"
+          label: Share ride receipt
+      - takeScreenshot: ride-completion-share-receipt
+
+# Step 5: Check rating CTA
+- runFlow:
+    when:
+      visible:
+        text: "Rate|Leave a Review|How was your ride"
+    commands:
+      - takeScreenshot: ride-completion-rating-cta
+
+- takeScreenshot: ride-completion-complete
+

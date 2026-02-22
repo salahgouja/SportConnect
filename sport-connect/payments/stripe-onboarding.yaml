@@ -1,0 +1,80 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Payments Journey: Stripe Onboarding
+# ============================================
+# Tests the Stripe payout setup screen for drivers
+# Journey: Earnings -> Set Up Payouts -> Stripe Onboarding
+# ============================================
+
+# Login as driver
+- runFlow: ../common/driver-login-helper.yaml
+
+# Step 1: Navigate to Earnings
+- runFlow:
+    when:
+      visible: "Earnings"
+    commands:
+      - tapOn: "Earnings"
+
+# Step 2: Wait for earnings screen
+- extendedWaitUntil:
+    visible:
+      text: "Set Up Payouts|Stripe Connected|Earnings"
+    timeout: 5000
+
+# Step 3: Test Stripe onboarding if not connected
+- runFlow:
+    when:
+      visible: "Set Up Payouts"
+    commands:
+      - tapOn:
+          text: "Set Up Payouts"
+          label: Start Stripe onboarding
+
+      - extendedWaitUntil:
+          visible: "Set Up Payouts"
+          timeout: 5000
+
+      # Verify Stripe onboarding screen elements
+      - assertVisible: "Get Paid for Your Rides"
+      - takeScreenshot: stripe-onboarding-screen
+
+      # Verify benefits section
+      - assertVisible: "Instant Payouts"
+      - assertVisible: "Secure & Protected"
+      - assertVisible: "Clear Tracking"
+      - assertVisible: "Low Fees"
+
+      # Verify CTA
+      - assertVisible: "Connect Stripe Account"
+      - assertVisible: "Powered by Stripe"
+      - takeScreenshot: stripe-onboarding-benefits
+
+      # Test cancel dialog
+      - back:
+          label: Try to leave Stripe setup
+      - runFlow:
+          when:
+            visible: "Cancel Setup?"
+          commands:
+            - assertVisible: "Cancel Setup?"
+            - assertVisible: "Continue Setup"
+            - tapOn:
+                text: "Continue Setup"
+                label: Stay in Stripe setup
+
+      - takeScreenshot: stripe-onboarding-complete
+
+      - back:
+          label: Return to earnings
+
+# Step 4: Handle already connected
+- runFlow:
+    when:
+      visible: "Stripe Connected"
+    commands:
+      - assertVisible: "Stripe Connected"
+      - takeScreenshot: stripe-already-connected
+
+- takeScreenshot: stripe-onboarding-journey-complete

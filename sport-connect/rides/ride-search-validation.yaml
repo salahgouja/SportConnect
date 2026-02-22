@@ -1,0 +1,87 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Validation: Ride Search Input Validation
+# ============================================
+# Tests validation on the ride search screen
+# Covers: empty locations, search without required fields
+# ============================================
+
+# Login first
+- runFlow: ../common/login-helper.yaml
+
+# Navigate to ride search
+- tapOn:
+    text: "Where are you going?"
+    label: Open ride search
+
+# -----------------------------------------------
+# Test 1: Search without any location
+# -----------------------------------------------
+- runFlow:
+    when:
+      visible: "Search"
+    commands:
+      - tapOn:
+          text: "Search"
+          label: Search without locations
+      - extendedWaitUntil:
+          visible:
+            text: "Please enter both locations|Location Required|Please select a pickup location|From"
+          timeout: 5000
+      - takeScreenshot: ride-search-validation-no-locations
+
+# -----------------------------------------------
+# Test 2: Search with only pickup (no destination)
+# -----------------------------------------------
+- runFlow:
+    when:
+      visible: "From"
+    commands:
+      - tapOn: "From"
+      - inputText: "City Center"
+      - extendedWaitUntil:
+          visible: "City"
+          timeout: 5000
+      - tapOn:
+          text: "City"
+          index: 0
+
+- runFlow:
+    when:
+      visible: "Search"
+    commands:
+      - tapOn:
+          text: "Search"
+          label: Search with only pickup
+      - extendedWaitUntil:
+          visible:
+            text: "Please enter both locations|Location Required|Please select a destination|To"
+          timeout: 5000
+      - takeScreenshot: ride-search-validation-no-destination
+
+# -----------------------------------------------
+# Test 3: Valid search (both locations filled)
+# -----------------------------------------------
+- runFlow:
+    when:
+      visible: "To"
+    commands:
+      - tapOn: "To"
+      - inputText: "Sports Complex"
+      - extendedWaitUntil:
+          visible: "Sports"
+          timeout: 5000
+      - tapOn:
+          text: "Sports"
+          index: 0
+
+- runFlow:
+    when:
+      visible: "Search"
+    commands:
+      - tapOn:
+          text: "Search"
+          label: Search with valid locations
+      - takeScreenshot: ride-search-validation-success
+

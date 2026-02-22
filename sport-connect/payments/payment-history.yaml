@@ -1,0 +1,99 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Payments Journey: Payment History
+# ============================================
+# Tests the payment history screen
+# Journey: Profile -> Settings -> Payment History -> Filter -> Details
+# ============================================
+
+# Login first
+- runFlow: ../common/login-helper.yaml
+
+# Step 1: Navigate to Profile -> Settings
+- tapOn: Profile
+- scrollUntilVisible:
+    element: "Settings"
+    direction: DOWN
+    timeout: 5000
+- tapOn: "Settings"
+
+# Step 2: Navigate to Payment Methods
+- scrollUntilVisible:
+    element: "Payment Methods"
+    direction: DOWN
+    timeout: 5000
+- tapOn:
+    text: "Payment Methods"
+    label: Open Payment Methods
+
+# Step 3: Wait for payment screen
+- extendedWaitUntil:
+    visible:
+      text: "Payment History|Your Transactions|Coming Soon|No payments found"
+    timeout: 5000
+
+- takeScreenshot: payment-history-screen
+
+# Step 4: Check payment history if available
+- runFlow:
+    when:
+      visible: "Your Transactions"
+    commands:
+      - assertVisible: "Your Transactions"
+
+      # Test filter chips
+      - runFlow:
+          when:
+            visible: "All"
+          commands:
+            - tapOn: "All"
+            - tapOn: "Completed"
+            - tapOn: "Pending"
+            - tapOn: "Refunded"
+            - tapOn:
+                text: "All"
+                label: Reset filter to All
+
+      - takeScreenshot: payment-history-filters
+
+      # Tap on a payment if available
+      - runFlow:
+          when:
+            visible: "Ride Payment"
+          commands:
+            - tapOn:
+                text: "Ride Payment"
+                label: Open payment details
+            - assertVisible: "Payment Details"
+            - assertVisible: "Amount"
+            - assertVisible: "Status"
+            - assertVisible: "Date"
+            - assertVisible: "Transaction ID"
+            - takeScreenshot: payment-detail-sheet
+            - swipe:
+                direction: DOWN
+                duration: 300
+                label: Dismiss payment details
+
+# Step 5: Handle empty state
+- runFlow:
+    when:
+      visible: "No payments found"
+    commands:
+      - assertVisible: "No payments found"
+      - assertVisible: "Your payment history will appear"
+      - takeScreenshot: payment-history-empty
+
+# Step 6: Handle coming soon
+- runFlow:
+    when:
+      visible: "Coming Soon"
+    commands:
+      - assertVisible: "Coming Soon"
+      - takeScreenshot: payment-coming-soon
+
+- back:
+    label: Return to settings
+
+- takeScreenshot: payment-history-complete

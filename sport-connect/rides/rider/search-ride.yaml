@@ -1,0 +1,103 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Rides Journey: Rider - Search Ride
+# ============================================
+# Tests the ride search flow with filters
+# Journey: Home -> Search -> Filters -> Sort -> Results
+# ============================================
+
+# Login first
+- runFlow: ../../common/login-helper.yaml
+
+# Step 1: Open search from home
+- tapOn:
+    text: "Where are you going?"
+    label: Open ride search
+
+# Step 2: Wait for search screen
+- extendedWaitUntil:
+    visible:
+      text: "Find a Ride|Pickup location"
+    timeout: 5000
+
+- takeScreenshot: ride-search-screen
+
+# Step 3: Enter pickup location
+- tapOn: "Pickup location"
+- inputText: "Central Station"
+- extendedWaitUntil:
+    visible: "Central Station"
+    timeout: 5000
+- tapOn:
+    text: "Central Station"
+    label: Select pickup suggestion
+
+# Step 4: Enter destination
+- tapOn: "Where to?"
+- inputText: "Sports Arena"
+- extendedWaitUntil:
+    visible: "Sports Arena"
+    timeout: 5000
+- tapOn:
+    text: "Sports Arena"
+    label: Select destination suggestion
+
+# Step 5: Select date
+- runFlow:
+    when:
+      visible: "Today"
+    commands:
+      - tapOn:
+          text: "Today"
+          label: Select today's date
+
+# Step 6: Test filters
+- runFlow:
+    when:
+      visible: "Filters"
+    commands:
+      - tapOn:
+          text: "Filters"
+          label: Open filter sheet
+      - takeScreenshot: ride-search-filters
+      - runFlow:
+          when:
+            visible: "Price Range"
+          commands:
+            - assertVisible: "Price Range"
+            - assertVisible: "Minimum Rating"
+            - assertVisible: "Preferences"
+      - runFlow:
+          when:
+            visible: "Eco"
+          commands:
+            - tapOn:
+                text: "Eco"
+                label: Toggle Eco filter
+      - runFlow:
+          when:
+            visible: "Apply Filters"
+          commands:
+            - tapOn:
+                text: "Apply Filters"
+                label: Apply selected filters
+
+# Step 7: Test sort options
+- runFlow:
+    when:
+      visible: "Sort"
+    commands:
+      - tapOn:
+          text: "Sort"
+          label: Open sort options
+      - takeScreenshot: ride-search-sort
+
+# Step 8: Check results
+- runFlow:
+    when:
+      visible: "Rides Available"
+    commands:
+      - assertVisible: "Rides Available"
+
+- takeScreenshot: ride-search-results

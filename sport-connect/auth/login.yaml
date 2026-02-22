@@ -1,0 +1,52 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Auth Journey: Login Flow
+# ============================================
+# Tests the complete email/password login
+# Journey: Splash -> Login -> Home
+# ============================================
+
+- launchApp:
+    clearState: true
+    label: Launch SportConnect fresh
+
+# Step 1: Wait for splash to complete and login screen to appear
+- extendedWaitUntil:
+    visible: "Welcome Back"
+    timeout: 15000
+    label: Wait for login screen after splash
+
+# Step 2: Verify login screen elements visible in viewport
+- assertVisible: "Welcome Back"
+- assertVisible: Email
+- assertVisible: Password
+- takeScreenshot: login-screen
+
+# Step 3: Fill email
+- tapOn:
+    text: "Enter your email"
+    label: Tap email field
+- inputText: "testuser@sportconnect.com"
+
+# Step 4: Fill password - use hideKeyboard then tap password field
+- hideKeyboard
+- tapOn:
+    text: "Enter your password"
+    label: Tap password field
+- inputText: "Test@12345"
+- hideKeyboard
+
+# Step 5: Tap Sign In (auto-scrolls to find button)
+- tapOn:
+    text: "Sign In"
+    label: Submit login form
+
+# Step 6: Verify home screen loaded
+- extendedWaitUntil:
+    visible: "Where are you going?"
+    timeout: 15000
+    label: Wait for home screen
+
+- assertVisible: "Where are you going?"
+- takeScreenshot: login-success

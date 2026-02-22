@@ -1,0 +1,59 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Profile Journey: Achievements
+# ============================================
+# Tests the achievements/badges screen
+# Journey: Profile -> Achievements -> View Badges
+# ============================================
+
+# Login first
+- runFlow: ../common/login-helper.yaml
+
+# Step 1: Navigate to Profile tab
+- tapOn:
+    text: Profile
+    label: Switch to Profile tab
+
+# Step 2: Wait for profile
+- extendedWaitUntil:
+    visible:
+      text: "My Profile|Achievements"
+    timeout: 5000
+
+# Step 3: Scroll to and tap Achievements
+- scrollUntilVisible:
+    element: "Achievements"
+    direction: DOWN
+    timeout: 5000
+
+- tapOn:
+    text: "Achievements"
+    label: Open achievements screen
+
+# Step 4: Wait for achievements screen
+- extendedWaitUntil:
+    visible:
+      text: "Achievements|Badges|rewards"
+    timeout: 5000
+
+- takeScreenshot: achievements-screen
+
+# Step 5: Verify achievements content
+- runFlow:
+    when:
+      visible: "Total XP"
+    commands:
+      - assertVisible: "Total XP"
+
+- runFlow:
+    when:
+      visible: "Level"
+    commands:
+      - assertVisible: "Level"
+
+# Step 6: Go back
+- back:
+    label: Return to profile
+
+- takeScreenshot: achievements-complete

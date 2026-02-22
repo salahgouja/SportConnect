@@ -1,0 +1,34 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Auth Journey: Social Login (Google)
+# ============================================
+# Tests the social login buttons visibility
+# Note: Actual Google/Apple sign-in requires real auth
+# ============================================
+
+- launchApp:
+    clearState: true
+    label: Launch SportConnect fresh
+
+# Step 1: Verify social login buttons on Login screen
+- extendedWaitUntil:
+    visible: "Welcome Back"
+    timeout: 10000
+- assertVisible: "or sign in with email"
+- assertVisible: "Continue with Google"
+- assertVisible: "Continue with Apple"
+- takeScreenshot: social-login-buttons
+
+# Step 2: Navigate to Register and verify social buttons there too
+- tapOn: "Sign Up"
+- assertVisible: "Create Account"
+- assertVisible: "or sign up with"
+- assertVisible: "Continue with Google"
+- assertVisible: "Continue with Apple"
+- takeScreenshot: social-signup-buttons
+
+# Step 3: Go back to Login
+- tapOn: "Sign In"
+- assertVisible: "Welcome Back"
+- takeScreenshot: social-login-complete

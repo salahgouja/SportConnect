@@ -1,0 +1,11 @@
+appId: com.sportconnect.sport_connect
+---
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd
+- assertVisible:
+    text: ".*"
+    label: Check any text visible
+- evalScript: |
+    const hierarchy = maestro.getUiHierarchy()
+    output.hierarchy = JSON.stringify(hierarchy)

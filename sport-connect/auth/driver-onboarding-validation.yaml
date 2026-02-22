@@ -1,0 +1,172 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Validation: Driver Onboarding Vehicle Form
+# ============================================
+# Tests validation on the driver onboarding screen
+# Covers: empty vehicle fields, invalid year, seats out of range
+# ============================================
+
+- launchApp:
+    clearState: true
+    label: Launch SportConnect fresh
+
+# Navigate to signup as driver
+- extendedWaitUntil:
+    visible: "Welcome Back"
+    timeout: 10000
+- tapOn:
+    text: "Sign Up"
+    label: Navigate to registration
+
+# Select Driver role
+- runFlow:
+    when:
+      visible: "Offer rides"
+    commands:
+      - tapOn: "Offer rides"
+
+# Fill registration form
+- tapOn: "Enter your full name"
+- inputText: "Test Driver"
+- tapOn: "Enter your email"
+- inputText: "driver-validation@test.com"
+- tapOn: "Create a strong password"
+- inputText: "SecurePass@123"
+- tapOn: "Re-enter your password"
+- inputText: "SecurePass@123"
+- tapOn: "I agree to the "
+- tapOn:
+    text: "Create Account"
+    label: Submit driver registration
+
+# Wait for driver onboarding screen
+- extendedWaitUntil:
+    visible:
+      text: "Vehicle Information|Add Your Vehicle|Vehicle Details"
+    timeout: 15000
+
+# -----------------------------------------------
+# Test 1: Submit with all vehicle fields empty
+# -----------------------------------------------
+- runFlow:
+    when:
+      visible: "Continue"
+    commands:
+      - tapOn:
+          text: "Continue"
+          label: Submit empty vehicle form
+      - extendedWaitUntil:
+          visible:
+            text: "Please enter vehicle make|Required|Please enter"
+          timeout: 5000
+      - takeScreenshot: driver-onboarding-validation-empty
+
+# -----------------------------------------------
+# Test 2: Fill make only, submit
+# -----------------------------------------------
+- runFlow:
+    when:
+      visible: "Make"
+    commands:
+      - tapOn: "Make"
+      - inputText: "Toyota"
+
+- runFlow:
+    when:
+      visible: "Continue"
+    commands:
+      - tapOn:
+          text: "Continue"
+          label: Submit with only make
+      - extendedWaitUntil:
+          visible:
+            text: "Please enter vehicle model|Required"
+          timeout: 5000
+      - takeScreenshot: driver-onboarding-validation-make-only
+
+# -----------------------------------------------
+# Test 3: Invalid year (out of range)
+# -----------------------------------------------
+- runFlow:
+    when:
+      visible: "Model"
+    commands:
+      - tapOn: "Model"
+      - inputText: "Corolla"
+
+- runFlow:
+    when:
+      visible: "Year"
+    commands:
+      - tapOn: "Year"
+      - inputText: "1980"
+
+- runFlow:
+    when:
+      visible: "Continue"
+    commands:
+      - tapOn:
+          text: "Continue"
+          label: Submit with invalid year
+      - assertVisible: "Invalid year"
+      - takeScreenshot: driver-onboarding-validation-invalid-year
+
+# Fix year
+- runFlow:
+    when:
+      visible: "Year"
+    commands:
+      - tapOn: "Year"
+      - eraseText:
+          charactersToErase: 50
+      - inputText: "2022"
+
+# -----------------------------------------------
+# Test 4: Seats out of range
+# -----------------------------------------------
+- runFlow:
+    when:
+      visible: "Seats"
+    commands:
+      - tapOn: "Seats"
+      - inputText: "15"
+
+- runFlow:
+    when:
+      visible: "Continue"
+    commands:
+      - tapOn:
+          text: "Continue"
+          label: Submit with seats out of range
+      - assertVisible: "Enter 1-8 seats"
+      - takeScreenshot: driver-onboarding-validation-seats-range
+
+# -----------------------------------------------
+# Test 5: Fill remaining fields correctly
+# -----------------------------------------------
+- runFlow:
+    when:
+      visible: "Seats"
+    commands:
+      - tapOn: "Seats"
+      - eraseText:
+          charactersToErase: 50
+      - inputText: "4"
+
+- runFlow:
+    when:
+      visible: "Color"
+    commands:
+      - tapOn: "Color"
+      - inputText: "White"
+
+- runFlow:
+    when:
+      visible: "License Plate"
+    commands:
+      - tapOn: "License Plate"
+      - inputText: "ABC 1234"
+
+- takeScreenshot: driver-onboarding-validation-all-filled
+

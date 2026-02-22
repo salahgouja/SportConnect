@@ -1,0 +1,123 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Validation: Login Form Input Validation
+# ============================================
+# Tests all validation error scenarios on login
+# Covers: empty fields, invalid email, short password
+# ============================================
+
+- launchApp:
+    clearState: true
+    label: Launch SportConnect fresh
+
+# Verify on login screen
+- extendedWaitUntil:
+    visible: "Welcome Back"
+    timeout: 10000
+
+# -----------------------------------------------
+# Test 1: Submit with all fields empty
+# -----------------------------------------------
+- tapOn:
+    text: "Sign In"
+    label: Submit with empty fields
+- assertVisible: "Email is required"
+- assertVisible: "Password is required"
+- takeScreenshot: login-validation-empty-fields
+
+# -----------------------------------------------
+# Test 2: Invalid email format
+# -----------------------------------------------
+- tapOn: "Enter your email"
+- inputText: "notanemail"
+- tapOn: "Enter your password"
+- inputText: "Test@12345"
+- tapOn:
+    text: "Sign In"
+    label: Submit with invalid email format
+- assertVisible: "Enter a valid email address"
+- takeScreenshot: login-validation-invalid-email
+
+# Clear fields for next test
+- tapOn: "Enter your email"
+- eraseText:
+    charactersToErase: 50
+- tapOn: "Enter your password"
+- eraseText:
+    charactersToErase: 50
+
+# -----------------------------------------------
+# Test 3: Email without domain
+# -----------------------------------------------
+- tapOn: "Enter your email"
+- inputText: "user@"
+- tapOn: "Enter your password"
+- inputText: "Test@12345"
+- tapOn:
+    text: "Sign In"
+    label: Submit with incomplete email
+- assertVisible: "Enter a valid email address"
+- takeScreenshot: login-validation-email-no-domain
+
+# Clear fields
+- tapOn: "Enter your email"
+- eraseText:
+    charactersToErase: 50
+- tapOn: "Enter your password"
+- eraseText:
+    charactersToErase: 50
+
+# -----------------------------------------------
+# Test 4: Password too short (less than 6 chars)
+# -----------------------------------------------
+- tapOn: "Enter your email"
+- inputText: "valid@email.com"
+- tapOn: "Enter your password"
+- inputText: "12345"
+- tapOn:
+    text: "Sign In"
+    label: Submit with short password
+- assertVisible: "Password must be at least 6 characters"
+- takeScreenshot: login-validation-short-password
+
+# Clear fields
+- tapOn: "Enter your email"
+- eraseText:
+    charactersToErase: 50
+- tapOn: "Enter your password"
+- eraseText:
+    charactersToErase: 50
+
+# -----------------------------------------------
+# Test 5: Valid email but empty password
+# -----------------------------------------------
+- tapOn: "Enter your email"
+- inputText: "valid@email.com"
+- tapOn:
+    text: "Sign In"
+    label: Submit with empty password
+- assertVisible: "Password is required"
+- takeScreenshot: login-validation-empty-password
+
+# Clear fields
+- tapOn: "Enter your email"
+- eraseText:
+    charactersToErase: 50
+
+# -----------------------------------------------
+# Test 6: Valid format but wrong credentials
+# -----------------------------------------------
+- tapOn: "Enter your email"
+- inputText: "nonexistent@sportconnect.com"
+- tapOn: "Enter your password"
+- inputText: "WrongPass123"
+- tapOn:
+    text: "Sign In"
+    label: Submit with wrong credentials
+- extendedWaitUntil:
+    visible:
+      text: "No user found with this email|Wrong password|Sign in failed. Please try again.|An error occurred"
+    timeout: 10000
+- takeScreenshot: login-validation-wrong-credentials
+

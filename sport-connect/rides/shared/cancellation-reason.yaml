@@ -1,0 +1,110 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Rides Journey: Cancellation Reason Flow
+# ============================================
+# Tests the structured cancellation reason screen
+# Verifies: reason chips, comment, confirmation
+# ============================================
+
+# Login first
+- runFlow: ../../common/login-helper.yaml
+
+# Navigate to Rides tab
+- tapOn: Rides
+
+# Find a ride that can be cancelled
+- runFlow:
+    when:
+      visible: "Upcoming"
+    commands:
+      - tapOn: "Upcoming"
+
+# Open a ride and find cancel option
+- runFlow:
+    when:
+      visible: "Cancel"
+    commands:
+      - tapOn:
+          text: "Cancel"
+          label: Open cancellation flow
+
+# Step 1: Verify cancellation reason screen
+- extendedWaitUntil:
+    visible:
+      text: "Please select a cancellation reason|Cancellation Reason|Why are you cancelling?"
+    timeout: 5000
+
+- takeScreenshot: cancellation-reason-screen
+
+# Step 2: Verify all reason options are visible
+- assertVisible: "Change of plans"
+- assertVisible: "Found another ride"
+
+- scrollUntilVisible:
+    element: "Price too high"
+    direction: DOWN
+    timeout: 3000
+- assertVisible: "Price too high"
+
+- scrollUntilVisible:
+    element: "Safety concern"
+    direction: DOWN
+    timeout: 3000
+
+- runFlow:
+    when:
+      visible: "Driver not responding"
+    commands:
+      - assertVisible: "Driver not responding"
+
+- runFlow:
+    when:
+      visible: "Emergency"
+    commands:
+      - assertVisible: "Emergency"
+
+- runFlow:
+    when:
+      visible: "Other"
+    commands:
+      - assertVisible: "Other"
+
+# Step 3: Select a reason
+- tapOn:
+    text: "Change of plans"
+    label: Select cancellation reason
+
+- takeScreenshot: cancellation-reason-selected
+
+# Step 4: Add optional comment
+- runFlow:
+    when:
+      visible:
+        text: "Additional comments|Tell us more"
+    commands:
+      - tapOn:
+          text: "Additional comments"
+          label: Open comment field
+      - inputText: "Schedule conflict, need to reschedule"
+
+- takeScreenshot: cancellation-reason-with-comment
+
+# Step 5: Submit cancellation
+- runFlow:
+    when:
+      visible:
+        text: "Confirm Cancellation|Cancel Ride|Submit"
+    commands:
+      - tapOn:
+          text: "Confirm Cancellation"
+          label: Confirm the cancellation
+
+# Step 6: Verify cancellation confirmation
+- extendedWaitUntil:
+    visible:
+      text: "Ride Cancelled|Cancellation Confirmed|My Rides"
+    timeout: 10000
+
+- takeScreenshot: cancellation-complete
+

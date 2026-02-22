@@ -1,0 +1,59 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Rides Journey: Rider - Active Ride
+# ============================================
+# Tests the active ride experience for passengers
+# Journey: My Rides -> Active Ride -> Track -> Message Driver
+# ============================================
+
+# Login first
+- runFlow: ../../common/login-helper.yaml
+
+# Step 1: Navigate to Rides tab
+- tapOn:
+    text: Rides
+    label: Switch to Rides tab
+
+# Step 2: Check for active ride
+- extendedWaitUntil:
+    visible:
+      text: "My Trips|Trip in Progress"
+    timeout: 5000
+
+# Step 3: View active ride if one exists
+- runFlow:
+    when:
+      visible: "Trip in Progress"
+    commands:
+      - tapOn:
+          text: "Trip in Progress"
+          label: Open active ride
+      - takeScreenshot: rider-active-ride-tracking
+
+      # Test quick actions
+      - runFlow:
+          when:
+            visible: "Message"
+          commands:
+            - tapOn:
+                text: "Message"
+                label: Message the driver
+            - back:
+                label: Return to active ride
+
+      # Test cancel option
+      - runFlow:
+          when:
+            visible: "Cancel"
+          commands:
+            - assertVisible: "Cancel"
+
+- runFlow:
+    when:
+      visible: "No Active Trips"
+    commands:
+      - assertVisible: "No Active Trips"
+      - assertVisible: "Find a Ride"
+
+- takeScreenshot: rider-active-ride-complete

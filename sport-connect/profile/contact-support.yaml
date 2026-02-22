@@ -1,0 +1,137 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Profile Journey: Contact Support
+# ============================================
+# Tests the support ticket submission flow
+# Verifies: categories, subject, message, attachments
+# ============================================
+
+# Login first
+- runFlow: ../common/login-helper.yaml
+
+# Navigate to Profile -> Settings -> Help Center -> Contact Support
+- tapOn: Profile
+- runFlow:
+    when:
+      visible: "Settings"
+    commands:
+      - tapOn: "Settings"
+
+- scrollUntilVisible:
+    element: "Help Center"
+    direction: DOWN
+    timeout: 5000
+- tapOn: "Help Center"
+
+- extendedWaitUntil:
+    visible: "Help Center"
+    timeout: 5000
+
+# Navigate to Contact Support
+- scrollUntilVisible:
+    element: "Contact Support"
+    direction: DOWN
+    timeout: 5000
+
+- tapOn:
+    text: "Contact Support"
+    label: Open contact support
+
+# Step 1: Verify Contact Support screen
+- extendedWaitUntil:
+    visible:
+      text: "Contact Support|Submit a Ticket|Get Help"
+    timeout: 5000
+
+- takeScreenshot: contact-support-screen
+
+# Step 2: Verify support categories
+- assertVisible: "General"
+
+- runFlow:
+    when:
+      visible: "Account Issue"
+    commands:
+      - assertVisible: "Account Issue"
+
+- runFlow:
+    when:
+      visible: "Payment Problem"
+    commands:
+      - assertVisible: "Payment Problem"
+
+- runFlow:
+    when:
+      visible: "Ride Issue"
+    commands:
+      - assertVisible: "Ride Issue"
+
+- runFlow:
+    when:
+      visible: "Safety Concern"
+    commands:
+      - assertVisible: "Safety Concern"
+
+- runFlow:
+    when:
+      visible: "Bug Report"
+    commands:
+      - assertVisible: "Bug Report"
+
+# Step 3: Select a category
+- tapOn:
+    text: "Payment Problem"
+    label: Select support category
+
+- takeScreenshot: contact-support-category-selected
+
+# Step 4: Fill in subject
+- runFlow:
+    when:
+      visible:
+        text: "Subject|Title"
+    commands:
+      - tapOn: "Subject"
+      - inputText: "Payment not processed correctly"
+
+# Step 5: Fill in description
+- runFlow:
+    when:
+      visible:
+        text: "Message|Description|Describe your issue"
+    commands:
+      - tapOn: "Message"
+      - inputText: "I was charged twice for a ride booking but only one booking was confirmed. Ride ID: 12345"
+
+- takeScreenshot: contact-support-filled
+
+# Step 6: Check attachment option
+- runFlow:
+    when:
+      visible: "Maximum 5 files allowed"
+    commands:
+      - assertVisible: "Maximum 5 files allowed"
+
+# Step 7: Submit ticket
+- scrollUntilVisible:
+    element:
+      text: "Submit|Send"
+    direction: DOWN
+    timeout: 5000
+
+- runFlow:
+    when:
+      visible: "Submit"
+    commands:
+      - tapOn:
+          text: "Submit"
+          label: Submit support ticket
+
+- extendedWaitUntil:
+    visible:
+      text: "Ticket Submitted|We'll get back to you|Support"
+    timeout: 10000
+
+- takeScreenshot: contact-support-submitted
+

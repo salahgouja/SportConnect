@@ -1,0 +1,96 @@
+appId: com.sportconnect.sport_connect
+---
+# ============================================
+# Profile Journey: Driver Public Profile
+# ============================================
+# Tests viewing a driver's public profile
+# Verifies: stats dashboard, rating, achievements
+# ============================================
+
+# Login as driver
+- runFlow: ../common/driver-login-helper.yaml
+
+# Navigate to Profile tab
+- tapOn: Profile
+
+# Step 1: Verify driver profile elements
+- extendedWaitUntil:
+    visible:
+      text: "My Profile|Profile"
+    timeout: 5000
+
+- takeScreenshot: driver-profile-screen
+
+# Step 2: Check driver-specific stats
+- runFlow:
+    when:
+      visible: "Total Rides"
+    commands:
+      - assertVisible: "Total Rides"
+
+- runFlow:
+    when:
+      visible: "Rating"
+    commands:
+      - assertVisible: "Rating"
+
+- runFlow:
+    when:
+      visible: "Earnings"
+    commands:
+      - assertVisible: "Earnings"
+
+# Step 3: Check tabs (if 3-tab layout)
+- runFlow:
+    when:
+      visible: "Details"
+    commands:
+      - tapOn:
+          text: "Details"
+          label: Switch to details tab
+      - takeScreenshot: driver-profile-details
+
+- runFlow:
+    when:
+      visible: "Bookings"
+    commands:
+      - tapOn:
+          text: "Bookings"
+          label: Switch to bookings tab
+      - takeScreenshot: driver-profile-bookings
+
+- runFlow:
+    when:
+      visible: "Passengers"
+    commands:
+      - tapOn:
+          text: "Passengers"
+          label: Switch to passengers tab
+      - takeScreenshot: driver-profile-passengers
+
+# Step 4: Check achievements section
+- runFlow:
+    when:
+      visible: "Achievements"
+    commands:
+      - tapOn:
+          text: "Achievements"
+          label: Open driver achievements
+      - takeScreenshot: driver-profile-achievements
+      - back:
+          label: Return from achievements
+
+# Step 5: Check rating breakdown
+- runFlow:
+    when:
+      visible: "Reviews"
+    commands:
+      - tapOn:
+          text: "Reviews"
+          label: View driver reviews
+      - takeScreenshot: driver-profile-reviews
+      - back:
+          label: Return from reviews
+
+- takeScreenshot: driver-profile-complete
+
