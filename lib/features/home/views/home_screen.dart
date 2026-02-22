@@ -9,7 +9,6 @@ import 'package:latlong2/latlong.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:showcaseview/showcaseview.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
@@ -75,10 +74,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   void initState() {
     super.initState();
 
-    // Register ShowcaseView FIRST before any other initialization
-    // This is required for showcaseview 5.x - must be in initState
-    FeatureDiscoveryService.register();
-
     _fabAnimationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
@@ -89,33 +84,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     )..repeat();
     _getCurrentLocation();
     _startLocationTracking();
-
-    // Start feature discovery tour
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkAndStartTour();
-    });
-  }
-
-  /// Check if first time user and start showcase tour
-  Future<void> _checkAndStartTour() async {
-    final isFirstTime = await FeatureDiscoveryService.isFirstTimeUser();
-    if (isFirstTime && mounted) {
-      // Small delay to ensure UI is fully built
-      await Future.delayed(const Duration(milliseconds: 500));
-      if (mounted) {
-        try {
-          FeatureDiscoveryService.startShowcase([
-            _searchBarKey,
-            _bottomNavKey,
-            _profileKey,
-          ]);
-          // Mark tour as complete
-          await FeatureDiscoveryService.markFirstTimeTourComplete();
-        } catch (e) {
-          TalkerService.warning('Could not start showcase tour: $e');
-        }
-      }
-    }
   }
 
   void _startLocationTracking() {
