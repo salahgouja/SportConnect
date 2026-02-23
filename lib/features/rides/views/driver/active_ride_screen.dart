@@ -21,7 +21,9 @@ import 'package:sport_connect/features/profile/view_models/profile_view_model.da
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sport_connect/core/theme/platform_adaptive.dart';
 
 /// Active Ride Navigation Screen - Shows map and ride details for drivers during active rides
 class ActiveRideScreen extends ConsumerStatefulWidget {
@@ -87,6 +89,13 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
       // Check and request location permission
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
+        if (!mounted) return;
+        final accepted =
+            await PermissionDialogHelper.showRideTrackingRationale(context);
+        if (!accepted) {
+          setState(() => _isLoadingLocation = false);
+          return;
+        }
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
           setState(() => _isLoadingLocation = false);
@@ -960,7 +969,9 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
                             if (!mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('Failed to open chat: $e'),
+                                content: const Text(
+                                  'Failed to open chat. Please try again.',
+                                ),
                                 backgroundColor: AppColors.error,
                               ),
                             );
@@ -1120,10 +1131,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
         padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
         child: Text(
           'No passengers',
-          style: TextStyle(
-            fontSize: 16.sp,
-            color: AppColors.textSecondary,
-          ),
+          style: TextStyle(fontSize: 16.sp, color: AppColors.textSecondary),
         ),
       );
     }
@@ -1140,10 +1148,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
         padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
         child: Row(
           children: [
-            PassengerAvatarWidget(
-              passengerId: booking.passengerId,
-              radius: 25,
-            ),
+            PassengerAvatarWidget(passengerId: booking.passengerId, radius: 25),
             SizedBox(width: 12.w),
             Expanded(
               child: Column(
@@ -1324,6 +1329,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
                           ),
                         ),
                         IconButton(
+                          tooltip: 'Close passenger details',
                           icon: Icon(Icons.close),
                           onPressed: () {
                             setState(() {
@@ -1598,7 +1604,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.r),
+          borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
         title: Row(
           children: [
@@ -1681,7 +1687,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.r),
+          borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
         title: Row(
           children: [
@@ -1921,18 +1927,14 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
   /// Calls a passenger using the device phone dialer.
   Future<void> _callPassenger(String passengerId) async {
     try {
-      final passenger = await ref.read(
-        userProfileProvider(passengerId).future,
-      );
+      final passenger = await ref.read(userProfileProvider(passengerId).future);
       final phoneNumber = passenger?.phoneNumber;
 
       if (phoneNumber == null || phoneNumber.isEmpty) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              AppLocalizations.of(context).phoneNumberNotAvailable,
-            ),
+            content: Text(AppLocalizations.of(context).phoneNumberNotAvailable),
           ),
         );
         return;
@@ -1945,9 +1947,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              AppLocalizations.of(context).cannotMakePhoneCalls,
-            ),
+            content: Text(AppLocalizations.of(context).cannotMakePhoneCalls),
           ),
         );
       }
@@ -1955,9 +1955,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            AppLocalizations.of(context).failedToLaunchDialer,
-          ),
+          content: Text(AppLocalizations.of(context).failedToLaunchDialer),
         ),
       );
     }
@@ -2027,7 +2025,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.r),
+          borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
         title: Text(l10n.cancelRide),
         content: Text(l10n.areYouSureYouWant7),

@@ -139,8 +139,19 @@ DriverModel _$DriverModelFromJson(Map json) => DriverModel(
           Map<String, dynamic>.from(json['gamification'] as Map),
         ),
   stripeAccountId: json['stripeAccountId'] as String?,
+  stripeCustomerId: json['stripeCustomerId'] as String?,
   isStripeEnabled: json['isStripeEnabled'] as bool? ?? false,
   isStripeOnboarded: json['isStripeOnboarded'] as bool? ?? false,
+  stripeAccountStatus: json['stripeAccountStatus'] as String?,
+  chargesEnabled: json['chargesEnabled'] as bool? ?? false,
+  payoutsEnabled: json['payoutsEnabled'] as bool? ?? false,
+  detailsSubmitted: json['detailsSubmitted'] as bool? ?? false,
+  stripeRequirements:
+      (json['stripeRequirements'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const [],
+  stripeDisabledReason: json['stripeDisabledReason'] as String?,
   needsRoleSelection: json['needsRoleSelection'] as bool? ?? false,
   preferences: json['preferences'] == null
       ? const UserPreferences()
@@ -180,8 +191,15 @@ Map<String, dynamic> _$DriverModelToJson(DriverModel instance) =>
       'rating': instance.rating.toJson(),
       'gamification': instance.gamification.toJson(),
       'stripeAccountId': instance.stripeAccountId,
+      'stripeCustomerId': instance.stripeCustomerId,
       'isStripeEnabled': instance.isStripeEnabled,
       'isStripeOnboarded': instance.isStripeOnboarded,
+      'stripeAccountStatus': instance.stripeAccountStatus,
+      'chargesEnabled': instance.chargesEnabled,
+      'payoutsEnabled': instance.payoutsEnabled,
+      'detailsSubmitted': instance.detailsSubmitted,
+      'stripeRequirements': instance.stripeRequirements,
+      'stripeDisabledReason': instance.stripeDisabledReason,
       'needsRoleSelection': instance.needsRoleSelection,
       'preferences': instance.preferences.toJson(),
       'createdAt': const TimestampConverter().toJson(instance.createdAt),

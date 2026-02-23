@@ -196,6 +196,7 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
           ),
         ),
         leading: IconButton(
+          tooltip: 'Go back',
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => context.pop(),
         ),
@@ -261,6 +262,7 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
         prefixIcon: Icon(Icons.search_rounded, color: AppColors.textSecondary),
         suffixIcon: _searchQuery.isNotEmpty
             ? IconButton(
+                tooltip: 'Clear search',
                 icon: const Icon(Icons.clear_rounded),
                 onPressed: () {
                   _searchController.clear();

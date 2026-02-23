@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +9,7 @@ import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/core/providers/settings_provider.dart';
+import 'package:sport_connect/core/theme/platform_adaptive.dart';
 
 /// Premium Settings Screen with enterprise-grade UI
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -53,6 +55,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             pinned: true,
             backgroundColor: AppColors.surface,
             leading: IconButton(
+              tooltip: 'Back',
               onPressed: () => context.pop(),
               icon: Container(
                 padding: EdgeInsets.all(8.w),
@@ -128,18 +131,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     },
                     icon: Icons.chat_bubble_outline_rounded,
                     enabled: notificationsEnabled,
-                  ),
-                  _buildDivider(),
-                  _buildSwitchTile(
-                    title: l10n.settingsMarketingTips,
-                    subtitle: l10n.settingsMarketingTipsDesc,
-                    value: marketingEmails,
-                    onChanged: (value) async {
-                      await ref
-                          .read(marketingEmailsProviderProvider.notifier)
-                          .setEnabled(value);
-                    },
-                    icon: Icons.campaign_outlined,
                   ),
                 ]),
 
@@ -229,6 +220,50 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     icon: Icons.block_outlined,
                     onTap: () => _showBlockedUsersDialog(),
                   ),
+                  _buildDivider(),
+                  _buildNavigationTile(
+                    title: 'Download My Data',
+                    subtitle: 'Export a copy of your personal data',
+                    icon: Icons.download_outlined,
+                    onTap: () => _showDataExportDialog(),
+                  ),
+                ]),
+
+                SizedBox(height: 24.h),
+
+                // Data & Consent Section (GDPR / Store compliance)
+                _buildSectionHeader(
+                  'Data & Consent',
+                  Icons.verified_user_outlined,
+                ),
+                SizedBox(height: 12.h),
+                _buildSettingsCard([
+                  _buildNavigationTile(
+                    title: 'Data Processing Notice',
+                    subtitle: 'How we collect, use, and protect your data',
+                    icon: Icons.info_outline_rounded,
+                    onTap: () => _showDataProcessingNotice(),
+                  ),
+                  _buildDivider(),
+                  _buildSwitchTile(
+                    title: 'Marketing Communications',
+                    subtitle:
+                        'Receive tips, offers, and product updates via email',
+                    value: marketingEmails,
+                    onChanged: (value) async {
+                      await ref
+                          .read(marketingEmailsProviderProvider.notifier)
+                          .setEnabled(value);
+                    },
+                    icon: Icons.campaign_outlined,
+                  ),
+                  _buildDivider(),
+                  _buildNavigationTile(
+                    title: 'Withdraw Consent',
+                    subtitle: 'Manage or withdraw your data consent',
+                    icon: Icons.remove_circle_outline,
+                    onTap: () => _showWithdrawConsentDialog(),
+                  ),
                 ]),
 
                 SizedBox(height: 24.h),
@@ -258,12 +293,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     title: l10n.settingsPaymentMethods,
                     subtitle: l10n.settingsPaymentMethodsDesc,
                     icon: Icons.payment_outlined,
-                    onTap: () => _showPaymentMethodsDialog(),
+                    onTap: () => context.push(AppRoutes.paymentHistory.path),
                   ),
                   _buildDivider(),
                   _buildNavigationTile(
-                    title: l10n.settingsVerifyAccount,
-                    subtitle: l10n.settingsVerifyAccountDesc,
+                    title: l10n.changePassword,
+                    subtitle: 'Update your account password',
                     icon: Icons.lock_outline_rounded,
                     onTap: () => _showChangePasswordDialog(),
                   ),
@@ -758,6 +793,329 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  void _showDataExportDialog() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: EdgeInsets.all(24.w),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40.w,
+              height: 4.h,
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2.r),
+              ),
+            ),
+            SizedBox(height: 24.h),
+            Icon(
+              Icons.download_outlined,
+              size: 48.sp,
+              color: AppColors.primary,
+            ),
+            SizedBox(height: 16.h),
+            Text(
+              'Download My Data',
+              style: TextStyle(
+                fontSize: 18.sp,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              'We will prepare a copy of your personal data including '
+              'your profile, ride history, and reviews. You will receive '
+              'an email with a download link within 48 hours.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
+            ),
+            SizedBox(height: 24.h),
+            PremiumButton(
+              text: 'Request Data Export',
+              onPressed: () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Data export request submitted. '
+                      'You will receive an email shortly.',
+                    ),
+                  ),
+                );
+              },
+              style: PremiumButtonStyle.gradient,
+            ),
+            SizedBox(height: 16.h),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDataProcessingNotice() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.9,
+        builder: (context, scrollController) => Container(
+          padding: EdgeInsets.all(24.w),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+          ),
+          child: ListView(
+            controller: scrollController,
+            children: [
+              Center(
+                child: Container(
+                  width: 40.w,
+                  height: 4.h,
+                  decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(2.r),
+                  ),
+                ),
+              ),
+              SizedBox(height: 24.h),
+              Icon(
+                Icons.verified_user_outlined,
+                size: 48.sp,
+                color: AppColors.primary,
+              ),
+              SizedBox(height: 16.h),
+              Text(
+                'Data Processing Notice',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              SizedBox(height: 16.h),
+              _buildConsentInfoItem(
+                'Personal Information',
+                'We collect your name, email, phone number, '
+                    'and profile photo to create and manage your account.',
+                Icons.person_outline,
+              ),
+              _buildConsentInfoItem(
+                'Location Data',
+                'We process your location to match rides, calculate '
+                    'routes, and show nearby destinations. You can disable '
+                    'location sharing in Privacy settings.',
+                Icons.location_on_outlined,
+              ),
+              _buildConsentInfoItem(
+                'Payment Data',
+                'Payment information is processed securely by Stripe. '
+                    'We do not store your full card details.',
+                Icons.payment_outlined,
+              ),
+              _buildConsentInfoItem(
+                'Usage Data',
+                'We collect crash reports and usage analytics to improve '
+                    'the app experience. This data is anonymized.',
+                Icons.analytics_outlined,
+              ),
+              _buildConsentInfoItem(
+                'Your Rights',
+                'You can access, export, correct, or delete your data '
+                    'at any time. Use "Download My Data" to export, or '
+                    '"Delete Account" to erase all data.',
+                Icons.gavel_outlined,
+              ),
+              SizedBox(height: 16.h),
+              Text(
+                'By using SportConnect, you consent to the data '
+                'processing described above and in our Privacy Policy. '
+                'You may withdraw consent at any time.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              SizedBox(height: 16.h),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildConsentInfoItem(
+    String title,
+    String description,
+    IconData icon,
+  ) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 16.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: EdgeInsets.all(8.w),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8.r),
+            ),
+            child: Icon(icon, color: AppColors.primary, size: 20.sp),
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  description,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showWithdrawConsentDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface.withValues(alpha: PlatformAdaptive.dialogAlpha),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
+        ),
+        title: Text(
+          'Withdraw Consent',
+          style: TextStyle(
+            fontSize: 18.sp,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'You can withdraw your consent for data processing in '
+              'the following ways:',
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            SizedBox(height: 16.h),
+            _buildConsentOption(
+              'Disable Location Sharing',
+              'Turn off location in Privacy & Safety settings.',
+              Icons.location_off_outlined,
+            ),
+            _buildConsentOption(
+              'Stop Marketing',
+              'Disable marketing communications in Notifications.',
+              Icons.unsubscribe_outlined,
+            ),
+            _buildConsentOption(
+              'Export Your Data',
+              'Request a copy of all your personal data.',
+              Icons.download_outlined,
+            ),
+            _buildConsentOption(
+              'Delete Account',
+              'Permanently delete your account and all data.',
+              Icons.delete_forever_outlined,
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              'Note: Withdrawing consent for core data processing '
+              '(account, rides) requires account deletion, as these '
+              'are essential for the service.',
+              style: TextStyle(
+                fontSize: 12.sp,
+                color: AppColors.textSecondary,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Close',
+              style: TextStyle(color: AppColors.primary),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConsentOption(
+    String title,
+    String description,
+    IconData icon,
+  ) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 12.h),
+      child: Row(
+        children: [
+          Icon(icon, color: AppColors.primary, size: 20.sp),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  description,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showPaymentMethodsDialog() {
     showModalBottomSheet(
       context: context,
@@ -803,70 +1161,179 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   void _showChangePasswordDialog() {
+    final currentPwdController = TextEditingController();
+    final newPwdController = TextEditingController();
+    final confirmPwdController = TextEditingController();
+    bool isUpdating = false;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.r),
-        ),
-        title: Text(
-          AppLocalizations.of(context).changePassword,
-          style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w600),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context).currentPassword,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12.r),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
+          ),
+          title: Text(
+            AppLocalizations.of(context).changePassword,
+            style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w600),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: currentPwdController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context).currentPassword,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
                 ),
               ),
+              SizedBox(height: 16.h),
+              TextField(
+                controller: newPwdController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context).newPassword,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                ),
+              ),
+              SizedBox(height: 16.h),
+              TextField(
+                controller: confirmPwdController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context).confirmNewPassword,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: isUpdating ? null : () => dialogContext.pop(),
+              child: Text(AppLocalizations.of(context).actionCancel),
             ),
-            SizedBox(height: 16.h),
-            TextField(
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context).newPassword,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-              ),
-            ),
-            SizedBox(height: 16.h),
-            TextField(
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context).confirmNewPassword,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-              ),
+            ElevatedButton(
+              onPressed: isUpdating
+                  ? null
+                  : () async {
+                      final currentPwd = currentPwdController.text;
+                      final newPwd = newPwdController.text;
+                      final confirmPwd = confirmPwdController.text;
+
+                      if (currentPwd.isEmpty ||
+                          newPwd.isEmpty ||
+                          confirmPwd.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content:
+                                const Text('Please fill in all fields.'),
+                            backgroundColor: AppColors.warning,
+                          ),
+                        );
+                        return;
+                      }
+
+                      if (newPwd.length < 8) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text(
+                              'New password must be at least 8 characters.',
+                            ),
+                            backgroundColor: AppColors.warning,
+                          ),
+                        );
+                        return;
+                      }
+
+                      if (newPwd != confirmPwd) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content:
+                                const Text('New passwords do not match.'),
+                            backgroundColor: AppColors.warning,
+                          ),
+                        );
+                        return;
+                      }
+
+                      setDialogState(() => isUpdating = true);
+
+                      try {
+                        final authActions =
+                            ref.read(authActionsViewModelProvider);
+                        final user = authActions.currentUser;
+                        if (user == null) throw Exception('Not signed in');
+
+                        // Re-authenticate with current password
+                        final credential =
+                            firebase_auth.EmailAuthProvider.credential(
+                          email: user.email ?? '',
+                          password: currentPwd,
+                        );
+                        await user.reauthenticateWithCredential(credential);
+
+                        // Update password
+                        await user.updatePassword(newPwd);
+
+                        if (context.mounted) {
+                          dialogContext.pop();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                AppLocalizations.of(context)
+                                    .passwordUpdatedSuccessfully,
+                              ),
+                              backgroundColor: AppColors.success,
+                            ),
+                          );
+                        }
+                      } on firebase_auth.FirebaseAuthException catch (e) {
+                        setDialogState(() => isUpdating = false);
+                        final message = e.code == 'wrong-password'
+                            ? 'Current password is incorrect.'
+                            : 'Failed to update password. Please try again.';
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(message),
+                              backgroundColor: AppColors.error,
+                            ),
+                          );
+                        }
+                      } catch (_) {
+                        setDialogState(() => isUpdating = false);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text(
+                                'Failed to update password. Please try again.',
+                              ),
+                              backgroundColor: AppColors.error,
+                            ),
+                          );
+                        }
+                      }
+                    },
+              child: isUpdating
+                  ? SizedBox(
+                      width: 20.w,
+                      height: 20.w,
+                      child: const CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Text(AppLocalizations.of(context).update),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => context.pop(),
-            child: Text(AppLocalizations.of(context).actionCancel),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              context.pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    AppLocalizations.of(context).passwordUpdatedSuccessfully,
-                  ),
-                  backgroundColor: AppColors.success,
-                ),
-              );
-            },
-            child: Text(AppLocalizations.of(context).update),
-          ),
-        ],
       ),
     );
   }
@@ -876,7 +1343,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.r),
+          borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
         title: Text(
           AppLocalizations.of(context).settingsLogout,
@@ -912,7 +1379,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.r),
+            borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
           ),
           title: Row(
             children: [

@@ -358,7 +358,7 @@ class _POISearchSheetState extends State<POISearchSheet> {
                       Text(
                         category.label,
                         style: TextStyle(
-                          fontSize: 10.sp,
+                          fontSize: 12.sp,
                           fontWeight: FontWeight.w600,
                           color: isSelected
                               ? Colors.white

@@ -18,6 +18,7 @@ import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
+import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Real-time ride navigation screen with GPS tracking.
@@ -76,6 +77,10 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
   Future<void> _startLocationTracking() async {
     final permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
+      if (!mounted) return;
+      final accepted =
+          await PermissionDialogHelper.showRideTrackingRationale(context);
+      if (!accepted) return;
       final requested = await Geolocator.requestPermission();
       if (requested == LocationPermission.denied ||
           requested == LocationPermission.deniedForever) {
@@ -225,7 +230,50 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
       backgroundColor: AppColors.background,
       body: rideAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(
+          child: Padding(
+            padding: EdgeInsets.all(24.w),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  color: AppColors.error,
+                  size: 48.sp,
+                ),
+                SizedBox(height: 16.h),
+                Text(
+                  l10n.somethingWentWrong,
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  'Unable to load ride navigation data.',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 16.h),
+                FilledButton.icon(
+                  onPressed: () => ref.invalidate(
+                    rideStreamProvider(widget.rideId),
+                  ),
+                  icon: const Icon(Icons.refresh),
+                  label: Text(l10n.retry),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         data: (ride) {
           if (ride == null) {
             return Center(child: Text(l10n.rideNotFound));
@@ -580,13 +628,17 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
   }
 
   void _showSOSDialog(BuildContext context) {
+    // Determine emergency number based on device locale
+    final locale = Localizations.localeOf(context);
+    final emergencyNumber = _getEmergencyNumber(locale.countryCode);
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Emergency SOS'),
-        content: const Text(
-          'Are you in an emergency? This will alert emergency services '
-          'and share your live location.',
+        content: Text(
+          'Are you in an emergency? This will call emergency services '
+          '($emergencyNumber) and share your live location.',
         ),
         actions: [
           TextButton(
@@ -598,8 +650,7 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
             onPressed: () async {
               Navigator.pop(context);
               
-              // Launch emergency services (112 for Europe, 911 for US)
-              final Uri emergencyUri = Uri(scheme: 'tel', path: '112');
+              final Uri emergencyUri = Uri(scheme: 'tel', path: emergencyNumber);
               try {
                 if (await canLaunchUrl(emergencyUri)) {
                   await launchUrl(emergencyUri);
@@ -629,13 +680,43 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
     );
   }
 
+  /// Returns the local emergency number based on country code
+  String _getEmergencyNumber(String? countryCode) {
+    switch (countryCode?.toUpperCase()) {
+      case 'US':
+      case 'CA':
+        return '911';
+      case 'GB':
+      case 'IE':
+        return '999';
+      case 'AU':
+        return '000';
+      case 'NZ':
+        return '111';
+      case 'JP':
+        return '110';
+      case 'CN':
+        return '110';
+      case 'IN':
+        return '112';
+      case 'BR':
+        return '190';
+      case 'MX':
+        return '911';
+      default:
+        // 112 is the international standard emergency number
+        return '112';
+    }
+  }
+
   Widget _buildBottomPanel(
     BuildContext context,
     RideModel ride,
     AppLocalizations l10n,
   ) {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
     return Container(
-      padding: EdgeInsets.fromLTRB(24.w, 20.h, 24.w, 32.h),
+      padding: EdgeInsets.fromLTRB(24.w, 20.h, 24.w, 32.h + bottomPadding),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
@@ -843,7 +924,7 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
             SizedBox(height: 2.h),
             Text(
               label,
-              style: TextStyle(fontSize: 10.sp, color: AppColors.textTertiary),
+              style: TextStyle(fontSize: 12.sp, color: AppColors.textTertiary),
             ),
           ],
         ),

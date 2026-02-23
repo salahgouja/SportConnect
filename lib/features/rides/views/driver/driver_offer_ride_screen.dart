@@ -22,6 +22,8 @@ import 'package:sport_connect/features/profile/repositories/profile_repository.d
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:sport_connect/features/events/models/event_model.dart';
+import 'package:sport_connect/features/events/views/event_picker_sheet.dart';
 
 class DriverOfferRideScreen extends ConsumerStatefulWidget {
   final RideModel? existingRide;
@@ -69,6 +71,9 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   bool _isWomenOnly = false;
   int? _maxDetourMinutes = 15;
   // String? _notes; // Unused
+
+  // Event attachment
+  EventModel? _selectedEvent;
 
   // State
   bool _isCreating = false;
@@ -138,12 +143,28 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   }
 
   bool get _canCreateRide {
-    return _fromLocation != null &&
-        _toLocation != null &&
-        _departureDate != null &&
-        _departureTime != null &&
-        _selectedVehicle != null &&
-        !_isCreating;
+    if (_fromLocation == null ||
+        _toLocation == null ||
+        _departureDate == null ||
+        _departureTime == null ||
+        _selectedVehicle == null ||
+        _isCreating) {
+      return false;
+    }
+
+    // Ensure the departure is in the future
+    final departureDateTime = DateTime(
+      _departureDate!.year,
+      _departureDate!.month,
+      _departureDate!.day,
+      _departureTime!.hour,
+      _departureTime!.minute,
+    );
+    if (departureDateTime.isBefore(DateTime.now())) {
+      return false;
+    }
+
+    return true;
   }
 
   @override
@@ -154,6 +175,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
       appBar: AppBar(
         title: Text(widget.isEditMode ? 'Edit Ride' : 'Offer a Ride'),
         leading: IconButton(
+          tooltip: 'Back',
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
@@ -389,6 +411,8 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         const SizedBox(height: 16),
         _buildWaypointsSection(),
         const SizedBox(height: 24),
+        _buildEventAttachmentCard(),
+        const SizedBox(height: 24),
         _buildDateTimeCard(),
         const SizedBox(height: 24),
         _buildRecurringDaysSelector(),
@@ -439,6 +463,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                 ),
                 const Spacer(),
                 IconButton(
+                  tooltip: 'Swap locations',
                   onPressed: _swapLocations,
                   icon: const Icon(
                     Icons.swap_vert_rounded,
@@ -773,6 +798,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
             ),
           ),
           IconButton(
+            tooltip: 'Edit waypoint',
             onPressed: () => _editWaypoint(index),
             icon: const Icon(
               Icons.edit_location_alt_rounded,
@@ -780,14 +806,15 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
             ),
             color: AppColors.primary,
             padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
           ),
           IconButton(
+            tooltip: 'Remove waypoint',
             onPressed: () => _removeWaypoint(index),
             icon: const Icon(Icons.remove_circle_outline, size: 20),
             color: AppColors.error,
             padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
           ),
         ],
       ),
@@ -834,6 +861,155 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
     setState(() {
       _waypoints.removeAt(index);
     });
+  }
+
+  // --- Event attachment card ---
+  Widget _buildEventAttachmentCard() {
+    return GestureDetector(
+      onTap: () async {
+        final picked = await EventPickerSheet.show(
+          context,
+          preselected: _selectedEvent,
+        );
+        if (picked != null && mounted) {
+          setState(() => _selectedEvent = picked);
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: _selectedEvent != null
+              ? _selectedEvent!.type.color.withValues(alpha: 0.06)
+              : AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: _selectedEvent != null
+                ? _selectedEvent!.type.color
+                : AppColors.border,
+            width: _selectedEvent != null ? 1.5 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: _selectedEvent != null
+            ? _buildSelectedEventContent()
+            : _buildNoEventContent(),
+      ),
+    ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.05, end: 0);
+  }
+
+  Widget _buildNoEventContent() {
+    return Row(
+      children: [
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: AppColors.primarySurface,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Icon(
+            Icons.event_rounded,
+            color: AppColors.primary,
+            size: 24,
+          ),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Link to an Event',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Optional — attach this ride to a sport event',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Icon(
+          Icons.add_circle_outline_rounded,
+          color: AppColors.primary,
+          size: 22,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSelectedEventContent() {
+    final event = _selectedEvent!;
+    return Row(
+      children: [
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: event.type.color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Icon(
+            event.type.icon,
+            color: event.type.color,
+            size: 24,
+          ),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                event.title,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                event.venueName ?? event.location.address,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+        IconButton(
+          tooltip: 'Clear event',
+          onPressed: () => setState(() => _selectedEvent = null),
+          icon: Icon(
+            Icons.close_rounded,
+            color: AppColors.textTertiary,
+            size: 18,
+          ),
+          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+          padding: EdgeInsets.zero,
+        ),
+      ],
+    );
   }
 
   // --- Step 2: Details ---
@@ -1026,6 +1202,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                 child: Row(
                   children: [
                     IconButton(
+                      tooltip: 'Decrease price',
                       onPressed: () {
                         if (_pricePerSeat > 0) {
                           setState(() => _pricePerSeat -= 1);
@@ -1041,6 +1218,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                       ),
                     ),
                     IconButton(
+                      tooltip: 'Increase price',
                       onPressed: () {
                         setState(() => _pricePerSeat += 1);
                       },
@@ -1447,6 +1625,10 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
           isWomenOnly: _isWomenOnly,
           maxDetourMinutes: _maxDetourMinutes,
         ),
+
+        // Event link
+        eventId: _selectedEvent?.id,
+        eventName: _selectedEvent?.title,
 
         status: RideStatus.active,
         createdAt: DateTime.now(),

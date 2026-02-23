@@ -6,6 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
+import 'package:sport_connect/core/widgets/glass_panel.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -54,19 +55,18 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
           if (_selectedRole == UserRole.driver) {
             context.go(AppRoutes.driverOnboarding.path);
           } else {
-            // Rider has no setup — navigate to home
-            // needsRoleSelection stays true so system back works
-            // It will be cleared in the home screen
-            if (mounted) context.go(AppRoutes.home.path);
+            // Rider setup continues in profile completion.
+            // needsRoleSelection remains true until required info is saved.
+            if (mounted) context.go(AppRoutes.riderOnboarding.path);
           }
         }
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              AppLocalizations.of(context).errorValue(e.toString()),
+            content: const Text(
+              'We could not continue right now. Please try again.',
             ),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
@@ -180,19 +180,11 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
   Widget _buildHeader() {
     return Column(
       children: [
-        Container(
+        GlassPanel(
+          radius: 999,
           padding: EdgeInsets.all(20.w),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                AppColors.primary.withAlpha(30),
-                AppColors.secondary.withAlpha(20),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            shape: BoxShape.circle,
-          ),
+          color: AppColors.surface.withValues(alpha: 0.62),
+          borderColor: AppColors.primary.withValues(alpha: 0.2),
           child: Icon(
             Icons.person_add_rounded,
             size: 48.sp,
@@ -237,133 +229,123 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
       onTap: () {
         setState(() => _selectedRole = role);
       },
-      child: AnimatedContainer(
+      child: AnimatedScale(
         duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOutCubic,
-        padding: EdgeInsets.all(16.w),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primarySurface : AppColors.cardBg,
-          borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
-            width: isSelected ? 2 : 1,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: AppColors.primary.withAlpha(30),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Icon
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: EdgeInsets.all(12.w),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? AppColors.primary
-                    : AppColors.primary.withAlpha(25),
-                borderRadius: BorderRadius.circular(12.r),
+        scale: isSelected ? 1.01 : 1,
+        child: GlassPanel(
+          padding: EdgeInsets.all(16.w),
+          radius: 16,
+          color: isSelected
+              ? AppColors.primarySurface.withValues(alpha: 0.72)
+              : AppColors.surface.withValues(alpha: 0.62),
+          borderColor: isSelected ? AppColors.primary : AppColors.border,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Icon
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: EdgeInsets.all(12.w),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.primary
+                      : AppColors.primary.withAlpha(25),
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                child: Icon(
+                  icon,
+                  color: isSelected ? Colors.white : AppColors.primary,
+                  size: 24.sp,
+                ),
               ),
-              child: Icon(
-                icon,
-                color: isSelected ? Colors.white : AppColors.primary,
-                size: 24.sp,
-              ),
-            ),
-            SizedBox(width: 14.w),
+              SizedBox(width: 14.w),
 
-            // Content
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          title,
-                          style: TextStyle(
-                            fontSize: 17.sp,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                      ),
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        width: 22.w,
-                        height: 22.w,
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppColors.primary
-                              : Colors.transparent,
-                          border: Border.all(
-                            color: isSelected
-                                ? AppColors.primary
-                                : AppColors.border,
-                            width: 2,
-                          ),
-                          shape: BoxShape.circle,
-                        ),
-                        child: isSelected
-                            ? Icon(
-                                Icons.check_rounded,
-                                color: Colors.white,
-                                size: 14.sp,
-                              )
-                            : null,
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 6.h),
-                  Text(
-                    description,
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      color: AppColors.textSecondary,
-                      height: 1.4,
-                    ),
-                  ),
-                  SizedBox(height: 10.h),
-                  Wrap(
-                    spacing: 6.w,
-                    runSpacing: 4.h,
-                    children: features.map((feature) {
-                      return Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.check_circle_outline_rounded,
-                            color: isSelected
-                                ? AppColors.primary
-                                : AppColors.textTertiary,
-                            size: 12.sp,
-                          ),
-                          SizedBox(width: 3.w),
-                          Text(
-                            feature,
+              // Content
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
                             style: TextStyle(
-                              fontSize: 11.sp,
-                              color: isSelected
-                                  ? AppColors.textPrimary
-                                  : AppColors.textSecondary,
+                              fontSize: 17.sp,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
                             ),
                           ),
-                        ],
-                      );
-                    }).toList(),
-                  ),
-                ],
+                        ),
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: 22.w,
+                          height: 22.w,
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppColors.primary
+                                : Colors.transparent,
+                            border: Border.all(
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : AppColors.border,
+                              width: 2,
+                            ),
+                            shape: BoxShape.circle,
+                          ),
+                          child: isSelected
+                              ? Icon(
+                                  Icons.check_rounded,
+                                  color: Colors.white,
+                                  size: 14.sp,
+                                )
+                              : null,
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 6.h),
+                    Text(
+                      description,
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: AppColors.textSecondary,
+                        height: 1.4,
+                      ),
+                    ),
+                    SizedBox(height: 10.h),
+                    Wrap(
+                      spacing: 6.w,
+                      runSpacing: 4.h,
+                      children: features.map((feature) {
+                        return Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.check_circle_outline_rounded,
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : AppColors.textTertiary,
+                              size: 12.sp,
+                            ),
+                            SizedBox(width: 3.w),
+                            Text(
+                              feature,
+                              style: TextStyle(
+                                fontSize: 11.sp,
+                                color: isSelected
+                                    ? AppColors.textPrimary
+                                    : AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

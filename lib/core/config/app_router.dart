@@ -21,6 +21,7 @@ import 'package:sport_connect/features/auth/views/signup_wizard_screen.dart';
 import 'package:sport_connect/features/auth/views/splash_screen.dart';
 import 'package:sport_connect/features/auth/views/role_selection_screen.dart';
 import 'package:sport_connect/features/auth/views/driver_onboarding_screen.dart';
+import 'package:sport_connect/features/auth/views/rider_onboarding_screen.dart';
 import 'package:sport_connect/features/auth/views/forgot_password_screen.dart';
 import 'package:sport_connect/features/auth/views/email_verification_screen.dart';
 
@@ -46,6 +47,7 @@ import 'package:sport_connect/features/reviews/views/submit_review_screen.dart';
 import 'package:sport_connect/features/reviews/views/reviews_list_screen.dart';
 
 // Feature imports - Other
+import 'package:sport_connect/features/legal/views/legal_screen.dart';
 import 'package:sport_connect/features/onboarding/views/onboarding_screen.dart';
 import 'package:sport_connect/features/payments/views/driver_earnings_screen.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -78,10 +80,7 @@ GoRouter appRouter(Ref ref) {
 }
 
 /// Centralized redirect handler using RouteGuardService
-String? _handleRedirect(
-  AsyncValue<UserModel?> userState,
-  GoRouterState state,
-) {
+String? _handleRedirect(AsyncValue<UserModel?> userState, GoRouterState state) {
   final guard = RouteGuardService.fromAuthState(userState);
   return guard.getRedirect(state.uri.path);
 }
@@ -95,6 +94,9 @@ List<RouteBase> _buildRoutes() {
   return [
     // Auth & Onboarding Routes (Full Screen)
     ..._buildAuthRoutes(),
+
+    // Legal Routes (public – accessible without authentication)
+    ..._buildLegalRoutes(),
 
     // Main App Shell with Bottom Navigation
     _buildMainShell(),
@@ -171,6 +173,14 @@ List<GoRoute> _buildAuthRoutes() {
       ),
     ),
     GoRoute(
+      path: AppRoutes.riderOnboarding.path,
+      name: AppRoutes.riderOnboarding.name,
+      pageBuilder: (context, state) => SlideUpTransitionPage(
+        key: state.pageKey,
+        child: const RiderOnboardingScreen(),
+      ),
+    ),
+    GoRoute(
       path: AppRoutes.forgotPassword.path,
       name: AppRoutes.forgotPassword.name,
       pageBuilder: (context, state) => SlideUpTransitionPage(
@@ -184,6 +194,30 @@ List<GoRoute> _buildAuthRoutes() {
       pageBuilder: (context, state) => SlideUpTransitionPage(
         key: state.pageKey,
         child: const EmailVerificationScreen(),
+      ),
+    ),
+  ];
+}
+
+// =============================================================================
+// ⚖️ LEGAL ROUTES (Terms of Service & Privacy Policy – no auth required)
+// =============================================================================
+List<GoRoute> _buildLegalRoutes() {
+  return [
+    GoRoute(
+      path: AppRoutes.terms.path,
+      name: AppRoutes.terms.name,
+      pageBuilder: (context, state) => SlideUpTransitionPage(
+        key: state.pageKey,
+        child: const LegalScreen(type: LegalDocumentType.terms),
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.privacy.path,
+      name: AppRoutes.privacy.name,
+      pageBuilder: (context, state) => SlideUpTransitionPage(
+        key: state.pageKey,
+        child: const LegalScreen(type: LegalDocumentType.privacy),
       ),
     ),
   ];
@@ -386,6 +420,7 @@ List<GoRoute> _buildChatRoutes() {
     ),
   ];
 }
+
 // =============================================================================
 // ⭐ REVIEW ROUTES
 // =============================================================================

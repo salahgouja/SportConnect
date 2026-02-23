@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/theme/platform_adaptive.dart';
 
 /// Premium Button Styles
 enum PremiumButtonStyle { primary, secondary, success, danger, ghost, gold }
@@ -156,14 +157,16 @@ class _PremiumButtonState extends State<PremiumButton>
     }
   }
 
+  /// Platform-adaptive border radii
+  /// iOS: Pill-shaped (Liquid Glass) | Android: Material standard
   double get _borderRadius {
     switch (widget.size) {
       case PremiumButtonSize.small:
-        return 10.r;
+        return PlatformAdaptive.buttonRadiusSm;
       case PremiumButtonSize.medium:
-        return 14.r;
+        return PlatformAdaptive.buttonRadiusMd;
       case PremiumButtonSize.large:
-        return 18.r;
+        return PlatformAdaptive.buttonRadiusLg;
     }
   }
 
@@ -212,15 +215,20 @@ class _PremiumButtonState extends State<PremiumButton>
           decoration: BoxDecoration(
             gradient: _gradient,
             borderRadius: BorderRadius.circular(_borderRadius),
+            // Platform-adaptive: ghost gets primary outline;
+            // iOS: glass highlight border | Android: no extra border
             border: widget.style == PremiumButtonStyle.ghost
-                ? Border.all(color: AppColors.primary, width: 2)
-                : null,
+                ? Border.all(
+                    color: AppColors.primary,
+                    width: PlatformAdaptive.ghostBorderWidth,
+                  )
+                : PlatformAdaptive.buttonGlassBorder,
             boxShadow: widget.style != PremiumButtonStyle.ghost
                 ? [
                     BoxShadow(
                       color: _shadowColor,
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
                     ),
                   ]
                 : null,
@@ -437,15 +445,19 @@ class _PremiumIconButtonState extends State<PremiumIconButton>
           decoration: BoxDecoration(
             gradient: _gradient,
             shape: BoxShape.circle,
+            // Platform-adaptive: glass border only on iOS
             border: widget.style == PremiumButtonStyle.ghost
-                ? Border.all(color: AppColors.primary, width: 2)
-                : null,
+                ? Border.all(
+                    color: AppColors.primary,
+                    width: PlatformAdaptive.ghostBorderWidth,
+                  )
+                : PlatformAdaptive.buttonGlassBorder,
             boxShadow: widget.style != PremiumButtonStyle.ghost
                 ? [
                     BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
+                      color: AppColors.primary.withValues(alpha: 0.2),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
                     ),
                   ]
                 : null,
@@ -560,11 +572,13 @@ class _PremiumFABState extends State<PremiumFAB>
             borderRadius: widget.isExtended
                 ? BorderRadius.circular(28.r)
                 : BorderRadius.circular(56.r),
+            // Platform-adaptive: glass highlight border only on iOS
+            border: PlatformAdaptive.buttonGlassBorder,
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.5),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
+                color: AppColors.primary.withValues(alpha: 0.35),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
               ),
             ],
           ),

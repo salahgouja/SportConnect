@@ -57,6 +57,7 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen>
             pinned: true,
             backgroundColor: AppColors.primary,
             leading: IconButton(
+              tooltip: 'Go back',
               icon: Container(
                 padding: EdgeInsets.all(8.w),
                 decoration: BoxDecoration(
@@ -69,6 +70,7 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen>
             ),
             actions: [
               IconButton(
+                tooltip: 'Edit profile',
                 icon: Container(
                   padding: EdgeInsets.all(8.w),
                   decoration: BoxDecoration(
@@ -591,7 +593,7 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen>
               Text(
                 subtitle,
                 style: TextStyle(
-                  fontSize: 10.sp,
+                  fontSize: 12.sp,
                   color: color,
                   fontWeight: FontWeight.w500,
                 ),

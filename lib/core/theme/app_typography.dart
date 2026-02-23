@@ -105,7 +105,7 @@ class AppTypography {
   );
 
   static TextStyle labelSmall = TextStyle(
-    fontSize: 10.sp,
+    fontSize: 12.sp,
     fontWeight: FontWeight.w600,
     letterSpacing: 0.5,
     height: 1.4,
@@ -129,7 +129,7 @@ class AppTypography {
 
   // Overline
   static TextStyle overline = TextStyle(
-    fontSize: 10.sp,
+    fontSize: 12.sp,
     fontWeight: FontWeight.w700,
     letterSpacing: 1.5,
     height: 1.6,

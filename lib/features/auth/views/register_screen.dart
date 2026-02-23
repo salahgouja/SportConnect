@@ -101,11 +101,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
       final authActions = ref.read(authActionsViewModelProvider);
       await authActions.signInWithGoogle();
       // Route guard handles redirect based on needsRoleSelection field in Firestore
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString()),
+            content: const Text('Google sign-in failed. Please try again.'),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -122,11 +122,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
       final authActions = ref.read(authActionsViewModelProvider);
       await authActions.signInWithApple();
       // Route guard handles redirect based on needsRoleSelection field in Firestore
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString()),
+            content: const Text('Apple sign-in failed. Please try again.'),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -162,6 +162,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                     Align(
                       alignment: Alignment.centerLeft,
                       child: IconButton(
+                        tooltip: 'Go back',
                         onPressed: () => context.pop(),
                         icon: Container(
                           padding: EdgeInsets.all(8.w),
@@ -177,7 +178,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                           ),
                         ),
                         padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
+                        constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
                       ),
                     ),
 
@@ -331,6 +332,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                       obscureText: _obscurePassword,
                       validator: Validators.password,
                       suffix: IconButton(
+                        tooltip: 'Toggle password visibility',
                         icon: Icon(
                           _obscurePassword
                               ? Icons.visibility_outlined
@@ -358,6 +360,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                         _passwordController.text,
                       ),
                       suffix: IconButton(
+                        tooltip: 'Toggle password visibility',
                         icon: Icon(
                           _obscureConfirmPassword
                               ? Icons.visibility_outlined

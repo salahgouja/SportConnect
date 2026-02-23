@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/theme/platform_adaptive.dart';
 
 /// Empty State Widget
 class EmptyState extends StatelessWidget {
@@ -98,7 +99,7 @@ class ShimmerLoading extends StatelessWidget {
     super.key,
     required this.width,
     required this.height,
-    this.borderRadius = 8,
+    this.borderRadius = 10,
   });
 
   @override
@@ -344,7 +345,10 @@ class StatusBadge extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
       decoration: BoxDecoration(
         color: _color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(6.r),
+        // Platform-adaptive status badge
+        borderRadius: BorderRadius.circular(
+          PlatformAdaptive.isApple ? 10.r : 8.r,
+        ),
         border: Border.all(color: _color.withValues(alpha: 0.3)),
       ),
       child: Text(
@@ -384,7 +388,10 @@ class InfoBanner extends StatelessWidget {
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
         color: backgroundColor ?? AppColors.info.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12.r),
+        // Platform-adaptive info banner
+        borderRadius: BorderRadius.circular(
+          PlatformAdaptive.isApple ? 14.r : 12.r,
+        ),
         border: Border.all(
           color: (iconColor ?? AppColors.info).withValues(alpha: 0.2),
         ),

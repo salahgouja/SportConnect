@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/theme/platform_adaptive.dart';
 
 /// Premium button styles
 enum PremiumButtonStyle {
@@ -136,7 +137,7 @@ class _PremiumButtonState extends State<PremiumButton>
 
   BoxBorder? get _border {
     if (widget.style == PremiumButtonStyle.outline) {
-      return Border.all(color: AppColors.primary, width: 2);
+      return Border.all(color: AppColors.primary, width: 1.5);
     }
     return null;
   }
@@ -185,8 +186,11 @@ class _PremiumButtonState extends State<PremiumButton>
             decoration: BoxDecoration(
               color: _gradient == null ? _backgroundColor : null,
               gradient: _gradient,
-              borderRadius: BorderRadius.circular(16.r),
-              border: _border,
+              // Platform-adaptive: pill-shaped on iOS, standard on Android
+              borderRadius: BorderRadius.circular(
+                PlatformAdaptive.buttonRadiusMd,
+              ),
+              border: _border ?? PlatformAdaptive.buttonGlassBorder,
               boxShadow: isEnabled ? _shadow : null,
             ),
             child: Center(
@@ -263,6 +267,8 @@ class GradientIconButton extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: gradient,
           borderRadius: BorderRadius.circular(size / 2),
+          // Platform-adaptive: glass border only on iOS
+          border: PlatformAdaptive.buttonGlassBorder,
           boxShadow: AppSpacing.primaryShadow(AppColors.primary),
         ),
         child: Icon(icon, color: Colors.white, size: (size * 0.5).sp),
@@ -290,7 +296,13 @@ class PremiumFAB extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           gradient: AppColors.primaryGradient,
-          borderRadius: BorderRadius.circular(label != null ? 28.r : 16.r),
+          // Platform-adaptive: pill FAB on iOS, rounded on Android
+          borderRadius: BorderRadius.circular(
+            label != null
+                ? PlatformAdaptive.buttonRadiusLg
+                : PlatformAdaptive.buttonRadiusMd,
+          ),
+          border: PlatformAdaptive.buttonGlassBorder,
           boxShadow: AppSpacing.primaryShadow(AppColors.primary),
         ),
         child: Row(

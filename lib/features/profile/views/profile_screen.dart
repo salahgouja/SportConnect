@@ -8,10 +8,12 @@ import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 
 /// Profile Screen - Clean carpooling-style design
 class ProfileScreen extends ConsumerWidget {
@@ -34,12 +36,12 @@ class ProfileScreen extends ConsumerWidget {
         loading: () => const Center(
           child: CircularProgressIndicator(color: AppColors.primary),
         ),
-        error: (e, _) => _buildErrorState(context),
+        error: (e, _) => _buildErrorState(context, ref),
       ),
     );
   }
 
-  Widget _buildErrorState(BuildContext context) {
+  Widget _buildErrorState(BuildContext context, WidgetRef ref) {
     return Center(
       child: Padding(
         padding: EdgeInsets.all(32.w),
@@ -77,8 +79,9 @@ class ProfileScreen extends ConsumerWidget {
             ElevatedButton.icon(
               onPressed: () {
                 if (userId != null) {
-                  // ignore: unused_result
-                  // Invalidate the provider to trigger a re-fetch
+                  ref.invalidate(userStreamProvider(userId!));
+                } else {
+                  ref.invalidate(currentUserStreamProvider);
                 }
               },
               icon: const Icon(Icons.refresh_rounded),
@@ -114,6 +117,7 @@ class ProfileScreen extends ConsumerWidget {
           leading: _isOwnProfile
               ? null
               : IconButton(
+                  tooltip: 'Back',
                   onPressed: () => context.pop(),
                   icon: Icon(
                     Icons.arrow_back_ios_new_rounded,
@@ -134,12 +138,56 @@ class ProfileScreen extends ConsumerWidget {
           actions: [
             if (_isOwnProfile)
               IconButton(
+                tooltip: 'Settings',
                 onPressed: () => context.push(AppRoutes.settings.path),
                 icon: Icon(
                   Icons.settings_outlined,
                   color: AppColors.textPrimary,
                   size: 24.sp,
                 ),
+              ),
+            if (!_isOwnProfile)
+              PopupMenuButton<String>(
+                icon: Icon(
+                  Icons.more_vert_rounded,
+                  color: AppColors.textPrimary,
+                  size: 24.sp,
+                ),
+                onSelected: (value) {
+                  if (value == 'report') {
+                    context.push(
+                      AppRoutes.reportIssue.path,
+                      extra: {
+                        'reportedUserId': userId,
+                        'reason': 'User profile report',
+                      },
+                    );
+                  } else if (value == 'block') {
+                    _showBlockUserDialog(context, ref);
+                  }
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'report',
+                    child: Row(
+                      children: [
+                        Icon(Icons.flag_outlined, size: 20.sp, color: AppColors.warning),
+                        SizedBox(width: 12.w),
+                        const Text('Report User'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'block',
+                    child: Row(
+                      children: [
+                        Icon(Icons.block_outlined, size: 20.sp, color: AppColors.error),
+                        SizedBox(width: 12.w),
+                        const Text('Block User'),
+                      ],
+                    ),
+                  ),
+                ],
               ),
           ],
         ),
@@ -436,7 +484,9 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   Widget _buildVerificationBadge(BuildContext context, _VerificationItem item) {
-    return Column(
+    return Semantics(
+      label: '${item.label}: ${item.isVerified ? 'verified' : 'not verified'}',
+      child: Column(
       children: [
         Container(
           padding: EdgeInsets.all(12.w),
@@ -469,11 +519,12 @@ class ProfileScreen extends ConsumerWidget {
               ? AppLocalizations.of(context).verified
               : AppLocalizations.of(context).notVerified,
           style: TextStyle(
-            fontSize: 10.sp,
+            fontSize: 12.sp,
             color: item.isVerified ? AppColors.success : AppColors.textTertiary,
           ),
         ),
       ],
+    ),
     );
   }
 
@@ -590,7 +641,9 @@ class ProfileScreen extends ConsumerWidget {
     required String label,
     required Color color,
   }) {
-    return Container(
+    return Semantics(
+      label: '$label: $value',
+      child: Container(
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
@@ -631,6 +684,7 @@ class ProfileScreen extends ConsumerWidget {
           ),
         ],
       ),
+    ),
     );
   }
 
@@ -812,6 +866,69 @@ class ProfileScreen extends ConsumerWidget {
             );
           }).toList(),
         ),
+      ),
+    );
+  }
+
+  /// Shows a confirmation dialog to block a user
+  void _showBlockUserDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Block User'),
+        content: const Text(
+          'Are you sure you want to block this user? '
+          'You will no longer see their content or receive messages from them.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(AppLocalizations.of(context).actionCancel),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                final currentUser =
+                    ref.read(currentUserProvider).value;
+                if (currentUser == null) return;
+                await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(currentUser.uid)
+                    .collection('blockedUsers')
+                    .doc(userId)
+                    .set({
+                  'blockedAt': FieldValue.serverTimestamp(),
+                });
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('User has been blocked.'),
+                      backgroundColor: AppColors.primary,
+                    ),
+                  );
+                  context.pop();
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        AppLocalizations.of(context).somethingWentWrong,
+                      ),
+                      backgroundColor: AppColors.error,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Block'),
+          ),
+        ],
       ),
     );
   }

@@ -151,6 +151,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
       pinned: true,
       backgroundColor: AppColors.primary,
       leading: IconButton(
+        tooltip: 'Go back',
         onPressed: () => context.pop(),
         icon: Container(
           padding: EdgeInsets.all(8.w),
@@ -167,6 +168,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
       ),
       actions: [
         IconButton(
+          tooltip: 'Share ride',
           onPressed: () => _shareRide(ride),
           icon: Container(
             padding: EdgeInsets.all(8.w),
@@ -296,7 +298,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
                         Text(
                           AppLocalizations.of(context).perSeat2,
                           style: TextStyle(
-                            fontSize: 10.sp,
+                            fontSize: 12.sp,
                             color: AppColors.textSecondary,
                           ),
                         ),
@@ -380,6 +382,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
               ),
               // Message button
               IconButton(
+                tooltip: 'Message driver',
                 onPressed: () => _openChat(ride),
                 style: IconButton.styleFrom(
                   backgroundColor: AppColors.primarySurface,
@@ -1055,7 +1058,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
                   child: Text(
                     tag,
                     style: TextStyle(
-                      fontSize: 10.sp,
+                      fontSize: 12.sp,
                       fontWeight: FontWeight.w500,
                       color: AppColors.primary,
                     ),
@@ -1265,7 +1268,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to open chat: $e'),
+          content: const Text('Failed to open chat. Please try again.'),
           backgroundColor: AppColors.error,
         ),
       );
@@ -1460,13 +1463,11 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
         );
         context.go(AppRoutes.riderMyRides.path);
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              AppLocalizations.of(context).errorValue(e.toString()),
-            ),
+            content: const Text('Booking failed. Please try again.'),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),

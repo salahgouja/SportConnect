@@ -37,7 +37,8 @@ class RideCompletionScreen extends ConsumerStatefulWidget {
   const RideCompletionScreen({super.key, required this.rideId});
 
   @override
-  ConsumerState<RideCompletionScreen> createState() => _RideCompletionScreenState();
+  ConsumerState<RideCompletionScreen> createState() =>
+      _RideCompletionScreenState();
 }
 
 class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
@@ -52,7 +53,50 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
       backgroundColor: AppColors.background,
       body: rideAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(
+          child: Padding(
+            padding: EdgeInsets.all(24.w),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  color: AppColors.error,
+                  size: 48.sp,
+                ),
+                SizedBox(height: 16.h),
+                Text(
+                  l10n.somethingWentWrong,
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  'Unable to load ride completion details.',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 16.h),
+                FilledButton.icon(
+                  onPressed: () => ref.invalidate(
+                    rideStreamProvider(widget.rideId),
+                  ),
+                  icon: const Icon(Icons.refresh),
+                  label: Text(l10n.retry),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         data: (ride) {
           if (ride == null) {
             return Center(child: Text(l10n.rideNotFound));
@@ -135,12 +179,12 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                       text: 'Rate & Review',
                       onPressed: () async {
                         HapticFeedback.mediumImpact();
-                        
+
                         // Fetch driver profile to get name for review screen
                         final driverProfile = await ref.read(
                           userProfileProvider(ride.driverId).future,
                         );
-                        
+
                         if (!context.mounted) return;
 
                         context.push(
@@ -167,7 +211,9 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                                   child: SizedBox(
                                     width: 20,
                                     height: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
                                   ),
                                 ),
                               )
@@ -221,7 +267,11 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
     );
   }
 
-  Future<void> _shareReceipt(BuildContext context, WidgetRef ref, RideModel ride) async {
+  Future<void> _shareReceipt(
+    BuildContext context,
+    WidgetRef ref,
+    RideModel ride,
+  ) async {
     // Show loading indicator
     setState(() => _isGeneratingPdf = true);
 
@@ -271,7 +321,8 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
       final serviceFee = (baseFare * 0.10).roundToDouble();
       final total = baseFare + serviceFee;
 
-      final receipt = '''SportConnect - Trip Receipt
+      final receipt =
+          '''SportConnect - Trip Receipt
 ${'=' * 30}
 From: ${ride.origin.address}
 To: ${ride.destination.address}
@@ -570,7 +621,7 @@ Ride ID: ${ride.id}''';
                 child: Text(
                   'PAID',
                   style: TextStyle(
-                    fontSize: 10.sp,
+                    fontSize: 12.sp,
                     fontWeight: FontWeight.w700,
                     color: AppColors.success,
                     letterSpacing: 0.5,
@@ -580,14 +631,14 @@ Ride ID: ${ride.id}''';
             ],
           ),
           SizedBox(height: 16.h),
-          _buildFareRow('Base Fare', '\$${baseFare.toStringAsFixed(2)}'),
+          _buildFareRow('Base Fare', '€${baseFare.toStringAsFixed(2)}'),
           SizedBox(height: 8.h),
           _buildFareRow(
             'Service Fee (10%)',
-            '\$${serviceFee.toStringAsFixed(2)}',
+            '€${serviceFee.toStringAsFixed(2)}',
           ),
           Divider(height: 24.h),
-          _buildFareRow('Total', '\$${total.toStringAsFixed(2)}', isBold: true),
+          _buildFareRow('Total', '€${total.toStringAsFixed(2)}', isBold: true),
         ],
       ),
     );
@@ -642,11 +693,7 @@ Ride ID: ${ride.id}''';
         builder: (context, displayName, photoUrl, rating) {
           return Row(
             children: [
-              PremiumAvatar(
-                imageUrl: photoUrl,
-                name: displayName,
-                size: 48,
-              ),
+              PremiumAvatar(imageUrl: photoUrl, name: displayName, size: 48),
               SizedBox(width: 16.w),
               Expanded(
                 child: Column(
@@ -663,7 +710,11 @@ Ride ID: ${ride.id}''';
                     SizedBox(height: 4.h),
                     Row(
                       children: [
-                        Icon(Icons.star_rounded, size: 16.sp, color: Colors.amber),
+                        Icon(
+                          Icons.star_rounded,
+                          size: 16.sp,
+                          color: Colors.amber,
+                        ),
                         SizedBox(width: 4.w),
                         Text(
                           '${rating.average.toStringAsFixed(1)} rating',
@@ -678,6 +729,7 @@ Ride ID: ${ride.id}''';
                 ),
               ),
               IconButton(
+                tooltip: 'Message driver',
                 onPressed: () async {
                   HapticFeedback.lightImpact();
                   final currentUser = ref.read(currentUserProvider).value;
@@ -713,7 +765,9 @@ Ride ID: ${ride.id}''';
                     if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Failed to open chat: $e'),
+                        content: const Text(
+                          'Failed to open chat. Please try again.',
+                        ),
                         backgroundColor: AppColors.error,
                       ),
                     );

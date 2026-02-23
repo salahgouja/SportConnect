@@ -55,6 +55,12 @@ service firebase.storage {
       allow write: if isDevMode() || (isAuthenticated() && request.resource.size < 10 * 1024 * 1024);
     }
     
+    // Event cover images
+    match /events/{eventId}/{fileName} {
+      allow read: if isDevMode() || isAuthenticated();
+      allow write: if isDevMode() || (isAuthenticated() && isValidImage());
+    }
+
     // Chat audio messages (voice notes)
     match /chats/{chatId}/audio/{fileName} {
       allow read: if isDevMode() || isAuthenticated();

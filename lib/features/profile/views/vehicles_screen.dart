@@ -12,6 +12,7 @@ import 'package:sport_connect/features/profile/repositories/profile_repository.d
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sport_connect/core/theme/platform_adaptive.dart';
 
 class VehiclesScreen extends ConsumerStatefulWidget {
   const VehiclesScreen({super.key});
@@ -98,6 +99,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
       pinned: true,
       elevation: 0,
       leading: IconButton(
+        tooltip: 'Go back',
         onPressed: () => context.pop(),
         icon: Container(
           padding: EdgeInsets.all(8.w),
@@ -345,7 +347,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                               ? AppLocalizations.of(context).verified
                               : AppLocalizations.of(context).pending,
                           style: TextStyle(
-                            fontSize: 10.sp,
+                            fontSize: 12.sp,
                             fontWeight: FontWeight.bold,
                             color: vehicle.isVerified
                                 ? AppColors.success
@@ -381,7 +383,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                       child: Text(
                         'DEFAULT',
                         style: TextStyle(
-                          fontSize: 10.sp,
+                          fontSize: 12.sp,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                           letterSpacing: 1.0,
@@ -496,7 +498,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                                 Text(
                                   AppLocalizations.of(context).seats2,
                                   style: TextStyle(
-                                    fontSize: 10.sp,
+                                    fontSize: 12.sp,
                                     color: AppColors.textSecondary,
                                   ),
                                 ),
@@ -538,7 +540,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
       children: [
         Text(
           label,
-          style: TextStyle(fontSize: 10.sp, color: AppColors.textSecondary),
+          style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
         ),
         SizedBox(height: 2.h),
         Text(
@@ -712,7 +714,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24.r),
+          borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
         title: Row(
           children: [

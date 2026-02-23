@@ -16,6 +16,8 @@ import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/ride_search_filters.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
+import 'package:sport_connect/features/events/models/event_model.dart';
+import 'package:sport_connect/features/events/views/event_picker_sheet.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Rider's screen to request/search for a ride
@@ -40,6 +42,9 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
   int _passengers = 1;
+
+  // Event filter
+  EventModel? _eventFilter;
 
   // UI state
   bool _isSearching = false;
@@ -78,6 +83,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
         slivers: [
           _buildHeader(),
           SliverToBoxAdapter(child: _buildLocationCard()),
+          SliverToBoxAdapter(child: _buildEventFilterChip()),
           SliverToBoxAdapter(child: _buildDateTimeSection()),
           SliverToBoxAdapter(child: _buildPassengerSelector()),
           if (_showResults) ...[
@@ -99,6 +105,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
       elevation: 0,
       backgroundColor: AppColors.primary,
       leading: IconButton(
+        tooltip: 'Go back',
         onPressed: () =>
             context.canPop() ? context.pop() : context.go(AppRoutes.home.path),
         icon: Icon(
@@ -268,6 +275,114 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
         ),
       ),
     );
+  }
+
+  // ── Event Filter Chip ─────────────────────────────────────
+  Widget _buildEventFilterChip() {
+    return GestureDetector(
+      onTap: () async {
+        final picked = await EventPickerSheet.show(
+          context,
+          preselected: _eventFilter,
+        );
+        if (picked != null && mounted) {
+          setState(() => _eventFilter = picked);
+        }
+      },
+      child: Container(
+        margin: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 4.h),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+        decoration: BoxDecoration(
+          color: _eventFilter != null
+              ? _eventFilter!.type.color.withValues(alpha: 0.06)
+              : AppColors.cardBg,
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(
+            color: _eventFilter != null
+                ? _eventFilter!.type.color
+                : AppColors.border,
+            width: _eventFilter != null ? 1.5 : 1,
+          ),
+          boxShadow: AppSpacing.shadowSm,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40.w,
+              height: 40.w,
+              decoration: BoxDecoration(
+                color: _eventFilter != null
+                    ? _eventFilter!.type.color.withValues(alpha: 0.12)
+                    : AppColors.primarySurface,
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              child: Icon(
+                _eventFilter != null
+                    ? _eventFilter!.type.icon
+                    : Icons.event_rounded,
+                color: _eventFilter != null
+                    ? _eventFilter!.type.color
+                    : AppColors.primary,
+                size: 20.sp,
+              ),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _eventFilter != null
+                        ? _eventFilter!.title
+                        : 'Going to an event?',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    _eventFilter != null
+                        ? _eventFilter!.venueName ??
+                            _eventFilter!.location.address
+                        : 'Filter rides linked to a sport event',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: AppColors.textSecondary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            if (_eventFilter != null)
+              GestureDetector(
+                onTap: () => setState(() => _eventFilter = null),
+                child: Padding(
+                  padding: EdgeInsets.only(left: 4.w),
+                  child: Icon(
+                    Icons.close_rounded,
+                    size: 18.sp,
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+              )
+            else
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 20.sp,
+                color: AppColors.textTertiary,
+              ),
+          ],
+        ),
+      ),
+    ).animate().fadeIn(duration: 300.ms, delay: 50.ms).slideY(
+          begin: 0.05,
+          end: 0,
+        );
   }
 
   Widget _buildDateTimeSection() {
@@ -652,10 +767,100 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
   }
 
   Widget _buildRideCard(RideModel ride) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
-      decoration: BoxDecoration(
-        color: AppColors.cardBg,
+    return Dismissible(
+      key: ValueKey('ride_result_${ride.id}'),
+      direction: DismissDirection.horizontal,
+      confirmDismiss: (direction) async {
+        HapticFeedback.mediumImpact();
+        if (direction == DismissDirection.startToEnd) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Tap to book this ride!'),
+                backgroundColor: AppColors.success,
+                action: SnackBarAction(
+                  label: 'Book',
+                  textColor: Colors.white,
+                  onPressed: () => context.pushNamed(
+                    AppRoutes.rideDetail.name,
+                    pathParameters: {'id': ride.id},
+                  ),
+                ),
+              ),
+            );
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Ride skipped'),
+                duration: Duration(seconds: 1),
+              ),
+            );
+          }
+        }
+        return false; // stream manages list
+      },
+      background: Container(
+        margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
+        decoration: BoxDecoration(
+          color: AppColors.success,
+          borderRadius: BorderRadius.circular(16.r),
+        ),
+        alignment: Alignment.centerLeft,
+        padding: EdgeInsets.only(left: 24.w),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.bookmark_add_outlined,
+              color: Colors.white,
+              size: 28.sp,
+            ),
+            SizedBox(height: 4.h),
+            Text(
+              'Book',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+      secondaryBackground: Container(
+        margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
+        decoration: BoxDecoration(
+          color: AppColors.textSecondary,
+          borderRadius: BorderRadius.circular(16.r),
+        ),
+        alignment: Alignment.centerRight,
+        padding: EdgeInsets.only(right: 24.w),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.skip_next_rounded,
+              color: Colors.white,
+              size: 28.sp,
+            ),
+            SizedBox(height: 4.h),
+            Text(
+              'Skip',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
+        decoration: BoxDecoration(
+          color: AppColors.cardBg,
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: AppSpacing.shadowSm,
       ),
@@ -716,7 +921,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
                       Text(
                         AppLocalizations.of(context).perSeat2,
                         style: TextStyle(
-                          fontSize: 10.sp,
+                          fontSize: 12.sp,
                           color: AppColors.textTertiary,
                         ),
                       ),
@@ -763,6 +968,43 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
                     ),
                   ),
                   const Spacer(),
+                  // Event badge
+                  if (ride.eventName != null && ride.eventName!.isNotEmpty)
+                    Container(
+                      margin: EdgeInsets.only(right: 6.w),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 6.w,
+                        vertical: 3.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6.r),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.event_rounded,
+                            size: 11.sp,
+                            color: AppColors.primary,
+                          ),
+                          SizedBox(width: 3.w),
+                          ConstrainedBox(
+                            constraints: BoxConstraints(maxWidth: 70.w),
+                            child: Text(
+                              ride.eventName!,
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   // Quick features
                   if (ride.allowPets) _buildFeatureChip(Icons.pets_rounded),
                   if (ride.isPriceNegotiable)
@@ -775,7 +1017,8 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
           ),
         ),
       ),
-    ).animate().fadeIn(duration: 200.ms).slideX(begin: 0.05, end: 0);
+    ).animate().fadeIn(duration: 200.ms).slideX(begin: 0.05, end: 0),
+    );
   }
 
   Widget _buildFeatureChip(IconData icon) {

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/theme/platform_adaptive.dart';
 
 /// Premium Card with various styles
 class PremiumCard extends StatefulWidget {
@@ -64,16 +65,9 @@ class _PremiumCardState extends State<PremiumCard>
           color: widget.backgroundColor ?? AppColors.cardBg,
           gradient: widget.gradient,
           borderRadius: BorderRadius.circular(widget.borderRadius.r),
-          border: widget.showBorder
-              ? Border.all(color: AppColors.border.withValues(alpha: 0.5))
-              : null,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          // Platform-adaptive: glass border on iOS, subtle on Android
+          border: widget.showBorder ? PlatformAdaptive.cardBorder : null,
+          boxShadow: PlatformAdaptive.adaptiveShadow(),
         );
       case PremiumCardStyle.flat:
         return BoxDecoration(
@@ -98,17 +92,18 @@ class _PremiumCardState extends State<PremiumCard>
         );
       case PremiumCardStyle.glass:
         return BoxDecoration(
+          // Glass: translucent surface (only styled on iOS)
           color: (widget.backgroundColor ?? Colors.white).withValues(
-            alpha: 0.1,
+            alpha: PlatformAdaptive.isApple ? 0.12 : 0.06,
           ),
           borderRadius: BorderRadius.circular(widget.borderRadius.r),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 20,
-            ),
-          ],
+          border: PlatformAdaptive.isApple
+              ? Border.all(
+                  color: Colors.white.withValues(alpha: 0.22),
+                  width: 0.8,
+                )
+              : Border.all(color: AppColors.border.withValues(alpha: 0.1)),
+          boxShadow: PlatformAdaptive.adaptiveShadow(),
         );
       case PremiumCardStyle.outlined:
         return BoxDecoration(
@@ -206,7 +201,7 @@ class PremiumListTile extends StatelessWidget {
             HapticFeedback.lightImpact();
             onTap?.call();
           },
-          borderRadius: BorderRadius.circular(12.r),
+          borderRadius: BorderRadius.circular(14.r),
           child: Padding(
             padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 4.w),
             child: Row(
@@ -219,7 +214,8 @@ class PremiumListTile extends StatelessWidget {
                       color: (accentColor ?? AppColors.primary).withValues(
                         alpha: 0.1,
                       ),
-                      borderRadius: BorderRadius.circular(12.r),
+                      // Liquid Glass: softer icon container
+                      borderRadius: BorderRadius.circular(14.r),
                     ),
                     child: Center(
                       child: leading is IconData

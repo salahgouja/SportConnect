@@ -114,6 +114,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
       elevation: 0,
       backgroundColor: AppColors.primary,
       leading: IconButton(
+        tooltip: 'Go back',
         onPressed: () =>
             context.canPop() ? context.pop() : context.go(AppRoutes.home.path),
         icon: Icon(
@@ -133,6 +134,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
       centerTitle: true,
       actions: [
         IconButton(
+          tooltip: 'Filters',
           onPressed: () => _showAdvancedFilters(),
           icon: Badge(
             isLabelVisible: _hasActiveFilters,

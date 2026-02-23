@@ -166,7 +166,7 @@ class LevelAvatar extends StatelessWidget {
               child: Text(
                 AppLocalizations.of(context).lvValue(level),
                 style: TextStyle(
-                  fontSize: 10.sp,
+                  fontSize: 12.sp,
                   fontWeight: FontWeight.w800,
                   color: level >= 40 ? Colors.black87 : Colors.white,
                 ),

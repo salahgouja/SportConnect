@@ -26,6 +26,8 @@ abstract class RideModel with _$RideModel {
   const factory RideModel({
     required String id,
     required String driverId,
+    String? eventId,
+    String? eventName,
 
     // Composed sub-models
     required RideRoute route,

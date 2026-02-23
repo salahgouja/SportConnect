@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Network Security Configuration for SportConnect.
+  Production: Only HTTPS traffic is allowed.
+  Debug builds override this via debug AndroidManifest to allow cleartext
+  for Firebase emulators (localhost / 10.0.2.2).
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    <!-- Debug-only: allow cleartext for Firebase emulator hosts -->
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="user" />
+        </trust-anchors>
+    </debug-overrides>
+</network-security-config>

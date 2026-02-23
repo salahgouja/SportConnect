@@ -12,6 +12,10 @@ class AppRoutes {
   static const register = AppRoute('/register', 'register');
   static const signupWizard = AppRoute('/signup', 'signup-wizard');
   static const roleSelection = AppRoute('/role-selection', 'role-selection');
+  static const riderOnboarding = AppRoute(
+    '/rider/onboarding',
+    'rider-onboarding',
+  );
 
   // Driver Routes
   static const driverOnboarding = AppRoute(

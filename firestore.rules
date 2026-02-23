@@ -183,5 +183,47 @@ service cloud.firestore {
       ));
       allow delete: if isDevMode() || (isAuthenticated() && resource.data.reviewerId == request.auth.uid);
     }
+
+    // ==================== EVENTS COLLECTION ====================
+    // Sport events created by users; participants join/leave
+    match /events/{eventId} {
+      // Any authenticated user can browse events
+      allow read: if isDevMode() || isAuthenticated();
+
+      // Only the creator can create their own event
+      allow create: if isDevMode() || (
+        isAuthenticated() &&
+        request.resource.data.creatorId == request.auth.uid
+      );
+
+      // Creator can fully update the event;
+      // any authenticated user can join/leave (participantIds array)
+      allow update: if isDevMode() || (
+        isAuthenticated() && (
+          resource.data.creatorId == request.auth.uid ||
+          // Participants can only modify the participantIds array
+          (
+            request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['participantIds', 'updatedAt'])
+          )
+        )
+      );
+
+      // Only the creator can delete their event
+      allow delete: if isDevMode() || (
+        isAuthenticated() && resource.data.creatorId == request.auth.uid
+      );
+    }
+
+    // ==================== PAYMENTS COLLECTION ====================
+    // Payment records written by Cloud Functions (Stripe webhook)
+    match /payments/{paymentId} {
+      allow read: if isDevMode() || (isAuthenticated() && (
+        resource.data.riderId == request.auth.uid ||
+        resource.data.driverId == request.auth.uid
+      ));
+      // Only Cloud Functions write to this collection (via webhook)
+      allow create, update, delete: if isDevMode();
+    }
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -251,7 +252,45 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
   Widget _buildPaymentCard(PaymentTransaction payment, int index) {
     final dateFormat = DateFormat('MMM dd, yyyy • HH:mm');
 
-    return Container(
+    return Dismissible(
+      key: ValueKey('payment_${payment.id}_$index'),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (_) async {
+        HapticFeedback.mediumImpact();
+        _showPaymentDetails(payment);
+        return false;
+      },
+      background: Container(
+        margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [AppColors.info, AppColors.info.withValues(alpha: 0.8)],
+          ),
+          borderRadius: BorderRadius.circular(16.r),
+        ),
+        alignment: Alignment.centerRight,
+        padding: EdgeInsets.only(right: 24.w),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.receipt_long_rounded,
+              color: Colors.white,
+              size: 28.sp,
+            ),
+            SizedBox(height: 4.h),
+            Text(
+              'Details',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+      child: Container(
           margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
           decoration: BoxDecoration(
             color: AppColors.surface,
@@ -327,7 +366,7 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
                           child: Text(
                             _getStatusText(payment.status),
                             style: TextStyle(
-                              fontSize: 10.sp,
+                              fontSize: 12.sp,
                               fontWeight: FontWeight.w600,
                               color: _getStatusColor(payment.status),
                             ),
@@ -374,7 +413,8 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
         )
         .animate()
         .fadeIn(delay: Duration(milliseconds: index * 50))
-        .slideX(begin: 0.1);
+        .slideX(begin: 0.1),
+    );
   }
 
   Color _getStatusColor(PaymentStatus status) {
@@ -621,13 +661,11 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
           ),
         );
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              AppLocalizations.of(context).errorValue(e.toString()),
-            ),
+            content: const Text('Refund request failed. Please try again.'),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),

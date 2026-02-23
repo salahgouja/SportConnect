@@ -14,6 +14,7 @@ import 'package:sport_connect/features/rides/repositories/driver_stats_repositor
 import 'package:sport_connect/features/payments/view_models/payment_view_model.dart';
 import 'package:intl/intl.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sport_connect/core/theme/platform_adaptive.dart';
 
 /// Driver Earnings Screen  - View earnings with real Firestore data
 class DriverEarningsScreen extends ConsumerStatefulWidget {
@@ -449,7 +450,37 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
           ],
         ),
       ),
-      error: (_, _) => const SizedBox.shrink(),
+      error: (_, _) => _buildErrorPlaceholder(),
+    );
+  }
+
+  /// Displays a compact error message when earnings data fails to load.
+  Widget _buildErrorPlaceholder() {
+    return Container(
+      margin: EdgeInsets.all(20.w),
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: AppColors.error.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(
+          color: AppColors.error.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, color: AppColors.error, size: 20.sp),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Text(
+              'Unable to load data. Pull to refresh.',
+              style: TextStyle(
+                fontSize: 13.sp,
+                color: AppColors.error,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -582,7 +613,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
         ),
         child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
       ),
-      error: (_, _) => const SizedBox.shrink(),
+      error: (_, _) => _buildErrorPlaceholder(),
     );
   }
 
@@ -632,7 +663,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
         );
       },
       loading: () => _buildPayoutCardLoading(),
-      error: (_, _) => const SizedBox.shrink(),
+      error: (_, _) => _buildErrorPlaceholder(),
     );
   }
 
@@ -857,7 +888,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.r),
+          borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
         title: Text(AppLocalizations.of(context).confirmPayout),
         content: Text(

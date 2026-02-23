@@ -74,7 +74,7 @@ final class NearbyRidesStreamProvider
   /// Stream provider for nearby rides
   NearbyRidesStreamProvider._({
     required NearbyRidesStreamFamily super.from,
-    required LatLng super.argument,
+    required NearbyRidesQuery super.argument,
   }) : super(
          retry: null,
          name: r'nearbyRidesStreamProvider',
@@ -101,7 +101,7 @@ final class NearbyRidesStreamProvider
 
   @override
   Stream<List<NearbyRidePreview>> create(Ref ref) {
-    final argument = this.argument as LatLng;
+    final argument = this.argument as NearbyRidesQuery;
     return nearbyRidesStream(ref, argument);
   }
 
@@ -116,12 +116,16 @@ final class NearbyRidesStreamProvider
   }
 }
 
-String _$nearbyRidesStreamHash() => r'ef3529270f65d1cf871b48185ae0f73d3cc22f1d';
+String _$nearbyRidesStreamHash() => r'ec49c5ba09c60a898487d3a20a04f114838307d7';
 
 /// Stream provider for nearby rides
 
 final class NearbyRidesStreamFamily extends $Family
-    with $FunctionalFamilyOverride<Stream<List<NearbyRidePreview>>, LatLng> {
+    with
+        $FunctionalFamilyOverride<
+          Stream<List<NearbyRidePreview>>,
+          NearbyRidesQuery
+        > {
   NearbyRidesStreamFamily._()
     : super(
         retry: null,
@@ -133,8 +137,8 @@ final class NearbyRidesStreamFamily extends $Family
 
   /// Stream provider for nearby rides
 
-  NearbyRidesStreamProvider call(LatLng location) =>
-      NearbyRidesStreamProvider._(argument: location, from: this);
+  NearbyRidesStreamProvider call(NearbyRidesQuery query) =>
+      NearbyRidesStreamProvider._(argument: query, from: this);
 
   @override
   String toString() => r'nearbyRidesStreamProvider';

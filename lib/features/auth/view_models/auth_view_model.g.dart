@@ -165,7 +165,7 @@ final class LoginViewModelProvider
   }
 }
 
-String _$loginViewModelHash() => r'49b4453fe6de023677c0876822699a017d427676';
+String _$loginViewModelHash() => r'd670056a70b853a855e576484d517ba102147648';
 
 /// Login view model
 

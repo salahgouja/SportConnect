@@ -367,9 +367,10 @@ class _DriverStripeOnboardingScreenState
           _isLoading = false;
         });
       }
-    } catch (e) {
+    } catch (_) {
       setState(() {
-        _errorMessage = 'Error: ${e.toString()}';
+        _errorMessage =
+            'Could not start Stripe setup right now. Please try again.';
         _isLoading = false;
       });
     }
@@ -562,10 +563,10 @@ class _DriverStripeOnboardingScreenState
           _isVerifying = false;
         });
       }
-    } catch (e) {
+    } catch (_) {
       setState(() {
         _isVerifying = false;
-        _errorMessage = 'Could not verify account: ${e.toString()}';
+        _errorMessage = 'Could not verify account right now. Please try again.';
         _showWebView = false;
       });
     }

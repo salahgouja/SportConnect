@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/features/reviews/models/review_model.dart';
@@ -114,10 +117,54 @@ class ReviewsListScreen extends ConsumerWidget {
           SliverList(
             delegate: SliverChildBuilderDelegate((context, index) {
               final review = state.filteredReviews[index];
-              return _ReviewCard(review: review)
-                  .animate()
-                  .fadeIn(delay: Duration(milliseconds: index * 50))
-                  .slideX(begin: 0.1, end: 0);
+              return Dismissible(
+                key: ValueKey('review_${review.id}'),
+                direction: DismissDirection.endToStart,
+                confirmDismiss: (_) async {
+                  HapticFeedback.mediumImpact();
+                  context.push(
+                    AppRoutes.reportIssue.path,
+                    extra: {
+                      'reportType': 'review',
+                      'reviewId': review.id,
+                      'reviewerName': review.reviewerName,
+                    },
+                  );
+                  return false;
+                },
+                background: Container(
+                  margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                  decoration: BoxDecoration(
+                    color: AppColors.error,
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  alignment: Alignment.centerRight,
+                  padding: EdgeInsets.only(right: 24.w),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.flag_outlined,
+                        color: Colors.white,
+                        size: 28.sp,
+                      ),
+                      SizedBox(height: 4.h),
+                      Text(
+                        'Report',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                child: _ReviewCard(review: review)
+                    .animate()
+                    .fadeIn(delay: Duration(milliseconds: index * 50))
+                    .slideX(begin: 0.1, end: 0),
+              );
             }, childCount: state.filteredReviews.length),
           ),
         SliverPadding(padding: EdgeInsets.only(bottom: 32.h)),
@@ -382,10 +429,58 @@ class _ReviewCard extends StatelessWidget {
                     color: review.type == ReviewType.driver
                         ? AppColors.info
                         : AppColors.success,
-                    fontSize: 10.sp,
+                    fontSize: 12.sp,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
+              ),
+              SizedBox(width: 4.w),
+              // Report menu
+              PopupMenuButton<String>(
+                icon: Icon(
+                  Icons.more_vert,
+                  size: 20.sp,
+                  color: AppColors.textTertiary,
+                ),
+                padding: EdgeInsets.zero,
+                constraints: BoxConstraints(minWidth: 150.w),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                onSelected: (value) {
+                  if (value == 'report') {
+                    context.push(
+                      AppRoutes.reportIssue.path,
+                      extra: {
+                        'reportType': 'review',
+                        'reviewId': review.id,
+                        'reviewerName': review.reviewerName,
+                      },
+                    );
+                  }
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'report',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.flag_outlined,
+                          size: 18.sp,
+                          color: AppColors.error,
+                        ),
+                        SizedBox(width: 8.w),
+                        Text(
+                          'Report Review',
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            color: AppColors.error,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

@@ -12,6 +12,7 @@ import 'package:shimmer/shimmer.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/location_service.dart';
+import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
@@ -91,6 +92,10 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
   /// Opens location settings if permission denied or services disabled.
   Future<void> _requestLocationPermission() async {
     try {
+      if (!mounted) return;
+      final accepted =
+          await PermissionDialogHelper.showLocationRationale(context);
+      if (!accepted) return;
       final granted = await LocationServiceImpl.instance.requestPermission();
       if (mounted) {
         setState(() {
@@ -402,6 +407,7 @@ class _DriverDashboard extends ConsumerWidget {
 
           // Actions
           IconButton(
+            tooltip: 'Notifications',
             onPressed: () => context.push(AppRoutes.notifications.path),
             icon: Badge(
               smallSize: 8.w,
@@ -414,6 +420,7 @@ class _DriverDashboard extends ConsumerWidget {
             ),
           ),
           IconButton(
+            tooltip: 'Messages',
             onPressed: () => context.go(AppRoutes.chat.path),
             icon: Icon(
               Icons.chat_bubble_outline_rounded,
@@ -1517,7 +1524,7 @@ class _UpcomingRideCard extends StatelessWidget {
                       'MMM',
                     ).format(ride.schedule.departureTime).toUpperCase(),
                     style: TextStyle(
-                      fontSize: 10.sp,
+                      fontSize: 12.sp,
                       fontWeight: FontWeight.w700,
                       color: AppColors.primary,
                     ),

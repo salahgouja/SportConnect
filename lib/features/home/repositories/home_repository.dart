@@ -7,6 +7,27 @@ import 'package:sport_connect/features/home/models/home_models.dart';
 
 part 'home_repository.g.dart';
 
+/// Family query input for nearby rides stream.
+class NearbyRidesQuery {
+  final LatLng location;
+  final double radiusKm;
+
+  const NearbyRidesQuery({required this.location, required this.radiusKm});
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is NearbyRidesQuery &&
+        other.location.latitude == location.latitude &&
+        other.location.longitude == location.longitude &&
+        other.radiusKm == radiusKm;
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(location.latitude, location.longitude, radiusKm);
+}
+
 /// Repository for home screen data
 class HomeRepository implements IHomeRepository {
   final FirebaseFirestore _firestore;
@@ -14,6 +35,7 @@ class HomeRepository implements IHomeRepository {
   HomeRepository(this._firestore);
 
   /// Stream nearby active rides
+  @override
   Stream<List<NearbyRidePreview>> streamNearbyRides({
     required LatLng center,
     double radiusKm = 50,
@@ -31,13 +53,29 @@ class HomeRepository implements IHomeRepository {
         .limit(limit)
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs
+          final distance = const Distance();
+          final maxDistanceMeters = radiusKm * 1000;
+
+          final rides = snapshot.docs
               .map((doc) => NearbyRidePreview.fromJson(doc.data(), doc.id))
+              .where((ride) {
+                final rideOrigin = ride.origin.toLatLng();
+                final distanceMeters = distance.as(
+                  LengthUnit.Meter,
+                  center,
+                  rideOrigin,
+                );
+                return distanceMeters <= maxDistanceMeters;
+              })
+              .take(limit)
               .toList();
+
+          return rides;
         });
   }
 
   /// Stream popular hotspots
+  @override
   Stream<List<Hotspot>> streamHotspots({int limit = 10}) {
     return _firestore
         .collection('hotspots')
@@ -52,6 +90,7 @@ class HomeRepository implements IHomeRepository {
   }
 
   /// Get hotspots near a location
+  @override
   Future<List<Hotspot>> getHotspotsNearLocation(
     LatLng location, {
     double radiusKm = 10,
@@ -69,6 +108,7 @@ class HomeRepository implements IHomeRepository {
   }
 
   /// Increment hotspot ride count (called when a ride is created)
+  @override
   Future<void> incrementHotspotCount(String hotspotId) async {
     await _firestore.collection('hotspots').doc(hotspotId).update({
       'rideCount': FieldValue.increment(1),
@@ -76,6 +116,7 @@ class HomeRepository implements IHomeRepository {
   }
 
   /// Create a new hotspot
+  @override
   Future<String> createHotspot(Hotspot hotspot) async {
     final docRef = await _firestore
         .collection('hotspots')
@@ -92,9 +133,15 @@ HomeRepository homeRepository(Ref ref) {
 
 /// Stream provider for nearby rides
 @riverpod
-Stream<List<NearbyRidePreview>> nearbyRidesStream(Ref ref, LatLng location) {
+Stream<List<NearbyRidePreview>> nearbyRidesStream(
+  Ref ref,
+  NearbyRidesQuery query,
+) {
   final repository = ref.watch(homeRepositoryProvider);
-  return repository.streamNearbyRides(center: location);
+  return repository.streamNearbyRides(
+    center: query.location,
+    radiusKm: query.radiusKm,
+  );
 }
 
 /// Stream provider for hotspots

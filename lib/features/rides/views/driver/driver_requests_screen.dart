@@ -16,6 +16,7 @@ import 'package:sport_connect/features/profile/view_models/profile_view_model.da
 import 'package:sport_connect/features/rides/repositories/driver_stats_repository.dart';
 import 'package:sport_connect/features/rides/view_models/driver_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sport_connect/core/theme/platform_adaptive.dart';
 import 'package:sport_connect/features/rides/models/ride_request_model.dart';
 
 /// Driver Requests Screen - View and manage incoming ride requests
@@ -99,7 +100,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
                         child: Text(
                           '5',
                           style: TextStyle(
-                            fontSize: 10.sp,
+                            fontSize: 12.sp,
                             fontWeight: FontWeight.w700,
                             color: Colors.white,
                           ),
@@ -172,16 +173,85 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
               'EEE, MMM d',
             ).format(request.requestedDate);
 
-            return _PendingRequestCard(
-                  request: request,
-                  formattedDate: formattedDate,
-                  onAccept: () => _handleAccept(request),
-                  onDecline: () => _handleDecline(request),
-                  onViewProfile: () => _handleViewProfile(request),
-                )
-                .animate(delay: Duration(milliseconds: 100 * index))
-                .fadeIn()
-                .slideY(begin: 0.1);
+            return Dismissible(
+              key: ValueKey('req_${request.id}_$index'),
+              direction: DismissDirection.horizontal,
+              confirmDismiss: (direction) async {
+                HapticFeedback.mediumImpact();
+                if (direction == DismissDirection.startToEnd) {
+                  _handleAccept(request);
+                } else {
+                  _handleDecline(request);
+                }
+                return false; // stream manages the list
+              },
+              background: Container(
+                margin: EdgeInsets.only(bottom: 16.h),
+                decoration: BoxDecoration(
+                  color: AppColors.success,
+                  borderRadius: BorderRadius.circular(16.r),
+                ),
+                alignment: Alignment.centerLeft,
+                padding: EdgeInsets.only(left: 24.w),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.check_circle_outline_rounded,
+                      color: Colors.white,
+                      size: 32.sp,
+                    ),
+                    SizedBox(height: 4.h),
+                    Text(
+                      'Accept',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              secondaryBackground: Container(
+                margin: EdgeInsets.only(bottom: 16.h),
+                decoration: BoxDecoration(
+                  color: AppColors.error,
+                  borderRadius: BorderRadius.circular(16.r),
+                ),
+                alignment: Alignment.centerRight,
+                padding: EdgeInsets.only(right: 24.w),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.cancel_outlined,
+                      color: Colors.white,
+                      size: 32.sp,
+                    ),
+                    SizedBox(height: 4.h),
+                    Text(
+                      'Decline',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              child: _PendingRequestCard(
+                    request: request,
+                    formattedDate: formattedDate,
+                    onAccept: () => _handleAccept(request),
+                    onDecline: () => _handleDecline(request),
+                    onViewProfile: () => _handleViewProfile(request),
+                  )
+                  .animate(delay: Duration(milliseconds: 100 * index))
+                  .fadeIn()
+                  .slideY(begin: 0.1),
+            );
           },
         );
       },
@@ -239,9 +309,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
                 ),
                 SizedBox(height: 8.h),
                 Text(
-                  AppLocalizations.of(
-                    context,
-                  ).acceptedRequestsWillAppearHere,
+                  AppLocalizations.of(context).acceptedRequestsWillAppearHere,
                   style: TextStyle(
                     fontSize: 14.sp,
                     color: AppColors.textTertiary,
@@ -367,7 +435,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.r),
+          borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
         title: Row(
           children: [
@@ -993,10 +1061,9 @@ class _AcceptedRequestCard extends StatelessWidget {
           ),
           SizedBox(height: 12.h),
           Text(
-            AppLocalizations.of(context).valueValue2(
-              request.fromLocation,
-              request.toLocation,
-            ),
+            AppLocalizations.of(
+              context,
+            ).valueValue2(request.fromLocation, request.toLocation),
             style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
           ),
           SizedBox(height: 8.h),
@@ -1009,10 +1076,9 @@ class _AcceptedRequestCard extends StatelessWidget {
               ),
               SizedBox(width: 4.w),
               Text(
-                AppLocalizations.of(context).valueAtValue(
-                  formattedDate,
-                  request.requestedTime,
-                ),
+                AppLocalizations.of(
+                  context,
+                ).valueAtValue(formattedDate, request.requestedTime),
                 style: TextStyle(
                   fontSize: 12.sp,
                   color: AppColors.textSecondary,
@@ -1026,9 +1092,7 @@ class _AcceptedRequestCard extends StatelessWidget {
               ),
               SizedBox(width: 4.w),
               Text(
-                AppLocalizations.of(
-                  context,
-                ).valueSeats(request.requestedSeats),
+                AppLocalizations.of(context).valueSeats(request.requestedSeats),
                 style: TextStyle(
                   fontSize: 12.sp,
                   color: AppColors.textSecondary,
@@ -1130,10 +1194,9 @@ class _DeclinedRequestCard extends StatelessWidget {
           ),
           SizedBox(height: 12.h),
           Text(
-            AppLocalizations.of(context).valueValue2(
-              request.fromLocation,
-              request.toLocation,
-            ),
+            AppLocalizations.of(
+              context,
+            ).valueValue2(request.fromLocation, request.toLocation),
             style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
           ),
           if (request.rejectionReason != null) ...[
@@ -1154,9 +1217,9 @@ class _DeclinedRequestCard extends StatelessWidget {
                   SizedBox(width: 8.w),
                   Expanded(
                     child: Text(
-                      AppLocalizations.of(context).reasonValue(
-                        request.rejectionReason!,
-                      ),
+                      AppLocalizations.of(
+                        context,
+                      ).reasonValue(request.rejectionReason!),
                       style: TextStyle(
                         fontSize: 12.sp,
                         color: AppColors.textSecondary,
@@ -1294,6 +1357,7 @@ class _DeclineReasonSheetState extends State<_DeclineReasonSheet> {
                 ),
               ),
               maxLines: 2,
+              onChanged: (_) => setState(() {}),
             ),
           ],
           SizedBox(height: 24.h),
@@ -1311,10 +1375,13 @@ class _DeclineReasonSheetState extends State<_DeclineReasonSheet> {
               SizedBox(width: 12.w),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: _selectedReason != null
+                  onPressed:
+                      _selectedReason != null &&
+                          (_selectedReason != 'Other' ||
+                              _otherController.text.trim().isNotEmpty)
                       ? () => widget.onDecline(
                           _selectedReason == 'Other'
-                              ? _otherController.text
+                              ? _otherController.text.trim()
                               : _selectedReason!,
                         )
                       : null,

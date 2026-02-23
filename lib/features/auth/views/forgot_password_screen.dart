@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/glass_panel.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/premium_text_field.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
@@ -51,12 +52,14 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         });
         _startResendTimer();
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString()),
+            content: const Text(
+              'Could not send reset email right now. Please try again.',
+            ),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -87,6 +90,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
+          tooltip: 'Go back',
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => context.pop(),
         ),
@@ -109,12 +113,11 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           SizedBox(height: 24.h),
 
           // Icon
-          Container(
+          GlassPanel(
                 padding: EdgeInsets.all(20.w),
-                decoration: BoxDecoration(
-                  color: AppColors.primarySurface,
-                  borderRadius: BorderRadius.circular(20.r),
-                ),
+                radius: 20,
+                color: AppColors.surface.withValues(alpha: 0.62),
+                borderColor: AppColors.primary.withValues(alpha: 0.2),
                 child: Icon(
                   Icons.lock_reset_rounded,
                   size: 48.sp,
@@ -209,12 +212,11 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         SizedBox(height: 60.h),
 
         // Success icon
-        Container(
+        GlassPanel(
               padding: EdgeInsets.all(24.w),
-              decoration: BoxDecoration(
-                color: AppColors.success.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
+              radius: 999,
+              color: AppColors.success.withValues(alpha: 0.12),
+              borderColor: AppColors.success.withValues(alpha: 0.25),
               child: Icon(
                 Icons.mark_email_read_rounded,
                 size: 64.sp,
@@ -251,12 +253,11 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         SizedBox(height: 16.h),
 
         // Show email sent to
-        Container(
+        GlassPanel(
           padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
-          decoration: BoxDecoration(
-            color: AppColors.primarySurface,
-            borderRadius: BorderRadius.circular(12.r),
-          ),
+          radius: 12,
+          color: AppColors.surface.withValues(alpha: 0.62),
+          borderColor: AppColors.primary.withValues(alpha: 0.2),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [

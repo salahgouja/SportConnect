@@ -19,6 +19,8 @@ abstract class RideRequestModel with _$RideRequestModel {
   const factory RideRequestModel({
     required String id,
     required String rideId,
+    String? eventId,
+    String? eventName,
     required String requesterId,
     required String driverId,
     required RideRequestStatus status,
@@ -47,6 +49,8 @@ abstract class RideRequestModel with _$RideRequestModel {
   factory RideRequestModel.create({
     required String id,
     required String rideId,
+    String? eventId,
+    String? eventName,
     required String requesterId,
     required String driverId,
     required LocationPoint pickupLocation,
@@ -59,6 +63,8 @@ abstract class RideRequestModel with _$RideRequestModel {
     return RideRequestModel(
       id: id,
       rideId: rideId,
+      eventId: eventId,
+      eventName: eventName,
       requesterId: requesterId,
       driverId: driverId,
       status: RideRequestStatus.pending,
@@ -87,7 +93,7 @@ abstract class RideRequestModel with _$RideRequestModel {
   String get requestedTime => DateFormat('HH:mm').format(createdAt);
 
   /// Convenience getter: lightweight passenger proxy for view layer
-  _PassengerProxy get passenger => _PassengerProxy(
+  PassengerProxy get passenger => PassengerProxy(
     displayName: passengerName ?? 'Unknown',
     photoUrl: passengerPhotoUrl,
     ratingValue: passengerRating,
@@ -164,19 +170,19 @@ abstract class RideRequestModel with _$RideRequestModel {
 }
 
 /// Lightweight proxy mimicking UserModel interface for view backward compat
-class _PassengerProxy {
+class PassengerProxy {
   final String displayName;
   final String? photoUrl;
-  final _RatingProxy rating;
+  final RatingProxy rating;
 
-  _PassengerProxy({
+  PassengerProxy({
     required this.displayName,
     this.photoUrl,
     required double ratingValue,
-  }) : rating = _RatingProxy(ratingValue);
+  }) : rating = RatingProxy(ratingValue);
 }
 
-class _RatingProxy {
+class RatingProxy {
   final double average;
-  const _RatingProxy(this.average);
+  const RatingProxy(this.average);
 }

@@ -15,6 +15,7 @@ import 'package:sport_connect/features/notifications/repositories/notification_r
 import 'package:sport_connect/features/notifications/view_models/notification_view_model.dart';
 import 'package:intl/intl.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sport_connect/core/theme/platform_adaptive.dart';
 
 /// Notifications Screen with Firestore real-time updates
 class NotificationsScreen extends ConsumerStatefulWidget {
@@ -67,7 +68,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
       context: scaffoldContext,
       builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16.r),
+          borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
         title: Text(AppLocalizations.of(context).clearAllNotifications),
         content: Text(AppLocalizations.of(context).areYouSureYouWant2),

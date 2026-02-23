@@ -11,15 +11,10 @@ class RouteGuardService {
   final bool isLoading;
   final UserModel? user;
 
-  const RouteGuardService({
-    required this.isLoading,
-    required this.user,
-  });
+  const RouteGuardService({required this.isLoading, required this.user});
 
   /// Factory to create from provider state
-  factory RouteGuardService.fromAuthState(
-    AsyncValue<UserModel?> userState,
-  ) {
+  factory RouteGuardService.fromAuthState(AsyncValue<UserModel?> userState) {
     return RouteGuardService(
       isLoading: userState.isLoading,
       user: userState.value,
@@ -61,6 +56,7 @@ class RouteGuardService {
       final allowedDuringSetup = [
         AppRoutes.roleSelection.path,
         AppRoutes.driverOnboarding.path,
+        AppRoutes.riderOnboarding.path,
         AppRoutes.home.path,
         AppRoutes.driverHome.path,
       ];
@@ -70,7 +66,13 @@ class RouteGuardService {
       return null;
     }
 
-    // 4. Handle public routes
+    // 4a. Legal routes are always accessible regardless of auth state.
+    //     Required by Apple App Store §5.1.1 and Google Play Developer Policy.
+    if (_isLegalRoute(currentPath)) {
+      return null;
+    }
+
+    // 4b. Handle other public routes
     if (_isPublicRoute(currentPath)) {
       // If logged in and on public route, redirect to dashboard
       if (isLoggedIn) {
@@ -115,6 +117,14 @@ class RouteGuardService {
         return AppRoutes.driverHome.path;
       },
     );
+  }
+
+  /// Legal routes are always accessible regardless of auth state.
+  /// Required by Apple App Store §5.1.1 and Google Play Developer Policy.
+  bool _isLegalRoute(String path) {
+    return path == AppRoutes.terms.path ||
+        path == AppRoutes.privacy.path ||
+        path.startsWith('/legal');
   }
 
   /// Check if route is public (accessible without auth)

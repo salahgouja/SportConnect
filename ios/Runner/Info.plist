@@ -29,6 +29,14 @@
 		<string>SportConnect needs camera access to take photos for your profile and attachments</string>
 		<key>NSMicrophoneUsageDescription</key>
 		<string>SportConnect needs microphone access for voice messages</string>
+		<!-- Photo Library permission -->
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>SportConnect needs photo library access to share photos in chats and update your profile picture</string>
+		<!-- Push Notifications -->
+		<key>UIBackgroundModes</key>
+		<array>
+			<string>remote-notification</string>
+		</array>
 		<!-- URL Scheme for deep links -->
 		<key>CFBundleURLTypes</key>
 		<array>

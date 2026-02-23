@@ -101,7 +101,9 @@ class _EmailVerificationScreenState
         setState(() => _isSending = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to send: $e'),
+            content: const Text(
+              'Failed to send verification email. Please try again.',
+            ),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),

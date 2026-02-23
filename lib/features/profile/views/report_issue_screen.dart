@@ -11,6 +11,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 
 /// Report Issue screen for reporting ride problems, safety concerns, or users.
@@ -90,6 +91,14 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
     );
 
     if (source == null) return;
+
+    final accepted = await PermissionDialogHelper.showCameraRationale(
+      context,
+      customMessage: 'Access to your ${source == ImageSource.camera ? 'camera' : 'photo library'} '
+          'is needed to attach screenshots or photos to your '
+          'issue report.',
+    );
+    if (!accepted) return;
 
     final picked = await _imagePicker.pickImage(
       source: source,
@@ -202,12 +211,12 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
           _isSubmitted = true;
         });
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         setState(() => _isSubmitting = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to submit report: $e'),
+            content: const Text('Failed to submit report. Please try again.'),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),
@@ -232,6 +241,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
           ),
         ),
         leading: IconButton(
+          tooltip: 'Go back',
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => context.pop(),
         ),

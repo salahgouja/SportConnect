@@ -70,7 +70,8 @@ class FirebaseServiceImpl implements IFirebaseService {
         cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
       );
 
-      await _requestNotificationPermissions();
+      // Notification permissions are now requested from the UI layer
+      // after showing a rationale dialog (2025 store compliance).
     } catch (e, stackTrace) {
       TalkerService.error('Firebase initialization failed', e, stackTrace);
       rethrow;

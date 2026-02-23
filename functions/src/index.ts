@@ -1,6 +1,6 @@
 // ============================================
 // SportConnect Cloud Functions
-// Stripe Payments + Push Notification Triggers
+// Stripe Payments + Push Notification Triggers + Event Triggers
 // ============================================
 
 import {
@@ -14,7 +14,7 @@ import Stripe from "stripe";
 
 admin.initializeApp();
 
-const stripeSecretKey = defineSecret("STRIPE_API_SECRET");
+const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
 const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 
 const PLATFORM_FEE_PERCENT = 0.15; // 15%
@@ -272,11 +272,146 @@ export const onRideStatusChanged = onDocumentUpdated(
 );
 
 // ============================================
+// Trigger: New Sport Event Created
+// ============================================
+
+export const onNewEvent = onDocumentCreated(
+  "events/{eventId}",
+  async (event) => {
+    const data = event.data?.data();
+    if (!data) return;
+
+    const creatorId = data.creatorId as string;
+    const title = (data.title as string) || "New event";
+    const eventType = (data.type as string) || "sport";
+    const eventId = event.params.eventId;
+
+    // Notify the creator that their event is live
+    await sendPushToUser(
+      creatorId,
+      "Your event is live! 🎉",
+      `"${title}" is now visible to all SportConnect users. Good luck!`,
+      {
+        type: "event_created",
+        referenceId: eventId,
+        eventType,
+      },
+    );
+  },
+);
+
+// ============================================
+// Trigger: Event Updated (participant joined / event cancelled)
+// ============================================
+
+export const onEventUpdated = onDocumentUpdated(
+  "events/{eventId}",
+  async (event) => {
+    const before = event.data?.before.data();
+    const after = event.data?.after.data();
+    if (!before || !after) return;
+
+    const eventId = event.params.eventId;
+    const eventTitle = (after.title as string) || "An event";
+    const creatorId = after.creatorId as string;
+
+    // ── 1. A new participant joined ──────────────────────────────────────
+    const participantsBefore = (before.participantIds as string[]) || [];
+    const participantsAfter = (after.participantIds as string[]) || [];
+
+    const newParticipants = participantsAfter.filter(
+      (id: string) => !participantsBefore.includes(id),
+    );
+
+    for (const participantId of newParticipants) {
+      // Notify the event creator about the new participant
+      if (participantId !== creatorId) {
+        // Look up the joining user's name for a personalised message
+        let joinerName = "A new player";
+        try {
+          const userDoc = await admin
+            .firestore()
+            .collection("users")
+            .doc(participantId)
+            .get();
+          joinerName = (userDoc.data()?.displayName as string) || joinerName;
+        } catch {
+          // Graceful fallback — name is just cosmetic
+        }
+
+        await sendPushToUser(
+          creatorId,
+          "New participant! 🏅",
+          `${joinerName} joined your event "${eventTitle}".`,
+          {
+            type: "event_joined",
+            referenceId: eventId,
+            participantId,
+          },
+        );
+      }
+
+      // Confirm to the participant that they are in
+      await sendPushToUser(
+        participantId,
+        "You're in! ✅",
+        `You have successfully joined "${eventTitle}". See you there!`,
+        {
+          type: "event_joined",
+          referenceId: eventId,
+        },
+      );
+    }
+
+    // ── 2. Event cancelled (isActive flipped from true → false) ─────────
+    if (before.isActive === true && after.isActive === false) {
+      const allParticipants = participantsAfter.filter(
+        (id: string) => id !== creatorId,
+      );
+
+      const cancelPushes = allParticipants.map((participantId: string) =>
+        sendPushToUser(
+          participantId,
+          "Event cancelled 😞",
+          `Unfortunately "${eventTitle}" has been cancelled by the organiser.`,
+          {
+            type: "event_cancelled",
+            referenceId: eventId,
+          },
+        ),
+      );
+
+      await Promise.all(cancelPushes);
+    }
+
+    // ── 3. Event is now full ─────────────────────────────────────────────
+    const maxParticipants = (after.maxParticipants as number) || 0;
+    if (
+      maxParticipants > 0 &&
+      participantsAfter.length >= maxParticipants &&
+      participantsBefore.length < maxParticipants
+    ) {
+      await sendPushToUser(
+        creatorId,
+        "Your event is full! 🎊",
+        `"${eventTitle}" has reached its maximum capacity of ${maxParticipants} participants.`,
+        {
+          type: "event_full",
+          referenceId: eventId,
+        },
+      );
+    }
+  },
+);
+
+// ============================================
 // Stripe Helpers
 // ============================================
 
 function getStripeClient(secretKey: string): Stripe {
-  return new Stripe(secretKey);
+  return new Stripe(secretKey, {
+    apiVersion: "2025-12-15.clover",
+  });
 }
 
 function calculateFees(amount: number) {

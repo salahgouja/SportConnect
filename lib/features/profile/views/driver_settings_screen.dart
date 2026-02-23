@@ -51,6 +51,7 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
+          tooltip: 'Go back',
           icon: Container(
             padding: EdgeInsets.all(8.w),
             decoration: BoxDecoration(
@@ -765,9 +766,9 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              AppLocalizations.of(
-                context,
-              ).failedToDeleteAccountValue(e.toString()),
+              AppLocalizations.of(context).failedToDeleteAccountValue(
+                'Unable to delete account right now.',
+              ),
             ),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,

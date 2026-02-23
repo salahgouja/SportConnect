@@ -1,9 +1,12 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/theme/platform_adaptive.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Premium App Bar with gradient and animations
@@ -41,21 +44,96 @@ class PremiumAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final canPop = context.canPop();
 
-    return Container(
-      decoration: useGradient
-          ? BoxDecoration(
-              gradient: AppColors.heroGradient,
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.15),
-                  blurRadius: 20,
-                  offset: const Offset(0, 4),
+    // Platform-adaptive app bar: glass on iOS, solid on Android
+    if (!useGradient) {
+      final appBar = AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: centerTitle,
+        leading: leading ??
+            (showBackButton && canPop
+                ? _buildBackButton(context)
+                : null),
+        title: titleWidget ??
+            (title != null
+                ? Text(
+                    title!,
+                    style: TextStyle(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                      letterSpacing: -0.3,
+                    ),
+                  )
+                : null),
+        actions: actions != null
+            ? [
+                ...actions!.map(
+                  (action) => Padding(
+                    padding: EdgeInsets.only(right: 8.w),
+                    child: action,
+                  ),
                 ),
-              ],
-            )
-          : null,
+              ]
+            : null,
+        bottom: bottom,
+      );
+
+      if (PlatformAdaptive.useBackdropBlur) {
+        // iOS: Liquid Glass frosted app bar
+        return ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(
+              sigmaX: PlatformAdaptive.appBarBlurSigma,
+              sigmaY: PlatformAdaptive.appBarBlurSigma,
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColors.surface.withValues(
+                  alpha: PlatformAdaptive.appBarAlpha,
+                ),
+                border: Border(
+                  bottom: BorderSide(
+                    color: AppColors.border.withValues(alpha: 0.2),
+                    width: 0.5,
+                  ),
+                ),
+              ),
+              child: appBar,
+            ),
+          ),
+        );
+      }
+
+      // Android: Solid surface app bar
+      return Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          border: Border(
+            bottom: BorderSide(
+              color: AppColors.border.withValues(alpha: 0.12),
+            ),
+          ),
+        ),
+        child: appBar,
+      );
+    }
+
+    // Gradient app bar (hero headers)
+    return Container(
+      decoration: BoxDecoration(
+        gradient: AppColors.heroGradient,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.15),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: AppBar(
-        backgroundColor: useGradient ? Colors.transparent : AppColors.cardBg,
+        backgroundColor: Colors.transparent,
         elevation: elevation,
         scrolledUnderElevation: 0,
         centerTitle: centerTitle,
@@ -74,16 +152,18 @@ class PremiumAppBar extends StatelessWidget implements PreferredSizeWidget {
                     child: Container(
                       margin: EdgeInsets.all(8.w),
                       decoration: BoxDecoration(
-                        color: useGradient
-                            ? Colors.white.withValues(alpha: 0.15)
-                            : AppColors.surfaceVariant,
+                        color: Colors.white.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12.r),
+                        border: PlatformAdaptive.isApple
+                            ? Border.all(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                width: 0.5,
+                              )
+                            : null,
                       ),
                       child: Icon(
                         Icons.arrow_back_rounded,
-                        color: useGradient
-                            ? Colors.white
-                            : AppColors.textPrimary,
+                        color: Colors.white,
                         size: 22.sp,
                       ),
                     ),
@@ -97,7 +177,7 @@ class PremiumAppBar extends StatelessWidget implements PreferredSizeWidget {
                     style: TextStyle(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.w700,
-                      color: useGradient ? Colors.white : AppColors.textPrimary,
+                      color: Colors.white,
                       letterSpacing: -0.3,
                     ),
                   )
@@ -113,6 +193,37 @@ class PremiumAppBar extends StatelessWidget implements PreferredSizeWidget {
               ]
             : null,
         bottom: bottom,
+      ),
+    );
+  }
+
+  Widget _buildBackButton(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        if (onBackPressed != null) {
+          onBackPressed!();
+        } else {
+          context.pop();
+        }
+      },
+      child: Container(
+        margin: EdgeInsets.all(8.w),
+        decoration: BoxDecoration(
+          color: AppColors.textPrimary.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(12.r),
+          border: PlatformAdaptive.isApple
+              ? Border.all(
+                  color: AppColors.border.withValues(alpha: 0.15),
+                  width: 0.5,
+                )
+              : null,
+        ),
+        child: Icon(
+          Icons.arrow_back_rounded,
+          color: AppColors.textPrimary,
+          size: 22.sp,
+        ),
       ),
     );
   }
@@ -213,6 +324,14 @@ class PremiumHeroHeader extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(12.r),
+                              border: PlatformAdaptive.isApple
+                                  ? Border.all(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.15,
+                                      ),
+                                      width: 0.5,
+                                    )
+                                  : null,
                             ),
                             child: Icon(
                               Icons.arrow_back_rounded,

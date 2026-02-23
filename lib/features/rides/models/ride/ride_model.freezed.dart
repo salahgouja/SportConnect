@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$RideModel {
 
- String get id; String get driverId;// Composed sub-models
+ String get id; String get driverId; String? get eventId; String? get eventName;// Composed sub-models
  RideRoute get route; RideSchedule get schedule; RideCapacity get capacity; RidePricing get pricing; RidePreferences get preferences;// Status
  RideStatus get status;// Vehicle reference (resolved through VehicleRepository)
  String? get vehicleId; String? get vehicleInfo;// Bookings (lightweight - detailed bookings stored separately)
@@ -36,16 +36,16 @@ $RideModelCopyWith<RideModel> get copyWith => _$RideModelCopyWithImpl<RideModel>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RideModel&&(identical(other.id, id) || other.id == id)&&(identical(other.driverId, driverId) || other.driverId == driverId)&&(identical(other.route, route) || other.route == route)&&(identical(other.schedule, schedule) || other.schedule == schedule)&&(identical(other.capacity, capacity) || other.capacity == capacity)&&(identical(other.pricing, pricing) || other.pricing == pricing)&&(identical(other.preferences, preferences) || other.preferences == preferences)&&(identical(other.status, status) || other.status == status)&&(identical(other.vehicleId, vehicleId) || other.vehicleId == vehicleId)&&(identical(other.vehicleInfo, vehicleInfo) || other.vehicleInfo == vehicleInfo)&&const DeepCollectionEquality().equals(other.bookingIds, bookingIds)&&const DeepCollectionEquality().equals(other.bookings, bookings)&&(identical(other.reviewCount, reviewCount) || other.reviewCount == reviewCount)&&(identical(other.averageRating, averageRating) || other.averageRating == averageRating)&&(identical(other.xpReward, xpReward) || other.xpReward == xpReward)&&(identical(other.notes, notes) || other.notes == notes)&&const DeepCollectionEquality().equals(other.tags, tags)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RideModel&&(identical(other.id, id) || other.id == id)&&(identical(other.driverId, driverId) || other.driverId == driverId)&&(identical(other.eventId, eventId) || other.eventId == eventId)&&(identical(other.eventName, eventName) || other.eventName == eventName)&&(identical(other.route, route) || other.route == route)&&(identical(other.schedule, schedule) || other.schedule == schedule)&&(identical(other.capacity, capacity) || other.capacity == capacity)&&(identical(other.pricing, pricing) || other.pricing == pricing)&&(identical(other.preferences, preferences) || other.preferences == preferences)&&(identical(other.status, status) || other.status == status)&&(identical(other.vehicleId, vehicleId) || other.vehicleId == vehicleId)&&(identical(other.vehicleInfo, vehicleInfo) || other.vehicleInfo == vehicleInfo)&&const DeepCollectionEquality().equals(other.bookingIds, bookingIds)&&const DeepCollectionEquality().equals(other.bookings, bookings)&&(identical(other.reviewCount, reviewCount) || other.reviewCount == reviewCount)&&(identical(other.averageRating, averageRating) || other.averageRating == averageRating)&&(identical(other.xpReward, xpReward) || other.xpReward == xpReward)&&(identical(other.notes, notes) || other.notes == notes)&&const DeepCollectionEquality().equals(other.tags, tags)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hashAll([runtimeType,id,driverId,route,schedule,capacity,pricing,preferences,status,vehicleId,vehicleInfo,const DeepCollectionEquality().hash(bookingIds),const DeepCollectionEquality().hash(bookings),reviewCount,averageRating,xpReward,notes,const DeepCollectionEquality().hash(tags),createdAt,updatedAt]);
+int get hashCode => Object.hashAll([runtimeType,id,driverId,eventId,eventName,route,schedule,capacity,pricing,preferences,status,vehicleId,vehicleInfo,const DeepCollectionEquality().hash(bookingIds),const DeepCollectionEquality().hash(bookings),reviewCount,averageRating,xpReward,notes,const DeepCollectionEquality().hash(tags),createdAt,updatedAt]);
 
 @override
 String toString() {
-  return 'RideModel(id: $id, driverId: $driverId, route: $route, schedule: $schedule, capacity: $capacity, pricing: $pricing, preferences: $preferences, status: $status, vehicleId: $vehicleId, vehicleInfo: $vehicleInfo, bookingIds: $bookingIds, bookings: $bookings, reviewCount: $reviewCount, averageRating: $averageRating, xpReward: $xpReward, notes: $notes, tags: $tags, createdAt: $createdAt, updatedAt: $updatedAt)';
+  return 'RideModel(id: $id, driverId: $driverId, eventId: $eventId, eventName: $eventName, route: $route, schedule: $schedule, capacity: $capacity, pricing: $pricing, preferences: $preferences, status: $status, vehicleId: $vehicleId, vehicleInfo: $vehicleInfo, bookingIds: $bookingIds, bookings: $bookings, reviewCount: $reviewCount, averageRating: $averageRating, xpReward: $xpReward, notes: $notes, tags: $tags, createdAt: $createdAt, updatedAt: $updatedAt)';
 }
 
 
@@ -56,7 +56,7 @@ abstract mixin class $RideModelCopyWith<$Res>  {
   factory $RideModelCopyWith(RideModel value, $Res Function(RideModel) _then) = _$RideModelCopyWithImpl;
 @useResult
 $Res call({
- String id, String driverId, RideRoute route, RideSchedule schedule, RideCapacity capacity, RidePricing pricing, RidePreferences preferences, RideStatus status, String? vehicleId, String? vehicleInfo, List<String> bookingIds, List<RideBooking> bookings, int reviewCount, double averageRating, int xpReward, String? notes, List<String> tags,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? updatedAt
+ String id, String driverId, String? eventId, String? eventName, RideRoute route, RideSchedule schedule, RideCapacity capacity, RidePricing pricing, RidePreferences preferences, RideStatus status, String? vehicleId, String? vehicleInfo, List<String> bookingIds, List<RideBooking> bookings, int reviewCount, double averageRating, int xpReward, String? notes, List<String> tags,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? updatedAt
 });
 
 
@@ -73,11 +73,13 @@ class _$RideModelCopyWithImpl<$Res>
 
 /// Create a copy of RideModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? driverId = null,Object? route = null,Object? schedule = null,Object? capacity = null,Object? pricing = null,Object? preferences = null,Object? status = null,Object? vehicleId = freezed,Object? vehicleInfo = freezed,Object? bookingIds = null,Object? bookings = null,Object? reviewCount = null,Object? averageRating = null,Object? xpReward = null,Object? notes = freezed,Object? tags = null,Object? createdAt = freezed,Object? updatedAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? driverId = null,Object? eventId = freezed,Object? eventName = freezed,Object? route = null,Object? schedule = null,Object? capacity = null,Object? pricing = null,Object? preferences = null,Object? status = null,Object? vehicleId = freezed,Object? vehicleInfo = freezed,Object? bookingIds = null,Object? bookings = null,Object? reviewCount = null,Object? averageRating = null,Object? xpReward = null,Object? notes = freezed,Object? tags = null,Object? createdAt = freezed,Object? updatedAt = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,driverId: null == driverId ? _self.driverId : driverId // ignore: cast_nullable_to_non_nullable
-as String,route: null == route ? _self.route : route // ignore: cast_nullable_to_non_nullable
+as String,eventId: freezed == eventId ? _self.eventId : eventId // ignore: cast_nullable_to_non_nullable
+as String?,eventName: freezed == eventName ? _self.eventName : eventName // ignore: cast_nullable_to_non_nullable
+as String?,route: null == route ? _self.route : route // ignore: cast_nullable_to_non_nullable
 as RideRoute,schedule: null == schedule ? _self.schedule : schedule // ignore: cast_nullable_to_non_nullable
 as RideSchedule,capacity: null == capacity ? _self.capacity : capacity // ignore: cast_nullable_to_non_nullable
 as RideCapacity,pricing: null == pricing ? _self.pricing : pricing // ignore: cast_nullable_to_non_nullable
@@ -224,10 +226,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String driverId,  RideRoute route,  RideSchedule schedule,  RideCapacity capacity,  RidePricing pricing,  RidePreferences preferences,  RideStatus status,  String? vehicleId,  String? vehicleInfo,  List<String> bookingIds,  List<RideBooking> bookings,  int reviewCount,  double averageRating,  int xpReward,  String? notes,  List<String> tags, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String driverId,  String? eventId,  String? eventName,  RideRoute route,  RideSchedule schedule,  RideCapacity capacity,  RidePricing pricing,  RidePreferences preferences,  RideStatus status,  String? vehicleId,  String? vehicleInfo,  List<String> bookingIds,  List<RideBooking> bookings,  int reviewCount,  double averageRating,  int xpReward,  String? notes,  List<String> tags, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _RideModel() when $default != null:
-return $default(_that.id,_that.driverId,_that.route,_that.schedule,_that.capacity,_that.pricing,_that.preferences,_that.status,_that.vehicleId,_that.vehicleInfo,_that.bookingIds,_that.bookings,_that.reviewCount,_that.averageRating,_that.xpReward,_that.notes,_that.tags,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.driverId,_that.eventId,_that.eventName,_that.route,_that.schedule,_that.capacity,_that.pricing,_that.preferences,_that.status,_that.vehicleId,_that.vehicleInfo,_that.bookingIds,_that.bookings,_that.reviewCount,_that.averageRating,_that.xpReward,_that.notes,_that.tags,_that.createdAt,_that.updatedAt);case _:
   return orElse();
 
 }
@@ -245,10 +247,10 @@ return $default(_that.id,_that.driverId,_that.route,_that.schedule,_that.capacit
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String driverId,  RideRoute route,  RideSchedule schedule,  RideCapacity capacity,  RidePricing pricing,  RidePreferences preferences,  RideStatus status,  String? vehicleId,  String? vehicleInfo,  List<String> bookingIds,  List<RideBooking> bookings,  int reviewCount,  double averageRating,  int xpReward,  String? notes,  List<String> tags, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String driverId,  String? eventId,  String? eventName,  RideRoute route,  RideSchedule schedule,  RideCapacity capacity,  RidePricing pricing,  RidePreferences preferences,  RideStatus status,  String? vehicleId,  String? vehicleInfo,  List<String> bookingIds,  List<RideBooking> bookings,  int reviewCount,  double averageRating,  int xpReward,  String? notes,  List<String> tags, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)  $default,) {final _that = this;
 switch (_that) {
 case _RideModel():
-return $default(_that.id,_that.driverId,_that.route,_that.schedule,_that.capacity,_that.pricing,_that.preferences,_that.status,_that.vehicleId,_that.vehicleInfo,_that.bookingIds,_that.bookings,_that.reviewCount,_that.averageRating,_that.xpReward,_that.notes,_that.tags,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.driverId,_that.eventId,_that.eventName,_that.route,_that.schedule,_that.capacity,_that.pricing,_that.preferences,_that.status,_that.vehicleId,_that.vehicleInfo,_that.bookingIds,_that.bookings,_that.reviewCount,_that.averageRating,_that.xpReward,_that.notes,_that.tags,_that.createdAt,_that.updatedAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -265,10 +267,10 @@ return $default(_that.id,_that.driverId,_that.route,_that.schedule,_that.capacit
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String driverId,  RideRoute route,  RideSchedule schedule,  RideCapacity capacity,  RidePricing pricing,  RidePreferences preferences,  RideStatus status,  String? vehicleId,  String? vehicleInfo,  List<String> bookingIds,  List<RideBooking> bookings,  int reviewCount,  double averageRating,  int xpReward,  String? notes,  List<String> tags, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String driverId,  String? eventId,  String? eventName,  RideRoute route,  RideSchedule schedule,  RideCapacity capacity,  RidePricing pricing,  RidePreferences preferences,  RideStatus status,  String? vehicleId,  String? vehicleInfo,  List<String> bookingIds,  List<RideBooking> bookings,  int reviewCount,  double averageRating,  int xpReward,  String? notes,  List<String> tags, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _RideModel() when $default != null:
-return $default(_that.id,_that.driverId,_that.route,_that.schedule,_that.capacity,_that.pricing,_that.preferences,_that.status,_that.vehicleId,_that.vehicleInfo,_that.bookingIds,_that.bookings,_that.reviewCount,_that.averageRating,_that.xpReward,_that.notes,_that.tags,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.driverId,_that.eventId,_that.eventName,_that.route,_that.schedule,_that.capacity,_that.pricing,_that.preferences,_that.status,_that.vehicleId,_that.vehicleInfo,_that.bookingIds,_that.bookings,_that.reviewCount,_that.averageRating,_that.xpReward,_that.notes,_that.tags,_that.createdAt,_that.updatedAt);case _:
   return null;
 
 }
@@ -280,11 +282,13 @@ return $default(_that.id,_that.driverId,_that.route,_that.schedule,_that.capacit
 @JsonSerializable()
 
 class _RideModel extends RideModel {
-  const _RideModel({required this.id, required this.driverId, required this.route, required this.schedule, required this.capacity, required this.pricing, required this.preferences, this.status = RideStatus.draft, this.vehicleId, this.vehicleInfo, final  List<String> bookingIds = const [], final  List<RideBooking> bookings = const [], this.reviewCount = 0, this.averageRating = 0.0, this.xpReward = 50, this.notes, final  List<String> tags = const [], @TimestampConverter() this.createdAt, @TimestampConverter() this.updatedAt}): _bookingIds = bookingIds,_bookings = bookings,_tags = tags,super._();
+  const _RideModel({required this.id, required this.driverId, this.eventId, this.eventName, required this.route, required this.schedule, required this.capacity, required this.pricing, required this.preferences, this.status = RideStatus.draft, this.vehicleId, this.vehicleInfo, final  List<String> bookingIds = const [], final  List<RideBooking> bookings = const [], this.reviewCount = 0, this.averageRating = 0.0, this.xpReward = 50, this.notes, final  List<String> tags = const [], @TimestampConverter() this.createdAt, @TimestampConverter() this.updatedAt}): _bookingIds = bookingIds,_bookings = bookings,_tags = tags,super._();
   factory _RideModel.fromJson(Map<String, dynamic> json) => _$RideModelFromJson(json);
 
 @override final  String id;
 @override final  String driverId;
+@override final  String? eventId;
+@override final  String? eventName;
 // Composed sub-models
 @override final  RideRoute route;
 @override final  RideSchedule schedule;
@@ -344,16 +348,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RideModel&&(identical(other.id, id) || other.id == id)&&(identical(other.driverId, driverId) || other.driverId == driverId)&&(identical(other.route, route) || other.route == route)&&(identical(other.schedule, schedule) || other.schedule == schedule)&&(identical(other.capacity, capacity) || other.capacity == capacity)&&(identical(other.pricing, pricing) || other.pricing == pricing)&&(identical(other.preferences, preferences) || other.preferences == preferences)&&(identical(other.status, status) || other.status == status)&&(identical(other.vehicleId, vehicleId) || other.vehicleId == vehicleId)&&(identical(other.vehicleInfo, vehicleInfo) || other.vehicleInfo == vehicleInfo)&&const DeepCollectionEquality().equals(other._bookingIds, _bookingIds)&&const DeepCollectionEquality().equals(other._bookings, _bookings)&&(identical(other.reviewCount, reviewCount) || other.reviewCount == reviewCount)&&(identical(other.averageRating, averageRating) || other.averageRating == averageRating)&&(identical(other.xpReward, xpReward) || other.xpReward == xpReward)&&(identical(other.notes, notes) || other.notes == notes)&&const DeepCollectionEquality().equals(other._tags, _tags)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RideModel&&(identical(other.id, id) || other.id == id)&&(identical(other.driverId, driverId) || other.driverId == driverId)&&(identical(other.eventId, eventId) || other.eventId == eventId)&&(identical(other.eventName, eventName) || other.eventName == eventName)&&(identical(other.route, route) || other.route == route)&&(identical(other.schedule, schedule) || other.schedule == schedule)&&(identical(other.capacity, capacity) || other.capacity == capacity)&&(identical(other.pricing, pricing) || other.pricing == pricing)&&(identical(other.preferences, preferences) || other.preferences == preferences)&&(identical(other.status, status) || other.status == status)&&(identical(other.vehicleId, vehicleId) || other.vehicleId == vehicleId)&&(identical(other.vehicleInfo, vehicleInfo) || other.vehicleInfo == vehicleInfo)&&const DeepCollectionEquality().equals(other._bookingIds, _bookingIds)&&const DeepCollectionEquality().equals(other._bookings, _bookings)&&(identical(other.reviewCount, reviewCount) || other.reviewCount == reviewCount)&&(identical(other.averageRating, averageRating) || other.averageRating == averageRating)&&(identical(other.xpReward, xpReward) || other.xpReward == xpReward)&&(identical(other.notes, notes) || other.notes == notes)&&const DeepCollectionEquality().equals(other._tags, _tags)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hashAll([runtimeType,id,driverId,route,schedule,capacity,pricing,preferences,status,vehicleId,vehicleInfo,const DeepCollectionEquality().hash(_bookingIds),const DeepCollectionEquality().hash(_bookings),reviewCount,averageRating,xpReward,notes,const DeepCollectionEquality().hash(_tags),createdAt,updatedAt]);
+int get hashCode => Object.hashAll([runtimeType,id,driverId,eventId,eventName,route,schedule,capacity,pricing,preferences,status,vehicleId,vehicleInfo,const DeepCollectionEquality().hash(_bookingIds),const DeepCollectionEquality().hash(_bookings),reviewCount,averageRating,xpReward,notes,const DeepCollectionEquality().hash(_tags),createdAt,updatedAt]);
 
 @override
 String toString() {
-  return 'RideModel(id: $id, driverId: $driverId, route: $route, schedule: $schedule, capacity: $capacity, pricing: $pricing, preferences: $preferences, status: $status, vehicleId: $vehicleId, vehicleInfo: $vehicleInfo, bookingIds: $bookingIds, bookings: $bookings, reviewCount: $reviewCount, averageRating: $averageRating, xpReward: $xpReward, notes: $notes, tags: $tags, createdAt: $createdAt, updatedAt: $updatedAt)';
+  return 'RideModel(id: $id, driverId: $driverId, eventId: $eventId, eventName: $eventName, route: $route, schedule: $schedule, capacity: $capacity, pricing: $pricing, preferences: $preferences, status: $status, vehicleId: $vehicleId, vehicleInfo: $vehicleInfo, bookingIds: $bookingIds, bookings: $bookings, reviewCount: $reviewCount, averageRating: $averageRating, xpReward: $xpReward, notes: $notes, tags: $tags, createdAt: $createdAt, updatedAt: $updatedAt)';
 }
 
 
@@ -364,7 +368,7 @@ abstract mixin class _$RideModelCopyWith<$Res> implements $RideModelCopyWith<$Re
   factory _$RideModelCopyWith(_RideModel value, $Res Function(_RideModel) _then) = __$RideModelCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String driverId, RideRoute route, RideSchedule schedule, RideCapacity capacity, RidePricing pricing, RidePreferences preferences, RideStatus status, String? vehicleId, String? vehicleInfo, List<String> bookingIds, List<RideBooking> bookings, int reviewCount, double averageRating, int xpReward, String? notes, List<String> tags,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? updatedAt
+ String id, String driverId, String? eventId, String? eventName, RideRoute route, RideSchedule schedule, RideCapacity capacity, RidePricing pricing, RidePreferences preferences, RideStatus status, String? vehicleId, String? vehicleInfo, List<String> bookingIds, List<RideBooking> bookings, int reviewCount, double averageRating, int xpReward, String? notes, List<String> tags,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? updatedAt
 });
 
 
@@ -381,11 +385,13 @@ class __$RideModelCopyWithImpl<$Res>
 
 /// Create a copy of RideModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? driverId = null,Object? route = null,Object? schedule = null,Object? capacity = null,Object? pricing = null,Object? preferences = null,Object? status = null,Object? vehicleId = freezed,Object? vehicleInfo = freezed,Object? bookingIds = null,Object? bookings = null,Object? reviewCount = null,Object? averageRating = null,Object? xpReward = null,Object? notes = freezed,Object? tags = null,Object? createdAt = freezed,Object? updatedAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? driverId = null,Object? eventId = freezed,Object? eventName = freezed,Object? route = null,Object? schedule = null,Object? capacity = null,Object? pricing = null,Object? preferences = null,Object? status = null,Object? vehicleId = freezed,Object? vehicleInfo = freezed,Object? bookingIds = null,Object? bookings = null,Object? reviewCount = null,Object? averageRating = null,Object? xpReward = null,Object? notes = freezed,Object? tags = null,Object? createdAt = freezed,Object? updatedAt = freezed,}) {
   return _then(_RideModel(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,driverId: null == driverId ? _self.driverId : driverId // ignore: cast_nullable_to_non_nullable
-as String,route: null == route ? _self.route : route // ignore: cast_nullable_to_non_nullable
+as String,eventId: freezed == eventId ? _self.eventId : eventId // ignore: cast_nullable_to_non_nullable
+as String?,eventName: freezed == eventName ? _self.eventName : eventName // ignore: cast_nullable_to_non_nullable
+as String?,route: null == route ? _self.route : route // ignore: cast_nullable_to_non_nullable
 as RideRoute,schedule: null == schedule ? _self.schedule : schedule // ignore: cast_nullable_to_non_nullable
 as RideSchedule,capacity: null == capacity ? _self.capacity : capacity // ignore: cast_nullable_to_non_nullable
 as RideCapacity,pricing: null == pricing ? _self.pricing : pricing // ignore: cast_nullable_to_non_nullable

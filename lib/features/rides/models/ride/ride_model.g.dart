@@ -9,6 +9,8 @@ part of 'ride_model.dart';
 _RideModel _$RideModelFromJson(Map json) => _RideModel(
   id: json['id'] as String,
   driverId: json['driverId'] as String,
+  eventId: json['eventId'] as String?,
+  eventName: json['eventName'] as String?,
   route: RideRoute.fromJson(Map<String, dynamic>.from(json['route'] as Map)),
   schedule: RideSchedule.fromJson(
     Map<String, dynamic>.from(json['schedule'] as Map),
@@ -54,6 +56,8 @@ Map<String, dynamic> _$RideModelToJson(_RideModel instance) =>
     <String, dynamic>{
       'id': instance.id,
       'driverId': instance.driverId,
+      'eventId': instance.eventId,
+      'eventName': instance.eventName,
       'route': instance.route.toJson(),
       'schedule': instance.schedule.toJson(),
       'capacity': instance.capacity.toJson(),

@@ -8,10 +8,12 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 import 'package:sport_connect/features/rides/repositories/vehicle_repository.dart';
 import 'package:sport_connect/features/rides/view_models/vehicle_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sport_connect/core/theme/platform_adaptive.dart';
 
 /// Driver Vehicle Management Screen with Firestore
 class DriverVehicleScreen extends ConsumerStatefulWidget {
@@ -104,6 +106,7 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
       backgroundColor: AppColors.background,
       elevation: 0,
       leading: IconButton(
+        tooltip: 'Go back',
         icon: Container(
           padding: EdgeInsets.all(8.w),
           decoration: BoxDecoration(
@@ -130,6 +133,7 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
       centerTitle: true,
       actions: [
         IconButton(
+          tooltip: 'Add vehicle',
           icon: Container(
             padding: EdgeInsets.all(8.w),
             decoration: BoxDecoration(
@@ -291,7 +295,7 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16.r),
+          borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
         title: Text(AppLocalizations.of(context).deleteVehicle),
         content: Text(
@@ -434,7 +438,7 @@ class _VehicleCard extends StatelessWidget {
                                   child: Text(
                                     AppLocalizations.of(context).active,
                                     style: TextStyle(
-                                      fontSize: 10.sp,
+                                      fontSize: 12.sp,
                                       fontWeight: FontWeight.bold,
                                       color: AppColors.success,
                                     ),
@@ -518,6 +522,7 @@ class _VehicleCard extends StatelessWidget {
                         ),
                       ),
                     IconButton(
+                      tooltip: 'Edit vehicle',
                       onPressed: onEdit,
                       icon: Icon(
                         Icons.edit_outlined,
@@ -526,6 +531,7 @@ class _VehicleCard extends StatelessWidget {
                       ),
                     ),
                     IconButton(
+                      tooltip: 'Delete vehicle',
                       onPressed: onDelete,
                       icon: Icon(
                         Icons.delete_outline,
@@ -655,6 +661,12 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
   }
 
   Future<void> _pickImage() async {
+    final accepted = await PermissionDialogHelper.showCameraRationale(
+      context,
+      customMessage: 'Access to your photo library is needed to '
+          'upload a photo of your vehicle.',
+    );
+    if (!accepted) return;
     final picker = ImagePicker();
     final image = await picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
@@ -735,6 +747,7 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
                 ),
                 const Spacer(),
                 IconButton(
+                  tooltip: 'Close',
                   onPressed: () => context.pop(),
                   icon: Icon(Icons.close, color: AppColors.textSecondary),
                 ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/theme/platform_adaptive.dart';
 
 /// Premium App Theme for SportConnect
 class AppTheme {
@@ -123,7 +124,7 @@ class AppTheme {
           color: AppColors.textSecondary,
         ),
         labelSmall: TextStyle(
-          fontSize: 10.sp,
+          fontSize: 12.sp,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.5,
           color: AppColors.textTertiary,
@@ -136,8 +137,11 @@ class AppTheme {
           elevation: 0,
           padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
           minimumSize: Size(double.infinity, 56.h),
+          // Platform-adaptive: pill on iOS, standard on Android
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.r),
+            borderRadius: BorderRadius.circular(
+              PlatformAdaptive.buttonRadiusMd,
+            ),
           ),
           textStyle: TextStyle(
             fontSize: 16.sp,
@@ -151,9 +155,15 @@ class AppTheme {
           foregroundColor: AppColors.primary,
           padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
           minimumSize: Size(double.infinity, 56.h),
-          side: BorderSide(color: AppColors.primary, width: 2),
+          side: BorderSide(
+            color: AppColors.primary,
+            width: PlatformAdaptive.outlineBorderWidth,
+          ),
+          // Platform-adaptive: pill on iOS, standard on Android
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.r),
+            borderRadius: BorderRadius.circular(
+              PlatformAdaptive.buttonRadiusMd,
+            ),
           ),
           textStyle: TextStyle(
             fontSize: 16.sp,
@@ -168,40 +178,43 @@ class AppTheme {
           textStyle: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
         ),
       ),
+      // Platform-adaptive input borders
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surfaceVariant,
         contentPadding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 18.h),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16.r),
+          borderRadius: BorderRadius.circular(PlatformAdaptive.inputRadius),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16.r),
+          borderRadius: BorderRadius.circular(PlatformAdaptive.inputRadius),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16.r),
+          borderRadius: BorderRadius.circular(PlatformAdaptive.inputRadius),
           borderSide: BorderSide(color: AppColors.primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16.r),
+          borderRadius: BorderRadius.circular(PlatformAdaptive.inputRadius),
           borderSide: BorderSide(color: AppColors.error, width: 2),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16.r),
+          borderRadius: BorderRadius.circular(PlatformAdaptive.inputRadius),
           borderSide: BorderSide(color: AppColors.error, width: 2),
         ),
         hintStyle: TextStyle(color: AppColors.textTertiary, fontSize: 16.sp),
         prefixIconColor: AppColors.textSecondary,
         suffixIconColor: AppColors.textSecondary,
       ),
+      // Platform-adaptive card — glass on iOS, Material on Android
       cardTheme: CardThemeData(
-        elevation: 0,
+        elevation: PlatformAdaptive.isApple ? 0 : 1,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.r),
+          borderRadius: BorderRadius.circular(PlatformAdaptive.radiusLg),
+          side: PlatformAdaptive.cardBorderSide,
         ),
-        color: AppColors.cardBg,
+        color: AppColors.cardBg.withValues(alpha: PlatformAdaptive.cardAlpha),
         margin: EdgeInsets.zero,
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
@@ -219,39 +232,53 @@ class AppTheme {
           fontWeight: FontWeight.w500,
         ),
       ),
+      // ─── Platform-Adaptive Theme Adaptations ───
+      // iOS: Liquid Glass (translucent, rounded, zero-elevation)
+      // Android: Material 3 (opaque, standard radii, standard elevation)
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: AppColors.surface,
-        indicatorColor: AppColors.primary.withValues(alpha: 0.1),
+        backgroundColor: AppColors.surface.withValues(
+          alpha: PlatformAdaptive.navBarAlpha,
+        ),
+        indicatorColor: AppColors.primary.withValues(alpha: 0.14),
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        height: 70.h,
+        height: 72.h,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return TextStyle(
-              fontSize: 12.sp,
+              fontSize: PlatformAdaptive.isApple ? 11.sp : 12.sp,
               fontWeight: FontWeight.w600,
               color: AppColors.primary,
             );
           }
           return TextStyle(
-            fontSize: 12.sp,
+            fontSize: PlatformAdaptive.isApple ? 11.sp : 12.sp,
             fontWeight: FontWeight.w500,
-            color: AppColors.textTertiary,
+            color: AppColors.textSecondary,
           );
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return IconThemeData(color: AppColors.primary, size: 24.sp);
           }
-          return IconThemeData(color: AppColors.textTertiary, size: 24.sp);
+          return IconThemeData(color: AppColors.textSecondary, size: 24.sp);
         }),
       ),
+      // Platform-adaptive chip
       chipTheme: ChipThemeData(
-        backgroundColor: AppColors.surfaceVariant,
+        backgroundColor: AppColors.surfaceVariant.withValues(
+          alpha: PlatformAdaptive.isApple ? 0.72 : 1.0,
+        ),
         selectedColor: AppColors.primary.withValues(alpha: 0.15),
-        labelStyle: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500),
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+        labelStyle: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w500),
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.r),
+          borderRadius: BorderRadius.circular(PlatformAdaptive.chipRadius),
+          side: PlatformAdaptive.isApple
+              ? BorderSide(
+                  color: AppColors.border.withValues(alpha: 0.15),
+                  width: 0.5,
+                )
+              : BorderSide.none,
         ),
       ),
       dividerTheme: DividerThemeData(
@@ -259,25 +286,39 @@ class AppTheme {
         thickness: 1,
         space: 1,
       ),
+      // Platform-adaptive snackbar
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: AppColors.textPrimary,
+        backgroundColor: AppColors.textPrimary.withValues(
+          alpha: PlatformAdaptive.isApple ? 0.9 : 1.0,
+        ),
         contentTextStyle: TextStyle(color: Colors.white, fontSize: 14.sp),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.r),
+          borderRadius: BorderRadius.circular(PlatformAdaptive.radiusMd),
         ),
         behavior: SnackBarBehavior.floating,
+        elevation: PlatformAdaptive.snackBarElevation,
       ),
+      // Platform-adaptive bottom sheet
       bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+        backgroundColor: AppColors.surface.withValues(
+          alpha: PlatformAdaptive.sheetAlpha,
         ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(PlatformAdaptive.sheetRadius),
+          ),
+        ),
+        elevation: PlatformAdaptive.sheetElevation,
       ),
+      // Platform-adaptive dialog
       dialogTheme: DialogThemeData(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24.r),
+        backgroundColor: AppColors.surface.withValues(
+          alpha: PlatformAdaptive.dialogAlpha,
         ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
+        ),
+        elevation: PlatformAdaptive.dialogElevation,
         titleTextStyle: TextStyle(
           fontSize: 20.sp,
           fontWeight: FontWeight.w600,

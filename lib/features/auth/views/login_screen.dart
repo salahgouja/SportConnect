@@ -1,3 +1,8 @@
+import 'dart:io' show Platform;
+
+import 'package:flutter/gestures.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,12 +13,12 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/utils/validators.dart';
-import 'package:sport_connect/core/widgets/custom_button.dart';
-import 'package:sport_connect/core/widgets/premium_text_field.dart';
 import 'package:sport_connect/core/widgets/utility_widgets.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 /// Professional Login Screen with clean, modern design
 /// No animated characters - just elegant branding and smooth UX
@@ -35,8 +40,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   bool _rememberMe = false;
   bool _isSocialLoading = false;
+  bool _obscurePassword = true;
   final FocusNode _emailFocus = FocusNode();
   final FocusNode _passwordFocus = FocusNode();
+
+  bool get _isIOS => !kIsWeb && Platform.isIOS;
+
+  bool get _isAndroid => !kIsWeb && Platform.isAndroid;
+
+  bool get _isCupertino => _isIOS;
 
   @override
   void initState() {
@@ -100,7 +112,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Future<void> _handleLogin() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_isCupertino) {
+      final emailError = Validators.email(_emailController.text.trim());
+      final passwordError = Validators.password(_passwordController.text);
+      if (emailError != null || passwordError != null) {
+        await _showAdaptiveMessage(emailError ?? passwordError!, isError: true);
+        return;
+      }
+    } else if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
     await _saveCredentials();
     try {
       await ref
@@ -114,18 +136,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       if (!mounted) return;
       final errorMessage = _getAuthErrorMessage(e);
       TalkerService.error('Login failed: $errorMessage');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMessage),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.red.shade600,
-          duration: const Duration(seconds: 5),
-          margin: EdgeInsets.all(16.w),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-        ),
-      );
+      await _showAdaptiveMessage(errorMessage, isError: true);
     }
   }
 
@@ -138,15 +149,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       // Route guard handles redirect based on needsRoleSelection field in Firestore
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).signInFailedPleaseTry),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-          ),
+        await _showAdaptiveMessage(
+          AppLocalizations.of(context).signInFailedPleaseTry,
+          isError: true,
         );
       }
     } finally {
@@ -163,15 +168,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       // Route guard handles redirect based on needsRoleSelection field in Firestore
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).signInFailedPleaseTry),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-          ),
+        await _showAdaptiveMessage(
+          AppLocalizations.of(context).signInFailedPleaseTry,
+          isError: true,
         );
       }
     } finally {
@@ -182,74 +181,84 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   @override
   Widget build(BuildContext context) {
     final loginState = ref.watch(loginViewModelProvider);
+    final loginBody = SafeArea(
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24.w),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SizedBox(height: 40.h),
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24.w),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    SizedBox(height: 40.h),
+                  // Professional logo header
+                  _buildLogoHeader(),
 
-                    // Professional logo header
-                    _buildLogoHeader(),
+                  SizedBox(height: 32.h),
 
-                    SizedBox(height: 32.h),
+                  // Welcome text
+                  _buildWelcomeText(),
 
-                    // Welcome text
-                    _buildWelcomeText(),
+                  SizedBox(height: 32.h),
 
-                    SizedBox(height: 32.h),
+                  // Social login buttons
+                  _buildSocialButtons(),
 
-                    // Social login buttons
-                    _buildSocialButtons(),
+                  SizedBox(height: 24.h),
 
-                    SizedBox(height: 24.h),
+                  // Divider
+                  _buildDivider(),
 
-                    // Divider
-                    _buildDivider(),
+                  SizedBox(height: 24.h),
 
-                    SizedBox(height: 24.h),
+                  // Email field
+                  _buildEmailField(),
 
-                    // Email field
-                    _buildEmailField(),
+                  SizedBox(height: 16.h),
 
-                    SizedBox(height: 16.h),
+                  // Password field
+                  _buildPasswordField(),
 
-                    // Password field
-                    _buildPasswordField(),
+                  SizedBox(height: 14.h),
 
-                    SizedBox(height: 14.h),
+                  // Remember me & Forgot password
+                  _buildOptionsRow(),
 
-                    // Remember me & Forgot password
-                    _buildOptionsRow(),
+                  SizedBox(height: 28.h),
 
-                    SizedBox(height: 28.h),
+                  // Sign in button
+                  _buildSignInButton(loginState),
 
-                    // Sign in button
-                    _buildSignInButton(loginState),
+                  SizedBox(height: 28.h),
 
-                    SizedBox(height: 28.h),
+                  // Sign up link
+                  _buildSignUpLink(),
 
-                    // Sign up link
-                    _buildSignUpLink(),
+                  SizedBox(height: 16.h),
 
-                    SizedBox(height: 32.h),
-                  ],
-                ),
+                  // Terms & Privacy footer
+                  _buildLegalFooter(),
+
+                  SizedBox(height: 32.h),
+                ],
               ),
             ),
           ),
         ),
       ),
     );
+
+    if (_isCupertino) {
+      return CupertinoPageScaffold(
+        backgroundColor: Colors.white,
+        child: loginBody,
+      );
+    }
+
+    return Scaffold(backgroundColor: Colors.white, body: loginBody);
   }
 
   Widget _buildLogoHeader() {
@@ -333,29 +342,166 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Widget _buildEmailField() {
-    return PremiumTextField(
+    final emailLabel = AppLocalizations.of(context).email;
+    final emailHint = AppLocalizations.of(context).enterYourEmail;
+
+    if (_isCupertino) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            emailLabel,
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          SizedBox(height: 8.h),
+          CupertinoTextField(
+            controller: _emailController,
+            focusNode: _emailFocus,
+            placeholder: emailHint,
+            keyboardType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.next,
+            autofillHints: const [AutofillHints.email],
+            keyboardAppearance: Brightness.light,
+            autocorrect: false,
+            enableSuggestions: false,
+            onEditingComplete: () => _passwordFocus.requestFocus(),
+            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
+            prefix: Padding(
+              padding: EdgeInsets.only(left: 12.w),
+              child: Icon(
+                CupertinoIcons.mail,
+                size: 18.sp,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceVariant,
+              borderRadius: BorderRadius.circular(_isIOS ? 20.r : 16.r),
+              border: Border.all(
+                color: AppColors.border.withValues(alpha: 0.5),
+              ),
+            ),
+          ),
+        ],
+      ).animate().fadeIn(duration: 400.ms, delay: 350.ms);
+    }
+
+    return TextFormField(
       controller: _emailController,
       focusNode: _emailFocus,
-      label: AppLocalizations.of(context).email,
-      hint: AppLocalizations.of(context).enterYourEmail,
-      prefixIcon: Icons.email_outlined,
       keyboardType: TextInputType.emailAddress,
       textInputAction: TextInputAction.next,
       validator: Validators.email,
+      autofillHints: const [AutofillHints.email],
+      autocorrect: false,
+      enableSuggestions: false,
+      onEditingComplete: () => _passwordFocus.requestFocus(),
+      decoration: InputDecoration(
+        labelText: emailLabel,
+        hintText: emailHint,
+        prefixIcon: const Icon(Icons.email_outlined),
+      ),
     ).animate().fadeIn(duration: 400.ms, delay: 350.ms);
   }
 
   Widget _buildPasswordField() {
-    return PremiumTextField(
+    final passwordLabel = AppLocalizations.of(context).password;
+    final passwordHint = AppLocalizations.of(context).enterYourPassword;
+
+    if (_isCupertino) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            passwordLabel,
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          SizedBox(height: 8.h),
+          CupertinoTextField(
+            controller: _passwordController,
+            focusNode: _passwordFocus,
+            placeholder: passwordHint,
+            obscureText: _obscurePassword,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _handleLogin(),
+            autofillHints: const [AutofillHints.password],
+            keyboardAppearance: Brightness.light,
+            autocorrect: false,
+            enableSuggestions: false,
+            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
+            prefix: Padding(
+              padding: EdgeInsets.only(left: 12.w),
+              child: Icon(
+                CupertinoIcons.lock,
+                size: 18.sp,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            suffix: CupertinoButton(
+              onPressed: () {
+                setState(() {
+                  _obscurePassword = !_obscurePassword;
+                });
+              },
+              padding: EdgeInsets.only(right: 10.w),
+              minimumSize: const Size(24, 24),
+              alignment: Alignment.centerRight,
+              child: Icon(
+                _obscurePassword
+                    ? CupertinoIcons.eye
+                    : CupertinoIcons.eye_slash,
+                size: 18.sp,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceVariant,
+              borderRadius: BorderRadius.circular(_isIOS ? 20.r : 16.r),
+              border: Border.all(
+                color: AppColors.border.withValues(alpha: 0.5),
+              ),
+            ),
+          ),
+        ],
+      ).animate().fadeIn(duration: 400.ms, delay: 400.ms);
+    }
+
+    return TextFormField(
       controller: _passwordController,
       focusNode: _passwordFocus,
-      label: AppLocalizations.of(context).password,
-      hint: AppLocalizations.of(context).enterYourPassword,
-      prefixIcon: Icons.lock_outline_rounded,
-      obscureText: true,
+      obscureText: _obscurePassword,
       textInputAction: TextInputAction.done,
       validator: Validators.password,
-      onSubmitted: (_) => _handleLogin(),
+      autofillHints: const [AutofillHints.password],
+      autocorrect: false,
+      enableSuggestions: false,
+      onFieldSubmitted: (_) => _handleLogin(),
+      decoration: InputDecoration(
+        labelText: passwordLabel,
+        hintText: passwordHint,
+        prefixIcon: const Icon(Icons.lock_outline_rounded),
+        suffixIcon: IconButton(
+          tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+          onPressed: () {
+            setState(() {
+              _obscurePassword = !_obscurePassword;
+            });
+          },
+          icon: Icon(
+            _obscurePassword
+                ? Icons.visibility_outlined
+                : Icons.visibility_off_outlined,
+          ),
+        ),
+      ),
     ).animate().fadeIn(duration: 400.ms, delay: 400.ms);
   }
 
@@ -364,70 +510,117 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         // Remember Me
-        GestureDetector(
-          onTap: () {
-            HapticFeedback.selectionClick();
-            setState(() {
-              _rememberMe = !_rememberMe;
-            });
-          },
-          child: Row(
-            children: [
-              AnimatedContainer(
-                duration: 200.ms,
-                width: 20.w,
-                height: 20.w,
-                decoration: BoxDecoration(
-                  color: _rememberMe ? AppColors.primary : Colors.transparent,
-                  borderRadius: BorderRadius.circular(5.r),
-                  border: Border.all(
-                    color: _rememberMe ? AppColors.primary : AppColors.border,
-                    width: 2,
+        Semantics(
+          toggled: _rememberMe,
+          label: AppLocalizations.of(context).rememberMe,
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 12.h),
+            child: Row(
+              children: [
+                if (_isCupertino)
+                  CupertinoSwitch(
+                    value: _rememberMe,
+                    onChanged: (value) {
+                      HapticFeedback.selectionClick();
+                      setState(() {
+                        _rememberMe = value;
+                      });
+                    },
+                    activeTrackColor: AppColors.primary,
+                  )
+                else
+                  Checkbox(
+                    value: _rememberMe,
+                    onChanged: (value) {
+                      HapticFeedback.selectionClick();
+                      setState(() {
+                        _rememberMe = value ?? false;
+                      });
+                    },
+                    visualDensity: VisualDensity.compact,
+                  ),
+                SizedBox(width: 8.w),
+                Text(
+                  AppLocalizations.of(context).rememberMe,
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-                child: _rememberMe
-                    ? Icon(
-                        Icons.check_rounded,
-                        size: 14.sp,
-                        color: Colors.white,
-                      )
-                    : null,
-              ),
-              SizedBox(width: 8.w),
-              Text(
-                AppLocalizations.of(context).rememberMe,
-                style: TextStyle(
-                  fontSize: 13.sp,
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         // Forgot Password
-        TextButton(
-          onPressed: _showForgotPasswordDialog,
-          style: TextButton.styleFrom(
-            foregroundColor: AppColors.primary,
-            padding: EdgeInsets.zero,
-          ),
-          child: Text(
-            AppLocalizations.of(context).authForgotPassword,
-            style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
-          ),
-        ),
+        _isCupertino
+            ? CupertinoButton(
+                onPressed: _showForgotPasswordDialog,
+                padding: EdgeInsets.zero,
+                child: Text(
+                  AppLocalizations.of(context).authForgotPassword,
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                  ),
+                ),
+              )
+            : TextButton(
+                onPressed: _showForgotPasswordDialog,
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  padding: EdgeInsets.zero,
+                ),
+                child: Text(
+                  AppLocalizations.of(context).authForgotPassword,
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
       ],
     ).animate().fadeIn(duration: 400.ms, delay: 450.ms);
   }
 
   Widget _buildSignInButton(AsyncValue<void> loginState) {
-    return PremiumButton(
-      text: AppLocalizations.of(context).authSignIn,
-      onPressed: _handleLogin,
-      isLoading: loginState.isLoading || _isSocialLoading,
-      style: PremiumButtonStyle.gradient,
-      size: ButtonSize.large,
+    final isLoading = loginState.isLoading || _isSocialLoading;
+
+    if (_isCupertino) {
+      return SizedBox(
+        height: 50.h,
+        child: CupertinoButton.filled(
+          onPressed: isLoading ? null : _handleLogin,
+          borderRadius: BorderRadius.circular(_isIOS ? 20.r : 14.r),
+          child: isLoading
+              ? const CupertinoActivityIndicator()
+              : Text(
+                  AppLocalizations.of(context).authSignIn,
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+        ),
+      ).animate().fadeIn(duration: 400.ms, delay: 500.ms);
+    }
+
+    return SizedBox(
+      height: 50.h,
+      child: ElevatedButton(
+        onPressed: isLoading ? null : _handleLogin,
+        child: isLoading
+            ? SizedBox(
+                height: 18.h,
+                width: 18.w,
+                child: const CircularProgressIndicator(strokeWidth: 2.5),
+              )
+            : Text(
+                AppLocalizations.of(context).authSignIn,
+                style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600),
+              ),
+      ),
     ).animate().fadeIn(duration: 400.ms, delay: 500.ms);
   }
 
@@ -442,22 +635,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       children: [
         Column(
           children: [
-            // Google button - theme-consistent subtle styling
-            _ThemeSocialButton(
-              icon: Icons.g_mobiledata_rounded,
-              label: AppLocalizations.of(context).continueWithGoogle,
-              isApple: false,
-              onPressed: _handleGoogleSignIn,
-            ).animate().fadeIn(duration: 300.ms, delay: 250.ms),
+            // Compliant Google Sign-In Button
+            _buildGoogleButton().animate().fadeIn(
+              duration: 300.ms,
+              delay: 250.ms,
+            ),
 
             SizedBox(height: 12.h),
 
-            // Apple button - theme-consistent subtle styling
-            _ThemeSocialButton(
-              icon: Icons.apple_rounded,
-              label: AppLocalizations.of(context).continueWithApple,
-              isApple: true,
+            // Compliant Apple Sign-In Button
+            SignInWithAppleButton(
               onPressed: _handleAppleSignIn,
+              text: AppLocalizations.of(context).continueWithApple,
+              height: 44.h, // Matches your original height standard
+              borderRadius: BorderRadius.circular(14.r),
+              style: SignInWithAppleButtonStyle
+                  .black, // Use .white or .whiteOutlined for light themes
             ).animate().fadeIn(duration: 300.ms, delay: 300.ms),
           ],
         ),
@@ -468,12 +661,76 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                 color: Colors.white.withValues(alpha: 0.7),
                 borderRadius: BorderRadius.circular(14.r),
               ),
-              child: const Center(
-                child: CircularProgressIndicator(color: AppColors.primary),
+              child: Center(
+                child: _isCupertino
+                    ? const CupertinoActivityIndicator(radius: 14)
+                    : const CircularProgressIndicator(color: AppColors.primary),
               ),
             ),
           ),
       ],
+    );
+  }
+
+  // Google's strict branding requires the official 'G', specific padding, and Roboto font (or system default)
+Widget _buildGoogleButton() {
+    // 1. Determine platform-specific dimensions based on the provided spec image
+    final double buttonHeight = _isCupertino ? 44.h : 40.h;
+    final double iconGap = _isCupertino ? 12.w : 10.w;
+
+    return Semantics(
+      button: true,
+      label: AppLocalizations.of(context).continueWithGoogle,
+      child: SizedBox(
+        height: buttonHeight,
+        width: double.infinity,
+        child: OutlinedButton(
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            _handleGoogleSignIn();
+          },
+          style: OutlinedButton.styleFrom(
+            backgroundColor: Colors.white, // Fill: #FFFFFF
+            padding: EdgeInsets.zero, 
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14.r), 
+            ),
+            // Stroke: #747775 | 1px | inside
+            side: const BorderSide(
+              color: Color(0xFF747775),
+              width: 1.0,
+            ),
+          ),
+          // Center the entire block (Icon + Gap + Text) for full-width buttons
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Icon is strictly 20x20 on both platforms
+              SvgPicture.asset(
+                'assets/icons/google_g_logo.svg', 
+                height: 20.sp,
+                width: 20.sp,
+              ),
+              
+              // Platform-specific spacing between icon and text (10 Android, 12 iOS)
+              SizedBox(width: iconGap),
+              
+              Text(
+                AppLocalizations.of(context).continueWithGoogle,
+                style: TextStyle(
+                  // Font: #1F1F1F | Roboto Medium | 14/20
+                  fontFamily: 'Roboto', // Google strongly prefers Roboto here
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w500, 
+                  color: const Color(0xFF1F1F1F),
+                  height: 20 / 14, // Calculates line-height of 20 for font-size 14
+                  letterSpacing: 0.2,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -485,19 +742,66 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           AppLocalizations.of(context).donTHaveAnAccount,
           style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
         ),
-        GestureDetector(
-          onTap: () => context.push(AppRoutes.signupWizard.path),
-          child: Text(
-            AppLocalizations.of(context).authSignUp,
-            style: TextStyle(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w700,
-              color: AppColors.primary,
+        Semantics(
+          button: true,
+          label: AppLocalizations.of(context).authSignUp,
+          child: GestureDetector(
+            onTap: () => context.push(AppRoutes.signupWizard.path),
+            child: Padding(
+              padding: EdgeInsets.all(8.w),
+              child: Text(
+                AppLocalizations.of(context).authSignUp,
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primary,
+                ),
+              ),
             ),
           ),
         ),
       ],
     ).animate().fadeIn(duration: 400.ms, delay: 550.ms);
+  }
+
+  Widget _buildLegalFooter() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 24.w),
+      child: Text.rich(
+        TextSpan(
+          style: TextStyle(fontSize: 12.sp, color: AppColors.textTertiary),
+          children: [
+            const TextSpan(text: 'By continuing, you agree to our '),
+            TextSpan(
+              text: 'Terms of Service',
+              style: TextStyle(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w600,
+                decoration: TextDecoration.underline,
+              ),
+              recognizer: TapGestureRecognizer()
+                ..onTap = () {
+                  context.push(AppRoutes.terms.path);
+                },
+            ),
+            const TextSpan(text: ' and '),
+            TextSpan(
+              text: 'Privacy Policy',
+              style: TextStyle(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w600,
+                decoration: TextDecoration.underline,
+              ),
+              recognizer: TapGestureRecognizer()
+                ..onTap = () {
+                  context.push(AppRoutes.privacy.path);
+                },
+            ),
+          ],
+        ),
+        textAlign: TextAlign.center,
+      ),
+    ).animate().fadeIn(duration: 400.ms, delay: 600.ms);
   }
 
   String _getAuthErrorMessage(Object? error) {
@@ -525,6 +829,56 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   void _showForgotPasswordDialog() {
     final resetEmailController = TextEditingController();
+
+    if (_isCupertino) {
+      final cancelLabel = MaterialLocalizations.of(context).cancelButtonLabel;
+      final resetSentMessage = AppLocalizations.of(
+        context,
+      ).passwordResetEmailSentCheck;
+      showCupertinoDialog<void>(
+        context: context,
+        builder: (dialogContext) => CupertinoAlertDialog(
+          title: Text(AppLocalizations.of(context).authResetPassword),
+          content: Padding(
+            padding: EdgeInsets.only(top: 12.h),
+            child: CupertinoTextField(
+              controller: resetEmailController,
+              keyboardType: TextInputType.emailAddress,
+              placeholder: AppLocalizations.of(context).enterYourEmail,
+            ),
+          ),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(cancelLabel),
+            ),
+            CupertinoDialogAction(
+              isDefaultAction: true,
+              onPressed: () async {
+                final email = resetEmailController.text.trim();
+                if (email.isEmpty) return;
+                try {
+                  await ref
+                      .read(authActionsViewModelProvider)
+                      .sendPasswordResetEmail(email);
+                  if (!context.mounted) return;
+                  Navigator.of(dialogContext).pop();
+                  await _showAdaptiveMessage(resetSentMessage);
+                } catch (_) {
+                  if (!context.mounted) return;
+                  await _showAdaptiveMessage(
+                    'Could not send reset email. Please try again.',
+                    isError: true,
+                  );
+                }
+              },
+              child: const Text('Send'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
 
     showModalBottomSheet(
       context: context,
@@ -598,39 +952,47 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
               SizedBox(height: 24.h),
 
-              PremiumTextField(
+              TextField(
                 controller: resetEmailController,
-                label: 'Email',
-                hint: 'Enter your email',
-                prefixIcon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context).email,
+                  hintText: AppLocalizations.of(context).enterYourEmail,
+                  prefixIcon: const Icon(Icons.email_outlined),
+                ),
               ),
 
               SizedBox(height: 24.h),
 
-              PremiumButton(
-                text: 'Send Reset Link',
-                onPressed: () {
-                  if (resetEmailController.text.isNotEmpty) {
-                    context.pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    final email = resetEmailController.text.trim();
+                    if (email.isEmpty) return;
+                    try {
+                      await ref
+                          .read(authActionsViewModelProvider)
+                          .sendPasswordResetEmail(email);
+                      if (context.mounted) {
+                        context.pop();
+                        await _showAdaptiveMessage(
                           AppLocalizations.of(
                             context,
                           ).passwordResetEmailSentCheck,
-                        ),
-                        backgroundColor: AppColors.success,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                      ),
-                    );
-                  }
-                },
-                style: PremiumButtonStyle.gradient,
-                size: ButtonSize.large,
+                        );
+                      }
+                    } catch (_) {
+                      if (context.mounted) {
+                        await _showAdaptiveMessage(
+                          'Could not send reset email. Please try again.',
+                          isError: true,
+                        );
+                      }
+                    }
+                  },
+                  child: const Text('Send Reset Link'),
+                ),
               ),
 
               SizedBox(height: 16.h),
@@ -640,69 +1002,39 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       ),
     );
   }
-}
 
-/// Theme-consistent social login button with subtle, elegant styling
-class _ThemeSocialButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isApple;
-  final VoidCallback onPressed;
+  Future<void> _showAdaptiveMessage(
+    String message, {
+    bool isError = false,
+  }) async {
+    if (!mounted) return;
 
-  const _ThemeSocialButton({
-    required this.icon,
-    required this.label,
-    required this.isApple,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          HapticFeedback.lightImpact();
-          onPressed();
-        },
-        borderRadius: BorderRadius.circular(14.r),
-        child: Container(
-          padding: EdgeInsets.symmetric(vertical: 16.h),
-          decoration: BoxDecoration(
-            color: isApple ? AppColors.textPrimary : AppColors.surface,
-            borderRadius: BorderRadius.circular(14.r),
-            border: Border.all(
-              color: isApple ? AppColors.textPrimary : AppColors.inputBorder,
-              width: 1.5,
+    if (_isCupertino) {
+      await showCupertinoDialog<void>(
+        context: context,
+        builder: (dialogContext) => CupertinoAlertDialog(
+          title: Text(isError ? 'Sign in error' : 'Success'),
+          content: Text(message),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(MaterialLocalizations.of(context).okButtonLabel),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 24.sp,
-                color: isApple ? Colors.white : AppColors.textPrimary,
-              ),
-              SizedBox(width: 12.w),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 15.sp,
-                  fontWeight: FontWeight.w600,
-                  color: isApple ? Colors.white : AppColors.textPrimary,
-                  letterSpacing: 0.2,
-                ),
-              ),
-            ],
-          ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: isError ? Colors.red.shade600 : AppColors.success,
+        duration: const Duration(seconds: 4),
+        margin: EdgeInsets.all(16.w),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.r),
         ),
       ),
     );

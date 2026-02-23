@@ -1,9 +1,12 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/theme/platform_adaptive.dart';
 
-/// Premium Card with shadow and optional gradient border
+/// Platform-adaptive card — glass border on iOS, standard on Android
 class PremiumCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
@@ -43,9 +46,12 @@ class PremiumCard extends StatelessWidget {
           gradient: gradient,
           borderRadius: BorderRadius.circular(borderRadius.r),
           border: hasBorder
-              ? Border.all(color: borderColor ?? AppColors.border, width: 1)
-              : null,
-          boxShadow: shadow ?? AppSpacing.shadowSm,
+              ? Border.all(
+                  color: borderColor ?? AppColors.border,
+                  width: 1,
+                )
+              : PlatformAdaptive.cardBorder,
+          boxShadow: shadow ?? PlatformAdaptive.adaptiveShadow(),
         ),
         child: Padding(
           padding: padding ?? EdgeInsets.all(AppSpacing.cardPadding),
@@ -56,7 +62,7 @@ class PremiumCard extends StatelessWidget {
   }
 }
 
-/// Glass morphism card
+/// Glass morphism card — Liquid Glass aesthetic
 class GlassCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
@@ -71,20 +77,34 @@ class GlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(borderRadius.r),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.2),
-          width: 1,
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(borderRadius.r),
-        child: Padding(
-          padding: padding ?? EdgeInsets.all(AppSpacing.cardPadding),
-          child: child,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(borderRadius.r),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.18),
+            borderRadius: BorderRadius.circular(borderRadius.r),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.22),
+              width: 0.8,
+            ),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withValues(alpha: 0.22),
+                Colors.white.withValues(alpha: 0.0),
+                Colors.white.withValues(alpha: 0.0),
+                Colors.white.withValues(alpha: 0.08),
+              ],
+              stops: const [0.0, 0.3, 0.7, 1.0],
+            ),
+          ),
+          child: Padding(
+            padding: padding ?? EdgeInsets.all(AppSpacing.cardPadding),
+            child: child,
+          ),
         ),
       ),
     );

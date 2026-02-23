@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/theme/platform_adaptive.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Premium Text Field with modern design and animations
@@ -165,7 +166,10 @@ class _PremiumTextFieldState extends State<PremiumTextField>
           builder: (context, child) {
             return Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16.r),
+                // Platform-adaptive corners
+                borderRadius: BorderRadius.circular(
+                  PlatformAdaptive.inputRadius,
+                ),
                 boxShadow: widget.showGlow && (_isFocused || _hasError)
                     ? [
                         BoxShadow(
@@ -184,7 +188,10 @@ class _PremiumTextFieldState extends State<PremiumTextField>
               color: widget.enabled
                   ? AppColors.surfaceVariant.withValues(alpha: 0.5)
                   : AppColors.surfaceVariant.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(16.r),
+              // Platform-adaptive corners
+              borderRadius: BorderRadius.circular(
+                PlatformAdaptive.inputRadius,
+              ),
               border: Border.all(
                 color: _borderColor,
                 width: _isFocused ? 2 : 1.5,
@@ -383,11 +390,20 @@ class _PremiumSearchFieldState extends State<PremiumSearchField> {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(16.r),
+        // Platform-adaptive search field
+        borderRadius: BorderRadius.circular(
+          PlatformAdaptive.searchRadius,
+        ),
+        border: PlatformAdaptive.isApple
+            ? Border.all(
+                color: AppColors.border.withValues(alpha: 0.15),
+                width: 0.5,
+              )
+            : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
@@ -478,7 +494,7 @@ class _PremiumSearchFieldState extends State<PremiumSearchField> {
                               context,
                             ).value2(widget.filterCount!),
                             style: TextStyle(
-                              fontSize: 10.sp,
+                              fontSize: 12.sp,
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
                             ),
@@ -587,7 +603,10 @@ class _PremiumPinFieldState extends State<PremiumPinField> {
                   color: isFilled
                       ? AppColors.primarySurface
                       : AppColors.surfaceVariant,
-                  borderRadius: BorderRadius.circular(14.r),
+                  // Platform-adaptive PIN box corners
+                  borderRadius: BorderRadius.circular(
+                    PlatformAdaptive.isApple ? 16.r : 12.r,
+                  ),
                   border: Border.all(
                     color: isActive
                         ? AppColors.primary

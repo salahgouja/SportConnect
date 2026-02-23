@@ -187,12 +187,14 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
           _isSubmitted = true;
         });
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         setState(() => _isSubmitting = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to submit: $e'),
+            content: const Text(
+              'Failed to submit your request. Please try again.',
+            ),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),
@@ -219,6 +221,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
           ),
         ),
         leading: IconButton(
+          tooltip: 'Go back',
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => context.pop(),
         ),

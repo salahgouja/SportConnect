@@ -512,6 +512,38 @@ class ChatRepository implements IChatRepository {
 
   // ==================== FILE UPLOADS ====================
 
+  /// Clear all messages in a chat for the current user (soft delete)
+  Future<void> clearChat({
+    required String chatId,
+    required String userId,
+  }) async {
+    // Set a 'clearedAt' timestamp for this user so the client
+    // filters out messages sent before this point.
+    await _chatsCollection.doc(chatId).update({
+      'clearedAt.$userId': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Block a user within a chat context
+  Future<void> blockUser({
+    required String chatId,
+    required String userId,
+    required String blockedUserId,
+  }) async {
+    // Store the block in the user's sub-document so queries can filter
+    final userBlocksRef = _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('blockedUsers');
+    await userBlocksRef.doc(blockedUserId).set({
+      'blockedAt': FieldValue.serverTimestamp(),
+      'chatId': chatId,
+    });
+
+    // Also mute the chat automatically
+    await toggleMute(chatId: chatId, odid: userId, mute: true);
+  }
+
   /// Upload chat image to Firebase Storage and return download URL
   Future<String> uploadChatImage({
     required String chatId,

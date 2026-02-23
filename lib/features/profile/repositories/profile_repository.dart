@@ -155,7 +155,12 @@ class ProfileRepository implements IUserRepository {
   /// Add a vehicle (only for drivers)
   Future<void> addVehicle(String uid, VehicleModel vehicle) async {
     final user = await getUserById(uid);
-    if (user == null || user is! DriverModel) return;
+    if (user == null) {
+      throw StateError('User not found for vehicle creation');
+    }
+    if (user is! DriverModel) {
+      throw StateError('Only drivers can add vehicles');
+    }
 
     // Store vehicle in its own collection
     final vehicleRef = _vehiclesCollection.doc(vehicle.id);

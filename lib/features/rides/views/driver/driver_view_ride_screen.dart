@@ -177,7 +177,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                                   context,
                                 ).value2(pendingBookings.length),
                                 style: TextStyle(
-                                  fontSize: 10.sp,
+                                  fontSize: 12.sp,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
                                 ),
@@ -208,7 +208,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                                   context,
                                 ).value2(confirmedBookings.length),
                                 style: TextStyle(
-                                  fontSize: 10.sp,
+                                  fontSize: 12.sp,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
                                 ),
@@ -244,6 +244,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       pinned: true,
       backgroundColor: AppColors.primary,
       leading: IconButton(
+        tooltip: 'Go back',
         onPressed: () => context.pop(),
         icon: Container(
           padding: EdgeInsets.all(8.w),
@@ -260,6 +261,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       ),
       actions: [
         IconButton(
+          tooltip: 'Ride options',
           onPressed: () => _showRideOptions(ride),
           icon: Container(
             padding: EdgeInsets.all(8.w),
@@ -1202,6 +1204,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton(
+                tooltip: 'Message passenger',
                 onPressed: () => _openPassengerChat(booking),
                 style: IconButton.styleFrom(
                   backgroundColor: AppColors.primarySurface,
@@ -1214,6 +1217,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
               ),
               SizedBox(width: 4.w),
               IconButton(
+                tooltip: 'Passenger options',
                 onPressed: () => _showPassengerOptions(ride, booking),
                 icon: Icon(
                   Icons.more_vert_rounded,
@@ -1451,13 +1455,11 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
           ),
         );
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              AppLocalizations.of(context).errorValue(e.toString()),
-            ),
+            content: const Text('Could not confirm booking. Please try again.'),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),
@@ -1517,13 +1519,11 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
             bookingId: booking.id,
             newStatus: BookingStatus.rejected,
           );
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              AppLocalizations.of(context).errorValue(e.toString()),
-            ),
+            content: const Text('Could not decline booking. Please try again.'),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),
@@ -1617,12 +1617,12 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
             bookingId: booking.id,
             newStatus: BookingStatus.cancelled,
           );
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              AppLocalizations.of(context).errorValue(e.toString()),
+            content: const Text(
+              'Could not remove passenger. Please try again.',
             ),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
@@ -1682,11 +1682,11 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
         pathParameters: {'id': chat.id},
         extra: passengerUser,
       );
-    } catch (e) {
+    } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to open chat: $e'),
+          content: const Text('Failed to open chat. Please try again.'),
           backgroundColor: AppColors.error,
         ),
       );
@@ -1770,13 +1770,11 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
 
     try {
       await ref.read(rideActionsViewModelProvider).startRide(ride.id);
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              AppLocalizations.of(context).errorValue(e.toString()),
-            ),
+            content: const Text('Could not start ride. Please try again.'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -1815,13 +1813,11 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
           ),
         );
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              AppLocalizations.of(context).errorValue(e.toString()),
-            ),
+            content: const Text('Could not complete ride. Please try again.'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -1858,13 +1854,11 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
           .read(rideActionsViewModelProvider)
           .cancelRide(ride.id, 'Cancelled by driver');
       if (mounted) context.pop();
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              AppLocalizations.of(context).errorValue(e.toString()),
-            ),
+            content: const Text('Could not cancel ride. Please try again.'),
             backgroundColor: AppColors.error,
           ),
         );

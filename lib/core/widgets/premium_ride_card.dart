@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/theme/platform_adaptive.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -109,18 +110,9 @@ class _PremiumRideCardState extends State<PremiumRideCard>
           decoration: BoxDecoration(
             color: AppColors.cardBg,
             borderRadius: BorderRadius.circular(24.r),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.08),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            // Platform-adaptive: glass border on iOS, standard on Android
+            border: PlatformAdaptive.cardBorder,
+            boxShadow: PlatformAdaptive.adaptiveShadow(),
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(24.r),
@@ -322,7 +314,7 @@ class _PremiumRideCardState extends State<PremiumRideCard>
           Text(
             '/seat',
             style: TextStyle(
-              fontSize: 10.sp,
+              fontSize: 12.sp,
               color: Colors.white.withValues(alpha: 0.8),
             ),
           ),
@@ -418,7 +410,7 @@ class _PremiumRideCardState extends State<PremiumRideCard>
                           Text(
                             'FROM',
                             style: TextStyle(
-                              fontSize: 10.sp,
+                              fontSize: 12.sp,
                               fontWeight: FontWeight.w600,
                               color: AppColors.textTertiary,
                               letterSpacing: 0.5,
@@ -479,7 +471,7 @@ class _PremiumRideCardState extends State<PremiumRideCard>
                           Text(
                             'TO',
                             style: TextStyle(
-                              fontSize: 10.sp,
+                              fontSize: 12.sp,
                               fontWeight: FontWeight.w600,
                               color: AppColors.textTertiary,
                               letterSpacing: 0.5,

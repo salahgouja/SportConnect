@@ -113,11 +113,10 @@ class _DriverOnboardingScreenState
           verificationStatus: VehicleVerificationStatus.pending,
         );
 
-        // Add vehicle to user's profile
-        final vehicleViewModel = ref.read(
-          vehicleViewModelProvider(currentUser.uid).notifier,
-        );
-        await vehicleViewModel.addVehicle(vehicle);
+        // Add vehicle to user's profile using actions provider
+        // to avoid auto-dispose family provider lifecycle issues.
+        final profileActions = ref.read(profileActionsViewModelProvider);
+        await profileActions.addVehicle(currentUser.uid, vehicle);
 
         _nextStep();
       }
@@ -174,6 +173,7 @@ class _DriverOnboardingScreenState
         elevation: 0,
         leading: _currentStep > 0
             ? IconButton(
+                tooltip: 'Previous step',
                 onPressed: _previousStep,
                 icon: Icon(
                   Icons.arrow_back_ios_new_rounded,
@@ -182,6 +182,7 @@ class _DriverOnboardingScreenState
                 ),
               )
             : IconButton(
+                tooltip: 'Go back',
                 onPressed: () => context.go(AppRoutes.roleSelection.path),
                 icon: Icon(
                   Icons.arrow_back_ios_new_rounded,

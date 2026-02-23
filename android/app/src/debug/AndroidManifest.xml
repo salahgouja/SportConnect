@@ -4,4 +4,6 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Allow cleartext traffic in debug for Firebase emulators -->
+    <application android:usesCleartextTraffic="true"/>
 </manifest>

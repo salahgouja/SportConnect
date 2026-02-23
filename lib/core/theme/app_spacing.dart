@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:sport_connect/core/theme/platform_adaptive.dart';
 
 /// Spacing constants for consistent layouts
 class AppSpacing {
@@ -25,14 +26,15 @@ class AppSpacing {
   static double get listItemSpacing => 12.w;
   static double get iconTextSpacing => 8.w;
 
-  // Border Radius
-  static double get radiusXs => 4.r;
-  static double get radiusSm => 8.r;
-  static double get radiusMd => 12.r;
-  static double get radiusLg => 16.r;
-  static double get radiusXl => 20.r;
-  static double get radiusXxl => 24.r;
-  static double get radiusFull => 999.r;
+  // Border Radius — platform-adaptive
+  // iOS: Liquid Glass (softer, rounder) | Android: Material 3 standard
+  static double get radiusXs => PlatformAdaptive.radiusXs;
+  static double get radiusSm => PlatformAdaptive.radiusSm;
+  static double get radiusMd => PlatformAdaptive.radiusMd;
+  static double get radiusLg => PlatformAdaptive.radiusLg;
+  static double get radiusXl => PlatformAdaptive.radiusXl;
+  static double get radiusXxl => PlatformAdaptive.radiusXxl;
+  static double get radiusFull => PlatformAdaptive.radiusFull;
 
   // Common BorderRadius
   static BorderRadius get borderRadiusSm => BorderRadius.circular(radiusSm);

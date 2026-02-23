@@ -84,6 +84,7 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
       pinned: true,
       backgroundColor: AppColors.surface,
       leading: IconButton(
+        tooltip: 'Go back',
         onPressed: () => context.pop(),
         icon: Container(
           padding: EdgeInsets.all(8.w),
@@ -316,7 +317,7 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 10.sp,
+                  fontSize: 12.sp,
                   color: Colors.white.withValues(alpha: 0.7),
                 ),
               ),
@@ -534,10 +535,7 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
                   // Driver info and time
                   Row(
                     children: [
-                      DriverAvatarWidget(
-                        driverId: ride.driverId,
-                        radius: 22,
-                      ),
+                      DriverAvatarWidget(driverId: ride.driverId, radius: 22),
                       SizedBox(width: 12.w),
                       Expanded(
                         child: Column(
@@ -729,10 +727,77 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
               itemCount: upcomingRides.length,
               itemBuilder: (context, index) {
                 final ride = upcomingRides[index];
-                return _buildUpcomingTripCard(ride, index)
-                    .animate()
-                    .fadeIn(delay: Duration(milliseconds: index * 80))
-                    .slideY(begin: 0.05);
+                return Dismissible(
+                  key: ValueKey('upcoming_ride_${ride.id}'),
+                  direction: DismissDirection.endToStart,
+                  confirmDismiss: (_) async {
+                    HapticFeedback.mediumImpact();
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Cancel this ride?'),
+                        content: const Text(
+                          'You will be taken to the cancellation screen.',
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16.r),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(false),
+                            child: const Text('Keep'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(true),
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.error,
+                            ),
+                            child: const Text('Cancel Ride'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirmed == true && context.mounted) {
+                      context.pushNamed(
+                        AppRoutes.cancellationReason.name,
+                        pathParameters: {'id': ride.id},
+                      );
+                    }
+                    return false; // list manages itself via stream
+                  },
+                  background: Container(
+                    margin: EdgeInsets.only(bottom: 12.h),
+                    decoration: BoxDecoration(
+                      color: AppColors.error,
+                      borderRadius: BorderRadius.circular(16.r),
+                    ),
+                    alignment: Alignment.centerRight,
+                    padding: EdgeInsets.symmetric(horizontal: 24.w),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.cancel_outlined,
+                          color: Colors.white,
+                          size: 26.sp,
+                        ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          'Cancel',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12.sp,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  child: _buildUpcomingTripCard(ride, index)
+                      .animate()
+                      .fadeIn(delay: Duration(milliseconds: index * 80))
+                      .slideY(begin: 0.05),
+                );
               },
             );
           },
@@ -836,7 +901,7 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
                         child: Text(
                           timeLabel,
                           style: TextStyle(
-                            fontSize: 10.sp,
+                            fontSize: 12.sp,
                             fontWeight: FontWeight.w600,
                             color: AppColors.primary,
                           ),
@@ -1313,7 +1378,9 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Failed to cancel: $e'),
+                              content: const Text(
+                                'Failed to cancel ride. Please try again.',
+                              ),
                               backgroundColor: AppColors.error,
                             ),
                           );
@@ -1404,7 +1471,9 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            AppLocalizations.of(context).failedToOpenChatValue(e.toString()),
+            AppLocalizations.of(
+              context,
+            ).failedToOpenChatValue('Unable to open chat right now.'),
           ),
           backgroundColor: Colors.red,
         ),
@@ -1417,18 +1486,14 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
     HapticFeedback.lightImpact();
 
     try {
-      final driver = await ref.read(
-        userProfileProvider(ride.driverId).future,
-      );
+      final driver = await ref.read(userProfileProvider(ride.driverId).future);
       final phoneNumber = driver?.phoneNumber;
 
       if (phoneNumber == null || phoneNumber.isEmpty) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              AppLocalizations.of(context).phoneNumberNotAvailable,
-            ),
+            content: Text(AppLocalizations.of(context).phoneNumberNotAvailable),
           ),
         );
         return;
@@ -1441,9 +1506,7 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              AppLocalizations.of(context).cannotMakePhoneCalls,
-            ),
+            content: Text(AppLocalizations.of(context).cannotMakePhoneCalls),
           ),
         );
       }
@@ -1451,9 +1514,7 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            AppLocalizations.of(context).failedToLaunchDialer,
-          ),
+          content: Text(AppLocalizations.of(context).failedToLaunchDialer),
         ),
       );
     }

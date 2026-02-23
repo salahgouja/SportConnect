@@ -29,6 +29,7 @@ import 'package:sport_connect/features/payments/view_models/payment_view_model.d
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/core/utils/distance_formatter.dart';
 import 'package:sport_connect/core/services/deep_link_service.dart';
+import 'package:sport_connect/core/theme/platform_adaptive.dart';
 
 /// Ride Detail Screen with booking functionality - Uses Firestore data
 class RideDetailScreen extends ConsumerStatefulWidget {
@@ -276,6 +277,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
       pinned: true,
       backgroundColor: AppColors.primary,
       leading: IconButton(
+        tooltip: 'Back',
         onPressed: () => context.pop(),
         icon: Container(
           padding: EdgeInsets.all(8.w),
@@ -293,6 +295,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
       ),
       actions: [
         IconButton(
+          tooltip: 'Share ride',
           onPressed: () async {
             try {
               // Generate shareable HTTPS link via app_links
@@ -759,6 +762,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                     ),
                   ),
                   IconButton(
+                    tooltip: 'Chat with driver',
                     onPressed: () => context.pushNamed(
                       AppRoutes.chat.path,
                       pathParameters: {'userId': ride.driverId},
@@ -1166,6 +1170,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
           ),
           // Chat button
           IconButton(
+            tooltip: 'Chat with passenger',
             onPressed: () => context.pushNamed(
               AppRoutes.chat.path,
               pathParameters: {'userId': booking.passengerId},
@@ -2178,7 +2183,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24.r),
+          borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
         title: Text(AppLocalizations.of(context).paymentMethod),
         content: Column(
@@ -2301,7 +2306,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24.r),
+          borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -2389,7 +2394,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24.r),
+          borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,

@@ -195,6 +195,7 @@ class _ProfileSearchScreenState extends ConsumerState<ProfileSearchScreen>
             ),
             suffixIcon: _searchController.text.isNotEmpty
                 ? IconButton(
+                    tooltip: 'Clear search',
                     onPressed: _clearSearch,
                     icon: Icon(
                       Icons.close_rounded,
@@ -403,28 +404,66 @@ class _ProfileSearchScreenState extends ConsumerState<ProfileSearchScreen>
       itemCount: users.length,
       itemBuilder: (context, index) {
         final user = users[index];
-        return _UserCard(
-              user: user,
-              onTap: () {
-                // Navigate to user profile
-                HapticFeedback.lightImpact();
-                if (user.role == UserRole.driver) {
-                  context.pushNamed(
-                    AppRoutes.driverProfile.path,
-                    pathParameters: {'userId': user.uid},
-                  );
-                } else {
-                  context.pushNamed(
-                    AppRoutes.profile.path,
-                    pathParameters: {'userId': user.uid},
-                  );
-                }
-                // You could navigate to a user detail screen here
-              },
-            )
-            .animate(delay: Duration(milliseconds: 50 * index))
-            .fadeIn()
-            .slideX(begin: 0.05);
+
+        void navigateToProfile() {
+          HapticFeedback.lightImpact();
+          if (user.role == UserRole.driver) {
+            context.pushNamed(
+              AppRoutes.driverProfile.path,
+              pathParameters: {'userId': user.uid},
+            );
+          } else {
+            context.pushNamed(
+              AppRoutes.profile.path,
+              pathParameters: {'userId': user.uid},
+            );
+          }
+        }
+
+        return Dismissible(
+          key: ValueKey('user_search_${user.uid}'),
+          direction: DismissDirection.endToStart,
+          confirmDismiss: (_) async {
+            HapticFeedback.mediumImpact();
+            navigateToProfile();
+            return false;
+          },
+          background: Container(
+            margin: EdgeInsets.only(bottom: 12.h),
+            decoration: BoxDecoration(
+              gradient: AppColors.primaryGradient,
+              borderRadius: BorderRadius.circular(16.r),
+            ),
+            alignment: Alignment.centerRight,
+            padding: EdgeInsets.only(right: 24.w),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.person_outline_rounded,
+                  color: Colors.white,
+                  size: 28.sp,
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  'Profile',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          child: _UserCard(
+                user: user,
+                onTap: navigateToProfile,
+              )
+              .animate(delay: Duration(milliseconds: 50 * index))
+              .fadeIn()
+              .slideX(begin: 0.05),
+        );
       },
     );
   }

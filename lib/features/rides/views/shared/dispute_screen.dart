@@ -10,6 +10,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 
 /// Dispute filing screen for ride fare or service disagreements.
 class DisputeScreen extends ConsumerStatefulWidget {
@@ -121,6 +122,14 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
     );
 
     if (source == null) return;
+
+    final accepted = await PermissionDialogHelper.showCameraRationale(
+      context,
+      customMessage: 'Access to your ${source == ImageSource.camera ? 'camera' : 'photo library'} '
+          'is needed to attach evidence to your dispute. '
+          'Photos are only uploaded when you submit the dispute.',
+    );
+    if (!accepted) return;
 
     final picked = await _imagePicker.pickImage(
       source: source,
@@ -239,6 +248,7 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
           ),
         ),
         leading: IconButton(
+          tooltip: 'Go back',
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => context.pop(),
         ),

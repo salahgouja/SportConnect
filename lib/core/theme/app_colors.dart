@@ -202,12 +202,33 @@ class AppColors {
     colors: [Color(0xFFFFFFFF), Color(0xFFF5F8F6)],
   );
 
-  // Glass effect gradient
+  // Glass effect gradient — Liquid Glass
   static const LinearGradient glassGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [Color(0x40FFFFFF), Color(0x10FFFFFF)],
   );
+
+  // Liquid Glass highlight gradient — for glass container top-left shimmer
+  static LinearGradient get liquidGlassHighlight => LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      const Color(0xFFFFFFFF).withValues(alpha: 0.30),
+      const Color(0xFFFFFFFF).withValues(alpha: 0.0),
+      const Color(0xFFFFFFFF).withValues(alpha: 0.0),
+      const Color(0xFFFFFFFF).withValues(alpha: 0.08),
+    ],
+    stops: const [0.0, 0.3, 0.7, 1.0],
+  );
+
+  // Liquid Glass surface — translucent white for glass panels
+  static Color get liquidGlassSurface =>
+      const Color(0xFFFFFFFF).withValues(alpha: 0.68);
+
+  // Liquid Glass border — subtle glass edge
+  static Color get liquidGlassBorder =>
+      const Color(0xFFFFFFFF).withValues(alpha: 0.20);
 
   // ═══════════════════════════════════════════════════════════════
   // LEVEL GRADIENTS FOR AVATARS

@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -884,8 +885,93 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
           (context, index) {
             final ride = rides[index];
             final isLast = index == rides.length - 1;
-            
-            return _buildTimelineRideCard(ride, isLast, index);
+
+            return Dismissible(
+              key: ValueKey('driver_timeline_${ride.id}'),
+              direction: DismissDirection.endToStart,
+              confirmDismiss: (_) async {
+                HapticFeedback.mediumImpact();
+                if (!mounted) return false;
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16.r),
+                    ),
+                    title: Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(8.w),
+                          decoration: BoxDecoration(
+                            color: AppColors.error.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.cancel_outlined,
+                            color: AppColors.error,
+                            size: 20.sp,
+                          ),
+                        ),
+                        SizedBox(width: 12.w),
+                        const Text('Cancel Ride'),
+                      ],
+                    ),
+                    content: const Text(
+                      'Are you sure you want to cancel this ride? This action cannot be undone.',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        child: const Text('Keep Ride'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.error,
+                        ),
+                        child: const Text('Cancel'),
+                      ),
+                    ],
+                  ),
+                );
+                if ((confirmed ?? false) && mounted) {
+                  context.pushNamed(
+                    AppRoutes.cancellationReason.name,
+                    pathParameters: {'id': ride.id},
+                  );
+                }
+                return false; // stream manages list
+              },
+              background: Container(
+                margin: EdgeInsets.only(bottom: isLast ? 0 : 16.h, left: 48.w),
+                decoration: BoxDecoration(
+                  color: AppColors.error,
+                  borderRadius: BorderRadius.circular(20.r),
+                ),
+                alignment: Alignment.centerRight,
+                padding: EdgeInsets.only(right: 24.w),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.cancel_outlined,
+                      color: Colors.white,
+                      size: 28.sp,
+                    ),
+                    SizedBox(height: 4.h),
+                    Text(
+                      'Cancel',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              child: _buildTimelineRideCard(ride, isLast, index),
+            );
           },
           childCount: rides.length,
         ),

@@ -162,6 +162,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
               Row(
                 children: [
                   IconButton(
+                    tooltip: 'Go back',
                     onPressed: () => context.pop(),
                     icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
                   ),
@@ -440,6 +441,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
           Row(
             children: [
               IconButton(
+                tooltip: 'Message driver',
                 onPressed: () => _sendMessage(driver.uid),
                 icon: Container(
                   padding: EdgeInsets.all(10.w),
@@ -455,6 +457,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                 ),
               ),
               IconButton(
+                tooltip: 'Call driver',
                 onPressed: () => _callDriver(driver.phoneNumber),
                 icon: Container(
                   padding: EdgeInsets.all(10.w),
@@ -736,6 +739,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                 ),
               ),
               IconButton(
+                tooltip: 'Message passenger',
                 onPressed: () => _sendMessage(passenger.uid),
                 icon: Icon(
                   Icons.chat_bubble_outline,
@@ -821,7 +825,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to open chat: $e'),
+          content: const Text('Failed to open chat. Please try again.'),
           backgroundColor: AppColors.error,
         ),
       );
@@ -837,7 +841,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
       );
       return;
     }
-    
+
     final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
     try {
       if (await canLaunchUrl(phoneUri)) {
@@ -846,9 +850,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
-                AppLocalizations.of(context).cannotMakePhoneCalls,
-              ),
+              content: Text(AppLocalizations.of(context).cannotMakePhoneCalls),
             ),
           );
         }
@@ -857,9 +859,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              AppLocalizations.of(context).failedToLaunchDialer,
-            ),
+            content: Text(AppLocalizations.of(context).failedToLaunchDialer),
           ),
         );
       }
@@ -923,7 +923,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
     final driverProfile = await ref.read(
       userProfileProvider(ride.driverId).future,
     );
-    
+
     if (!mounted) return;
 
     // Navigate to the submit review screen for the driver

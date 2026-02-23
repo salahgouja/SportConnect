@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +8,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/theme/platform_adaptive.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 
 /// Main wrapper widget with bottom navigation
@@ -97,43 +100,69 @@ class _CustomBottomNavBar extends StatelessWidget {
     final tabs = isDriver ? _driverTabs : _riderTabs;
     final totalTabs = tabs.length;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          top: BorderSide(
-            color: AppColors.border.withValues(alpha: 0.5),
-            width: 1,
-          ),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 72.h, // Increased from 55.h for better touch targets
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: List.generate(
-              tabs.length,
-              (index) => _NavBarTab(
-                item: tabs[index],
-                isActive: index == activeIndex,
-                onTap: () => onTap(index),
-                index: index,
-                totalTabs: totalTabs,
-              ),
+    // Platform-adaptive bottom navigation
+    // iOS: Liquid Glass frosted glass aesthetic
+    // Android: Solid Material 3 surface
+    final navContent = SafeArea(
+      top: false,
+      child: SizedBox(
+        height: 72.h,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: List.generate(
+            tabs.length,
+            (index) => _NavBarTab(
+              item: tabs[index],
+              isActive: index == activeIndex,
+              onTap: () => onTap(index),
+              index: index,
+              totalTabs: totalTabs,
             ),
           ),
         ),
       ),
+    );
+
+    if (PlatformAdaptive.useBackdropBlur) {
+      // iOS: Liquid Glass — frosted blur + translucent surface
+      return ClipRRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(
+            sigmaX: PlatformAdaptive.navBarBlurSigma,
+            sigmaY: PlatformAdaptive.navBarBlurSigma,
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.surface.withValues(
+                alpha: PlatformAdaptive.navBarAlpha,
+              ),
+              border: Border(
+                top: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.25),
+                  width: 0.5,
+                ),
+              ),
+            ),
+            child: navContent,
+          ),
+        ),
+      );
+    }
+
+    // Android: Material 3 — solid surface with standard elevation
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: navContent,
     );
   }
 
@@ -224,56 +253,69 @@ class _NavBarTab extends StatelessWidget {
             : 'Double tap to switch to ${item.label}',
         child: InkWell(
           onTap: onTap,
-          splashColor: AppColors.primary.withValues(alpha: 0.1),
-          highlightColor: AppColors.primary.withValues(alpha: 0.05),
+          splashColor: AppColors.primary.withValues(alpha: 0.08),
+          highlightColor: Colors.transparent,
           customBorder: const StadiumBorder(),
           child: Tooltip(
             message: item.label,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Active indicator pill (MD3 style)
+                // Platform-adaptive active indicator
                 AnimatedContainer(
-                  duration: const Duration(milliseconds: 250),
+                  duration: const Duration(milliseconds: 300),
                   curve: Curves.easeOutCubic,
                   padding: EdgeInsets.symmetric(
-                    horizontal: isActive ? 16.w : 8.w,
-                    vertical: 4.h,
+                    horizontal: isActive ? 18.w : 8.w,
+                    vertical: 5.h,
                   ),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? AppColors.primary.withValues(alpha: 0.12)
+                        ? AppColors.primary.withValues(
+                            alpha: PlatformAdaptive.isApple ? 0.14 : 0.12,
+                          )
                         : Colors.transparent,
-                    borderRadius: BorderRadius.circular(16.r),
+                    borderRadius: BorderRadius.circular(
+                      PlatformAdaptive.isApple ? 20.r : 16.r,
+                    ),
+                    border: isActive && PlatformAdaptive.isApple
+                        ? Border.all(
+                            color:
+                                AppColors.primary.withValues(alpha: 0.08),
+                            width: 0.5,
+                          )
+                        : null,
                   ),
                   child: AnimatedScale(
                     scale: isActive ? 1.05 : 1.0,
-                    duration: const Duration(milliseconds: 200),
+                    duration: const Duration(milliseconds: 250),
                     curve: Curves.easeOutCubic,
                     child: Icon(
                       isActive ? item.activeIcon : item.icon,
-                      size: 24.sp, // MD3 standard: 24dp
+                      size: 24.sp,
                       color: isActive
                           ? AppColors.primary
-                          : AppColors
-                                .textSecondary, // Changed from textTertiary for better contrast
+                          : AppColors.textSecondary,
                     ),
                   ),
                 ),
-                SizedBox(height: 4.h),
-                // Label with proper size
-                Text(
-                  item.label,
+                SizedBox(height: 3.h),
+                // Label
+                AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 200),
                   style: TextStyle(
-                    fontSize: 12.sp, // Increased from 10.sp per MD3 guidelines
+                    fontSize: PlatformAdaptive.isApple ? 11.sp : 12.sp,
                     fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
                     color: isActive
                         ? AppColors.primary
-                        : AppColors.textSecondary, // Better contrast
+                        : AppColors.textSecondary,
                     letterSpacing: 0.1,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  child: Text(
+                    item.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),

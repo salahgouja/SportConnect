@@ -12,13 +12,14 @@ import 'package:geolocator/geolocator.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
-import 'package:sport_connect/core/services/feature_discovery_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/services/routing_service.dart';
 import 'package:sport_connect/features/home/repositories/home_repository.dart';
 import 'package:sport_connect/features/home/models/home_models.dart';
+import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 /// Modern Carpooling Home Screen  - Uses proper MVVM architecture with repository
 class HomeScreen extends ConsumerStatefulWidget {
@@ -47,18 +48,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   bool _showDistanceRadius = false;
   double _searchRadius = 5.0; // km
   StreamSubscription<Position>? _positionStreamSubscription;
+  LatLng? _nearbyQueryAnchor;
+  DateTime? _lastMapMoveAt;
 
   // OSRM Routing state
   RouteInfo? _activeRoute;
   List<RouteInfo> _alternativeRoutes = [];
-  bool _isLoadingRoute = false;
+  final bool _isLoadingRoute = false;
   bool _showRouteInfo = false;
-  int _selectedRouteIndex = 0;
-
-  // Showcase keys for feature discovery tour
-  final GlobalKey _searchBarKey = GlobalKey();
-  final GlobalKey _bottomNavKey = GlobalKey();
-  final GlobalKey _profileKey = GlobalKey();
+  final int _selectedRouteIndex = 0;
 
   // Map styles available
   final Map<String, String> _mapStyles = {
@@ -84,12 +82,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     )..repeat();
     _getCurrentLocation();
     _startLocationTracking();
+    _requestNotificationPermission();
+  }
+
+  /// Requests notification permission with a rationale dialog.
+  Future<void> _requestNotificationPermission() async {
+    final settings = await FirebaseMessaging.instance.getNotificationSettings();
+    if (settings.authorizationStatus == AuthorizationStatus.notDetermined) {
+      // Only show rationale if permission hasn't been decided yet
+      await Future.delayed(const Duration(seconds: 2));
+      if (!mounted) return;
+      final accepted =
+          await PermissionDialogHelper.showNotificationRationale(context);
+      if (!accepted) return;
+      await FirebaseMessaging.instance.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+    }
   }
 
   void _startLocationTracking() {
     const locationSettings = LocationSettings(
       accuracy: LocationAccuracy.high,
-      distanceFilter: 10, // Update every 10 meters
+      distanceFilter: 20, // Reduce update frequency for smoother UI
     );
 
     _positionStreamSubscription =
@@ -97,12 +114,49 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           locationSettings: locationSettings,
         ).listen((Position position) {
           if (mounted) {
+            final nextLocation = LatLng(position.latitude, position.longitude);
+            final movedDistance = Geolocator.distanceBetween(
+              _currentLocation.latitude,
+              _currentLocation.longitude,
+              nextLocation.latitude,
+              nextLocation.longitude,
+            );
+
+            final headingDelta = (_userHeading - position.heading).abs();
+            final shouldRefreshUi = movedDistance >= 12 || headingDelta >= 8;
+
+            if (!shouldRefreshUi) {
+              return;
+            }
+
             setState(() {
-              _currentLocation = LatLng(position.latitude, position.longitude);
+              _currentLocation = nextLocation;
               _userHeading = position.heading;
+
+              final anchor = _nearbyQueryAnchor;
+              if (anchor == null ||
+                  Geolocator.distanceBetween(
+                        anchor.latitude,
+                        anchor.longitude,
+                        nextLocation.latitude,
+                        nextLocation.longitude,
+                      ) >=
+                      1000) {
+                _nearbyQueryAnchor = nextLocation;
+              }
             });
+
             if (_isFollowingUser) {
-              _mapController.move(_currentLocation, _currentZoom);
+              final now = DateTime.now();
+              final canMoveMap =
+                  _lastMapMoveAt == null ||
+                  now.difference(_lastMapMoveAt!) >=
+                      const Duration(milliseconds: 700);
+
+              if (canMoveMap) {
+                _mapController.move(_currentLocation, _currentZoom);
+                _lastMapMoveAt = now;
+              }
             }
           }
         });
@@ -119,6 +173,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
+        if (!mounted) return;
+        final accepted =
+            await PermissionDialogHelper.showLocationRationale(context);
+        if (!accepted) {
+          setState(() => _isLoadingLocation = false);
+          return;
+        }
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
           TalkerService.debug('Location permission denied');
@@ -145,6 +206,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       );
       setState(() {
         _currentLocation = LatLng(position.latitude, position.longitude);
+        _nearbyQueryAnchor = _currentLocation;
         _isLoadingLocation = false;
       });
       _mapController.move(_currentLocation, _currentZoom);
@@ -168,7 +230,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Widget _buildMapHome() {
-    final nearbyRides = ref.watch(nearbyRidesStreamProvider(_currentLocation));
+    final queryAnchor = _nearbyQueryAnchor ?? _currentLocation;
+    final nearbyRides = ref.watch(
+      nearbyRidesStreamProvider(
+        NearbyRidesQuery(location: queryAnchor, radiusKm: _searchRadius),
+      ),
+    );
+    final filteredNearbyRides = nearbyRides.whenData(_filterRides);
     final hotspots = ref.watch(hotspotsStreamProvider);
     final user = ref.watch(currentUserProvider);
 
@@ -182,7 +250,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             initialZoom: _currentZoom,
             onPositionChanged: (position, hasGesture) {
               if (hasGesture) {
-                setState(() => _currentZoom = position.zoom);
+                final nextZoom = position.zoom;
+                if ((nextZoom - _currentZoom).abs() > 0.01) {
+                  setState(() => _currentZoom = nextZoom);
+                }
               }
             },
           ),
@@ -215,10 +286,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
             // Nearby rides markers
             if (_showNearbyDrivers)
-              nearbyRides.when(
-                data: (rides) => MarkerLayer(
-                  markers: _buildRideMarkers(_filterRides(rides)),
-                ),
+              filteredNearbyRides.when(
+                data: (rides) => MarkerLayer(markers: _buildRideMarkers(rides)),
                 loading: () => const MarkerLayer(markers: []),
                 error: (_, _) => const MarkerLayer(markers: []),
               ),
@@ -288,7 +357,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         if (_showRouteInfo && _activeRoute != null) _buildRouteInfoPanel(),
 
         // Quick Stats Bar
-        _buildQuickStatsBar(nearbyRides),
+        _buildQuickStatsBar(filteredNearbyRides),
 
         // Loading overlay
         if (_isLoadingLocation || _isLoadingRoute)
@@ -544,7 +613,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             Text(
               scaleText,
               style: TextStyle(
-                fontSize: 10.sp,
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
               ),
@@ -652,8 +721,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       bottom: 24.h,
       child: nearbyRides.when(
         data: (rides) {
-          final filteredRides = _filterRides(rides);
-          final availableSeats = filteredRides.fold<int>(
+          final availableSeats = rides.fold<int>(
             0,
             (sum, r) => sum + r.availableSeats,
           );
@@ -675,7 +743,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               children: [
                 _buildStatItem(
                   Icons.directions_car,
-                  AppLocalizations.of(context).value2(filteredRides.length),
+                  AppLocalizations.of(context).value2(rides.length),
                   AppLocalizations.of(context).rides,
                 ),
                 SizedBox(width: 16.w),
@@ -716,7 +784,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ),
             Text(
               label,
-              style: TextStyle(fontSize: 10.sp, color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
             ),
           ],
         ),
@@ -730,126 +798,98 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
         child: Row(
           children: [
-            // Profile Button
-            Showcase(
-              key: _profileKey,
-              title: 'Your Profile',
-              description:
-                  'Tap here to access your profile, settings, achievements, and more. View your XP progress and level!',
-              titleTextStyle: TextStyle(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-              ),
-              descTextStyle: TextStyle(
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w400,
-                color: Colors.white.withValues(alpha: 0.9),
-              ),
-              tooltipBackgroundColor: AppColors.primary,
-              targetShapeBorder: const CircleBorder(),
-              targetPadding: EdgeInsets.all(8.w),
+            Semantics(
+              button: true,
+              label: 'Profile',
               child: GestureDetector(
-                child: Container(
-                  padding: EdgeInsets.all(3.w),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 10,
-                      ),
-                    ],
+              child: Container(
+                padding: EdgeInsets.all(3.w),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 10,
+                    ),
+                  ],
+                ),
+                child: user.when(
+                  data: (userData) => PremiumAvatar(
+                    imageUrl: userData?.photoUrl,
+                    name: userData?.displayName ?? 'User',
+                    size: 40.w,
                   ),
-                  child: user.when(
-                    data: (userData) => PremiumAvatar(
-                      imageUrl: userData?.photoUrl,
-                      name: userData?.displayName ?? 'User',
-                      size: 40.w,
-                    ),
-                    loading: () => CircleAvatar(
-                      radius: 20.w,
-                      backgroundColor: AppColors.shimmer,
-                    ),
-                    error: (_, _) => CircleAvatar(
-                      radius: 20.w,
-                      child: const Icon(Icons.person),
-                    ),
+                  loading: () => CircleAvatar(
+                    radius: 20.w,
+                    backgroundColor: AppColors.shimmer,
+                  ),
+                  error: (_, _) => CircleAvatar(
+                    radius: 20.w,
+                    child: const Icon(Icons.person),
                   ),
                 ),
               ),
+            ),
             ),
 
             SizedBox(width: 12.w),
 
             // Clean Search Bar - Opens inline search bottom sheet
             Expanded(
-              child: Showcase(
-                key: _searchBarKey,
-                title: 'Search for Rides',
-                description:
-                    'Tap here to find rides to your destination. Enter your pickup and drop-off locations to see available rides.',
-                titleTextStyle: TextStyle(
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-                descTextStyle: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w400,
-                  color: Colors.white.withValues(alpha: 0.9),
-                ),
-                tooltipBackgroundColor: AppColors.primary,
-                targetBorderRadius: BorderRadius.circular(28.r),
-                targetPadding: EdgeInsets.all(8.w),
+              child: Semantics(
+                button: true,
+                label: AppLocalizations.of(context).whereAreYouGoing,
                 child: GestureDetector(
-                  onTap: () => _showInlineSearchSheet(),
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 14.w,
-                      vertical: 12.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(28.r),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.search_rounded,
-                          color: AppColors.primary,
-                          size: 20.sp,
-                        ),
-                        SizedBox(width: 10.w),
-                        Expanded(
-                          child: Text(
-                            AppLocalizations.of(context).whereAreYouGoing,
-                            style: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 14.sp,
-                            ),
-                            overflow: TextOverflow.ellipsis,
+                onTap: () => _showInlineSearchSheet(),
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 14.w,
+                    vertical: 12.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(28.r),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.search_rounded,
+                        color: AppColors.primary,
+                        size: 20.sp,
+                      ),
+                      SizedBox(width: 10.w),
+                      Expanded(
+                        child: Text(
+                          AppLocalizations.of(context).whereAreYouGoing,
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 14.sp,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
+              ),
               ),
             ),
 
             SizedBox(width: 12.w),
 
             // Profile Search
-            GestureDetector(
+            Semantics(
+              button: true,
+              label: 'Search users',
+              child: GestureDetector(
               onTap: () => context.push(AppRoutes.profileSearch.path),
               child: Container(
                 padding: EdgeInsets.all(10.w),
@@ -870,11 +910,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 ),
               ),
             ),
+            ),
 
             SizedBox(width: 8.w),
 
             // Notifications
-            GestureDetector(
+            Semantics(
+              button: true,
+              label: 'Notifications',
+              child: GestureDetector(
               onTap: () => context.push(AppRoutes.notifications.path),
               child: Container(
                 padding: EdgeInsets.all(10.w),
@@ -894,6 +938,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   size: 22.sp,
                 ),
               ),
+            ),
             ),
           ],
         ),
@@ -924,7 +969,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
             return Padding(
               padding: EdgeInsets.only(right: 8.w),
-              child: GestureDetector(
+              child: Semantics(
+                selected: isSelected,
+                button: true,
+                label: '${filter['label']} filter',
+                child: GestureDetector(
                 onTap: () {
                   HapticFeedback.selectionClick();
                   setState(() => _selectedFilter = filter['id'] as String);
@@ -965,6 +1014,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     ],
                   ),
                 ),
+              ),
               ),
             );
           },
@@ -1067,7 +1117,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     bool isActive = false,
     String? tooltip,
   }) {
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      label: tooltip ?? 'Map control',
+      child: GestureDetector(
       onTap: onTap,
       child: Container(
         padding: EdgeInsets.all(12.w),
@@ -1087,6 +1140,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           color: isActive ? Colors.white : AppColors.textPrimary,
         ),
       ),
+    ),
     );
   }
 
@@ -1153,6 +1207,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   ),
                 ),
                 IconButton(
+                  tooltip: 'Close route info',
                   onPressed: () {
                     setState(() {
                       _showRouteInfo = false;
@@ -1281,8 +1336,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
+            final queryAnchor = _nearbyQueryAnchor ?? _currentLocation;
             final nearbyRides = ref.watch(
-              nearbyRidesStreamProvider(_currentLocation),
+              nearbyRidesStreamProvider(
+                NearbyRidesQuery(
+                  location: queryAnchor,
+                  radiusKm: _searchRadius,
+                ),
+              ),
             );
 
             return Container(
@@ -1357,6 +1418,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         // From field
                         TextField(
                           controller: fromController,
+                          onChanged: (_) => setModalState(() {}),
                           decoration: InputDecoration(
                             hintText: AppLocalizations.of(context).fromWhere,
                             hintStyle: TextStyle(
@@ -1379,6 +1441,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         // To field
                         TextField(
                           controller: toController,
+                          onChanged: (_) => setModalState(() {}),
                           decoration: InputDecoration(
                             hintText: AppLocalizations.of(context).toWhere,
                             hintStyle: TextStyle(
@@ -1569,7 +1632,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   Expanded(
                     child: nearbyRides.when(
                       data: (rides) {
-                        if (rides.isEmpty) {
+                        final filteredRides = _filterSearchSheetRides(
+                          rides,
+                          fromText: fromController.text,
+                          toText: toController.text,
+                          date: selectedDate,
+                          seats: selectedSeats,
+                        );
+                        if (filteredRides.isEmpty) {
                           return Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -1606,9 +1676,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
                         return ListView.builder(
                           padding: EdgeInsets.symmetric(horizontal: 16.w),
-                          itemCount: rides.length,
+                          itemCount: filteredRides.length,
                           itemBuilder: (context, index) {
-                            final ride = rides[index];
+                            final ride = filteredRides[index];
                             return _buildSearchRideCard(ride, context);
                           },
                         );
@@ -1647,6 +1717,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         );
       },
     );
+  }
+
+  List<NearbyRidePreview> _filterSearchSheetRides(
+    List<NearbyRidePreview> rides, {
+    required String fromText,
+    required String toText,
+    required DateTime date,
+    required int seats,
+  }) {
+    final normalizedFrom = fromText.trim().toLowerCase();
+    final normalizedTo = toText.trim().toLowerCase();
+    final dateOnly = DateTime(date.year, date.month, date.day);
+
+    return _filterRides(rides).where((ride) {
+      final rideDate = DateTime(
+        ride.departureTime.year,
+        ride.departureTime.month,
+        ride.departureTime.day,
+      );
+
+      final originText = '${ride.origin.address} ${ride.origin.city ?? ''}'
+          .toLowerCase();
+      final destinationText =
+          '${ride.destination.address} ${ride.destination.city ?? ''}'
+              .toLowerCase();
+
+      final matchesFrom =
+          normalizedFrom.isEmpty || originText.contains(normalizedFrom);
+      final matchesTo =
+          normalizedTo.isEmpty || destinationText.contains(normalizedTo);
+      final matchesDate = rideDate == dateOnly;
+      final matchesSeats = ride.availableSeats >= seats;
+
+      return matchesFrom && matchesTo && matchesDate && matchesSeats;
+    }).toList();
   }
 
   /// Builds a ride card for the search sheet - uses proper NearbyRidePreview model

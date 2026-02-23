@@ -10,6 +10,7 @@ import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/core/widgets/premium_text_field.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
+import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -78,6 +79,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   Future<void> _pickImageFromGallery() async {
+    final accepted = await PermissionDialogHelper.showCameraRationale(
+      context,
+      customMessage: 'Access to your photo library is needed to '
+          'update your profile picture.',
+    );
+    if (!accepted) return;
     final XFile? image = await _imagePicker.pickImage(
       source: ImageSource.gallery,
     );
@@ -151,6 +158,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               elevation: 0,
               pinned: true,
               leading: IconButton(
+                tooltip: 'Back',
                 onPressed: () => context.pop(),
                 icon: Icon(
                   Icons.arrow_back_ios_new_rounded,
@@ -682,6 +690,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 ),
                 onTap: () async {
                   Navigator.pop(context);
+                  final accepted =
+                      await PermissionDialogHelper.showCameraRationale(
+                    context,
+                    customMessage: 'Camera access is needed to take a '
+                        'new profile photo.',
+                  );
+                  if (!accepted) return;
                   final XFile? image = await _imagePicker.pickImage(
                     source: ImageSource.camera,
                   );

@@ -96,6 +96,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
             pinned: true,
             backgroundColor: AppColors.primary,
             leading: IconButton(
+              tooltip: 'Go back',
               onPressed: () => context.pop(),
               icon: Container(
                 padding: EdgeInsets.all(8.w),

@@ -9,6 +9,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/services/map_service.dart';
+import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Full-screen Location Picker with Search and Map
@@ -133,6 +134,16 @@ class _MapLocationPickerState extends State<MapLocationPicker>
 
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
+        if (!mounted) {
+          setState(() => _isLoadingLocation = false);
+          return;
+        }
+        final accepted =
+            await PermissionDialogHelper.showLocationRationale(context);
+        if (!accepted) {
+          setState(() => _isLoadingLocation = false);
+          return;
+        }
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
           setState(() => _isLoadingLocation = false);
@@ -714,7 +725,7 @@ class _MapLocationPickerState extends State<MapLocationPicker>
                 Text(
                   country,
                   style: TextStyle(
-                    fontSize: 10.sp,
+                    fontSize: 12.sp,
                     color: isSelected
                         ? Colors.white.withValues(alpha: 0.8)
                         : AppColors.textSecondary,

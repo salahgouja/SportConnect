@@ -78,6 +78,29 @@ class ChatActionsViewModel {
   Future<ChatModel?> getChatById(String chatId) {
     return _ref.read(chatRepositoryProvider).getChatById(chatId);
   }
+
+  Future<void> clearChat({
+    required String chatId,
+    required String userId,
+  }) {
+    return _ref
+        .read(chatRepositoryProvider)
+        .clearChat(chatId: chatId, userId: userId);
+  }
+
+  Future<void> blockUser({
+    required String chatId,
+    required String userId,
+    required String blockedUserId,
+  }) {
+    return _ref
+        .read(chatRepositoryProvider)
+        .blockUser(
+          chatId: chatId,
+          userId: userId,
+          blockedUserId: blockedUserId,
+        );
+  }
 }
 
 /// User Chats Stream Provider

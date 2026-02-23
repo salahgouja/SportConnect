@@ -9,6 +9,8 @@ part of 'ride_request_model.dart';
 _RideRequestModel _$RideRequestModelFromJson(Map json) => _RideRequestModel(
   id: json['id'] as String,
   rideId: json['rideId'] as String,
+  eventId: json['eventId'] as String?,
+  eventName: json['eventName'] as String?,
   requesterId: json['requesterId'] as String,
   driverId: json['driverId'] as String,
   status: $enumDecode(_$RideRequestStatusEnumMap, json['status']),
@@ -38,6 +40,8 @@ Map<String, dynamic> _$RideRequestModelToJson(_RideRequestModel instance) =>
     <String, dynamic>{
       'id': instance.id,
       'rideId': instance.rideId,
+      'eventId': instance.eventId,
+      'eventName': instance.eventName,
       'requesterId': instance.requesterId,
       'driverId': instance.driverId,
       'status': _$RideRequestStatusEnumMap[instance.status]!,

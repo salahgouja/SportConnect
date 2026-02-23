@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -64,6 +65,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
   bool _agreedToTerms = false;
   UserRole _selectedRole = UserRole.rider;
   File? _profileImage;
+  DateTime? _dateOfBirth;
   final List<String> _selectedInterests = [];
 
   final List<_WizardStep> _steps = [
@@ -147,6 +149,21 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
       if (!_formKeys[_currentStep].currentState!.validate()) return;
     }
 
+    // Step 0: validate DOB (minimum age 18)
+    if (_currentStep == 0 && _dateOfBirth == null) {
+      _showError('Please enter your date of birth.');
+      return;
+    }
+    if (_currentStep == 0 && _dateOfBirth != null) {
+      final age = DateTime.now().difference(_dateOfBirth!).inDays ~/ 365;
+      if (age < 18) {
+        _showError(
+          'You must be at least 18 years old to use SportConnect.',
+        );
+        return;
+      }
+    }
+
     if (_currentStep == 1 && !_agreedToTerms) {
       _showError('Please agree to the Terms of Service');
       return;
@@ -212,8 +229,8 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
           );
 
       // Registration successful - navigation handled by listener
-    } catch (e) {
-      _showError(e.toString());
+    } catch (_) {
+      _showError('Unable to create your account right now. Please try again.');
     }
   }
 
@@ -481,7 +498,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 10.sp,
+              fontSize: 12.sp,
               fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w400,
               color: isCurrent
                   ? AppColors.textPrimary
@@ -580,6 +597,96 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
               prefixIcon: Icons.phone_outlined,
               keyboardType: TextInputType.phone,
             ).animate().fadeIn(delay: 400.ms).slideX(begin: -0.1),
+
+            SizedBox(height: 20.h),
+
+            // Date of Birth field (required for age verification)
+            GestureDetector(
+              onTap: () async {
+                final now = DateTime.now();
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: _dateOfBirth ??
+                      DateTime(now.year - 18, now.month, now.day),
+                  firstDate: DateTime(1920),
+                  lastDate: now,
+                  helpText: 'Select your date of birth',
+                  builder: (context, child) {
+                    return Theme(
+                      data: Theme.of(context).copyWith(
+                        colorScheme: ColorScheme.light(
+                          primary: AppColors.primary,
+                          onSurface: AppColors.textPrimary,
+                        ),
+                      ),
+                      child: child!,
+                    );
+                  },
+                );
+                if (picked != null) {
+                  setState(() => _dateOfBirth = picked);
+                }
+              },
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 16.w,
+                  vertical: 16.h,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.cardBg,
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(
+                    color: _dateOfBirth != null
+                        ? AppColors.primary.withAlpha(100)
+                        : AppColors.border,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.cake_outlined,
+                      color: _dateOfBirth != null
+                          ? AppColors.primary
+                          : AppColors.textTertiary,
+                      size: 22.sp,
+                    ),
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Date of Birth *',
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              color: AppColors.textTertiary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(height: 2.h),
+                          Text(
+                            _dateOfBirth != null
+                                ? '${_dateOfBirth!.day}/${_dateOfBirth!.month}/${_dateOfBirth!.year}'
+                                : 'Tap to select (must be 18+)',
+                            style: TextStyle(
+                              fontSize: 15.sp,
+                              color: _dateOfBirth != null
+                                  ? AppColors.textPrimary
+                                  : AppColors.textTertiary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_drop_down_rounded,
+                      color: AppColors.textTertiary,
+                      size: 24.sp,
+                    ),
+                  ],
+                ),
+              ),
+            ).animate().fadeIn(delay: 450.ms).slideX(begin: -0.1),
 
             SizedBox(height: 32.h),
 
@@ -701,6 +808,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
               obscureText: _obscurePassword,
               validator: Validators.password,
               suffix: IconButton(
+                tooltip: 'Toggle password visibility',
                 icon: Icon(
                   _obscurePassword
                       ? Icons.visibility_outlined
@@ -725,6 +833,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
               validator: (value) =>
                   Validators.confirmPassword(value, _passwordController.text),
               suffix: IconButton(
+                tooltip: 'Toggle password visibility',
                 icon: Icon(
                   _obscureConfirmPassword
                       ? Icons.visibility_outlined
@@ -864,7 +973,12 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                       style: TextStyle(
                         color: AppColors.primary,
                         fontWeight: FontWeight.w600,
+                        decoration: TextDecoration.underline,
                       ),
+                      recognizer: TapGestureRecognizer()
+                        ..onTap = () {
+                          context.push(AppRoutes.terms.path);
+                        },
                     ),
                     const TextSpan(text: ' and '),
                     TextSpan(
@@ -872,7 +986,12 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                       style: TextStyle(
                         color: AppColors.primary,
                         fontWeight: FontWeight.w600,
+                        decoration: TextDecoration.underline,
                       ),
+                      recognizer: TapGestureRecognizer()
+                        ..onTap = () {
+                          context.push(AppRoutes.privacy.path);
+                        },
                     ),
                   ],
                 ),
