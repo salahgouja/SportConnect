@@ -155,7 +155,6 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
-    - assets/animations/
     - shorebird.yaml
 
 # Flutter Native Splash Configuration
