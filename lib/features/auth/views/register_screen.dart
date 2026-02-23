@@ -178,7 +178,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                           ),
                         ),
                         padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                        constraints: const BoxConstraints(
+                          minWidth: 44,
+                          minHeight: 44,
+                        ),
                       ),
                     ),
 

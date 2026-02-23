@@ -1007,7 +1007,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface.withValues(alpha: PlatformAdaptive.dialogAlpha),
+        backgroundColor: AppColors.surface.withValues(
+          alpha: PlatformAdaptive.dialogAlpha,
+        ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
@@ -1026,10 +1028,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             Text(
               'You can withdraw your consent for data processing in '
               'the following ways:',
-              style: TextStyle(
-                fontSize: 14.sp,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
             ),
             SizedBox(height: 16.h),
             _buildConsentOption(
@@ -1068,21 +1067,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Close',
-              style: TextStyle(color: AppColors.primary),
-            ),
+            child: Text('Close', style: TextStyle(color: AppColors.primary)),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildConsentOption(
-    String title,
-    String description,
-    IconData icon,
-  ) {
+  Widget _buildConsentOption(String title, String description, IconData icon) {
     return Padding(
       padding: EdgeInsets.only(bottom: 12.h),
       child: Row(
@@ -1232,8 +1224,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           confirmPwd.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content:
-                                const Text('Please fill in all fields.'),
+                            content: const Text('Please fill in all fields.'),
                             backgroundColor: AppColors.warning,
                           ),
                         );
@@ -1255,8 +1246,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       if (newPwd != confirmPwd) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content:
-                                const Text('New passwords do not match.'),
+                            content: const Text('New passwords do not match.'),
                             backgroundColor: AppColors.warning,
                           ),
                         );
@@ -1266,17 +1256,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       setDialogState(() => isUpdating = true);
 
                       try {
-                        final authActions =
-                            ref.read(authActionsViewModelProvider);
+                        final authActions = ref.read(
+                          authActionsViewModelProvider,
+                        );
                         final user = authActions.currentUser;
                         if (user == null) throw Exception('Not signed in');
 
                         // Re-authenticate with current password
                         final credential =
                             firebase_auth.EmailAuthProvider.credential(
-                          email: user.email ?? '',
-                          password: currentPwd,
-                        );
+                              email: user.email ?? '',
+                              password: currentPwd,
+                            );
                         await user.reauthenticateWithCredential(credential);
 
                         // Update password
@@ -1287,8 +1278,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                AppLocalizations.of(context)
-                                    .passwordUpdatedSuccessfully,
+                                AppLocalizations.of(
+                                  context,
+                                ).passwordUpdatedSuccessfully,
                               ),
                               backgroundColor: AppColors.success,
                             ),

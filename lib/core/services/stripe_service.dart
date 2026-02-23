@@ -113,7 +113,6 @@ class StripeService {
     String? ephemeralKeySecret,
   }) async {
     try {
-
       // Initialize Payment Sheet with branded appearance
       await Stripe.instance.initPaymentSheet(
         paymentSheetParameters: SetupPaymentSheetParameters(
@@ -122,9 +121,7 @@ class StripeService {
           customerId: customerId,
           customerEphemeralKeySecret: ephemeralKeySecret,
           // Enable Apple Pay / Google Pay for faster checkout
-          applePay: const PaymentSheetApplePay(
-            merchantCountryCode: 'FR',
-          ),
+          applePay: const PaymentSheetApplePay(merchantCountryCode: 'FR'),
           googlePay: const PaymentSheetGooglePay(
             merchantCountryCode: 'FR',
             testEnv: true, // Set to false in production
@@ -138,9 +135,7 @@ class StripeService {
               componentBackground: Color(0xFFF5F5F5),
               componentBorder: Color(0xFFE0E0E0),
             ),
-            shapes: PaymentSheetShape(
-              borderWidth: 1,
-            ),
+            shapes: PaymentSheetShape(borderWidth: 1),
             primaryButton: PaymentSheetPrimaryButtonAppearance(
               shapes: PaymentSheetPrimaryButtonShape(),
             ),

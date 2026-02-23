@@ -314,17 +314,14 @@ class RideRepository implements IRideRepository {
       final query = await _ridesCollection
           .where(FieldPath.documentId, whereIn: batch)
           .get();
-      rides.addAll(
-        query.docs.map((doc) => RideModel.fromJson(doc.data())),
-      );
+      rides.addAll(query.docs.map((doc) => RideModel.fromJson(doc.data())));
     }
 
     // Filter to only future rides and sort ascending
     final now = DateTime.now();
-    final upcoming = rides
-        .where((ride) => ride.departureTime.isAfter(now))
-        .toList()
-      ..sort((a, b) => a.departureTime.compareTo(b.departureTime));
+    final upcoming =
+        rides.where((ride) => ride.departureTime.isAfter(now)).toList()
+          ..sort((a, b) => a.departureTime.compareTo(b.departureTime));
 
     return upcoming;
   }
@@ -404,8 +401,10 @@ class RideRepository implements IRideRepository {
     // If cancelled, free up the seats on the ride
     if (newStatus == BookingStatus.cancelled ||
         newStatus == BookingStatus.rejected) {
-      final bookingDoc =
-          await _firestore.collection('bookings').doc(bookingId).get();
+      final bookingDoc = await _firestore
+          .collection('bookings')
+          .doc(bookingId)
+          .get();
       if (bookingDoc.exists) {
         final seatsBooked =
             (bookingDoc.data()?['seatsBooked'] as num?)?.toInt() ?? 1;

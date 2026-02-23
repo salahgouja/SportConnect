@@ -90,8 +90,9 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         if (!mounted) return;
-        final accepted =
-            await PermissionDialogHelper.showRideTrackingRationale(context);
+        final accepted = await PermissionDialogHelper.showRideTrackingRationale(
+          context,
+        );
         if (!accepted) {
           setState(() => _isLoadingLocation = false);
           return;

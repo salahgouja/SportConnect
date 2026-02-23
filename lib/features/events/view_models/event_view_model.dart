@@ -35,8 +35,9 @@ class EventSelectionState {
     bool clearError = false,
   }) {
     return EventSelectionState(
-      selectedEvent:
-          clearSelectedEvent ? null : (selectedEvent ?? this.selectedEvent),
+      selectedEvent: clearSelectedEvent
+          ? null
+          : (selectedEvent ?? this.selectedEvent),
       filterType: clearFilterType ? null : (filterType ?? this.filterType),
       searchQuery: searchQuery ?? this.searchQuery,
       isLoading: isLoading ?? this.isLoading,
@@ -101,9 +102,7 @@ class EventSelectionViewModel extends _$EventSelectionViewModel {
         description: description?.trim().isEmpty ?? true
             ? null
             : description!.trim(),
-        venueName: venueName?.trim().isEmpty ?? true
-            ? null
-            : venueName!.trim(),
+        venueName: venueName?.trim().isEmpty ?? true ? null : venueName!.trim(),
         organizerName: organizerName?.trim().isEmpty ?? true
             ? null
             : organizerName!.trim(),
@@ -115,10 +114,7 @@ class EventSelectionViewModel extends _$EventSelectionViewModel {
           .createEvent(event);
 
       final created = event.copyWith(id: eventId);
-      state = state.copyWith(
-        isLoading: false,
-        selectedEvent: created,
-      );
+      state = state.copyWith(isLoading: false, selectedEvent: created);
       return created;
     } catch (_) {
       state = state.copyWith(

@@ -138,8 +138,9 @@ class _MapLocationPickerState extends State<MapLocationPicker>
           setState(() => _isLoadingLocation = false);
           return;
         }
-        final accepted =
-            await PermissionDialogHelper.showLocationRationale(context);
+        final accepted = await PermissionDialogHelper.showLocationRationale(
+          context,
+        );
         if (!accepted) {
           setState(() => _isLoadingLocation = false);
           return;

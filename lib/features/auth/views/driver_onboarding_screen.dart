@@ -118,6 +118,7 @@ class _DriverOnboardingScreenState
         final profileActions = ref.read(profileActionsViewModelProvider);
         await profileActions.addVehicle(currentUser.uid, vehicle);
 
+        if (!mounted) return;
         _nextStep();
       }
     } catch (e) {
@@ -342,11 +343,18 @@ class _DriverOnboardingScreenState
                     hint: 'e.g., 2020',
                     prefixIcon: Icons.calendar_today_outlined,
                     keyboardType: TextInputType.number,
+                    textInputAction: TextInputAction.next,
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
+                      if (value == null || value.trim().isEmpty) {
                         return 'Required';
                       }
-                      final year = int.tryParse(value);
+
+                      // Use regex to ensure it's strictly numbers before parsing
+                      if (!RegExp(r'^\d+$').hasMatch(value.trim())) {
+                        return 'Numbers only';
+                      }
+
+                      final year = int.tryParse(value.trim());
                       if (year == null ||
                           year < 1990 ||
                           year > DateTime.now().year + 1) {

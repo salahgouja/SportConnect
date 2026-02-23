@@ -171,7 +171,11 @@ class ProfileScreen extends ConsumerWidget {
                     value: 'report',
                     child: Row(
                       children: [
-                        Icon(Icons.flag_outlined, size: 20.sp, color: AppColors.warning),
+                        Icon(
+                          Icons.flag_outlined,
+                          size: 20.sp,
+                          color: AppColors.warning,
+                        ),
                         SizedBox(width: 12.w),
                         const Text('Report User'),
                       ],
@@ -181,7 +185,11 @@ class ProfileScreen extends ConsumerWidget {
                     value: 'block',
                     child: Row(
                       children: [
-                        Icon(Icons.block_outlined, size: 20.sp, color: AppColors.error),
+                        Icon(
+                          Icons.block_outlined,
+                          size: 20.sp,
+                          color: AppColors.error,
+                        ),
                         SizedBox(width: 12.w),
                         const Text('Block User'),
                       ],
@@ -487,44 +495,48 @@ class ProfileScreen extends ConsumerWidget {
     return Semantics(
       label: '${item.label}: ${item.isVerified ? 'verified' : 'not verified'}',
       child: Column(
-      children: [
-        Container(
-          padding: EdgeInsets.all(12.w),
-          decoration: BoxDecoration(
-            color: item.isVerified
-                ? AppColors.success.withValues(alpha: 0.1)
-                : AppColors.surfaceVariant,
-            shape: BoxShape.circle,
+        children: [
+          Container(
+            padding: EdgeInsets.all(12.w),
+            decoration: BoxDecoration(
+              color: item.isVerified
+                  ? AppColors.success.withValues(alpha: 0.1)
+                  : AppColors.surfaceVariant,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              item.isVerified ? Icons.check_rounded : item.icon,
+              color: item.isVerified
+                  ? AppColors.success
+                  : AppColors.textTertiary,
+              size: 20.sp,
+            ),
           ),
-          child: Icon(
-            item.isVerified ? Icons.check_rounded : item.icon,
-            color: item.isVerified ? AppColors.success : AppColors.textTertiary,
-            size: 20.sp,
+          SizedBox(height: 8.h),
+          Text(
+            item.label,
+            style: TextStyle(
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w500,
+              color: item.isVerified
+                  ? AppColors.textPrimary
+                  : AppColors.textTertiary,
+            ),
           ),
-        ),
-        SizedBox(height: 8.h),
-        Text(
-          item.label,
-          style: TextStyle(
-            fontSize: 12.sp,
-            fontWeight: FontWeight.w500,
-            color: item.isVerified
-                ? AppColors.textPrimary
-                : AppColors.textTertiary,
+          SizedBox(height: 2.h),
+          Text(
+            item.isVerified
+                ? AppLocalizations.of(context).verified
+                : AppLocalizations.of(context).notVerified,
+            style: TextStyle(
+              fontSize: 12.sp,
+              color: item.isVerified
+                  ? AppColors.success
+                  : AppColors.textTertiary,
+            ),
           ),
-        ),
-        SizedBox(height: 2.h),
-        Text(
-          item.isVerified
-              ? AppLocalizations.of(context).verified
-              : AppLocalizations.of(context).notVerified,
-          style: TextStyle(
-            fontSize: 12.sp,
-            color: item.isVerified ? AppColors.success : AppColors.textTertiary,
-          ),
-        ),
-      ],
-    ),
+        ],
+      ),
     );
   }
 
@@ -644,47 +656,47 @@ class ProfileScreen extends ConsumerWidget {
     return Semantics(
       label: '$label: $value',
       child: Container(
-      padding: EdgeInsets.all(12.w),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12.r),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(8.w),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(8.r),
+        padding: EdgeInsets.all(12.w),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12.r),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(8.w),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+              child: Icon(icon, color: color, size: 18.sp),
             ),
-            child: Icon(icon, color: color, size: 18.sp),
-          ),
-          SizedBox(width: 10.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
+            SizedBox(width: 10.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                ),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 11.sp,
-                    color: AppColors.textSecondary,
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
     );
   }
 
@@ -893,17 +905,14 @@ class ProfileScreen extends ConsumerWidget {
             onPressed: () async {
               Navigator.pop(ctx);
               try {
-                final currentUser =
-                    ref.read(currentUserProvider).value;
+                final currentUser = ref.read(currentUserProvider).value;
                 if (currentUser == null) return;
                 await FirebaseFirestore.instance
                     .collection('users')
                     .doc(currentUser.uid)
                     .collection('blockedUsers')
                     .doc(userId)
-                    .set({
-                  'blockedAt': FieldValue.serverTimestamp(),
-                });
+                    .set({'blockedAt': FieldValue.serverTimestamp()});
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(

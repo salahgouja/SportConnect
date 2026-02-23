@@ -673,7 +673,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   // Google's strict branding requires the official 'G', specific padding, and Roboto font (or system default)
-Widget _buildGoogleButton() {
+  Widget _buildGoogleButton() {
     // 1. Determine platform-specific dimensions based on the provided spec image
     final double buttonHeight = _isCupertino ? 44.h : 40.h;
     final double iconGap = _isCupertino ? 12.w : 10.w;
@@ -691,15 +691,12 @@ Widget _buildGoogleButton() {
           },
           style: OutlinedButton.styleFrom(
             backgroundColor: Colors.white, // Fill: #FFFFFF
-            padding: EdgeInsets.zero, 
+            padding: EdgeInsets.zero,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14.r), 
+              borderRadius: BorderRadius.circular(14.r),
             ),
             // Stroke: #747775 | 1px | inside
-            side: const BorderSide(
-              color: Color(0xFF747775),
-              width: 1.0,
-            ),
+            side: const BorderSide(color: Color(0xFF747775), width: 1.0),
           ),
           // Center the entire block (Icon + Gap + Text) for full-width buttons
           child: Row(
@@ -707,23 +704,24 @@ Widget _buildGoogleButton() {
             children: [
               // Icon is strictly 20x20 on both platforms
               SvgPicture.asset(
-                'assets/icons/google_g_logo.svg', 
+                'assets/icons/google_g_logo.svg',
                 height: 20.sp,
                 width: 20.sp,
               ),
-              
+
               // Platform-specific spacing between icon and text (10 Android, 12 iOS)
               SizedBox(width: iconGap),
-              
+
               Text(
                 AppLocalizations.of(context).continueWithGoogle,
                 style: TextStyle(
                   // Font: #1F1F1F | Roboto Medium | 14/20
                   fontFamily: 'Roboto', // Google strongly prefers Roboto here
                   fontSize: 14.sp,
-                  fontWeight: FontWeight.w500, 
+                  fontWeight: FontWeight.w500,
                   color: const Color(0xFF1F1F1F),
-                  height: 20 / 14, // Calculates line-height of 20 for font-size 14
+                  height:
+                      20 / 14, // Calculates line-height of 20 for font-size 14
                   letterSpacing: 0.2,
                 ),
               ),

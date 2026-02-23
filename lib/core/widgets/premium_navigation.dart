@@ -51,11 +51,11 @@ class PremiumAppBar extends StatelessWidget implements PreferredSizeWidget {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: centerTitle,
-        leading: leading ??
-            (showBackButton && canPop
-                ? _buildBackButton(context)
-                : null),
-        title: titleWidget ??
+        leading:
+            leading ??
+            (showBackButton && canPop ? _buildBackButton(context) : null),
+        title:
+            titleWidget ??
             (title != null
                 ? Text(
                     title!,
@@ -111,9 +111,7 @@ class PremiumAppBar extends StatelessWidget implements PreferredSizeWidget {
         decoration: BoxDecoration(
           color: AppColors.surface,
           border: Border(
-            bottom: BorderSide(
-              color: AppColors.border.withValues(alpha: 0.12),
-            ),
+            bottom: BorderSide(color: AppColors.border.withValues(alpha: 0.12)),
           ),
         ),
         child: appBar,

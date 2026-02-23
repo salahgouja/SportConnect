@@ -1546,10 +1546,12 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
       default:
         // Recommended: combination of remaining seats and departure time
         sorted.sort((a, b) {
-          final scoreA = (a.remainingSeats * 10) + 
-                         (100 - a.departureTime.difference(DateTime.now()).inMinutes);
-          final scoreB = (b.remainingSeats * 10) + 
-                         (100 - b.departureTime.difference(DateTime.now()).inMinutes);
+          final scoreA =
+              (a.remainingSeats * 10) +
+              (100 - a.departureTime.difference(DateTime.now()).inMinutes);
+          final scoreB =
+              (b.remainingSeats * 10) +
+              (100 - b.departureTime.difference(DateTime.now()).inMinutes);
           return scoreB.compareTo(scoreA);
         });
     }
@@ -1599,10 +1601,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Driver Avatar
-                        DriverAvatarWidget(
-                          driverId: ride.driverId,
-                          radius: 22,
-                        ),
+                        DriverAvatarWidget(driverId: ride.driverId, radius: 22),
                         SizedBox(width: 10.w),
                         // Driver info
                         Expanded(

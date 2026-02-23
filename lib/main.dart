@@ -153,7 +153,6 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
     final localeAsync = ref.watch(localeProviderProvider);
     final locale = localeAsync.value; // null = use system locale
 
-
     return ScreenUtilInit(
       designSize: const Size(375, 812), // iPhone X/11/12/13 standard width
       minTextAdapt: true,

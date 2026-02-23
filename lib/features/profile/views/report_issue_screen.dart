@@ -94,7 +94,8 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
 
     final accepted = await PermissionDialogHelper.showCameraRationale(
       context,
-      customMessage: 'Access to your ${source == ImageSource.camera ? 'camera' : 'photo library'} '
+      customMessage:
+          'Access to your ${source == ImageSource.camera ? 'camera' : 'photo library'} '
           'is needed to attach screenshots or photos to your '
           'issue report.',
     );

@@ -75,7 +75,7 @@ class PaymentViewModel extends _$PaymentViewModel {
       }
     } catch (e, stack) {
       TalkerService.error('Error processing payment: $e');
-      
+
       // Check if provider is still mounted before setting error state
       if (ref.mounted) {
         state = AsyncValue.error(e, stack);
@@ -130,7 +130,7 @@ class PaymentViewModel extends _$PaymentViewModel {
       state = const AsyncValue.data(null);
     } catch (e, stack) {
       TalkerService.error('Error processing refund: $e');
-      
+
       // Check if provider is still mounted before setting error state
       if (ref.mounted) {
         state = AsyncValue.error(e, stack);
@@ -174,15 +174,15 @@ class PaymentViewModel extends _$PaymentViewModel {
 
       // Check if provider is still mounted after async operation
       if (!ref.mounted) return result;
-      
+
       state = const AsyncValue.data(null);
       return result;
     } catch (e, stack) {
       TalkerService.error('Error creating connected account: $e');
-      
+
       // Check if provider is still mounted before setting error state
       if (!ref.mounted) return null;
-      
+
       state = AsyncValue.error(e, stack);
       return null;
     }
@@ -217,7 +217,7 @@ class PaymentViewModel extends _$PaymentViewModel {
       return true;
     } catch (e, stack) {
       TalkerService.error('Error requesting payout: $e');
-      
+
       // Check if provider is still mounted before setting error state
       if (ref.mounted) {
         state = AsyncValue.error(e, stack);
@@ -446,7 +446,7 @@ class DriverPayoutViewModel extends _$DriverPayoutViewModel {
       );
     } catch (e, stack) {
       TalkerService.error('Error requesting instant payout: $e');
-      
+
       // Check if provider is still mounted before setting error state
       if (ref.mounted) {
         state = AsyncValue.error(e, stack);

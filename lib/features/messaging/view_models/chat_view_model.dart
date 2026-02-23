@@ -79,10 +79,7 @@ class ChatActionsViewModel {
     return _ref.read(chatRepositoryProvider).getChatById(chatId);
   }
 
-  Future<void> clearChat({
-    required String chatId,
-    required String userId,
-  }) {
+  Future<void> clearChat({required String chatId, required String userId}) {
     return _ref
         .read(chatRepositoryProvider)
         .clearChat(chatId: chatId, userId: userId);

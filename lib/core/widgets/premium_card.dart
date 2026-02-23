@@ -46,10 +46,7 @@ class PremiumCard extends StatelessWidget {
           gradient: gradient,
           borderRadius: BorderRadius.circular(borderRadius.r),
           border: hasBorder
-              ? Border.all(
-                  color: borderColor ?? AppColors.border,
-                  width: 1,
-                )
+              ? Border.all(color: borderColor ?? AppColors.border, width: 1)
               : PlatformAdaptive.cardBorder,
           boxShadow: shadow ?? PlatformAdaptive.adaptiveShadow(),
         ),

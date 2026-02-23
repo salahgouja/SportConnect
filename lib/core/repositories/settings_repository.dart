@@ -53,8 +53,6 @@ class SettingsRepository {
     await _prefs.remove(_languageCodeKey);
   }
 
-
-
   // ============================================================
   // Notification Settings
   // ============================================================

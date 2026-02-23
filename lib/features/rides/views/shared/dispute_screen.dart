@@ -125,7 +125,8 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
 
     final accepted = await PermissionDialogHelper.showCameraRationale(
       context,
-      customMessage: 'Access to your ${source == ImageSource.camera ? 'camera' : 'photo library'} '
+      customMessage:
+          'Access to your ${source == ImageSource.camera ? 'camera' : 'photo library'} '
           'is needed to attach evidence to your dispute. '
           'Photos are only uploaded when you submit the dispute.',
     );

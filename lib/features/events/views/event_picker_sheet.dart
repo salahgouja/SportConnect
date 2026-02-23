@@ -121,16 +121,16 @@ class _EventPickerSheetState extends ConsumerState<EventPickerSheet>
 
   // ── Handle ─────────────────────────────────────────────────────────────────
   Widget _buildHandle() => Padding(
-        padding: EdgeInsets.only(top: 12.h, bottom: 4.h),
-        child: Container(
-          width: 40.w,
-          height: 4.h,
-          decoration: BoxDecoration(
-            color: AppColors.border,
-            borderRadius: BorderRadius.circular(2.r),
-          ),
-        ),
-      );
+    padding: EdgeInsets.only(top: 12.h, bottom: 4.h),
+    child: Container(
+      width: 40.w,
+      height: 4.h,
+      decoration: BoxDecoration(
+        color: AppColors.border,
+        borderRadius: BorderRadius.circular(2.r),
+      ),
+    ),
+  );
 
   // ── Header ─────────────────────────────────────────────────────────────────
   Widget _buildHeader() {
@@ -194,8 +194,9 @@ class _EventPickerSheetState extends ConsumerState<EventPickerSheet>
               child: Icon(
                 _showSearch ? Icons.search_off_rounded : Icons.search_rounded,
                 key: ValueKey(_showSearch),
-                color:
-                    _showSearch ? AppColors.primary : AppColors.textSecondary,
+                color: _showSearch
+                    ? AppColors.primary
+                    : AppColors.textSecondary,
                 size: 24.sp,
               ),
             ),
@@ -208,8 +209,7 @@ class _EventPickerSheetState extends ConsumerState<EventPickerSheet>
             ),
             child: Text(
               'Skip',
-              style:
-                  TextStyle(fontSize: 13.sp, color: AppColors.textTertiary),
+              style: TextStyle(fontSize: 13.sp, color: AppColors.textTertiary),
             ),
           ),
         ],
@@ -266,10 +266,12 @@ class _EventPickerSheetState extends ConsumerState<EventPickerSheet>
         style: TextStyle(fontSize: 14.sp, color: AppColors.textPrimary),
         decoration: InputDecoration(
           hintText: 'Search by event name or venue...',
-          hintStyle:
-              TextStyle(color: AppColors.textTertiary, fontSize: 14.sp),
-          prefixIcon: Icon(Icons.search_rounded,
-              size: 20.sp, color: AppColors.primary),
+          hintStyle: TextStyle(color: AppColors.textTertiary, fontSize: 14.sp),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            size: 20.sp,
+            color: AppColors.primary,
+          ),
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(
                   icon: Icon(Icons.clear_rounded, size: 18.sp),
@@ -281,8 +283,10 @@ class _EventPickerSheetState extends ConsumerState<EventPickerSheet>
               : null,
           filled: true,
           fillColor: AppColors.surfaceVariant,
-          contentPadding:
-              EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 16.w,
+            vertical: 12.h,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16.r),
             borderSide: BorderSide.none,
@@ -303,23 +307,23 @@ class _EventPickerSheetState extends ConsumerState<EventPickerSheet>
         final dx = _swipeDx[event.id] ?? 0.0;
 
         return _SwipeableEventCard(
-          key: ValueKey(event.id),
-          event: event,
-          isSelected: isSelected,
-          swipeDx: dx,
-          onSwipeUpdate: (d) => setState(() => _swipeDx[event.id] = d),
-          onSwipeCommit: (direction) {
-            setState(() => _swipeDx[event.id] = 0);
-            if (direction > 0) {
-              HapticFeedback.mediumImpact();
-              setState(() => _selected = event);
-            }
-          },
-          onTap: () {
-            HapticFeedback.selectionClick();
-            setState(() => _selected = isSelected ? null : event);
-          },
-        )
+              key: ValueKey(event.id),
+              event: event,
+              isSelected: isSelected,
+              swipeDx: dx,
+              onSwipeUpdate: (d) => setState(() => _swipeDx[event.id] = d),
+              onSwipeCommit: (direction) {
+                setState(() => _swipeDx[event.id] = 0);
+                if (direction > 0) {
+                  HapticFeedback.mediumImpact();
+                  setState(() => _selected = event);
+                }
+              },
+              onTap: () {
+                HapticFeedback.selectionClick();
+                setState(() => _selected = isSelected ? null : event);
+              },
+            )
             .animate(delay: Duration(milliseconds: 40 * index))
             .fadeIn(duration: 300.ms)
             .slideY(begin: 0.08, curve: Curves.easeOutCubic);
@@ -342,8 +346,11 @@ class _EventPickerSheetState extends ConsumerState<EventPickerSheet>
                 color: AppColors.primarySurface,
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.event_busy_rounded,
-                  size: 40.sp, color: AppColors.primary),
+              child: Icon(
+                Icons.event_busy_rounded,
+                size: 40.sp,
+                color: AppColors.primary,
+              ),
             ),
             SizedBox(height: 16.h),
             Text(
@@ -359,8 +366,7 @@ class _EventPickerSheetState extends ConsumerState<EventPickerSheet>
             SizedBox(height: 6.h),
             Text(
               'Be the first to create one!',
-              style: TextStyle(
-                  fontSize: 13.sp, color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 24.h),
@@ -370,10 +376,10 @@ class _EventPickerSheetState extends ConsumerState<EventPickerSheet>
               label: const Text('Create Event'),
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                padding:
-                    EdgeInsets.symmetric(horizontal: 24.w, vertical: 14.h),
+                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 14.h),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16.r)),
+                  borderRadius: BorderRadius.circular(16.r),
+                ),
               ),
             ),
           ],
@@ -388,15 +394,16 @@ class _EventPickerSheetState extends ConsumerState<EventPickerSheet>
       itemCount: 5,
       itemBuilder: (_, i) => Padding(
         padding: EdgeInsets.only(bottom: 12.h),
-        child: Container(
-          height: 130.h,
-          decoration: BoxDecoration(
-            color: AppColors.surfaceVariant,
-            borderRadius: BorderRadius.circular(20.r),
-          ),
-        )
-            .animate(onPlay: (c) => c.repeat())
-            .shimmer(duration: 1200.ms, color: Colors.white54),
+        child:
+            Container(
+                  height: 130.h,
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceVariant,
+                    borderRadius: BorderRadius.circular(20.r),
+                  ),
+                )
+                .animate(onPlay: (c) => c.repeat())
+                .shimmer(duration: 1200.ms, color: Colors.white54),
       ),
     );
   }
@@ -429,9 +436,7 @@ class _EventPickerSheetState extends ConsumerState<EventPickerSheet>
         decoration: BoxDecoration(
           color: AppColors.surface,
           border: Border(
-            top: BorderSide(
-              color: AppColors.border.withValues(alpha: 0.4),
-            ),
+            top: BorderSide(color: AppColors.border.withValues(alpha: 0.4)),
           ),
         ),
         child: Row(
@@ -445,9 +450,11 @@ class _EventPickerSheetState extends ConsumerState<EventPickerSheet>
                   foregroundColor: AppColors.primary,
                   padding: EdgeInsets.symmetric(vertical: 14.h),
                   side: BorderSide(
-                      color: AppColors.primary.withValues(alpha: 0.6)),
+                    color: AppColors.primary.withValues(alpha: 0.6),
+                  ),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16.r)),
+                    borderRadius: BorderRadius.circular(16.r),
+                  ),
                 ),
               ),
             ),
@@ -460,18 +467,23 @@ class _EventPickerSheetState extends ConsumerState<EventPickerSheet>
                     : null,
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  disabledBackgroundColor:
-                      AppColors.primary.withValues(alpha: 0.25),
+                  disabledBackgroundColor: AppColors.primary.withValues(
+                    alpha: 0.25,
+                  ),
                   padding: EdgeInsets.symmetric(vertical: 14.h),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16.r)),
+                    borderRadius: BorderRadius.circular(16.r),
+                  ),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     if (_selected != null) ...[
-                      Icon(_selected!.type.icon,
-                          size: 16.sp, color: Colors.white),
+                      Icon(
+                        _selected!.type.icon,
+                        size: 16.sp,
+                        color: Colors.white,
+                      ),
                       SizedBox(width: 6.w),
                     ],
                     Flexible(
@@ -480,7 +492,9 @@ class _EventPickerSheetState extends ConsumerState<EventPickerSheet>
                             ? _truncate(_selected!.title, 18)
                             : 'Choose an Event',
                         style: TextStyle(
-                            fontSize: 14.sp, fontWeight: FontWeight.w700),
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w700,
+                        ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -531,9 +545,7 @@ class _CategoryChip extends StatelessWidget {
         margin: EdgeInsets.only(right: 10.w),
         padding: EdgeInsets.symmetric(horizontal: 14.w),
         decoration: BoxDecoration(
-          color: isActive
-              ? color.withValues(alpha: 0.12)
-              : AppColors.surface,
+          color: isActive ? color.withValues(alpha: 0.12) : AppColors.surface,
           borderRadius: BorderRadius.circular(22.r),
           border: Border.all(
             color: isActive ? color : AppColors.border,
@@ -552,9 +564,11 @@ class _CategoryChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon,
-                size: 16.sp,
-                color: isActive ? color : AppColors.textSecondary),
+            Icon(
+              icon,
+              size: 16.sp,
+              color: isActive ? color : AppColors.textSecondary,
+            ),
             SizedBox(width: 6.w),
             Text(
               label,
@@ -636,10 +650,10 @@ class _SwipeableEventCard extends StatelessWidget {
                       color: isSelected
                           ? event.type.color
                           : showSelect
-                              ? AppColors.success
-                              : showSkip
-                                  ? AppColors.error
-                                  : AppColors.border,
+                          ? AppColors.success
+                          : showSkip
+                          ? AppColors.error
+                          : AppColors.border,
                       width: isSelected || swipeDx.abs() > 10 ? 2 : 1,
                     ),
                     boxShadow: isSelected
@@ -703,17 +717,14 @@ class _SwipeableEventCard extends StatelessWidget {
   }
 
   Widget _buildColorBar() => Container(
-        height: 6.h,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              event.type.color,
-              event.type.color.withValues(alpha: 0.4),
-            ],
-          ),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-        ),
-      );
+    height: 6.h,
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        colors: [event.type.color, event.type.color.withValues(alpha: 0.4)],
+      ),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+    ),
+  );
 
   Widget _buildBody() {
     final now = DateTime.now();
@@ -736,8 +747,7 @@ class _SwipeableEventCard extends StatelessWidget {
               ],
             ),
             borderRadius: BorderRadius.circular(16.r),
-            border:
-                Border.all(color: event.type.color.withValues(alpha: 0.3)),
+            border: Border.all(color: event.type.color.withValues(alpha: 0.3)),
           ),
           child: Icon(event.type.icon, color: event.type.color, size: 28.sp),
         ),
@@ -768,8 +778,11 @@ class _SwipeableEventCard extends StatelessWidget {
                         color: AppColors.success,
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(Icons.check_rounded,
-                          color: Colors.white, size: 12.sp),
+                      child: Icon(
+                        Icons.check_rounded,
+                        color: Colors.white,
+                        size: 12.sp,
+                      ),
                     ),
                   ],
                 ],
@@ -803,9 +816,7 @@ class _SwipeableEventCard extends StatelessWidget {
                       label: event.isFull
                           ? 'Full'
                           : '${event.participantLabel} spots',
-                      color: event.isFull
-                          ? AppColors.error
-                          : AppColors.success,
+                      color: event.isFull ? AppColors.error : AppColors.success,
                       icon: Icons.people_rounded,
                     ),
                 ],
@@ -889,8 +900,7 @@ class _InfoRow extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style:
-                TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
+            style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

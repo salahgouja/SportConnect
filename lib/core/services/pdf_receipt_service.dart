@@ -77,12 +77,21 @@ class PdfReceiptService {
                   children: [
                     _buildSectionTitle('Trip Details'),
                     pw.SizedBox(height: 15),
-                    _buildDetailRow('Ride ID', rideId.substring(0, 8).toUpperCase()),
+                    _buildDetailRow(
+                      'Ride ID',
+                      rideId.substring(0, 8).toUpperCase(),
+                    ),
                     pw.SizedBox(height: 8),
-                    _buildDetailRow('Departure', dateFormat.format(departureTime)),
+                    _buildDetailRow(
+                      'Departure',
+                      dateFormat.format(departureTime),
+                    ),
                     if (completedTime != null) ...[
                       pw.SizedBox(height: 8),
-                      _buildDetailRow('Completed', dateFormat.format(completedTime)),
+                      _buildDetailRow(
+                        'Completed',
+                        dateFormat.format(completedTime),
+                      ),
                     ],
                   ],
                 ),
@@ -149,7 +158,10 @@ class PdfReceiptService {
                       currencyFormat.format(baseFare),
                     ),
                     pw.SizedBox(height: 8),
-                    _buildPriceRow('Service Fee', currencyFormat.format(serviceFee)),
+                    _buildPriceRow(
+                      'Service Fee',
+                      currencyFormat.format(serviceFee),
+                    ),
                     pw.Divider(color: lightGray, thickness: 1),
                     pw.SizedBox(height: 8),
                     pw.Row(
@@ -180,7 +192,10 @@ class PdfReceiptService {
               // Verification code
               pw.Center(
                 child: pw.Container(
-                  padding: const pw.EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  padding: const pw.EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
                   decoration: pw.BoxDecoration(
                     color: lightGray,
                     borderRadius: pw.BorderRadius.circular(8),
@@ -282,9 +297,15 @@ class PdfReceiptService {
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceEvenly,
               children: [
-                _buildSummaryCard('Total Earnings', currencyFormat.format(totalEarnings)),
+                _buildSummaryCard(
+                  'Total Earnings',
+                  currencyFormat.format(totalEarnings),
+                ),
                 _buildSummaryCard('Total Trips', totalTrips.toStringAsFixed(0)),
-                _buildSummaryCard('Average Rating', '${averageRating.toStringAsFixed(1)} ⭐'),
+                _buildSummaryCard(
+                  'Average Rating',
+                  '${averageRating.toStringAsFixed(1)} ⭐',
+                ),
               ],
             ),
             pw.SizedBox(height: 30),
@@ -292,10 +313,7 @@ class PdfReceiptService {
             // Trip history
             pw.Text(
               'Trip History',
-              style: pw.TextStyle(
-                fontSize: 16,
-                fontWeight: pw.FontWeight.bold,
-              ),
+              style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
             ),
             pw.SizedBox(height: 15),
 
@@ -311,13 +329,15 @@ class PdfReceiptService {
                     _buildTableHeader('Earnings'),
                   ],
                 ),
-                ...trips.map((trip) => pw.TableRow(
-                  children: [
-                    _buildTableCell(dateFormat.format(trip.date)),
-                    _buildTableCell('${trip.from} → ${trip.to}'),
-                    _buildTableCell(currencyFormat.format(trip.earnings)),
-                  ],
-                )),
+                ...trips.map(
+                  (trip) => pw.TableRow(
+                    children: [
+                      _buildTableCell(dateFormat.format(trip.date)),
+                      _buildTableCell('${trip.from} → ${trip.to}'),
+                      _buildTableCell(currencyFormat.format(trip.earnings)),
+                    ],
+                  ),
+                ),
               ],
             ),
             pw.SizedBox(height: 20),
@@ -376,10 +396,7 @@ class PdfReceiptService {
     );
   }
 
-  pw.Widget _buildCard({
-    required pw.Widget child,
-    bool background = false,
-  }) {
+  pw.Widget _buildCard({required pw.Widget child, bool background = false}) {
     return pw.Container(
       width: double.infinity,
       padding: const pw.EdgeInsets.all(20),
@@ -409,17 +426,11 @@ class PdfReceiptService {
       children: [
         pw.Text(
           label,
-          style: const pw.TextStyle(
-            fontSize: 12,
-            color: PdfColors.grey700,
-          ),
+          style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey700),
         ),
         pw.Text(
           value,
-          style: pw.TextStyle(
-            fontSize: 12,
-            fontWeight: pw.FontWeight.bold,
-          ),
+          style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
         ),
       ],
     );
@@ -433,19 +444,13 @@ class PdfReceiptService {
           width: 60,
           child: pw.Text(
             label,
-            style: const pw.TextStyle(
-              fontSize: 12,
-              color: PdfColors.grey700,
-            ),
+            style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey700),
           ),
         ),
         pw.Expanded(
           child: pw.Text(
             address,
-            style: pw.TextStyle(
-              fontSize: 12,
-              fontWeight: pw.FontWeight.bold,
-            ),
+            style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
           ),
         ),
       ],
@@ -456,16 +461,10 @@ class PdfReceiptService {
     return pw.Row(
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
       children: [
-        pw.Text(
-          label,
-          style: const pw.TextStyle(fontSize: 12),
-        ),
+        pw.Text(label, style: const pw.TextStyle(fontSize: 12)),
         pw.Text(
           value,
-          style: pw.TextStyle(
-            fontSize: 12,
-            fontWeight: pw.FontWeight.bold,
-          ),
+          style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
         ),
       ],
     );
@@ -482,10 +481,7 @@ class PdfReceiptService {
         children: [
           pw.Text(
             label,
-            style: const pw.TextStyle(
-              fontSize: 12,
-              color: PdfColors.grey700,
-            ),
+            style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey700),
           ),
           pw.SizedBox(height: 8),
           pw.Text(
@@ -518,10 +514,7 @@ class PdfReceiptService {
   pw.Widget _buildTableCell(String text) {
     return pw.Padding(
       padding: const pw.EdgeInsets.all(8),
-      child: pw.Text(
-        text,
-        style: const pw.TextStyle(fontSize: 10),
-      ),
+      child: pw.Text(text, style: const pw.TextStyle(fontSize: 10)),
     );
   }
 

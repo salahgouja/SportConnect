@@ -94,8 +94,7 @@ class LiquidGlassContainer extends StatelessWidget {
         highlightOpacity = isDark ? 0.05 : 0.20;
     }
 
-    final glassColor =
-        tintColor ?? (isDark ? Colors.black : Colors.white);
+    final glassColor = tintColor ?? (isDark ? Colors.black : Colors.white);
 
     return Padding(
       padding: margin ?? EdgeInsets.zero,
@@ -120,12 +119,12 @@ class LiquidGlassContainer extends StatelessWidget {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          Colors.white
-                              .withValues(alpha: highlightOpacity),
+                          Colors.white.withValues(alpha: highlightOpacity),
                           Colors.white.withValues(alpha: 0.0),
                           Colors.white.withValues(alpha: 0.0),
-                          Colors.white
-                              .withValues(alpha: highlightOpacity * 0.3),
+                          Colors.white.withValues(
+                            alpha: highlightOpacity * 0.3,
+                          ),
                         ],
                         stops: const [0.0, 0.3, 0.7, 1.0],
                       )
@@ -211,11 +210,13 @@ class LiquidGlassAppBar extends StatelessWidget implements PreferredSizeWidget {
             elevation: 0,
             scrolledUnderElevation: 0,
             centerTitle: centerTitle,
-            leading: leading ??
+            leading:
+                leading ??
                 (showBackButton && canPop
                     ? _buildGlassBackButton(context)
                     : null),
-            title: titleWidget ??
+            title:
+                titleWidget ??
                 (title != null
                     ? Text(
                         title!,
@@ -319,8 +320,7 @@ class LiquidGlassCard extends StatelessWidget {
             child: Container(
               padding: padding ?? EdgeInsets.all(16.w),
               decoration: BoxDecoration(
-                color:
-                    (tintColor ?? AppColors.surface).withValues(alpha: 0.72),
+                color: (tintColor ?? AppColors.surface).withValues(alpha: 0.72),
                 borderRadius: BorderRadius.circular(borderRadius.r),
                 border: Border.all(
                   color: Colors.white.withValues(alpha: 0.2),
@@ -457,8 +457,7 @@ class _LiquidGlassNavTab extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20.r),
                     border: isActive
                         ? Border.all(
-                            color:
-                                AppColors.primary.withValues(alpha: 0.08),
+                            color: AppColors.primary.withValues(alpha: 0.08),
                             width: 0.5,
                           )
                         : null,
@@ -555,8 +554,7 @@ class LiquidGlassFAB extends StatelessWidget {
       child: GestureDetector(
         onTap: onPressed,
         child: ClipRRect(
-          borderRadius:
-              BorderRadius.circular(isExtended ? 28.r : 999),
+          borderRadius: BorderRadius.circular(isExtended ? 28.r : 999),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
             child: Container(
@@ -566,8 +564,7 @@ class LiquidGlassFAB extends StatelessWidget {
               ),
               decoration: BoxDecoration(
                 color: AppColors.primary.withValues(alpha: 0.85),
-                borderRadius:
-                    BorderRadius.circular(isExtended ? 28.r : 999),
+                borderRadius: BorderRadius.circular(isExtended ? 28.r : 999),
                 border: Border.all(
                   color: Colors.white.withValues(alpha: 0.2),
                   width: 0.8,
@@ -668,10 +665,7 @@ class LiquidGlassChip extends StatelessWidget {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: 14.w,
-              vertical: 8.h,
-            ),
+            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
             decoration: BoxDecoration(
               color: isSelected
                   ? chipColor.withValues(alpha: 0.18)
@@ -736,8 +730,7 @@ class LiquidGlassSectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: padding ??
-          EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+      padding: padding ?? EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

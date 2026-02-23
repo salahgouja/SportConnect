@@ -137,10 +137,13 @@ abstract class EventModel with _$EventModel {
     @TimestampConverter() required DateTime startsAt,
     @TimestampConverter() DateTime? endsAt,
     String? description,
+
     /// Venue / facility name (e.g. "Downtown Sports Complex").
     String? venueName,
+
     /// Display name of the organiser (denormalized for fast rendering).
     String? organizerName,
+
     /// Cover image URL (Firebase Storage).
     String? imageUrl,
     @Default([]) List<String> participantIds,

@@ -37,8 +37,6 @@ class LocaleProvider extends _$LocaleProvider {
   }
 }
 
-
-
 /// Provider for push notifications setting
 @riverpod
 class NotificationsEnabledProvider extends _$NotificationsEnabledProvider {

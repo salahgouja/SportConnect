@@ -93,8 +93,9 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
   Future<void> _requestLocationPermission() async {
     try {
       if (!mounted) return;
-      final accepted =
-          await PermissionDialogHelper.showLocationRationale(context);
+      final accepted = await PermissionDialogHelper.showLocationRationale(
+        context,
+      );
       if (!accepted) return;
       final granted = await LocationServiceImpl.instance.requestPermission();
       if (mounted) {

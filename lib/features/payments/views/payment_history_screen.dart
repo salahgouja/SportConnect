@@ -273,11 +273,7 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.receipt_long_rounded,
-              color: Colors.white,
-              size: 28.sp,
-            ),
+            Icon(Icons.receipt_long_rounded, color: Colors.white, size: 28.sp),
             SizedBox(height: 4.h),
             Text(
               'Details',
@@ -290,130 +286,131 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
           ],
         ),
       ),
-      child: Container(
-          margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(16.r),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: InkWell(
-            onTap: () => _showPaymentDetails(payment),
-            borderRadius: BorderRadius.circular(16.r),
-            child: Padding(
-              padding: EdgeInsets.all(16.w),
-              child: Row(
-                children: [
-                  // Status Icon
-                  Container(
-                    width: 48.w,
-                    height: 48.w,
-                    decoration: BoxDecoration(
-                      color: _getStatusColor(
-                        payment.status,
-                      ).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12.r),
+      child:
+          Container(
+                margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
-                    child: Icon(
-                      _getStatusIcon(payment.status),
-                      color: _getStatusColor(payment.status),
-                      size: 24.sp,
-                    ),
-                  ),
-                  SizedBox(width: 12.w),
-
-                  // Payment Info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  ],
+                ),
+                child: InkWell(
+                  onTap: () => _showPaymentDetails(payment),
+                  borderRadius: BorderRadius.circular(16.r),
+                  child: Padding(
+                    padding: EdgeInsets.all(16.w),
+                    child: Row(
                       children: [
-                        Text(
-                          AppLocalizations.of(context).ridePayment,
-                          style: TextStyle(
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        SizedBox(height: 4.h),
-                        Text(
-                          payment.createdAt != null
-                              ? dateFormat.format(payment.createdAt!)
-                              : AppLocalizations.of(context).unknownDate,
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        SizedBox(height: 4.h),
+                        // Status Icon
                         Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 8.w,
-                            vertical: 2.h,
-                          ),
+                          width: 48.w,
+                          height: 48.w,
                           decoration: BoxDecoration(
                             color: _getStatusColor(
                               payment.status,
                             ).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(4.r),
+                            borderRadius: BorderRadius.circular(12.r),
                           ),
-                          child: Text(
-                            _getStatusText(payment.status),
-                            style: TextStyle(
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w600,
-                              color: _getStatusColor(payment.status),
+                          child: Icon(
+                            _getStatusIcon(payment.status),
+                            color: _getStatusColor(payment.status),
+                            size: 24.sp,
+                          ),
+                        ),
+                        SizedBox(width: 12.w),
+
+                        // Payment Info
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                AppLocalizations.of(context).ridePayment,
+                                style: TextStyle(
+                                  fontSize: 16.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              SizedBox(height: 4.h),
+                              Text(
+                                payment.createdAt != null
+                                    ? dateFormat.format(payment.createdAt!)
+                                    : AppLocalizations.of(context).unknownDate,
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                              SizedBox(height: 4.h),
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 8.w,
+                                  vertical: 2.h,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _getStatusColor(
+                                    payment.status,
+                                  ).withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(4.r),
+                                ),
+                                child: Text(
+                                  _getStatusText(payment.status),
+                                  style: TextStyle(
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: _getStatusColor(payment.status),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Amount
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              AppLocalizations.of(context).valueValue4(
+                                payment.amount.toStringAsFixed(2),
+                                payment.currency,
+                              ),
+                              style: TextStyle(
+                                fontSize: 18.sp,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                              ),
                             ),
-                          ),
+                            if (payment.seatsBooked != null) ...[
+                              SizedBox(height: 4.h),
+                              Text(
+                                AppLocalizations.of(context).valueSeatValue(
+                                  payment.seatsBooked!,
+                                  payment.seatsBooked! > 1 ? 's' : '',
+                                ),
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ],
                     ),
                   ),
-
-                  // Amount
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        AppLocalizations.of(context).valueValue4(
-                          payment.amount.toStringAsFixed(2),
-                          payment.currency,
-                        ),
-                        style: TextStyle(
-                          fontSize: 18.sp,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      if (payment.seatsBooked != null) ...[
-                        SizedBox(height: 4.h),
-                        Text(
-                          AppLocalizations.of(context).valueSeatValue(
-                            payment.seatsBooked!,
-                            payment.seatsBooked! > 1 ? 's' : '',
-                          ),
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        )
-        .animate()
-        .fadeIn(delay: Duration(milliseconds: index * 50))
-        .slideX(begin: 0.1),
+                ),
+              )
+              .animate()
+              .fadeIn(delay: Duration(milliseconds: index * 50))
+              .slideX(begin: 0.1),
     );
   }
 

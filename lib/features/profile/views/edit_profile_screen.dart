@@ -81,7 +81,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   Future<void> _pickImageFromGallery() async {
     final accepted = await PermissionDialogHelper.showCameraRationale(
       context,
-      customMessage: 'Access to your photo library is needed to '
+      customMessage:
+          'Access to your photo library is needed to '
           'update your profile picture.',
     );
     if (!accepted) return;
@@ -692,10 +693,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   Navigator.pop(context);
                   final accepted =
                       await PermissionDialogHelper.showCameraRationale(
-                    context,
-                    customMessage: 'Camera access is needed to take a '
-                        'new profile photo.',
-                  );
+                        context,
+                        customMessage:
+                            'Camera access is needed to take a '
+                            'new profile photo.',
+                      );
                   if (!accepted) return;
                   final XFile? image = await _imagePicker.pickImage(
                     source: ImageSource.camera,

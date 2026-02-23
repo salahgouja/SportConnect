@@ -78,8 +78,9 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
     final permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       if (!mounted) return;
-      final accepted =
-          await PermissionDialogHelper.showRideTrackingRationale(context);
+      final accepted = await PermissionDialogHelper.showRideTrackingRationale(
+        context,
+      );
       if (!accepted) return;
       final requested = await Geolocator.requestPermission();
       if (requested == LocationPermission.denied ||
@@ -127,10 +128,7 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
       final rideAsync = ref.read(rideStreamProvider(widget.rideId));
       final ride = rideAsync.value;
       if (ride != null) {
-        _originLatLng = LatLng(
-          ride.origin.latitude,
-          ride.origin.longitude,
-        );
+        _originLatLng = LatLng(ride.origin.latitude, ride.origin.longitude);
         _destinationLatLng = LatLng(
           ride.destination.latitude,
           ride.destination.longitude,
@@ -211,7 +209,8 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
     final dLon = _degToRad(b.longitude - a.longitude);
     final sinLat = math.sin(dLat / 2);
     final sinLon = math.sin(dLon / 2);
-    final h = sinLat * sinLat +
+    final h =
+        sinLat * sinLat +
         math.cos(_degToRad(a.latitude)) *
             math.cos(_degToRad(b.latitude)) *
             sinLon *
@@ -236,11 +235,7 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.error_outline,
-                  color: AppColors.error,
-                  size: 48.sp,
-                ),
+                Icon(Icons.error_outline, color: AppColors.error, size: 48.sp),
                 SizedBox(height: 16.h),
                 Text(
                   l10n.somethingWentWrong,
@@ -261,9 +256,8 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
                 ),
                 SizedBox(height: 16.h),
                 FilledButton.icon(
-                  onPressed: () => ref.invalidate(
-                    rideStreamProvider(widget.rideId),
-                  ),
+                  onPressed: () =>
+                      ref.invalidate(rideStreamProvider(widget.rideId)),
                   icon: const Icon(Icons.refresh),
                   label: Text(l10n.retry),
                   style: FilledButton.styleFrom(
@@ -480,10 +474,7 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    DriverAvatarWidget(
-                      driverId: ride.driverId,
-                      radius: 14,
-                    ),
+                    DriverAvatarWidget(driverId: ride.driverId, radius: 14),
                     SizedBox(width: 8.w),
                     Expanded(
                       child: DriverNameWidget(
@@ -649,8 +640,11 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             onPressed: () async {
               Navigator.pop(context);
-              
-              final Uri emergencyUri = Uri(scheme: 'tel', path: emergencyNumber);
+
+              final Uri emergencyUri = Uri(
+                scheme: 'tel',
+                path: emergencyNumber,
+              );
               try {
                 if (await canLaunchUrl(emergencyUri)) {
                   await launchUrl(emergencyUri);
@@ -658,7 +652,9 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Cannot make emergency calls on this device'),
+                        content: Text(
+                          'Cannot make emergency calls on this device',
+                        ),
                       ),
                     );
                   }

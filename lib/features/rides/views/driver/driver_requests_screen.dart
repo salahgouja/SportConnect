@@ -241,16 +241,17 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
                   ],
                 ),
               ),
-              child: _PendingRequestCard(
-                    request: request,
-                    formattedDate: formattedDate,
-                    onAccept: () => _handleAccept(request),
-                    onDecline: () => _handleDecline(request),
-                    onViewProfile: () => _handleViewProfile(request),
-                  )
-                  .animate(delay: Duration(milliseconds: 100 * index))
-                  .fadeIn()
-                  .slideY(begin: 0.1),
+              child:
+                  _PendingRequestCard(
+                        request: request,
+                        formattedDate: formattedDate,
+                        onAccept: () => _handleAccept(request),
+                        onDecline: () => _handleDecline(request),
+                        onViewProfile: () => _handleViewProfile(request),
+                      )
+                      .animate(delay: Duration(milliseconds: 100 * index))
+                      .fadeIn()
+                      .slideY(begin: 0.1),
             );
           },
         );

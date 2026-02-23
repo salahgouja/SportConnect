@@ -14,9 +14,7 @@ part 'push_notification_service.g.dart';
 /// Top-level background message handler — must NOT be a class method.
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  TalkerService.info(
-    'Background message received: ${message.messageId}',
-  );
+  TalkerService.info('Background message received: ${message.messageId}');
   // Local notification is shown automatically by FCM for data+notification
   // messages when the app is in background/terminated.
 }
@@ -44,8 +42,7 @@ class NotificationChannels {
 class PushNotificationService {
   PushNotificationService._();
 
-  static final PushNotificationService _instance =
-      PushNotificationService._();
+  static final PushNotificationService _instance = PushNotificationService._();
   static PushNotificationService get instance => _instance;
 
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
@@ -109,19 +106,17 @@ class PushNotificationService {
       final token = await _messaging.getToken();
       if (token == null) return;
 
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .update({'fcmToken': token});
+      await FirebaseFirestore.instance.collection('users').doc(userId).update({
+        'fcmToken': token,
+      });
 
       TalkerService.info('FCM token saved for user $userId');
 
       // Listen for token refreshes
       _messaging.onTokenRefresh.listen((newToken) async {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(userId)
-            .update({'fcmToken': newToken});
+        await FirebaseFirestore.instance.collection('users').doc(userId).update(
+          {'fcmToken': newToken},
+        );
         TalkerService.info('FCM token refreshed for user $userId');
       });
     } catch (e) {
@@ -134,9 +129,10 @@ class PushNotificationService {
   // ---------------------------------------------------------------------------
 
   Future<void> _createNotificationChannels() async {
-    final androidPlugin =
-        _localNotifications.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+    final androidPlugin = _localNotifications
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
 
     if (androidPlugin == null) return;
 
@@ -167,7 +163,9 @@ class PushNotificationService {
   }
 
   Future<void> _initLocalNotifications() async {
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
     const darwinSettings = DarwinInitializationSettings(
       requestAlertPermission: false,
       requestBadgePermission: false,
@@ -197,9 +195,7 @@ class PushNotificationService {
 
   /// Display a local notification when a message arrives in the foreground.
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
-    TalkerService.info(
-      'Foreground message: ${message.notification?.title}',
-    );
+    TalkerService.info('Foreground message: ${message.notification?.title}');
 
     final notification = message.notification;
     if (notification == null) return;
@@ -256,10 +252,14 @@ class PushNotificationService {
 
     switch (type) {
       case 'message':
-        context.push(AppRoutes.chatDetail.path.replaceFirst(':id', referenceId));
+        context.push(
+          AppRoutes.chatDetail.path.replaceFirst(':id', referenceId),
+        );
       case 'ride_request':
       case 'ride_update':
-        context.push(AppRoutes.rideDetail.path.replaceFirst(':id', referenceId));
+        context.push(
+          AppRoutes.rideDetail.path.replaceFirst(':id', referenceId),
+        );
       default:
         context.push(AppRoutes.notifications.path);
     }

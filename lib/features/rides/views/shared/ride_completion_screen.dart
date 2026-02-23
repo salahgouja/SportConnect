@@ -59,11 +59,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.error_outline,
-                  color: AppColors.error,
-                  size: 48.sp,
-                ),
+                Icon(Icons.error_outline, color: AppColors.error, size: 48.sp),
                 SizedBox(height: 16.h),
                 Text(
                   l10n.somethingWentWrong,
@@ -84,9 +80,8 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                 ),
                 SizedBox(height: 16.h),
                 FilledButton.icon(
-                  onPressed: () => ref.invalidate(
-                    rideStreamProvider(widget.rideId),
-                  ),
+                  onPressed: () =>
+                      ref.invalidate(rideStreamProvider(widget.rideId)),
                   icon: const Icon(Icons.refresh),
                   label: Text(l10n.retry),
                   style: FilledButton.styleFrom(

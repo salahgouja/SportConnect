@@ -8,7 +8,8 @@ part 'driver_stats.g.dart';
 @freezed
 abstract class DriverStats with _$DriverStats {
   const factory DriverStats({
-    @Default('') String driverId, // Default to empty string to handle null from Firestore
+    @Default('')
+    String driverId, // Default to empty string to handle null from Firestore
     @Default(0.0) double rating,
     @Default(0) int totalRides,
     @Default(0) int ridesThisWeek,

@@ -447,9 +447,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              isMuted
-                  ? Icons.volume_up_rounded
-                  : Icons.volume_off_rounded,
+              isMuted ? Icons.volume_up_rounded : Icons.volume_off_rounded,
               color: Colors.white,
               size: 24.sp,
             ),
@@ -477,7 +475,11 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.delete_outline_rounded, color: Colors.white, size: 24.sp),
+            Icon(
+              Icons.delete_outline_rounded,
+              color: Colors.white,
+              size: 24.sp,
+            ),
             SizedBox(height: 4.h),
             Text(
               'Delete',
@@ -497,14 +499,20 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
           try {
             await ref
                 .read(chatActionsViewModelProvider)
-                .toggleMute(chatId: chat.id, userId: currentUserId, mute: !isMuted);
+                .toggleMute(
+                  chatId: chat.id,
+                  userId: currentUserId,
+                  mute: !isMuted,
+                );
             messenger.showSnackBar(
               SnackBar(
                 content: Text(
                   isMuted ? 'Chat unmuted' : 'Chat muted',
                   style: const TextStyle(color: Colors.white),
                 ),
-                backgroundColor: isMuted ? AppColors.warning : AppColors.success,
+                backgroundColor: isMuted
+                    ? AppColors.warning
+                    : AppColors.success,
                 behavior: SnackBarBehavior.floating,
                 duration: 2.seconds,
               ),
@@ -530,8 +538,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
                 ),
                 TextButton(
                   onPressed: () => Navigator.of(ctx).pop(true),
-                  style:
-                      TextButton.styleFrom(foregroundColor: AppColors.error),
+                  style: TextButton.styleFrom(foregroundColor: AppColors.error),
                   child: const Text('Delete'),
                 ),
               ],

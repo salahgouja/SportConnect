@@ -20,10 +20,11 @@ class DriverMyRidesScreen extends ConsumerStatefulWidget {
   const DriverMyRidesScreen({super.key});
 
   @override
-  ConsumerState<DriverMyRidesScreen> createState() => _DriverMyRidesScreenState();
+  ConsumerState<DriverMyRidesScreen> createState() =>
+      _DriverMyRidesScreenState();
 }
 
-class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen> 
+class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
     with TickerProviderStateMixin {
   int _currentRequestIndex = 0;
   Offset _dragOffset = Offset.zero;
@@ -31,7 +32,7 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
   late AnimationController _shakeController;
   late AnimationController _acceptController;
   late AnimationController _declineController;
-  
+
   @override
   void initState() {
     super.initState();
@@ -70,16 +71,14 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
           children: [
             // Main content with parallax background
             _buildParallaxBackground(),
-            
+
             // Main scrollable content
             CustomScrollView(
               physics: const BouncingScrollPhysics(),
               slivers: [
                 // Creative floating header
-                SliverToBoxAdapter(
-                  child: _buildCreativeHeader(context),
-                ),
-                
+                SliverToBoxAdapter(child: _buildCreativeHeader(context)),
+
                 // Swipeable pending requests card deck
                 SliverToBoxAdapter(
                   child: pendingRequestsAsync.when(
@@ -90,14 +89,12 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
                     error: (e, _) => _buildErrorDeck(e),
                   ),
                 ),
-                
+
                 SizedBox(height: 32.h).toSliver(),
-                
+
                 // Timeline view for upcoming rides
-                SliverToBoxAdapter(
-                  child: _buildTimelineHeader(),
-                ),
-                
+                SliverToBoxAdapter(child: _buildTimelineHeader()),
+
                 upcomingRidesAsync.when(
                   data: (rides) => rides.isEmpty
                       ? _buildEmptyTimeline().toSliver()
@@ -105,11 +102,11 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
                   loading: () => _buildLoadingTimeline().toSliver(),
                   error: (e, _) => _buildErrorTimeline(e).toSliver(),
                 ),
-                
+
                 SizedBox(height: 100.h).toSliver(),
               ],
             ),
-            
+
             // Floating action bubbles
             _buildFloatingActionBubbles(context),
           ],
@@ -121,28 +118,29 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
   /// 🎨 Parallax animated background
   Widget _buildParallaxBackground() {
     return Positioned.fill(
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColors.primary.withOpacity(0.03),
-              AppColors.scaffoldBg,
-              AppColors.accent.withOpacity(0.02),
-            ],
-          ),
-        ),
-        child: CustomPaint(
-          painter: _ParallaxPatternPainter(animation: _shakeController),
-        ),
-      ).animate(
-        onPlay: (controller) => controller.repeat(),
-      ).shimmer(
-        duration: 3000.ms,
-        color: AppColors.primary.withOpacity(0.02),
-      ),
+      child:
+          AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.primary.withOpacity(0.03),
+                      AppColors.scaffoldBg,
+                      AppColors.accent.withOpacity(0.02),
+                    ],
+                  ),
+                ),
+                child: CustomPaint(
+                  painter: _ParallaxPatternPainter(animation: _shakeController),
+                ),
+              )
+              .animate(onPlay: (controller) => controller.repeat())
+              .shimmer(
+                duration: 3000.ms,
+                color: AppColors.primary.withOpacity(0.02),
+              ),
     );
   }
 
@@ -169,7 +167,11 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.access_time_rounded, color: Colors.white, size: 20.sp),
+                Icon(
+                  Icons.access_time_rounded,
+                  color: Colors.white,
+                  size: 20.sp,
+                ),
                 SizedBox(width: 8.w),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -194,9 +196,9 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
               ],
             ),
           ).animate().scale(delay: 100.ms).fadeIn(),
-          
+
           const Spacer(),
-          
+
           // Profile bubble
           GestureDetector(
             onTap: () => context.push(AppRoutes.profile.path),
@@ -214,7 +216,11 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
                   ),
                 ],
               ),
-              child: Icon(Icons.person_rounded, color: Colors.white, size: 24.sp),
+              child: Icon(
+                Icons.person_rounded,
+                color: Colors.white,
+                size: 24.sp,
+              ),
             ).animate().scale(delay: 200.ms).fadeIn(),
           ),
         ],
@@ -235,43 +241,56 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
               child: Container(
                 alignment: Alignment.bottomCenter,
                 padding: EdgeInsets.only(bottom: 24.h),
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
-                    borderRadius: BorderRadius.circular(16.r),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.swipe, color: Colors.white, size: 20.sp),
-                      SizedBox(width: 8.w),
-                      Text(
-                        'Swipe right to accept • Swipe left to decline',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ).animate(
-                  onPlay: (controller) => controller.repeat(reverse: true),
-                ).fadeIn().fadeOut(delay: 2000.ms, duration: 500.ms),
+                child:
+                    Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 20.w,
+                            vertical: 12.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.7),
+                            borderRadius: BorderRadius.circular(16.r),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.swipe,
+                                color: Colors.white,
+                                size: 20.sp,
+                              ),
+                              SizedBox(width: 8.w),
+                              Text(
+                                'Swipe right to accept • Swipe left to decline',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                        .animate(
+                          onPlay: (controller) =>
+                              controller.repeat(reverse: true),
+                        )
+                        .fadeIn()
+                        .fadeOut(delay: 2000.ms, duration: 500.ms),
               ),
             ),
-          
+
           // Card stack (show 3 cards for depth effect)
           ...List.generate(
             math.min(3, requests.length - _currentRequestIndex),
             (index) {
               final actualIndex = _currentRequestIndex + index;
-              if (actualIndex >= requests.length) return const SizedBox.shrink();
-              
+              if (actualIndex >= requests.length)
+                return const SizedBox.shrink();
+
               final request = requests[actualIndex];
               final isTop = index == 0;
-              
+
               return _buildStackedCard(
                 request,
                 index,
@@ -294,11 +313,13 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
   ) {
     final offset = stackIndex * 8.0;
     final scale = 1.0 - (stackIndex * 0.05);
-    
+
     // Calculate rotation based on drag
     final rotation = isTopCard ? _dragOffset.dx / 1000 : 0.0;
-    final opacity = isTopCard ? (1.0 - (_dragOffset.distance / 500).clamp(0.0, 1.0)) : 1.0;
-    
+    final opacity = isTopCard
+        ? (1.0 - (_dragOffset.distance / 500).clamp(0.0, 1.0))
+        : 1.0;
+
     return Positioned.fill(
       top: offset,
       bottom: -offset,
@@ -311,31 +332,38 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
             child: Opacity(
               opacity: opacity,
               child: GestureDetector(
-                onPanStart: isTopCard ? (_) => setState(() => _isDragging = true) : null,
-                onPanUpdate: isTopCard ? (details) {
-                  setState(() {
-                    _dragOffset += details.delta;
-                  });
-                  
-                  // Haptic feedback at threshold
-                  if (_dragOffset.dx.abs() > 100 && _dragOffset.dx.abs() < 110) {
-                    // HapticFeedback.selectionClick();
-                  }
-                } : null,
-                onPanEnd: isTopCard ? (details) {
-                  setState(() => _isDragging = false);
-                  
-                  // Check if swiped far enough
-                  if (_dragOffset.dx > 100) {
-                    _acceptRequest(request);
-                  } else if (_dragOffset.dx < -100) {
-                    _declineRequest(request);
-                  } else {
-                    // Snap back
-                    setState(() => _dragOffset = Offset.zero);
-                    _shakeController.forward(from: 0);
-                  }
-                } : null,
+                onPanStart: isTopCard
+                    ? (_) => setState(() => _isDragging = true)
+                    : null,
+                onPanUpdate: isTopCard
+                    ? (details) {
+                        setState(() {
+                          _dragOffset += details.delta;
+                        });
+
+                        // Haptic feedback at threshold
+                        if (_dragOffset.dx.abs() > 100 &&
+                            _dragOffset.dx.abs() < 110) {
+                          // HapticFeedback.selectionClick();
+                        }
+                      }
+                    : null,
+                onPanEnd: isTopCard
+                    ? (details) {
+                        setState(() => _isDragging = false);
+
+                        // Check if swiped far enough
+                        if (_dragOffset.dx > 100) {
+                          _acceptRequest(request);
+                        } else if (_dragOffset.dx < -100) {
+                          _declineRequest(request);
+                        } else {
+                          // Snap back
+                          setState(() => _dragOffset = Offset.zero);
+                          _shakeController.forward(from: 0);
+                        }
+                      }
+                    : null,
                 child: _buildRequestCard(request, isTopCard),
               ),
             ),
@@ -349,22 +377,19 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
   Widget _buildRequestCard(RideRequestModel request, bool isTopCard) {
     final showAcceptHint = isTopCard && _dragOffset.dx > 50;
     final showDeclineHint = isTopCard && _dragOffset.dx < -50;
-    
+
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 4.w),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Colors.white,
-            Colors.white.withOpacity(0.95),
-          ],
+          colors: [Colors.white, Colors.white.withOpacity(0.95)],
         ),
         borderRadius: BorderRadius.circular(24.r),
         boxShadow: [
           BoxShadow(
-            color: isTopCard 
+            color: isTopCard
                 ? AppColors.primary.withOpacity(0.2)
                 : Colors.black.withOpacity(0.05),
             blurRadius: isTopCard ? 20 : 10,
@@ -391,7 +416,10 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
                   child: Transform.rotate(
                     angle: -0.3,
                     child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 32.w, vertical: 16.h),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 32.w,
+                        vertical: 16.h,
+                      ),
                       decoration: BoxDecoration(
                         border: Border.all(color: AppColors.success, width: 4),
                         borderRadius: BorderRadius.circular(12.r),
@@ -409,7 +437,7 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
                 ),
               ),
             ),
-          
+
           // Decline hint overlay
           if (showDeclineHint)
             Positioned.fill(
@@ -427,7 +455,10 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
                   child: Transform.rotate(
                     angle: 0.3,
                     child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 32.w, vertical: 16.h),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 32.w,
+                        vertical: 16.h,
+                      ),
                       decoration: BoxDecoration(
                         border: Border.all(color: AppColors.error, width: 4),
                         borderRadius: BorderRadius.circular(12.r),
@@ -445,7 +476,7 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
                 ),
               ),
             ),
-          
+
           // Card content
           Padding(
             padding: EdgeInsets.all(24.w),
@@ -501,7 +532,10 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
                       ),
                     ),
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12.w,
+                        vertical: 6.h,
+                      ),
                       decoration: BoxDecoration(
                         gradient: AppColors.goldGradient,
                         borderRadius: BorderRadius.circular(12.r),
@@ -517,9 +551,9 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
                     ),
                   ],
                 ),
-                
+
                 SizedBox(height: 24.h),
-                
+
                 // Route visualization
                 Container(
                   padding: EdgeInsets.all(20.w),
@@ -548,10 +582,7 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
-                            colors: [
-                              AppColors.primary,
-                              AppColors.accent,
-                            ],
+                            colors: [AppColors.primary, AppColors.accent],
                           ),
                         ),
                       ),
@@ -564,9 +595,9 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
                     ],
                   ),
                 ),
-                
+
                 SizedBox(height: 20.h),
-                
+
                 // Details chips
                 Wrap(
                   spacing: 8.w,
@@ -582,9 +613,9 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
                     ),
                   ],
                 ),
-                
+
                 const Spacer(),
-                
+
                 // Swipe action buttons (alternative to swipe)
                 Row(
                   children: [
@@ -615,17 +646,19 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
     );
   }
 
-  Widget _buildRoutePoint(IconData icon, String label, String address, Color color) {
+  Widget _buildRoutePoint(
+    IconData icon,
+    String label,
+    String address,
+    Color color,
+  ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           width: 24.w,
           height: 24.w,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           child: Icon(icon, color: Colors.white, size: 14.sp),
         ),
         SizedBox(width: 12.w),
@@ -684,7 +717,12 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
     );
   }
 
-  Widget _buildActionButton(String label, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildActionButton(
+    String label,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -724,12 +762,11 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
         _currentRequestIndex++;
         _dragOffset = Offset.zero;
       });
-      
+
       // Call API
-      ref.read(driverViewModelProvider.notifier).acceptRideRequest(
-        request.rideId,
-        request.id,
-      );
+      ref
+          .read(driverViewModelProvider.notifier)
+          .acceptRideRequest(request.rideId, request.id);
     });
   }
 
@@ -740,12 +777,11 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
         _currentRequestIndex++;
         _dragOffset = Offset.zero;
       });
-      
+
       // Call API
-      ref.read(driverViewModelProvider.notifier).declineRideRequest(
-        request.rideId,
-        request.id,
-      );
+      ref
+          .read(driverViewModelProvider.notifier)
+          .declineRideRequest(request.rideId, request.id);
     });
   }
 
@@ -763,34 +799,33 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
           ],
         ),
         borderRadius: BorderRadius.circular(24.r),
-        border: Border.all(
-          color: AppColors.border.withOpacity(0.5),
-          width: 2,
-        ),
+        border: Border.all(color: AppColors.border.withOpacity(0.5), width: 2),
       ),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 120.w,
-              height: 120.w,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: AppColors.primaryGradient,
-              ),
-              child: Icon(
-                Icons.inbox_rounded,
-                size: 60.sp,
-                color: Colors.white,
-              ),
-            ).animate(
-              onPlay: (controller) => controller.repeat(reverse: true),
-            ).scale(
-              duration: 2000.ms,
-              begin: const Offset(0.9, 0.9),
-              end: const Offset(1.0, 1.0),
-            ),
+                  width: 120.w,
+                  height: 120.w,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: AppColors.primaryGradient,
+                  ),
+                  child: Icon(
+                    Icons.inbox_rounded,
+                    size: 60.sp,
+                    color: Colors.white,
+                  ),
+                )
+                .animate(
+                  onPlay: (controller) => controller.repeat(reverse: true),
+                )
+                .scale(
+                  duration: 2000.ms,
+                  begin: const Offset(0.9, 0.9),
+                  end: const Offset(1.0, 1.0),
+                ),
             SizedBox(height: 24.h),
             Text(
               'No Pending Requests',
@@ -803,10 +838,7 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
             SizedBox(height: 8.h),
             Text(
               'You\'re all caught up!',
-              style: TextStyle(
-                fontSize: 14.sp,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
             ),
           ],
         ),
@@ -818,9 +850,7 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
     return Container(
       height: 460.h,
       margin: EdgeInsets.symmetric(horizontal: 20.w),
-      child: Center(
-        child: CircularProgressIndicator(color: AppColors.primary),
-      ),
+      child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
     );
   }
 
@@ -836,7 +866,11 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline_rounded, size: 60.sp, color: AppColors.error),
+            Icon(
+              Icons.error_outline_rounded,
+              size: 60.sp,
+              color: AppColors.error,
+            ),
             SizedBox(height: 16.h),
             Text(
               'Error loading requests',
@@ -881,100 +915,93 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
     return SliverPadding(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
       sliver: SliverList(
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            final ride = rides[index];
-            final isLast = index == rides.length - 1;
+        delegate: SliverChildBuilderDelegate((context, index) {
+          final ride = rides[index];
+          final isLast = index == rides.length - 1;
 
-            return Dismissible(
-              key: ValueKey('driver_timeline_${ride.id}'),
-              direction: DismissDirection.endToStart,
-              confirmDismiss: (_) async {
-                HapticFeedback.mediumImpact();
-                if (!mounted) return false;
-                final confirmed = await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16.r),
-                    ),
-                    title: Row(
-                      children: [
-                        Container(
-                          padding: EdgeInsets.all(8.w),
-                          decoration: BoxDecoration(
-                            color: AppColors.error.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.cancel_outlined,
-                            color: AppColors.error,
-                            size: 20.sp,
-                          ),
+          return Dismissible(
+            key: ValueKey('driver_timeline_${ride.id}'),
+            direction: DismissDirection.endToStart,
+            confirmDismiss: (_) async {
+              HapticFeedback.mediumImpact();
+              if (!mounted) return false;
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16.r),
+                  ),
+                  title: Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(8.w),
+                        decoration: BoxDecoration(
+                          color: AppColors.error.withOpacity(0.1),
+                          shape: BoxShape.circle,
                         ),
-                        SizedBox(width: 12.w),
-                        const Text('Cancel Ride'),
-                      ],
-                    ),
-                    content: const Text(
-                      'Are you sure you want to cancel this ride? This action cannot be undone.',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(ctx).pop(false),
-                        child: const Text('Keep Ride'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => Navigator.of(ctx).pop(true),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.error,
+                        child: Icon(
+                          Icons.cancel_outlined,
+                          color: AppColors.error,
+                          size: 20.sp,
                         ),
-                        child: const Text('Cancel'),
                       ),
+                      SizedBox(width: 12.w),
+                      const Text('Cancel Ride'),
                     ],
                   ),
-                );
-                if ((confirmed ?? false) && mounted) {
-                  context.pushNamed(
-                    AppRoutes.cancellationReason.name,
-                    pathParameters: {'id': ride.id},
-                  );
-                }
-                return false; // stream manages list
-              },
-              background: Container(
-                margin: EdgeInsets.only(bottom: isLast ? 0 : 16.h, left: 48.w),
-                decoration: BoxDecoration(
-                  color: AppColors.error,
-                  borderRadius: BorderRadius.circular(20.r),
-                ),
-                alignment: Alignment.centerRight,
-                padding: EdgeInsets.only(right: 24.w),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.cancel_outlined,
-                      color: Colors.white,
-                      size: 28.sp,
+                  content: const Text(
+                    'Are you sure you want to cancel this ride? This action cannot be undone.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(false),
+                      child: const Text('Keep Ride'),
                     ),
-                    SizedBox(height: 4.h),
-                    Text(
-                      'Cancel',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w600,
+                    ElevatedButton(
+                      onPressed: () => Navigator.of(ctx).pop(true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.error,
                       ),
+                      child: const Text('Cancel'),
                     ),
                   ],
                 ),
+              );
+              if ((confirmed ?? false) && mounted) {
+                context.pushNamed(
+                  AppRoutes.cancellationReason.name,
+                  pathParameters: {'id': ride.id},
+                );
+              }
+              return false; // stream manages list
+            },
+            background: Container(
+              margin: EdgeInsets.only(bottom: isLast ? 0 : 16.h, left: 48.w),
+              decoration: BoxDecoration(
+                color: AppColors.error,
+                borderRadius: BorderRadius.circular(20.r),
               ),
-              child: _buildTimelineRideCard(ride, isLast, index),
-            );
-          },
-          childCount: rides.length,
-        ),
+              alignment: Alignment.centerRight,
+              padding: EdgeInsets.only(right: 24.w),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.cancel_outlined, color: Colors.white, size: 28.sp),
+                  SizedBox(height: 4.h),
+                  Text(
+                    'Cancel',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            child: _buildTimelineRideCard(ride, isLast, index),
+          );
+        }, childCount: rides.length),
       ),
     );
   }
@@ -1030,114 +1057,139 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
               ),
           ],
         ).animate(delay: Duration(milliseconds: index * 100)).fadeIn().scale(),
-        
+
         SizedBox(width: 16.w),
-        
+
         // Ride card
         Expanded(
           child: GestureDetector(
-            onTap: () => context.push('${AppRoutes.riderViewRide.path}/${ride.id}'),
-            child: Container(
-              margin: EdgeInsets.only(bottom: isLast ? 0 : 16.h),
-              padding: EdgeInsets.all(16.w),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-                        decoration: BoxDecoration(
-                          gradient: AppColors.goldGradient,
-                          borderRadius: BorderRadius.circular(8.r),
-                        ),
-                        child: Text(
-                          ride.departureTime != null
-                              ? DateFormat('MMM d • HH:mm').format(ride.departureTime!)
-                              : 'TBD',
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+            onTap: () =>
+                context.push('${AppRoutes.riderViewRide.path}/${ride.id}'),
+            child:
+                Container(
+                      margin: EdgeInsets.only(bottom: isLast ? 0 : 16.h),
+                      padding: EdgeInsets.all(16.w),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20.r),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.06),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
                           ),
-                        ),
+                        ],
                       ),
-                      const Spacer(),
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-                        decoration: BoxDecoration(
-                          color: AppColors.success.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8.r),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.people_outline_rounded, size: 14.sp, color: AppColors.success),
-                            SizedBox(width: 4.w),
-                            Text(
-                              '${ride.acceptedBookings.length}/${ride.availableSeats ?? 0}',
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.success,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 10.w,
+                                  vertical: 6.h,
+                                ),
+                                decoration: BoxDecoration(
+                                  gradient: AppColors.goldGradient,
+                                  borderRadius: BorderRadius.circular(8.r),
+                                ),
+                                child: Text(
+                                  ride.departureTime != null
+                                      ? DateFormat(
+                                          'MMM d • HH:mm',
+                                        ).format(ride.departureTime!)
+                                      : 'TBD',
+                                  style: TextStyle(
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 12.h),
-                  Row(
-                    children: [
-                      Icon(Icons.trip_origin_rounded, size: 16.sp, color: AppColors.primary),
-                      SizedBox(width: 8.w),
-                      Expanded(
-                        child: Text(
-                          ride.origin.address,
-                          style: TextStyle(
-                            fontSize: 13.sp,
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w500,
+                              const Spacer(),
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 10.w,
+                                  vertical: 6.h,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.success.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8.r),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.people_outline_rounded,
+                                      size: 14.sp,
+                                      color: AppColors.success,
+                                    ),
+                                    SizedBox(width: 4.w),
+                                    Text(
+                                      '${ride.acceptedBookings.length}/${ride.availableSeats ?? 0}',
+                                      style: TextStyle(
+                                        fontSize: 12.sp,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.success,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 8.h),
-                  Row(
-                    children: [
-                      Icon(Icons.location_on_rounded, size: 16.sp, color: AppColors.accent),
-                      SizedBox(width: 8.w),
-                      Expanded(
-                        child: Text(
-                          ride.destination.address,
-                          style: TextStyle(
-                            fontSize: 13.sp,
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w500,
+                          SizedBox(height: 12.h),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.trip_origin_rounded,
+                                size: 16.sp,
+                                color: AppColors.primary,
+                              ),
+                              SizedBox(width: 8.w),
+                              Expanded(
+                                child: Text(
+                                  ride.origin.address,
+                                  style: TextStyle(
+                                    fontSize: 13.sp,
+                                    color: AppColors.textPrimary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                          SizedBox(height: 8.h),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.location_on_rounded,
+                                size: 16.sp,
+                                color: AppColors.accent,
+                              ),
+                              SizedBox(width: 8.w),
+                              Expanded(
+                                child: Text(
+                                  ride.destination.address,
+                                  style: TextStyle(
+                                    fontSize: 13.sp,
+                                    color: AppColors.textPrimary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ],
-              ),
-            ).animate(delay: Duration(milliseconds: index * 100 + 50)).fadeIn().slideX(begin: 0.3),
+                    )
+                    .animate(delay: Duration(milliseconds: index * 100 + 50))
+                    .fadeIn()
+                    .slideX(begin: 0.3),
           ),
         ),
       ],
@@ -1159,7 +1211,11 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
       ),
       child: Column(
         children: [
-          Icon(Icons.calendar_today_rounded, size: 48.sp, color: AppColors.primary.withOpacity(0.4)),
+          Icon(
+            Icons.calendar_today_rounded,
+            size: 48.sp,
+            color: AppColors.primary.withOpacity(0.4),
+          ),
           SizedBox(height: 16.h),
           Text(
             'No Upcoming Rides',
@@ -1172,10 +1228,7 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
           SizedBox(height: 8.h),
           Text(
             'Start planning your journey',
-            style: TextStyle(
-              fontSize: 14.sp,
-              color: AppColors.textSecondary,
-            ),
+            style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
           ),
         ],
       ),
@@ -1185,9 +1238,7 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
   Widget _buildLoadingTimeline() {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 32.h),
-      child: Center(
-        child: CircularProgressIndicator(color: AppColors.primary),
-      ),
+      child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
     );
   }
 
@@ -1201,7 +1252,11 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
       ),
       child: Column(
         children: [
-          Icon(Icons.error_outline_rounded, size: 48.sp, color: AppColors.error),
+          Icon(
+            Icons.error_outline_rounded,
+            size: 48.sp,
+            color: AppColors.error,
+          ),
           SizedBox(height: 16.h),
           Text(
             'Error loading rides',
@@ -1225,19 +1280,19 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
             () => context.push(AppRoutes.driverOfferRide.path),
           ).animate().scale(delay: 200.ms).fadeIn(),
           SizedBox(height: 12.h),
-          _buildFloatingBubble(
-            Icons.map_rounded,
-            AppColors.accentGradient,
-            () {
-              // Navigate to map view
-            },
-          ).animate().scale(delay: 300.ms).fadeIn(),
+          _buildFloatingBubble(Icons.map_rounded, AppColors.accentGradient, () {
+            // Navigate to map view
+          }).animate().scale(delay: 300.ms).fadeIn(),
         ],
       ),
     );
   }
 
-  Widget _buildFloatingBubble(IconData icon, Gradient gradient, VoidCallback onTap) {
+  Widget _buildFloatingBubble(
+    IconData icon,
+    Gradient gradient,
+    VoidCallback onTap,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -1264,7 +1319,8 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
 class _ParallaxPatternPainter extends CustomPainter {
   final Animation<double> animation;
 
-  _ParallaxPatternPainter({required this.animation}) : super(repaint: animation);
+  _ParallaxPatternPainter({required this.animation})
+    : super(repaint: animation);
 
   @override
   void paint(Canvas canvas, Size size) {

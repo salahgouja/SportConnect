@@ -124,7 +124,6 @@ class DeepLinkService {
     );
   }
 
-
   /// Parses the URI and navigates to the appropriate screen.
   void _handleDeepLink(BuildContext context, Uri uri) {
     if (!context.mounted) return;

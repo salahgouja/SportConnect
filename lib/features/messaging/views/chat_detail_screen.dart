@@ -157,10 +157,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   }
 
   Future<void> _sendImage() async {
-    final accepted =
-        await PermissionDialogHelper.showCameraRationale(
+    final accepted = await PermissionDialogHelper.showCameraRationale(
       context,
-      customMessage: 'Access to your photo library is needed to send '
+      customMessage:
+          'Access to your photo library is needed to send '
           'images in this chat. Your photos are only shared '
           'when you choose to send them.',
     );
@@ -240,8 +240,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   /// Start voice recording
   Future<void> _startRecording() async {
     try {
-      final accepted =
-          await PermissionDialogHelper.showMicrophoneRationale(context);
+      final accepted = await PermissionDialogHelper.showMicrophoneRationale(
+        context,
+      );
       if (!accepted) return;
       if (await _audioRecorder.hasPermission()) {
         final directory = await getTemporaryDirectory();
@@ -501,23 +502,14 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                 _muteChat();
               },
             ),
-            _buildOptionItem(
-              Icons.flag_outlined,
-              'Report User',
-              () {
-                context.pop();
-                _reportUser();
-              },
-            ),
-            _buildOptionItem(
-              Icons.block_rounded,
-              'Block User',
-              () {
-                context.pop();
-                _confirmBlockUser();
-              },
-              isDestructive: true,
-            ),
+            _buildOptionItem(Icons.flag_outlined, 'Report User', () {
+              context.pop();
+              _reportUser();
+            }),
+            _buildOptionItem(Icons.block_rounded, 'Block User', () {
+              context.pop();
+              _confirmBlockUser();
+            }, isDestructive: true),
             _buildOptionItem(
               Icons.delete_outline_rounded,
               AppLocalizations.of(context).clearChat,
@@ -567,8 +559,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
             onPressed: () async {
               dialogContext.pop();
               try {
-                final chatController =
-                    ref.read(chatActionsViewModelProvider);
+                final chatController = ref.read(chatActionsViewModelProvider);
                 await chatController.blockUser(
                   chatId: widget.chatId,
                   userId: currentUser!.uid,
@@ -600,13 +591,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                 }
               }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-            ),
-            child: const Text(
-              'Block',
-              style: TextStyle(color: Colors.white),
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('Block', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -649,8 +635,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
             onPressed: () async {
               dialogContext.pop();
               try {
-                final chatController =
-                    ref.read(chatActionsViewModelProvider);
+                final chatController = ref.read(chatActionsViewModelProvider);
                 await chatController.clearChat(
                   chatId: widget.chatId,
                   userId: currentUser!.uid,
@@ -658,8 +643,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content:
-                          Text(AppLocalizations.of(context).chatCleared),
+                      content: Text(AppLocalizations.of(context).chatCleared),
                       backgroundColor: AppColors.success,
                       behavior: SnackBarBehavior.floating,
                     ),
@@ -1351,376 +1335,384 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     int index,
   ) {
     return Semantics(
-      label: 'Message from ${message.senderName}. Long press for options',
-      child: GestureDetector(
-          onLongPress: () => _showMessageOptions(message),
-          child: Padding(
-            padding: EdgeInsets.only(bottom: 4.h),
-            child: Row(
-              mainAxisAlignment: isMe
-                  ? MainAxisAlignment.end
-                  : MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                if (!isMe) ...[
-                  if (showAvatar)
-                    PremiumAvatar(name: message.senderName, size: 32)
-                  else
-                    SizedBox(width: 32.w),
-                  SizedBox(width: 8.w),
-                ],
-                Flexible(
-                  child: Column(
-                    crossAxisAlignment: isMe
-                        ? CrossAxisAlignment.end
-                        : CrossAxisAlignment.start,
-                    children: [
-                      // Reply indicator
-                      if (message.replyToContent != null)
-                        Container(
-                          margin: EdgeInsets.only(bottom: 4.h),
-                          padding: EdgeInsets.all(8.w),
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceVariant.withValues(
-                              alpha: 0.3,
-                            ),
-                            borderRadius: BorderRadius.circular(8.r),
-                            border: Border(
-                              left: BorderSide(
-                                color: AppColors.primary,
-                                width: 2,
+          label: 'Message from ${message.senderName}. Long press for options',
+          child: GestureDetector(
+            onLongPress: () => _showMessageOptions(message),
+            child: Padding(
+              padding: EdgeInsets.only(bottom: 4.h),
+              child: Row(
+                mainAxisAlignment: isMe
+                    ? MainAxisAlignment.end
+                    : MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (!isMe) ...[
+                    if (showAvatar)
+                      PremiumAvatar(name: message.senderName, size: 32)
+                    else
+                      SizedBox(width: 32.w),
+                    SizedBox(width: 8.w),
+                  ],
+                  Flexible(
+                    child: Column(
+                      crossAxisAlignment: isMe
+                          ? CrossAxisAlignment.end
+                          : CrossAxisAlignment.start,
+                      children: [
+                        // Reply indicator
+                        if (message.replyToContent != null)
+                          Container(
+                            margin: EdgeInsets.only(bottom: 4.h),
+                            padding: EdgeInsets.all(8.w),
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceVariant.withValues(
+                                alpha: 0.3,
+                              ),
+                              borderRadius: BorderRadius.circular(8.r),
+                              border: Border(
+                                left: BorderSide(
+                                  color: AppColors.primary,
+                                  width: 2,
+                                ),
                               ),
                             ),
-                          ),
-                          child: Text(
-                            message.replyToContent!,
-                            style: TextStyle(
-                              fontSize: 12.sp,
-                              color: AppColors.textSecondary,
+                            child: Text(
+                              message.replyToContent!,
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: AppColors.textSecondary,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
 
-                      // Message content
-                      Container(
-                        constraints: BoxConstraints(maxWidth: 280.w),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 16.w,
-                          vertical: 10.h,
-                        ),
-                        decoration: BoxDecoration(
-                          gradient: isMe
-                              ? LinearGradient(
-                                  colors: [
-                                    AppColors.primary,
-                                    AppColors.primary.withValues(alpha: 0.9),
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                )
-                              : null,
-                          color: isMe
-                              ? null
-                              : AppColors.surfaceVariant.withValues(alpha: 0.7),
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(20.r),
-                            topRight: Radius.circular(20.r),
-                            bottomLeft: isMe
-                                ? Radius.circular(20.r)
-                                : Radius.circular(4.r),
-                            bottomRight: isMe
-                                ? Radius.circular(4.r)
-                                : Radius.circular(20.r),
+                        // Message content
+                        Container(
+                          constraints: BoxConstraints(maxWidth: 280.w),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 16.w,
+                            vertical: 10.h,
                           ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: isMe
-                                  ? AppColors.primary.withValues(alpha: 0.2)
-                                  : Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
+                          decoration: BoxDecoration(
+                            gradient: isMe
+                                ? LinearGradient(
+                                    colors: [
+                                      AppColors.primary,
+                                      AppColors.primary.withValues(alpha: 0.9),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  )
+                                : null,
+                            color: isMe
+                                ? null
+                                : AppColors.surfaceVariant.withValues(
+                                    alpha: 0.7,
+                                  ),
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(20.r),
+                              topRight: Radius.circular(20.r),
+                              bottomLeft: isMe
+                                  ? Radius.circular(20.r)
+                                  : Radius.circular(4.r),
+                              bottomRight: isMe
+                                  ? Radius.circular(4.r)
+                                  : Radius.circular(20.r),
                             ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            // Image message
-                            if (message.type == MessageType.image &&
-                                message.imageUrl != null)
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(12.r),
-                                child: Image.network(
-                                  message.imageUrl!,
-                                  width: 200.w,
-                                  fit: BoxFit.cover,
-                                  loadingBuilder:
-                                      (context, child, loadingProgress) {
-                                        if (loadingProgress == null)
-                                          return child;
-                                        return Container(
-                                          width: 200.w,
-                                          height: 150.h,
-                                          color: AppColors.surfaceVariant,
-                                          child: Center(
-                                            child: CircularProgressIndicator(
-                                              value:
-                                                  loadingProgress
-                                                          .expectedTotalBytes !=
-                                                      null
-                                                  ? loadingProgress
-                                                            .cumulativeBytesLoaded /
-                                                        loadingProgress
-                                                            .expectedTotalBytes!
-                                                  : null,
-                                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: isMe
+                                    ? AppColors.primary.withValues(alpha: 0.2)
+                                    : Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              // Image message
+                              if (message.type == MessageType.image &&
+                                  message.imageUrl != null)
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(12.r),
+                                  child: Image.network(
+                                    message.imageUrl!,
+                                    width: 200.w,
+                                    fit: BoxFit.cover,
+                                    loadingBuilder: (context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      return Container(
+                                        width: 200.w,
+                                        height: 150.h,
+                                        color: AppColors.surfaceVariant,
+                                        child: Center(
+                                          child: CircularProgressIndicator(
+                                            value:
+                                                loadingProgress
+                                                        .expectedTotalBytes !=
+                                                    null
+                                                ? loadingProgress
+                                                          .cumulativeBytesLoaded /
+                                                      loadingProgress
+                                                          .expectedTotalBytes!
+                                                : null,
                                           ),
-                                        );
-                                      },
-                                ),
-                              )
-                            // Location message
-                            else if (message.type == MessageType.location &&
-                                message.latitude != null &&
-                                message.longitude != null)
-                              GestureDetector(
-                                onTap: () => _openLocationInMaps(
-                                  message.latitude!,
-                                  message.longitude!,
-                                  message.content,
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // Map preview using OpenStreetMap static image
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(12.r),
-                                      child: Stack(
-                                        children: [
-                                          Image.network(
-                                            'https://staticmap.openstreetmap.de/staticmap.php?center=${message.latitude},${message.longitude}&zoom=15&size=200x120&maptype=osmarenderer&markers=${message.latitude},${message.longitude},red-pushpin',
-                                            width: 200.w,
-                                            height: 120.h,
-                                            fit: BoxFit.cover,
-                                            errorBuilder:
-                                                (context, error, stackTrace) {
-                                                  return Container(
-                                                    width: 200.w,
-                                                    height: 120.h,
-                                                    color: AppColors
-                                                        .surfaceVariant,
-                                                    child: Column(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .center,
-                                                      children: [
-                                                        Icon(
-                                                          Icons.map_rounded,
-                                                          size: 32.sp,
-                                                          color: isMe
-                                                              ? Colors.white70
-                                                              : AppColors
-                                                                    .textSecondary,
-                                                        ),
-                                                        SizedBox(height: 4.h),
-                                                        Text(
-                                                          AppLocalizations.of(
-                                                            context,
-                                                          ).tapToOpenMap,
-                                                          style: TextStyle(
-                                                            fontSize: 11.sp,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                )
+                              // Location message
+                              else if (message.type == MessageType.location &&
+                                  message.latitude != null &&
+                                  message.longitude != null)
+                                GestureDetector(
+                                  onTap: () => _openLocationInMaps(
+                                    message.latitude!,
+                                    message.longitude!,
+                                    message.content,
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      // Map preview using OpenStreetMap static image
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(
+                                          12.r,
+                                        ),
+                                        child: Stack(
+                                          children: [
+                                            Image.network(
+                                              'https://staticmap.openstreetmap.de/staticmap.php?center=${message.latitude},${message.longitude}&zoom=15&size=200x120&maptype=osmarenderer&markers=${message.latitude},${message.longitude},red-pushpin',
+                                              width: 200.w,
+                                              height: 120.h,
+                                              fit: BoxFit.cover,
+                                              errorBuilder:
+                                                  (context, error, stackTrace) {
+                                                    return Container(
+                                                      width: 200.w,
+                                                      height: 120.h,
+                                                      color: AppColors
+                                                          .surfaceVariant,
+                                                      child: Column(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .center,
+                                                        children: [
+                                                          Icon(
+                                                            Icons.map_rounded,
+                                                            size: 32.sp,
                                                             color: isMe
                                                                 ? Colors.white70
                                                                 : AppColors
                                                                       .textSecondary,
                                                           ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  );
-                                                },
-                                            loadingBuilder:
-                                                (
-                                                  context,
-                                                  child,
-                                                  loadingProgress,
-                                                ) {
-                                                  if (loadingProgress == null)
-                                                    return child;
-                                                  return Container(
-                                                    width: 200.w,
-                                                    height: 120.h,
-                                                    color: AppColors
-                                                        .surfaceVariant,
-                                                    child: const Center(
-                                                      child:
-                                                          CircularProgressIndicator(
-                                                            strokeWidth: 2,
+                                                          SizedBox(height: 4.h),
+                                                          Text(
+                                                            AppLocalizations.of(
+                                                              context,
+                                                            ).tapToOpenMap,
+                                                            style: TextStyle(
+                                                              fontSize: 11.sp,
+                                                              color: isMe
+                                                                  ? Colors
+                                                                        .white70
+                                                                  : AppColors
+                                                                        .textSecondary,
+                                                            ),
                                                           ),
-                                                    ),
-                                                  );
-                                                },
-                                          ),
-                                          // Tap to open indicator
-                                          Positioned(
-                                            right: 8.w,
-                                            top: 8.h,
-                                            child: Container(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: 8.w,
-                                                vertical: 4.h,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: Colors.black54,
-                                                borderRadius:
-                                                    BorderRadius.circular(12.r),
-                                              ),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Icon(
-                                                    Icons.open_in_new,
-                                                    size: 12.sp,
-                                                    color: Colors.white,
-                                                  ),
-                                                  SizedBox(width: 4.w),
-                                                  Text(
-                                                    AppLocalizations.of(
-                                                      context,
-                                                    ).open,
-                                                    style: TextStyle(
-                                                      fontSize: 12.sp,
+                                                        ],
+                                                      ),
+                                                    );
+                                                  },
+                                              loadingBuilder:
+                                                  (
+                                                    context,
+                                                    child,
+                                                    loadingProgress,
+                                                  ) {
+                                                    if (loadingProgress == null)
+                                                      return child;
+                                                    return Container(
+                                                      width: 200.w,
+                                                      height: 120.h,
+                                                      color: AppColors
+                                                          .surfaceVariant,
+                                                      child: const Center(
+                                                        child:
+                                                            CircularProgressIndicator(
+                                                              strokeWidth: 2,
+                                                            ),
+                                                      ),
+                                                    );
+                                                  },
+                                            ),
+                                            // Tap to open indicator
+                                            Positioned(
+                                              right: 8.w,
+                                              top: 8.h,
+                                              child: Container(
+                                                padding: EdgeInsets.symmetric(
+                                                  horizontal: 8.w,
+                                                  vertical: 4.h,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.black54,
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                        12.r,
+                                                      ),
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Icon(
+                                                      Icons.open_in_new,
+                                                      size: 12.sp,
                                                       color: Colors.white,
-                                                      fontWeight:
-                                                          FontWeight.w500,
                                                     ),
-                                                  ),
-                                                ],
+                                                    SizedBox(width: 4.w),
+                                                    Text(
+                                                      AppLocalizations.of(
+                                                        context,
+                                                      ).open,
+                                                      style: TextStyle(
+                                                        fontSize: 12.sp,
+                                                        color: Colors.white,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      SizedBox(height: 8.h),
+                                      // Location name/address
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.location_on_rounded,
+                                            size: 16.sp,
+                                            color: isMe
+                                                ? Colors.white70
+                                                : const Color(0xFF4CAF50),
+                                          ),
+                                          SizedBox(width: 4.w),
+                                          Flexible(
+                                            child: Text(
+                                              message.content.replaceFirst(
+                                                '📍 ',
+                                                '',
+                                              ),
+                                              style: TextStyle(
+                                                fontSize: 13.sp,
+                                                color: isMe
+                                                    ? Colors.white
+                                                    : AppColors.textPrimary,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
                                             ),
                                           ),
                                         ],
                                       ),
-                                    ),
-                                    SizedBox(height: 8.h),
-                                    // Location name/address
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.location_on_rounded,
-                                          size: 16.sp,
+                                    ],
+                                  ),
+                                )
+                              // Audio message
+                              else if (message.type == MessageType.audio &&
+                                  message.imageUrl !=
+                                      null) // Using imageUrl field for audio URL
+                                _AudioMessagePlayer(
+                                  audioUrl: message.imageUrl!,
+                                  isMe: isMe,
+                                )
+                              else
+                                Text(
+                                  message.isDeleted
+                                      ? AppLocalizations.of(
+                                          context,
+                                        ).thisMessageWasDeleted
+                                      : message.content,
+                                  style: TextStyle(
+                                    fontSize: 15.sp,
+                                    color: isMe
+                                        ? Colors.white
+                                        : AppColors.textPrimary,
+                                    fontStyle: message.isDeleted
+                                        ? FontStyle.italic
+                                        : FontStyle.normal,
+                                    height: 1.3,
+                                  ),
+                                ),
+                              SizedBox(height: 4.h),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (message.isEdited)
+                                    Padding(
+                                      padding: EdgeInsets.only(right: 4.w),
+                                      child: Text(
+                                        AppLocalizations.of(context).edited,
+                                        style: TextStyle(
+                                          fontSize: 12.sp,
                                           color: isMe
-                                              ? Colors.white70
-                                              : const Color(0xFF4CAF50),
+                                              ? Colors.white.withValues(
+                                                  alpha: 0.6,
+                                                )
+                                              : AppColors.textTertiary,
                                         ),
-                                        SizedBox(width: 4.w),
-                                        Flexible(
-                                          child: Text(
-                                            message.content.replaceFirst(
-                                              '📍 ',
-                                              '',
-                                            ),
-                                            style: TextStyle(
-                                              fontSize: 13.sp,
-                                              color: isMe
-                                                  ? Colors.white
-                                                  : AppColors.textPrimary,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              )
-                            // Audio message
-                            else if (message.type == MessageType.audio &&
-                                message.imageUrl !=
-                                    null) // Using imageUrl field for audio URL
-                              _AudioMessagePlayer(
-                                audioUrl: message.imageUrl!,
-                                isMe: isMe,
-                              )
-                            else
-                              Text(
-                                message.isDeleted
-                                    ? AppLocalizations.of(
-                                        context,
-                                      ).thisMessageWasDeleted
-                                    : message.content,
-                                style: TextStyle(
-                                  fontSize: 15.sp,
-                                  color: isMe
-                                      ? Colors.white
-                                      : AppColors.textPrimary,
-                                  fontStyle: message.isDeleted
-                                      ? FontStyle.italic
-                                      : FontStyle.normal,
-                                  height: 1.3,
-                                ),
-                              ),
-                            SizedBox(height: 4.h),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (message.isEdited)
-                                  Padding(
-                                    padding: EdgeInsets.only(right: 4.w),
-                                    child: Text(
-                                      AppLocalizations.of(context).edited,
-                                      style: TextStyle(
-                                        fontSize: 12.sp,
-                                        color: isMe
-                                            ? Colors.white.withValues(
-                                                alpha: 0.6,
-                                              )
-                                            : AppColors.textTertiary,
                                       ),
                                     ),
+                                  Text(
+                                    _formatTime(message.createdAt),
+                                    style: TextStyle(
+                                      fontSize: 11.sp,
+                                      color: isMe
+                                          ? Colors.white.withValues(alpha: 0.7)
+                                          : AppColors.textTertiary,
+                                    ),
                                   ),
-                                Text(
-                                  _formatTime(message.createdAt),
-                                  style: TextStyle(
-                                    fontSize: 11.sp,
-                                    color: isMe
-                                        ? Colors.white.withValues(alpha: 0.7)
-                                        : AppColors.textTertiary,
-                                  ),
-                                ),
-                                if (isMe) ...[
-                                  SizedBox(width: 4.w),
-                                  Icon(
-                                    message.status == MessageStatus.read
-                                        ? Icons.done_all_rounded
-                                        : message.status ==
-                                              MessageStatus.delivered
-                                        ? Icons.done_all_rounded
-                                        : Icons.done_rounded,
-                                    size: 14.sp,
-                                    color: message.status == MessageStatus.read
-                                        ? Colors.lightBlueAccent
-                                        : Colors.white.withValues(alpha: 0.7),
-                                  ),
+                                  if (isMe) ...[
+                                    SizedBox(width: 4.w),
+                                    Icon(
+                                      message.status == MessageStatus.read
+                                          ? Icons.done_all_rounded
+                                          : message.status ==
+                                                MessageStatus.delivered
+                                          ? Icons.done_all_rounded
+                                          : Icons.done_rounded,
+                                      size: 14.sp,
+                                      color:
+                                          message.status == MessageStatus.read
+                                          ? Colors.lightBlueAccent
+                                          : Colors.white.withValues(alpha: 0.7),
+                                    ),
+                                  ],
                                 ],
-                              ],
-                            ),
-                          ],
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                if (isMe) SizedBox(width: 8.w),
-              ],
+                  if (isMe) SizedBox(width: 8.w),
+                ],
+              ),
             ),
           ),
-        ),
         )
         .animate()
         .fadeIn(
@@ -1969,28 +1961,30 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                     SizedBox(width: 8.w),
                     Semantics(
                       button: true,
-                      label: _showEmojiPicker ? 'Show keyboard' : 'Show emoji picker',
+                      label: _showEmojiPicker
+                          ? 'Show keyboard'
+                          : 'Show emoji picker',
                       child: GestureDetector(
-                      onTap: _toggleEmojiPicker,
-                      child: Container(
-                        padding: EdgeInsets.all(6.w),
-                        decoration: BoxDecoration(
-                          color: _showEmojiPicker
-                              ? AppColors.primary.withOpacity(0.1)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(8.r),
-                        ),
-                        child: Icon(
-                          _showEmojiPicker
-                              ? Icons.keyboard_rounded
-                              : Icons.emoji_emotions_rounded,
-                          color: _showEmojiPicker
-                              ? AppColors.primary
-                              : AppColors.textSecondary,
-                          size: 22.sp,
+                        onTap: _toggleEmojiPicker,
+                        child: Container(
+                          padding: EdgeInsets.all(6.w),
+                          decoration: BoxDecoration(
+                            color: _showEmojiPicker
+                                ? AppColors.primary.withOpacity(0.1)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                          child: Icon(
+                            _showEmojiPicker
+                                ? Icons.keyboard_rounded
+                                : Icons.emoji_emotions_rounded,
+                            color: _showEmojiPicker
+                                ? AppColors.primary
+                                : AppColors.textSecondary,
+                            size: 22.sp,
+                          ),
                         ),
                       ),
-                    ),
                     ),
                   ],
                 ),
@@ -2004,66 +1998,66 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
               button: true,
               label: 'Send message',
               child: GestureDetector(
-              onTap: () {
-                if (_messageController.text.trim().isNotEmpty) {
-                  _sendMessage();
-                } else if (_isRecording) {
-                  _stopRecording();
-                } else {
-                  _startRecording();
-                }
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: EdgeInsets.all(12.w),
-                decoration: BoxDecoration(
-                  gradient: _isRecording
-                      ? const LinearGradient(
-                          colors: [Color(0xFFE91E63), Color(0xFFF44336)],
-                        )
-                      : AppColors.primaryGradient,
-                  borderRadius: BorderRadius.circular(12.r),
-                  boxShadow: [
-                    BoxShadow(
-                      color:
-                          (_isRecording
-                                  ? const Color(0xFFE91E63)
-                                  : AppColors.primary)
-                              .withValues(alpha: 0.3),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: _isRecording
-                    ? Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.mic_rounded,
-                            color: Colors.white,
-                            size: 22.sp,
-                          ),
-                          SizedBox(width: 8.w),
-                          Text(
-                            '${_recordingDuration.inMinutes}:${(_recordingDuration.inSeconds % 60).toString().padLeft(2, '0')}',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      )
-                    : Icon(
-                        _messageController.text.trim().isNotEmpty
-                            ? Icons.send_rounded
-                            : Icons.mic_rounded,
-                        color: Colors.white,
-                        size: 22.sp,
+                onTap: () {
+                  if (_messageController.text.trim().isNotEmpty) {
+                    _sendMessage();
+                  } else if (_isRecording) {
+                    _stopRecording();
+                  } else {
+                    _startRecording();
+                  }
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: EdgeInsets.all(12.w),
+                  decoration: BoxDecoration(
+                    gradient: _isRecording
+                        ? const LinearGradient(
+                            colors: [Color(0xFFE91E63), Color(0xFFF44336)],
+                          )
+                        : AppColors.primaryGradient,
+                    borderRadius: BorderRadius.circular(12.r),
+                    boxShadow: [
+                      BoxShadow(
+                        color:
+                            (_isRecording
+                                    ? const Color(0xFFE91E63)
+                                    : AppColors.primary)
+                                .withValues(alpha: 0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
+                    ],
+                  ),
+                  child: _isRecording
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.mic_rounded,
+                              color: Colors.white,
+                              size: 22.sp,
+                            ),
+                            SizedBox(width: 8.w),
+                            Text(
+                              '${_recordingDuration.inMinutes}:${(_recordingDuration.inSeconds % 60).toString().padLeft(2, '0')}',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Icon(
+                          _messageController.text.trim().isNotEmpty
+                              ? Icons.send_rounded
+                              : Icons.mic_rounded,
+                          color: Colors.white,
+                          size: 22.sp,
+                        ),
+                ),
               ),
-            ),
             ),
           ],
         ),
@@ -2182,8 +2176,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     HapticFeedback.mediumImpact();
 
     // Show rationale before requesting location
-    final accepted =
-        await PermissionDialogHelper.showLocationSharingRationale(context);
+    final accepted = await PermissionDialogHelper.showLocationSharingRationale(
+      context,
+    );
     if (!accepted) return;
 
     // Show loading indicator

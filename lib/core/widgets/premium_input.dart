@@ -189,9 +189,7 @@ class _PremiumTextFieldState extends State<PremiumTextField>
                   ? AppColors.surfaceVariant.withValues(alpha: 0.5)
                   : AppColors.surfaceVariant.withValues(alpha: 0.3),
               // Platform-adaptive corners
-              borderRadius: BorderRadius.circular(
-                PlatformAdaptive.inputRadius,
-              ),
+              borderRadius: BorderRadius.circular(PlatformAdaptive.inputRadius),
               border: Border.all(
                 color: _borderColor,
                 width: _isFocused ? 2 : 1.5,
@@ -391,9 +389,7 @@ class _PremiumSearchFieldState extends State<PremiumSearchField> {
       decoration: BoxDecoration(
         color: AppColors.surfaceVariant,
         // Platform-adaptive search field
-        borderRadius: BorderRadius.circular(
-          PlatformAdaptive.searchRadius,
-        ),
+        borderRadius: BorderRadius.circular(PlatformAdaptive.searchRadius),
         border: PlatformAdaptive.isApple
             ? Border.all(
                 color: AppColors.border.withValues(alpha: 0.15),

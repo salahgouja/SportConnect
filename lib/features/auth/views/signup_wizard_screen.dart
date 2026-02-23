@@ -157,9 +157,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
     if (_currentStep == 0 && _dateOfBirth != null) {
       final age = DateTime.now().difference(_dateOfBirth!).inDays ~/ 365;
       if (age < 18) {
-        _showError(
-          'You must be at least 18 years old to use SportConnect.',
-        );
+        _showError('You must be at least 18 years old to use SportConnect.');
         return;
       }
     }
@@ -606,7 +604,8 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                 final now = DateTime.now();
                 final picked = await showDatePicker(
                   context: context,
-                  initialDate: _dateOfBirth ??
+                  initialDate:
+                      _dateOfBirth ??
                       DateTime(now.year - 18, now.month, now.day),
                   firstDate: DateTime(1920),
                   lastDate: now,
@@ -628,10 +627,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                 }
               },
               child: Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 16.w,
-                  vertical: 16.h,
-                ),
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
                 decoration: BoxDecoration(
                   color: AppColors.cardBg,
                   borderRadius: BorderRadius.circular(12.r),

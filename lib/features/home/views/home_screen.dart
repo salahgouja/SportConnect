@@ -92,8 +92,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       // Only show rationale if permission hasn't been decided yet
       await Future.delayed(const Duration(seconds: 2));
       if (!mounted) return;
-      final accepted =
-          await PermissionDialogHelper.showNotificationRationale(context);
+      final accepted = await PermissionDialogHelper.showNotificationRationale(
+        context,
+      );
       if (!accepted) return;
       await FirebaseMessaging.instance.requestPermission(
         alert: true,
@@ -174,8 +175,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         if (!mounted) return;
-        final accepted =
-            await PermissionDialogHelper.showLocationRationale(context);
+        final accepted = await PermissionDialogHelper.showLocationRationale(
+          context,
+        );
         if (!accepted) {
           setState(() => _isLoadingLocation = false);
           return;
@@ -802,35 +804,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               button: true,
               label: 'Profile',
               child: GestureDetector(
-              child: Container(
-                padding: EdgeInsets.all(3.w),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 10,
+                child: Container(
+                  padding: EdgeInsets.all(3.w),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 10,
+                      ),
+                    ],
+                  ),
+                  child: user.when(
+                    data: (userData) => PremiumAvatar(
+                      imageUrl: userData?.photoUrl,
+                      name: userData?.displayName ?? 'User',
+                      size: 40.w,
                     ),
-                  ],
-                ),
-                child: user.when(
-                  data: (userData) => PremiumAvatar(
-                    imageUrl: userData?.photoUrl,
-                    name: userData?.displayName ?? 'User',
-                    size: 40.w,
-                  ),
-                  loading: () => CircleAvatar(
-                    radius: 20.w,
-                    backgroundColor: AppColors.shimmer,
-                  ),
-                  error: (_, _) => CircleAvatar(
-                    radius: 20.w,
-                    child: const Icon(Icons.person),
+                    loading: () => CircleAvatar(
+                      radius: 20.w,
+                      backgroundColor: AppColors.shimmer,
+                    ),
+                    error: (_, _) => CircleAvatar(
+                      radius: 20.w,
+                      child: const Icon(Icons.person),
+                    ),
                   ),
                 ),
               ),
-            ),
             ),
 
             SizedBox(width: 12.w),
@@ -841,45 +843,45 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 button: true,
                 label: AppLocalizations.of(context).whereAreYouGoing,
                 child: GestureDetector(
-                onTap: () => _showInlineSearchSheet(),
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 14.w,
-                    vertical: 12.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(28.r),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.08),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.search_rounded,
-                        color: AppColors.primary,
-                        size: 20.sp,
-                      ),
-                      SizedBox(width: 10.w),
-                      Expanded(
-                        child: Text(
-                          AppLocalizations.of(context).whereAreYouGoing,
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 14.sp,
-                          ),
-                          overflow: TextOverflow.ellipsis,
+                  onTap: () => _showInlineSearchSheet(),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 14.w,
+                      vertical: 12.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(28.r),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.08),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.search_rounded,
+                          color: AppColors.primary,
+                          size: 20.sp,
+                        ),
+                        SizedBox(width: 10.w),
+                        Expanded(
+                          child: Text(
+                            AppLocalizations.of(context).whereAreYouGoing,
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 14.sp,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
               ),
             ),
 
@@ -890,26 +892,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               button: true,
               label: 'Search users',
               child: GestureDetector(
-              onTap: () => context.push(AppRoutes.profileSearch.path),
-              child: Container(
-                padding: EdgeInsets.all(10.w),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 10,
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  Icons.person_search_rounded,
-                  color: AppColors.textPrimary,
-                  size: 22.sp,
+                onTap: () => context.push(AppRoutes.profileSearch.path),
+                child: Container(
+                  padding: EdgeInsets.all(10.w),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 10,
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.person_search_rounded,
+                    color: AppColors.textPrimary,
+                    size: 22.sp,
+                  ),
                 ),
               ),
-            ),
             ),
 
             SizedBox(width: 8.w),
@@ -919,26 +921,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               button: true,
               label: 'Notifications',
               child: GestureDetector(
-              onTap: () => context.push(AppRoutes.notifications.path),
-              child: Container(
-                padding: EdgeInsets.all(10.w),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 10,
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  Icons.notifications_outlined,
-                  color: AppColors.textPrimary,
-                  size: 22.sp,
+                onTap: () => context.push(AppRoutes.notifications.path),
+                child: Container(
+                  padding: EdgeInsets.all(10.w),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 10,
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.notifications_outlined,
+                    color: AppColors.textPrimary,
+                    size: 22.sp,
+                  ),
                 ),
               ),
-            ),
             ),
           ],
         ),
@@ -974,47 +976,47 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 button: true,
                 label: '${filter['label']} filter',
                 child: GestureDetector(
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  setState(() => _selectedFilter = filter['id'] as String);
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: EdgeInsets.symmetric(horizontal: 14.w),
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppColors.primary : AppColors.surface,
-                    borderRadius: BorderRadius.circular(18.r),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.08),
-                        blurRadius: 4,
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        filter['icon'] as IconData,
-                        size: 14.sp,
-                        color: isSelected
-                            ? Colors.white
-                            : AppColors.textSecondary,
-                      ),
-                      SizedBox(width: 5.w),
-                      Text(
-                        filter['label'] as String,
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w600,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    setState(() => _selectedFilter = filter['id'] as String);
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: EdgeInsets.symmetric(horizontal: 14.w),
+                    decoration: BoxDecoration(
+                      color: isSelected ? AppColors.primary : AppColors.surface,
+                      borderRadius: BorderRadius.circular(18.r),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.08),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          filter['icon'] as IconData,
+                          size: 14.sp,
                           color: isSelected
                               ? Colors.white
                               : AppColors.textSecondary,
                         ),
-                      ),
-                    ],
+                        SizedBox(width: 5.w),
+                        Text(
+                          filter['label'] as String,
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w600,
+                            color: isSelected
+                                ? Colors.white
+                                : AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
               ),
             );
           },
@@ -1121,26 +1123,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       button: true,
       label: tooltip ?? 'Map control',
       child: GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.all(12.w),
-        decoration: BoxDecoration(
-          color: isActive ? AppColors.primary : AppColors.surface,
-          borderRadius: BorderRadius.circular(12.r),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 6,
-            ),
-          ],
-        ),
-        child: Icon(
-          icon,
-          size: 22.sp,
-          color: isActive ? Colors.white : AppColors.textPrimary,
+        onTap: onTap,
+        child: Container(
+          padding: EdgeInsets.all(12.w),
+          decoration: BoxDecoration(
+            color: isActive ? AppColors.primary : AppColors.surface,
+            borderRadius: BorderRadius.circular(12.r),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 6,
+              ),
+            ],
+          ),
+          child: Icon(
+            icon,
+            size: 22.sp,
+            color: isActive ? Colors.white : AppColors.textPrimary,
+          ),
         ),
       ),
-    ),
     );
   }
 

@@ -456,10 +456,7 @@ class _ProfileSearchScreenState extends ConsumerState<ProfileSearchScreen>
               ],
             ),
           ),
-          child: _UserCard(
-                user: user,
-                onTap: navigateToProfile,
-              )
+          child: _UserCard(user: user, onTap: navigateToProfile)
               .animate(delay: Duration(milliseconds: 50 * index))
               .fadeIn()
               .slideX(begin: 0.05),

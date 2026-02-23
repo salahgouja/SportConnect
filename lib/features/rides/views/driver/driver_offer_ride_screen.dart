@@ -107,8 +107,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
     _allowLuggage = ride.preferences.allowLuggage;
     _isWomenOnly = ride.preferences.isWomenOnly;
     _maxDetourMinutes = ride.preferences.maxDetourMinutes;
-    _waypoints =
-        ride.route.waypoints.map((wp) => wp.location).toList();
+    _waypoints = ride.route.waypoints.map((wp) => wp.location).toList();
   }
 
   /// Initialize vehicle selection based on available vehicles and prefill data
@@ -674,17 +673,13 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.route_rounded,
-                color: AppColors.primary,
-                size: 20,
-              ),
+              Icon(Icons.route_rounded, color: AppColors.primary, size: 20),
               const SizedBox(width: 10),
               Text(
                 'Intermediate Stops',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               const Spacer(),
               if (_waypoints.length < 5)
@@ -707,10 +702,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
               padding: const EdgeInsets.only(top: 12),
               child: Text(
                 'Add stops along your route to pick up more passengers',
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 13,
-                ),
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
               ),
             )
           else
@@ -800,10 +792,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
           IconButton(
             tooltip: 'Edit waypoint',
             onPressed: () => _editWaypoint(index),
-            icon: const Icon(
-              Icons.edit_location_alt_rounded,
-              size: 20,
-            ),
+            icon: const Icon(Icons.edit_location_alt_rounded, size: 20),
             color: AppColors.primary,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
@@ -913,11 +902,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
             color: AppColors.primarySurface,
             borderRadius: BorderRadius.circular(14),
           ),
-          child: Icon(
-            Icons.event_rounded,
-            color: AppColors.primary,
-            size: 24,
-          ),
+          child: Icon(Icons.event_rounded, color: AppColors.primary, size: 24),
         ),
         const SizedBox(width: 14),
         Expanded(
@@ -935,10 +920,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
               const SizedBox(height: 2),
               Text(
                 'Optional — attach this ride to a sport event',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
-                ),
+                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
               ),
             ],
           ),
@@ -963,11 +945,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
             color: event.type.color.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(14),
           ),
-          child: Icon(
-            event.type.icon,
-            color: event.type.color,
-            size: 24,
-          ),
+          child: Icon(event.type.icon, color: event.type.color, size: 24),
         ),
         const SizedBox(width: 14),
         Expanded(
@@ -987,10 +965,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
               const SizedBox(height: 2),
               Text(
                 event.venueName ?? event.location.address,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
-                ),
+                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -1602,9 +1577,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
           waypoints: _waypoints
               .asMap()
               .entries
-              .map(
-                (e) => RouteWaypoint(location: e.value, order: e.key),
-              )
+              .map((e) => RouteWaypoint(location: e.value, order: e.key))
               .toList(),
         ),
         schedule: RideSchedule(

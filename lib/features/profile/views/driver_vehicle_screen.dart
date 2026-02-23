@@ -663,7 +663,8 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
   Future<void> _pickImage() async {
     final accepted = await PermissionDialogHelper.showCameraRationale(
       context,
-      customMessage: 'Access to your photo library is needed to '
+      customMessage:
+          'Access to your photo library is needed to '
           'upload a photo of your vehicle.',
     );
     if (!accepted) return;

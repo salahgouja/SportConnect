@@ -96,10 +96,7 @@ class RideService extends _$RideService {
     await repo.updateRide(cancelled);
 
     // Notify all passengers about the cancellation
-    await _notifyPassengersOfCancellation(
-      ride: ride,
-      reason: reason,
-    );
+    await _notifyPassengersOfCancellation(ride: ride, reason: reason);
   }
 
   /// Calculate XP reward based on ride characteristics

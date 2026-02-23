@@ -22,8 +22,7 @@ class PlatformAdaptive {
       defaultTargetPlatform == TargetPlatform.macOS;
 
   /// Whether the current platform is Android.
-  static bool get isAndroid =>
-      defaultTargetPlatform == TargetPlatform.android;
+  static bool get isAndroid => defaultTargetPlatform == TargetPlatform.android;
 
   // ─── Border Radii ───
   // iOS: softer, more rounded (Liquid Glass)
@@ -58,18 +57,12 @@ class PlatformAdaptive {
 
   /// Card border: subtle glass border on iOS, no border on Android.
   static Border? get cardBorder => isApple
-      ? Border.all(
-          color: Colors.white.withValues(alpha: 0.15),
-          width: 0.5,
-        )
+      ? Border.all(color: Colors.white.withValues(alpha: 0.15), width: 0.5)
       : null;
 
   /// Card border side for theme shapes (CardTheme.shape).
   static BorderSide get cardBorderSide => isApple
-      ? BorderSide(
-          color: Colors.white.withValues(alpha: 0.15),
-          width: 0.5,
-        )
+      ? BorderSide(color: Colors.white.withValues(alpha: 0.15), width: 0.5)
       : BorderSide.none;
 
   /// Card shadow blur radius.
@@ -121,18 +114,12 @@ class PlatformAdaptive {
 
   /// Glass highlight border for iOS Liquid Glass effect.
   static Border? get glassBorder => isApple
-      ? Border.all(
-          color: Colors.white.withValues(alpha: 0.15),
-          width: 0.5,
-        )
+      ? Border.all(color: Colors.white.withValues(alpha: 0.15), width: 0.5)
       : null;
 
   /// Button glass border for iOS.
   static Border get buttonGlassBorder => isApple
-      ? Border.all(
-          color: Colors.white.withValues(alpha: 0.15),
-          width: 0.5,
-        )
+      ? Border.all(color: Colors.white.withValues(alpha: 0.15), width: 0.5)
       : Border.all(color: Colors.transparent, width: 0);
 
   /// Ghost button border (shared styling).
@@ -172,9 +159,7 @@ class PlatformAdaptive {
   }) {
     return [
       BoxShadow(
-        color: (color ?? Colors.black).withValues(
-          alpha: cardShadowOpacity,
-        ),
+        color: (color ?? Colors.black).withValues(alpha: cardShadowOpacity),
         blurRadius: blurRadius ?? cardShadowBlur,
         offset: offset ?? cardShadowOffset,
       ),

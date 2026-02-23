@@ -121,9 +121,7 @@ class PermissionDialogHelper {
           alpha: PlatformAdaptive.dialogAlpha,
         ),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(
-            PlatformAdaptive.dialogRadius,
-          ),
+          borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
         title: Row(
           children: [

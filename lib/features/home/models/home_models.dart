@@ -117,11 +117,10 @@ class NearbyRidePreview {
       availableSeats:
           ((capacityMap?['available'] as num?)?.toInt() ?? 0) -
           ((capacityMap?['booked'] as num?)?.toInt() ?? 0),
-      pricePerSeat:
-          (pricePerSeatMap?['amount'] as num?)?.toDouble() ?? 0.0,
+      pricePerSeat: (pricePerSeatMap?['amount'] as num?)?.toDouble() ?? 0.0,
       departureTime:
           (scheduleMap?['departureTime'] as Timestamp?)?.toDate() ??
-              DateTime.now(),
+          DateTime.now(),
       isPremium: json['isPremium'] ?? false,
       isEco: json['isEco'] ?? true,
     );

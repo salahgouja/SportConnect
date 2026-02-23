@@ -113,16 +113,22 @@ sealed class UserModel with _$UserModel {
     String? stripeCustomerId,
     @Default(false) bool isStripeEnabled,
     @Default(false) bool isStripeOnboarded,
+
     /// "pending" | "active" | "under_review" | "incomplete"
     String? stripeAccountStatus,
+
     /// Whether Stripe has enabled charges on this account
     @Default(false) bool chargesEnabled,
+
     /// Whether Stripe has enabled payouts on this account
     @Default(false) bool payoutsEnabled,
+
     /// Whether the driver has submitted all required Stripe details
     @Default(false) bool detailsSubmitted,
+
     /// Outstanding Stripe requirements (e.g. ["individual.dob"])
     @Default([]) List<String> stripeRequirements,
+
     /// Reason charges/payouts are disabled, if any
     String? stripeDisabledReason,
 

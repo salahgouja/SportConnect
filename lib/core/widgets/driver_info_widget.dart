@@ -7,13 +7,15 @@ import 'package:sport_connect/features/profile/view_models/profile_view_model.da
 /// Follows single source of truth principle - no denormalized data
 class DriverInfoWidget extends ConsumerWidget {
   final String driverId;
-  final Widget Function(BuildContext context, String displayName, String? photoUrl, RatingBreakdown rating)? builder;
+  final Widget Function(
+    BuildContext context,
+    String displayName,
+    String? photoUrl,
+    RatingBreakdown rating,
+  )?
+  builder;
 
-  const DriverInfoWidget({
-    super.key,
-    required this.driverId,
-    this.builder,
-  });
+  const DriverInfoWidget({super.key, required this.driverId, this.builder});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -23,7 +25,12 @@ class DriverInfoWidget extends ConsumerWidget {
       data: (user) {
         if (user == null) {
           // Fallback for deleted/missing users
-          return builder?.call(context, 'Unknown Driver', null, RatingBreakdown()) ??
+          return builder?.call(
+                context,
+                'Unknown Driver',
+                null,
+                RatingBreakdown(),
+              ) ??
               const Text('Unknown Driver');
         }
 
@@ -53,20 +60,13 @@ class DriverNameWidget extends ConsumerWidget {
   final String driverId;
   final TextStyle? style;
 
-  const DriverNameWidget({
-    super.key,
-    required this.driverId,
-    this.style,
-  });
+  const DriverNameWidget({super.key, required this.driverId, this.style});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return DriverInfoWidget(
       driverId: driverId,
-      builder: (context, displayName, _, __) => Text(
-        displayName,
-        style: style,
-      ),
+      builder: (context, displayName, _, __) => Text(displayName, style: style),
     );
   }
 }
@@ -121,10 +121,7 @@ class DriverRatingWidget extends ConsumerWidget {
             const Icon(Icons.star, size: 16, color: Colors.amber),
             const SizedBox(width: 4),
           ],
-          Text(
-            rating.average.toStringAsFixed(1),
-            style: style,
-          ),
+          Text(rating.average.toStringAsFixed(1), style: style),
         ],
       ),
     );

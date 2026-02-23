@@ -154,7 +154,9 @@ class AboutScreen extends ConsumerWidget {
             _buildLinkCard(
               icon: Icons.description_outlined,
               title: l10n.settingsTermsConditions,
-              onTap: () => context.push(AppRoutes.termsPrivacy.path.replaceFirst(':type', 'terms')),
+              onTap: () => context.push(
+                AppRoutes.termsPrivacy.path.replaceFirst(':type', 'terms'),
+              ),
             ).animate().fadeIn(delay: 500.ms).slideX(begin: 0.05),
 
             SizedBox(height: 8.h),
@@ -162,7 +164,9 @@ class AboutScreen extends ConsumerWidget {
             _buildLinkCard(
               icon: Icons.privacy_tip_outlined,
               title: l10n.settingsPrivacyPolicy,
-              onTap: () => context.push(AppRoutes.termsPrivacy.path.replaceFirst(':type', 'privacy')),
+              onTap: () => context.push(
+                AppRoutes.termsPrivacy.path.replaceFirst(':type', 'privacy'),
+              ),
             ).animate().fadeIn(delay: 550.ms).slideX(begin: 0.05),
 
             SizedBox(height: 8.h),

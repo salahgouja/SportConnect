@@ -192,10 +192,7 @@ class _CreateEventSheetState extends ConsumerState<CreateEventSheet> {
               },
               child: AnimatedContainer(
                 duration: 200.ms,
-                padding: EdgeInsets.symmetric(
-                  horizontal: 12.w,
-                  vertical: 8.h,
-                ),
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                 decoration: BoxDecoration(
                   color: isActive
                       ? type.color.withValues(alpha: 0.15)
@@ -215,10 +212,10 @@ class _CreateEventSheetState extends ConsumerState<CreateEventSheet> {
                       type.label,
                       style: TextStyle(
                         fontSize: 12.sp,
-                        fontWeight:
-                            isActive ? FontWeight.w700 : FontWeight.w500,
-                        color:
-                            isActive ? type.color : AppColors.textSecondary,
+                        fontWeight: isActive
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                        color: isActive ? type.color : AppColors.textSecondary,
                       ),
                     ),
                   ],
@@ -261,8 +258,10 @@ class _CreateEventSheetState extends ConsumerState<CreateEventSheet> {
       minLines: 2,
       textCapitalization: TextCapitalization.sentences,
       style: TextStyle(fontSize: 14.sp, color: AppColors.textPrimary),
-      decoration:
-          _inputDeco('Description (optional)', Icons.description_outlined),
+      decoration: _inputDeco(
+        'Description (optional)',
+        Icons.description_outlined,
+      ),
     ).animate().fadeIn(duration: 200.ms, delay: 200.ms);
   }
 
@@ -277,10 +276,7 @@ class _CreateEventSheetState extends ConsumerState<CreateEventSheet> {
           onTap: _pickLocation,
           child: Container(
             width: double.infinity,
-            padding: EdgeInsets.symmetric(
-              horizontal: 16.w,
-              vertical: 14.h,
-            ),
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
             decoration: BoxDecoration(
               color: AppColors.surfaceVariant,
               borderRadius: BorderRadius.circular(14.r),
@@ -459,9 +455,7 @@ class _CreateEventSheetState extends ConsumerState<CreateEventSheet> {
           min: 0,
           max: 100,
           divisions: 20,
-          label: _maxParticipants == 0
-              ? 'Unlimited'
-              : '$_maxParticipants',
+          label: _maxParticipants == 0 ? 'Unlimited' : '$_maxParticipants',
           activeColor: _selectedType.color,
           onChanged: (v) => setState(() => _maxParticipants = v.round()),
         ),
@@ -521,10 +515,7 @@ class _CreateEventSheetState extends ConsumerState<CreateEventSheet> {
       prefixIcon: Icon(icon, size: 20.sp, color: AppColors.textTertiary),
       filled: true,
       fillColor: AppColors.surfaceVariant,
-      contentPadding: EdgeInsets.symmetric(
-        horizontal: 16.w,
-        vertical: 14.h,
-      ),
+      contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14.r),
         borderSide: BorderSide.none,
@@ -595,10 +586,7 @@ class _CreateEventSheetState extends ConsumerState<CreateEventSheet> {
             _endsAt ?? _startsAt.add(const Duration(hours: 2)),
           );
 
-    final time = await showTimePicker(
-      context: context,
-      initialTime: initial,
-    );
+    final time = await showTimePicker(context: context, initialTime: initial);
     if (time == null || !mounted) return;
 
     setState(() {
@@ -638,9 +626,9 @@ class _CreateEventSheetState extends ConsumerState<CreateEventSheet> {
     if (user == null) {
       if (mounted) {
         setState(() => _isSubmitting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please sign in first.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Please sign in first.')));
       }
       return;
     }

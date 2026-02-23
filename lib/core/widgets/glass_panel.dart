@@ -36,8 +36,7 @@ class GlassPanel extends StatelessWidget {
             color: color ?? AppColors.surface.withValues(alpha: 0.68),
             borderRadius: BorderRadius.circular(radius.r),
             border: Border.all(
-              color:
-                  borderColor ?? Colors.white.withValues(alpha: 0.2),
+              color: borderColor ?? Colors.white.withValues(alpha: 0.2),
               width: 0.8,
             ),
             // Liquid Glass highlight gradient

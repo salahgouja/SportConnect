@@ -62,9 +62,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
       ..writeln('EARNINGS SUMMARY')
       ..writeln('  Today:      \$${stats.earningsToday.toStringAsFixed(2)}')
       ..writeln('  This Week:  \$${stats.earningsThisWeek.toStringAsFixed(2)}')
-      ..writeln(
-        '  This Month: \$${stats.earningsThisMonth.toStringAsFixed(2)}',
-      )
+      ..writeln('  This Month: \$${stats.earningsThisMonth.toStringAsFixed(2)}')
       ..writeln('  Total:      \$${stats.totalEarnings.toStringAsFixed(2)}')
       ..writeln()
       ..writeln('RIDE STATISTICS')
@@ -462,9 +460,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
       decoration: BoxDecoration(
         color: AppColors.error.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(
-          color: AppColors.error.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: AppColors.error.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -473,10 +469,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
           Expanded(
             child: Text(
               'Unable to load data. Pull to refresh.',
-              style: TextStyle(
-                fontSize: 13.sp,
-                color: AppColors.error,
-              ),
+              style: TextStyle(fontSize: 13.sp, color: AppColors.error),
             ),
           ),
         ],

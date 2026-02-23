@@ -280,8 +280,7 @@ class _NavBarTab extends StatelessWidget {
                     ),
                     border: isActive && PlatformAdaptive.isApple
                         ? Border.all(
-                            color:
-                                AppColors.primary.withValues(alpha: 0.08),
+                            color: AppColors.primary.withValues(alpha: 0.08),
                             width: 0.5,
                           )
                         : null,

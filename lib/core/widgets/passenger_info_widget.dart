@@ -94,7 +94,7 @@ class PassengerAvatarWidget extends ConsumerWidget {
       data: (passenger) {
         final photoUrl = passenger?.photoUrl;
         final displayName = passenger?.displayName ?? 'Unknown';
-        
+
         return CircleAvatar(
           radius: radius,
           backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
@@ -102,7 +102,10 @@ class PassengerAvatarWidget extends ConsumerWidget {
           child: photoUrl == null
               ? Text(
                   displayName.isNotEmpty ? displayName[0] : '?',
-                  style: TextStyle(fontSize: radius * 0.7, color: AppColors.primary),
+                  style: TextStyle(
+                    fontSize: radius * 0.7,
+                    color: AppColors.primary,
+                  ),
                 )
               : null,
         );
@@ -141,18 +144,14 @@ class PassengerPhoneWidget extends ConsumerWidget {
     final passengerAsync = ref.watch(userProfileProvider(passengerId));
 
     return passengerAsync.when(
-      data: (passenger) => Text(
-        passenger?.phoneNumber ?? 'No phone',
-        style: style,
-      ),
+      data: (passenger) =>
+          Text(passenger?.phoneNumber ?? 'No phone', style: style),
       loading: () => Text(
         'Loading...',
         style: style?.copyWith(color: AppColors.textTertiary),
       ),
-      error: (_, __) => Text(
-        'N/A',
-        style: style?.copyWith(color: AppColors.error),
-      ),
+      error: (_, __) =>
+          Text('N/A', style: style?.copyWith(color: AppColors.error)),
     );
   }
 }
