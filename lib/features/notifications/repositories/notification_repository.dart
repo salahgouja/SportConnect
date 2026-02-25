@@ -301,7 +301,7 @@ class NotificationRepository implements INotificationRepository {
   }
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 NotificationRepository notificationRepository(Ref ref) {
   return NotificationRepository(FirebaseFirestore.instance);
 }

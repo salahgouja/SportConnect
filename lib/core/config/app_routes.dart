@@ -82,7 +82,6 @@ class AppRoutes {
   static const chatRide = AppRoute('/chat/ride/:id', 'chat-ride');
 
   // Rides
-  static const createRide = AppRoute('/ride/create', 'create-ride');
   static const rideDetail = AppRoute('/ride/detail/:id', 'ride-detail');
   static const searchRides = AppRoute('/ride/search', 'search-rides');
   static const driverOfferRide = AppRoute('/driver/offer', 'driver-offer-ride');

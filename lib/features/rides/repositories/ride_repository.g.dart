@@ -21,7 +21,7 @@ final class RideRepositoryProvider
         argument: null,
         retry: null,
         name: r'rideRepositoryProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -48,4 +48,4 @@ final class RideRepositoryProvider
   }
 }
 
-String _$rideRepositoryHash() => r'12addf1a15ccca67d6876542df584895f3eae9e9';
+String _$rideRepositoryHash() => r'c58693a59b563a6ab029d7d41f65db0a81bf96e3';

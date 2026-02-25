@@ -146,46 +146,48 @@ class DriverStatsRepository implements IDriverStatsRepository {
   }
 
   /// Accept a ride request
+  ///
+  /// Updates the booking document in the `bookings` collection and
+  /// increments the ride's booked capacity.
   @override
   Future<void> acceptRequest(String rideId, String bookingId) async {
-    final rideDoc = await _ridesCollection.doc(rideId).get();
-    if (!rideDoc.exists) return;
+    final bookingDoc = await _firestore
+        .collection('bookings')
+        .doc(bookingId)
+        .get();
+    if (!bookingDoc.exists) return;
 
-    final bookings = List<Map<String, dynamic>>.from(
-      rideDoc.data()?['bookings'] ?? [],
-    );
+    final seatsBooked =
+        (bookingDoc.data()?['seatsBooked'] as num?)?.toInt() ?? 1;
 
-    final index = bookings.indexWhere((b) => b['id'] == bookingId);
-    if (index != -1) {
-      bookings[index]['status'] = 'accepted';
-      bookings[index]['respondedAt'] = Timestamp.now();
+    // Update booking status
+    await _firestore.collection('bookings').doc(bookingId).update({
+      'status': 'accepted',
+      'respondedAt': FieldValue.serverTimestamp(),
+    });
 
-      await _ridesCollection.doc(rideId).update({
-        'bookings': bookings,
-        'bookedSeats': FieldValue.increment(
-          bookings[index]['seatsBooked'] ?? 1,
-        ),
-      });
-    }
+    // Update ride capacity
+    await _ridesCollection.doc(rideId).update({
+      'capacity.booked': FieldValue.increment(seatsBooked),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
   }
 
   /// Decline a ride request
+  ///
+  /// Updates the booking document status in the `bookings` collection.
   @override
   Future<void> declineRequest(String rideId, String bookingId) async {
-    final rideDoc = await _ridesCollection.doc(rideId).get();
-    if (!rideDoc.exists) return;
+    final bookingDoc = await _firestore
+        .collection('bookings')
+        .doc(bookingId)
+        .get();
+    if (!bookingDoc.exists) return;
 
-    final bookings = List<Map<String, dynamic>>.from(
-      rideDoc.data()?['bookings'] ?? [],
-    );
-
-    final index = bookings.indexWhere((b) => b['id'] == bookingId);
-    if (index != -1) {
-      bookings[index]['status'] = 'rejected';
-      bookings[index]['respondedAt'] = Timestamp.now();
-
-      await _ridesCollection.doc(rideId).update({'bookings': bookings});
-    }
+    await _firestore.collection('bookings').doc(bookingId).update({
+      'status': 'rejected',
+      'respondedAt': FieldValue.serverTimestamp(),
+    });
   }
 
   /// Update driver stats after ride completion

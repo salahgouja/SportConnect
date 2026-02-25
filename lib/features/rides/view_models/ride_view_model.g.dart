@@ -23,7 +23,7 @@ final class RideFormViewModelProvider
         argument: null,
         retry: null,
         name: r'rideFormViewModelProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -44,7 +44,7 @@ final class RideFormViewModelProvider
   }
 }
 
-String _$rideFormViewModelHash() => r'bfff1077451e76cf3392b635144b4fd7402ea06a';
+String _$rideFormViewModelHash() => r'985aef02e0317c139ebba22d8ed6c0946ad89fa5';
 
 /// Ride Form View Model
 
@@ -81,7 +81,7 @@ final class RideSearchViewModelProvider
         argument: null,
         retry: null,
         name: r'rideSearchViewModelProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -103,7 +103,7 @@ final class RideSearchViewModelProvider
 }
 
 String _$rideSearchViewModelHash() =>
-    r'51284b1d3065e1a4c52fc36b15be689b7a9bd5c4';
+    r'633f457f3ba883c2eed48c5472c7ebbd3737a856';
 
 /// Ride Search View Model
 
@@ -171,7 +171,7 @@ final class RideDetailViewModelProvider
 }
 
 String _$rideDetailViewModelHash() =>
-    r'99016bd3a7de5d0325cd4e1fc2429917027dc5ee';
+    r'152510f0e83063689d1ce1c5cd4f0e3b19f89c1c';
 
 /// Single Ride Detail View Model (real-time updates)
 

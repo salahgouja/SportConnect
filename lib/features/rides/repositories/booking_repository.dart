@@ -134,7 +134,7 @@ class BookingRepository {
   }
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 BookingRepository bookingRepository(Ref ref) {
   return BookingRepository(FirebaseFirestore.instance);
 }

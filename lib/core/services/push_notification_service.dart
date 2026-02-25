@@ -266,7 +266,16 @@ class PushNotificationService {
           AppRoutes.chatDetail.path.replaceFirst(':id', referenceId),
         );
       case 'ride_request':
+      case 'ride_booking_request':
+        context.push(AppRoutes.driverRequests.path);
       case 'ride_update':
+      case 'ride_booking_accepted':
+      case 'ride_booking_rejected':
+      case 'ride_booking_cancelled':
+      case 'ride_starting_soon':
+      case 'ride_started':
+      case 'ride_completed':
+      case 'ride_cancelled':
         context.push(
           AppRoutes.rideDetail.path.replaceFirst(':id', referenceId),
         );
@@ -285,6 +294,14 @@ class PushNotificationService {
         return NotificationChannels.messagesId;
       case 'ride_request':
       case 'ride_update':
+      case 'ride_booking_request':
+      case 'ride_booking_accepted':
+      case 'ride_booking_rejected':
+      case 'ride_booking_cancelled':
+      case 'ride_starting_soon':
+      case 'ride_started':
+      case 'ride_completed':
+      case 'ride_cancelled':
         return NotificationChannels.ridesId;
       default:
         return NotificationChannels.generalId;

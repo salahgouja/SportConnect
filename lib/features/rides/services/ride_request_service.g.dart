@@ -26,7 +26,7 @@ final class RideRequestServiceProvider
         argument: null,
         retry: null,
         name: r'rideRequestServiceProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -40,7 +40,7 @@ final class RideRequestServiceProvider
 }
 
 String _$rideRequestServiceHash() =>
-    r'86ed9087571b74118630fed48bd071ac93d419f4';
+    r'03efb407834aa265fb58700f1577ffdc83555e3b';
 
 /// Ride request service - handles business logic
 /// Moved from model extensions to proper service layer

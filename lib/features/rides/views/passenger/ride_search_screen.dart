@@ -529,6 +529,11 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
       ),
       departureDate: _selectedDate,
       minSeats: _seats,
+      maxPrice: _maxPrice < 50 ? _maxPrice : null,
+      womenOnly: _femaleOnly,
+      allowPets: _petFriendly,
+      minDriverRating: _minRating > 0 ? _minRating : null,
+      sortBy: _sortBy == 'recommended' ? 'departure_time' : _sortBy,
     );
 
     ref.read(rideSearchViewModelProvider.notifier).updateFilters(filters);

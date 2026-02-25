@@ -4,12 +4,13 @@ import 'package:sport_connect/features/notifications/repositories/notification_r
 import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/repositories/booking_repository.dart';
+import 'package:sport_connect/features/rides/repositories/driver_stats_repository.dart';
 import 'package:sport_connect/features/rides/repositories/ride_repository.dart';
 
 part 'ride_service.g.dart';
 
 /// Ride service - handles ride business logic
-@riverpod
+@Riverpod(keepAlive: true)
 class RideService extends _$RideService {
   @override
   FutureOr<void> build() async {}
@@ -97,6 +98,48 @@ class RideService extends _$RideService {
 
     // Notify all passengers about the cancellation
     await _notifyPassengersOfCancellation(ride: ride, reason: reason);
+  }
+
+  /// Complete a ride, award XP and record driver stats.
+  ///
+  /// This is the business-logic entry point for ride completion.
+  /// Call this instead of going directly to the repository so that
+  /// XP rewards and driver stats are always recorded.
+  Future<void> completeRide(String rideId) async {
+    final repo = ref.read(rideRepositoryProvider);
+
+    final ride = await repo.getRideById(rideId);
+    if (ride == null) {
+      throw ArgumentError('Ride not found');
+    }
+
+    if (ride.status != RideStatus.inProgress) {
+      throw ArgumentError('Only in-progress rides can be completed');
+    }
+
+    // Mark ride as completed in Firestore
+    await repo.completeRide(rideId);
+
+    // Award XP and record driver stats
+    try {
+      final xp = calculateXpReward(ride);
+      final distanceKm = ride.route.distanceKm ?? 0.0;
+      final earnings = ride.pricing.pricePerSeat.amount * ride.capacity.booked;
+
+      final statsRepo = ref.read(driverStatsRepositoryProvider);
+      await statsRepo.recordRideCompletion(
+        driverId: ride.driverId,
+        earnings: earnings,
+        distanceKm: distanceKm,
+      );
+
+      TalkerService.info(
+        'Ride $rideId completed. XP awarded: $xp, earnings: $earnings',
+      );
+    } catch (e) {
+      // Stats failure should NOT roll back the completion
+      TalkerService.error('Failed to record ride completion stats: $e');
+    }
   }
 
   /// Calculate XP reward based on ride characteristics

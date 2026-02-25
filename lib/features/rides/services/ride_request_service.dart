@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/notifications/repositories/notification_repository.dart';
@@ -25,7 +26,7 @@ class Failure<T> extends Result<T> {
 
 /// Ride request service - handles business logic
 /// Moved from model extensions to proper service layer
-@riverpod
+@Riverpod(keepAlive: true)
 class RideRequestService extends _$RideRequestService {
   @override
   FutureOr<void> build() async {}
@@ -72,11 +73,11 @@ class RideRequestService extends _$RideRequestService {
       // Update request
       await repo.updateRideRequest(accepted);
 
-      // Update ride capacity
-      final newCapacity = ride.capacity.bookSeats(request.requestedSeats);
-      if (newCapacity != null) {
-        await repo.updateRide(ride.copyWith(capacity: newCapacity));
-      }
+      // Update ride capacity atomically using FieldValue.increment so we
+      // don't overwrite fields written by concurrent bookings.
+      await repo.updateRideFields(request.rideId, {
+        'capacity.booked': FieldValue.increment(request.requestedSeats),
+      });
 
       // Send notification to the requester that their request was accepted
       await _sendAcceptedNotification(

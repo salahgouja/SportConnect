@@ -306,7 +306,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         color: Theme.of(context).scaffoldBackgroundColor,
         border: Border(
           bottom: BorderSide(
-            color: Theme.of(context).dividerColor.withOpacity(0.1),
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
           ),
         ),
       ),
@@ -347,7 +347,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
               boxShadow: isActive
                   ? [
                       BoxShadow(
-                        color: AppColors.primary.withOpacity(0.3),
+                        color: AppColors.primary.withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -427,7 +427,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -469,7 +469,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                     color: AppColors.primary,
                   ),
                   style: IconButton.styleFrom(
-                    backgroundColor: AppColors.primary.withOpacity(0.1),
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                   ),
                 ),
               ],
@@ -508,7 +508,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: color, size: 20),
@@ -532,7 +532,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                     style: TextStyle(
                       color: value.isNotEmpty
                           ? AppColors.textPrimary
-                          : AppColors.textSecondary.withOpacity(0.5),
+                          : AppColors.textSecondary.withValues(alpha: 0.5),
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
                     ),
@@ -560,7 +560,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -662,7 +662,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -741,7 +741,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         children: [
           Icon(
             Icons.drag_indicator_rounded,
-            color: AppColors.textSecondary.withOpacity(0.5),
+            color: AppColors.textSecondary.withValues(alpha: 0.5),
             size: 20,
           ),
           const SizedBox(width: 8),
@@ -749,7 +749,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
             width: 28,
             height: 28,
             decoration: BoxDecoration(
-              color: AppColors.warning.withOpacity(0.15),
+              color: AppColors.warning.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -874,7 +874,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   Widget _buildVehicleSelector(List<VehicleModel> vehicles) {
     if (vehicles.isEmpty) {
       return Card(
-        color: AppColors.error.withOpacity(0.1),
+        color: AppColors.error.withValues(alpha: 0.1),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -918,7 +918,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? AppColors.primary.withOpacity(0.1)
+                        ? AppColors.primary.withValues(alpha: 0.1)
                         : AppColors.surface,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
@@ -1016,7 +1016,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -1165,7 +1165,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -1247,7 +1247,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         color: AppColors.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -4),
           ),

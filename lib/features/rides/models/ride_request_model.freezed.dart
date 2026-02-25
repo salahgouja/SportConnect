@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$RideRequestModel {
 
- String get id; String get rideId; String? get eventId; String? get eventName; String get requesterId; String get driverId; RideRequestStatus get status; LocationPoint get pickupLocation; LocationPoint get dropoffLocation; int get requestedSeats; String? get message; String? get rejectionReason;@TimestampConverter() DateTime get createdAt;@TimestampConverter() DateTime? get updatedAt;@TimestampConverter() DateTime? get respondedAt;@TimestampConverter() DateTime? get expiresAt; Map<String, dynamic> get metadata;// Denormalized display fields (populated by service layer)
+ String get id; String get rideId; String? get eventId; String? get eventName; String get requesterId; String get driverId; RideRequestStatus get status; LocationPoint get pickupLocation; LocationPoint get dropoffLocation; int get requestedSeats; String? get message; String? get rejectionReason;@RequiredTimestampConverter() DateTime get createdAt;@TimestampConverter() DateTime? get updatedAt;@TimestampConverter() DateTime? get respondedAt;@TimestampConverter() DateTime? get expiresAt; Map<String, dynamic> get metadata;// Denormalized display fields (populated by service layer)
  String? get passengerName; String? get passengerPhotoUrl; double get passengerRating; double get pricePerSeat;
 /// Create a copy of RideRequestModel
 /// with the given fields replaced by the non-null parameter values.
@@ -49,7 +49,7 @@ abstract mixin class $RideRequestModelCopyWith<$Res>  {
   factory $RideRequestModelCopyWith(RideRequestModel value, $Res Function(RideRequestModel) _then) = _$RideRequestModelCopyWithImpl;
 @useResult
 $Res call({
- String id, String rideId, String? eventId, String? eventName, String requesterId, String driverId, RideRequestStatus status, LocationPoint pickupLocation, LocationPoint dropoffLocation, int requestedSeats, String? message, String? rejectionReason,@TimestampConverter() DateTime createdAt,@TimestampConverter() DateTime? updatedAt,@TimestampConverter() DateTime? respondedAt,@TimestampConverter() DateTime? expiresAt, Map<String, dynamic> metadata, String? passengerName, String? passengerPhotoUrl, double passengerRating, double pricePerSeat
+ String id, String rideId, String? eventId, String? eventName, String requesterId, String driverId, RideRequestStatus status, LocationPoint pickupLocation, LocationPoint dropoffLocation, int requestedSeats, String? message, String? rejectionReason,@RequiredTimestampConverter() DateTime createdAt,@TimestampConverter() DateTime? updatedAt,@TimestampConverter() DateTime? respondedAt,@TimestampConverter() DateTime? expiresAt, Map<String, dynamic> metadata, String? passengerName, String? passengerPhotoUrl, double passengerRating, double pricePerSeat
 });
 
 
@@ -192,7 +192,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String rideId,  String? eventId,  String? eventName,  String requesterId,  String driverId,  RideRequestStatus status,  LocationPoint pickupLocation,  LocationPoint dropoffLocation,  int requestedSeats,  String? message,  String? rejectionReason, @TimestampConverter()  DateTime createdAt, @TimestampConverter()  DateTime? updatedAt, @TimestampConverter()  DateTime? respondedAt, @TimestampConverter()  DateTime? expiresAt,  Map<String, dynamic> metadata,  String? passengerName,  String? passengerPhotoUrl,  double passengerRating,  double pricePerSeat)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String rideId,  String? eventId,  String? eventName,  String requesterId,  String driverId,  RideRequestStatus status,  LocationPoint pickupLocation,  LocationPoint dropoffLocation,  int requestedSeats,  String? message,  String? rejectionReason, @RequiredTimestampConverter()  DateTime createdAt, @TimestampConverter()  DateTime? updatedAt, @TimestampConverter()  DateTime? respondedAt, @TimestampConverter()  DateTime? expiresAt,  Map<String, dynamic> metadata,  String? passengerName,  String? passengerPhotoUrl,  double passengerRating,  double pricePerSeat)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _RideRequestModel() when $default != null:
 return $default(_that.id,_that.rideId,_that.eventId,_that.eventName,_that.requesterId,_that.driverId,_that.status,_that.pickupLocation,_that.dropoffLocation,_that.requestedSeats,_that.message,_that.rejectionReason,_that.createdAt,_that.updatedAt,_that.respondedAt,_that.expiresAt,_that.metadata,_that.passengerName,_that.passengerPhotoUrl,_that.passengerRating,_that.pricePerSeat);case _:
@@ -213,7 +213,7 @@ return $default(_that.id,_that.rideId,_that.eventId,_that.eventName,_that.reques
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String rideId,  String? eventId,  String? eventName,  String requesterId,  String driverId,  RideRequestStatus status,  LocationPoint pickupLocation,  LocationPoint dropoffLocation,  int requestedSeats,  String? message,  String? rejectionReason, @TimestampConverter()  DateTime createdAt, @TimestampConverter()  DateTime? updatedAt, @TimestampConverter()  DateTime? respondedAt, @TimestampConverter()  DateTime? expiresAt,  Map<String, dynamic> metadata,  String? passengerName,  String? passengerPhotoUrl,  double passengerRating,  double pricePerSeat)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String rideId,  String? eventId,  String? eventName,  String requesterId,  String driverId,  RideRequestStatus status,  LocationPoint pickupLocation,  LocationPoint dropoffLocation,  int requestedSeats,  String? message,  String? rejectionReason, @RequiredTimestampConverter()  DateTime createdAt, @TimestampConverter()  DateTime? updatedAt, @TimestampConverter()  DateTime? respondedAt, @TimestampConverter()  DateTime? expiresAt,  Map<String, dynamic> metadata,  String? passengerName,  String? passengerPhotoUrl,  double passengerRating,  double pricePerSeat)  $default,) {final _that = this;
 switch (_that) {
 case _RideRequestModel():
 return $default(_that.id,_that.rideId,_that.eventId,_that.eventName,_that.requesterId,_that.driverId,_that.status,_that.pickupLocation,_that.dropoffLocation,_that.requestedSeats,_that.message,_that.rejectionReason,_that.createdAt,_that.updatedAt,_that.respondedAt,_that.expiresAt,_that.metadata,_that.passengerName,_that.passengerPhotoUrl,_that.passengerRating,_that.pricePerSeat);case _:
@@ -233,7 +233,7 @@ return $default(_that.id,_that.rideId,_that.eventId,_that.eventName,_that.reques
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String rideId,  String? eventId,  String? eventName,  String requesterId,  String driverId,  RideRequestStatus status,  LocationPoint pickupLocation,  LocationPoint dropoffLocation,  int requestedSeats,  String? message,  String? rejectionReason, @TimestampConverter()  DateTime createdAt, @TimestampConverter()  DateTime? updatedAt, @TimestampConverter()  DateTime? respondedAt, @TimestampConverter()  DateTime? expiresAt,  Map<String, dynamic> metadata,  String? passengerName,  String? passengerPhotoUrl,  double passengerRating,  double pricePerSeat)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String rideId,  String? eventId,  String? eventName,  String requesterId,  String driverId,  RideRequestStatus status,  LocationPoint pickupLocation,  LocationPoint dropoffLocation,  int requestedSeats,  String? message,  String? rejectionReason, @RequiredTimestampConverter()  DateTime createdAt, @TimestampConverter()  DateTime? updatedAt, @TimestampConverter()  DateTime? respondedAt, @TimestampConverter()  DateTime? expiresAt,  Map<String, dynamic> metadata,  String? passengerName,  String? passengerPhotoUrl,  double passengerRating,  double pricePerSeat)?  $default,) {final _that = this;
 switch (_that) {
 case _RideRequestModel() when $default != null:
 return $default(_that.id,_that.rideId,_that.eventId,_that.eventName,_that.requesterId,_that.driverId,_that.status,_that.pickupLocation,_that.dropoffLocation,_that.requestedSeats,_that.message,_that.rejectionReason,_that.createdAt,_that.updatedAt,_that.respondedAt,_that.expiresAt,_that.metadata,_that.passengerName,_that.passengerPhotoUrl,_that.passengerRating,_that.pricePerSeat);case _:
@@ -248,7 +248,7 @@ return $default(_that.id,_that.rideId,_that.eventId,_that.eventName,_that.reques
 @JsonSerializable()
 
 class _RideRequestModel extends RideRequestModel {
-  const _RideRequestModel({required this.id, required this.rideId, this.eventId, this.eventName, required this.requesterId, required this.driverId, required this.status, required this.pickupLocation, required this.dropoffLocation, required this.requestedSeats, this.message, this.rejectionReason, @TimestampConverter() required this.createdAt, @TimestampConverter() this.updatedAt, @TimestampConverter() this.respondedAt, @TimestampConverter() this.expiresAt, final  Map<String, dynamic> metadata = const {}, this.passengerName, this.passengerPhotoUrl, this.passengerRating = 0.0, this.pricePerSeat = 0.0}): _metadata = metadata,super._();
+  const _RideRequestModel({required this.id, required this.rideId, this.eventId, this.eventName, required this.requesterId, required this.driverId, required this.status, required this.pickupLocation, required this.dropoffLocation, required this.requestedSeats, this.message, this.rejectionReason, @RequiredTimestampConverter() required this.createdAt, @TimestampConverter() this.updatedAt, @TimestampConverter() this.respondedAt, @TimestampConverter() this.expiresAt, final  Map<String, dynamic> metadata = const {}, this.passengerName, this.passengerPhotoUrl, this.passengerRating = 0.0, this.pricePerSeat = 0.0}): _metadata = metadata,super._();
   factory _RideRequestModel.fromJson(Map<String, dynamic> json) => _$RideRequestModelFromJson(json);
 
 @override final  String id;
@@ -263,7 +263,7 @@ class _RideRequestModel extends RideRequestModel {
 @override final  int requestedSeats;
 @override final  String? message;
 @override final  String? rejectionReason;
-@override@TimestampConverter() final  DateTime createdAt;
+@override@RequiredTimestampConverter() final  DateTime createdAt;
 @override@TimestampConverter() final  DateTime? updatedAt;
 @override@TimestampConverter() final  DateTime? respondedAt;
 @override@TimestampConverter() final  DateTime? expiresAt;
@@ -313,7 +313,7 @@ abstract mixin class _$RideRequestModelCopyWith<$Res> implements $RideRequestMod
   factory _$RideRequestModelCopyWith(_RideRequestModel value, $Res Function(_RideRequestModel) _then) = __$RideRequestModelCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String rideId, String? eventId, String? eventName, String requesterId, String driverId, RideRequestStatus status, LocationPoint pickupLocation, LocationPoint dropoffLocation, int requestedSeats, String? message, String? rejectionReason,@TimestampConverter() DateTime createdAt,@TimestampConverter() DateTime? updatedAt,@TimestampConverter() DateTime? respondedAt,@TimestampConverter() DateTime? expiresAt, Map<String, dynamic> metadata, String? passengerName, String? passengerPhotoUrl, double passengerRating, double pricePerSeat
+ String id, String rideId, String? eventId, String? eventName, String requesterId, String driverId, RideRequestStatus status, LocationPoint pickupLocation, LocationPoint dropoffLocation, int requestedSeats, String? message, String? rejectionReason,@RequiredTimestampConverter() DateTime createdAt,@TimestampConverter() DateTime? updatedAt,@TimestampConverter() DateTime? respondedAt,@TimestampConverter() DateTime? expiresAt, Map<String, dynamic> metadata, String? passengerName, String? passengerPhotoUrl, double passengerRating, double pricePerSeat
 });
 
 

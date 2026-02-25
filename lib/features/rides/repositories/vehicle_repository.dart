@@ -9,6 +9,7 @@ import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 
 part 'vehicle_repository.g.dart';
 
+
 /// Vehicle Repository for Firestore operations
 class VehicleRepository implements IVehicleRepository {
   final FirebaseFirestore _firestore;
@@ -25,12 +26,12 @@ class VehicleRepository implements IVehicleRepository {
   @override
   Future<String> createVehicle(VehicleModel vehicle) async {
     final docRef = _vehiclesCollection.doc();
-    final vehicleWithId = vehicle.copyWith(
-      id: docRef.id,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-    await docRef.set(vehicleWithId.toJson());
+    final vehicleWithId = vehicle.copyWith(id: docRef.id);
+    final json = vehicleWithId.toJson();
+    // Use server timestamps for consistency across time zones
+    json['createdAt'] = FieldValue.serverTimestamp();
+    json['updatedAt'] = FieldValue.serverTimestamp();
+    await docRef.set(json);
     return docRef.id;
   }
 
@@ -199,7 +200,7 @@ class VehicleRepository implements IVehicleRepository {
   }
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 VehicleRepository vehicleRepository(Ref ref) {
   return VehicleRepository(
     FirebaseFirestore.instance,

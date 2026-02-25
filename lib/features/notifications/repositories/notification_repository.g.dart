@@ -26,7 +26,7 @@ final class NotificationRepositoryProvider
         argument: null,
         retry: null,
         name: r'notificationRepositoryProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -55,7 +55,7 @@ final class NotificationRepositoryProvider
 }
 
 String _$notificationRepositoryHash() =>
-    r'27c9d3bde592f511f7cf2b8035766c44c9f5bd00';
+    r'dd0d28357d2182e3c0da9d2c7d3eee6117b929b6';
 
 /// Provider for streaming user notifications
 

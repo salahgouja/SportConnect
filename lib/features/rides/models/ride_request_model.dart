@@ -29,7 +29,7 @@ abstract class RideRequestModel with _$RideRequestModel {
     required int requestedSeats,
     String? message,
     String? rejectionReason,
-    @TimestampConverter() required DateTime createdAt,
+    @RequiredTimestampConverter() required DateTime createdAt,
     @TimestampConverter() DateTime? updatedAt,
     @TimestampConverter() DateTime? respondedAt,
     @TimestampConverter() DateTime? expiresAt,

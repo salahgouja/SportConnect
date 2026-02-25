@@ -26,7 +26,7 @@ final class VehicleRepositoryProvider
         argument: null,
         retry: null,
         name: r'vehicleRepositoryProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -54,7 +54,7 @@ final class VehicleRepositoryProvider
   }
 }
 
-String _$vehicleRepositoryHash() => r'a4ec7e2d102e5cbec7817db13341bdb7303c331f';
+String _$vehicleRepositoryHash() => r'55c9f56734224c5f21bfeb286b4106652d552f5b';
 
 /// Provider for streaming user vehicles
 

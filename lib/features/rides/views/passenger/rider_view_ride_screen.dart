@@ -25,8 +25,11 @@ import 'package:sport_connect/features/reviews/models/review_model.dart';
 import 'package:sport_connect/core/utils/distance_formatter.dart';
 import 'package:sport_connect/core/services/deep_link_service.dart';
 
-/// Rider's dedicated screen for viewing ride details and booking
-/// Clean, informative UI with easy booking flow
+/// Rider's personal ride view with booking and review sections.
+///
+/// Navigated to from the rider's "My Rides" tab to see details about
+/// a ride they have booked or are interested in.
+/// For the general ride detail screen, see [RideDetailScreen].
 class RiderViewRideScreen extends ConsumerStatefulWidget {
   final String rideId;
 

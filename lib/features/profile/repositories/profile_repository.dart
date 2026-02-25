@@ -512,7 +512,7 @@ class ProfileRepository implements IUserRepository {
   }
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 ProfileRepository profileRepository(Ref ref) {
   return ProfileRepository(
     FirebaseFirestore.instance,
