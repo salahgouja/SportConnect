@@ -2107,6 +2107,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get goBack => 'Retour';
 
   @override
+  String get tooltipShowPassword => 'Afficher le mot de passe';
+
+  @override
+  String get tooltipHidePassword => 'Masquer le mot de passe';
+
+  @override
   String get activeRide => 'Trajet actif';
 
   @override

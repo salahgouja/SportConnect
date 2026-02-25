@@ -3858,6 +3858,18 @@ abstract class AppLocalizations {
   /// **'Go Back'**
   String get goBack;
 
+  /// Tooltip for showing the password in a text field
+  ///
+  /// In en, this message translates to:
+  /// **'Show password'**
+  String get tooltipShowPassword;
+
+  /// Tooltip for hiding the password in a text field
+  ///
+  /// In en, this message translates to:
+  /// **'Hide password'**
+  String get tooltipHidePassword;
+
   /// Text from Text in active_ride_screen.dart
   ///
   /// In en, this message translates to:

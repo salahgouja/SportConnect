@@ -98,7 +98,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          tooltip: 'Go back',
+          tooltip: l10n.goBack,
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => context.pop(),
         ),
@@ -177,7 +177,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
             obscureText: _obscureNew,
             validator: Validators.password,
             suffix: IconButton(
-              tooltip: _obscureNew ? 'Show password' : 'Hide password',
+              tooltip: _obscureNew ? l10n.tooltipShowPassword : l10n.tooltipHidePassword,
               icon: Icon(
                 _obscureNew
                     ? Icons.visibility_outlined
@@ -199,7 +199,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
             validator: (value) =>
                 Validators.confirmPassword(value, _newPasswordController.text),
             suffix: IconButton(
-              tooltip: _obscureConfirm ? 'Show password' : 'Hide password',
+              tooltip: _obscureConfirm ? l10n.tooltipShowPassword : l10n.tooltipHidePassword,
               icon: Icon(
                 _obscureConfirm
                     ? Icons.visibility_outlined

@@ -68,7 +68,8 @@ class PhoneAuthViewModel extends _$PhoneAuthViewModel {
                 await ref
                     .read(authActionsViewModelProvider)
                     .signInWithPhoneAutoCredential(credential);
-                final uid = FirebaseAuth.instance.currentUser?.uid;
+                final uid =
+                    ref.read(authActionsViewModelProvider).currentUser?.uid;
                 if (uid != null) AnalyticsService.instance.setUserId(uid);
                 AnalyticsService.instance.logLogin('phone');
                 state = const PhoneAuthState.verified();
@@ -97,7 +98,7 @@ class PhoneAuthViewModel extends _$PhoneAuthViewModel {
             verificationId: currentState.verificationId,
             smsCode: smsCode,
           );
-      final uid = FirebaseAuth.instance.currentUser?.uid;
+      final uid = ref.read(authActionsViewModelProvider).currentUser?.uid;
       if (uid != null) AnalyticsService.instance.setUserId(uid);
       AnalyticsService.instance.logLogin('phone');
 
@@ -133,8 +134,22 @@ class PhoneAuthViewModel extends _$PhoneAuthViewModel {
                 error.message ?? 'Verification failed',
               );
             },
-            onVerificationCompleted: (_) {
-              // Auto-verification on resend is unlikely but handled
+            onVerificationCompleted: (credential) async {
+              // Auto-verified (Android only) — sign in via DI-aware
+              // repository method, same as sendCode.
+              state = const PhoneAuthState.verifying();
+              try {
+                await ref
+                    .read(authActionsViewModelProvider)
+                    .signInWithPhoneAutoCredential(credential);
+                final uid =
+                    ref.read(authActionsViewModelProvider).currentUser?.uid;
+                if (uid != null) AnalyticsService.instance.setUserId(uid);
+                AnalyticsService.instance.logLogin('phone');
+                state = const PhoneAuthState.verified();
+              } catch (e) {
+                state = PhoneAuthState.error(e.toString());
+              }
             },
             onAutoRetrievalTimeout: (_) {},
           );

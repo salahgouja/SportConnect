@@ -71,6 +71,7 @@ class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
   }
 
   void _startResendCooldown() {
+    if (!mounted) return;
     setState(() => _resendCooldown = 60);
     _cooldownTimer?.cancel();
     _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (_) {

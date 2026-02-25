@@ -2098,6 +2098,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get goBack => 'Zurück';
 
   @override
+  String get tooltipShowPassword => 'Passwort anzeigen';
+
+  @override
+  String get tooltipHidePassword => 'Passwort verbergen';
+
+  @override
   String get activeRide => 'Aktive Fahrt';
 
   @override

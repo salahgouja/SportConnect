@@ -66,10 +66,11 @@ class RideRoutes implements RouteConfig {
           final params = state.params;
           // rideId is required — if absent the route was navigated to incorrectly
           final rideId = params.getQuery('rideId') ?? '';
-          assert(
-            rideId.isNotEmpty,
-            'riderActiveRide requires a non-empty rideId query param',
-          );
+          if (rideId.isEmpty) {
+            throw ArgumentError(
+              'riderActiveRide requires a non-empty rideId query param',
+            );
+          }
           return SlideUpTransitionPage(
             key: state.pageKey,
             child: passenger_active.ActiveRideScreen(rideId: rideId),
@@ -137,10 +138,11 @@ class RideRoutes implements RouteConfig {
           final params = state.params;
           // rideId is required — if absent the route was navigated to incorrectly
           final rideId = params.getQuery('rideId') ?? '';
-          assert(
-            rideId.isNotEmpty,
-            'driverActiveRide requires a non-empty rideId query param',
-          );
+          if (rideId.isEmpty) {
+            throw ArgumentError(
+              'driverActiveRide requires a non-empty rideId query param',
+            );
+          }
           return SlideUpTransitionPage(
             key: state.pageKey,
             child: driver_active.ActiveRideScreen(rideId: rideId),

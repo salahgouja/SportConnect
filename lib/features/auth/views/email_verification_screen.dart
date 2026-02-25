@@ -6,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -67,7 +68,11 @@ class _EmailVerificationScreenState
       // The router's refreshListenable triggers automatically when the
       // auth state changes from the reload above.
       await Future.delayed(const Duration(seconds: 2));
-      // No explicit context.go — the route guard handles the redirect.
+
+      if (!mounted) return;
+      // Force the auth state provider to re-evaluate so the router redirect
+      // picks up the updated emailVerified flag.
+      ref.invalidate(authStateProvider);
     }
   }
 

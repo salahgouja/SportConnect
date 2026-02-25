@@ -260,9 +260,19 @@ service cloud.firestore {
         resource.data.respondentId == request.auth.uid
       ));
       allow create: if isDevMode() || (isAuthenticated() && request.resource.data.complainantId == request.auth.uid);
+      // Complainant can only update their own complaint details;
+      // Respondent can ONLY add their response — no tampering with original complaint
       allow update: if isDevMode() || (isAuthenticated() && (
-        resource.data.complainantId == request.auth.uid ||
-        resource.data.respondentId == request.auth.uid
+        (
+          resource.data.complainantId == request.auth.uid &&
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['description', 'attachmentUrls', 'updatedAt'])
+        ) ||
+        (
+          resource.data.respondentId == request.auth.uid &&
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['respondentResponse', 'respondentEvidence', 'updatedAt'])
+        )
       ));
       allow delete: if isDevMode();
     }

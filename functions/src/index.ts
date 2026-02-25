@@ -428,8 +428,11 @@ function calculateFees(amount: number) {
 export const createConnectedAccount = onCall(
   {secrets: [stripeSecretKey], cors: true},
   async (request) => {
-    logger.info("Request data:", JSON.stringify(request.data));
-    logger.info("Request auth:", request.auth?.uid);
+    logger.info("createConnectedAccount called", {
+      userId: request.data?.userId,
+      country: request.data?.country,
+      authUid: request.auth?.uid,
+    });
 
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "User must be authenticated");
@@ -456,7 +459,7 @@ export const createConnectedAccount = onCall(
     let stripeApiKey: string;
     try {
       stripeApiKey = stripeSecretKey.value().trim();
-      logger.info("Stripe API key loaded, prefix:", stripeApiKey?.substring(0, 20));
+      logger.info("Stripe API key loaded successfully");
     } catch (err) {
       logger.error("Error getting Stripe secret:", err);
       throw new HttpsError("internal", "Failed to load Stripe API key");
@@ -682,6 +685,16 @@ export const createInstantPayout = onCall(
     const stripe = getStripeClient(stripeSecretKey.value().trim());
     const db = admin.firestore();
 
+    // Authorization: verify the caller owns this Stripe connected account
+    const callerDoc = await db.collection("users").doc(request.auth.uid).get();
+    const callerData = callerDoc.data();
+    if (!callerData || callerData.stripeAccountId !== stripeAccountId) {
+      throw new HttpsError(
+        "permission-denied",
+        "You are not authorized to create payouts for this account",
+      );
+    }
+
     // Convert from main currency unit to cents for Stripe API
     const amountInCents = Math.round(amount * 100);
 
@@ -765,6 +778,25 @@ export const refundPayment = onCall(
 
     const stripe = getStripeClient(stripeSecretKey.value().trim());
     const db = admin.firestore();
+
+    // Authorization: verify the caller is associated with this payment
+    const paymentSnap = await db
+      .collection("payments")
+      .where("paymentIntentId", "==", paymentIntentId)
+      .get();
+    if (paymentSnap.empty) {
+      throw new HttpsError("not-found", "Payment not found");
+    }
+    const paymentDoc = paymentSnap.docs[0].data();
+    if (
+      paymentDoc.passengerId !== request.auth.uid &&
+      paymentDoc.driverId !== request.auth.uid
+    ) {
+      throw new HttpsError(
+        "permission-denied",
+        "You are not authorized to refund this payment",
+      );
+    }
 
     // Create refund
     // Convert from main currency unit to cents for Stripe API

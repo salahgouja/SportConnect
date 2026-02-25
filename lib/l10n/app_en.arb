@@ -2270,6 +2270,14 @@
   "@goBack": {
     "description": "Text from Text in active_ride_screen.dart"
   },
+  "tooltipShowPassword": "Show password",
+  "@tooltipShowPassword": {
+    "description": "Tooltip for showing the password in a text field"
+  },
+  "tooltipHidePassword": "Hide password",
+  "@tooltipHidePassword": {
+    "description": "Tooltip for hiding the password in a text field"
+  },
   "activeRide": "Active Ride",
   "@activeRide": {
     "description": "Text from Text in active_ride_screen.dart"
