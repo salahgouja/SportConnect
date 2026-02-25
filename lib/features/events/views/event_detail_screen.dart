@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
@@ -161,6 +162,15 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                   event: event,
                 ).animate().fadeIn(delay: 250.ms, duration: 350.ms),
 
+                SizedBox(height: 16.h),
+
+                // ── Status badge ──
+                _StatusBadge(
+                  isOwner: isOwner,
+                  isJoined: isJoined,
+                  event: event,
+                ).animate().fadeIn(delay: 275.ms, duration: 350.ms),
+
                 SizedBox(height: 24.h),
 
                 // ── Description ──
@@ -212,6 +222,8 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                     detailState,
                   ).animate().fadeIn(delay: 400.ms, duration: 400.ms),
 
+                SizedBox(height: 24.h),
+
                 if (isOwner && event.isUpcoming)
                   _buildOwnerActions(
                     event,
@@ -239,6 +251,23 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
       backgroundColor: event.type.color,
       leading: _CircleBackButton(onTap: () => context.pop()),
       actions: [
+        IconButton(
+          icon: Icon(Icons.share_rounded, color: Colors.white, size: 22.sp),
+          onPressed: () {
+            final dateStr = DateFormat(
+              'EEE, MMM d · h:mm a',
+            ).format(event.startsAt);
+            SharePlus.instance.share(
+              ShareParams(
+                text:
+                    '${event.title} — ${event.type.label}\n'
+                    '$dateStr\n'
+                    '${event.location.address}\n\n'
+                    'Join me on SportConnect!',
+              ),
+            );
+          },
+        ),
         if (isOwner)
           IconButton(
             icon: Icon(Icons.edit_rounded, color: Colors.white, size: 22.sp),
@@ -669,6 +698,119 @@ class _ErrorBody extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── Status badge — shows the user's relationship to the event ──
+class _StatusBadge extends StatelessWidget {
+  const _StatusBadge({
+    required this.isOwner,
+    required this.isJoined,
+    required this.event,
+  });
+
+  final bool isOwner;
+  final bool isJoined;
+  final EventModel event;
+
+  @override
+  Widget build(BuildContext context) {
+    final (IconData icon, String label, Color color) = switch ((
+      isOwner,
+      isJoined,
+      event.isUpcoming,
+    )) {
+      (true, _, true) => (
+        Icons.stars_rounded,
+        'You are the organizer',
+        AppColors.primary,
+      ),
+      (true, _, false) => (
+        Icons.stars_rounded,
+        'You organized this event',
+        AppColors.textTertiary,
+      ),
+      (false, true, true) => (
+        Icons.check_circle_rounded,
+        'You\'re going',
+        AppColors.success,
+      ),
+      (false, true, false) => (
+        Icons.check_circle_rounded,
+        'You attended',
+        AppColors.textTertiary,
+      ),
+      (false, false, true) => (
+        Icons.info_outline_rounded,
+        'You haven\'t joined yet',
+        AppColors.warning,
+      ),
+      _ => (
+        Icons.event_busy_rounded,
+        'This event has ended',
+        AppColors.textTertiary,
+      ),
+    };
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18.sp, color: color),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+          ),
+          if (event.isUpcoming) ...[
+            _CountdownText(startsAt: event.startsAt, color: color),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ── Relative countdown text (e.g. "In 2h 15m") ──
+class _CountdownText extends StatelessWidget {
+  const _CountdownText({required this.startsAt, required this.color});
+
+  final DateTime startsAt;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final diff = startsAt.difference(DateTime.now());
+    if (diff.isNegative) return const SizedBox.shrink();
+
+    final String text;
+    if (diff.inDays > 0) {
+      text = 'In ${diff.inDays}d ${diff.inHours.remainder(24)}h';
+    } else if (diff.inHours > 0) {
+      text = 'In ${diff.inHours}h ${diff.inMinutes.remainder(60)}m';
+    } else {
+      text = 'In ${diff.inMinutes}m';
+    }
+
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: 12.sp,
+        fontWeight: FontWeight.w500,
+        color: color.withValues(alpha: 0.7),
       ),
     );
   }

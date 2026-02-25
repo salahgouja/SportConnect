@@ -42,7 +42,7 @@ final class EventSelectionViewModelProvider
 }
 
 String _$eventSelectionViewModelHash() =>
-    r'b14abda7ace21cfd000e2039a8a450b550e401ca';
+    r'74c9c9fd2adaac825a4d25839ab478c092e8e737';
 
 abstract class _$EventSelectionViewModel
     extends $Notifier<EventSelectionState> {

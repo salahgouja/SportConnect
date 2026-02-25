@@ -110,6 +110,7 @@ class EventSelectionViewModel extends _$EventSelectionViewModel {
             ? null
             : organizerName!.trim(),
         maxParticipants: maxParticipants,
+        participantIds: [creatorId],
       );
 
       final eventId = await ref
