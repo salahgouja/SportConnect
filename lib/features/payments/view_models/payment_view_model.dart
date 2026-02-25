@@ -1,11 +1,15 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/stripe_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/payments/models/payment_model.dart';
 import 'package:sport_connect/features/payments/repositories/payment_repository.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 
+part 'payment_view_model.freezed.dart';
 part 'payment_view_model.g.dart';
 
 /// Payment Processing View Model
@@ -26,7 +30,7 @@ class PaymentViewModel extends _$PaymentViewModel {
     state = const AsyncValue.loading();
 
     try {
-      final stripeService = StripeService();
+      final stripeService = ref.read(stripeServiceProvider);
       final paymentRepo = ref.read(paymentRepositoryProvider);
 
       // Calculate total amount
@@ -45,7 +49,7 @@ class PaymentViewModel extends _$PaymentViewModel {
         riderName: riderName,
         driverId: ride.driverId,
         driverName: '', // Resolved at view layer
-        amount: totalAmount * 100, // Convert to cents
+        amount: totalAmount, // Main currency unit — server converts to cents
         currency: currency,
         customerId: customerId,
         description:
@@ -93,7 +97,7 @@ class PaymentViewModel extends _$PaymentViewModel {
     String? existingCustomerId,
   }) async {
     try {
-      final stripeService = StripeService();
+      final stripeService = ref.read(stripeServiceProvider);
       final result = await stripeService.getOrCreateCustomer(
         userId: userId,
         email: email,
@@ -156,7 +160,8 @@ class PaymentViewModel extends _$PaymentViewModel {
     state = const AsyncValue.loading();
 
     try {
-      final stripeService = StripeService();
+      final stripeService = ref.read(stripeServiceProvider);
+      final paymentRepo = ref.read(paymentRepositoryProvider);
 
       final result = await stripeService.createDriverConnectedAccount(
         userId: userId,
@@ -168,9 +173,24 @@ class PaymentViewModel extends _$PaymentViewModel {
         dateOfBirth: dateOfBirth,
         addressLine1: addressLine1,
         city: city,
-        refreshUrl: 'sportconnect://driver/onboarding/refresh',
-        returnUrl: 'sportconnect://driver/onboarding/complete',
       );
+
+      // Save connected account to repository
+      if (result['accountId'] != null) {
+        final connectedAccount = DriverConnectedAccount(
+          id: result['accountId'],
+          driverId: userId,
+          stripeAccountId: result['accountId'],
+          email: email,
+          country: country,
+          chargesEnabled: false,
+          payoutsEnabled: false,
+          detailsSubmitted: false,
+          onboardingCompleted: false,
+          onboardingUrl: result['onboardingUrl'],
+        );
+        await paymentRepo.saveConnectedAccount(connectedAccount);
+      }
 
       // Check if provider is still mounted after async operation
       if (!ref.mounted) return result;
@@ -200,14 +220,12 @@ class PaymentViewModel extends _$PaymentViewModel {
     state = const AsyncValue.loading();
 
     try {
-      final stripeService = StripeService();
+      final stripeService = ref.read(stripeServiceProvider);
 
       await stripeService.createInstantPayout(
-        driverId: userId,
         stripeAccountId: stripeAccountId,
-        amount: amount * 100, // Convert to cents/millimes
+        amount: amount, // Main currency unit — server converts to cents
         currency: currency,
-        isFullySetup: isFullySetup,
       );
 
       // Check if provider is still mounted after async operation
@@ -280,54 +298,6 @@ class DriverConnectedAccountViewModel
     return paymentRepo.getConnectedAccount(driverId);
   }
 
-  /// Create connected account for driver
-  /// Uses Firebase Cloud Functions for secure server-side processing
-  Future<DriverConnectedAccount> createConnectedAccount({
-    required String email,
-    required String country,
-  }) async {
-    state = const AsyncValue.loading();
-
-    try {
-      final stripeService = StripeService();
-      final paymentRepo = ref.read(paymentRepositoryProvider);
-
-      // Create Stripe Connect account and get onboarding URL
-      // The Firebase Cloud Function returns both accountId and onboardingUrl
-      final accountData = await stripeService.createDriverConnectedAccount(
-        userId: driverId,
-        email: email,
-        country: country,
-        refreshUrl: 'sportconnect://driver/onboarding/refresh',
-        returnUrl: 'sportconnect://driver/onboarding/complete',
-      );
-
-      // Create local record (Firebase Function also saves to Firestore)
-      final connectedAccount = DriverConnectedAccount(
-        id: accountData['accountId'],
-        driverId: driverId,
-        stripeAccountId: accountData['accountId'],
-        email: email,
-        country: country,
-        chargesEnabled: false,
-        payoutsEnabled: false,
-        detailsSubmitted: false,
-        onboardingCompleted: false,
-        onboardingUrl: accountData['onboardingUrl'],
-      );
-
-      // Optionally save locally if not already done by function
-      await paymentRepo.saveConnectedAccount(connectedAccount);
-
-      state = AsyncValue.data(connectedAccount);
-      return connectedAccount;
-    } catch (e, stack) {
-      TalkerService.error('Error creating connected account: $e');
-      state = AsyncValue.error(e, stack);
-      rethrow;
-    }
-  }
-
   /// Refresh connected account status
   /// Status is automatically updated via webhooks
   /// This method just refreshes the local state from Firestore
@@ -372,133 +342,84 @@ Future<List<DriverPayout>> driverPayouts(Ref ref, String driverId) async {
   return paymentRepo.getDriverPayouts(driverId: driverId);
 }
 
+/// Single Payout Detail Provider
+@riverpod
+Future<DriverPayout?> payoutDetail(Ref ref, String payoutId) async {
+  try {
+    final doc = await FirebaseFirestore.instance
+        .collection('payouts')
+        .doc(payoutId)
+        .get();
+    if (doc.exists) {
+      return DriverPayout.fromJson({...doc.data()!, 'id': doc.id});
+    }
+  } catch (e) {
+    TalkerService.error('Error fetching payout detail: $e');
+  }
+  return null;
+}
+
 /// Driver Payout View Model
 @riverpod
 class DriverPayoutViewModel extends _$DriverPayoutViewModel {
   @override
   FutureOr<void> build() {}
 
-  /// Request instant payout
-  Future<DriverPayout> requestInstantPayout({
-    required String driverId,
-    required String stripeAccountId,
-    required double amount,
-    required String currency,
-    bool isFullySetup = true,
-  }) async {
+  /// Cancel a pending payout
+  Future<bool> cancelPayout(String payoutId) async {
     state = const AsyncValue.loading();
-
     try {
-      final stripeService = StripeService();
       final paymentRepo = ref.read(paymentRepositoryProvider);
-
-      // Get connected account
-      final connectedAccount = await paymentRepo.getConnectedAccount(driverId);
-      if (connectedAccount == null) {
-        throw Exception('No connected account found');
-      }
-
-      // Request instant payout via Firebase Cloud Function
-      final payoutData = await stripeService.createInstantPayout(
-        driverId: driverId,
-        stripeAccountId: stripeAccountId,
-        amount: amount * 100, // Convert to cents
-        currency: currency,
-        isFullySetup: isFullySetup,
+      await paymentRepo.updatePayoutStatus(
+        payoutId: payoutId,
+        status: PayoutStatus.cancelled,
       );
 
-      // Payout record created by Cloud Function, just refresh
-      ref.invalidateSelf();
-
-      // Check if provider is still mounted after async operation
-      if (!ref.mounted) {
-        return DriverPayout(
-          id: payoutData['payoutId'],
-          driverId: driverId,
-          driverName: '',
-          connectedAccountId: connectedAccount.stripeAccountId,
-          amount: amount,
-          currency: currency,
-          status: PayoutStatus.inTransit,
-          stripePayoutId: payoutData['payoutId'],
-          isInstantPayout: true,
-          expectedArrivalDate: DateTime.fromMillisecondsSinceEpoch(
-            payoutData['arrivalDate'] * 1000,
-          ),
-        );
-      }
-
+      if (!ref.mounted) return true;
       state = const AsyncValue.data(null);
-
-      return DriverPayout(
-        id: payoutData['payoutId'],
-        driverId: driverId,
-        driverName: '',
-        connectedAccountId: connectedAccount.stripeAccountId,
-        amount: amount,
-        currency: currency,
-        status: PayoutStatus.inTransit,
-        stripePayoutId: payoutData['payoutId'],
-        isInstantPayout: true,
-        expectedArrivalDate: DateTime.fromMillisecondsSinceEpoch(
-          payoutData['arrivalDate'] * 1000,
-        ),
-      );
+      return true;
     } catch (e, stack) {
-      TalkerService.error('Error requesting instant payout: $e');
-
-      // Check if provider is still mounted before setting error state
+      TalkerService.error('Error cancelling payout: $e');
       if (ref.mounted) {
         state = AsyncValue.error(e, stack);
       }
-      rethrow;
+      return false;
     }
   }
 }
 
 /// Driver Stripe Status model for UI display
-class DriverStripeStatus {
-  final bool isConnected;
-  final bool payoutsEnabled;
-  final bool chargesEnabled;
-  final bool detailsSubmitted;
-  final double availableBalance;
-  final double pendingBalance;
-  final String? stripeAccountId;
+///
+/// Represents the current state of a driver's Stripe Connect account.
+@freezed
+abstract class DriverStripeStatus with _$DriverStripeStatus {
+  const factory DriverStripeStatus({
+    @Default(false) bool isConnected,
+    @Default(false) bool payoutsEnabled,
+    @Default(false) bool chargesEnabled,
+    @Default(false) bool detailsSubmitted,
+    @Default(0.0) double availableBalance,
+    @Default(0.0) double pendingBalance,
+    @Default('EUR') String currency,
+    String? stripeAccountId,
+  }) = _DriverStripeStatus;
 
-  DriverStripeStatus({
-    required this.isConnected,
-    required this.payoutsEnabled,
-    required this.chargesEnabled,
-    required this.detailsSubmitted,
-    required this.availableBalance,
-    required this.pendingBalance,
-    this.stripeAccountId,
-  });
+  factory DriverStripeStatus.fromJson(Map<String, dynamic> json) =>
+      _$DriverStripeStatusFromJson(json);
 }
 
 /// Provider to get current driver's Stripe status
 @riverpod
 Future<DriverStripeStatus> driverStripeStatus(Ref ref) async {
   final paymentRepo = ref.read(paymentRepositoryProvider);
+  final user = ref.watch(authStateProvider).value;
+  if (user == null) return const DriverStripeStatus();
 
-  // Get current user ID - we need to import auth provider
-  // For now, use the payment repository to check if connected
   try {
-    // This will be called with the logged-in user context
-    // The payment repository should have methods to get the current driver's status
-    final connectedAccount = await paymentRepo
-        .getCurrentDriverConnectedAccount();
+    final connectedAccount = await paymentRepo.getConnectedAccount(user.uid);
 
     if (connectedAccount == null) {
-      return DriverStripeStatus(
-        isConnected: false,
-        payoutsEnabled: false,
-        chargesEnabled: false,
-        detailsSubmitted: false,
-        availableBalance: 0.0,
-        pendingBalance: 0.0,
-      );
+      return const DriverStripeStatus();
     }
 
     return DriverStripeStatus(
@@ -508,16 +429,10 @@ Future<DriverStripeStatus> driverStripeStatus(Ref ref) async {
       detailsSubmitted: connectedAccount.detailsSubmitted,
       availableBalance: connectedAccount.availableBalance,
       pendingBalance: connectedAccount.pendingBalance,
+      currency: connectedAccount.defaultCurrency,
       stripeAccountId: connectedAccount.stripeAccountId,
     );
   } catch (e) {
-    return DriverStripeStatus(
-      isConnected: false,
-      payoutsEnabled: false,
-      chargesEnabled: false,
-      detailsSubmitted: false,
-      availableBalance: 0.0,
-      pendingBalance: 0.0,
-    );
+    return const DriverStripeStatus();
   }
 }

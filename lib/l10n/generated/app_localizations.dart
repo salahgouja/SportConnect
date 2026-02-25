@@ -2145,7 +2145,7 @@ abstract class AppLocalizations {
   /// Text from Text in driver_earnings_screen.dart
   ///
   /// In en, this message translates to:
-  /// **'Complete verification'**
+  /// **'Complete Verification'**
   String get completeVerification;
 
   /// Text from Text in driver_earnings_screen.dart
@@ -5651,6 +5651,1128 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Create a ride to start earning'**
   String get createARideToStartEarning;
+
+  /// No description provided for @wizardStepWelcome.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome'**
+  String get wizardStepWelcome;
+
+  /// No description provided for @wizardStepWelcomeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Let\'s get you started'**
+  String get wizardStepWelcomeSubtitle;
+
+  /// No description provided for @wizardStepSecurity.
+  ///
+  /// In en, this message translates to:
+  /// **'Security'**
+  String get wizardStepSecurity;
+
+  /// No description provided for @wizardStepSecuritySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a secure password'**
+  String get wizardStepSecuritySubtitle;
+
+  /// No description provided for @wizardStepRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Role'**
+  String get wizardStepRole;
+
+  /// No description provided for @wizardStepRoleSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How will you use SportConnect?'**
+  String get wizardStepRoleSubtitle;
+
+  /// No description provided for @wizardStepProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get wizardStepProfile;
+
+  /// No description provided for @wizardStepProfileSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Make it personal'**
+  String get wizardStepProfileSubtitle;
+
+  /// No description provided for @authFullName.
+  ///
+  /// In en, this message translates to:
+  /// **'Full Name'**
+  String get authFullName;
+
+  /// No description provided for @authFullNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your full name'**
+  String get authFullNameHint;
+
+  /// No description provided for @authEmailAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Email Address'**
+  String get authEmailAddress;
+
+  /// No description provided for @authEmailHint.
+  ///
+  /// In en, this message translates to:
+  /// **'you@example.com'**
+  String get authEmailHint;
+
+  /// No description provided for @authPhoneOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone Number (Optional)'**
+  String get authPhoneOptional;
+
+  /// No description provided for @authPhoneHint.
+  ///
+  /// In en, this message translates to:
+  /// **'+216 XX XXX XXX'**
+  String get authPhoneHint;
+
+  /// No description provided for @authDateOfBirth.
+  ///
+  /// In en, this message translates to:
+  /// **'Date of Birth *'**
+  String get authDateOfBirth;
+
+  /// No description provided for @authDobPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to select (must be 18+)'**
+  String get authDobPrompt;
+
+  /// No description provided for @authDobMinAge.
+  ///
+  /// In en, this message translates to:
+  /// **'You must be at least 18 years old to use SportConnect.'**
+  String get authDobMinAge;
+
+  /// No description provided for @authDobPicker.
+  ///
+  /// In en, this message translates to:
+  /// **'Select your date of birth'**
+  String get authDobPicker;
+
+  /// No description provided for @authCreatePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Password'**
+  String get authCreatePassword;
+
+  /// No description provided for @authPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Min 8 characters'**
+  String get authPasswordHint;
+
+  /// No description provided for @authConfirmPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-enter your password'**
+  String get authConfirmPasswordHint;
+
+  /// No description provided for @authAboutYou.
+  ///
+  /// In en, this message translates to:
+  /// **'About You (Optional)'**
+  String get authAboutYou;
+
+  /// No description provided for @authAboutYouHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us a bit about yourself...'**
+  String get authAboutYouHint;
+
+  /// No description provided for @wizardFindRides.
+  ///
+  /// In en, this message translates to:
+  /// **'Find Rides'**
+  String get wizardFindRides;
+
+  /// No description provided for @wizardFindRidesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for rides to sporting events, practices, and games'**
+  String get wizardFindRidesDesc;
+
+  /// No description provided for @wizardOfferRides.
+  ///
+  /// In en, this message translates to:
+  /// **'Offer Rides'**
+  String get wizardOfferRides;
+
+  /// No description provided for @wizardOfferRidesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Share your car and earn money while helping others'**
+  String get wizardOfferRidesDesc;
+
+  /// No description provided for @wizardContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get wizardContinue;
+
+  /// No description provided for @authAgreeTermsError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please agree to the Terms of Service'**
+  String get authAgreeTermsError;
+
+  /// No description provided for @authDobError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your date of birth.'**
+  String get authDobError;
+
+  /// No description provided for @otpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone Verification'**
+  String get otpTitle;
+
+  /// No description provided for @otpEnterPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your phone number'**
+  String get otpEnterPhone;
+
+  /// No description provided for @otpPhoneHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number'**
+  String get otpPhoneHint;
+
+  /// No description provided for @otpSendCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Verification Code'**
+  String get otpSendCode;
+
+  /// No description provided for @otpVerifyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify OTP'**
+  String get otpVerifyTitle;
+
+  /// No description provided for @otpEnterCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the 6-digit code sent to'**
+  String get otpEnterCode;
+
+  /// No description provided for @otpVerify.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify'**
+  String get otpVerify;
+
+  /// No description provided for @otpResendIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend in {seconds}s'**
+  String otpResendIn(int seconds);
+
+  /// No description provided for @otpResendCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend Code'**
+  String get otpResendCode;
+
+  /// No description provided for @otpInvalidCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid verification code. Please try again.'**
+  String get otpInvalidCode;
+
+  /// No description provided for @otpExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification code expired. Please request a new one.'**
+  String get otpExpired;
+
+  /// No description provided for @otpPhoneRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number is required'**
+  String get otpPhoneRequired;
+
+  /// No description provided for @otpInvalidPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid phone number'**
+  String get otpInvalidPhone;
+
+  /// No description provided for @otpSending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending verification code...'**
+  String get otpSending;
+
+  /// No description provided for @otpVerifying.
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying...'**
+  String get otpVerifying;
+
+  /// No description provided for @otpCodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'OTP Code'**
+  String get otpCodeLabel;
+
+  /// No description provided for @otpPhoneVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone Verified!'**
+  String get otpPhoneVerified;
+
+  /// No description provided for @otpPhoneVerifiedDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Your phone number has been verified successfully.'**
+  String get otpPhoneVerifiedDesc;
+
+  /// No description provided for @otpContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get otpContinue;
+
+  /// No description provided for @otpChangePhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Change phone number'**
+  String get otpChangePhone;
+
+  /// No description provided for @otpTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try Again'**
+  String get otpTryAgain;
+
+  /// No description provided for @otpBackToLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Login'**
+  String get otpBackToLogin;
+
+  /// No description provided for @reauthTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify Your Identity'**
+  String get reauthTitle;
+
+  /// No description provided for @reauthSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'For your security, please confirm your identity before continuing with this action.'**
+  String get reauthSubtitle;
+
+  /// No description provided for @reauthPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get reauthPassword;
+
+  /// No description provided for @reauthPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your current password'**
+  String get reauthPasswordHint;
+
+  /// No description provided for @reauthPasswordRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your password'**
+  String get reauthPasswordRequired;
+
+  /// No description provided for @reauthConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get reauthConfirm;
+
+  /// No description provided for @reauthWithGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify with Google'**
+  String get reauthWithGoogle;
+
+  /// No description provided for @reauthCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get reauthCancel;
+
+  /// No description provided for @reauthWrongPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect password. Please try again.'**
+  String get reauthWrongPassword;
+
+  /// No description provided for @reauthFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication failed. Please try again.'**
+  String get reauthFailed;
+
+  /// No description provided for @reauthGoogleFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Google re-authentication failed.'**
+  String get reauthGoogleFailed;
+
+  /// No description provided for @emailVerifyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify Email'**
+  String get emailVerifyTitle;
+
+  /// No description provided for @emailVerifyHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify Your Email'**
+  String get emailVerifyHeading;
+
+  /// No description provided for @emailVerifySentTo.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ve sent a verification link to:'**
+  String get emailVerifySentTo;
+
+  /// No description provided for @emailVerifyWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for verification...'**
+  String get emailVerifyWaiting;
+
+  /// No description provided for @emailVerifyResend.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend Verification Email'**
+  String get emailVerifyResend;
+
+  /// No description provided for @emailVerifyResendIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend in {seconds}s'**
+  String emailVerifyResendIn(int seconds);
+
+  /// No description provided for @emailVerifyCheckButton.
+  ///
+  /// In en, this message translates to:
+  /// **'I\'ve Verified My Email'**
+  String get emailVerifyCheckButton;
+
+  /// No description provided for @emailVerifySent.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification email sent!'**
+  String get emailVerifySent;
+
+  /// No description provided for @emailVerifySendFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send verification email. Please try again.'**
+  String get emailVerifySendFailed;
+
+  /// No description provided for @emailVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Email Verified!'**
+  String get emailVerified;
+
+  /// No description provided for @emailVerifiedRedirecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Your email has been verified. Redirecting...'**
+  String get emailVerifiedRedirecting;
+
+  /// No description provided for @changePasswordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Password'**
+  String get changePasswordTitle;
+
+  /// No description provided for @changePasswordHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Your Password'**
+  String get changePasswordHeading;
+
+  /// No description provided for @changePasswordDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a strong password with at least 8 characters, including uppercase, lowercase, and numbers.'**
+  String get changePasswordDesc;
+
+  /// No description provided for @changePasswordNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New Password'**
+  String get changePasswordNew;
+
+  /// No description provided for @changePasswordNewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter new password'**
+  String get changePasswordNewHint;
+
+  /// No description provided for @changePasswordConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Password'**
+  String get changePasswordConfirm;
+
+  /// No description provided for @changePasswordConfirmHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-enter new password'**
+  String get changePasswordConfirmHint;
+
+  /// No description provided for @changePasswordUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Password'**
+  String get changePasswordUpdate;
+
+  /// No description provided for @changePasswordSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Password Updated!'**
+  String get changePasswordSuccess;
+
+  /// No description provided for @changePasswordSuccessDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Your password has been changed successfully. Use your new password next time you sign in.'**
+  String get changePasswordSuccessDesc;
+
+  /// No description provided for @changePasswordDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get changePasswordDone;
+
+  /// No description provided for @changePasswordWeakError.
+  ///
+  /// In en, this message translates to:
+  /// **'Password is too weak. Please choose a stronger password.'**
+  String get changePasswordWeakError;
+
+  /// No description provided for @changePasswordGenericError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update password. Please try again.'**
+  String get changePasswordGenericError;
+
+  /// No description provided for @forgotPasswordCheckEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Check Your Email'**
+  String get forgotPasswordCheckEmail;
+
+  /// No description provided for @forgotPasswordResendEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend Email'**
+  String get forgotPasswordResendEmail;
+
+  /// No description provided for @forgotPasswordResendIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend in {seconds}s'**
+  String forgotPasswordResendIn(int seconds);
+
+  /// No description provided for @forgotPasswordBackToLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Login'**
+  String get forgotPasswordBackToLogin;
+
+  /// No description provided for @forgotPasswordEmailRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your email'**
+  String get forgotPasswordEmailRequired;
+
+  /// No description provided for @forgotPasswordInvalidEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid email'**
+  String get forgotPasswordInvalidEmail;
+
+  /// No description provided for @forgotPasswordSendError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send reset email right now. Please try again.'**
+  String get forgotPasswordSendError;
+
+  /// No description provided for @roleSelectionError.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not continue right now. Please try again.'**
+  String get roleSelectionError;
+
+  /// No description provided for @accountExistsError.
+  ///
+  /// In en, this message translates to:
+  /// **'An account already exists with a different sign-in method. Try signing in with email/password or the original provider.'**
+  String get accountExistsError;
+
+  /// No description provided for @loginErrorUserNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No account found with this email.'**
+  String get loginErrorUserNotFound;
+
+  /// No description provided for @loginErrorWrongPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect email or password. Please try again.'**
+  String get loginErrorWrongPassword;
+
+  /// No description provided for @loginErrorTooManyRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many login attempts. Please try again later.'**
+  String get loginErrorTooManyRequests;
+
+  /// No description provided for @loginErrorNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Network error. Please check your connection.'**
+  String get loginErrorNetwork;
+
+  /// No description provided for @loginErrorInvalidEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid email address.'**
+  String get loginErrorInvalidEmail;
+
+  /// No description provided for @signUpFailedPleaseTry.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign up failed. Please try again.'**
+  String get signUpFailedPleaseTry;
+
+  /// No description provided for @periodToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get periodToday;
+
+  /// No description provided for @periodThisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'This Week'**
+  String get periodThisWeek;
+
+  /// No description provided for @periodThisMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'This Month'**
+  String get periodThisMonth;
+
+  /// No description provided for @periodAllTime.
+  ///
+  /// In en, this message translates to:
+  /// **'All Time'**
+  String get periodAllTime;
+
+  /// No description provided for @statRides.
+  ///
+  /// In en, this message translates to:
+  /// **'Rides'**
+  String get statRides;
+
+  /// No description provided for @statEarnings.
+  ///
+  /// In en, this message translates to:
+  /// **'Earnings'**
+  String get statEarnings;
+
+  /// No description provided for @statOnlineHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Online Hours'**
+  String get statOnlineHours;
+
+  /// No description provided for @statAvgRating.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg Rating'**
+  String get statAvgRating;
+
+  /// No description provided for @connectStripeAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Stripe Account'**
+  String get connectStripeAccount;
+
+  /// No description provided for @benefitInstantPayoutsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Get your money in minutes, not days'**
+  String get benefitInstantPayoutsDesc;
+
+  /// No description provided for @benefitSecureDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank-level security with Stripe'**
+  String get benefitSecureDesc;
+
+  /// No description provided for @benefitTrackingDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'See every ride payment in detail'**
+  String get benefitTrackingDesc;
+
+  /// No description provided for @benefitLowFeesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep 85% of every ride payment'**
+  String get benefitLowFeesDesc;
+
+  /// No description provided for @pleaseSignInToContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Please sign in to continue'**
+  String get pleaseSignInToContinue;
+
+  /// No description provided for @poweredByStripe.
+  ///
+  /// In en, this message translates to:
+  /// **'Powered by Stripe • Secure and encrypted'**
+  String get poweredByStripe;
+
+  /// No description provided for @cancelSetupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Setup?'**
+  String get cancelSetupTitle;
+
+  /// No description provided for @cancelSetupMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to cancel? You won\'t be able to receive payouts until you complete this setup.'**
+  String get cancelSetupMessage;
+
+  /// No description provided for @continueSetup.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue Setup'**
+  String get continueSetup;
+
+  /// No description provided for @filterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get filterAll;
+
+  /// No description provided for @filterCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get filterCompleted;
+
+  /// No description provided for @filterPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get filterPending;
+
+  /// No description provided for @filterRefunded.
+  ///
+  /// In en, this message translates to:
+  /// **'Refunded'**
+  String get filterRefunded;
+
+  /// No description provided for @filterFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get filterFailed;
+
+  /// No description provided for @statusCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get statusCompleted;
+
+  /// No description provided for @statusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get statusPending;
+
+  /// No description provided for @statusProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing'**
+  String get statusProcessing;
+
+  /// No description provided for @statusFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get statusFailed;
+
+  /// No description provided for @statusCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get statusCancelled;
+
+  /// No description provided for @statusRefunded.
+  ///
+  /// In en, this message translates to:
+  /// **'Refunded'**
+  String get statusRefunded;
+
+  /// No description provided for @statusPartiallyRefunded.
+  ///
+  /// In en, this message translates to:
+  /// **'Partially Refunded'**
+  String get statusPartiallyRefunded;
+
+  /// No description provided for @statusInTransit.
+  ///
+  /// In en, this message translates to:
+  /// **'In Transit'**
+  String get statusInTransit;
+
+  /// No description provided for @details.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get details;
+
+  /// No description provided for @refundRequestSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Refund request submitted successfully'**
+  String get refundRequestSubmitted;
+
+  /// No description provided for @refundRequestFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Refund request failed. Please try again.'**
+  String get refundRequestFailed;
+
+  /// No description provided for @payoutDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Payout Details'**
+  String get payoutDetails;
+
+  /// No description provided for @payoutNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Payout not found'**
+  String get payoutNotFound;
+
+  /// No description provided for @totalPayout.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Payout'**
+  String get totalPayout;
+
+  /// No description provided for @breakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Breakdown'**
+  String get breakdown;
+
+  /// No description provided for @timeline.
+  ///
+  /// In en, this message translates to:
+  /// **'Timeline'**
+  String get timeline;
+
+  /// No description provided for @grossEarnings.
+  ///
+  /// In en, this message translates to:
+  /// **'Gross Earnings'**
+  String get grossEarnings;
+
+  /// No description provided for @netPayout.
+  ///
+  /// In en, this message translates to:
+  /// **'Net Payout'**
+  String get netPayout;
+
+  /// No description provided for @payoutCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Payout Created'**
+  String get payoutCreated;
+
+  /// No description provided for @fees.
+  ///
+  /// In en, this message translates to:
+  /// **'Fees'**
+  String get fees;
+
+  /// No description provided for @payoutAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Payout Amount'**
+  String get payoutAmount;
+
+  /// No description provided for @instantPayout.
+  ///
+  /// In en, this message translates to:
+  /// **'Instant Payout'**
+  String get instantPayout;
+
+  /// No description provided for @payoutDetailsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get payoutDetailsSection;
+
+  /// No description provided for @expectedArrival.
+  ///
+  /// In en, this message translates to:
+  /// **'Expected Arrival'**
+  String get expectedArrival;
+
+  /// No description provided for @arrivedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Arrived At'**
+  String get arrivedAt;
+
+  /// No description provided for @bankName.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank Name'**
+  String get bankName;
+
+  /// No description provided for @accountEnding.
+  ///
+  /// In en, this message translates to:
+  /// **'Account Ending'**
+  String get accountEnding;
+
+  /// No description provided for @failureReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Failure Reason'**
+  String get failureReason;
+
+  /// No description provided for @cancelPayout.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Payout'**
+  String get cancelPayout;
+
+  /// No description provided for @cancelPayoutConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to cancel this payout? This action cannot be undone.'**
+  String get cancelPayoutConfirm;
+
+  /// No description provided for @payoutCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Payout cancelled successfully'**
+  String get payoutCancelled;
+
+  /// No description provided for @payoutCancelFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to cancel payout. Please try again.'**
+  String get payoutCancelFailed;
+
+  /// No description provided for @payoutPendingDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Your payout is being processed and will be sent shortly.'**
+  String get payoutPendingDesc;
+
+  /// No description provided for @payoutInTransit.
+  ///
+  /// In en, this message translates to:
+  /// **'In Transit'**
+  String get payoutInTransit;
+
+  /// No description provided for @payoutInTransitDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Your payout has been sent and is on its way to your bank.'**
+  String get payoutInTransitDesc;
+
+  /// No description provided for @payoutPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid'**
+  String get payoutPaid;
+
+  /// No description provided for @payoutPaidDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Your payout has arrived in your bank account.'**
+  String get payoutPaidDesc;
+
+  /// No description provided for @payoutFailedDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'This payout failed. Check the failure reason below.'**
+  String get payoutFailedDesc;
+
+  /// No description provided for @payoutCancelledDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'This payout was cancelled.'**
+  String get payoutCancelledDesc;
+
+  /// No description provided for @stripeVerifyingAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying your account...'**
+  String get stripeVerifyingAccount;
+
+  /// No description provided for @stripeAccountCreationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to create Stripe account. Please try again.'**
+  String get stripeAccountCreationFailed;
+
+  /// No description provided for @stripeSetupFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not start Stripe setup right now. Please try again.'**
+  String get stripeSetupFailed;
+
+  /// No description provided for @stripePageLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load page. Please try again.'**
+  String get stripePageLoadFailed;
+
+  /// No description provided for @stripeLoadingConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading Stripe Connect...'**
+  String get stripeLoadingConnect;
+
+  /// No description provided for @stripeAdditionalInfoNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Additional information needed. Please complete all fields.'**
+  String get stripeAdditionalInfoNeeded;
+
+  /// No description provided for @stripeVerifyFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not verify account right now. Please try again.'**
+  String get stripeVerifyFailed;
+
+  /// No description provided for @unableToLoadData.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load data. Pull to refresh.'**
+  String get unableToLoadData;
+
+  /// No description provided for @exportEarningsReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Earnings Report'**
+  String get exportEarningsReport;
+
+  /// No description provided for @exportGenerated.
+  ///
+  /// In en, this message translates to:
+  /// **'Generated'**
+  String get exportGenerated;
+
+  /// No description provided for @exportEarningsSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'EARNINGS SUMMARY'**
+  String get exportEarningsSummary;
+
+  /// No description provided for @exportRideStatistics.
+  ///
+  /// In en, this message translates to:
+  /// **'RIDE STATISTICS'**
+  String get exportRideStatistics;
+
+  /// No description provided for @exportRecentTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'RECENT TRANSACTIONS'**
+  String get exportRecentTransactions;
+
+  /// No description provided for @driverProfileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete Your Profile'**
+  String get driverProfileTitle;
+
+  /// No description provided for @driverProfileSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us about yourself so riders can get to know you.'**
+  String get driverProfileSubtitle;
+
+  /// No description provided for @driverCityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'City'**
+  String get driverCityLabel;
+
+  /// No description provided for @driverCityHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Where are you based?'**
+  String get driverCityHint;
+
+  /// No description provided for @driverCityRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your city'**
+  String get driverCityRequired;
+
+  /// No description provided for @driverGenderRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select your gender.'**
+  String get driverGenderRequired;
+
+  /// No description provided for @driverInterestsRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select at least one interest.'**
+  String get driverInterestsRequired;
+
+  /// No description provided for @driverTermsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'I agree to the Terms of Service and Privacy Policy.'**
+  String get driverTermsLabel;
+
+  /// No description provided for @driverTermsRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'You must accept Terms and Privacy to continue.'**
+  String get driverTermsRequired;
+
+  /// No description provided for @driverSaveAndContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Save & Continue'**
+  String get driverSaveAndContinue;
 }
 
 class _AppLocalizationsDelegate

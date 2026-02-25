@@ -65,9 +65,6 @@ abstract class IPaymentRepository {
   /// Get driver connected account
   Future<DriverConnectedAccount?> getConnectedAccount(String driverId);
 
-  /// Get current driver's connected account (uses Firebase Auth)
-  Future<DriverConnectedAccount?> getCurrentDriverConnectedAccount();
-
   /// Update connected account status
   Future<void> updateConnectedAccountStatus({
     required String driverId,

@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -9,6 +10,7 @@ import 'package:sport_connect/core/config/routes/route_params.dart';
 import 'package:sport_connect/core/config/routes/ride_routes.dart';
 import 'package:sport_connect/core/config/routes/profile_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/core/services/analytics_service.dart';
 import 'package:sport_connect/core/services/route_guard_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/main_wrapper.dart';
@@ -16,7 +18,6 @@ import 'package:sport_connect/features/auth/models/models.dart';
 
 // Feature imports - Auth
 import 'package:sport_connect/features/auth/views/login_screen.dart';
-import 'package:sport_connect/features/auth/views/register_screen.dart';
 import 'package:sport_connect/features/auth/views/signup_wizard_screen.dart';
 import 'package:sport_connect/features/auth/views/splash_screen.dart';
 import 'package:sport_connect/features/auth/views/role_selection_screen.dart';
@@ -24,6 +25,8 @@ import 'package:sport_connect/features/auth/views/driver_onboarding_screen.dart'
 import 'package:sport_connect/features/auth/views/rider_onboarding_screen.dart';
 import 'package:sport_connect/features/auth/views/forgot_password_screen.dart';
 import 'package:sport_connect/features/auth/views/email_verification_screen.dart';
+import 'package:sport_connect/features/auth/views/change_password_screen.dart';
+import 'package:sport_connect/features/auth/views/phone_otp_screen.dart';
 
 // Feature imports - Home
 import 'package:sport_connect/features/home/views/home_screen.dart';
@@ -50,6 +53,7 @@ import 'package:sport_connect/features/reviews/views/reviews_list_screen.dart';
 import 'package:sport_connect/features/legal/views/legal_screen.dart';
 import 'package:sport_connect/features/onboarding/views/onboarding_screen.dart';
 import 'package:sport_connect/features/payments/views/driver_earnings_screen.dart';
+
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 part 'app_router.g.dart';
@@ -60,19 +64,34 @@ GoRouter appRouter(Ref ref) {
   // Use ref.listen (NOT ref.watch) to avoid full router disposal/recreation
   // on every auth state change. The refreshListenable triggers redirect
   // re-evaluation without rebuilding the entire GoRouter instance.
-  final routerListenable = ValueNotifier<bool>(false);
+  //
+  // ChangeNotifier.notifyListeners() is used instead of a boolean toggle to
+  // prevent rapid successive emissions from cancelling each other out.
+  final routerListenable = _AuthChangeNotifier();
   ref.listen(currentUserProvider, (previous, next) {
-    routerListenable.value = !routerListenable.value;
+    routerListenable.notify();
   });
+  // Also listen to raw Firebase auth state so email-verification changes
+  // (which don't affect the Firestore UserModel) still trigger a redirect.
+  ref.listen(authStateProvider, (previous, next) {
+    routerListenable.notify();
+  });
+  ref.onDispose(routerListenable.dispose);
 
   return GoRouter(
     initialLocation: AppRoutes.splash.path,
     debugLogDiagnostics: true,
     refreshListenable: routerListenable,
+    observers: [AnalyticsService.instance.navigatorObserver],
     redirect: (context, state) {
       // Read current user state at redirect time
       final userState = ref.read(currentUserProvider);
-      return _handleRedirect(userState, state);
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+      return _handleRedirect(
+        userState,
+        state,
+        isEmailVerified: firebaseUser?.emailVerified ?? false,
+      );
     },
     routes: _buildRoutes(),
     errorBuilder: _buildErrorPage,
@@ -80,8 +99,15 @@ GoRouter appRouter(Ref ref) {
 }
 
 /// Centralized redirect handler using RouteGuardService
-String? _handleRedirect(AsyncValue<UserModel?> userState, GoRouterState state) {
-  final guard = RouteGuardService.fromAuthState(userState);
+String? _handleRedirect(
+  AsyncValue<UserModel?> userState,
+  GoRouterState state, {
+  bool isEmailVerified = false,
+}) {
+  final guard = RouteGuardService.fromAuthState(
+    userState,
+    isEmailVerified: isEmailVerified,
+  );
   return guard.getRedirect(state.uri.path);
 }
 
@@ -112,6 +138,7 @@ List<RouteBase> _buildRoutes() {
 
     // Review Routes
     ..._buildReviewRoutes(),
+
   ];
 }
 
@@ -139,14 +166,6 @@ List<GoRoute> _buildAuthRoutes() {
       name: AppRoutes.login.name,
       pageBuilder: (context, state) =>
           FadeTransitionPage(key: state.pageKey, child: const LoginScreen()),
-    ),
-    GoRoute(
-      path: AppRoutes.register.path,
-      name: AppRoutes.register.name,
-      pageBuilder: (context, state) => SlideRightTransitionPage(
-        key: state.pageKey,
-        child: const RegisterScreen(),
-      ),
     ),
     GoRoute(
       path: AppRoutes.signupWizard.path,
@@ -194,6 +213,22 @@ List<GoRoute> _buildAuthRoutes() {
       pageBuilder: (context, state) => SlideUpTransitionPage(
         key: state.pageKey,
         child: const EmailVerificationScreen(),
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.changePassword.path,
+      name: AppRoutes.changePassword.name,
+      pageBuilder: (context, state) => SlideUpTransitionPage(
+        key: state.pageKey,
+        child: const ChangePasswordScreen(),
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.phoneOtp.path,
+      name: AppRoutes.phoneOtp.name,
+      pageBuilder: (context, state) => SlideUpTransitionPage(
+        key: state.pageKey,
+        child: const PhoneOtpScreen(),
       ),
     ),
   ];
@@ -349,7 +384,8 @@ List<StatefulShellBranch> _buildDriverBranches() {
     StatefulShellBranch(
       routes: [
         GoRoute(
-          path: '/driver/chat',
+          path: AppRoutes.driverChat.path,
+          name: AppRoutes.driverChat.name,
           pageBuilder: (context, state) =>
               const NoTransitionPage(child: ChatListScreen()),
         ),
@@ -360,7 +396,8 @@ List<StatefulShellBranch> _buildDriverBranches() {
     StatefulShellBranch(
       routes: [
         GoRoute(
-          path: '/driver/profile',
+          path: AppRoutes.driverProfileTab.path,
+          name: AppRoutes.driverProfileTab.name,
           pageBuilder: (context, state) =>
               const NoTransitionPage(child: ProfileScreen()),
         ),
@@ -475,6 +512,17 @@ List<GoRoute> _buildReviewRoutes() {
       },
     ),
   ];
+}
+
+// �🔔 ROUTER REFRESH LISTENABLE
+// =============================================================================
+
+/// A simple ChangeNotifier that forwards auth state changes to the GoRouter
+/// refresh listener. Using ChangeNotifier.notifyListeners() is safer than a
+/// boolean toggle, which can silently cancel out if two emissions arrive in
+/// the same frame (true → false → true evaluates as no change).
+class _AuthChangeNotifier extends ChangeNotifier {
+  void notify() => notifyListeners();
 }
 
 // =============================================================================

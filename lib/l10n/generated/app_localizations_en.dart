@@ -1121,7 +1121,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get receivePaymentsFromRiders => 'Receive payments from riders';
 
   @override
-  String get completeVerification => 'Complete verification';
+  String get completeVerification => 'Complete Verification';
 
   @override
   String get connectYourBankAccount => 'Connect your bank account';
@@ -3072,4 +3072,601 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get createARideToStartEarning => 'Create a ride to start earning';
+
+  @override
+  String get wizardStepWelcome => 'Welcome';
+
+  @override
+  String get wizardStepWelcomeSubtitle => 'Let\'s get you started';
+
+  @override
+  String get wizardStepSecurity => 'Security';
+
+  @override
+  String get wizardStepSecuritySubtitle => 'Create a secure password';
+
+  @override
+  String get wizardStepRole => 'Your Role';
+
+  @override
+  String get wizardStepRoleSubtitle => 'How will you use SportConnect?';
+
+  @override
+  String get wizardStepProfile => 'Profile';
+
+  @override
+  String get wizardStepProfileSubtitle => 'Make it personal';
+
+  @override
+  String get authFullName => 'Full Name';
+
+  @override
+  String get authFullNameHint => 'Enter your full name';
+
+  @override
+  String get authEmailAddress => 'Email Address';
+
+  @override
+  String get authEmailHint => 'you@example.com';
+
+  @override
+  String get authPhoneOptional => 'Phone Number (Optional)';
+
+  @override
+  String get authPhoneHint => '+216 XX XXX XXX';
+
+  @override
+  String get authDateOfBirth => 'Date of Birth *';
+
+  @override
+  String get authDobPrompt => 'Tap to select (must be 18+)';
+
+  @override
+  String get authDobMinAge =>
+      'You must be at least 18 years old to use SportConnect.';
+
+  @override
+  String get authDobPicker => 'Select your date of birth';
+
+  @override
+  String get authCreatePassword => 'Create Password';
+
+  @override
+  String get authPasswordHint => 'Min 8 characters';
+
+  @override
+  String get authConfirmPasswordHint => 'Re-enter your password';
+
+  @override
+  String get authAboutYou => 'About You (Optional)';
+
+  @override
+  String get authAboutYouHint => 'Tell us a bit about yourself...';
+
+  @override
+  String get wizardFindRides => 'Find Rides';
+
+  @override
+  String get wizardFindRidesDesc =>
+      'Search for rides to sporting events, practices, and games';
+
+  @override
+  String get wizardOfferRides => 'Offer Rides';
+
+  @override
+  String get wizardOfferRidesDesc =>
+      'Share your car and earn money while helping others';
+
+  @override
+  String get wizardContinue => 'Continue';
+
+  @override
+  String get authAgreeTermsError => 'Please agree to the Terms of Service';
+
+  @override
+  String get authDobError => 'Please enter your date of birth.';
+
+  @override
+  String get otpTitle => 'Phone Verification';
+
+  @override
+  String get otpEnterPhone => 'Enter your phone number';
+
+  @override
+  String get otpPhoneHint => 'Phone number';
+
+  @override
+  String get otpSendCode => 'Send Verification Code';
+
+  @override
+  String get otpVerifyTitle => 'Verify OTP';
+
+  @override
+  String get otpEnterCode => 'Enter the 6-digit code sent to';
+
+  @override
+  String get otpVerify => 'Verify';
+
+  @override
+  String otpResendIn(int seconds) {
+    return 'Resend in ${seconds}s';
+  }
+
+  @override
+  String get otpResendCode => 'Resend Code';
+
+  @override
+  String get otpInvalidCode => 'Invalid verification code. Please try again.';
+
+  @override
+  String get otpExpired =>
+      'Verification code expired. Please request a new one.';
+
+  @override
+  String get otpPhoneRequired => 'Phone number is required';
+
+  @override
+  String get otpInvalidPhone => 'Please enter a valid phone number';
+
+  @override
+  String get otpSending => 'Sending verification code...';
+
+  @override
+  String get otpVerifying => 'Verifying...';
+
+  @override
+  String get otpCodeLabel => 'OTP Code';
+
+  @override
+  String get otpPhoneVerified => 'Phone Verified!';
+
+  @override
+  String get otpPhoneVerifiedDesc =>
+      'Your phone number has been verified successfully.';
+
+  @override
+  String get otpContinue => 'Continue';
+
+  @override
+  String get otpChangePhone => 'Change phone number';
+
+  @override
+  String get otpTryAgain => 'Try Again';
+
+  @override
+  String get otpBackToLogin => 'Back to Login';
+
+  @override
+  String get reauthTitle => 'Verify Your Identity';
+
+  @override
+  String get reauthSubtitle =>
+      'For your security, please confirm your identity before continuing with this action.';
+
+  @override
+  String get reauthPassword => 'Password';
+
+  @override
+  String get reauthPasswordHint => 'Enter your current password';
+
+  @override
+  String get reauthPasswordRequired => 'Please enter your password';
+
+  @override
+  String get reauthConfirm => 'Confirm';
+
+  @override
+  String get reauthWithGoogle => 'Verify with Google';
+
+  @override
+  String get reauthCancel => 'Cancel';
+
+  @override
+  String get reauthWrongPassword => 'Incorrect password. Please try again.';
+
+  @override
+  String get reauthFailed => 'Authentication failed. Please try again.';
+
+  @override
+  String get reauthGoogleFailed => 'Google re-authentication failed.';
+
+  @override
+  String get emailVerifyTitle => 'Verify Email';
+
+  @override
+  String get emailVerifyHeading => 'Verify Your Email';
+
+  @override
+  String get emailVerifySentTo => 'We\'ve sent a verification link to:';
+
+  @override
+  String get emailVerifyWaiting => 'Waiting for verification...';
+
+  @override
+  String get emailVerifyResend => 'Resend Verification Email';
+
+  @override
+  String emailVerifyResendIn(int seconds) {
+    return 'Resend in ${seconds}s';
+  }
+
+  @override
+  String get emailVerifyCheckButton => 'I\'ve Verified My Email';
+
+  @override
+  String get emailVerifySent => 'Verification email sent!';
+
+  @override
+  String get emailVerifySendFailed =>
+      'Failed to send verification email. Please try again.';
+
+  @override
+  String get emailVerified => 'Email Verified!';
+
+  @override
+  String get emailVerifiedRedirecting =>
+      'Your email has been verified. Redirecting...';
+
+  @override
+  String get changePasswordTitle => 'Change Password';
+
+  @override
+  String get changePasswordHeading => 'Update Your Password';
+
+  @override
+  String get changePasswordDesc =>
+      'Choose a strong password with at least 8 characters, including uppercase, lowercase, and numbers.';
+
+  @override
+  String get changePasswordNew => 'New Password';
+
+  @override
+  String get changePasswordNewHint => 'Enter new password';
+
+  @override
+  String get changePasswordConfirm => 'Confirm Password';
+
+  @override
+  String get changePasswordConfirmHint => 'Re-enter new password';
+
+  @override
+  String get changePasswordUpdate => 'Update Password';
+
+  @override
+  String get changePasswordSuccess => 'Password Updated!';
+
+  @override
+  String get changePasswordSuccessDesc =>
+      'Your password has been changed successfully. Use your new password next time you sign in.';
+
+  @override
+  String get changePasswordDone => 'Done';
+
+  @override
+  String get changePasswordWeakError =>
+      'Password is too weak. Please choose a stronger password.';
+
+  @override
+  String get changePasswordGenericError =>
+      'Could not update password. Please try again.';
+
+  @override
+  String get forgotPasswordCheckEmail => 'Check Your Email';
+
+  @override
+  String get forgotPasswordResendEmail => 'Resend Email';
+
+  @override
+  String forgotPasswordResendIn(int seconds) {
+    return 'Resend in ${seconds}s';
+  }
+
+  @override
+  String get forgotPasswordBackToLogin => 'Back to Login';
+
+  @override
+  String get forgotPasswordEmailRequired => 'Please enter your email';
+
+  @override
+  String get forgotPasswordInvalidEmail => 'Please enter a valid email';
+
+  @override
+  String get forgotPasswordSendError =>
+      'Could not send reset email right now. Please try again.';
+
+  @override
+  String get roleSelectionError =>
+      'We could not continue right now. Please try again.';
+
+  @override
+  String get accountExistsError =>
+      'An account already exists with a different sign-in method. Try signing in with email/password or the original provider.';
+
+  @override
+  String get loginErrorUserNotFound => 'No account found with this email.';
+
+  @override
+  String get loginErrorWrongPassword =>
+      'Incorrect email or password. Please try again.';
+
+  @override
+  String get loginErrorTooManyRequests =>
+      'Too many login attempts. Please try again later.';
+
+  @override
+  String get loginErrorNetwork =>
+      'Network error. Please check your connection.';
+
+  @override
+  String get loginErrorInvalidEmail => 'Invalid email address.';
+
+  @override
+  String get signUpFailedPleaseTry => 'Sign up failed. Please try again.';
+
+  @override
+  String get periodToday => 'Today';
+
+  @override
+  String get periodThisWeek => 'This Week';
+
+  @override
+  String get periodThisMonth => 'This Month';
+
+  @override
+  String get periodAllTime => 'All Time';
+
+  @override
+  String get statRides => 'Rides';
+
+  @override
+  String get statEarnings => 'Earnings';
+
+  @override
+  String get statOnlineHours => 'Online Hours';
+
+  @override
+  String get statAvgRating => 'Avg Rating';
+
+  @override
+  String get connectStripeAccount => 'Connect Stripe Account';
+
+  @override
+  String get benefitInstantPayoutsDesc => 'Get your money in minutes, not days';
+
+  @override
+  String get benefitSecureDesc => 'Bank-level security with Stripe';
+
+  @override
+  String get benefitTrackingDesc => 'See every ride payment in detail';
+
+  @override
+  String get benefitLowFeesDesc => 'Keep 85% of every ride payment';
+
+  @override
+  String get pleaseSignInToContinue => 'Please sign in to continue';
+
+  @override
+  String get poweredByStripe => 'Powered by Stripe • Secure and encrypted';
+
+  @override
+  String get cancelSetupTitle => 'Cancel Setup?';
+
+  @override
+  String get cancelSetupMessage =>
+      'Are you sure you want to cancel? You won\'t be able to receive payouts until you complete this setup.';
+
+  @override
+  String get continueSetup => 'Continue Setup';
+
+  @override
+  String get filterAll => 'All';
+
+  @override
+  String get filterCompleted => 'Completed';
+
+  @override
+  String get filterPending => 'Pending';
+
+  @override
+  String get filterRefunded => 'Refunded';
+
+  @override
+  String get filterFailed => 'Failed';
+
+  @override
+  String get statusCompleted => 'Completed';
+
+  @override
+  String get statusPending => 'Pending';
+
+  @override
+  String get statusProcessing => 'Processing';
+
+  @override
+  String get statusFailed => 'Failed';
+
+  @override
+  String get statusCancelled => 'Cancelled';
+
+  @override
+  String get statusRefunded => 'Refunded';
+
+  @override
+  String get statusPartiallyRefunded => 'Partially Refunded';
+
+  @override
+  String get statusInTransit => 'In Transit';
+
+  @override
+  String get details => 'Details';
+
+  @override
+  String get refundRequestSubmitted => 'Refund request submitted successfully';
+
+  @override
+  String get refundRequestFailed => 'Refund request failed. Please try again.';
+
+  @override
+  String get payoutDetails => 'Payout Details';
+
+  @override
+  String get payoutNotFound => 'Payout not found';
+
+  @override
+  String get totalPayout => 'Total Payout';
+
+  @override
+  String get breakdown => 'Breakdown';
+
+  @override
+  String get timeline => 'Timeline';
+
+  @override
+  String get grossEarnings => 'Gross Earnings';
+
+  @override
+  String get netPayout => 'Net Payout';
+
+  @override
+  String get payoutCreated => 'Payout Created';
+
+  @override
+  String get fees => 'Fees';
+
+  @override
+  String get payoutAmount => 'Payout Amount';
+
+  @override
+  String get instantPayout => 'Instant Payout';
+
+  @override
+  String get payoutDetailsSection => 'Details';
+
+  @override
+  String get expectedArrival => 'Expected Arrival';
+
+  @override
+  String get arrivedAt => 'Arrived At';
+
+  @override
+  String get bankName => 'Bank Name';
+
+  @override
+  String get accountEnding => 'Account Ending';
+
+  @override
+  String get failureReason => 'Failure Reason';
+
+  @override
+  String get cancelPayout => 'Cancel Payout';
+
+  @override
+  String get cancelPayoutConfirm =>
+      'Are you sure you want to cancel this payout? This action cannot be undone.';
+
+  @override
+  String get payoutCancelled => 'Payout cancelled successfully';
+
+  @override
+  String get payoutCancelFailed => 'Failed to cancel payout. Please try again.';
+
+  @override
+  String get payoutPendingDesc =>
+      'Your payout is being processed and will be sent shortly.';
+
+  @override
+  String get payoutInTransit => 'In Transit';
+
+  @override
+  String get payoutInTransitDesc =>
+      'Your payout has been sent and is on its way to your bank.';
+
+  @override
+  String get payoutPaid => 'Paid';
+
+  @override
+  String get payoutPaidDesc => 'Your payout has arrived in your bank account.';
+
+  @override
+  String get payoutFailedDesc =>
+      'This payout failed. Check the failure reason below.';
+
+  @override
+  String get payoutCancelledDesc => 'This payout was cancelled.';
+
+  @override
+  String get stripeVerifyingAccount => 'Verifying your account...';
+
+  @override
+  String get stripeAccountCreationFailed =>
+      'Failed to create Stripe account. Please try again.';
+
+  @override
+  String get stripeSetupFailed =>
+      'Could not start Stripe setup right now. Please try again.';
+
+  @override
+  String get stripePageLoadFailed => 'Failed to load page. Please try again.';
+
+  @override
+  String get stripeLoadingConnect => 'Loading Stripe Connect...';
+
+  @override
+  String get stripeAdditionalInfoNeeded =>
+      'Additional information needed. Please complete all fields.';
+
+  @override
+  String get stripeVerifyFailed =>
+      'Could not verify account right now. Please try again.';
+
+  @override
+  String get unableToLoadData => 'Unable to load data. Pull to refresh.';
+
+  @override
+  String get exportEarningsReport => 'Earnings Report';
+
+  @override
+  String get exportGenerated => 'Generated';
+
+  @override
+  String get exportEarningsSummary => 'EARNINGS SUMMARY';
+
+  @override
+  String get exportRideStatistics => 'RIDE STATISTICS';
+
+  @override
+  String get exportRecentTransactions => 'RECENT TRANSACTIONS';
+
+  @override
+  String get driverProfileTitle => 'Complete Your Profile';
+
+  @override
+  String get driverProfileSubtitle =>
+      'Tell us about yourself so riders can get to know you.';
+
+  @override
+  String get driverCityLabel => 'City';
+
+  @override
+  String get driverCityHint => 'Where are you based?';
+
+  @override
+  String get driverCityRequired => 'Please enter your city';
+
+  @override
+  String get driverGenderRequired => 'Please select your gender.';
+
+  @override
+  String get driverInterestsRequired => 'Please select at least one interest.';
+
+  @override
+  String get driverTermsLabel =>
+      'I agree to the Terms of Service and Privacy Policy.';
+
+  @override
+  String get driverTermsRequired =>
+      'You must accept Terms and Privacy to continue.';
+
+  @override
+  String get driverSaveAndContinue => 'Save & Continue';
 }

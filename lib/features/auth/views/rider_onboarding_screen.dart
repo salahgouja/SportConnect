@@ -309,7 +309,7 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
                   ),
                   SizedBox(height: 14.h),
                   DropdownButtonFormField<String>(
-                    value: _gender,
+                    initialValue: _gender,
                     decoration: const InputDecoration(labelText: 'Gender'),
                     items: const [
                       DropdownMenuItem(value: 'Male', child: Text('Male')),

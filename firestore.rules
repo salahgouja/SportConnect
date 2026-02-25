@@ -27,6 +27,12 @@ service cloud.firestore {
       allow create: if isDevMode() || isOwner(userId);
       allow update: if isDevMode() || isOwner(userId);
       allow delete: if isDevMode() || isOwner(userId);
+
+      // Blocked users subcollection — only the owner can read/write
+      match /blockedUsers/{blockedUserId} {
+        allow read: if isDevMode() || isOwner(userId);
+        allow write: if isDevMode() || isOwner(userId);
+      }
     }
     
     // ==================== RIDES COLLECTION ====================
@@ -44,14 +50,20 @@ service cloud.firestore {
       allow update: if isDevMode() || (isAuthenticated() && request.auth.uid in resource.data.participantIds);
       allow delete: if isDevMode();
       
-      // Messages subcollection
+      // Messages subcollection — only participants of the parent chat can read/write
       match /messages/{messageId} {
-        allow read, write: if isDevMode() || isAuthenticated();
+        allow read, write: if isDevMode() || (
+          isAuthenticated() &&
+          request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participantIds
+        );
       }
       
-      // Typing indicators subcollection
+      // Typing indicators subcollection — only participants of the parent chat
       match /typing/{typingId} {
-        allow read, write: if isDevMode() || isAuthenticated();
+        allow read, write: if isDevMode() || (
+          isAuthenticated() &&
+          request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participantIds
+        );
       }
     }
     
@@ -106,15 +118,22 @@ service cloud.firestore {
     
     // ==================== TRANSACTIONS COLLECTION ====================
     match /transactions/{transactionId} {
-      // Allow the driver to read their own transactions
-      allow read: if isDevMode() || (isAuthenticated() && resource.data.driverId == request.auth.uid);
+      // Both the driver and the rider can read their own transaction records
+      // (riders need access to view their payment history).
+      allow read: if isDevMode() || (isAuthenticated() && (
+        resource.data.driverId == request.auth.uid ||
+        resource.data.riderId == request.auth.uid
+      ));
       allow create: if isDevMode() || (isAuthenticated() && request.resource.data.driverId == request.auth.uid);
       allow update, delete: if isDevMode() || (isAuthenticated() && resource.data.driverId == request.auth.uid);
     }
 
     // Support transactions in subcollections as collectionGroup queries
     match /{path=**}/transactions/{transactionId} {
-      allow read: if isDevMode() || (isAuthenticated() && resource.data.driverId == request.auth.uid);
+      allow read: if isDevMode() || (isAuthenticated() && (
+        resource.data.driverId == request.auth.uid ||
+        resource.data.riderId == request.auth.uid
+      ));
       allow create: if isDevMode() || (isAuthenticated() && request.resource.data.driverId == request.auth.uid);
       allow update, delete: if isDevMode() || (isAuthenticated() && resource.data.driverId == request.auth.uid);
     }
@@ -177,10 +196,9 @@ service cloud.firestore {
     match /reviews/{reviewId} {
       allow read: if isDevMode() || isAuthenticated();
       allow create: if isDevMode() || (isAuthenticated() && request.resource.data.reviewerId == request.auth.uid);
-      allow update: if isDevMode() || (isAuthenticated() && (
-        resource.data.reviewerId == request.auth.uid || 
-        resource.data.targetUserId == request.auth.uid
-      ));
+      // Only the review author may edit — the reviewed person must NOT be able
+      // to modify or suppress a rating written about them.
+      allow update: if isDevMode() || (isAuthenticated() && resource.data.reviewerId == request.auth.uid);
       allow delete: if isDevMode() || (isAuthenticated() && resource.data.reviewerId == request.auth.uid);
     }
 
@@ -224,6 +242,46 @@ service cloud.firestore {
       ));
       // Only Cloud Functions write to this collection (via webhook)
       allow create, update, delete: if isDevMode();
+    }
+
+    // ==================== PAYOUTS COLLECTION ====================
+    // Stripe payout records for drivers
+    match /payouts/{payoutId} {
+      allow read: if isDevMode() || (isAuthenticated() && resource.data.driverId == request.auth.uid);
+      // Only Cloud Functions write payout records (via Stripe webhook)
+      allow create, update, delete: if isDevMode();
+    }
+
+    // ==================== DISPUTES COLLECTION ====================
+    // Ride/user disputes raised by passengers or drivers
+    match /disputes/{disputeId} {
+      allow read: if isDevMode() || (isAuthenticated() && (
+        resource.data.complainantId == request.auth.uid ||
+        resource.data.respondentId == request.auth.uid
+      ));
+      allow create: if isDevMode() || (isAuthenticated() && request.resource.data.complainantId == request.auth.uid);
+      allow update: if isDevMode() || (isAuthenticated() && (
+        resource.data.complainantId == request.auth.uid ||
+        resource.data.respondentId == request.auth.uid
+      ));
+      allow delete: if isDevMode();
+    }
+
+    // ==================== REPORTS COLLECTION ====================
+    // User/content reports for moderation
+    match /reports/{reportId} {
+      allow read: if isDevMode() || (isAuthenticated() && resource.data.reporterId == request.auth.uid);
+      allow create: if isDevMode() || (isAuthenticated() && request.resource.data.reporterId == request.auth.uid);
+      allow update, delete: if isDevMode();
+    }
+
+    // ==================== SUPPORT TICKETS COLLECTION ====================
+    // User support tickets
+    match /support_tickets/{ticketId} {
+      allow read: if isDevMode() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isDevMode() || (isAuthenticated() && request.resource.data.userId == request.auth.uid);
+      allow update: if isDevMode() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow delete: if isDevMode();
     }
   }
 }

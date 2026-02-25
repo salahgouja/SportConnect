@@ -22,6 +22,7 @@ class VehicleRepository implements IVehicleRepository {
   // ==================== VEHICLE OPERATIONS ====================
 
   /// Create a new vehicle
+  @override
   Future<String> createVehicle(VehicleModel vehicle) async {
     final docRef = _vehiclesCollection.doc();
     final vehicleWithId = vehicle.copyWith(
@@ -34,6 +35,7 @@ class VehicleRepository implements IVehicleRepository {
   }
 
   /// Get vehicle by ID
+  @override
   Future<VehicleModel?> getVehicleById(String id) async {
     final doc = await _vehiclesCollection.doc(id).get();
     if (!doc.exists) return null;
@@ -41,6 +43,7 @@ class VehicleRepository implements IVehicleRepository {
   }
 
   /// Stream user's vehicles
+  @override
   Stream<List<VehicleModel>> streamUserVehicles(String userId) {
     return _vehiclesCollection
         .where('ownerId', isEqualTo: userId)
@@ -54,6 +57,7 @@ class VehicleRepository implements IVehicleRepository {
   }
 
   /// Get user's vehicles
+  @override
   Future<List<VehicleModel>> getUserVehicles(String userId) async {
     final snapshot = await _vehiclesCollection
         .where('ownerId', isEqualTo: userId)
@@ -65,6 +69,7 @@ class VehicleRepository implements IVehicleRepository {
   }
 
   /// Get user's active vehicle
+  @override
   Future<VehicleModel?> getActiveVehicle(String userId) async {
     final snapshot = await _vehiclesCollection
         .where('ownerId', isEqualTo: userId)
@@ -77,6 +82,7 @@ class VehicleRepository implements IVehicleRepository {
   }
 
   /// Stream user's active vehicle
+  @override
   Stream<VehicleModel?> streamActiveVehicle(String userId) {
     return _vehiclesCollection
         .where('ownerId', isEqualTo: userId)
@@ -90,6 +96,7 @@ class VehicleRepository implements IVehicleRepository {
   }
 
   /// Update vehicle
+  @override
   Future<void> updateVehicle(VehicleModel vehicle) async {
     await _vehiclesCollection.doc(vehicle.id).update({
       ...vehicle.toJson(),
@@ -98,6 +105,7 @@ class VehicleRepository implements IVehicleRepository {
   }
 
   /// Set vehicle as active (deactivates others)
+  @override
   Future<void> setActiveVehicle(String userId, String vehicleId) async {
     final batch = _firestore.batch();
 
@@ -117,6 +125,7 @@ class VehicleRepository implements IVehicleRepository {
   }
 
   /// Delete vehicle
+  @override
   Future<void> deleteVehicle(String vehicleId) async {
     // Get vehicle first to delete associated images
     final vehicle = await getVehicleById(vehicleId);
@@ -140,6 +149,7 @@ class VehicleRepository implements IVehicleRepository {
   }
 
   /// Upload vehicle image
+  @override
   Future<String> uploadVehicleImage({
     required String vehicleId,
     required String imagePath,
@@ -154,6 +164,7 @@ class VehicleRepository implements IVehicleRepository {
   }
 
   /// Update vehicle verification status
+  @override
   Future<void> updateVerificationStatus({
     required String vehicleId,
     required VehicleVerificationStatus status,
@@ -167,6 +178,7 @@ class VehicleRepository implements IVehicleRepository {
   }
 
   /// Update vehicle stats after ride
+  @override
   Future<void> updateVehicleStats({
     required String vehicleId,
     required double newRating,

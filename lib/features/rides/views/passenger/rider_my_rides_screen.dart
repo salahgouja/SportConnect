@@ -11,7 +11,6 @@ import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
@@ -213,7 +212,7 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
 
     return user.when(
       loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
       data: (userData) {
         if (userData == null) return const SizedBox.shrink();
 
@@ -223,7 +222,7 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
 
         return ridesAsync.when(
           loading: () => _buildStatsShimmer(),
-          error: (_, __) => const SizedBox.shrink(),
+          error: (_, _) => const SizedBox.shrink(),
           data: (rides) {
             final totalRides = rides.length;
             final activeRides = rides
@@ -333,7 +332,7 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
 
     return user.when(
       loading: () => _buildLoadingState(),
-      error: (_, __) =>
+      error: (_, _) =>
           _buildErrorState(AppLocalizations.of(context).failedToLoadUser),
       data: (userData) {
         if (userData == null) {
@@ -684,7 +683,7 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
 
     return user.when(
       loading: () => _buildLoadingState(),
-      error: (_, __) =>
+      error: (_, _) =>
           _buildErrorState(AppLocalizations.of(context).failedToLoadUser),
       data: (userData) {
         if (userData == null) {
@@ -960,7 +959,7 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
 
     return user.when(
       loading: () => _buildLoadingState(),
-      error: (_, __) =>
+      error: (_, _) =>
           _buildErrorState(AppLocalizations.of(context).failedToLoadUser),
       data: (userData) {
         if (userData == null) {

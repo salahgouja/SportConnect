@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/payments/view_models/payment_view_model.dart';
@@ -124,25 +125,25 @@ class _DriverStripeOnboardingScreenState
                       _buildBenefitItem(
                         icon: Icons.bolt_rounded,
                         title: AppLocalizations.of(context).instantPayouts,
-                        description: 'Get your money in minutes, not days',
+                        description: AppLocalizations.of(context).benefitInstantPayoutsDesc,
                         delay: 400,
                       ),
                       _buildBenefitItem(
                         icon: Icons.security_rounded,
                         title: AppLocalizations.of(context).secureProtected,
-                        description: 'Bank-level security with Stripe',
+                        description: AppLocalizations.of(context).benefitSecureDesc,
                         delay: 500,
                       ),
                       _buildBenefitItem(
                         icon: Icons.receipt_long_rounded,
                         title: AppLocalizations.of(context).clearTracking,
-                        description: 'See every ride payment in detail',
+                        description: AppLocalizations.of(context).benefitTrackingDesc,
                         delay: 600,
                       ),
                       _buildBenefitItem(
                         icon: Icons.percent_rounded,
                         title: AppLocalizations.of(context).lowFees,
-                        description: 'Keep 85% of every ride payment',
+                        description: AppLocalizations.of(context).benefitLowFeesDesc,
                         delay: 700,
                       ),
 
@@ -196,7 +197,7 @@ class _DriverStripeOnboardingScreenState
                               SizedBox(width: 12.w),
                               Expanded(
                                 child: Text(
-                                  'Verifying your account...',
+                                  AppLocalizations.of(context).stripeVerifyingAccount,
                                   style: TextStyle(
                                     color: AppColors.primary,
                                     fontSize: 14.sp,
@@ -215,7 +216,7 @@ class _DriverStripeOnboardingScreenState
               // CTA Button
               SizedBox(height: 20.h),
               PremiumButton(
-                text: 'Connect Stripe Account',
+                text: AppLocalizations.of(context).connectStripeAccount,
                 isLoading: _isLoading || _isVerifying,
                 onPressed: _isLoading || _isVerifying ? null : _startOnboarding,
                 style: PremiumButtonStyle.primary,
@@ -224,7 +225,7 @@ class _DriverStripeOnboardingScreenState
               SizedBox(height: 12.h),
 
               Text(
-                'Powered by Stripe • Secure and encrypted',
+                AppLocalizations.of(context).poweredByStripe,
                 style: TextStyle(
                   fontSize: 12.sp,
                   color: AppColors.textSecondary,
@@ -309,7 +310,7 @@ class _DriverStripeOnboardingScreenState
       }
     } catch (e) {
       // Silent fail - user can proceed with onboarding
-      debugPrint('Error checking existing account: $e');
+      TalkerService.error('Error checking existing account: $e');
     }
   }
 
@@ -318,7 +319,7 @@ class _DriverStripeOnboardingScreenState
     final user = ref.read(currentUserProvider).value;
     if (user == null) {
       setState(() {
-        _errorMessage = 'Please sign in to continue';
+        _errorMessage = AppLocalizations.of(context).pleaseSignInToContinue;
       });
       return;
     }
@@ -363,14 +364,13 @@ class _DriverStripeOnboardingScreenState
         });
       } else {
         setState(() {
-          _errorMessage = 'Failed to create Stripe account. Please try again.';
+          _errorMessage = AppLocalizations.of(context).stripeAccountCreationFailed;
           _isLoading = false;
         });
       }
     } catch (_) {
       setState(() {
-        _errorMessage =
-            'Could not start Stripe setup right now. Please try again.';
+        _errorMessage = AppLocalizations.of(context).stripeSetupFailed;
         _isLoading = false;
       });
     }
@@ -382,7 +382,7 @@ class _DriverStripeOnboardingScreenState
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
-          'Connect Stripe',
+          AppLocalizations.of(context).connectStripe,
           style: TextStyle(
             fontSize: 18.sp,
             fontWeight: FontWeight.w700,
@@ -435,10 +435,10 @@ class _DriverStripeOnboardingScreenState
               });
             },
             onLoadStart: (controller, url) {
-              debugPrint('Loading: $url');
+              TalkerService.debug('Loading: $url');
             },
             onLoadStop: (controller, url) async {
-              debugPrint('Loaded: $url');
+              TalkerService.debug('Loaded: $url');
 
               final urlStr = url?.toString() ?? '';
 
@@ -451,10 +451,10 @@ class _DriverStripeOnboardingScreenState
                 await _handleOnboardingComplete();
               }
             },
-            onLoadError: (controller, url, code, message) {
-              debugPrint('Error loading: $message');
+            onReceivedError: (controller, request, error) {
+              TalkerService.error('Error loading: ${error.description}');
               setState(() {
-                _errorMessage = 'Failed to load page. Please try again.';
+                _errorMessage = AppLocalizations.of(context).stripePageLoadFailed;
                 _showWebView = false;
                 _onboardingUrl = null;
               });
@@ -490,7 +490,7 @@ class _DriverStripeOnboardingScreenState
                     CircularProgressIndicator(color: AppColors.primary),
                     SizedBox(height: 20.h),
                     Text(
-                      'Loading Stripe Connect...',
+                      AppLocalizations.of(context).stripeLoadingConnect,
                       style: TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 14.sp,
@@ -549,9 +549,9 @@ class _DriverStripeOnboardingScreenState
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
               content: Text(
-                'Additional information needed. Please complete all fields.',
+                AppLocalizations.of(context).stripeAdditionalInfoNeeded,
               ),
               backgroundColor: Colors.orange,
             ),
@@ -566,7 +566,7 @@ class _DriverStripeOnboardingScreenState
     } catch (_) {
       setState(() {
         _isVerifying = false;
-        _errorMessage = 'Could not verify account right now. Please try again.';
+        _errorMessage = AppLocalizations.of(context).stripeVerifyFailed;
         _showWebView = false;
       });
     }
@@ -577,19 +577,19 @@ class _DriverStripeOnboardingScreenState
     final shouldCancel = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Cancel Setup?'),
-        content: const Text(
-          'Are you sure you want to cancel? You won\'t be able to receive payouts until you complete this setup.',
+        title: Text(AppLocalizations.of(context).cancelSetupTitle),
+        content: Text(
+          AppLocalizations.of(context).cancelSetupMessage,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Continue Setup'),
+            child: Text(AppLocalizations.of(context).continueSetup),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
         ],
       ),

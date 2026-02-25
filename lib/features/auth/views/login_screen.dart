@@ -14,6 +14,7 @@ import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/utils/validators.dart';
 import 'package:sport_connect/core/widgets/utility_widgets.dart';
+import 'package:sport_connect/features/auth/models/auth_exception.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -44,11 +45,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   final FocusNode _emailFocus = FocusNode();
   final FocusNode _passwordFocus = FocusNode();
 
-  bool get _isIOS => !kIsWeb && Platform.isIOS;
-
-  bool get _isAndroid => !kIsWeb && Platform.isAndroid;
-
-  bool get _isCupertino => _isIOS;
+  bool get _isCupertino => !kIsWeb && Platform.isIOS;
 
   @override
   void initState() {
@@ -149,10 +146,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       // Route guard handles redirect based on needsRoleSelection field in Firestore
     } catch (e) {
       if (mounted) {
-        await _showAdaptiveMessage(
-          AppLocalizations.of(context).signInFailedPleaseTry,
-          isError: true,
-        );
+        await _showAdaptiveMessage(_getAuthErrorMessage(e), isError: true);
       }
     } finally {
       if (mounted) setState(() => _isSocialLoading = false);
@@ -168,10 +162,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       // Route guard handles redirect based on needsRoleSelection field in Firestore
     } catch (e) {
       if (mounted) {
-        await _showAdaptiveMessage(
-          AppLocalizations.of(context).signInFailedPleaseTry,
-          isError: true,
-        );
+        await _showAdaptiveMessage(_getAuthErrorMessage(e), isError: true);
       }
     } finally {
       if (mounted) setState(() => _isSocialLoading = false);
@@ -380,7 +371,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             ),
             decoration: BoxDecoration(
               color: AppColors.surfaceVariant,
-              borderRadius: BorderRadius.circular(_isIOS ? 20.r : 16.r),
+              borderRadius: BorderRadius.circular(_isCupertino ? 20.r : 16.r),
               border: Border.all(
                 color: AppColors.border.withValues(alpha: 0.5),
               ),
@@ -464,7 +455,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             ),
             decoration: BoxDecoration(
               color: AppColors.surfaceVariant,
-              borderRadius: BorderRadius.circular(_isIOS ? 20.r : 16.r),
+              borderRadius: BorderRadius.circular(_isCupertino ? 20.r : 16.r),
               border: Border.all(
                 color: AppColors.border.withValues(alpha: 0.5),
               ),
@@ -592,7 +583,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         height: 50.h,
         child: CupertinoButton.filled(
           onPressed: isLoading ? null : _handleLogin,
-          borderRadius: BorderRadius.circular(_isIOS ? 20.r : 14.r),
+          borderRadius: BorderRadius.circular(_isCupertino ? 20.r : 14.r),
           child: isLoading
               ? const CupertinoActivityIndicator()
               : Text(
@@ -803,26 +794,41 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   String _getAuthErrorMessage(Object? error) {
-    final errorStr = error.toString().toLowerCase();
-    if (errorStr.contains('user-not-found') ||
-        errorStr.contains('no user found')) {
-      return 'No account found with this email';
-    } else if (errorStr.contains('wrong-password') ||
-        errorStr.contains('wrong password') ||
-        errorStr.contains('invalid-credential') ||
-        errorStr.contains('incorrect')) {
-      return 'Incorrect email or password. Please try again.';
-    } else if (errorStr.contains('too-many-requests') ||
-        errorStr.contains('too many')) {
-      return 'Too many login attempts. Please try again later.';
-    } else if (errorStr.contains('network')) {
-      return 'Network error. Please check your connection.';
-    } else if (errorStr.contains('invalid-email') ||
-        errorStr.contains('invalid email')) {
-      return 'Invalid email address.';
-    } else {
-      return AppLocalizations.of(context).signInFailedPleaseTry;
+    final l10n = AppLocalizations.of(context);
+    if (error is AuthException) {
+      switch (error.code) {
+        case 'user-not-found':
+          return l10n.loginErrorUserNotFound;
+        case 'wrong-password' || 'invalid-credential':
+          return l10n.loginErrorWrongPassword;
+        case 'too-many-requests':
+          return l10n.loginErrorTooManyRequests;
+        case 'invalid-email':
+          return l10n.loginErrorInvalidEmail;
+        case 'account-exists-with-different-credential':
+          return l10n.accountExistsError;
+        case 'network-request-failed':
+          return l10n.loginErrorNetwork;
+        default:
+          return error.message;
+      }
     }
+    final errorStr = error.toString().toLowerCase();
+    if (errorStr.contains('user-not-found')) {
+      return l10n.loginErrorUserNotFound;
+    } else if (errorStr.contains('wrong-password') ||
+        errorStr.contains('invalid-credential')) {
+      return l10n.loginErrorWrongPassword;
+    } else if (errorStr.contains('too-many-requests')) {
+      return l10n.loginErrorTooManyRequests;
+    } else if (errorStr.contains('network')) {
+      return l10n.loginErrorNetwork;
+    } else if (errorStr.contains('invalid-email')) {
+      return l10n.loginErrorInvalidEmail;
+    } else if (errorStr.contains('account-exists-with-different-credential')) {
+      return l10n.accountExistsError;
+    }
+    return l10n.signInFailedPleaseTry;
   }
 
   void _showForgotPasswordDialog() {

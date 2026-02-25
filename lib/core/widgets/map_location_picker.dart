@@ -45,6 +45,7 @@ class MapLocationPicker extends StatefulWidget {
     return showModalBottomSheet<LocationPickerResult>(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (context) => MapLocationPicker(
         title: title,

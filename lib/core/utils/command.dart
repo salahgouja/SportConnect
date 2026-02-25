@@ -20,6 +20,7 @@
 ///   showLoader();
 /// }
 /// ```
+library;
 import 'package:flutter/foundation.dart';
 import 'package:sport_connect/core/utils/result.dart';
 

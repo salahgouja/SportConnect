@@ -8,6 +8,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
@@ -17,6 +18,7 @@ import 'package:sport_connect/core/widgets/premium_text_field.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 /// Wizard step data
 class _WizardStep {
@@ -68,32 +70,35 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
   DateTime? _dateOfBirth;
   final List<String> _selectedInterests = [];
 
-  final List<_WizardStep> _steps = [
-    _WizardStep(
-      title: 'Welcome',
-      subtitle: 'Let\'s get you started',
-      icon: Icons.waving_hand_rounded,
-      color: AppColors.primary,
-    ),
-    _WizardStep(
-      title: 'Security',
-      subtitle: 'Create a secure password',
-      icon: Icons.lock_rounded,
-      color: AppColors.info,
-    ),
-    _WizardStep(
-      title: 'Your Role',
-      subtitle: 'How will you use SportConnect?',
-      icon: Icons.person_rounded,
-      color: AppColors.warning,
-    ),
-    _WizardStep(
-      title: 'Profile',
-      subtitle: 'Make it personal',
-      icon: Icons.face_rounded,
-      color: AppColors.secondary,
-    ),
-  ];
+  List<_WizardStep> get _steps {
+    final l10n = AppLocalizations.of(context);
+    return [
+      _WizardStep(
+        title: l10n.wizardStepWelcome,
+        subtitle: l10n.wizardStepWelcomeSubtitle,
+        icon: Icons.waving_hand_rounded,
+        color: AppColors.primary,
+      ),
+      _WizardStep(
+        title: l10n.wizardStepSecurity,
+        subtitle: l10n.wizardStepSecuritySubtitle,
+        icon: Icons.lock_rounded,
+        color: AppColors.info,
+      ),
+      _WizardStep(
+        title: l10n.wizardStepRole,
+        subtitle: l10n.wizardStepRoleSubtitle,
+        icon: Icons.person_rounded,
+        color: AppColors.warning,
+      ),
+      _WizardStep(
+        title: l10n.wizardStepProfile,
+        subtitle: l10n.wizardStepProfileSubtitle,
+        icon: Icons.face_rounded,
+        color: AppColors.secondary,
+      ),
+    ];
+  }
 
   final List<String> _availableInterests = [
     '⚽ Football',
@@ -109,11 +114,6 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
     '🎿 Skiing',
     '🏄 Surfing',
   ];
-
-  @override
-  void initState() {
-    super.initState();
-  }
 
   @override
   void dispose() {
@@ -151,19 +151,19 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
 
     // Step 0: validate DOB (minimum age 18)
     if (_currentStep == 0 && _dateOfBirth == null) {
-      _showError('Please enter your date of birth.');
+      _showError(AppLocalizations.of(context).authDobError);
       return;
     }
     if (_currentStep == 0 && _dateOfBirth != null) {
       final age = DateTime.now().difference(_dateOfBirth!).inDays ~/ 365;
       if (age < 18) {
-        _showError('You must be at least 18 years old to use SportConnect.');
+        _showError(AppLocalizations.of(context).authDobMinAge);
         return;
       }
     }
 
     if (_currentStep == 1 && !_agreedToTerms) {
-      _showError('Please agree to the Terms of Service');
+      _showError(AppLocalizations.of(context).authAgreeTermsError);
       return;
     }
 
@@ -226,9 +226,16 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             profileImage: _profileImage,
           );
 
-      // Registration successful - navigation handled by listener
-    } catch (_) {
-      _showError('Unable to create your account right now. Please try again.');
+      // Registration successful — Firebase Auth state change triggers the
+      // router's refreshListenable, which re-evaluates the redirect and
+      // sends the user to the appropriate dashboard automatically.
+    } catch (e) {
+      final message = e.toString().replaceFirst('Exception: ', '');
+      _showError(
+        message.isNotEmpty
+            ? message
+            : 'Unable to create your account right now. Please try again.',
+      );
     }
   }
 
@@ -566,8 +573,8 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             // Name field
             PremiumTextField(
               controller: _nameController,
-              label: 'Full Name',
-              hint: 'Enter your full name',
+              label: AppLocalizations.of(context).authFullName,
+              hint: AppLocalizations.of(context).authFullNameHint,
               prefixIcon: Icons.person_outline_rounded,
               validator: Validators.name,
               textCapitalization: TextCapitalization.words,
@@ -578,8 +585,8 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             // Email field
             PremiumTextField(
               controller: _emailController,
-              label: 'Email Address',
-              hint: 'you@example.com',
+              label: AppLocalizations.of(context).authEmailAddress,
+              hint: AppLocalizations.of(context).authEmailHint,
               prefixIcon: Icons.email_outlined,
               keyboardType: TextInputType.emailAddress,
               validator: Validators.email,
@@ -590,8 +597,8 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             // Phone field (optional)
             PremiumTextField(
               controller: _phoneController,
-              label: 'Phone Number (Optional)',
-              hint: '+216 XX XXX XXX',
+              label: AppLocalizations.of(context).authPhoneOptional,
+              hint: AppLocalizations.of(context).authPhoneHint,
               prefixIcon: Icons.phone_outlined,
               keyboardType: TextInputType.phone,
             ).animate().fadeIn(delay: 400.ms).slideX(begin: -0.1),
@@ -609,7 +616,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                       DateTime(now.year - 18, now.month, now.day),
                   firstDate: DateTime(1920),
                   lastDate: now,
-                  helpText: 'Select your date of birth',
+                  helpText: AppLocalizations.of(context).authDobPicker,
                   builder: (context, child) {
                     return Theme(
                       data: Theme.of(context).copyWith(
@@ -652,7 +659,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Date of Birth *',
+                            AppLocalizations.of(context).authDateOfBirth,
                             style: TextStyle(
                               fontSize: 11.sp,
                               color: AppColors.textTertiary,
@@ -663,7 +670,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                           Text(
                             _dateOfBirth != null
                                 ? '${_dateOfBirth!.day}/${_dateOfBirth!.month}/${_dateOfBirth!.year}'
-                                : 'Tap to select (must be 18+)',
+                                : AppLocalizations.of(context).authDobPrompt,
                             style: TextStyle(
                               fontSize: 15.sp,
                               color: _dateOfBirth != null
@@ -696,20 +703,52 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             SizedBox(height: 16.h),
 
             // Professional social signup options
-            _ProfessionalSocialButton(
-              icon: Icons.g_mobiledata_rounded,
-              iconColor: Colors.white,
-              label: 'Continue with Google',
-              backgroundColor: const Color(0xFF4285F4),
-              onPressed: _handleGoogleSignIn,
+            // Compliant Google Sign-In Button (matches login screen)
+            SizedBox(
+              height: 44.h,
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: _handleGoogleSignIn,
+                style: OutlinedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  padding: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14.r),
+                  ),
+                  side: const BorderSide(color: Color(0xFF747775), width: 1.0),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SvgPicture.asset(
+                      'assets/icons/google_g_logo.svg',
+                      height: 20.sp,
+                      width: 20.sp,
+                    ),
+                    SizedBox(width: 10.w),
+                    Text(
+                      AppLocalizations.of(context).continueWithGoogle,
+                      style: TextStyle(
+                        fontFamily: 'Roboto',
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF1F1F1F),
+                        height: 20 / 14,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
             SizedBox(height: 12.h),
-            _ProfessionalSocialButton(
-              icon: Icons.apple_rounded,
-              iconColor: Colors.white,
-              label: 'Continue with Apple',
-              backgroundColor: const Color(0xFF1A1A1A),
+            SignInWithAppleButton(
               onPressed: _handleAppleSignIn,
+              text: AppLocalizations.of(context).continueWithApple,
+              height: 44.h, // Matches your original height standard
+              borderRadius: BorderRadius.circular(14.r),
+              style: SignInWithAppleButtonStyle
+                  .black, // Use .white or .whiteOutlined for light themes
             ).animate().fadeIn(delay: 650.ms).slideY(begin: 0.1),
           ],
         ),
@@ -723,7 +762,12 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
       await authActions.signInWithGoogle();
       // Route guard handles redirect based on needsRoleSelection field in Firestore
     } catch (e) {
-      _showError(e.toString());
+      if (mounted) {
+        final message = e is AuthException && e.code == 'account-exists-with-different-credential'
+            ? AppLocalizations.of(context).accountExistsError
+            : AppLocalizations.of(context).signUpFailedPleaseTry;
+        _showError(message);
+      }
     }
   }
 
@@ -733,7 +777,12 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
       await authActions.signInWithApple();
       // Route guard handles redirect based on needsRoleSelection field in Firestore
     } catch (e) {
-      _showError(e.toString());
+      if (mounted) {
+        final message = e is AuthException && e.code == 'account-exists-with-different-credential'
+            ? AppLocalizations.of(context).accountExistsError
+            : AppLocalizations.of(context).signUpFailedPleaseTry;
+        _showError(message);
+      }
     }
   }
 
@@ -798,8 +847,8 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             // Password field
             PremiumTextField(
               controller: _passwordController,
-              label: 'Create Password',
-              hint: 'Min 8 characters',
+              label: AppLocalizations.of(context).authCreatePassword,
+              hint: AppLocalizations.of(context).authPasswordHint,
               prefixIcon: Icons.lock_outline_rounded,
               obscureText: _obscurePassword,
               validator: Validators.password,
@@ -822,8 +871,8 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             // Confirm password field
             PremiumTextField(
               controller: _confirmPasswordController,
-              label: 'Confirm Password',
-              hint: 'Re-enter your password',
+              label: AppLocalizations.of(context).authConfirmPassword,
+              hint: AppLocalizations.of(context).authConfirmPasswordHint,
               prefixIcon: Icons.lock_outline_rounded,
               obscureText: _obscureConfirmPassword,
               validator: (value) =>
@@ -1029,9 +1078,8 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                 setState(() => _selectedRole = UserRole.rider);
               },
               icon: Icons.person_pin_circle_rounded,
-              title: 'Find Rides',
-              description:
-                  'Search for rides to sporting events, practices, and games',
+              title: AppLocalizations.of(context).wizardFindRides,
+              description: AppLocalizations.of(context).wizardFindRidesDesc,
               gradient: const [AppColors.info, AppColors.infoDark],
             ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.1),
 
@@ -1045,8 +1093,8 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                 setState(() => _selectedRole = UserRole.driver);
               },
               icon: Icons.drive_eta_rounded,
-              title: 'Offer Rides',
-              description: 'Share your car and earn money while helping others',
+              title: AppLocalizations.of(context).wizardOfferRides,
+              description: AppLocalizations.of(context).wizardOfferRidesDesc,
               gradient: const [AppColors.primary, AppColors.primaryLight],
             ).animate().fadeIn(delay: 300.ms).slideX(begin: -0.1),
 
@@ -1229,8 +1277,8 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             // Bio field
             PremiumTextField(
               controller: _bioController,
-              label: 'About You (Optional)',
-              hint: 'Tell us a bit about yourself...',
+              label: AppLocalizations.of(context).authAboutYou,
+              hint: AppLocalizations.of(context).authAboutYouHint,
               prefixIcon: Icons.edit_note_rounded,
               maxLines: 3,
             ).animate().fadeIn(delay: 300.ms).slideX(begin: -0.1),
@@ -1309,7 +1357,9 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
       child: SafeArea(
         top: false,
         child: PremiumButton(
-          text: isLastStep ? 'Create Account' : 'Continue',
+          text: isLastStep
+              ? AppLocalizations.of(context).createAccount
+              : AppLocalizations.of(context).wizardContinue,
           onPressed: _nextStep,
           isLoading: ref.watch(registerViewModelProvider).isLoading,
           style: PremiumButtonStyle.gradient,
@@ -1420,67 +1470,6 @@ class _RoleSelectionCard extends StatelessWidget {
                 ),
               ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Professional social login button with clean styling
-class _ProfessionalSocialButton extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final String label;
-  final Color backgroundColor;
-  final VoidCallback onPressed;
-
-  const _ProfessionalSocialButton({
-    required this.icon,
-    required this.iconColor,
-    required this.label,
-    required this.backgroundColor,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          HapticFeedback.lightImpact();
-          onPressed();
-        },
-        borderRadius: BorderRadius.circular(14.r),
-        child: Container(
-          padding: EdgeInsets.symmetric(vertical: 16.h),
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(14.r),
-            boxShadow: [
-              BoxShadow(
-                color: backgroundColor.withValues(alpha: 0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 24.sp, color: iconColor),
-              SizedBox(width: 12.w),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 15.sp,
-                  fontWeight: FontWeight.w600,
-                  color: iconColor,
-                  letterSpacing: 0.2,
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );

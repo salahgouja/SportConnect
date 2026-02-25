@@ -8,92 +8,27 @@ part of 'auth_view_model.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Tracks whether a new social sign-in user needs to pick a role.
+/// Auth repository provider.
 ///
-/// Set to `true` right after Google/Apple sign-in creates a new account.
-/// The route guard reads this to redirect to role-selection instead of home.
-/// Cleared when the user selects a role on the RoleSelectionScreen.
-
-@ProviderFor(PendingRoleSelection)
-final pendingRoleSelectionProvider = PendingRoleSelectionProvider._();
-
-/// Tracks whether a new social sign-in user needs to pick a role.
-///
-/// Set to `true` right after Google/Apple sign-in creates a new account.
-/// The route guard reads this to redirect to role-selection instead of home.
-/// Cleared when the user selects a role on the RoleSelectionScreen.
-final class PendingRoleSelectionProvider
-    extends $NotifierProvider<PendingRoleSelection, bool> {
-  /// Tracks whether a new social sign-in user needs to pick a role.
-  ///
-  /// Set to `true` right after Google/Apple sign-in creates a new account.
-  /// The route guard reads this to redirect to role-selection instead of home.
-  /// Cleared when the user selects a role on the RoleSelectionScreen.
-  PendingRoleSelectionProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'pendingRoleSelectionProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$pendingRoleSelectionHash();
-
-  @$internal
-  @override
-  PendingRoleSelection create() => PendingRoleSelection();
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(bool value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<bool>(value),
-    );
-  }
-}
-
-String _$pendingRoleSelectionHash() =>
-    r'9ec496bd1ecc82dc2a4aa365c9c47bbe5393b9a8';
-
-/// Tracks whether a new social sign-in user needs to pick a role.
-///
-/// Set to `true` right after Google/Apple sign-in creates a new account.
-/// The route guard reads this to redirect to role-selection instead of home.
-/// Cleared when the user selects a role on the RoleSelectionScreen.
-
-abstract class _$PendingRoleSelection extends $Notifier<bool> {
-  bool build();
-  @$mustCallSuper
-  @override
-  void runBuild() {
-    final ref = this.ref as $Ref<bool, bool>;
-    final element =
-        ref.element
-            as $ClassProviderElement<
-              AnyNotifier<bool, bool>,
-              bool,
-              Object?,
-              Object?
-            >;
-    element.handleCreate(ref, build);
-  }
-}
-
-/// Auth repository provider
+/// Returns the interface type so consumers depend on the abstraction,
+/// making it easy to swap implementations or provide mocks in tests.
 
 @ProviderFor(authRepository)
 final authRepositoryProvider = AuthRepositoryProvider._();
 
-/// Auth repository provider
+/// Auth repository provider.
+///
+/// Returns the interface type so consumers depend on the abstraction,
+/// making it easy to swap implementations or provide mocks in tests.
 
 final class AuthRepositoryProvider
-    extends $FunctionalProvider<AuthRepository, AuthRepository, AuthRepository>
-    with $Provider<AuthRepository> {
-  /// Auth repository provider
+    extends
+        $FunctionalProvider<IAuthRepository, IAuthRepository, IAuthRepository>
+    with $Provider<IAuthRepository> {
+  /// Auth repository provider.
+  ///
+  /// Returns the interface type so consumers depend on the abstraction,
+  /// making it easy to swap implementations or provide mocks in tests.
   AuthRepositoryProvider._()
     : super(
         from: null,
@@ -110,24 +45,24 @@ final class AuthRepositoryProvider
 
   @$internal
   @override
-  $ProviderElement<AuthRepository> $createElement($ProviderPointer pointer) =>
+  $ProviderElement<IAuthRepository> $createElement($ProviderPointer pointer) =>
       $ProviderElement(pointer);
 
   @override
-  AuthRepository create(Ref ref) {
+  IAuthRepository create(Ref ref) {
     return authRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(AuthRepository value) {
+  Override overrideWithValue(IAuthRepository value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<AuthRepository>(value),
+      providerOverride: $SyncValueProvider<IAuthRepository>(value),
     );
   }
 }
 
-String _$authRepositoryHash() => r'19a3485653561ac2f781b997131430c5659286d1';
+String _$authRepositoryHash() => r'd46f69c6c8b1b1a866beb6286d356d5305473d89';
 
 /// Login view model
 
@@ -165,7 +100,7 @@ final class LoginViewModelProvider
   }
 }
 
-String _$loginViewModelHash() => r'd670056a70b853a855e576484d517ba102147648';
+String _$loginViewModelHash() => r'9a748c1ab98fcea2657d996aa96e539f5dd2b79e';
 
 /// Login view model
 
@@ -223,7 +158,7 @@ final class RegisterViewModelProvider
   }
 }
 
-String _$registerViewModelHash() => r'c1139a5db50cde5dc9f3706ca4116304e5987a32';
+String _$registerViewModelHash() => r'63d80e7718f8f43a58482fa93087293783fb40c4';
 
 /// Register view model
 
@@ -244,3 +179,68 @@ abstract class _$RegisterViewModel extends $Notifier<AsyncValue<void>> {
     element.handleCreate(ref, build);
   }
 }
+
+/// Provides shared auth actions (sign-out, social sign-in, role management).
+///
+/// Declaring this as a [Provider] at global scope is intentional: the class
+/// is a thin pass-through over [authRepositoryProvider] and carries no local
+/// state, so it does not need to be auto-disposed per-widget.
+
+@ProviderFor(authActionsViewModel)
+final authActionsViewModelProvider = AuthActionsViewModelProvider._();
+
+/// Provides shared auth actions (sign-out, social sign-in, role management).
+///
+/// Declaring this as a [Provider] at global scope is intentional: the class
+/// is a thin pass-through over [authRepositoryProvider] and carries no local
+/// state, so it does not need to be auto-disposed per-widget.
+
+final class AuthActionsViewModelProvider
+    extends
+        $FunctionalProvider<
+          AuthActionsViewModel,
+          AuthActionsViewModel,
+          AuthActionsViewModel
+        >
+    with $Provider<AuthActionsViewModel> {
+  /// Provides shared auth actions (sign-out, social sign-in, role management).
+  ///
+  /// Declaring this as a [Provider] at global scope is intentional: the class
+  /// is a thin pass-through over [authRepositoryProvider] and carries no local
+  /// state, so it does not need to be auto-disposed per-widget.
+  AuthActionsViewModelProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'authActionsViewModelProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$authActionsViewModelHash();
+
+  @$internal
+  @override
+  $ProviderElement<AuthActionsViewModel> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  AuthActionsViewModel create(Ref ref) {
+    return authActionsViewModel(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(AuthActionsViewModel value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AuthActionsViewModel>(value),
+    );
+  }
+}
+
+String _$authActionsViewModelHash() =>
+    r'20b4c9a8cf70f3fe672de665a948b3d0a5bd7017';

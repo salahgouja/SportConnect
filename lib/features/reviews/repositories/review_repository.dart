@@ -98,6 +98,7 @@ class ReviewRepository implements IReviewRepository {
       _firestore.collection('reviews');
 
   /// Create a new review
+  @override
   Future<ReviewModel> createReview(CreateReviewRequest request) async {
     final currentUser = _ref.read(currentUserProvider).value;
     if (currentUser == null) {
@@ -144,6 +145,7 @@ class ReviewRepository implements IReviewRepository {
   }
 
   /// Get all reviews for a user (reviews they received)
+  @override
   Future<List<ReviewModel>> getReviewsForUser(
     String userId, {
     ReviewType? type,
@@ -166,6 +168,7 @@ class ReviewRepository implements IReviewRepository {
   }
 
   /// Get all reviews left by a user
+  @override
   Future<List<ReviewModel>> getReviewsByUser(
     String userId, {
     int limit = 50,
@@ -182,6 +185,7 @@ class ReviewRepository implements IReviewRepository {
   }
 
   /// Get reviews for a specific ride
+  @override
   Future<List<ReviewModel>> getReviewsForRide(String rideId) async {
     final snapshot = await _reviewsCollection
         .where('rideId', isEqualTo: rideId)
@@ -194,6 +198,7 @@ class ReviewRepository implements IReviewRepository {
   }
 
   /// Watch reviews for a user (real-time updates)
+  @override
   Stream<List<ReviewModel>> watchReviewsForUser(String userId) {
     return _reviewsCollection
         .where('revieweeId', isEqualTo: userId)
@@ -209,12 +214,14 @@ class ReviewRepository implements IReviewRepository {
   }
 
   /// Get rating stats for a user
+  @override
   Future<RatingStats> getRatingStatsForUser(String userId) async {
     final reviews = await getReviewsForUser(userId);
     return RatingStats.fromReviews(reviews);
   }
 
   /// Add response to a review (by the reviewee)
+  @override
   Future<void> respondToReview(String reviewId, String response) async {
     final currentUser = _ref.read(currentUserProvider).value;
     if (currentUser == null) {
@@ -240,6 +247,7 @@ class ReviewRepository implements IReviewRepository {
   }
 
   /// Delete a review (by reviewer or admin)
+  @override
   Future<void> deleteReview(String reviewId) async {
     final currentUser = _ref.read(currentUserProvider).value;
     if (currentUser == null) {
@@ -286,6 +294,7 @@ class ReviewRepository implements IReviewRepository {
   }
 
   /// Check if user can review another user for a specific ride
+  @override
   Future<bool> canReview({
     required String rideId,
     required String revieweeId,
@@ -304,6 +313,7 @@ class ReviewRepository implements IReviewRepository {
   }
 
   /// Get pending reviews (rides that user participated in but hasn't reviewed)
+  @override
   Future<List<Map<String, dynamic>>> getPendingReviews() async {
     final currentUser = _ref.read(currentUserProvider).value;
     if (currentUser == null) return [];

@@ -3,28 +3,19 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sport_connect/core/interfaces/repositories/i_auth_repository.dart';
+import 'package:sport_connect/core/services/analytics_service.dart';
 import 'package:sport_connect/features/auth/repositories/auth_repository.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 
 part 'auth_view_model.g.dart';
 
-/// Tracks whether a new social sign-in user needs to pick a role.
+/// Auth repository provider.
 ///
-/// Set to `true` right after Google/Apple sign-in creates a new account.
-/// The route guard reads this to redirect to role-selection instead of home.
-/// Cleared when the user selects a role on the RoleSelectionScreen.
+/// Returns the interface type so consumers depend on the abstraction,
+/// making it easy to swap implementations or provide mocks in tests.
 @riverpod
-class PendingRoleSelection extends _$PendingRoleSelection {
-  @override
-  bool build() => false;
-
-  /// Sets the pending role selection state.
-  void set(bool value) => state = value;
-}
-
-/// Auth repository provider
-@riverpod
-AuthRepository authRepository(Ref ref) {
+IAuthRepository authRepository(Ref ref) {
   return AuthRepository();
 }
 
@@ -40,6 +31,9 @@ class LoginViewModel extends _$LoginViewModel {
       await ref
           .read(authRepositoryProvider)
           .signInWithEmail(email, password, rememberMe);
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) AnalyticsService.instance.setUserId(uid);
+      AnalyticsService.instance.logLogin('email');
       state = const AsyncValue.data(null);
     } catch (e, stackTrace) {
       state = AsyncValue.error(e, stackTrace);
@@ -49,9 +43,12 @@ class LoginViewModel extends _$LoginViewModel {
 
   Future<void> resetPassword(String email) async {
     try {
-      await ref.read(authRepositoryProvider).resetPassword(email);
+      await ref.read(authRepositoryProvider).sendPasswordResetEmail(email);
     } catch (e, stackTrace) {
       state = AsyncValue.error(e, stackTrace);
+      // Rethrow so calling widgets (e.g. ForgotPasswordScreen) can also
+      // handle the error directly (e.g. show a snackbar with the message).
+      rethrow;
     }
   }
 }
@@ -87,6 +84,9 @@ class RegisterViewModel extends _$RegisterViewModel {
             interests: interests,
             profileImage: profileImage,
           );
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) AnalyticsService.instance.setUserId(uid);
+      AnalyticsService.instance.logSignUp('email');
       state = const AsyncValue.data(null);
     } catch (e, stackTrace) {
       state = AsyncValue.error(e, stackTrace);
@@ -94,9 +94,13 @@ class RegisterViewModel extends _$RegisterViewModel {
   }
 }
 
-final authActionsViewModelProvider = Provider<AuthActionsViewModel>((ref) {
-  return AuthActionsViewModel(ref);
-});
+/// Provides shared auth actions (sign-out, social sign-in, role management).
+///
+/// Declaring this as a [Provider] at global scope is intentional: the class
+/// is a thin pass-through over [authRepositoryProvider] and carries no local
+/// state, so it does not need to be auto-disposed per-widget.
+@riverpod
+AuthActionsViewModel authActionsViewModel(Ref ref) => AuthActionsViewModel(ref);
 
 class AuthActionsViewModel {
   AuthActionsViewModel(this._ref);
@@ -119,12 +123,20 @@ class AuthActionsViewModel {
     return _ref.read(authRepositoryProvider).createUserDocument(user);
   }
 
-  Future<SocialSignInResult> signInWithGoogle() {
-    return _ref.read(authRepositoryProvider).signInWithGoogle();
+  Future<SocialSignInResult> signInWithGoogle() async {
+    final result = await _ref.read(authRepositoryProvider).signInWithGoogle();
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) AnalyticsService.instance.setUserId(uid);
+    AnalyticsService.instance.logLogin('google');
+    return result;
   }
 
-  Future<SocialSignInResult> signInWithApple() {
-    return _ref.read(authRepositoryProvider).signInWithApple();
+  Future<SocialSignInResult> signInWithApple() async {
+    final result = await _ref.read(authRepositoryProvider).signInWithApple();
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) AnalyticsService.instance.setUserId(uid);
+    AnalyticsService.instance.logLogin('apple');
+    return result;
   }
 
   Future<void> sendPasswordResetEmail(String email) {
@@ -137,5 +149,70 @@ class AuthActionsViewModel {
 
   Future<void> clearNeedsRoleSelection(String uid) {
     return _ref.read(authRepositoryProvider).clearNeedsRoleSelection(uid);
+  }
+
+  Future<void> reauthenticateWithPassword(String password) {
+    return _ref
+        .read(authRepositoryProvider)
+        .reauthenticateWithPassword(password);
+  }
+
+  Future<void> reauthenticateWithGoogle() {
+    return _ref.read(authRepositoryProvider).reauthenticateWithGoogle();
+  }
+
+  // ── Email verification ──────────────────────────────────────────────
+
+  Future<void> sendEmailVerification() {
+    return _ref.read(authRepositoryProvider).sendEmailVerification();
+  }
+
+  Future<bool> isEmailVerified() {
+    return _ref.read(authRepositoryProvider).isEmailVerified();
+  }
+
+  Future<void> reloadUser() {
+    return _ref.read(authRepositoryProvider).reloadUser();
+  }
+
+  // ── Phone OTP ───────────────────────────────────────────────────────
+
+  Future<void> verifyPhoneNumber({
+    required String phoneNumber,
+    required void Function(String verificationId, int? resendToken)
+        onCodeSent,
+    required void Function(FirebaseAuthException error)
+        onVerificationFailed,
+    required void Function(PhoneAuthCredential credential)
+        onVerificationCompleted,
+    required void Function(String verificationId) onAutoRetrievalTimeout,
+    int? forceResendingToken,
+  }) {
+    return _ref.read(authRepositoryProvider).verifyPhoneNumber(
+          phoneNumber: phoneNumber,
+          onCodeSent: onCodeSent,
+          onVerificationFailed: onVerificationFailed,
+          onVerificationCompleted: onVerificationCompleted,
+          onAutoRetrievalTimeout: onAutoRetrievalTimeout,
+          forceResendingToken: forceResendingToken,
+        );
+  }
+
+  Future<UserCredential> signInWithPhoneCredential({
+    required String verificationId,
+    required String smsCode,
+  }) {
+    return _ref.read(authRepositoryProvider).signInWithPhoneCredential(
+          verificationId: verificationId,
+          smsCode: smsCode,
+        );
+  }
+
+  Future<UserCredential> signInWithPhoneAutoCredential(
+    PhoneAuthCredential credential,
+  ) {
+    return _ref
+        .read(authRepositoryProvider)
+        .signInWithPhoneAutoCredential(credential);
   }
 }

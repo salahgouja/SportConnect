@@ -9,6 +9,7 @@ import {
 } from "firebase-functions/v2/firestore";
 import {onRequest, onCall, HttpsError} from "firebase-functions/v2/https";
 import {defineSecret} from "firebase-functions/params";
+import {logger} from "firebase-functions/v2";
 import * as admin from "firebase-admin";
 import Stripe from "stripe";
 
@@ -41,7 +42,7 @@ async function sendPushToUser(
     const fcmToken = userDoc.data()?.fcmToken as string | undefined;
 
     if (!fcmToken) {
-      console.log(`No FCM token for user ${userId}, skipping push`);
+      logger.info(`No FCM token for user ${userId}, skipping push`);
       return;
     }
 
@@ -71,7 +72,7 @@ async function sendPushToUser(
       },
     });
 
-    console.log(`Push sent to ${userId}: "${title}"`);
+    logger.info(`Push sent to ${userId}: "${title}"`);
   } catch (error: unknown) {
     const e = error as {code?: string};
     // Token may be stale — clean it up
@@ -79,7 +80,7 @@ async function sendPushToUser(
       e.code === "messaging/invalid-registration-token" ||
       e.code === "messaging/registration-token-not-registered"
     ) {
-      console.log(`Removing stale FCM token for user ${userId}`);
+      logger.info(`Removing stale FCM token for user ${userId}`);
       await admin
         .firestore()
         .collection("users")
@@ -88,7 +89,7 @@ async function sendPushToUser(
           fcmToken: admin.firestore.FieldValue.delete(),
         });
     } else {
-      console.error(`Failed to send push to ${userId}:`, error);
+      logger.error(`Failed to send push to ${userId}:`, error);
     }
   }
 }
@@ -427,8 +428,8 @@ function calculateFees(amount: number) {
 export const createConnectedAccount = onCall(
   {secrets: [stripeSecretKey], cors: true},
   async (request) => {
-    console.log("Request data:", JSON.stringify(request.data));
-    console.log("Request auth:", request.auth?.uid);
+    logger.info("Request data:", JSON.stringify(request.data));
+    logger.info("Request auth:", request.auth?.uid);
 
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "User must be authenticated");
@@ -445,7 +446,7 @@ export const createConnectedAccount = onCall(
       addressLine1,
       city,
     } = request.data;
-    console.log("Parsed - userId:", userId, "email:", email, "country:", country);
+    logger.info("Parsed - userId:", userId, "email:", email, "country:", country);
 
     if (!email) {
       throw new HttpsError("invalid-argument", "Email is required");
@@ -455,15 +456,15 @@ export const createConnectedAccount = onCall(
     let stripeApiKey: string;
     try {
       stripeApiKey = stripeSecretKey.value().trim();
-      console.log("Stripe API key loaded, prefix:", stripeApiKey?.substring(0, 20));
+      logger.info("Stripe API key loaded, prefix:", stripeApiKey?.substring(0, 20));
     } catch (err) {
-      console.error("Error getting Stripe secret:", err);
+      logger.error("Error getting Stripe secret:", err);
       throw new HttpsError("internal", "Failed to load Stripe API key");
     }
 
-    console.log("Creating Stripe client...");
+    logger.info("Creating Stripe client...");
     const stripe = getStripeClient(stripeApiKey);
-    console.log("Stripe client created successfully");
+    logger.info("Stripe client created successfully");
 
     const db = admin.firestore();
 
@@ -484,16 +485,16 @@ export const createConnectedAccount = onCall(
     }
 
     let accountId = userData.stripeAccountId;
-    console.log("User data - role:", userData.role, "stripeAccountId:", accountId);
+    logger.info("User data - role:", userData.role, "stripeAccountId:", accountId);
 
     // If there's an existing accountId, verify it exists in Stripe
     if (accountId) {
-      console.log("Found existing stripeAccountId:", accountId);
+      logger.info("Found existing stripeAccountId:", accountId);
       try {
         const existingAccount = await stripe.accounts.retrieve(accountId);
-        console.log("Existing Stripe account found:", existingAccount.id);
+        logger.info("Existing Stripe account found:", existingAccount.id);
       } catch (error) {
-        console.log("Existing Stripe account not valid, creating new one:", error);
+        logger.info("Existing Stripe account not valid, creating new one:", error);
         // Clear invalid accountId and create new one
         accountId = null;
         await db.collection("users").doc(userId).update({
@@ -509,7 +510,7 @@ export const createConnectedAccount = onCall(
     if (!accountId) {
       // Create new Stripe Connect account with prefilled individual info
       // Prefilling reduces onboarding friction - Stripe won't ask for prefilled fields
-      console.log("Creating new Stripe Connect account for:", email);
+      logger.info("Creating new Stripe Connect account for:", email);
 
       // Build individual info from user profile data
       const individual: Record<string, unknown> = {};
@@ -558,7 +559,7 @@ export const createConnectedAccount = onCall(
       });
 
       accountId = account.id;
-      console.log("New Stripe account created:", accountId);
+      logger.info("New Stripe account created:", accountId);
 
       // Save Stripe account ID to user document
       await db.collection("users").doc(userId).update({
@@ -583,6 +584,224 @@ export const createConnectedAccount = onCall(
     });
 
     return {accountId, onboardingUrl: accountLink.url};
+  },
+);
+
+// ============================================
+// Stripe: Create Account Link (re-onboarding)
+// ============================================
+
+export const createAccountLink = onCall(
+  {secrets: [stripeSecretKey], cors: true},
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "User must be authenticated");
+    }
+
+    const {accountId, refreshUrl, returnUrl} = request.data;
+
+    if (!accountId) {
+      throw new HttpsError("invalid-argument", "accountId is required");
+    }
+
+    const stripe = getStripeClient(stripeSecretKey.value().trim());
+
+    // Use Firebase Hosting pages as fallback for deep links
+    const baseUrl = "https://marathon-connect.web.app";
+
+    const accountLink = await stripe.accountLinks.create({
+      account: accountId,
+      refresh_url: refreshUrl || `${baseUrl}/stripe-refresh.html`,
+      return_url: returnUrl || `${baseUrl}/stripe-return.html`,
+      type: "account_onboarding",
+    });
+
+    return {url: accountLink.url};
+  },
+);
+
+// ============================================
+// Stripe: Get Account Status
+// ============================================
+
+export const getAccountStatus = onCall(
+  {secrets: [stripeSecretKey], cors: true},
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "User must be authenticated");
+    }
+
+    const {accountId} = request.data;
+
+    if (!accountId) {
+      throw new HttpsError("invalid-argument", "accountId is required");
+    }
+
+    const stripe = getStripeClient(stripeSecretKey.value().trim());
+
+    try {
+      const account = await stripe.accounts.retrieve(accountId);
+
+      return {
+        chargesEnabled: account.charges_enabled ?? false,
+        payoutsEnabled: account.payouts_enabled ?? false,
+        detailsSubmitted: account.details_submitted ?? false,
+        requirements: account.requirements?.currently_due ?? [],
+        disabledReason: account.requirements?.disabled_reason ?? null,
+      };
+    } catch (error: any) {
+      logger.error("getAccountStatus failed", {accountId, error: error.message});
+      throw new HttpsError(
+        "not-found",
+        `Stripe account not found: ${error.message}`,
+      );
+    }
+  },
+);
+
+// ============================================
+// Stripe: Create Instant Payout
+// ============================================
+
+export const createInstantPayout = onCall(
+  {secrets: [stripeSecretKey], cors: true},
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "User must be authenticated");
+    }
+
+    const {stripeAccountId, amount, currency = "eur"} = request.data;
+
+    if (!stripeAccountId || !amount) {
+      throw new HttpsError(
+        "invalid-argument",
+        "stripeAccountId and amount are required",
+      );
+    }
+
+    const stripe = getStripeClient(stripeSecretKey.value().trim());
+    const db = admin.firestore();
+
+    // Convert from main currency unit to cents for Stripe API
+    const amountInCents = Math.round(amount * 100);
+
+    // Verify the connected account exists and has payouts enabled
+    try {
+      const account = await stripe.accounts.retrieve(stripeAccountId);
+      if (!account.payouts_enabled) {
+        throw new HttpsError(
+          "failed-precondition",
+          "Payouts are not enabled for this account",
+        );
+      }
+    } catch (error: any) {
+      if (error instanceof HttpsError) throw error;
+      logger.error("createInstantPayout: account verification failed", {
+        stripeAccountId,
+        uid: request.auth.uid,
+        error: error.message,
+      });
+      throw new HttpsError(
+        "not-found",
+        `Stripe account verification failed: ${error.message}`,
+      );
+    }
+
+    // Create instant payout on the connected account
+    const payout = await stripe.payouts.create(
+      {
+        amount: amountInCents,
+        currency: currency.toLowerCase(),
+        method: "instant",
+      },
+      {stripeAccount: stripeAccountId},
+    );
+
+    // Save payout record to Firestore (top-level payouts collection)
+    // Store amount in main currency unit to match client models
+    const payoutRef = await db.collection("payouts").add({
+      driverId: request.auth.uid,
+      stripePayoutId: payout.id,
+      connectedAccountId: stripeAccountId,
+      amount,
+      currency,
+      status: payout.status === "paid" ? "completed" : "inTransit",
+      isInstantPayout: true,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      expectedArrivalDate: payout.arrival_date
+        ? new Date(payout.arrival_date * 1000)
+        : null,
+    });
+
+    return {
+      payoutId: payoutRef.id,
+      stripePayoutId: payout.id,
+      status: payout.status,
+      arrivalDate: payout.arrival_date,
+    };
+  },
+);
+
+// ============================================
+// Stripe: Refund Payment
+// ============================================
+
+export const refundPayment = onCall(
+  {secrets: [stripeSecretKey], cors: true},
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "User must be authenticated");
+    }
+
+    const {paymentIntentId, amount, reason = "requested_by_customer"} =
+      request.data;
+
+    if (!paymentIntentId) {
+      throw new HttpsError(
+        "invalid-argument",
+        "paymentIntentId is required",
+      );
+    }
+
+    const stripe = getStripeClient(stripeSecretKey.value().trim());
+    const db = admin.firestore();
+
+    // Create refund
+    // Convert from main currency unit to cents for Stripe API
+    const refundParams: Record<string, unknown> = {
+      payment_intent: paymentIntentId,
+      reason,
+    };
+
+    if (amount) {
+      refundParams.amount = Math.round(amount * 100);
+    }
+
+    const refund = await stripe.refunds.create(
+      refundParams as Parameters<typeof stripe.refunds.create>[0],
+    );
+
+    // Update payment record in Firestore
+    const payments = await db
+      .collection("payments")
+      .where("paymentIntentId", "==", paymentIntentId)
+      .get();
+
+    for (const doc of payments.docs) {
+      const isFullRefund = !amount || amount >= (doc.data().amount ?? 0);
+      await doc.ref.update({
+        status: isFullRefund ? "refunded" : "partiallyRefunded",
+        refundedAt: admin.firestore.FieldValue.serverTimestamp(),
+        refundReason: reason,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    }
+
+    return {
+      refundId: refund.id,
+      status: refund.status,
+      amount: (refund.amount ?? 0) / 100,
+    };
   },
 );
 
@@ -615,7 +834,7 @@ export const getOrCreateCustomer = onCall(
           return {customerId: existingCustomerId};
         }
       } catch {
-        console.log("Existing customer not found, creating new one");
+        logger.info("Existing customer not found, creating new one");
       }
     }
 
@@ -631,7 +850,7 @@ export const getOrCreateCustomer = onCall(
           return {customerId: userData.stripeCustomerId};
         }
       } catch {
-        console.log("Stored customer ID invalid, creating new one");
+        logger.info("Stored customer ID invalid, creating new one");
       }
     }
 
@@ -670,6 +889,8 @@ export const createPaymentIntent = onCall(
       rideId,
       driverId,
       riderId,
+      riderName,
+      driverName,
       driverStripeAccountId,
       description,
       customerId,
@@ -702,12 +923,16 @@ export const createPaymentIntent = onCall(
       }
 
       if (!account.payouts_enabled) {
-        console.warn(
+        logger.warn(
           `Driver ${driverId} has charges enabled but payouts disabled`,
         );
       }
     } catch (error: any) {
-      console.error("Error verifying Stripe account:", error);
+      logger.error("Error verifying Stripe account:", {
+        driverStripeAccountId,
+        driverId,
+        error: error.message,
+      });
       throw new HttpsError(
         "failed-precondition",
         `Driver's Stripe account verification failed: ${error.message}`,
@@ -715,7 +940,7 @@ export const createPaymentIntent = onCall(
     }
 
     const amountInCents = Math.round(amount * 100);
-    const {platformFee} = calculateFees(amountInCents);
+    const {platformFee, driverAmount} = calculateFees(amountInCents);
 
     // Generate idempotency key to prevent duplicate charges on retries
     const idempotencyKey = `pi_${rideId}_${riderId}_${amountInCents}`;
@@ -737,15 +962,20 @@ export const createPaymentIntent = onCall(
     );
 
     // Save payment record to Firestore
+    // Store amounts in main currency units (e.g., euros) to match client models
     await db.collection("payments").add({
       paymentIntentId: paymentIntent.id,
       rideId,
       driverId,
       riderId,
+      riderName: riderName || "",
+      driverName: driverName || "",
       driverStripeAccountId,
-      amount: amountInCents,
+      amount,
       currency,
-      platformFee,
+      platformFee: platformFee / 100,
+      driverEarnings: driverAmount / 100,
+      stripeFee: 0,
       status: "pending",
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
@@ -791,7 +1021,7 @@ export const stripeWebhook = onRequest(
         stripeWebhookSecret.value(),
       );
     } catch (err) {
-      console.error("Webhook signature verification failed:", err);
+      logger.error("Webhook signature verification failed:", err);
       res.status(400).json({error: "Invalid signature"});
       return;
     }
@@ -820,7 +1050,7 @@ export const stripeWebhook = onRequest(
             last4 = pm.card?.last4 ?? null;
             brand = pm.card?.brand ?? null;
           } catch {
-            console.warn("Could not retrieve payment method details");
+            logger.warn("Could not retrieve payment method details");
           }
         }
 
@@ -909,12 +1139,17 @@ export const stripeWebhook = onRequest(
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        logger.info(`Unhandled event type: ${event.type}`);
       }
 
       res.status(200).json({received: true});
     } catch (error) {
-      console.error("Error processing webhook:", error);
+      logger.error("Error processing webhook", {
+        eventType: event.type,
+        eventId: event.id,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       res.status(500).json({error: "Webhook processing failed"});
     }
   },

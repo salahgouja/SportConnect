@@ -21,14 +21,32 @@ class PaymentHistoryScreen extends ConsumerStatefulWidget {
 }
 
 class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
-  String _selectedFilter = 'All';
-  final List<String> _filters = [
-    'All',
-    'Completed',
-    'Pending',
-    'Refunded',
-    'Failed',
+  String _selectedFilter = 'all';
+  final List<String> _filterKeys = [
+    'all',
+    'completed',
+    'pending',
+    'refunded',
+    'failed',
   ];
+
+  String _filterLabel(BuildContext context, String key) {
+    final l10n = AppLocalizations.of(context);
+    switch (key) {
+      case 'all':
+        return l10n.filterAll;
+      case 'completed':
+        return l10n.filterCompleted;
+      case 'pending':
+        return l10n.filterPending;
+      case 'refunded':
+        return l10n.filterRefunded;
+      case 'failed':
+        return l10n.filterFailed;
+      default:
+        return key;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -155,15 +173,15 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
         scrollDirection: Axis.horizontal,
         padding: EdgeInsets.symmetric(horizontal: 16.w),
         child: Row(
-          children: _filters.map((filter) {
-            final isSelected = _selectedFilter == filter;
+          children: _filterKeys.map((key) {
+            final isSelected = _selectedFilter == key;
             return Padding(
               padding: EdgeInsets.only(right: 8.w),
               child: FilterChip(
-                label: Text(filter),
+                label: Text(_filterLabel(context, key)),
                 selected: isSelected,
                 onSelected: (selected) {
-                  setState(() => _selectedFilter = filter);
+                  setState(() => _selectedFilter = key);
                 },
                 backgroundColor: AppColors.surface,
                 selectedColor: AppColors.primary.withValues(alpha: 0.2),
@@ -187,11 +205,11 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
 
   List<PaymentTransaction> _filterPayments(List<PaymentTransaction> payments) {
     switch (_selectedFilter) {
-      case 'Completed':
+      case 'completed':
         return payments
             .where((p) => p.status == PaymentStatus.succeeded)
             .toList();
-      case 'Pending':
+      case 'pending':
         return payments
             .where(
               (p) =>
@@ -199,7 +217,7 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
                   p.status == PaymentStatus.processing,
             )
             .toList();
-      case 'Refunded':
+      case 'refunded':
         return payments
             .where(
               (p) =>
@@ -207,7 +225,7 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
                   p.status == PaymentStatus.partiallyRefunded,
             )
             .toList();
-      case 'Failed':
+      case 'failed':
         return payments
             .where(
               (p) =>
@@ -276,7 +294,7 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
             Icon(Icons.receipt_long_rounded, color: Colors.white, size: 28.sp),
             SizedBox(height: 4.h),
             Text(
-              'Details',
+              AppLocalizations.of(context).details,
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 12.sp,
@@ -361,7 +379,7 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
                                   borderRadius: BorderRadius.circular(4.r),
                                 ),
                                 child: Text(
-                                  _getStatusText(payment.status),
+                                  _getStatusText(context, payment.status),
                                   style: TextStyle(
                                     fontSize: 12.sp,
                                     fontWeight: FontWeight.w600,
@@ -446,22 +464,23 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
     }
   }
 
-  String _getStatusText(PaymentStatus status) {
+  String _getStatusText(BuildContext context, PaymentStatus status) {
+    final l10n = AppLocalizations.of(context);
     switch (status) {
       case PaymentStatus.succeeded:
-        return 'Completed';
+        return l10n.statusCompleted;
       case PaymentStatus.pending:
-        return 'Pending';
+        return l10n.statusPending;
       case PaymentStatus.processing:
-        return 'Processing';
+        return l10n.statusProcessing;
       case PaymentStatus.failed:
-        return 'Failed';
+        return l10n.statusFailed;
       case PaymentStatus.cancelled:
-        return 'Cancelled';
+        return l10n.statusCancelled;
       case PaymentStatus.refunded:
-        return 'Refunded';
+        return l10n.statusRefunded;
       case PaymentStatus.partiallyRefunded:
-        return 'Partially Refunded';
+        return l10n.statusPartiallyRefunded;
     }
   }
 
@@ -520,7 +539,7 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
                   ),
                   _buildDetailRow(
                     AppLocalizations.of(context).status,
-                    _getStatusText(payment.status),
+                    _getStatusText(context, payment.status),
                   ),
                   _buildDetailRow(
                     AppLocalizations.of(context).driver,
@@ -555,7 +574,7 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
                   if (payment.stripePaymentIntentId != null)
                     _buildDetailRow(
                       AppLocalizations.of(context).transactionId,
-                      payment.stripePaymentIntentId!.substring(0, 20) + '...',
+                      '${payment.stripePaymentIntentId!.substring(0, 20)}...',
                     ),
 
                   SizedBox(height: 24.h),
@@ -652,7 +671,7 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context).requestRefund),
+            content: Text(AppLocalizations.of(context).refundRequestSubmitted),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
           ),
@@ -662,7 +681,7 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Refund request failed. Please try again.'),
+            content: Text(AppLocalizations.of(context).refundRequestFailed),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),

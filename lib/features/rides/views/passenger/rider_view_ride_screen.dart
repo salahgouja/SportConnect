@@ -14,12 +14,10 @@ import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
-import 'package:sport_connect/features/rides/models/ride_review_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/features/reviews/repositories/review_repository.dart';
@@ -123,8 +121,9 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
   }
 
   Widget _buildContent(RideModel? ride) {
-    if (ride == null)
+    if (ride == null) {
       return _buildErrorState(AppLocalizations.of(context).rideNotFound);
+    }
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -779,16 +778,21 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
   Widget _buildPreferencesCard(RideModel ride) {
     final preferences = <MapEntry<IconData, String>>[];
 
-    if (ride.allowLuggage)
+    if (ride.allowLuggage) {
       preferences.add(MapEntry(Icons.luggage_rounded, 'Luggage OK'));
-    if (ride.allowPets)
+    }
+    if (ride.allowPets) {
       preferences.add(MapEntry(Icons.pets_rounded, 'Pets OK'));
-    if (!ride.allowSmoking)
+    }
+    if (!ride.allowSmoking) {
       preferences.add(MapEntry(Icons.smoke_free_rounded, 'No smoking'));
-    if (ride.isWomenOnly)
+    }
+    if (ride.isWomenOnly) {
       preferences.add(MapEntry(Icons.female_rounded, 'Women only'));
-    if (ride.allowChat)
+    }
+    if (ride.allowChat) {
       preferences.add(MapEntry(Icons.chat_rounded, 'Chat enabled'));
+    }
 
     if (preferences.isEmpty) return const SizedBox.shrink();
 
@@ -956,7 +960,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
                     ),
                   ),
                 ),
-                error: (_, __) => Text(
+                error: (_, _) => Text(
                   AppLocalizations.of(context).failedToLoadReviews,
                   style: TextStyle(fontSize: 12.sp, color: AppColors.error),
                 ),

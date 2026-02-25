@@ -4,8 +4,10 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
+import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/core/providers/settings_provider.dart';
@@ -43,6 +45,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final publicProfile =
         ref.watch(publicProfileProviderProvider).value ?? true;
     final distanceUnit = ref.watch(distanceUnitProviderProvider).value ?? 'km';
+    // Only drivers have the auto-accept toggle — hide it for riders
+    final isDriver = ref.watch(currentUserProvider).value is DriverModel;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -202,18 +206,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     icon: Icons.location_on_outlined,
                   ),
                   _buildDivider(),
-                  _buildSwitchTile(
-                    title: l10n.settingsAutoAcceptRides,
-                    subtitle: l10n.settingsAutoAcceptRidesDesc,
-                    value: autoAcceptRides,
-                    onChanged: (value) async {
-                      await ref
-                          .read(autoAcceptRidesProviderProvider.notifier)
-                          .setEnabled(value);
-                    },
-                    icon: Icons.check_circle_outline_rounded,
-                  ),
-                  _buildDivider(),
+                  // Auto-accept is a driver-only feature (drivers accept/reject
+                  // ride requests). Hide the toggle entirely for riders.
+                  if (isDriver) ...[
+                    _buildSwitchTile(
+                      title: l10n.settingsAutoAcceptRides,
+                      subtitle: l10n.settingsAutoAcceptRidesDesc,
+                      value: autoAcceptRides,
+                      onChanged: (value) async {
+                        await ref
+                            .read(autoAcceptRidesProviderProvider.notifier)
+                            .setEnabled(value);
+                      },
+                      icon: Icons.check_circle_outline_rounded,
+                    ),
+                    _buildDivider(),
+                  ],
                   _buildNavigationTile(
                     title: l10n.settingsBlockedUsers,
                     subtitle: l10n.settingsBlockedUsersDesc,
@@ -282,13 +290,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     onTap: () => context.push(AppRoutes.editProfile.path),
                   ),
                   _buildDivider(),
-                  _buildNavigationTile(
-                    title: AppLocalizations.of(context).vehicles,
-                    subtitle: 'Manage your vehicles',
-                    icon: Icons.directions_car_outlined,
-                    onTap: () => context.push(AppRoutes.vehicles.path),
-                  ),
-                  _buildDivider(),
+                  // Vehicles management is driver-only — riders don't have vehicles
+                  if (isDriver) ...[
+                    _buildNavigationTile(
+                      title: AppLocalizations.of(context).vehicles,
+                      subtitle: 'Manage your vehicles',
+                      icon: Icons.directions_car_outlined,
+                      onTap: () => context.push(AppRoutes.vehicles.path),
+                    ),
+                    _buildDivider(),
+                  ],
                   _buildNavigationTile(
                     title: l10n.settingsPaymentMethods,
                     subtitle: l10n.settingsPaymentMethodsDesc,

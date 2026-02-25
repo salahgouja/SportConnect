@@ -6,6 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/validators.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/premium_text_field.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
@@ -15,8 +16,9 @@ import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Driver Onboarding Screen - Multi-step wizard for new drivers
-/// Step 1: Add vehicle information
-/// Step 2: Setup Stripe for payouts
+/// Step 1: Complete driver profile (name, phone, city, bio, gender, DOB, interests)
+/// Step 2: Add vehicle information
+/// Step 3: Setup Stripe for payouts
 class DriverOnboardingScreen extends ConsumerStatefulWidget {
   const DriverOnboardingScreen({super.key});
 
@@ -30,8 +32,38 @@ class _DriverOnboardingScreenState
   final PageController _pageController = PageController();
   int _currentStep = 0;
   bool _isLoading = false;
+  bool _isProfilePopulated = false;
 
-  // Vehicle form controllers
+  // ── Profile form (Step 0) ──────────────────────────────────────────
+  final _profileFormKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _cityController = TextEditingController();
+  final _bioController = TextEditingController();
+
+  final List<String> _availableInterests = [
+    'Football',
+    'Basketball',
+    'Tennis',
+    'Running',
+    'Cycling',
+    'Swimming',
+    'Gym',
+    'Yoga',
+    'Hiking',
+  ];
+
+  final Set<String> _selectedInterests = <String>{};
+  DateTime? _dateOfBirth;
+  String? _gender;
+  bool _agreedToTerms = false;
+
+  String? _genderError;
+  String? _dateOfBirthError;
+  String? _interestsError;
+  String? _termsError;
+
+  // ── Vehicle form (Step 1) ──────────────────────────────────────────
   final _vehicleFormKey = GlobalKey<FormState>();
   final _makeController = TextEditingController();
   final _modelController = TextEditingController();
@@ -52,6 +84,12 @@ class _DriverOnboardingScreenState
   @override
   void dispose() {
     _pageController.dispose();
+    // Profile
+    _nameController.dispose();
+    _phoneController.dispose();
+    _cityController.dispose();
+    _bioController.dispose();
+    // Vehicle
     _makeController.dispose();
     _modelController.dispose();
     _yearController.dispose();
@@ -61,12 +99,18 @@ class _DriverOnboardingScreenState
     super.dispose();
   }
 
+  // ── Navigation helpers ──────────────────────────────────────────────
+
   void _nextStep() {
+    // Validate the current step before advancing.
     if (_currentStep == 0) {
+      if (!_profileFormKey.currentState!.validate()) return;
+      if (!_validateProfileNonTextFields()) return;
+    } else if (_currentStep == 1) {
       if (!_vehicleFormKey.currentState!.validate()) return;
     }
 
-    if (_currentStep < 1) {
+    if (_currentStep < 2) {
       setState(() => _currentStep++);
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
@@ -84,6 +128,127 @@ class _DriverOnboardingScreenState
       );
     }
   }
+
+  // ── Profile helpers (Step 0) ───────────────────────────────────────
+
+  void _populateProfileFields(UserModel user) {
+    _nameController.text = user.displayName;
+    _phoneController.text = user.phoneNumber ?? '';
+    _cityController.text = user.city ?? '';
+    _bioController.text = user.bio ?? '';
+    _gender = user.gender;
+    _dateOfBirth = user.dateOfBirth;
+    _selectedInterests
+      ..clear()
+      ..addAll(user.interests);
+  }
+
+  Future<void> _pickDateOfBirth() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _dateOfBirth ?? DateTime(now.year - 20),
+      firstDate: DateTime(1950),
+      lastDate: DateTime(now.year - 18, now.month, now.day),
+      helpText: AppLocalizations.of(context).authDobPicker,
+    );
+
+    if (picked != null) {
+      final age = now.difference(picked).inDays ~/ 365;
+      if (age < 18) {
+        setState(() {
+          _dateOfBirthError = AppLocalizations.of(context).authDobMinAge;
+        });
+        return;
+      }
+      setState(() {
+        _dateOfBirth = picked;
+        _dateOfBirthError = null;
+      });
+    }
+  }
+
+  bool _validateProfileNonTextFields() {
+    var isValid = true;
+    setState(() {
+      _genderError = null;
+      _dateOfBirthError = null;
+      _interestsError = null;
+      _termsError = null;
+
+      if (_gender == null) {
+        _genderError = AppLocalizations.of(context).driverGenderRequired;
+        isValid = false;
+      }
+      if (_dateOfBirth == null) {
+        _dateOfBirthError = AppLocalizations.of(context).authDobError;
+        isValid = false;
+      }
+      if (_selectedInterests.isEmpty) {
+        _interestsError =
+            AppLocalizations.of(context).driverInterestsRequired;
+        isValid = false;
+      }
+      if (!_agreedToTerms) {
+        _termsError = AppLocalizations.of(context).driverTermsRequired;
+        isValid = false;
+      }
+    });
+    return isValid;
+  }
+
+  Future<void> _saveProfileAndContinue() async {
+    if (!_profileFormKey.currentState!.validate()) return;
+    if (!_validateProfileNonTextFields()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final currentUser = ref.read(currentUserProvider).value;
+      if (currentUser == null) return;
+
+      final updatedUser = currentUser.map(
+        rider: (rider) => rider, // Should not reach this in driver flow
+        driver: (driver) => driver.copyWith(
+          displayName: _nameController.text.trim(),
+          phoneNumber: _phoneController.text.trim().isEmpty
+              ? null
+              : _phoneController.text.trim(),
+          city: _cityController.text.trim(),
+          bio: _bioController.text.trim().isEmpty
+              ? null
+              : _bioController.text.trim(),
+          gender: _gender,
+          dateOfBirth: _dateOfBirth,
+          interests: _selectedInterests.toList(),
+        ),
+      );
+
+      await ref
+          .read(profileActionsViewModelProvider)
+          .updateProfile(updatedUser.uid, updatedUser.toJson());
+
+      if (!mounted) return;
+      _nextStep();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  // ── Vehicle + Stripe helpers ───────────────────────────────────────
 
   Future<void> _saveVehicleAndContinue() async {
     if (!_vehicleFormKey.currentState!.validate()) return;
@@ -167,6 +332,14 @@ class _DriverOnboardingScreenState
 
   @override
   Widget build(BuildContext context) {
+    // Pre-populate profile fields from the current user (once).
+    final userAsync = ref.watch(currentUserProvider);
+    final user = userAsync.value;
+    if (!_isProfilePopulated && user != null) {
+      _populateProfileFields(user);
+      _isProfilePopulated = true;
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -211,7 +384,11 @@ class _DriverOnboardingScreenState
             child: PageView(
               controller: _pageController,
               physics: const NeverScrollableScrollPhysics(),
-              children: [_buildVehicleStep(), _buildStripeStep()],
+              children: [
+                _buildProfileStep(),
+                _buildVehicleStep(),
+                _buildStripeStep(),
+              ],
             ),
           ),
         ],
@@ -226,8 +403,8 @@ class _DriverOnboardingScreenState
         children: [
           _buildStepIndicator(
             0,
-            AppLocalizations.of(context).vehicle,
-            Icons.directions_car_outlined,
+            AppLocalizations.of(context).navProfile,
+            Icons.person_outline_rounded,
           ),
           Expanded(
             child: Container(
@@ -241,6 +418,21 @@ class _DriverOnboardingScreenState
           ),
           _buildStepIndicator(
             1,
+            AppLocalizations.of(context).vehicle,
+            Icons.directions_car_outlined,
+          ),
+          Expanded(
+            child: Container(
+              height: 2,
+              margin: EdgeInsets.symmetric(horizontal: 8.w),
+              decoration: BoxDecoration(
+                color: _currentStep >= 2 ? AppColors.primary : AppColors.border,
+                borderRadius: BorderRadius.circular(1),
+              ),
+            ),
+          ),
+          _buildStepIndicator(
+            2,
             AppLocalizations.of(context).payouts,
             Icons.account_balance_outlined,
           ),
@@ -283,6 +475,300 @@ class _DriverOnboardingScreenState
       ],
     );
   }
+
+  // ── Step 0: Profile ─────────────────────────────────────────────────
+
+  Widget _buildProfileStep() {
+    final l10n = AppLocalizations.of(context);
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(24.w),
+      child: Form(
+        key: _profileFormKey,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            _buildStepHeader(
+              icon: Icons.person_add_alt_1_rounded,
+              title: l10n.driverProfileTitle,
+              subtitle: l10n.driverProfileSubtitle,
+            ).animate().fadeIn(duration: 400.ms),
+
+            SizedBox(height: 24.h),
+
+            // Full name
+            PremiumTextField(
+              controller: _nameController,
+              label: l10n.authFullName,
+              hint: l10n.authFullNameHint,
+              prefixIcon: Icons.person_rounded,
+              textInputAction: TextInputAction.next,
+              validator: Validators.name,
+            ).animate().fadeIn(duration: 400.ms, delay: 50.ms),
+
+            SizedBox(height: 16.h),
+
+            // Phone (optional)
+            PremiumTextField(
+              controller: _phoneController,
+              label: l10n.authPhoneOptional,
+              hint: l10n.authPhoneHint,
+              prefixIcon: Icons.phone_rounded,
+              keyboardType: TextInputType.phone,
+              textInputAction: TextInputAction.next,
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) return null;
+                return Validators.phone(value);
+              },
+            ).animate().fadeIn(duration: 400.ms, delay: 100.ms),
+
+            SizedBox(height: 16.h),
+
+            // City
+            PremiumTextField(
+              controller: _cityController,
+              label: l10n.driverCityLabel,
+              hint: l10n.driverCityHint,
+              prefixIcon: Icons.location_city_rounded,
+              textInputAction: TextInputAction.next,
+              validator: (value) =>
+                  Validators.required(value, fieldName: l10n.driverCityLabel),
+            ).animate().fadeIn(duration: 400.ms, delay: 150.ms),
+
+            SizedBox(height: 16.h),
+
+            // About you (optional)
+            PremiumTextField(
+              controller: _bioController,
+              label: l10n.authAboutYou,
+              hint: l10n.authAboutYouHint,
+              prefixIcon: Icons.info_outline_rounded,
+              maxLines: 3,
+              maxLength: 160,
+              textInputAction: TextInputAction.newline,
+              keyboardType: TextInputType.multiline,
+            ).animate().fadeIn(duration: 400.ms, delay: 200.ms),
+
+            SizedBox(height: 16.h),
+
+            // Gender dropdown
+            Text(
+              l10n.gender,
+              style: TextStyle(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ).animate().fadeIn(duration: 400.ms, delay: 250.ms),
+            SizedBox(height: 8.h),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              decoration: BoxDecoration(
+                color: AppColors.inputFill,
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(
+                  color: _genderError != null
+                      ? AppColors.error
+                      : AppColors.inputBorder,
+                ),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _gender,
+                  isExpanded: true,
+                  hint: Text(
+                    l10n.selectGender,
+                    style: TextStyle(
+                      fontSize: 15.sp,
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                  icon: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: AppColors.textSecondary,
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'Male', child: Text('Male')),
+                    DropdownMenuItem(value: 'Female', child: Text('Female')),
+                    DropdownMenuItem(value: 'Other', child: Text('Other')),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _gender = value;
+                      _genderError = null;
+                    });
+                  },
+                ),
+              ),
+            ).animate().fadeIn(duration: 400.ms, delay: 250.ms),
+            if (_genderError != null) ...[
+              SizedBox(height: 6.h),
+              Text(
+                _genderError!,
+                style: TextStyle(color: AppColors.error, fontSize: 12.sp),
+              ),
+            ],
+
+            SizedBox(height: 16.h),
+
+            // Date of birth
+            Text(
+              l10n.authDateOfBirth,
+              style: TextStyle(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ).animate().fadeIn(duration: 400.ms, delay: 300.ms),
+            SizedBox(height: 8.h),
+            InkWell(
+              onTap: _pickDateOfBirth,
+              borderRadius: BorderRadius.circular(12.r),
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+                decoration: BoxDecoration(
+                  color: AppColors.inputFill,
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(
+                    color: _dateOfBirthError != null
+                        ? AppColors.error
+                        : AppColors.inputBorder,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.calendar_today_outlined,
+                      color: AppColors.textSecondary,
+                      size: 20.sp,
+                    ),
+                    SizedBox(width: 12.w),
+                    Text(
+                      _dateOfBirth == null
+                          ? l10n.authDobPrompt
+                          : '${_dateOfBirth!.day}/${_dateOfBirth!.month}/${_dateOfBirth!.year}',
+                      style: TextStyle(
+                        fontSize: 15.sp,
+                        color: _dateOfBirth == null
+                            ? AppColors.textTertiary
+                            : AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ).animate().fadeIn(duration: 400.ms, delay: 300.ms),
+            if (_dateOfBirthError != null) ...[
+              SizedBox(height: 6.h),
+              Text(
+                _dateOfBirthError!,
+                style: TextStyle(color: AppColors.error, fontSize: 12.sp),
+              ),
+            ],
+
+            SizedBox(height: 20.h),
+
+            // Sports interests
+            Text(
+              l10n.sportsInterests,
+              style: TextStyle(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ).animate().fadeIn(duration: 400.ms, delay: 350.ms),
+            SizedBox(height: 10.h),
+            Wrap(
+              spacing: 8.w,
+              runSpacing: 8.h,
+              children: _availableInterests.map((interest) {
+                final isSelected = _selectedInterests.contains(interest);
+                return FilterChip(
+                  label: Text(interest),
+                  labelStyle: TextStyle(
+                    color: isSelected
+                        ? AppColors.textPrimary
+                        : AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  backgroundColor: AppColors.surface,
+                  selectedColor: AppColors.primary.withAlpha(50),
+                  checkmarkColor: AppColors.primary,
+                  selected: isSelected,
+                  onSelected: (selected) {
+                    setState(() {
+                      if (selected) {
+                        _selectedInterests.add(interest);
+                      } else {
+                        _selectedInterests.remove(interest);
+                      }
+                      _interestsError = null;
+                    });
+                  },
+                );
+              }).toList(),
+            ).animate().fadeIn(duration: 400.ms, delay: 350.ms),
+            if (_interestsError != null) ...[
+              SizedBox(height: 6.h),
+              Text(
+                _interestsError!,
+                style: TextStyle(color: AppColors.error, fontSize: 12.sp),
+              ),
+            ],
+
+            SizedBox(height: 18.h),
+
+            // Terms checkbox
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              value: _agreedToTerms,
+              controlAffinity: ListTileControlAffinity.leading,
+              onChanged: (value) {
+                setState(() {
+                  _agreedToTerms = value ?? false;
+                  _termsError = null;
+                });
+              },
+              title: Text(
+                l10n.driverTermsLabel,
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ).animate().fadeIn(duration: 400.ms, delay: 400.ms),
+            if (_termsError != null)
+              Text(
+                _termsError!,
+                style: TextStyle(color: AppColors.error, fontSize: 12.sp),
+              ),
+
+            SizedBox(height: 28.h),
+
+            // Save & Continue
+            SizedBox(
+              width: double.infinity,
+              child: PremiumButton(
+                text: l10n.driverSaveAndContinue,
+                onPressed: _isLoading ? null : _saveProfileAndContinue,
+                isLoading: _isLoading,
+                style: PremiumButtonStyle.primary,
+                size: PremiumButtonSize.large,
+                trailingIcon: Icons.arrow_forward_rounded,
+              ),
+            ).animate().fadeIn(duration: 400.ms, delay: 450.ms),
+
+            SizedBox(height: 24.h),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Step 1: Vehicle ────────────────────────────────────────────────
 
   Widget _buildVehicleStep() {
     return SingleChildScrollView(
@@ -357,7 +843,7 @@ class _DriverOnboardingScreenState
                       final year = int.tryParse(value.trim());
                       if (year == null ||
                           year < 1990 ||
-                          year > DateTime.now().year + 1) {
+                          year > DateTime.now().year) {
                         return 'Invalid year';
                       }
                       return null;

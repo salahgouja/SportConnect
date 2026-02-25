@@ -65,8 +65,8 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text(
-              'We could not continue right now. Please try again.',
+            content: Text(
+              AppLocalizations.of(context).roleSelectionError,
             ),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,

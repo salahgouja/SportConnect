@@ -527,7 +527,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   }
 
   void _reportUser() {
-    this.context.push(
+    context.push(
       AppRoutes.reportIssue.path,
       extra: {
         'reportedUserId': widget.receiver.uid,
@@ -1535,8 +1535,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                                                     child,
                                                     loadingProgress,
                                                   ) {
-                                                    if (loadingProgress == null)
+                                                    if (loadingProgress == null) {
                                                       return child;
+                                                    }
                                                     return Container(
                                                       width: 200.w,
                                                       height: 120.h,

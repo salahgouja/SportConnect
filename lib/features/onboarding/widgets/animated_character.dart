@@ -335,7 +335,7 @@ class _AnimatedCharacterState extends State<AnimatedCharacter>
 
   // Component builders
   Widget _buildCar(double width) {
-    return Container(
+    return SizedBox(
       width: width,
       height: width * 0.4,
       child: CustomPaint(

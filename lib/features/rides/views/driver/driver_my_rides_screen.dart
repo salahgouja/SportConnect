@@ -62,7 +62,6 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
   Widget build(BuildContext context) {
     final pendingRequestsAsync = ref.watch(pendingRideRequestsProvider);
     final upcomingRidesAsync = ref.watch(upcomingDriverRidesProvider);
-    final user = ref.watch(currentUserProvider).value;
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
@@ -285,8 +284,9 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
             math.min(3, requests.length - _currentRequestIndex),
             (index) {
               final actualIndex = _currentRequestIndex + index;
-              if (actualIndex >= requests.length)
+              if (actualIndex >= requests.length) {
                 return const SizedBox.shrink();
+              }
 
               final request = requests[actualIndex];
               final isTop = index == 0;
@@ -298,7 +298,7 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
                 requests.length - _currentRequestIndex,
               );
             },
-          ).reversed.toList(),
+          ).reversed,
         ],
       ),
     );
@@ -520,7 +520,7 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
                             ),
                           ),
                           Text(
-                            request.id ?? 'Unknown',
+                            request.id,
                             style: TextStyle(
                               fontSize: 12.sp,
                               color: AppColors.textSecondary,
@@ -1095,11 +1095,9 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
                                   borderRadius: BorderRadius.circular(8.r),
                                 ),
                                 child: Text(
-                                  ride.departureTime != null
-                                      ? DateFormat(
-                                          'MMM d • HH:mm',
-                                        ).format(ride.departureTime!)
-                                      : 'TBD',
+                                  DateFormat(
+                                    'MMM d • HH:mm',
+                                  ).format(ride.departureTime),
                                   style: TextStyle(
                                     fontSize: 12.sp,
                                     fontWeight: FontWeight.bold,
@@ -1126,7 +1124,7 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
                                     ),
                                     SizedBox(width: 4.w),
                                     Text(
-                                      '${ride.acceptedBookings.length}/${ride.availableSeats ?? 0}',
+                                      '${ride.acceptedBookings.length}/${ride.availableSeats}',
                                       style: TextStyle(
                                         fontSize: 12.sp,
                                         fontWeight: FontWeight.bold,

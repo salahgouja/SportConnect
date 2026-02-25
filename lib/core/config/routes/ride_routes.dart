@@ -64,8 +64,12 @@ class RideRoutes implements RouteConfig {
         name: AppRoutes.riderActiveRide.name,
         pageBuilder: (context, state) {
           final params = state.params;
+          // rideId is required — if absent the route was navigated to incorrectly
           final rideId = params.getQuery('rideId') ?? '';
-
+          assert(
+            rideId.isNotEmpty,
+            'riderActiveRide requires a non-empty rideId query param',
+          );
           return SlideUpTransitionPage(
             key: state.pageKey,
             child: passenger_active.ActiveRideScreen(rideId: rideId),
@@ -92,13 +96,19 @@ class RideRoutes implements RouteConfig {
       GoRoute(
         path: AppRoutes.driverOfferRide.path,
         name: AppRoutes.driverOfferRide.name,
-        pageBuilder: (context, state) => SlideUpTransitionPage(
-          key: state.pageKey,
-          child: DriverOfferRideScreen(
-            existingRide: state.extra as RideModel?,
-            isEditMode: state.extra != null,
-          ),
-        ),
+        pageBuilder: (context, state) {
+          // Safety: guard against wrong extra type (e.g. deep-link with no extra)
+          final existingRide = state.extra is RideModel
+              ? state.extra as RideModel
+              : null;
+          return SlideUpTransitionPage(
+            key: state.pageKey,
+            child: DriverOfferRideScreen(
+              existingRide: existingRide,
+              isEditMode: existingRide != null,
+            ),
+          );
+        },
       ),
 
       // NOTE: driverRides is defined as a StatefulShellBranch in app_router.dart
@@ -125,8 +135,12 @@ class RideRoutes implements RouteConfig {
         name: AppRoutes.driverActiveRide.name,
         pageBuilder: (context, state) {
           final params = state.params;
+          // rideId is required — if absent the route was navigated to incorrectly
           final rideId = params.getQuery('rideId') ?? '';
-
+          assert(
+            rideId.isNotEmpty,
+            'driverActiveRide requires a non-empty rideId query param',
+          );
           return SlideUpTransitionPage(
             key: state.pageKey,
             child: driver_active.ActiveRideScreen(rideId: rideId),

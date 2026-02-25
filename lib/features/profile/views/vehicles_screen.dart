@@ -43,10 +43,11 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
       ),
       body: userAsync.when(
         data: (user) {
-          if (user == null)
+          if (user == null) {
             return Center(
               child: Text(AppLocalizations.of(context).userNotFound),
             );
+          }
 
           // Load vehicles from the repository using provider
           final vehiclesAsync = ref.watch(driverVehiclesProvider(user.uid));
@@ -902,7 +903,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                         child: ListView.separated(
                           scrollDirection: Axis.horizontal,
                           itemCount: 8,
-                          separatorBuilder: (_, __) => SizedBox(width: 12.w),
+                          separatorBuilder: (_, _) => SizedBox(width: 12.w),
                           itemBuilder: (context, index) {
                             final count = index + 1;
                             final isSelected = capacity == count;
@@ -1007,8 +1008,9 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                           // ... (Validation and Save logic same as before) ...
                           // Copying logic from previous message for brevity
                           if (makeController.text.isEmpty ||
-                              modelController.text.isEmpty)
+                              modelController.text.isEmpty) {
                             return;
+                          }
 
                           final user = ref
                               .read(currentUserStreamProvider)

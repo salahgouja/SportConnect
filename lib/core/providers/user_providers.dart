@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
-import 'package:sport_connect/features/auth/repositories/auth_repository.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 
 part 'user_providers.g.dart';
@@ -13,6 +12,11 @@ Stream<User?> authState(Ref ref) {
 }
 
 /// Current user data provider (Firestore User Model)
+///
+/// Uses [authRepositoryProvider] (via DI) so that only one [AuthRepository]
+/// instance is shared and its Firestore listener is properly cancelled when
+/// the provider is disposed. Creating a bare [AuthRepository()] here on every
+/// rebuild would accumulate orphaned snapshot listeners.
 @riverpod
 Stream<UserModel?> currentUser(Ref ref) {
   final authUser = ref.watch(authStateProvider).value;
@@ -21,5 +25,6 @@ Stream<UserModel?> currentUser(Ref ref) {
     return Stream.value(null);
   }
 
-  return AuthRepository().getUserDataStream(authUser.uid);
+  final repository = ref.watch(authRepositoryProvider);
+  return repository.getUserDataStream(authUser.uid);
 }

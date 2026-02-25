@@ -35,7 +35,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
   final _scrollController = ScrollController();
   DateTime _selectedDate = DateTime.now();
   int _seats = 1;
-  bool _showFilters = false;
+  final bool _showFilters = false;
   bool _isSearching = false;
   bool _hasSearched = false;
   int _selectedDateChip = 0; // 0=Today, 1=Tomorrow, 2=Custom

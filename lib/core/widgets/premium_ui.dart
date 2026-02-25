@@ -1,7 +1,7 @@
 /// Premium UI Components for SportConnect
 /// Modern, animated, and consistent widgets across the app
 /// Includes iOS 26 Liquid Glass design system
-library premium_ui;
+library;
 
 export 'liquid_glass.dart';
 export 'premium_ride_card.dart';

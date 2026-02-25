@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_payment_repository.dart';
 import 'package:sport_connect/core/services/stripe_service.dart';
@@ -26,6 +25,7 @@ class PaymentRepository implements IPaymentRepository {
       _firestore.collection('driver_connected_accounts');
 
   /// Create payment transaction record
+  @override
   Future<String> createPaymentTransaction(PaymentTransaction payment) async {
     try {
       final docRef = _paymentsCollection.doc();
@@ -45,6 +45,7 @@ class PaymentRepository implements IPaymentRepository {
   }
 
   /// Update payment transaction status
+  @override
   Future<void> updatePaymentStatus({
     required String paymentId,
     required PaymentStatus status,
@@ -55,7 +56,7 @@ class PaymentRepository implements IPaymentRepository {
       await _paymentsCollection.doc(paymentId).update({
         'status': status.name,
         'updatedAt': FieldValue.serverTimestamp(),
-        if (failureReason != null) 'failureReason': failureReason,
+        'failureReason': ?failureReason,
         if (completedAt != null) 'completedAt': Timestamp.fromDate(completedAt),
       });
 
@@ -69,6 +70,7 @@ class PaymentRepository implements IPaymentRepository {
   }
 
   /// Get payment transaction by ID
+  @override
   Future<PaymentTransaction?> getPaymentById(String paymentId) async {
     try {
       final doc = await _paymentsCollection.doc(paymentId).get();
@@ -82,6 +84,7 @@ class PaymentRepository implements IPaymentRepository {
   }
 
   /// Get payments by ride
+  @override
   Future<List<PaymentTransaction>> getPaymentsByRide(String rideId) async {
     try {
       final snapshot = await _paymentsCollection
@@ -99,6 +102,7 @@ class PaymentRepository implements IPaymentRepository {
   }
 
   /// Get rider's payment history
+  @override
   Future<List<PaymentTransaction>> getRiderPaymentHistory({
     required String riderId,
     int limit = 20,
@@ -120,6 +124,7 @@ class PaymentRepository implements IPaymentRepository {
   }
 
   /// Stream rider's payment history
+  @override
   Stream<List<PaymentTransaction>> streamRiderPaymentHistory({
     required String riderId,
     int limit = 20,
@@ -137,6 +142,7 @@ class PaymentRepository implements IPaymentRepository {
   }
 
   /// Get driver's earnings transactions
+  @override
   Future<List<PaymentTransaction>> getDriverEarnings({
     required String driverId,
     DateTime? startDate,
@@ -176,6 +182,7 @@ class PaymentRepository implements IPaymentRepository {
   }
 
   /// Calculate earnings summary for driver
+  @override
   Future<EarningsSummary> calculateEarningsSummary(String driverId) async {
     try {
       final now = DateTime.now();
@@ -272,6 +279,7 @@ class PaymentRepository implements IPaymentRepository {
   }
 
   /// Create payout record
+  @override
   Future<String> createPayout(DriverPayout payout) async {
     try {
       final docRef = _payoutsCollection.doc();
@@ -290,6 +298,7 @@ class PaymentRepository implements IPaymentRepository {
   }
 
   /// Update payout status
+  @override
   Future<void> updatePayoutStatus({
     required String payoutId,
     required PayoutStatus status,
@@ -299,7 +308,7 @@ class PaymentRepository implements IPaymentRepository {
     try {
       await _payoutsCollection.doc(payoutId).update({
         'status': status.name,
-        if (failureReason != null) 'failureReason': failureReason,
+        'failureReason': ?failureReason,
         if (arrivedAt != null) 'arrivedAt': Timestamp.fromDate(arrivedAt),
       });
 
@@ -311,6 +320,7 @@ class PaymentRepository implements IPaymentRepository {
   }
 
   /// Get driver payouts
+  @override
   Future<List<DriverPayout>> getDriverPayouts({
     required String driverId,
     int limit = 20,
@@ -332,6 +342,7 @@ class PaymentRepository implements IPaymentRepository {
   }
 
   /// Save driver connected account
+  @override
   Future<void> saveConnectedAccount(DriverConnectedAccount account) async {
     try {
       await _connectedAccountsCollection
@@ -354,6 +365,7 @@ class PaymentRepository implements IPaymentRepository {
   }
 
   /// Get driver connected account
+  @override
   Future<DriverConnectedAccount?> getConnectedAccount(String driverId) async {
     try {
       final doc = await _connectedAccountsCollection.doc(driverId).get();
@@ -366,20 +378,8 @@ class PaymentRepository implements IPaymentRepository {
     }
   }
 
-  /// Get current driver's connected account (uses Firebase Auth)
-  Future<DriverConnectedAccount?> getCurrentDriverConnectedAccount() async {
-    try {
-      final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser == null) return null;
-
-      return getConnectedAccount(currentUser.uid);
-    } catch (e) {
-      TalkerService.error('Error getting current driver connected account: $e');
-      rethrow;
-    }
-  }
-
   /// Update connected account status
+  @override
   Future<void> updateConnectedAccountStatus({
     required String driverId,
     required bool chargesEnabled,
@@ -406,6 +406,7 @@ class PaymentRepository implements IPaymentRepository {
   }
 
   /// Process refund
+  @override
   Future<void> processRefund({
     required String paymentId,
     double? amount,
@@ -416,21 +417,13 @@ class PaymentRepository implements IPaymentRepository {
       if (payment == null) throw Exception('Payment not found');
 
       // Call Stripe service to process refund
+      // The Cloud Function also updates the Firestore payment record
+      // (status, refundedAt, refundReason) — no client-side update needed
       await _stripeService.refundPayment(
         paymentIntentId: payment.stripePaymentIntentId!,
         amount: amount,
         reason: reason,
       );
-
-      // Update payment record
-      await _paymentsCollection.doc(paymentId).update({
-        'status': amount == null || amount == payment.amount
-            ? PaymentStatus.refunded.name
-            : PaymentStatus.partiallyRefunded.name,
-        'refundedAt': FieldValue.serverTimestamp(),
-        'refundReason': reason,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
 
       TalkerService.info('Refund processed: $paymentId');
     } catch (e) {
@@ -442,6 +435,9 @@ class PaymentRepository implements IPaymentRepository {
 
 /// Payment Repository Provider
 @riverpod
-PaymentRepository paymentRepository(Ref ref) {
-  return PaymentRepository(FirebaseFirestore.instance, StripeService());
+IPaymentRepository paymentRepository(Ref ref) {
+  return PaymentRepository(
+    FirebaseFirestore.instance,
+    ref.read(stripeServiceProvider),
+  );
 }

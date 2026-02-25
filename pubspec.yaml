@@ -32,6 +32,8 @@ dependencies:
   cloud_firestore: ^5.6.2
   firebase_storage: ^12.4.10
   firebase_messaging: ^15.2.10
+  firebase_analytics: ^11.4.8
+  firebase_crashlytics: ^4.3.8
 
   # Deep Linking & Notifications
   app_links: ^7.0.0
@@ -156,6 +158,7 @@ flutter:
     - assets/images/
     - assets/icons/
     - shorebird.yaml
+    - tool/data/
 
 # Flutter Native Splash Configuration
 flutter_native_splash:

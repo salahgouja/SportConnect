@@ -21,4 +21,7 @@ export 'package:sport_connect/core/models/user/user_preferences.dart';
 export 'package:sport_connect/core/converters/timestamp_converter.dart';
 
 // Auth-specific models (still in this feature)
-export 'leaderboard_entry.dart';
+// Note: LeaderboardEntry moved to profile feature; re-exported for compatibility
+export 'package:sport_connect/features/profile/models/leaderboard_entry.dart';
+export 'package:sport_connect/features/auth/models/auth_exception.dart';
+export 'package:sport_connect/features/auth/models/social_sign_in_result.dart';

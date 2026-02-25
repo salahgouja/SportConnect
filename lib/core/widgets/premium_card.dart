@@ -258,7 +258,7 @@ class FeaturedCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (badge != null) badge!,
+                    ?badge,
                     const Spacer(),
                     Text(
                       title,
@@ -341,7 +341,7 @@ class ListItemCard extends StatelessWidget {
               ],
             ),
           ),
-          if (trailing != null) trailing!,
+          ?trailing,
         ],
       ),
     );

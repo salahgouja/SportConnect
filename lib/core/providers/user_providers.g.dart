@@ -47,11 +47,21 @@ final class AuthStateProvider
 String _$authStateHash() => r'758ae4e4e34de70fe2d743034d78a541d9de3f05';
 
 /// Current user data provider (Firestore User Model)
+///
+/// Uses [authRepositoryProvider] (via DI) so that only one [AuthRepository]
+/// instance is shared and its Firestore listener is properly cancelled when
+/// the provider is disposed. Creating a bare [AuthRepository()] here on every
+/// rebuild would accumulate orphaned snapshot listeners.
 
 @ProviderFor(currentUser)
 final currentUserProvider = CurrentUserProvider._();
 
 /// Current user data provider (Firestore User Model)
+///
+/// Uses [authRepositoryProvider] (via DI) so that only one [AuthRepository]
+/// instance is shared and its Firestore listener is properly cancelled when
+/// the provider is disposed. Creating a bare [AuthRepository()] here on every
+/// rebuild would accumulate orphaned snapshot listeners.
 
 final class CurrentUserProvider
     extends
@@ -62,6 +72,11 @@ final class CurrentUserProvider
         >
     with $FutureModifier<UserModel?>, $StreamProvider<UserModel?> {
   /// Current user data provider (Firestore User Model)
+  ///
+  /// Uses [authRepositoryProvider] (via DI) so that only one [AuthRepository]
+  /// instance is shared and its Firestore listener is properly cancelled when
+  /// the provider is disposed. Creating a bare [AuthRepository()] here on every
+  /// rebuild would accumulate orphaned snapshot listeners.
   CurrentUserProvider._()
     : super(
         from: null,
@@ -87,4 +102,4 @@ final class CurrentUserProvider
   }
 }
 
-String _$currentUserHash() => r'9bdc0c043f5e956ca9ec1fa64bc397bbe5965524';
+String _$currentUserHash() => r'944e96fa81934d7d72369555d4aace751b1e6ebd';

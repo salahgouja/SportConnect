@@ -9,6 +9,9 @@ class AppRoutes {
   static const splash = AppRoute('/', 'splash');
   static const onboarding = AppRoute('/onboarding', 'onboarding');
   static const login = AppRoute('/login', 'login');
+  @Deprecated(
+    'Use signupWizard instead. RegisterScreen is superseded by SignupWizardScreen.',
+  )
   static const register = AppRoute('/register', 'register');
   static const signupWizard = AppRoute('/signup', 'signup-wizard');
   static const roleSelection = AppRoute('/role-selection', 'role-selection');
@@ -26,10 +29,18 @@ class AppRoutes {
   static const driverRides = AppRoute('/driver/rides', 'driver-rides');
   static const driverEarnings = AppRoute('/driver/earnings', 'driver-earnings');
   static const driverRequests = AppRoute('/driver/requests', 'driver-requests');
+  // Shell branch tab (no :id — own profile)
+  static const driverProfileTab = AppRoute(
+    '/driver/profile',
+    'driver-profile-tab',
+  );
+  // Deep-link to another driver's profile (has :id param)
   static const driverProfile = AppRoute(
     '/driver/profile/:id',
     'driver-profile',
   );
+  // Driver chat shell branch
+  static const driverChat = AppRoute('/driver/chat', 'driver-chat');
   static const driverVehicles = AppRoute('/driver/vehicles', 'driver-vehicles');
   static const driverSettings = AppRoute('/driver/settings', 'driver-settings');
   static const driverStripeOnboarding = AppRoute(
@@ -87,6 +98,8 @@ class AppRoutes {
     '/email-verification',
     'email-verification',
   );
+  static const changePassword = AppRoute('/change-password', 'change-password');
+  static const phoneOtp = AppRoute('/phone-otp', 'phone-otp');
 
   // Reviews & Ratings
   static const submitReview = AppRoute('/review/submit', 'submit-review');

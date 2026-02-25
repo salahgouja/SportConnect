@@ -1,8 +1,15 @@
 import 'dart:ui';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/config/app_config.dart';
+
+part 'stripe_service.g.dart';
+
+/// Riverpod provider for StripeService singleton
+@riverpod
+StripeService stripeService(Ref ref) => StripeService();
 
 /// Stripe Service for payment processing and Connect functionality
 ///
@@ -73,8 +80,7 @@ class StripeService {
     required String riderName,
     required String driverId,
     required String driverName,
-    required double
-    amount, // Total amount in smallest currency unit (e.g., cents)
+    required double amount, // Total amount in main currency unit (e.g., euros)
     required String currency,
     String? customerId,
     String? existingCustomerId,
@@ -88,7 +94,7 @@ class StripeService {
         'riderName': riderName,
         'driverId': driverId,
         'driverName': driverName,
-        'amount': amount.round(),
+        'amount': amount,
         'currency': currency.toLowerCase(),
         'customerId': customerId ?? existingCustomerId,
         'driverStripeAccountId': driverStripeAccountId,
@@ -201,21 +207,18 @@ class StripeService {
     DateTime? dateOfBirth,
     String? addressLine1,
     String? city,
-    String? existingStripeAccountId,
-    String? refreshUrl,
-    String? returnUrl,
   }) async {
     try {
       final response = await _callFunction('createConnectedAccount', {
         'userId': userId,
         'email': email,
         'country': country,
-        if (firstName != null) 'firstName': firstName,
-        if (lastName != null) 'lastName': lastName,
-        if (phone != null) 'phone': phone,
+        'firstName': ?firstName,
+        'lastName': ?lastName,
+        'phone': ?phone,
         if (dateOfBirth != null) 'dateOfBirth': dateOfBirth.toIso8601String(),
-        if (addressLine1 != null) 'addressLine1': addressLine1,
-        if (city != null) 'city': city,
+        'addressLine1': ?addressLine1,
+        'city': ?city,
       });
 
       return response;
@@ -270,17 +273,16 @@ class StripeService {
   /// Uses Firebase Cloud Functions
   ///
   /// [stripeAccountId] - Driver's Stripe Connect account ID (from Firestore)
+  /// [amount] - Amount in main currency unit (e.g., euros). Server converts to cents.
   Future<Map<String, dynamic>> createInstantPayout({
-    required String driverId,
     required String stripeAccountId,
     required double amount,
     required String currency,
-    bool isFullySetup = true,
   }) async {
     try {
       final response = await _callFunction('createInstantPayout', {
         'stripeAccountId': stripeAccountId,
-        'amount': amount.round(),
+        'amount': amount,
         'currency': currency.toLowerCase(),
       });
 
@@ -302,7 +304,7 @@ class StripeService {
     try {
       final response = await _callFunction('refundPayment', {
         'paymentIntentId': paymentIntentId,
-        if (amount != null) 'amount': amount.round(),
+        if (amount != null) 'amount': amount,
         'reason': reason ?? 'requested_by_customer',
       });
 

@@ -21,6 +21,7 @@ class RideRepository implements IRideRepository {
       _firestore.collection('rideRequests');
 
   /// Create a new ride
+  @override
   Future<String> createRide(RideModel ride) async {
     final docRef = _ridesCollection.doc();
     final rideWithId = ride.copyWith(
@@ -33,6 +34,7 @@ class RideRepository implements IRideRepository {
   }
 
   /// Get ride by ID
+  @override
   Future<RideModel?> getRideById(String rideId) async {
     final doc = await _ridesCollection.doc(rideId).get();
     if (!doc.exists) return null;
@@ -66,6 +68,7 @@ class RideRepository implements IRideRepository {
   }
 
   /// Delete ride
+  @override
   Future<void> deleteRide(String rideId) async {
     await _ridesCollection.doc(rideId).delete();
   }
@@ -184,12 +187,15 @@ class RideRepository implements IRideRepository {
     final rides = results.docs
         .map((doc) => RideModel.fromJson(doc.data()))
         .where((ride) {
-          if (date != null && !_isSameDay(ride.schedule.departureTime, date))
+          if (date != null && !_isSameDay(ride.schedule.departureTime, date)) {
             return false;
-          if (minSeats != null && ride.capacity.available < minSeats)
+          }
+          if (minSeats != null && ride.capacity.available < minSeats) {
             return false;
-          if (maxPrice != null && ride.pricing.pricePerSeat.amount > maxPrice)
+          }
+          if (maxPrice != null && ride.pricing.pricePerSeat.amount > maxPrice) {
             return false;
+          }
 
           final destDistance = _calculateDistance(
             ride.route.destination.latitude,
@@ -450,6 +456,7 @@ class RideRepository implements IRideRepository {
   }
 
   /// Start ride
+  @override
   Future<void> startRide(String rideId) async {
     await _ridesCollection.doc(rideId).update({
       'status': RideStatus.inProgress.name,
@@ -458,6 +465,7 @@ class RideRepository implements IRideRepository {
   }
 
   /// Complete ride
+  @override
   Future<void> completeRide(String rideId) async {
     await _ridesCollection.doc(rideId).update({
       'status': RideStatus.completed.name,

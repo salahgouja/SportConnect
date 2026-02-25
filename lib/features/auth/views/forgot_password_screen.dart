@@ -57,8 +57,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text(
-              'Could not send reset email right now. Please try again.',
+            content: Text(
+              AppLocalizations.of(context).forgotPasswordSendError,
             ),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
@@ -161,12 +161,12 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             prefixIcon: Icons.email_outlined,
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return 'Please enter your email';
+                return l10n.forgotPasswordEmailRequired;
               }
               if (!RegExp(
                 r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
               ).hasMatch(value)) {
-                return 'Please enter a valid email';
+                return l10n.forgotPasswordInvalidEmail;
               }
               return null;
             },
@@ -192,7 +192,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               onPressed: () => context.pop(),
               icon: Icon(Icons.arrow_back_rounded, size: 18.sp),
               label: Text(
-                'Back to Login',
+                l10n.forgotPasswordBackToLogin,
                 style: TextStyle(
                   fontSize: 14.sp,
                   color: AppColors.primary,
@@ -230,7 +230,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         SizedBox(height: 32.h),
 
         Text(
-          'Check Your Email',
+          l10n.forgotPasswordCheckEmail,
           style: TextStyle(
             fontSize: 26.sp,
             fontWeight: FontWeight.w800,
@@ -282,8 +282,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           width: double.infinity,
           child: PremiumButton(
             text: _resendCooldown > 0
-                ? 'Resend in ${_resendCooldown}s'
-                : 'Resend Email',
+                ? l10n.forgotPasswordResendIn(_resendCooldown)
+                : l10n.forgotPasswordResendEmail,
             onPressed: _resendCooldown > 0 || _isLoading
                 ? null
                 : _sendResetEmail,
@@ -297,7 +297,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         SizedBox(
           width: double.infinity,
           child: PremiumButton(
-            text: 'Back to Login',
+            text: l10n.forgotPasswordBackToLogin,
             onPressed: () => context.pop(),
             icon: Icons.login_rounded,
           ),

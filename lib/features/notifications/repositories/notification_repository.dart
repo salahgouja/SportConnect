@@ -18,6 +18,7 @@ class NotificationRepository implements INotificationRepository {
   // ==================== NOTIFICATION OPERATIONS ====================
 
   /// Create a notification
+  @override
   Future<String> createNotification(NotificationModel notification) async {
     final docRef = _notificationsCollection.doc();
     final notificationWithId = notification.copyWith(
@@ -29,6 +30,7 @@ class NotificationRepository implements INotificationRepository {
   }
 
   /// Get notification by ID
+  @override
   Future<NotificationModel?> getNotificationById(String id) async {
     final doc = await _notificationsCollection.doc(id).get();
     if (!doc.exists) return null;
@@ -36,6 +38,7 @@ class NotificationRepository implements INotificationRepository {
   }
 
   /// Stream user's notifications
+  @override
   Stream<List<NotificationModel>> streamUserNotifications(String userId) {
     return _notificationsCollection
         .where('userId', isEqualTo: userId)
@@ -51,6 +54,7 @@ class NotificationRepository implements INotificationRepository {
   }
 
   /// Stream unread notification count
+  @override
   Stream<int> streamUnreadCount(String userId) {
     return _notificationsCollection
         .where('userId', isEqualTo: userId)
@@ -61,6 +65,7 @@ class NotificationRepository implements INotificationRepository {
   }
 
   /// Get user's notifications (paginated)
+  @override
   Future<List<NotificationModel>> getUserNotifications({
     required String userId,
     int limit = 20,
@@ -83,6 +88,7 @@ class NotificationRepository implements INotificationRepository {
   }
 
   /// Mark notification as read
+  @override
   Future<void> markAsRead(String notificationId) async {
     await _notificationsCollection.doc(notificationId).update({
       'isRead': true,
@@ -91,6 +97,7 @@ class NotificationRepository implements INotificationRepository {
   }
 
   /// Mark all user notifications as read
+  @override
   Future<void> markAllAsRead(String userId) async {
     final batch = _firestore.batch();
     final snapshot = await _notificationsCollection
@@ -109,6 +116,7 @@ class NotificationRepository implements INotificationRepository {
   }
 
   /// Archive notification (soft delete)
+  @override
   Future<void> archiveNotification(String notificationId) async {
     await _notificationsCollection.doc(notificationId).update({
       'isArchived': true,
@@ -116,6 +124,7 @@ class NotificationRepository implements INotificationRepository {
   }
 
   /// Archive all user notifications
+  @override
   Future<void> archiveAll(String userId) async {
     final batch = _firestore.batch();
     final snapshot = await _notificationsCollection
@@ -131,11 +140,13 @@ class NotificationRepository implements INotificationRepository {
   }
 
   /// Delete notification permanently
+  @override
   Future<void> deleteNotification(String notificationId) async {
     await _notificationsCollection.doc(notificationId).delete();
   }
 
   /// Send ride booking request notification
+  @override
   Future<void> sendRideBookingRequest({
     required String toUserId,
     required String fromUserId,
@@ -162,6 +173,7 @@ class NotificationRepository implements INotificationRepository {
   }
 
   /// Send ride booking accepted notification
+  @override
   Future<void> sendRideBookingAccepted({
     required String toUserId,
     required String driverName,
@@ -244,6 +256,7 @@ class NotificationRepository implements INotificationRepository {
   }
 
   /// Send new message notification
+  @override
   Future<void> sendNewMessageNotification({
     required String toUserId,
     required String fromUserId,
@@ -269,6 +282,7 @@ class NotificationRepository implements INotificationRepository {
   }
 
   /// Send achievement notification
+  @override
   Future<void> sendAchievementNotification({
     required String userId,
     required String achievementName,

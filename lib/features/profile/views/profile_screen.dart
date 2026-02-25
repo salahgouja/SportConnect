@@ -751,13 +751,15 @@ class ProfileScreen extends ConsumerWidget {
   Widget _buildQuickActions(BuildContext context, UserModel user) {
     final isDriver = user.role == UserRole.driver;
     final menuItems = [
-      _MenuItem(
-        icon: Icons.directions_car_outlined,
-        title: 'My Vehicles',
-        subtitle: 'Manage your vehicles',
-        color: AppColors.primary,
-        onTap: () => context.push(AppRoutes.vehicles.path),
-      ),
+      // Vehicles management is only relevant for drivers
+      if (isDriver)
+        _MenuItem(
+          icon: Icons.directions_car_outlined,
+          title: 'My Vehicles',
+          subtitle: 'Manage your vehicles',
+          color: AppColors.primary,
+          onTap: () => context.push(AppRoutes.vehicles.path),
+        ),
       _MenuItem(
         icon: Icons.history_rounded,
         title: 'My Rides',

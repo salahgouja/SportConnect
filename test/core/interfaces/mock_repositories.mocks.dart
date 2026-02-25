@@ -4,36 +4,34 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i8;
-import 'dart:io' as _i10;
+import 'dart:io' as _i9;
 
 import 'package:cloud_firestore/cloud_firestore.dart' as _i4;
 import 'package:firebase_auth/firebase_auth.dart' as _i3;
 import 'package:firebase_messaging/firebase_messaging.dart' as _i6;
 import 'package:firebase_storage/firebase_storage.dart' as _i5;
-import 'package:geolocator/geolocator.dart' as _i20;
+import 'package:geolocator/geolocator.dart' as _i19;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i14;
+import 'package:mockito/src/dummies.dart' as _i10;
 import 'package:sport_connect/core/interfaces/repositories/i_auth_repository.dart'
     as _i7;
 import 'package:sport_connect/core/interfaces/repositories/i_chat_repository.dart'
-    as _i16;
+    as _i15;
 import 'package:sport_connect/core/interfaces/repositories/i_ride_repository.dart'
     as _i12;
 import 'package:sport_connect/core/interfaces/repositories/i_user_repository.dart'
     as _i11;
 import 'package:sport_connect/core/interfaces/services/i_firebase_service.dart'
-    as _i18;
-import 'package:sport_connect/core/interfaces/services/i_location_service.dart'
-    as _i19;
-import 'package:sport_connect/features/auth/models/models.dart' as _i9;
-import 'package:sport_connect/features/auth/repositories/auth_repository.dart'
-    as _i2;
-import 'package:sport_connect/features/messaging/models/message_model.dart'
     as _i17;
+import 'package:sport_connect/core/interfaces/services/i_location_service.dart'
+    as _i18;
+import 'package:sport_connect/features/auth/models/models.dart' as _i2;
+import 'package:sport_connect/features/messaging/models/message_model.dart'
+    as _i16;
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart'
     as _i13;
 import 'package:sport_connect/features/rides/models/ride_request_model.dart'
-    as _i15;
+    as _i14;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -56,38 +54,44 @@ class _FakeSocialSignInResult_0 extends _i1.SmartFake
     : super(parent, parentInvocation);
 }
 
-class _FakeFirebaseAuth_1 extends _i1.SmartFake implements _i3.FirebaseAuth {
-  _FakeFirebaseAuth_1(Object parent, Invocation parentInvocation)
+class _FakeUserCredential_1 extends _i1.SmartFake
+    implements _i3.UserCredential {
+  _FakeUserCredential_1(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeFirebaseFirestore_2 extends _i1.SmartFake
+class _FakeFirebaseAuth_2 extends _i1.SmartFake implements _i3.FirebaseAuth {
+  _FakeFirebaseAuth_2(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeFirebaseFirestore_3 extends _i1.SmartFake
     implements _i4.FirebaseFirestore {
-  _FakeFirebaseFirestore_2(Object parent, Invocation parentInvocation)
+  _FakeFirebaseFirestore_3(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeFirebaseStorage_3 extends _i1.SmartFake
+class _FakeFirebaseStorage_4 extends _i1.SmartFake
     implements _i5.FirebaseStorage {
-  _FakeFirebaseStorage_3(Object parent, Invocation parentInvocation)
+  _FakeFirebaseStorage_4(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeFirebaseMessaging_4 extends _i1.SmartFake
+class _FakeFirebaseMessaging_5 extends _i1.SmartFake
     implements _i6.FirebaseMessaging {
-  _FakeFirebaseMessaging_4(Object parent, Invocation parentInvocation)
+  _FakeFirebaseMessaging_5(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeCollectionReference_5<T extends Object?> extends _i1.SmartFake
+class _FakeCollectionReference_6<T extends Object?> extends _i1.SmartFake
     implements _i4.CollectionReference<T> {
-  _FakeCollectionReference_5(Object parent, Invocation parentInvocation)
+  _FakeCollectionReference_6(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeDocumentReference_6<T extends Object?> extends _i1.SmartFake
+class _FakeDocumentReference_7<T extends Object?> extends _i1.SmartFake
     implements _i4.DocumentReference<T> {
-  _FakeDocumentReference_6(Object parent, Invocation parentInvocation)
+  _FakeDocumentReference_7(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
@@ -113,27 +117,27 @@ class MockIAuthRepository extends _i1.Mock implements _i7.IAuthRepository {
           as bool);
 
   @override
-  _i8.Future<_i9.UserModel?> signInWithEmail(
+  _i8.Future<_i2.UserModel?> signInWithEmail(
     String? email,
     String? password,
     bool? rememberMe,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#signInWithEmail, [email, password, rememberMe]),
-            returnValue: _i8.Future<_i9.UserModel?>.value(),
+            returnValue: _i8.Future<_i2.UserModel?>.value(),
           )
-          as _i8.Future<_i9.UserModel?>);
+          as _i8.Future<_i2.UserModel?>);
 
   @override
-  _i8.Future<_i9.UserModel?> registerWithEmail({
+  _i8.Future<_i2.UserModel?> registerWithEmail({
     required String? email,
     required String? password,
     required String? displayName,
-    required _i9.UserRole? role,
+    required _i2.UserRole? role,
     String? phone,
     String? bio,
     List<String>? interests = const [],
-    _i10.File? profileImage,
+    _i9.File? profileImage,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#registerWithEmail, [], {
@@ -146,9 +150,9 @@ class MockIAuthRepository extends _i1.Mock implements _i7.IAuthRepository {
               #interests: interests,
               #profileImage: profileImage,
             }),
-            returnValue: _i8.Future<_i9.UserModel?>.value(),
+            returnValue: _i8.Future<_i2.UserModel?>.value(),
           )
-          as _i8.Future<_i9.UserModel?>);
+          as _i8.Future<_i2.UserModel?>);
 
   @override
   _i8.Future<_i2.SocialSignInResult> signInWithGoogle() =>
@@ -177,15 +181,23 @@ class MockIAuthRepository extends _i1.Mock implements _i7.IAuthRepository {
           as _i8.Future<_i2.SocialSignInResult>);
 
   @override
-  _i8.Future<_i9.UserModel?> getUserData(String? uid) =>
+  _i8.Future<_i2.UserModel?> getUserData(String? uid) =>
       (super.noSuchMethod(
             Invocation.method(#getUserData, [uid]),
-            returnValue: _i8.Future<_i9.UserModel?>.value(),
+            returnValue: _i8.Future<_i2.UserModel?>.value(),
           )
-          as _i8.Future<_i9.UserModel?>);
+          as _i8.Future<_i2.UserModel?>);
 
   @override
-  _i8.Future<void> updateUserData(_i9.UserModel? user) =>
+  _i8.Stream<_i2.UserModel?> getUserDataStream(String? uid) =>
+      (super.noSuchMethod(
+            Invocation.method(#getUserDataStream, [uid]),
+            returnValue: _i8.Stream<_i2.UserModel?>.empty(),
+          )
+          as _i8.Stream<_i2.UserModel?>);
+
+  @override
+  _i8.Future<void> updateUserData(_i2.UserModel? user) =>
       (super.noSuchMethod(
             Invocation.method(#updateUserData, [user]),
             returnValue: _i8.Future<void>.value(),
@@ -230,7 +242,111 @@ class MockIAuthRepository extends _i1.Mock implements _i7.IAuthRepository {
           as _i8.Future<void>);
 
   @override
-  _i8.Future<String?> uploadProfileImage(_i10.File? image, String? uid) =>
+  _i8.Future<void> reauthenticateWithPassword(String? password) =>
+      (super.noSuchMethod(
+            Invocation.method(#reauthenticateWithPassword, [password]),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  _i8.Future<void> reauthenticateWithGoogle() =>
+      (super.noSuchMethod(
+            Invocation.method(#reauthenticateWithGoogle, []),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  _i8.Future<void> sendEmailVerification() =>
+      (super.noSuchMethod(
+            Invocation.method(#sendEmailVerification, []),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  _i8.Future<bool> isEmailVerified() =>
+      (super.noSuchMethod(
+            Invocation.method(#isEmailVerified, []),
+            returnValue: _i8.Future<bool>.value(false),
+          )
+          as _i8.Future<bool>);
+
+  @override
+  _i8.Future<void> reloadUser() =>
+      (super.noSuchMethod(
+            Invocation.method(#reloadUser, []),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  _i8.Future<void> verifyPhoneNumber({
+    required String? phoneNumber,
+    required void Function(String, int?)? onCodeSent,
+    required void Function(String)? onAutoRetrievalTimeout,
+    required void Function(_i3.FirebaseAuthException)? onVerificationFailed,
+    required void Function(_i3.PhoneAuthCredential)? onVerificationCompleted,
+    int? forceResendingToken,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#verifyPhoneNumber, [], {
+              #phoneNumber: phoneNumber,
+              #onCodeSent: onCodeSent,
+              #onAutoRetrievalTimeout: onAutoRetrievalTimeout,
+              #onVerificationFailed: onVerificationFailed,
+              #onVerificationCompleted: onVerificationCompleted,
+              #forceResendingToken: forceResendingToken,
+            }),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  _i8.Future<_i3.UserCredential> signInWithPhoneCredential({
+    required String? verificationId,
+    required String? smsCode,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#signInWithPhoneCredential, [], {
+              #verificationId: verificationId,
+              #smsCode: smsCode,
+            }),
+            returnValue: _i8.Future<_i3.UserCredential>.value(
+              _FakeUserCredential_1(
+                this,
+                Invocation.method(#signInWithPhoneCredential, [], {
+                  #verificationId: verificationId,
+                  #smsCode: smsCode,
+                }),
+              ),
+            ),
+          )
+          as _i8.Future<_i3.UserCredential>);
+
+  @override
+  _i8.Future<_i3.UserCredential> signInWithPhoneAutoCredential(
+    _i3.PhoneAuthCredential? credential,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#signInWithPhoneAutoCredential, [credential]),
+            returnValue: _i8.Future<_i3.UserCredential>.value(
+              _FakeUserCredential_1(
+                this,
+                Invocation.method(#signInWithPhoneAutoCredential, [credential]),
+              ),
+            ),
+          )
+          as _i8.Future<_i3.UserCredential>);
+
+  @override
+  _i8.Future<String?> uploadProfileImage(_i9.File? image, String? uid) =>
       (super.noSuchMethod(
             Invocation.method(#uploadProfileImage, [image, uid]),
             returnValue: _i8.Future<String?>.value(),
@@ -238,7 +354,7 @@ class MockIAuthRepository extends _i1.Mock implements _i7.IAuthRepository {
           as _i8.Future<String?>);
 
   @override
-  _i8.Future<void> updateUserRole(String? uid, _i9.UserRole? role) =>
+  _i8.Future<void> updateUserRole(String? uid, _i2.UserRole? role) =>
       (super.noSuchMethod(
             Invocation.method(#updateUserRole, [uid, role]),
             returnValue: _i8.Future<void>.value(),
@@ -254,6 +370,38 @@ class MockIAuthRepository extends _i1.Mock implements _i7.IAuthRepository {
             returnValueForMissingStub: _i8.Future<void>.value(),
           )
           as _i8.Future<void>);
+
+  @override
+  _i8.Future<_i2.UserModel> createUserDocument(_i2.UserModel? user) =>
+      (super.noSuchMethod(
+            Invocation.method(#createUserDocument, [user]),
+            returnValue: _i8.Future<_i2.UserModel>.value(
+              _i10.dummyValue<_i2.UserModel>(
+                this,
+                Invocation.method(#createUserDocument, [user]),
+              ),
+            ),
+          )
+          as _i8.Future<_i2.UserModel>);
+
+  @override
+  _i8.Future<void> updateUserStats({
+    required String? userId,
+    int? xpIncrement,
+    int? ridesOfferedIncrement,
+    int? ridesCompletedIncrement,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#updateUserStats, [], {
+              #userId: userId,
+              #xpIncrement: xpIncrement,
+              #ridesOfferedIncrement: ridesOfferedIncrement,
+              #ridesCompletedIncrement: ridesCompletedIncrement,
+            }),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
 }
 
 /// A class which mocks [IUserRepository].
@@ -265,17 +413,17 @@ class MockIUserRepository extends _i1.Mock implements _i11.IUserRepository {
   }
 
   @override
-  _i8.Future<_i9.UserModel?> getUserById(String? userId) =>
+  _i8.Future<_i2.UserModel?> getUserById(String? userId) =>
       (super.noSuchMethod(
             Invocation.method(#getUserById, [userId]),
-            returnValue: _i8.Future<_i9.UserModel?>.value(),
+            returnValue: _i8.Future<_i2.UserModel?>.value(),
           )
-          as _i8.Future<_i9.UserModel?>);
+          as _i8.Future<_i2.UserModel?>);
 
   @override
-  _i8.Future<List<_i9.UserModel>> searchUsers({
+  _i8.Future<List<_i2.UserModel>> searchUsers({
     String? query,
-    _i9.UserRole? role,
+    _i2.UserRole? role,
     int? limit,
   }) =>
       (super.noSuchMethod(
@@ -284,14 +432,14 @@ class MockIUserRepository extends _i1.Mock implements _i11.IUserRepository {
               #role: role,
               #limit: limit,
             }),
-            returnValue: _i8.Future<List<_i9.UserModel>>.value(
-              <_i9.UserModel>[],
+            returnValue: _i8.Future<List<_i2.UserModel>>.value(
+              <_i2.UserModel>[],
             ),
           )
-          as _i8.Future<List<_i9.UserModel>>);
+          as _i8.Future<List<_i2.UserModel>>);
 
   @override
-  _i8.Future<void> updateUser(_i9.UserModel? user) =>
+  _i8.Future<void> updateUser(_i2.UserModel? user) =>
       (super.noSuchMethod(
             Invocation.method(#updateUser, [user]),
             returnValue: _i8.Future<void>.value(),
@@ -331,24 +479,24 @@ class MockIUserRepository extends _i1.Mock implements _i11.IUserRepository {
           as _i8.Future<void>);
 
   @override
-  _i8.Future<List<_i9.UserModel>> getFollowers(String? userId) =>
+  _i8.Future<List<_i2.UserModel>> getFollowers(String? userId) =>
       (super.noSuchMethod(
             Invocation.method(#getFollowers, [userId]),
-            returnValue: _i8.Future<List<_i9.UserModel>>.value(
-              <_i9.UserModel>[],
+            returnValue: _i8.Future<List<_i2.UserModel>>.value(
+              <_i2.UserModel>[],
             ),
           )
-          as _i8.Future<List<_i9.UserModel>>);
+          as _i8.Future<List<_i2.UserModel>>);
 
   @override
-  _i8.Future<List<_i9.UserModel>> getFollowing(String? userId) =>
+  _i8.Future<List<_i2.UserModel>> getFollowing(String? userId) =>
       (super.noSuchMethod(
             Invocation.method(#getFollowing, [userId]),
-            returnValue: _i8.Future<List<_i9.UserModel>>.value(
-              <_i9.UserModel>[],
+            returnValue: _i8.Future<List<_i2.UserModel>>.value(
+              <_i2.UserModel>[],
             ),
           )
-          as _i8.Future<List<_i9.UserModel>>);
+          as _i8.Future<List<_i2.UserModel>>);
 
   @override
   _i8.Future<void> updateOnlineStatus(String? userId, bool? isOnline) =>
@@ -381,7 +529,7 @@ class MockIRideRepository extends _i1.Mock implements _i12.IRideRepository {
       (super.noSuchMethod(
             Invocation.method(#createRide, [ride]),
             returnValue: _i8.Future<String>.value(
-              _i14.dummyValue<String>(
+              _i10.dummyValue<String>(
                 this,
                 Invocation.method(#createRide, [ride]),
               ),
@@ -458,11 +606,11 @@ class MockIRideRepository extends _i1.Mock implements _i12.IRideRepository {
           as _i8.Stream<List<_i13.RideModel>>);
 
   @override
-  _i8.Future<String> createRideRequest(_i15.RideRequestModel? request) =>
+  _i8.Future<String> createRideRequest(_i14.RideRequestModel? request) =>
       (super.noSuchMethod(
             Invocation.method(#createRideRequest, [request]),
             returnValue: _i8.Future<String>.value(
-              _i14.dummyValue<String>(
+              _i10.dummyValue<String>(
                 this,
                 Invocation.method(#createRideRequest, [request]),
               ),
@@ -471,15 +619,15 @@ class MockIRideRepository extends _i1.Mock implements _i12.IRideRepository {
           as _i8.Future<String>);
 
   @override
-  _i8.Future<_i15.RideRequestModel?> getRideRequest(String? requestId) =>
+  _i8.Future<_i14.RideRequestModel?> getRideRequest(String? requestId) =>
       (super.noSuchMethod(
             Invocation.method(#getRideRequest, [requestId]),
-            returnValue: _i8.Future<_i15.RideRequestModel?>.value(),
+            returnValue: _i8.Future<_i14.RideRequestModel?>.value(),
           )
-          as _i8.Future<_i15.RideRequestModel?>);
+          as _i8.Future<_i14.RideRequestModel?>);
 
   @override
-  _i8.Future<void> updateRideRequest(_i15.RideRequestModel? request) =>
+  _i8.Future<void> updateRideRequest(_i14.RideRequestModel? request) =>
       (super.noSuchMethod(
             Invocation.method(#updateRideRequest, [request]),
             returnValue: _i8.Future<void>.value(),
@@ -506,12 +654,12 @@ class MockIRideRepository extends _i1.Mock implements _i12.IRideRepository {
           as _i8.Future<void>);
 
   @override
-  _i8.Stream<List<_i15.RideRequestModel>> getRideRequests(String? rideId) =>
+  _i8.Stream<List<_i14.RideRequestModel>> getRideRequests(String? rideId) =>
       (super.noSuchMethod(
             Invocation.method(#getRideRequests, [rideId]),
-            returnValue: _i8.Stream<List<_i15.RideRequestModel>>.empty(),
+            returnValue: _i8.Stream<List<_i14.RideRequestModel>>.empty(),
           )
-          as _i8.Stream<List<_i15.RideRequestModel>>);
+          as _i8.Stream<List<_i14.RideRequestModel>>);
 
   @override
   _i8.Future<void> startRide(String? rideId) =>
@@ -544,17 +692,17 @@ class MockIRideRepository extends _i1.Mock implements _i12.IRideRepository {
 /// A class which mocks [IChatRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockIChatRepository extends _i1.Mock implements _i16.IChatRepository {
+class MockIChatRepository extends _i1.Mock implements _i15.IChatRepository {
   MockIChatRepository() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i8.Future<String> createChat(_i17.ChatModel? chat) =>
+  _i8.Future<String> createChat(_i16.ChatModel? chat) =>
       (super.noSuchMethod(
             Invocation.method(#createChat, [chat]),
             returnValue: _i8.Future<String>.value(
-              _i14.dummyValue<String>(
+              _i10.dummyValue<String>(
                 this,
                 Invocation.method(#createChat, [chat]),
               ),
@@ -563,38 +711,38 @@ class MockIChatRepository extends _i1.Mock implements _i16.IChatRepository {
           as _i8.Future<String>);
 
   @override
-  _i8.Future<_i17.ChatModel?> getChatById(String? chatId) =>
+  _i8.Future<_i16.ChatModel?> getChatById(String? chatId) =>
       (super.noSuchMethod(
             Invocation.method(#getChatById, [chatId]),
-            returnValue: _i8.Future<_i17.ChatModel?>.value(),
+            returnValue: _i8.Future<_i16.ChatModel?>.value(),
           )
-          as _i8.Future<_i17.ChatModel?>);
+          as _i8.Future<_i16.ChatModel?>);
 
   @override
-  _i8.Future<_i17.ChatModel?> getOrCreateDirectChat(
+  _i8.Future<_i16.ChatModel?> getOrCreateDirectChat(
     String? userId1,
     String? userId2,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getOrCreateDirectChat, [userId1, userId2]),
-            returnValue: _i8.Future<_i17.ChatModel?>.value(),
+            returnValue: _i8.Future<_i16.ChatModel?>.value(),
           )
-          as _i8.Future<_i17.ChatModel?>);
+          as _i8.Future<_i16.ChatModel?>);
 
   @override
-  _i8.Stream<List<_i17.ChatModel>> getUserChats(String? userId) =>
+  _i8.Stream<List<_i16.ChatModel>> getUserChats(String? userId) =>
       (super.noSuchMethod(
             Invocation.method(#getUserChats, [userId]),
-            returnValue: _i8.Stream<List<_i17.ChatModel>>.empty(),
+            returnValue: _i8.Stream<List<_i16.ChatModel>>.empty(),
           )
-          as _i8.Stream<List<_i17.ChatModel>>);
+          as _i8.Stream<List<_i16.ChatModel>>);
 
   @override
-  _i8.Future<String> sendMessage(_i17.MessageModel? message) =>
+  _i8.Future<String> sendMessage(_i16.MessageModel? message) =>
       (super.noSuchMethod(
             Invocation.method(#sendMessage, [message]),
             returnValue: _i8.Future<String>.value(
-              _i14.dummyValue<String>(
+              _i10.dummyValue<String>(
                 this,
                 Invocation.method(#sendMessage, [message]),
               ),
@@ -621,15 +769,15 @@ class MockIChatRepository extends _i1.Mock implements _i16.IChatRepository {
           as _i8.Future<void>);
 
   @override
-  _i8.Stream<List<_i17.MessageModel>> getChatMessages(
+  _i8.Stream<List<_i16.MessageModel>> getChatMessages(
     String? chatId, {
     int? limit = 50,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#getChatMessages, [chatId], {#limit: limit}),
-            returnValue: _i8.Stream<List<_i17.MessageModel>>.empty(),
+            returnValue: _i8.Stream<List<_i16.MessageModel>>.empty(),
           )
-          as _i8.Stream<List<_i17.MessageModel>>);
+          as _i8.Stream<List<_i16.MessageModel>>);
 
   @override
   _i8.Future<void> setTypingStatus(
@@ -656,7 +804,7 @@ class MockIChatRepository extends _i1.Mock implements _i16.IChatRepository {
 /// A class which mocks [IFirebaseService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockIFirebaseService extends _i1.Mock implements _i18.IFirebaseService {
+class MockIFirebaseService extends _i1.Mock implements _i17.IFirebaseService {
   MockIFirebaseService() {
     _i1.throwOnMissingStub(this);
   }
@@ -665,7 +813,7 @@ class MockIFirebaseService extends _i1.Mock implements _i18.IFirebaseService {
   _i3.FirebaseAuth get auth =>
       (super.noSuchMethod(
             Invocation.getter(#auth),
-            returnValue: _FakeFirebaseAuth_1(this, Invocation.getter(#auth)),
+            returnValue: _FakeFirebaseAuth_2(this, Invocation.getter(#auth)),
           )
           as _i3.FirebaseAuth);
 
@@ -673,7 +821,7 @@ class MockIFirebaseService extends _i1.Mock implements _i18.IFirebaseService {
   _i4.FirebaseFirestore get firestore =>
       (super.noSuchMethod(
             Invocation.getter(#firestore),
-            returnValue: _FakeFirebaseFirestore_2(
+            returnValue: _FakeFirebaseFirestore_3(
               this,
               Invocation.getter(#firestore),
             ),
@@ -684,7 +832,7 @@ class MockIFirebaseService extends _i1.Mock implements _i18.IFirebaseService {
   _i5.FirebaseStorage get storage =>
       (super.noSuchMethod(
             Invocation.getter(#storage),
-            returnValue: _FakeFirebaseStorage_3(
+            returnValue: _FakeFirebaseStorage_4(
               this,
               Invocation.getter(#storage),
             ),
@@ -695,7 +843,7 @@ class MockIFirebaseService extends _i1.Mock implements _i18.IFirebaseService {
   _i6.FirebaseMessaging get messaging =>
       (super.noSuchMethod(
             Invocation.getter(#messaging),
-            returnValue: _FakeFirebaseMessaging_4(
+            returnValue: _FakeFirebaseMessaging_5(
               this,
               Invocation.getter(#messaging),
             ),
@@ -714,7 +862,7 @@ class MockIFirebaseService extends _i1.Mock implements _i18.IFirebaseService {
   _i4.CollectionReference<Map<String, dynamic>> get usersCollection =>
       (super.noSuchMethod(
             Invocation.getter(#usersCollection),
-            returnValue: _FakeCollectionReference_5<Map<String, dynamic>>(
+            returnValue: _FakeCollectionReference_6<Map<String, dynamic>>(
               this,
               Invocation.getter(#usersCollection),
             ),
@@ -739,7 +887,7 @@ class MockIFirebaseService extends _i1.Mock implements _i18.IFirebaseService {
   _i4.DocumentReference<Map<String, dynamic>> getUserDoc(String? uid) =>
       (super.noSuchMethod(
             Invocation.method(#getUserDoc, [uid]),
-            returnValue: _FakeDocumentReference_6<Map<String, dynamic>>(
+            returnValue: _FakeDocumentReference_7<Map<String, dynamic>>(
               this,
               Invocation.method(#getUserDoc, [uid]),
             ),
@@ -759,7 +907,7 @@ class MockIFirebaseService extends _i1.Mock implements _i18.IFirebaseService {
 /// A class which mocks [ILocationService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockILocationService extends _i1.Mock implements _i19.ILocationService {
+class MockILocationService extends _i1.Mock implements _i18.ILocationService {
   MockILocationService() {
     _i1.throwOnMissingStub(this);
   }
@@ -781,20 +929,20 @@ class MockILocationService extends _i1.Mock implements _i19.ILocationService {
           as _i8.Future<bool>);
 
   @override
-  _i8.Future<_i20.Position?> getCurrentLocation() =>
+  _i8.Future<_i19.Position?> getCurrentLocation() =>
       (super.noSuchMethod(
             Invocation.method(#getCurrentLocation, []),
-            returnValue: _i8.Future<_i20.Position?>.value(),
+            returnValue: _i8.Future<_i19.Position?>.value(),
           )
-          as _i8.Future<_i20.Position?>);
+          as _i8.Future<_i19.Position?>);
 
   @override
-  _i8.Stream<_i20.Position> getLocationStream() =>
+  _i8.Stream<_i19.Position> getLocationStream() =>
       (super.noSuchMethod(
             Invocation.method(#getLocationStream, []),
-            returnValue: _i8.Stream<_i20.Position>.empty(),
+            returnValue: _i8.Stream<_i19.Position>.empty(),
           )
-          as _i8.Stream<_i20.Position>);
+          as _i8.Stream<_i19.Position>);
 
   @override
   double calculateDistance(
@@ -818,10 +966,10 @@ class MockILocationService extends _i1.Mock implements _i19.ILocationService {
           as _i8.Future<String?>);
 
   @override
-  _i8.Future<_i20.Position?> getCoordinatesFromAddress(String? address) =>
+  _i8.Future<_i19.Position?> getCoordinatesFromAddress(String? address) =>
       (super.noSuchMethod(
             Invocation.method(#getCoordinatesFromAddress, [address]),
-            returnValue: _i8.Future<_i20.Position?>.value(),
+            returnValue: _i8.Future<_i19.Position?>.value(),
           )
-          as _i8.Future<_i20.Position?>);
+          as _i8.Future<_i19.Position?>);
 }

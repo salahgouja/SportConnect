@@ -21,13 +21,11 @@ class DriverStatsRepository implements IDriverStatsRepository {
   CollectionReference<Map<String, dynamic>> get _ridesCollection =>
       _firestore.collection(AppConstants.ridesCollection);
 
-  CollectionReference<Map<String, dynamic>> get _usersCollection =>
-      _firestore.collection(AppConstants.usersCollection);
-
   CollectionReference<Map<String, dynamic>> get _transactionsCollection =>
       _firestore.collection('transactions');
 
   /// Get driver stats
+  @override
   Future<DriverStats> getDriverStats(String driverId) async {
     final doc = await _driverStatsCollection.doc(driverId).get();
     if (!doc.exists) {
@@ -40,6 +38,7 @@ class DriverStatsRepository implements IDriverStatsRepository {
   }
 
   /// Stream driver stats
+  @override
   Stream<DriverStats> streamDriverStats(String driverId) {
     return _driverStatsCollection.doc(driverId).snapshots().map((doc) {
       if (!doc.exists) {
@@ -50,6 +49,7 @@ class DriverStatsRepository implements IDriverStatsRepository {
   }
 
   /// Update driver online status
+  @override
   Future<void> setOnlineStatus(String driverId, bool isOnline) async {
     await _driverStatsCollection.doc(driverId).set({
       'isOnline': isOnline,
@@ -61,6 +61,7 @@ class DriverStatsRepository implements IDriverStatsRepository {
   ///
   /// Queries the `rideRequests` collection directly for pending requests
   /// addressed to this driver.
+  @override
   Stream<List<RideRequestModel>> streamPendingRequests(String driverId) {
     return _firestore
         .collection('rideRequests')
@@ -109,6 +110,7 @@ class DriverStatsRepository implements IDriverStatsRepository {
   }
 
   /// Get upcoming rides for driver - returns proper RideModel
+  @override
   Stream<List<RideModel>> streamUpcomingRides(String driverId) {
     final now = DateTime.now();
     return _ridesCollection
@@ -126,6 +128,7 @@ class DriverStatsRepository implements IDriverStatsRepository {
   }
 
   /// Get earnings transactions
+  @override
   Stream<List<EarningsTransaction>> streamTransactions(String driverId) {
     return _transactionsCollection
         .where('driverId', isEqualTo: driverId)
@@ -143,6 +146,7 @@ class DriverStatsRepository implements IDriverStatsRepository {
   }
 
   /// Accept a ride request
+  @override
   Future<void> acceptRequest(String rideId, String bookingId) async {
     final rideDoc = await _ridesCollection.doc(rideId).get();
     if (!rideDoc.exists) return;
@@ -166,6 +170,7 @@ class DriverStatsRepository implements IDriverStatsRepository {
   }
 
   /// Decline a ride request
+  @override
   Future<void> declineRequest(String rideId, String bookingId) async {
     final rideDoc = await _ridesCollection.doc(rideId).get();
     if (!rideDoc.exists) return;
@@ -184,6 +189,7 @@ class DriverStatsRepository implements IDriverStatsRepository {
   }
 
   /// Update driver stats after ride completion
+  @override
   Future<void> recordRideCompletion({
     required String driverId,
     required double earnings,

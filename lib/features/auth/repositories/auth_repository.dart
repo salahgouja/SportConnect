@@ -13,34 +13,45 @@ import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_auth_repository.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 
-/// Result of a social sign-in operation
-class SocialSignInResult {
-  final UserModel? user;
-  final bool isNewUser;
-
-  SocialSignInResult({this.user, this.isNewUser = false});
-}
-
 /// Repository for authentication operations - Firebase only
 class AuthRepository implements IAuthRepository {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+  final FirebaseAuth _auth;
+  final FirebaseStorage _storage;
+  final FirebaseFirestore _firestore;
+  final GoogleSignIn _googleSignIn;
+
+  /// Creates an [AuthRepository] with optional dependency injection.
+  ///
+  /// Defaults to production Firebase instances when no arguments are provided.
+  /// Pass custom instances in tests to enable mocking.
+  AuthRepository({
+    FirebaseAuth? auth,
+    FirebaseStorage? storage,
+    FirebaseFirestore? firestore,
+    GoogleSignIn? googleSignIn,
+  }) : _auth = auth ?? FirebaseAuth.instance,
+       _storage = storage ?? FirebaseStorage.instance,
+       _firestore = firestore ?? FirebaseFirestore.instance,
+       _googleSignIn = googleSignIn ?? GoogleSignIn.instance;
 
   /// Get current user stream
+  @override
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
   /// Get current user
+  @override
   User? get currentUser => _auth.currentUser;
 
   /// Check if user is logged in
+  @override
   bool get isLoggedIn => _auth.currentUser != null;
 
   /// Get current user ID
+  @override
   String? get currentUserId => _auth.currentUser?.uid;
 
   /// Sign in with email and password
+  @override
   Future<UserModel?> signInWithEmail(
     String email,
     String password,
@@ -71,6 +82,7 @@ class AuthRepository implements IAuthRepository {
   }
 
   /// Register with email and password
+  @override
   Future<UserModel?> registerWithEmail({
     required String email,
     required String password,
@@ -141,6 +153,11 @@ class AuthRepository implements IAuthRepository {
           await credential.user!.updatePhotoURL(photoUrl);
         }
 
+        // Auto-send email verification after registration
+        if (!(credential.user!.emailVerified)) {
+          await credential.user!.sendEmailVerification();
+        }
+
         return userModel;
       }
     } on FirebaseAuthException catch (e) {
@@ -182,6 +199,7 @@ class AuthRepository implements IAuthRepository {
   }
 
   /// Get user data from Firestore
+  @override
   Future<UserModel?> getUserData(String uid) async {
     try {
       final doc = await _firestore
@@ -198,6 +216,7 @@ class AuthRepository implements IAuthRepository {
     return null;
   }
 
+  @override
   Stream<UserModel?> getUserDataStream(String uid) {
     return _firestore
         .collection(AppConstants.usersCollection)
@@ -212,9 +231,10 @@ class AuthRepository implements IAuthRepository {
   }
 
   /// Sign out
+  @override
   Future<void> signOut() async {
     try {
-      await GoogleSignIn.instance.signOut();
+      await _googleSignIn.signOut();
       await _auth.signOut();
       TalkerService.info('User signed out');
     } catch (e) {
@@ -224,6 +244,7 @@ class AuthRepository implements IAuthRepository {
   }
 
   /// Delete user account and all associated data
+  @override
   Future<void> deleteAccount() async {
     try {
       final user = _auth.currentUser;
@@ -232,59 +253,83 @@ class AuthRepository implements IAuthRepository {
       }
 
       final uid = user.uid;
-      final batch = _firestore.batch();
 
-      // Delete user document
-      batch.delete(
+      // Collect all document references to delete
+      final refs = <DocumentReference>[
         _firestore.collection(AppConstants.usersCollection).doc(uid),
-      );
+      ];
 
-      // Delete user's rides
+      // User's rides
       final ridesQuery = await _firestore
           .collection('rides')
           .where('driverId', isEqualTo: uid)
           .get();
-      for (var doc in ridesQuery.docs) {
-        batch.delete(doc.reference);
-      }
+      refs.addAll(ridesQuery.docs.map((d) => d.reference));
 
-      // Delete user's bookings
+      // User's bookings
       final bookingsQuery = await _firestore
           .collection('bookings')
           .where('userId', isEqualTo: uid)
           .get();
-      for (var doc in bookingsQuery.docs) {
-        batch.delete(doc.reference);
-      }
+      refs.addAll(bookingsQuery.docs.map((d) => d.reference));
 
-      // Delete user's messages
+      // User's messages
       final messagesQuery = await _firestore
           .collection('messages')
           .where('senderId', isEqualTo: uid)
           .get();
-      for (var doc in messagesQuery.docs) {
-        batch.delete(doc.reference);
-      }
+      refs.addAll(messagesQuery.docs.map((d) => d.reference));
 
-      // Delete user's chats
+      // User's chats
       final chatsQuery = await _firestore
           .collection('chats')
           .where('participants', arrayContains: uid)
           .get();
-      for (var doc in chatsQuery.docs) {
-        batch.delete(doc.reference);
+      refs.addAll(chatsQuery.docs.map((d) => d.reference));
+
+      // Commit in chunks of 499 to stay within Firestore batch limit (500)
+      const batchLimit = 499;
+      for (var i = 0; i < refs.length; i += batchLimit) {
+        final chunk = refs.sublist(
+          i,
+          i + batchLimit > refs.length ? refs.length : i + batchLimit,
+        );
+        final batch = _firestore.batch();
+        for (final ref in chunk) {
+          batch.delete(ref);
+        }
+        await batch.commit();
       }
 
-      await batch.commit();
-      await GoogleSignIn.instance.signOut();
+      // Clean up storage (profile images)
+      try {
+        await _storage.ref().child('users').child(uid).listAll().then((
+          result,
+        ) async {
+          for (final ref in result.items) {
+            await ref.delete();
+          }
+          for (final prefix in result.prefixes) {
+            final subItems = await prefix.listAll();
+            for (final item in subItems.items) {
+              await item.delete();
+            }
+          }
+        });
+      } on FirebaseException catch (e) {
+        TalkerService.warning('Storage cleanup failed (best-effort): ${e.message}');
+      }
+
+      await _googleSignIn.signOut();
       await user.delete();
 
       TalkerService.info('User account and data deleted: $uid');
     } on FirebaseAuthException catch (e) {
       TalkerService.error('Delete account error: ${e.message}');
       if (e.code == 'requires-recent-login') {
-        throw Exception(
-          'Please log out and log in again before deleting your account',
+        throw AuthException(
+          code: e.code,
+          message: 'Please re-authenticate before deleting your account',
         );
       }
       throw _handleAuthException(e);
@@ -305,8 +350,7 @@ class AuthRepository implements IAuthRepository {
       // authenticate() returns non-nullable account, throws on cancellation
       final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
 
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
       final credential = GoogleAuthProvider.credential(
         idToken: googleAuth.idToken,
       );
@@ -423,7 +467,7 @@ class AuthRepository implements IAuthRepository {
       throw Exception('Apple sign-in failed: no user returned');
     } on SignInWithAppleAuthorizationException catch (e) {
       TalkerService.error('Apple sign in error: ${e.message}');
-      throw e.message;
+      throw Exception('Apple sign-in failed: ${e.message}');
     } on FirebaseAuthException catch (e) {
       TalkerService.error('Apple sign in Firebase error: ${e.message}');
       throw _handleAuthException(e);
@@ -450,22 +494,10 @@ class AuthRepository implements IAuthRepository {
     return digest.toString();
   }
 
-  /// Reset password
-  Future<void> resetPassword(String email) async {
-    try {
-      await _auth.sendPasswordResetEmail(email: email.trim());
-      TalkerService.info('Password reset email sent');
-    } on FirebaseAuthException catch (e) {
-      TalkerService.error('Reset password error: ${e.message}');
-      throw _handleAuthException(e);
-    } catch (e) {
-      TalkerService.error('Reset password error', e);
-      rethrow;
-    }
-  }
-
-  /// Create or update user document in Firestore
-  /// Useful for syncing Firebase Auth user with Firestore document
+  /// Create or update user document in Firestore.
+  ///
+  /// Useful for syncing Firebase Auth user with Firestore document.
+  @override
   Future<UserModel> createUserDocument(UserModel user) async {
     try {
       await _firestore
@@ -480,7 +512,8 @@ class AuthRepository implements IAuthRepository {
     }
   }
 
-  /// Update user gamification stats (XP, rides, etc.)
+  /// Update user gamification stats (XP, rides, etc.).
+  @override
   Future<void> updateUserStats({
     required String userId,
     int? xpIncrement,
@@ -516,6 +549,7 @@ class AuthRepository implements IAuthRepository {
   }
 
   /// Update user role (rider/driver)
+  @override
   Future<void> updateUserRole(String userId, UserRole role) async {
     try {
       await _firestore
@@ -534,6 +568,7 @@ class AuthRepository implements IAuthRepository {
   }
 
   /// Clear the needsRoleSelection flag after onboarding is complete
+  @override
   Future<void> clearNeedsRoleSelection(String userId) async {
     try {
       await _firestore
@@ -605,22 +640,204 @@ class AuthRepository implements IAuthRepository {
     return await _uploadProfileImage(image, uid);
   }
 
-  String _handleAuthException(FirebaseAuthException e) {
+  AuthException _handleAuthException(FirebaseAuthException e) {
     switch (e.code) {
       case 'user-not-found':
-        return 'No user found with this email';
+        return AuthException(code: e.code, message: 'No user found with this email');
       case 'wrong-password':
-        return 'Wrong password';
+        return AuthException(code: e.code, message: 'Wrong password');
       case 'email-already-in-use':
-        return 'Email already in use';
+        return AuthException(code: e.code, message: 'Email already in use');
       case 'invalid-email':
-        return 'Invalid email address';
+        return AuthException(code: e.code, message: 'Invalid email address');
       case 'weak-password':
-        return 'Password is too weak';
+        return AuthException(code: e.code, message: 'Password is too weak');
       case 'too-many-requests':
-        return 'Too many attempts. Please try again later';
+        return AuthException(
+          code: e.code,
+          message: 'Too many attempts. Please try again later',
+        );
+      case 'requires-recent-login':
+        return AuthException(
+          code: e.code,
+          message: 'Please re-authenticate to continue',
+        );
+      case 'account-exists-with-different-credential':
+        return AuthException(
+          code: e.code,
+          message: 'An account already exists with a different sign-in method. '
+              'Try signing in with email/password or the original provider.',
+        );
       default:
-        return e.message ?? 'An error occurred';
+        return AuthException(
+          code: e.code,
+          message: e.message ?? 'An error occurred',
+        );
+    }
+  }
+
+  /// Re-authenticate user with email/password for sensitive operations.
+  ///
+  /// Required before [deleteAccount] or [updatePassword] when the session
+  /// is too old (Firebase throws `requires-recent-login`).
+  @override
+  Future<void> reauthenticateWithPassword(String password) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null || user.email == null) {
+        throw Exception('No user is currently signed in');
+      }
+
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: password,
+      );
+      await user.reauthenticateWithCredential(credential);
+      TalkerService.info('User re-authenticated successfully');
+    } on FirebaseAuthException catch (e) {
+      TalkerService.error('Re-authentication error: ${e.message}');
+      throw _handleAuthException(e);
+    } catch (e) {
+      TalkerService.error('Re-authentication error', e);
+      rethrow;
+    }
+  }
+
+  /// Re-authenticate user with Google credential for sensitive operations.
+  @override
+  Future<void> reauthenticateWithGoogle() async {
+    try {
+      await _googleSignIn.initialize();
+      final googleUser = await _googleSignIn.authenticate();
+      final googleAuth = googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        idToken: googleAuth.idToken,
+      );
+
+      final user = _auth.currentUser;
+      if (user == null) {
+        throw Exception('No user is currently signed in');
+      }
+      await user.reauthenticateWithCredential(credential);
+      TalkerService.info('User re-authenticated with Google');
+    } catch (e) {
+      TalkerService.error('Google re-authentication error', e);
+      rethrow;
+    }
+  }
+
+  // =========================================================================
+  // Email Verification
+  // =========================================================================
+
+  /// Send a verification email to the current user.
+  @override
+  Future<void> sendEmailVerification() async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        throw Exception('No user is currently signed in');
+      }
+      await user.sendEmailVerification();
+      TalkerService.info('Verification email sent to ${user.email}');
+    } on FirebaseAuthException catch (e) {
+      TalkerService.error('Send verification email error: ${e.message}');
+      throw _handleAuthException(e);
+    } catch (e) {
+      TalkerService.error('Send verification email error', e);
+      rethrow;
+    }
+  }
+
+  /// Check whether the current user's email is verified.
+  ///
+  /// Reloads the user first to get the latest status from Firebase.
+  @override
+  Future<bool> isEmailVerified() async {
+    final user = _auth.currentUser;
+    if (user == null) return false;
+    await user.reload();
+    return _auth.currentUser?.emailVerified ?? false;
+  }
+
+  /// Reload the current Firebase Auth user to refresh cached properties
+  /// such as [User.emailVerified].
+  @override
+  Future<void> reloadUser() async {
+    await _auth.currentUser?.reload();
+  }
+
+  // =========================================================================
+  // Phone Auth / OTP
+  // =========================================================================
+
+  /// Start phone number verification — Firebase sends an SMS OTP.
+  ///
+  /// The caller provides callbacks for each phase of the verification:
+  /// - [onCodeSent]: SMS sent; use the verificationId to create credential.
+  /// - [onVerificationCompleted]: Auto-verified (Android auto-retrieval).
+  /// - [onVerificationFailed]: Error (invalid number, quota exceeded, etc).
+  /// - [onAutoRetrievalTimeout]: Auto-retrieval timed out; user must enter OTP manually.
+  @override
+  Future<void> verifyPhoneNumber({
+    required String phoneNumber,
+    required void Function(String verificationId, int? resendToken)
+        onCodeSent,
+    required void Function(String verificationId) onAutoRetrievalTimeout,
+    required void Function(FirebaseAuthException error) onVerificationFailed,
+    required void Function(PhoneAuthCredential credential)
+        onVerificationCompleted,
+    int? forceResendingToken,
+  }) async {
+    await _auth.verifyPhoneNumber(
+      phoneNumber: phoneNumber,
+      verificationCompleted: onVerificationCompleted,
+      verificationFailed: onVerificationFailed,
+      codeSent: onCodeSent,
+      codeAutoRetrievalTimeout: onAutoRetrievalTimeout,
+      forceResendingToken: forceResendingToken,
+      timeout: const Duration(seconds: 60),
+    );
+  }
+
+  /// Sign in (or link) with a phone credential built from verificationId + smsCode.
+  @override
+  Future<UserCredential> signInWithPhoneCredential({
+    required String verificationId,
+    required String smsCode,
+  }) async {
+    try {
+      final credential = PhoneAuthProvider.credential(
+        verificationId: verificationId,
+        smsCode: smsCode,
+      );
+      final result = await _auth.signInWithCredential(credential);
+      TalkerService.info('Phone OTP sign-in successful');
+      return result;
+    } on FirebaseAuthException catch (e) {
+      TalkerService.error('Phone OTP error: ${e.message}');
+      throw _handleAuthException(e);
+    } catch (e) {
+      TalkerService.error('Phone OTP error', e);
+      rethrow;
+    }
+  }
+
+  /// Signs in with a pre-built [PhoneAuthCredential] from auto-verification.
+  @override
+  Future<UserCredential> signInWithPhoneAutoCredential(
+    PhoneAuthCredential credential,
+  ) async {
+    try {
+      final result = await _auth.signInWithCredential(credential);
+      TalkerService.info('Phone auto-verification sign-in successful');
+      return result;
+    } on FirebaseAuthException catch (e) {
+      TalkerService.error('Phone auto-verification error: ${e.message}');
+      throw _handleAuthException(e);
+    } catch (e) {
+      TalkerService.error('Phone auto-verification error', e);
+      rethrow;
     }
   }
 }
