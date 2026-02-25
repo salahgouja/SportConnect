@@ -317,7 +317,9 @@ class AuthRepository implements IAuthRepository {
           }
         });
       } on FirebaseException catch (e) {
-        TalkerService.warning('Storage cleanup failed (best-effort): ${e.message}');
+        TalkerService.warning(
+          'Storage cleanup failed (best-effort): ${e.message}',
+        );
       }
 
       await _googleSignIn.signOut();
@@ -643,7 +645,10 @@ class AuthRepository implements IAuthRepository {
   AuthException _handleAuthException(FirebaseAuthException e) {
     switch (e.code) {
       case 'user-not-found':
-        return AuthException(code: e.code, message: 'No user found with this email');
+        return AuthException(
+          code: e.code,
+          message: 'No user found with this email',
+        );
       case 'wrong-password':
         return AuthException(code: e.code, message: 'Wrong password');
       case 'email-already-in-use':
@@ -665,7 +670,8 @@ class AuthRepository implements IAuthRepository {
       case 'account-exists-with-different-credential':
         return AuthException(
           code: e.code,
-          message: 'An account already exists with a different sign-in method. '
+          message:
+              'An account already exists with a different sign-in method. '
               'Try signing in with email/password or the original provider.',
         );
       default:
@@ -781,12 +787,11 @@ class AuthRepository implements IAuthRepository {
   @override
   Future<void> verifyPhoneNumber({
     required String phoneNumber,
-    required void Function(String verificationId, int? resendToken)
-        onCodeSent,
+    required void Function(String verificationId, int? resendToken) onCodeSent,
     required void Function(String verificationId) onAutoRetrievalTimeout,
     required void Function(FirebaseAuthException error) onVerificationFailed,
     required void Function(PhoneAuthCredential credential)
-        onVerificationCompleted,
+    onVerificationCompleted,
     int? forceResendingToken,
   }) async {
     await _auth.verifyPhoneNumber(

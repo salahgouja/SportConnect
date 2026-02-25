@@ -78,15 +78,20 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push(AppRoutes.createEvent.path),
-        backgroundColor: AppColors.primary,
-        icon: Icon(Icons.add_rounded, size: 22.sp),
-        label: Text(
-          'Create',
-          style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
-        ),
-      ).animate().scale(delay: 300.ms, duration: 400.ms, curve: Curves.easeOutBack),
+      floatingActionButton:
+          FloatingActionButton.extended(
+            onPressed: () => context.push(AppRoutes.createEvent.path),
+            backgroundColor: AppColors.primary,
+            icon: Icon(Icons.add_rounded, size: 22.sp),
+            label: Text(
+              'Create',
+              style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
+            ),
+          ).animate().scale(
+            delay: 300.ms,
+            duration: 400.ms,
+            curve: Curves.easeOutBack,
+          ),
     );
   }
 
@@ -99,7 +104,11 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
       backgroundColor: AppColors.background,
       surfaceTintColor: Colors.transparent,
       leading: IconButton(
-        icon: Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary, size: 22.sp),
+        icon: Icon(
+          Icons.arrow_back_rounded,
+          color: AppColors.textPrimary,
+          size: 22.sp,
+        ),
         onPressed: () => context.pop(),
       ),
       title: Text(
@@ -131,7 +140,11 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
         decoration: InputDecoration(
           hintText: 'Search events…',
           hintStyle: TextStyle(fontSize: 14.sp, color: AppColors.textTertiary),
-          prefixIcon: Icon(Icons.search_rounded, size: 20.sp, color: AppColors.textTertiary),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            size: 20.sp,
+            color: AppColors.textTertiary,
+          ),
           suffixIcon: _searchQuery.isNotEmpty
               ? IconButton(
                   icon: Icon(Icons.close_rounded, size: 18.sp),
@@ -222,7 +235,11 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.event_busy_rounded, size: 56.sp, color: AppColors.textTertiary),
+            Icon(
+              Icons.event_busy_rounded,
+              size: 56.sp,
+              color: AppColors.textTertiary,
+            ),
             SizedBox(height: 16.h),
             Text(
               'No events found',
@@ -238,10 +255,7 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
                   ? 'No upcoming ${_selectedType!.label.toLowerCase()} events.'
                   : 'Be the first to create one!',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14.sp,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
             ),
             SizedBox(height: 24.h),
             PremiumButton(
@@ -290,7 +304,9 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final chipColor = isSelected ? (color ?? AppColors.primary) : AppColors.textTertiary;
+    final chipColor = isSelected
+        ? (color ?? AppColors.primary)
+        : AppColors.textTertiary;
     return Padding(
       padding: EdgeInsets.only(right: 8.w),
       child: GestureDetector(
@@ -302,7 +318,9 @@ class _FilterChip extends StatelessWidget {
           duration: 200.ms,
           padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
           decoration: BoxDecoration(
-            color: isSelected ? chipColor.withValues(alpha: 0.12) : Colors.transparent,
+            color: isSelected
+                ? chipColor.withValues(alpha: 0.12)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(20.r),
             border: Border.all(
               color: isSelected ? chipColor : AppColors.border,
@@ -371,7 +389,10 @@ class _EventCard extends ConsumerWidget {
                   top: 10.h,
                   right: 12.w,
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 10.w,
+                      vertical: 4.h,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black26,
                       borderRadius: BorderRadius.circular(12.r),
@@ -391,7 +412,10 @@ class _EventCard extends ConsumerWidget {
                     top: 10.h,
                     left: 12.w,
                     child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 8.w,
+                        vertical: 3.h,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.error.withValues(alpha: 0.85),
                         borderRadius: BorderRadius.circular(8.r),

@@ -1,16 +1,19 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
-import 'package:sport_connect/features/events/repositories/event_repository.dart';
+import 'package:sport_connect/features/events/view_models/event_view_model.dart';
 
 /// Full-screen event editing form — pre-populated from an existing event.
 ///
@@ -36,6 +39,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
   DateTime? _endsAt;
   LocationPoint? _location;
   late int _maxParticipants;
+  File? _imageFile;
   bool _submitting = false;
 
   final _dateFmt = DateFormat('EEE, MMM d, yyyy');
@@ -103,6 +107,8 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
             _buildVenueField(),
             SizedBox(height: 14.h),
             _buildDescriptionField(),
+            SizedBox(height: 20.h),
+            _buildImagePicker(),
             SizedBox(height: 20.h),
             _buildLocationPicker(),
             SizedBox(height: 20.h),
@@ -197,6 +203,97 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
       textCapitalization: TextCapitalization.sentences,
       decoration: _deco('Description (optional)', Icons.notes_rounded),
     ).animate().fadeIn(duration: 250.ms, delay: 140.ms);
+  }
+
+  // ── Cover Image ──────────────────────────────────────────────
+  Widget _buildImagePicker() {
+    final existingUrl = widget.event.imageUrl;
+    final hasImage =
+        _imageFile != null || (existingUrl != null && existingUrl.isNotEmpty);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _label('Cover Image (optional)'),
+        SizedBox(height: 8.h),
+        GestureDetector(
+          onTap: _pickImage,
+          child: Container(
+            height: 160.h,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(16.r),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.15),
+              ),
+              image: _imageFile != null
+                  ? DecorationImage(
+                      image: FileImage(_imageFile!),
+                      fit: BoxFit.cover,
+                    )
+                  : existingUrl != null && existingUrl.isNotEmpty
+                  ? DecorationImage(
+                      image: NetworkImage(existingUrl),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
+            ),
+            child: hasImage
+                ? Align(
+                    alignment: Alignment.topRight,
+                    child: Padding(
+                      padding: EdgeInsets.all(8.r),
+                      child: CircleAvatar(
+                        radius: 16.r,
+                        backgroundColor: Colors.black54,
+                        child: IconButton(
+                          icon: Icon(
+                            Icons.close,
+                            size: 16.sp,
+                            color: Colors.white,
+                          ),
+                          padding: EdgeInsets.zero,
+                          onPressed: () => setState(() => _imageFile = null),
+                        ),
+                      ),
+                    ),
+                  )
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.add_photo_alternate_outlined,
+                        size: 36.sp,
+                        color: AppColors.textSecondary,
+                      ),
+                      SizedBox(height: 8.h),
+                      Text(
+                        'Tap to add a cover photo',
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+      ],
+    ).animate().fadeIn(duration: 250.ms, delay: 160.ms);
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1200,
+      maxHeight: 800,
+      imageQuality: 85,
+    );
+    if (image != null) {
+      setState(() => _imageFile = File(image.path));
+    }
   }
 
   // ── Location ───────────────────────────────────────────────
@@ -302,10 +399,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
           children: [
             Text(
               'End',
-              style: TextStyle(
-                fontSize: 13.sp,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
             ),
             SizedBox(width: 8.w),
             Expanded(
@@ -401,33 +495,52 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
       );
       return;
     }
+    if (_startsAt.isBefore(DateTime.now())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Start time must be in the future.')),
+      );
+      return;
+    }
+    if (_endsAt != null && _endsAt!.isBefore(_startsAt)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('End time must be after start time.')),
+      );
+      return;
+    }
 
     setState(() => _submitting = true);
 
-    try {
-      final updated = widget.event.copyWith(
-        title: _titleCtrl.text.trim(),
-        type: _type,
-        location: _location!,
-        startsAt: _startsAt,
-        endsAt: _endsAt,
-        description: _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
-        venueName: _venueCtrl.text.trim().isEmpty ? null : _venueCtrl.text.trim(),
-        maxParticipants: _maxParticipants,
-        updatedAt: DateTime.now(),
-      );
+    final vmNotifier = ref.read(
+      eventDetailViewModelProvider(widget.event.id).notifier,
+    );
 
-      await ref.read(eventRepositoryProvider).updateEvent(updated);
+    // Upload new cover image if one was picked.
+    String? imageUrl = widget.event.imageUrl;
+    if (_imageFile != null) {
+      final url = await vmNotifier.uploadImage(_imageFile!);
+      if (url != null) imageUrl = url;
+    }
 
-      if (!mounted) return;
+    final updated = widget.event.copyWith(
+      title: _titleCtrl.text.trim(),
+      type: _type,
+      location: _location!,
+      startsAt: _startsAt,
+      endsAt: _endsAt,
+      description: _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
+      venueName: _venueCtrl.text.trim().isEmpty ? null : _venueCtrl.text.trim(),
+      imageUrl: imageUrl,
+      maxParticipants: _maxParticipants,
+      updatedAt: DateTime.now(),
+    );
+
+    final success = await vmNotifier.updateEvent(updated);
+
+    if (!mounted) return;
+    setState(() => _submitting = false);
+
+    if (success) {
       context.pop(updated);
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to update event. Try again.')),
-      );
-    } finally {
-      if (mounted) setState(() => _submitting = false);
     }
   }
 
@@ -452,6 +565,15 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
           _startsAt.hour,
           _startsAt.minute,
         );
+      } else {
+        final base = _endsAt ?? _startsAt;
+        _endsAt = DateTime(
+          picked.year,
+          picked.month,
+          picked.day,
+          base.hour,
+          base.minute,
+        );
       }
     });
   }
@@ -472,10 +594,11 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
           picked.minute,
         );
       } else {
+        final base = _endsAt ?? _startsAt;
         _endsAt = DateTime(
-          _startsAt.year,
-          _startsAt.month,
-          _startsAt.day,
+          base.year,
+          base.month,
+          base.day,
           picked.hour,
           picked.minute,
         );

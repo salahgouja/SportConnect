@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$EventModel {
 
- String get id; String get creatorId; String get title; EventType get type; LocationPoint get location;@TimestampConverter() DateTime get startsAt;@TimestampConverter() DateTime? get endsAt; String? get description;/// Venue / facility name (e.g. "Downtown Sports Complex").
+ String get id; String get creatorId; String get title; EventType get type; LocationPoint get location;@RequiredTimestampConverter() DateTime get startsAt;@TimestampConverter() DateTime? get endsAt; String? get description;/// Venue / facility name (e.g. "Downtown Sports Complex").
  String? get venueName;/// Display name of the organiser (denormalized for fast rendering).
  String? get organizerName;/// Cover image URL (Firebase Storage).
  String? get imageUrl; List<String> get participantIds; int get maxParticipants; bool get isActive;@TimestampConverter() DateTime? get createdAt;@TimestampConverter() DateTime? get updatedAt;
@@ -51,7 +51,7 @@ abstract mixin class $EventModelCopyWith<$Res>  {
   factory $EventModelCopyWith(EventModel value, $Res Function(EventModel) _then) = _$EventModelCopyWithImpl;
 @useResult
 $Res call({
- String id, String creatorId, String title, EventType type, LocationPoint location,@TimestampConverter() DateTime startsAt,@TimestampConverter() DateTime? endsAt, String? description, String? venueName, String? organizerName, String? imageUrl, List<String> participantIds, int maxParticipants, bool isActive,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? updatedAt
+ String id, String creatorId, String title, EventType type, LocationPoint location,@RequiredTimestampConverter() DateTime startsAt,@TimestampConverter() DateTime? endsAt, String? description, String? venueName, String? organizerName, String? imageUrl, List<String> participantIds, int maxParticipants, bool isActive,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? updatedAt
 });
 
 
@@ -180,7 +180,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String creatorId,  String title,  EventType type,  LocationPoint location, @TimestampConverter()  DateTime startsAt, @TimestampConverter()  DateTime? endsAt,  String? description,  String? venueName,  String? organizerName,  String? imageUrl,  List<String> participantIds,  int maxParticipants,  bool isActive, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String creatorId,  String title,  EventType type,  LocationPoint location, @RequiredTimestampConverter()  DateTime startsAt, @TimestampConverter()  DateTime? endsAt,  String? description,  String? venueName,  String? organizerName,  String? imageUrl,  List<String> participantIds,  int maxParticipants,  bool isActive, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _EventModel() when $default != null:
 return $default(_that.id,_that.creatorId,_that.title,_that.type,_that.location,_that.startsAt,_that.endsAt,_that.description,_that.venueName,_that.organizerName,_that.imageUrl,_that.participantIds,_that.maxParticipants,_that.isActive,_that.createdAt,_that.updatedAt);case _:
@@ -201,7 +201,7 @@ return $default(_that.id,_that.creatorId,_that.title,_that.type,_that.location,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String creatorId,  String title,  EventType type,  LocationPoint location, @TimestampConverter()  DateTime startsAt, @TimestampConverter()  DateTime? endsAt,  String? description,  String? venueName,  String? organizerName,  String? imageUrl,  List<String> participantIds,  int maxParticipants,  bool isActive, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String creatorId,  String title,  EventType type,  LocationPoint location, @RequiredTimestampConverter()  DateTime startsAt, @TimestampConverter()  DateTime? endsAt,  String? description,  String? venueName,  String? organizerName,  String? imageUrl,  List<String> participantIds,  int maxParticipants,  bool isActive, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)  $default,) {final _that = this;
 switch (_that) {
 case _EventModel():
 return $default(_that.id,_that.creatorId,_that.title,_that.type,_that.location,_that.startsAt,_that.endsAt,_that.description,_that.venueName,_that.organizerName,_that.imageUrl,_that.participantIds,_that.maxParticipants,_that.isActive,_that.createdAt,_that.updatedAt);case _:
@@ -221,7 +221,7 @@ return $default(_that.id,_that.creatorId,_that.title,_that.type,_that.location,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String creatorId,  String title,  EventType type,  LocationPoint location, @TimestampConverter()  DateTime startsAt, @TimestampConverter()  DateTime? endsAt,  String? description,  String? venueName,  String? organizerName,  String? imageUrl,  List<String> participantIds,  int maxParticipants,  bool isActive, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String creatorId,  String title,  EventType type,  LocationPoint location, @RequiredTimestampConverter()  DateTime startsAt, @TimestampConverter()  DateTime? endsAt,  String? description,  String? venueName,  String? organizerName,  String? imageUrl,  List<String> participantIds,  int maxParticipants,  bool isActive, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _EventModel() when $default != null:
 return $default(_that.id,_that.creatorId,_that.title,_that.type,_that.location,_that.startsAt,_that.endsAt,_that.description,_that.venueName,_that.organizerName,_that.imageUrl,_that.participantIds,_that.maxParticipants,_that.isActive,_that.createdAt,_that.updatedAt);case _:
@@ -236,7 +236,7 @@ return $default(_that.id,_that.creatorId,_that.title,_that.type,_that.location,_
 @JsonSerializable()
 
 class _EventModel extends EventModel {
-  const _EventModel({required this.id, required this.creatorId, required this.title, required this.type, required this.location, @TimestampConverter() required this.startsAt, @TimestampConverter() this.endsAt, this.description, this.venueName, this.organizerName, this.imageUrl, final  List<String> participantIds = const [], this.maxParticipants = 0, this.isActive = true, @TimestampConverter() this.createdAt, @TimestampConverter() this.updatedAt}): _participantIds = participantIds,super._();
+  const _EventModel({required this.id, required this.creatorId, required this.title, required this.type, required this.location, @RequiredTimestampConverter() required this.startsAt, @TimestampConverter() this.endsAt, this.description, this.venueName, this.organizerName, this.imageUrl, final  List<String> participantIds = const [], this.maxParticipants = 0, this.isActive = true, @TimestampConverter() this.createdAt, @TimestampConverter() this.updatedAt}): _participantIds = participantIds,super._();
   factory _EventModel.fromJson(Map<String, dynamic> json) => _$EventModelFromJson(json);
 
 @override final  String id;
@@ -244,7 +244,7 @@ class _EventModel extends EventModel {
 @override final  String title;
 @override final  EventType type;
 @override final  LocationPoint location;
-@override@TimestampConverter() final  DateTime startsAt;
+@override@RequiredTimestampConverter() final  DateTime startsAt;
 @override@TimestampConverter() final  DateTime? endsAt;
 @override final  String? description;
 /// Venue / facility name (e.g. "Downtown Sports Complex").
@@ -298,7 +298,7 @@ abstract mixin class _$EventModelCopyWith<$Res> implements $EventModelCopyWith<$
   factory _$EventModelCopyWith(_EventModel value, $Res Function(_EventModel) _then) = __$EventModelCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String creatorId, String title, EventType type, LocationPoint location,@TimestampConverter() DateTime startsAt,@TimestampConverter() DateTime? endsAt, String? description, String? venueName, String? organizerName, String? imageUrl, List<String> participantIds, int maxParticipants, bool isActive,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? updatedAt
+ String id, String creatorId, String title, EventType type, LocationPoint location,@RequiredTimestampConverter() DateTime startsAt,@TimestampConverter() DateTime? endsAt, String? description, String? venueName, String? organizerName, String? imageUrl, List<String> participantIds, int maxParticipants, bool isActive,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? updatedAt
 });
 
 

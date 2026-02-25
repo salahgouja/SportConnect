@@ -185,8 +185,7 @@ class _DriverOnboardingScreenState
         isValid = false;
       }
       if (_selectedInterests.isEmpty) {
-        _interestsError =
-            AppLocalizations.of(context).driverInterestsRequired;
+        _interestsError = AppLocalizations.of(context).driverInterestsRequired;
         isValid = false;
       }
       if (!_agreedToTerms) {

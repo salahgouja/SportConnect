@@ -851,6 +851,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
       _waypoints.removeAt(index);
     });
   }
+
   // --- Step 2: Details ---
   Widget _buildDetailsStep(List<VehicleModel> vehicles) {
     return ListView(

@@ -763,7 +763,9 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
       // Route guard handles redirect based on needsRoleSelection field in Firestore
     } catch (e) {
       if (mounted) {
-        final message = e is AuthException && e.code == 'account-exists-with-different-credential'
+        final message =
+            e is AuthException &&
+                e.code == 'account-exists-with-different-credential'
             ? AppLocalizations.of(context).accountExistsError
             : AppLocalizations.of(context).signUpFailedPleaseTry;
         _showError(message);
@@ -778,7 +780,9 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
       // Route guard handles redirect based on needsRoleSelection field in Firestore
     } catch (e) {
       if (mounted) {
-        final message = e is AuthException && e.code == 'account-exists-with-different-credential'
+        final message =
+            e is AuthException &&
+                e.code == 'account-exists-with-different-credential'
             ? AppLocalizations.of(context).accountExistsError
             : AppLocalizations.of(context).signUpFailedPleaseTry;
         _showError(message);

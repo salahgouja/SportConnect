@@ -179,16 +179,16 @@ class AuthActionsViewModel {
 
   Future<void> verifyPhoneNumber({
     required String phoneNumber,
-    required void Function(String verificationId, int? resendToken)
-        onCodeSent,
-    required void Function(FirebaseAuthException error)
-        onVerificationFailed,
+    required void Function(String verificationId, int? resendToken) onCodeSent,
+    required void Function(FirebaseAuthException error) onVerificationFailed,
     required void Function(PhoneAuthCredential credential)
-        onVerificationCompleted,
+    onVerificationCompleted,
     required void Function(String verificationId) onAutoRetrievalTimeout,
     int? forceResendingToken,
   }) {
-    return _ref.read(authRepositoryProvider).verifyPhoneNumber(
+    return _ref
+        .read(authRepositoryProvider)
+        .verifyPhoneNumber(
           phoneNumber: phoneNumber,
           onCodeSent: onCodeSent,
           onVerificationFailed: onVerificationFailed,
@@ -202,7 +202,9 @@ class AuthActionsViewModel {
     required String verificationId,
     required String smsCode,
   }) {
-    return _ref.read(authRepositoryProvider).signInWithPhoneCredential(
+    return _ref
+        .read(authRepositoryProvider)
+        .signInWithPhoneCredential(
           verificationId: verificationId,
           smsCode: smsCode,
         );

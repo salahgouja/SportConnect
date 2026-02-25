@@ -101,22 +101,32 @@ class PushNotificationService {
   // ---------------------------------------------------------------------------
 
   /// Save the current FCM token to the user's Firestore document.
+  ///
+  /// Uses `set` with merge so it works even if the document does not yet
+  /// contain an `fcmToken` field (avoids the `update`-on-missing-field
+  /// silent failure).
   Future<void> saveFcmToken(String userId) async {
     try {
       final token = await _messaging.getToken();
-      if (token == null) return;
+      if (token == null) {
+        TalkerService.warning(
+          'FCM getToken() returned null for user $userId — '
+          'push notifications will not work.',
+        );
+        return;
+      }
 
-      await FirebaseFirestore.instance.collection('users').doc(userId).update({
+      await FirebaseFirestore.instance.collection('users').doc(userId).set({
         'fcmToken': token,
-      });
+      }, SetOptions(merge: true));
 
       TalkerService.info('FCM token saved for user $userId');
 
       // Listen for token refreshes
       _messaging.onTokenRefresh.listen((newToken) async {
-        await FirebaseFirestore.instance.collection('users').doc(userId).update(
-          {'fcmToken': newToken},
-        );
+        await FirebaseFirestore.instance.collection('users').doc(userId).set({
+          'fcmToken': newToken,
+        }, SetOptions(merge: true));
         TalkerService.info('FCM token refreshed for user $userId');
       });
     } catch (e) {

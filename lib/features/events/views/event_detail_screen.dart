@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
@@ -33,8 +32,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
   bool _isParticipant(EventModel event, String userId) =>
       event.participantIds.contains(userId);
 
-  bool _isCreator(EventModel event, String userId) =>
-      event.creatorId == userId;
+  bool _isCreator(EventModel event, String userId) => event.creatorId == userId;
 
   // ------------------------------------------------------------------
   // Build
@@ -42,9 +40,47 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final eventAsync = ref.watch(eventByIdProvider(widget.eventId));
-    final detailVm = ref.watch(eventDetailViewModelProvider);
+    final detailVm = ref.watch(eventDetailViewModelProvider(widget.eventId));
     final currentUser = ref.watch(currentUserProvider).value;
     final userId = currentUser?.uid ?? '';
+
+    // Listen for success / error messages from the view-model.
+    ref.listen<EventDetailState>(eventDetailViewModelProvider(widget.eventId), (
+      prev,
+      next,
+    ) {
+      if (next.successMessage != null &&
+          next.successMessage != prev?.successMessage) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.successMessage!),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+          ),
+        );
+        ref
+            .read(eventDetailViewModelProvider(widget.eventId).notifier)
+            .clearMessages();
+      }
+      if (next.error != null && next.error != prev?.error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.error!),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+          ),
+        );
+        ref
+            .read(eventDetailViewModelProvider(widget.eventId).notifier)
+            .clearMessages();
+      }
+    });
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -121,9 +157,9 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                 ],
 
                 // ── Participants chip ──
-                _ParticipantChip(event: event)
-                    .animate()
-                    .fadeIn(delay: 250.ms, duration: 350.ms),
+                _ParticipantChip(
+                  event: event,
+                ).animate().fadeIn(delay: 250.ms, duration: 350.ms),
 
                 SizedBox(height: 24.h),
 
@@ -146,9 +182,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                       height: 1.55,
                       color: AppColors.textSecondary,
                     ),
-                  )
-                      .animate()
-                      .fadeIn(delay: 300.ms, duration: 350.ms),
+                  ).animate().fadeIn(delay: 300.ms, duration: 350.ms),
                   SizedBox(height: 24.h),
                 ],
 
@@ -163,9 +197,9 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                     ),
                   ),
                   SizedBox(height: 12.h),
-                  _ParticipantAvatars(participantIds: event.participantIds)
-                      .animate()
-                      .fadeIn(delay: 350.ms, duration: 350.ms),
+                  _ParticipantAvatars(
+                    participantIds: event.participantIds,
+                  ).animate().fadeIn(delay: 350.ms, duration: 350.ms),
                   SizedBox(height: 24.h),
                 ],
 
@@ -179,9 +213,10 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                   ).animate().fadeIn(delay: 400.ms, duration: 400.ms),
 
                 if (isOwner && event.isUpcoming)
-                  _buildOwnerActions(event, detailState)
-                      .animate()
-                      .fadeIn(delay: 400.ms, duration: 400.ms),
+                  _buildOwnerActions(
+                    event,
+                    detailState,
+                  ).animate().fadeIn(delay: 400.ms, duration: 400.ms),
 
                 // Bottom safe-area padding
                 SizedBox(height: MediaQuery.of(context).padding.bottom + 32.h),
@@ -207,10 +242,8 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         if (isOwner)
           IconButton(
             icon: Icon(Icons.edit_rounded, color: Colors.white, size: 22.sp),
-            onPressed: () => context.push(
-              '/events/${event.id}/edit',
-              extra: event,
-            ),
+            onPressed: () =>
+                context.push('/events/${event.id}/edit', extra: event),
           ),
       ],
       flexibleSpace: FlexibleSpaceBar(
@@ -239,9 +272,8 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         onPressed: () async {
           HapticFeedback.mediumImpact();
           await ref
-              .read(eventDetailViewModelProvider.notifier)
-              .leaveEvent(event.id, userId);
-          if (mounted) ref.invalidate(eventByIdProvider(event.id));
+              .read(eventDetailViewModelProvider(widget.eventId).notifier)
+              .leaveEvent(userId);
         },
       );
     }
@@ -258,9 +290,8 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
           : () async {
               HapticFeedback.mediumImpact();
               await ref
-                  .read(eventDetailViewModelProvider.notifier)
-                  .joinEvent(event.id, userId);
-              if (mounted) ref.invalidate(eventByIdProvider(event.id));
+                  .read(eventDetailViewModelProvider(widget.eventId).notifier)
+                  .joinEvent(userId);
             },
     );
   }
@@ -276,10 +307,8 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
           icon: Icons.edit_rounded,
           style: PremiumButtonStyle.secondary,
           fullWidth: true,
-          onPressed: () => context.push(
-            '/events/${event.id}/edit',
-            extra: event,
-          ),
+          onPressed: () =>
+              context.push('/events/${event.id}/edit', extra: event),
         ),
         SizedBox(height: 12.h),
         PremiumButton(
@@ -293,8 +322,8 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
             if (!confirm || !mounted) return;
             HapticFeedback.mediumImpact();
             final deleted = await ref
-                .read(eventDetailViewModelProvider.notifier)
-                .deleteEvent(event.id);
+                .read(eventDetailViewModelProvider(widget.eventId).notifier)
+                .deleteEvent();
             if (deleted && mounted) context.pop();
           },
         ),
@@ -344,7 +373,11 @@ class _CircleBackButton extends StatelessWidget {
         child: CircleAvatar(
           backgroundColor: Colors.black26,
           radius: 18.r,
-          child: Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20.sp),
+          child: Icon(
+            Icons.arrow_back_rounded,
+            color: Colors.white,
+            size: 20.sp,
+          ),
         ),
       ),
     );
@@ -384,10 +417,7 @@ class _HeroBanner extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            event.type.color,
-            event.type.color.withValues(alpha: 0.7),
-          ],
+          colors: [event.type.color, event.type.color.withValues(alpha: 0.7)],
         ),
       ),
       child: _SportOverlay(event: event),
@@ -401,24 +431,22 @@ class _SportOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Positioned.fill(
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(event.type.icon, size: 52.sp, color: Colors.white70),
-            SizedBox(height: 8.h),
-            Text(
-              event.type.label,
-              style: TextStyle(
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w600,
-                color: Colors.white70,
-                letterSpacing: 1.2,
-              ),
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(event.type.icon, size: 52.sp, color: Colors.white70),
+          SizedBox(height: 8.h),
+          Text(
+            event.type.label,
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
+              color: Colors.white70,
+              letterSpacing: 1.2,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -622,15 +650,16 @@ class _ErrorBody extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline_rounded, size: 48.sp, color: AppColors.error),
+            Icon(
+              Icons.error_outline_rounded,
+              size: 48.sp,
+              color: AppColors.error,
+            ),
             SizedBox(height: 16.h),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16.sp,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 16.sp, color: AppColors.textSecondary),
             ),
             SizedBox(height: 24.h),
             PremiumButton(

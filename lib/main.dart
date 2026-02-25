@@ -141,6 +141,9 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
     if (_deepLinksInitialized) return;
     _deepLinksInitialized = true;
 
+    // Wire up the navigator key so notification taps can navigate
+    PushNotificationService.navigatorKey = rootNavigatorKey;
+
     // Initialize after first frame so the router is ready
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {

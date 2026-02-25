@@ -89,10 +89,18 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
       ..writeln('================================')
       ..writeln()
       ..writeln(l10n.exportEarningsSummary)
-      ..writeln('  ${l10n.periodToday}:      ${stats.earningsToday.toStringAsFixed(2)} $_currencyCode')
-      ..writeln('  ${l10n.periodThisWeek}:  ${stats.earningsThisWeek.toStringAsFixed(2)} $_currencyCode')
-      ..writeln('  ${l10n.periodThisMonth}: ${stats.earningsThisMonth.toStringAsFixed(2)} $_currencyCode')
-      ..writeln('  ${l10n.periodAllTime}:      ${stats.totalEarnings.toStringAsFixed(2)} $_currencyCode')
+      ..writeln(
+        '  ${l10n.periodToday}:      ${stats.earningsToday.toStringAsFixed(2)} $_currencyCode',
+      )
+      ..writeln(
+        '  ${l10n.periodThisWeek}:  ${stats.earningsThisWeek.toStringAsFixed(2)} $_currencyCode',
+      )
+      ..writeln(
+        '  ${l10n.periodThisMonth}: ${stats.earningsThisMonth.toStringAsFixed(2)} $_currencyCode',
+      )
+      ..writeln(
+        '  ${l10n.periodAllTime}:      ${stats.totalEarnings.toStringAsFixed(2)} $_currencyCode',
+      )
       ..writeln()
       ..writeln(l10n.exportRideStatistics)
       ..writeln('  ${l10n.statRides}: ${stats.totalRides}')
@@ -424,7 +432,8 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
                       icon: Icons.attach_money_rounded,
                       iconColor: AppColors.success,
                       title: AppLocalizations.of(context).statEarnings,
-                      value: '${displayEarnings.toStringAsFixed(0)} $_currencyCode',
+                      value:
+                          '${displayEarnings.toStringAsFixed(0)} $_currencyCode',
                     ),
                   ),
                 ],

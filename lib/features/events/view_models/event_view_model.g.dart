@@ -20,7 +20,7 @@ final class EventSelectionViewModelProvider
         argument: null,
         retry: null,
         name: r'eventSelectionViewModelProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -42,7 +42,7 @@ final class EventSelectionViewModelProvider
 }
 
 String _$eventSelectionViewModelHash() =>
-    r'6101429a36221a59cd35f07d30f49231c2998506';
+    r'b14abda7ace21cfd000e2039a8a450b550e401ca';
 
 abstract class _$EventSelectionViewModel
     extends $Notifier<EventSelectionState> {
@@ -64,23 +64,30 @@ abstract class _$EventSelectionViewModel
 }
 
 @ProviderFor(EventDetailViewModel)
-final eventDetailViewModelProvider = EventDetailViewModelProvider._();
+final eventDetailViewModelProvider = EventDetailViewModelFamily._();
 
 final class EventDetailViewModelProvider
     extends $NotifierProvider<EventDetailViewModel, EventDetailState> {
-  EventDetailViewModelProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'eventDetailViewModelProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
+  EventDetailViewModelProvider._({
+    required EventDetailViewModelFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'eventDetailViewModelProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
 
   @override
   String debugGetCreateSourceHash() => _$eventDetailViewModelHash();
+
+  @override
+  String toString() {
+    return r'eventDetailViewModelProvider'
+        ''
+        '($argument)';
+  }
 
   @$internal
   @override
@@ -93,13 +100,51 @@ final class EventDetailViewModelProvider
       providerOverride: $SyncValueProvider<EventDetailState>(value),
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    return other is EventDetailViewModelProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
 }
 
 String _$eventDetailViewModelHash() =>
-    r'30ce2cc1c3f8b98ec17b43a673ca0288a5314cec';
+    r'0d233f2840e57e6daf96ac5ef15fa85dd62dd619';
+
+final class EventDetailViewModelFamily extends $Family
+    with
+        $ClassFamilyOverride<
+          EventDetailViewModel,
+          EventDetailState,
+          EventDetailState,
+          EventDetailState,
+          String
+        > {
+  EventDetailViewModelFamily._()
+    : super(
+        retry: null,
+        name: r'eventDetailViewModelProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  EventDetailViewModelProvider call(String eventId) =>
+      EventDetailViewModelProvider._(argument: eventId, from: this);
+
+  @override
+  String toString() => r'eventDetailViewModelProvider';
+}
 
 abstract class _$EventDetailViewModel extends $Notifier<EventDetailState> {
-  EventDetailState build();
+  late final _$args = ref.$arg as String;
+  String get eventId => _$args;
+
+  EventDetailState build(String eventId);
   @$mustCallSuper
   @override
   void runBuild() {
@@ -112,7 +157,7 @@ abstract class _$EventDetailViewModel extends $Notifier<EventDetailState> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    element.handleCreate(ref, () => build(_$args));
   }
 }
 
@@ -392,9 +437,9 @@ final class EventByIdProvider
         $FunctionalProvider<
           AsyncValue<EventModel?>,
           EventModel?,
-          FutureOr<EventModel?>
+          Stream<EventModel?>
         >
-    with $FutureModifier<EventModel?>, $FutureProvider<EventModel?> {
+    with $FutureModifier<EventModel?>, $StreamProvider<EventModel?> {
   EventByIdProvider._({
     required EventByIdFamily super.from,
     required String super.argument,
@@ -418,12 +463,12 @@ final class EventByIdProvider
 
   @$internal
   @override
-  $FutureProviderElement<EventModel?> $createElement(
+  $StreamProviderElement<EventModel?> $createElement(
     $ProviderPointer pointer,
-  ) => $FutureProviderElement(pointer);
+  ) => $StreamProviderElement(pointer);
 
   @override
-  FutureOr<EventModel?> create(Ref ref) {
+  Stream<EventModel?> create(Ref ref) {
     final argument = this.argument as String;
     return eventById(ref, argument);
   }
@@ -439,10 +484,10 @@ final class EventByIdProvider
   }
 }
 
-String _$eventByIdHash() => r'c710e4d543bcdb8d4a0e45847fe89419c53ce4b4';
+String _$eventByIdHash() => r'99b3bd74dab8bae92131799c7e3b5a16bea1b5bc';
 
 final class EventByIdFamily extends $Family
-    with $FunctionalFamilyOverride<FutureOr<EventModel?>, String> {
+    with $FunctionalFamilyOverride<Stream<EventModel?>, String> {
   EventByIdFamily._()
     : super(
         retry: null,
