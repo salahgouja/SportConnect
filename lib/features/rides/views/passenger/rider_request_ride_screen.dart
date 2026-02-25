@@ -4,24 +4,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:intl/intl.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
-import 'package:sport_connect/core/widgets/premium_button.dart';
-import 'package:sport_connect/core/widgets/map_location_picker.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
-import 'package:sport_connect/core/models/location/location_point.dart';
+import 'package:sport_connect/core/widgets/map_location_picker.dart';
+import 'package:sport_connect/core/widgets/premium_button.dart';
+import 'package:sport_connect/features/events/models/event_model.dart';
+import 'package:sport_connect/features/events/views/inline_event_selector.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/ride_search_filters.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
-import 'package:sport_connect/features/events/models/event_model.dart';
-import 'package:sport_connect/features/events/views/event_picker_sheet.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
-/// Rider's screen to request/search for a ride
-/// Modern, Bolt-like UI with minimal steps and clear visual feedback
+/// Two-phase screen:
+///   Phase 1 → compact search form (no scroll needed)
+///   Phase 2 → results list slides up, form collapses to a sticky summary bar
 class RiderRequestRideScreen extends ConsumerStatefulWidget {
   const RiderRequestRideScreen({super.key});
 
@@ -32,235 +33,238 @@ class RiderRequestRideScreen extends ConsumerStatefulWidget {
 
 class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
     with SingleTickerProviderStateMixin {
-  // Location data
+  // ── Location ────────────────────────────────────────────────
   LatLng? _fromLocation;
   LatLng? _toLocation;
   String _fromAddress = '';
   String _toAddress = '';
 
-  // Search parameters
-  DateTime _selectedDate = DateTime.now();
-  TimeOfDay _selectedTime = TimeOfDay.now();
+  // ── Params ──────────────────────────────────────────────────
+  DateTime _date = DateTime.now();
+  TimeOfDay _time = TimeOfDay.now();
   int _passengers = 1;
+  EventModel? _event;
 
-  // Event filter
-  EventModel? _eventFilter;
-
-  // UI state
+  // ── UI state ────────────────────────────────────────────────
   bool _isSearching = false;
   bool _showResults = false;
-  int _selectedDateOption = 0; // 0: Today, 1: Tomorrow, 2: Custom
-  String _sortOption = 'recommended'; // recommended, earliest, price, rating
+  String _sort = 'recommended';
 
-  late AnimationController _animationController;
+  late final AnimationController _resultsAnim;
+  late final Animation<Offset> _slideAnim;
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
+    _resultsAnim = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 420),
     );
+    _slideAnim = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: _resultsAnim, curve: Curves.easeOutCubic),
+        );
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _resultsAnim.dispose();
     super.dispose();
   }
 
-  bool get _canSearch =>
-      _fromLocation != null &&
-      _toLocation != null &&
-      _fromAddress.isNotEmpty &&
-      _toAddress.isNotEmpty;
+  bool get _canSearch => _fromLocation != null && _toLocation != null;
 
+  // ════════════════════════════════════════════════════════════
+  // BUILD
+  // ════════════════════════════════════════════════════════════
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: CustomScrollView(
-        slivers: [
-          _buildHeader(),
-          SliverToBoxAdapter(child: _buildLocationCard()),
-          SliverToBoxAdapter(child: _buildEventFilterChip()),
-          SliverToBoxAdapter(child: _buildDateTimeSection()),
-          SliverToBoxAdapter(child: _buildPassengerSelector()),
-          if (_showResults) ...[
-            SliverToBoxAdapter(child: _buildResultsHeader()),
-            _buildResultsList(),
-          ],
-          SliverToBoxAdapter(child: SizedBox(height: 120.h)),
-        ],
-      ),
-      bottomSheet: _buildSearchButton(),
-    );
-  }
-
-  Widget _buildHeader() {
-    return SliverAppBar(
-      expandedHeight: 140.h,
-      floating: false,
-      pinned: true,
-      elevation: 0,
-      backgroundColor: AppColors.primary,
-      leading: IconButton(
-        tooltip: 'Go back',
-        onPressed: () =>
-            context.canPop() ? context.pop() : context.go(AppRoutes.home.path),
-        icon: Icon(
-          Icons.arrow_back_ios_new_rounded,
-          color: Colors.white,
-          size: 20.sp,
+      // ── Thin top app bar ────────────────────────────────────
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            size: 20.sp,
+            color: AppColors.textPrimary,
+          ),
+          onPressed: () => context.canPop()
+              ? context.pop()
+              : context.go(AppRoutes.home.path),
         ),
-      ),
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: BoxDecoration(gradient: AppColors.heroGradient),
-          child: SafeArea(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(20.w, 50.h, 20.w, 20.h),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    AppLocalizations.of(context).whereTo,
-                    style: TextStyle(
-                      fontSize: 28.sp,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  SizedBox(height: 4.h),
-                  Text(
-                    AppLocalizations.of(context).findThePerfectRideFor,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: Colors.white.withValues(alpha: 0.9),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+        title: Text(
+          'Find a Ride',
+          style: TextStyle(
+            fontSize: 18.sp,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
           ),
         ),
+        centerTitle: true,
+        actions: [
+          if (_showResults)
+            TextButton(
+              onPressed: _resetSearch,
+              child: Text(
+                'Edit',
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+        ],
+      ),
+
+      body: Stack(
+        children: [
+          // ── Phase 1: Search form ─────────────────────────────
+          AnimatedOpacity(
+            opacity: _showResults ? 0 : 1,
+            duration: 200.ms,
+            child: _showResults ? const SizedBox.shrink() : _buildSearchForm(),
+          ),
+
+          // ── Phase 2: Results panel slides up ────────────────
+          if (_showResults)
+            Positioned.fill(
+              child: SlideTransition(
+                position: _slideAnim,
+                child: _buildResultsPanel(),
+              ),
+            ),
+          // ── Sticky bottom CTA (only in search phase) ────────
+          if (!_showResults)
+            Positioned(left: 0, right: 0, bottom: 0, child: _buildSearchCta()),
+        ],
       ),
     );
   }
 
-  Widget _buildLocationCard() {
+  // ════════════════════════════════════════════════════════════
+  // PHASE 1 — SEARCH FORM
+  // All fits on one screen without scrolling on any normal phone
+  // ════════════════════════════════════════════════════════════
+  Widget _buildSearchForm() {
+    return SingleChildScrollView(
+      // 👈 Replaced Padding with SingleChildScrollView
+      padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 100.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildRouteCard(),
+          SizedBox(height: 12.h),
+          _buildParamsRow(),
+          SizedBox(height: 12.h),
+          InlineEventSelector(
+            selected: _event,
+            onChanged: (e) => setState(() => _event = e),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Route Card ──────────────────────────────────────────────
+  Widget _buildRouteCard() {
     return Container(
-      margin: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 8.h),
       decoration: BoxDecoration(
-        color: AppColors.cardBg,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(20.r),
         boxShadow: AppSpacing.shadowMd,
       ),
       child: Column(
         children: [
-          // From Location
-          _buildLocationRow(
-            icon: Icons.my_location_rounded,
+          _locationTile(
+            icon: Icons.radio_button_checked_rounded,
             iconColor: AppColors.primary,
-            label: _fromAddress.isEmpty
-                ? AppLocalizations.of(context).whereFrom
-                : _fromAddress,
-            hint: _fromAddress.isEmpty,
-            onTap: () => _selectLocation(isFrom: true),
+            label: _fromAddress.isEmpty ? 'From where?' : _fromAddress,
+            isEmpty: _fromAddress.isEmpty,
+            onTap: () => _pickLocation(isFrom: true),
           ),
-
-          // Divider with swap button
-          Row(
-            children: [
-              SizedBox(width: 20.w),
-              Container(
-                width: 24.w,
-                height: 24.w,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant,
-                  borderRadius: BorderRadius.circular(6.r),
-                ),
-                child: Center(
-                  child: Icon(
-                    Icons.more_vert,
-                    size: 14.sp,
-                    color: AppColors.textSecondary,
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
+            child: Row(
+              children: [
+                // Dotted line
+                SizedBox(
+                  width: 20.w,
+                  child: Column(
+                    children: List.generate(
+                      3,
+                      (_) => Container(
+                        margin: EdgeInsets.symmetric(vertical: 2.h),
+                        width: 3.w,
+                        height: 3.h,
+                        decoration: BoxDecoration(
+                          color: AppColors.border,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              Expanded(
-                child: Divider(
-                  color: AppColors.divider,
-                  indent: 16.w,
-                  endIndent: 16.w,
-                ),
-              ),
-              // Swap button
-              GestureDetector(
-                onTap: _swapLocations,
-                child: Container(
-                  padding: EdgeInsets.all(8.w),
-                  margin: EdgeInsets.only(right: 12.w),
-                  decoration: BoxDecoration(
-                    color: AppColors.primarySurface,
-                    borderRadius: BorderRadius.circular(8.r),
-                  ),
-                  child: Icon(
-                    Icons.swap_vert_rounded,
-                    size: 20.sp,
-                    color: AppColors.primary,
+                Expanded(child: Divider(color: AppColors.border)),
+                // Swap button
+                GestureDetector(
+                  onTap: _swapLocations,
+                  child: Container(
+                    padding: EdgeInsets.all(6.w),
+                    decoration: BoxDecoration(
+                      color: AppColors.primarySurface,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.swap_vert_rounded,
+                      size: 18.sp,
+                      color: AppColors.primary,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-
-          // To Location
-          _buildLocationRow(
+          _locationTile(
             icon: Icons.location_on_rounded,
             iconColor: AppColors.error,
-            label: _toAddress.isEmpty
-                ? AppLocalizations.of(context).whereTo
-                : _toAddress,
-            hint: _toAddress.isEmpty,
-            onTap: () => _selectLocation(isFrom: false),
+            label: _toAddress.isEmpty ? 'To where?' : _toAddress,
+            isEmpty: _toAddress.isEmpty,
+            onTap: () => _pickLocation(isFrom: false),
           ),
         ],
       ),
-    ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.1, end: 0);
+    ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.06, end: 0);
   }
 
-  Widget _buildLocationRow({
+  Widget _locationTile({
     required IconData icon,
     required Color iconColor,
     required String label,
-    required bool hint,
+    required bool isEmpty,
     required VoidCallback onTap,
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12.r),
+      borderRadius: BorderRadius.circular(16.r),
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
         child: Row(
           children: [
-            Container(
-              width: 40.w,
-              height: 40.w,
-              decoration: BoxDecoration(
-                color: iconColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12.r),
-              ),
-              child: Icon(icon, color: iconColor, size: 20.sp),
-            ),
-            SizedBox(width: 12.w),
+            Icon(icon, color: iconColor, size: 20.sp),
+            SizedBox(width: 14.w),
             Expanded(
               child: Text(
                 label,
                 style: TextStyle(
                   fontSize: 15.sp,
-                  fontWeight: hint ? FontWeight.w400 : FontWeight.w500,
-                  color: hint ? AppColors.textTertiary : AppColors.textPrimary,
+                  fontWeight: isEmpty ? FontWeight.w400 : FontWeight.w600,
+                  color: isEmpty
+                      ? AppColors.textTertiary
+                      : AppColors.textPrimary,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -268,8 +272,8 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
             ),
             Icon(
               Icons.chevron_right_rounded,
+              size: 18.sp,
               color: AppColors.textTertiary,
-              size: 20.sp,
             ),
           ],
         ),
@@ -277,844 +281,157 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
     );
   }
 
-  // ── Event Filter Chip ─────────────────────────────────────
-  Widget _buildEventFilterChip() {
-    return GestureDetector(
-          onTap: () async {
-            final picked = await EventPickerSheet.show(
-              context,
-              preselected: _eventFilter,
-            );
-            if (picked != null && mounted) {
-              setState(() => _eventFilter = picked);
-            }
-          },
-          child: Container(
-            margin: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 4.h),
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-            decoration: BoxDecoration(
-              color: _eventFilter != null
-                  ? _eventFilter!.type.color.withValues(alpha: 0.06)
-                  : AppColors.cardBg,
-              borderRadius: BorderRadius.circular(16.r),
-              border: Border.all(
-                color: _eventFilter != null
-                    ? _eventFilter!.type.color
-                    : AppColors.border,
-                width: _eventFilter != null ? 1.5 : 1,
-              ),
-              boxShadow: AppSpacing.shadowSm,
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 40.w,
-                  height: 40.w,
-                  decoration: BoxDecoration(
-                    color: _eventFilter != null
-                        ? _eventFilter!.type.color.withValues(alpha: 0.12)
-                        : AppColors.primarySurface,
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  child: Icon(
-                    _eventFilter != null
-                        ? _eventFilter!.type.icon
-                        : Icons.event_rounded,
-                    color: _eventFilter != null
-                        ? _eventFilter!.type.color
-                        : AppColors.primary,
-                    size: 20.sp,
-                  ),
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _eventFilter != null
-                            ? _eventFilter!.title
-                            : 'Going to an event?',
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        _eventFilter != null
-                            ? _eventFilter!.venueName ??
-                                  _eventFilter!.location.address
-                            : 'Filter rides linked to a sport event',
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: AppColors.textSecondary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                if (_eventFilter != null)
-                  GestureDetector(
-                    onTap: () => setState(() => _eventFilter = null),
-                    child: Padding(
-                      padding: EdgeInsets.only(left: 4.w),
-                      child: Icon(
-                        Icons.close_rounded,
-                        size: 18.sp,
-                        color: AppColors.textTertiary,
-                      ),
-                    ),
-                  )
-                else
-                  Icon(
-                    Icons.chevron_right_rounded,
-                    size: 20.sp,
-                    color: AppColors.textTertiary,
-                  ),
-              ],
-            ),
-          ),
-        )
-        .animate()
-        .fadeIn(duration: 300.ms, delay: 50.ms)
-        .slideY(begin: 0.05, end: 0);
-  }
+  // ── Date · Time · Passengers ────────────────────────────────
+  Widget _buildParamsRow() {
+    final dateLabel = _isToday(_date)
+        ? 'Today'
+        : _isTomorrow(_date)
+        ? 'Tomorrow'
+        : DateFormat('d MMM').format(_date);
+    final timeLabel = _time.format(context);
 
-  Widget _buildDateTimeSection() {
-    return Container(
-          margin: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 8.h),
-          decoration: BoxDecoration(
-            color: AppColors.cardBg,
-            borderRadius: BorderRadius.circular(20.r),
-            boxShadow: AppSpacing.shadowSm,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 12.h),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.calendar_today_rounded,
-                      size: 18.sp,
-                      color: AppColors.primary,
-                    ),
-                    SizedBox(width: 8.w),
-                    Text(
-                      AppLocalizations.of(context).when,
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Quick date selection chips
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: EdgeInsets.symmetric(horizontal: 16.w),
-                child: Row(
-                  children: [
-                    _buildDateChip(
-                      0,
-                      AppLocalizations.of(context).today,
-                      DateTime.now(),
-                    ),
-                    SizedBox(width: 8.w),
-                    _buildDateChip(
-                      1,
-                      AppLocalizations.of(context).tomorrow,
-                      DateTime.now().add(const Duration(days: 1)),
-                    ),
-                    SizedBox(width: 8.w),
-                    _buildDateChip(
-                      2,
-                      AppLocalizations.of(context).pickDate,
-                      null,
-                    ),
-                  ],
-                ),
-              ),
-
-              SizedBox(height: 12.h),
-
-              // Time picker row
-              InkWell(
-                onTap: _selectTime,
-                borderRadius: BorderRadius.circular(12.r),
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 16.h),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 12.w,
-                          vertical: 8.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.primarySurface,
-                          borderRadius: BorderRadius.circular(10.r),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.access_time_rounded,
-                              size: 18.sp,
-                              color: AppColors.primary,
-                            ),
-                            SizedBox(width: 8.w),
-                            Text(
-                              _selectedTime.format(context),
-                              style: TextStyle(
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(width: 8.w),
-                      Text(
-                        AppLocalizations.of(context).departureTime2,
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        )
-        .animate()
-        .fadeIn(duration: 300.ms, delay: 100.ms)
-        .slideY(begin: 0.1, end: 0);
-  }
-
-  Widget _buildDateChip(int index, String label, DateTime? date) {
-    final isSelected = _selectedDateOption == index;
-    final displayDate = date != null
-        ? DateFormat('EEE, MMM d').format(date)
-        : DateFormat('EEE, MMM d').format(_selectedDate);
-
-    return GestureDetector(
-      onTap: () => _selectDateOption(index, date),
-      child: AnimatedContainer(
-        height: 60.h,
-        duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.surfaceVariant,
-          borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
-            width: 1,
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.max,
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
+    return Row(
           children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w500,
-                color: isSelected ? Colors.white : AppColors.textSecondary,
+            // Date
+            Expanded(
+              child: _paramTile(
+                icon: Icons.calendar_today_rounded,
+                label: dateLabel,
+                onTap: _pickDate,
               ),
             ),
-            if (index != 2 || isSelected) ...[
-              SizedBox(height: 2.h),
-              Text(
-                displayDate,
-                style: TextStyle(
-                  fontSize: 11.sp,
-                  color: isSelected
-                      ? Colors.white.withValues(alpha: 0.8)
-                      : AppColors.textTertiary,
-                ),
+            SizedBox(width: 8.w),
+            // Time
+            Expanded(
+              child: _paramTile(
+                icon: Icons.access_time_rounded,
+                label: timeLabel,
+                onTap: _pickTime,
               ),
-            ],
+            ),
+            SizedBox(width: 8.w),
+            // Passengers
+            _passengerCounter(),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPassengerSelector() {
-    return Container(
-          margin: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 8.h),
-          padding: EdgeInsets.all(16.w),
-          decoration: BoxDecoration(
-            color: AppColors.cardBg,
-            borderRadius: BorderRadius.circular(20.r),
-            boxShadow: AppSpacing.shadowSm,
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 44.w,
-                height: 44.w,
-                decoration: BoxDecoration(
-                  color: AppColors.primarySurface,
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                child: Icon(
-                  Icons.people_outline_rounded,
-                  color: AppColors.primary,
-                  size: 22.sp,
-                ),
-              ),
-              SizedBox(width: 12.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      AppLocalizations.of(context).passengers,
-                      style: TextStyle(
-                        fontSize: 15.sp,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      AppLocalizations.of(context).howManySeatsDoYou,
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Counter
-              Container(
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant,
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildCounterButton(
-                      icon: Icons.remove,
-                      onTap: _passengers > 1
-                          ? () => setState(() => _passengers--)
-                          : null,
-                    ),
-                    Container(
-                      width: 40.w,
-                      alignment: Alignment.center,
-                      child: Text(
-                        AppLocalizations.of(context).value2(_passengers),
-                        style: TextStyle(
-                          fontSize: 18.sp,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ),
-                    _buildCounterButton(
-                      icon: Icons.add,
-                      onTap: _passengers < 6
-                          ? () => setState(() => _passengers++)
-                          : null,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
         )
         .animate()
-        .fadeIn(duration: 300.ms, delay: 200.ms)
-        .slideY(begin: 0.1, end: 0);
+        .fadeIn(duration: 300.ms, delay: 80.ms)
+        .slideY(begin: 0.06, end: 0);
   }
 
-  Widget _buildCounterButton({required IconData icon, VoidCallback? onTap}) {
-    final enabled = onTap != null;
+  Widget _paramTile({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
-      onTap: () {
-        if (enabled) {
-          HapticFeedback.lightImpact();
-          onTap();
-        }
-      },
+      onTap: onTap,
       child: Container(
-        width: 36.w,
-        height: 36.w,
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
         decoration: BoxDecoration(
-          color: enabled
-              ? AppColors.primary.withValues(alpha: 0.1)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(10.r),
-        ),
-        child: Icon(
-          icon,
-          size: 20.sp,
-          color: enabled ? AppColors.primary : AppColors.textTertiary,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildResultsHeader() {
-    final rides = ref.watch(activeRidesProvider);
-    final count = rides.when(
-      data: (list) => list.length,
-      loading: () => 0,
-      error: (_, _) => 0,
-    );
-
-    return Container(
-      padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 8.h),
-      child: Row(
-        children: [
-          Text(
-            AppLocalizations.of(context).availableRides,
-            style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          SizedBox(width: 8.w),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-            decoration: BoxDecoration(
-              color: AppColors.primarySurface,
-              borderRadius: BorderRadius.circular(8.r),
-            ),
-            child: Text(
-              AppLocalizations.of(context).value2(count),
-              style: TextStyle(
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w600,
-                color: AppColors.primary,
-              ),
-            ),
-          ),
-          const Spacer(),
-          TextButton.icon(
-            onPressed: () => _showSortOptions(),
-            icon: Icon(Icons.sort_rounded, size: 18.sp),
-            label: Text(
-              AppLocalizations.of(context).sort,
-              style: TextStyle(fontSize: 13.sp),
-            ),
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.textSecondary,
-              padding: EdgeInsets.symmetric(horizontal: 12.w),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildResultsList() {
-    final rides = ref.watch(activeRidesProvider);
-
-    return rides.when(
-      data: (rideList) {
-        if (rideList.isEmpty) {
-          return SliverToBoxAdapter(child: _buildEmptyState());
-        }
-
-        final sortedList = List<RideModel>.of(rideList);
-        switch (_sortOption) {
-          case 'earliest':
-            sortedList.sort(
-              (a, b) => a.departureTime.compareTo(b.departureTime),
-            );
-          case 'price':
-            sortedList.sort((a, b) => a.pricePerSeat.compareTo(b.pricePerSeat));
-          case 'rating':
-            // Rating-based sorting disabled - would require fetching driver data
-            // for each ride which is inefficient. Consider using recommended sort.
-            break;
-          default:
-            // 'recommended' — keep original order
-            break;
-        }
-
-        return SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) => _buildRideCard(sortedList[index]),
-            childCount: sortedList.length,
-          ),
-        );
-      },
-      loading: () => SliverToBoxAdapter(child: _buildLoadingState()),
-      error: (err, _) =>
-          SliverToBoxAdapter(child: _buildErrorState(err.toString())),
-    );
-  }
-
-  Widget _buildRideCard(RideModel ride) {
-    return Dismissible(
-      key: ValueKey('ride_result_${ride.id}'),
-      direction: DismissDirection.horizontal,
-      confirmDismiss: (direction) async {
-        HapticFeedback.mediumImpact();
-        if (direction == DismissDirection.startToEnd) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text('Tap to book this ride!'),
-                backgroundColor: AppColors.success,
-                action: SnackBarAction(
-                  label: 'Book',
-                  textColor: Colors.white,
-                  onPressed: () => context.pushNamed(
-                    AppRoutes.rideDetail.name,
-                    pathParameters: {'id': ride.id},
-                  ),
-                ),
-              ),
-            );
-          }
-        } else {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Ride skipped'),
-                duration: Duration(seconds: 1),
-              ),
-            );
-          }
-        }
-        return false; // stream manages list
-      },
-      background: Container(
-        margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
-        decoration: BoxDecoration(
-          color: AppColors.success,
-          borderRadius: BorderRadius.circular(16.r),
-        ),
-        alignment: Alignment.centerLeft,
-        padding: EdgeInsets.only(left: 24.w),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.bookmark_add_outlined, color: Colors.white, size: 28.sp),
-            SizedBox(height: 4.h),
-            Text(
-              'Book',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
-      secondaryBackground: Container(
-        margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
-        decoration: BoxDecoration(
-          color: AppColors.textSecondary,
-          borderRadius: BorderRadius.circular(16.r),
-        ),
-        alignment: Alignment.centerRight,
-        padding: EdgeInsets.only(right: 24.w),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.skip_next_rounded, color: Colors.white, size: 28.sp),
-            SizedBox(height: 4.h),
-            Text(
-              'Skip',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
-      child: Container(
-        margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
-        decoration: BoxDecoration(
-          color: AppColors.cardBg,
-          borderRadius: BorderRadius.circular(16.r),
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(14.r),
           boxShadow: AppSpacing.shadowSm,
         ),
-        child: InkWell(
-          onTap: () => context.pushNamed(
-            AppRoutes.rideDetail.name,
-            pathParameters: {'id': ride.id},
+        child: Row(
+          children: [
+            Icon(icon, size: 16.sp, color: AppColors.primary),
+            SizedBox(width: 8.w),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _passengerCounter() {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14.r),
+        boxShadow: AppSpacing.shadowSm,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          GestureDetector(
+            onTap: _passengers > 1
+                ? () {
+                    HapticFeedback.lightImpact();
+                    setState(() => _passengers--);
+                  }
+                : null,
+            child: Icon(
+              Icons.remove_circle_outline_rounded,
+              size: 22.sp,
+              color: _passengers > 1 ? AppColors.primary : AppColors.border,
+            ),
           ),
-          borderRadius: BorderRadius.circular(16.r),
-          child: Padding(
-            padding: EdgeInsets.all(14.w),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 10.w),
             child: Column(
               children: [
-                // Driver info row
-                Row(
-                  children: [
-                    DriverAvatarWidget(driverId: ride.driverId, radius: 22.r),
-                    SizedBox(width: 10.w),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          DriverNameWidget(
-                            driverId: ride.driverId,
-                            style: TextStyle(
-                              fontSize: 15.sp,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          DriverRatingWidget(
-                            driverId: ride.driverId,
-                            showIcon: true,
-                            style: TextStyle(
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Price
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          '\$${ride.pricePerSeat.toStringAsFixed(0)}',
-                          style: TextStyle(
-                            fontSize: 18.sp,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                        Text(
-                          AppLocalizations.of(context).perSeat2,
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            color: AppColors.textTertiary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                Text(
+                  '$_passengers',
+                  style: TextStyle(
+                    fontSize: 17.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
-
-                SizedBox(height: 12.h),
-                Divider(height: 1, color: AppColors.divider),
-                SizedBox(height: 12.h),
-
-                // Route and time
-                Row(
-                  children: [
-                    Icon(
-                      Icons.access_time_rounded,
-                      size: 16.sp,
-                      color: AppColors.textSecondary,
-                    ),
-                    SizedBox(width: 6.w),
-                    Text(
-                      DateFormat('HH:mm').format(ride.departureTime),
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    SizedBox(width: 16.w),
-                    Icon(
-                      Icons.airline_seat_recline_normal_rounded,
-                      size: 16.sp,
-                      color: AppColors.textSecondary,
-                    ),
-                    SizedBox(width: 4.w),
-                    Text(
-                      AppLocalizations.of(
-                        context,
-                      ).valueSeats(ride.remainingSeats),
-                      style: TextStyle(
-                        fontSize: 13.sp,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const Spacer(),
-                    // Event badge
-                    if (ride.eventName != null && ride.eventName!.isNotEmpty)
-                      Container(
-                        margin: EdgeInsets.only(right: 6.w),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 6.w,
-                          vertical: 3.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6.r),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.event_rounded,
-                              size: 11.sp,
-                              color: AppColors.primary,
-                            ),
-                            SizedBox(width: 3.w),
-                            ConstrainedBox(
-                              constraints: BoxConstraints(maxWidth: 70.w),
-                              child: Text(
-                                ride.eventName!,
-                                style: TextStyle(
-                                  fontSize: 12.sp,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.primary,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    // Quick features
-                    if (ride.allowPets) _buildFeatureChip(Icons.pets_rounded),
-                    if (ride.isPriceNegotiable)
-                      _buildFeatureChip(Icons.handshake_rounded),
-                    if (ride.allowLuggage)
-                      _buildFeatureChip(Icons.luggage_rounded),
-                  ],
+                Text(
+                  'seat${_passengers > 1 ? 's' : ''}',
+                  style: TextStyle(
+                    fontSize: 10.sp,
+                    color: AppColors.textTertiary,
+                  ),
                 ),
               ],
             ),
           ),
+          GestureDetector(
+            onTap: _passengers < 6
+                ? () {
+                    HapticFeedback.lightImpact();
+                    setState(() => _passengers++);
+                  }
+                : null,
+            child: Icon(
+              Icons.add_circle_outline_rounded,
+              size: 22.sp,
+              color: _passengers < 6 ? AppColors.primary : AppColors.border,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Search CTA ───────────────────────────────────────────────
+  Widget _buildSearchCta() {
+    return Container(
+      padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 24.h),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        border: Border(
+          top: BorderSide(color: AppColors.border.withValues(alpha: 0.4)),
         ),
-      ).animate().fadeIn(duration: 200.ms).slideX(begin: 0.05, end: 0),
-    );
-  }
-
-  Widget _buildFeatureChip(IconData icon) {
-    return Container(
-      margin: EdgeInsets.only(left: 6.w),
-      padding: EdgeInsets.all(4.w),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(6.r),
-      ),
-      child: Icon(icon, size: 14.sp, color: AppColors.textSecondary),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: 40.h),
-      child: Column(
-        children: [
-          Icon(
-            Icons.search_off_rounded,
-            size: 64.sp,
-            color: AppColors.textTertiary,
-          ),
-          SizedBox(height: 16.h),
-          Text(
-            AppLocalizations.of(context).noRidesFound,
-            style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            AppLocalizations.of(context).tryAdjustingYourSearchCriteria,
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLoadingState() {
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: 40.h),
-      child: Column(
-        children: [
-          CircularProgressIndicator(color: AppColors.primary),
-          SizedBox(height: 16.h),
-          Text(
-            AppLocalizations.of(context).findingRides,
-            style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildErrorState(String error) {
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: 40.h, horizontal: 24.w),
-      child: Column(
-        children: [
-          Icon(
-            Icons.error_outline_rounded,
-            size: 48.sp,
-            color: AppColors.error,
-          ),
-          SizedBox(height: 16.h),
-          Text(
-            AppLocalizations.of(context).somethingWentWrong,
-            style: TextStyle(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            error,
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSearchButton() {
-    return Container(
-      padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 24.h),
-      decoration: BoxDecoration(
-        color: AppColors.cardBg,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
-          ),
-        ],
       ),
       child: SafeArea(
         top: false,
         child: PremiumButton(
-          text: _isSearching ? 'Searching...' : 'Search Rides',
+          text: _isSearching ? 'Searching…' : 'Search Rides',
           onPressed: _canSearch ? _performSearch : null,
           isLoading: _isSearching,
           icon: Icons.search_rounded,
@@ -1124,17 +441,481 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
     );
   }
 
-  // === Actions ===
+  // ════════════════════════════════════════════════════════════
+  // PHASE 2 — RESULTS PANEL
+  // ════════════════════════════════════════════════════════════
+  Widget _buildResultsPanel() {
+    return Column(
+      children: [
+        // Compact summary bar
+        _buildSummaryBar(),
+        // Results list
+        Expanded(child: _buildResultsList()),
+      ],
+    );
+  }
 
-  Future<void> _selectLocation({required bool isFrom}) async {
+  Widget _buildSummaryBar() {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        boxShadow: AppSpacing.shadowSm,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.radio_button_checked_rounded,
+                      size: 12.sp,
+                      color: AppColors.primary,
+                    ),
+                    SizedBox(width: 4.w),
+                    Flexible(
+                      child: Text(
+                        _fromAddress,
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 2.h),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.location_on_rounded,
+                      size: 12.sp,
+                      color: AppColors.error,
+                    ),
+                    SizedBox(width: 4.w),
+                    Flexible(
+                      child: Text(
+                        _toAddress,
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: 12.w),
+          // Param pills
+          _pill(
+            Icons.calendar_today_rounded,
+            _isToday(_date) ? 'Today' : DateFormat('d MMM').format(_date),
+          ),
+          SizedBox(width: 6.w),
+          _pill(Icons.people_rounded, '$_passengers'),
+        ],
+      ),
+    );
+  }
+
+  Widget _pill(IconData icon, String label) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 5.h),
+      decoration: BoxDecoration(
+        color: AppColors.primarySurface,
+        borderRadius: BorderRadius.circular(8.r),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12.sp, color: AppColors.primary),
+          SizedBox(width: 4.w),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResultsList() {
+    final rides = ref.watch(activeRidesProvider);
+    return rides.when(
+      data: (list) {
+        if (list.isEmpty) return _buildEmptyState();
+        final sorted = _sortRides(List.of(list));
+        return Column(
+          children: [
+            _buildResultsHeader(sorted.length),
+            Expanded(
+              child: ListView.builder(
+                padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 32.h),
+                itemCount: sorted.length,
+                itemBuilder: (_, i) => _buildRideCard(sorted[i]),
+              ),
+            ),
+          ],
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => _buildErrorState(e.toString()),
+    );
+  }
+
+  Widget _buildResultsHeader(int count) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16.w, 12.h, 8.w, 4.h),
+      child: Row(
+        children: [
+          Text(
+            '$count ride${count != 1 ? 's' : ''} found',
+            style: TextStyle(
+              fontSize: 15.sp,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const Spacer(),
+          TextButton.icon(
+            onPressed: _showSortSheet,
+            icon: Icon(Icons.tune_rounded, size: 16.sp),
+            label: Text('Sort', style: TextStyle(fontSize: 13.sp)),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.textSecondary,
+              padding: EdgeInsets.symmetric(horizontal: 8.w),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Ride Card ────────────────────────────────────────────────
+  Widget _buildRideCard(RideModel ride) {
+    return GestureDetector(
+      onTap: () => context.pushNamed(
+        AppRoutes.rideDetail.name,
+        pathParameters: {'id': ride.id},
+      ),
+      child: Container(
+        margin: EdgeInsets.only(bottom: 10.h),
+        padding: EdgeInsets.all(14.w),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(18.r),
+          boxShadow: AppSpacing.shadowSm,
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                // Avatar
+                DriverAvatarWidget(driverId: ride.driverId, radius: 22.r),
+                SizedBox(width: 10.w),
+                // Name + rating
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      DriverNameWidget(
+                        driverId: ride.driverId,
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      DriverRatingWidget(
+                        driverId: ride.driverId,
+                        showIcon: true,
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Price — prominent
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '\$${ride.pricePerSeat.toStringAsFixed(0)}',
+                      style: TextStyle(
+                        fontSize: 22.sp,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    Text(
+                      'per seat',
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            SizedBox(height: 10.h),
+            Divider(height: 1, color: AppColors.divider),
+            SizedBox(height: 10.h),
+            // Meta row
+            Wrap(
+              spacing: 8.w, // Horizontal space between items
+              runSpacing: 8.h, // Vertical space if it wraps to a new line
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                _metaChip(
+                  Icons.access_time_rounded,
+                  DateFormat('HH:mm').format(ride.departureTime),
+                ),
+                SizedBox(width: 8.w),
+                _metaChip(
+                  Icons.airline_seat_recline_normal_rounded,
+                  '${ride.remainingSeats} left',
+                ),
+                const Spacer(),
+                // Feature icons
+                if (ride.allowPets) _featureIcon(Icons.pets_rounded),
+                if (ride.isPriceNegotiable)
+                  _featureIcon(Icons.handshake_rounded),
+                if (ride.allowLuggage) _featureIcon(Icons.luggage_rounded),
+                // Event badge
+                if (ride.eventName?.isNotEmpty == true)
+                  _eventBadge(ride.eventName!),
+              ],
+            ),
+          ],
+        ),
+      ).animate().fadeIn(duration: 220.ms).slideY(begin: 0.05, end: 0),
+    );
+  }
+
+  Widget _metaChip(IconData icon, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14.sp, color: AppColors.textTertiary),
+        SizedBox(width: 4.w),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 13.sp,
+            fontWeight: FontWeight.w500,
+            color: AppColors.textSecondary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _featureIcon(IconData icon) {
+    return Padding(
+      padding: EdgeInsets.only(left: 6.w),
+      child: Icon(icon, size: 16.sp, color: AppColors.textTertiary),
+    );
+  }
+
+  Widget _eventBadge(String name) {
+    return Container(
+      margin: EdgeInsets.only(left: 6.w),
+      padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 3.h),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(6.r),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.event_rounded, size: 11.sp, color: AppColors.primary),
+          SizedBox(width: 3.w),
+          ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: 60.w),
+            child: Text(
+              name,
+              style: TextStyle(
+                fontSize: 11.sp,
+                fontWeight: FontWeight.w600,
+                color: AppColors.primary,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Empty / Error ────────────────────────────────────────────
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.search_off_rounded,
+            size: 56.sp,
+            color: AppColors.textTertiary,
+          ),
+          SizedBox(height: 12.h),
+          Text(
+            'No rides found',
+            style: TextStyle(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          SizedBox(height: 6.h),
+          Text(
+            'Try adjusting your search',
+            style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
+          ),
+          SizedBox(height: 20.h),
+          OutlinedButton(
+            onPressed: _resetSearch,
+            child: const Text('Edit Search'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState(String err) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(24.w),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.error_outline_rounded,
+              size: 48.sp,
+              color: AppColors.error,
+            ),
+            SizedBox(height: 12.h),
+            Text(
+              'Something went wrong',
+              style: TextStyle(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            SizedBox(height: 6.h),
+            Text(
+              err,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // SORT SHEET
+  // ════════════════════════════════════════════════════════════
+  void _showSortSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40.w,
+              height: 4.h,
+              margin: EdgeInsets.symmetric(vertical: 12.h),
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2.r),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 4.h),
+              child: Text(
+                'Sort by',
+                style: TextStyle(
+                  fontSize: 17.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+            ...[
+              ('recommended', Icons.auto_awesome_rounded, 'Recommended'),
+              ('earliest', Icons.schedule_rounded, 'Earliest departure'),
+              ('price', Icons.attach_money_rounded, 'Lowest price'),
+              ('rating', Icons.star_rounded, 'Highest rated'),
+            ].map((e) {
+              final isActive = _sort == e.$1;
+              return ListTile(
+                leading: Icon(
+                  e.$2,
+                  color: isActive ? AppColors.primary : AppColors.textSecondary,
+                ),
+                title: Text(
+                  e.$3,
+                  style: TextStyle(
+                    fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                    color: isActive ? AppColors.primary : AppColors.textPrimary,
+                  ),
+                ),
+                trailing: isActive
+                    ? Icon(
+                        Icons.check_rounded,
+                        color: AppColors.primary,
+                        size: 20.sp,
+                      )
+                    : null,
+                onTap: () {
+                  Navigator.pop(context);
+                  setState(() => _sort = e.$1);
+                },
+              );
+            }),
+            SizedBox(height: 12.h),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // ACTIONS
+  // ════════════════════════════════════════════════════════════
+  Future<void> _pickLocation({required bool isFrom}) async {
     final result = await MapLocationPicker.show(
       context,
       title: isFrom ? 'Pickup Location' : 'Drop-off Location',
       initialLocation: isFrom ? _fromLocation : _toLocation,
       showQuickPicks: true,
     );
-
-    if (result != null) {
+    if (result != null && mounted) {
       setState(() {
         if (isFrom) {
           _fromLocation = result.location;
@@ -1148,218 +929,106 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
   }
 
   void _swapLocations() {
-    if (_fromLocation == null && _toLocation == null) return;
-
     HapticFeedback.lightImpact();
     setState(() {
-      final tempLocation = _fromLocation;
-      final tempAddress = _fromAddress;
+      final tmpL = _fromLocation;
+      final tmpA = _fromAddress;
       _fromLocation = _toLocation;
       _fromAddress = _toAddress;
-      _toLocation = tempLocation;
-      _toAddress = tempAddress;
+      _toLocation = tmpL;
+      _toAddress = tmpA;
     });
   }
 
-  void _selectDateOption(int index, DateTime? date) async {
-    HapticFeedback.selectionClick();
-
-    if (index == 2) {
-      // Custom date picker
-      final picked = await showDatePicker(
-        context: context,
-        initialDate: _selectedDate,
-        firstDate: DateTime.now(),
-        lastDate: DateTime.now().add(const Duration(days: 90)),
-        builder: (context, child) {
-          return Theme(
-            data: Theme.of(context).copyWith(
-              colorScheme: ColorScheme.light(
-                primary: AppColors.primary,
-                onPrimary: Colors.white,
-                surface: AppColors.cardBg,
-                onSurface: AppColors.textPrimary,
-              ),
-            ),
-            child: child!,
-          );
-        },
-      );
-
-      if (mounted && picked != null) {
-        setState(() {
-          _selectedDate = picked;
-          _selectedDateOption = 2;
-        });
-      }
-    } else {
-      setState(() {
-        _selectedDate = date!;
-        _selectedDateOption = index;
-      });
-    }
-  }
-
-  Future<void> _selectTime() async {
-    final picked = await showTimePicker(
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
       context: context,
-      initialTime: _selectedTime,
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: Colors.white,
-              surface: AppColors.cardBg,
-              onSurface: AppColors.textPrimary,
-            ),
-          ),
-          child: child!,
-        );
-      },
+      initialDate: _date,
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 90)),
     );
-
-    if (mounted && picked != null) {
-      setState(() => _selectedTime = picked);
-    }
+    if (picked != null && mounted) setState(() => _date = picked);
   }
 
-  void _showSortOptions() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.cardBg,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40.w,
-                height: 4.h,
-                margin: EdgeInsets.symmetric(vertical: 12.h),
-                decoration: BoxDecoration(
-                  color: AppColors.border,
-                  borderRadius: BorderRadius.circular(2.r),
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                child: Text(
-                  AppLocalizations.of(context).sortBy,
-                  style: TextStyle(
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ),
-              _buildSortOption(
-                AppLocalizations.of(context).recommended,
-                Icons.auto_awesome_rounded,
-                'recommended',
-              ),
-              _buildSortOption(
-                AppLocalizations.of(context).earliestDeparture,
-                Icons.schedule_rounded,
-                'earliest',
-              ),
-              _buildSortOption(
-                AppLocalizations.of(context).lowestPrice,
-                Icons.attach_money_rounded,
-                'price',
-              ),
-              _buildSortOption(
-                AppLocalizations.of(context).highestRated,
-                Icons.star_rounded,
-                'rating',
-              ),
-              SizedBox(height: 16.h),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildSortOption(String label, IconData icon, String sortKey) {
-    final isSelected = _sortOption == sortKey;
-    return ListTile(
-      leading: Icon(
-        icon,
-        color: isSelected ? AppColors.primary : AppColors.textSecondary,
-      ),
-      title: Text(
-        label,
-        style: TextStyle(
-          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-          color: isSelected ? AppColors.primary : AppColors.textPrimary,
-        ),
-      ),
-      trailing: isSelected
-          ? Icon(Icons.check_rounded, color: AppColors.primary, size: 20.sp)
-          : null,
-      onTap: () {
-        Navigator.pop(context);
-        setState(() => _sortOption = sortKey);
-      },
-    );
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(context: context, initialTime: _time);
+    if (picked != null && mounted) setState(() => _time = picked);
   }
 
   Future<void> _performSearch() async {
-    if (!_canSearch) return;
-
     HapticFeedback.mediumImpact();
-    setState(() {
-      _isSearching = true;
-      _showResults = true;
-    });
+    setState(() => _isSearching = true);
+
+    final dt = DateTime(
+      _date.year,
+      _date.month,
+      _date.day,
+      _time.hour,
+      _time.minute,
+    );
+
+    final filters = RideSearchFilters(
+      origin: LocationPoint(
+        address: _fromAddress,
+        latitude: _fromLocation!.latitude,
+        longitude: _fromLocation!.longitude,
+      ),
+      destination: LocationPoint(
+        address: _toAddress,
+        latitude: _toLocation!.latitude,
+        longitude: _toLocation!.longitude,
+      ),
+      departureDate: dt,
+      minSeats: _passengers,
+    );
+
+    ref.read(rideSearchViewModelProvider.notifier).updateFilters(filters);
 
     try {
-      // Combine date and time
-      final departureDateTime = DateTime(
-        _selectedDate.year,
-        _selectedDate.month,
-        _selectedDate.day,
-        _selectedTime.hour,
-        _selectedTime.minute,
-      );
-
-      // Create search filters
-      final filters = RideSearchFilters(
-        origin: LocationPoint(
-          address: _fromAddress,
-          latitude: _fromLocation!.latitude,
-          longitude: _fromLocation!.longitude,
-        ),
-        destination: LocationPoint(
-          address: _toAddress,
-          latitude: _toLocation!.latitude,
-          longitude: _toLocation!.longitude,
-        ),
-        departureDate: departureDateTime,
-        minSeats: _passengers,
-      );
-
-      // Update filters and trigger search
-      ref.read(rideSearchViewModelProvider.notifier).updateFilters(filters);
-      try {
-        await ref.read(rideSearchViewModelProvider.notifier).searchRides();
-      } on Object catch (_) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                AppLocalizations.of(context).searchFailedPleaseTryAgain,
-              ),
-            ),
-          );
-        }
+      await ref.read(rideSearchViewModelProvider.notifier).searchRides();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Search failed. Please try again.')),
+        );
       }
     } finally {
-      if (mounted) setState(() => _isSearching = false);
+      if (mounted) {
+        setState(() {
+          _isSearching = false;
+          _showResults = true;
+        });
+        _resultsAnim.forward();
+      }
     }
+  }
+
+  void _resetSearch() {
+    _resultsAnim.reverse().then((_) {
+      if (mounted) setState(() => _showResults = false);
+    });
+  }
+
+  List<RideModel> _sortRides(List<RideModel> list) {
+    switch (_sort) {
+      case 'earliest':
+        list.sort((a, b) => a.departureTime.compareTo(b.departureTime));
+      case 'price':
+        list.sort((a, b) => a.pricePerSeat.compareTo(b.pricePerSeat));
+      default:
+        break;
+    }
+    return list;
+  }
+
+  // ── Date helpers ─────────────────────────────────────────────
+  bool _isToday(DateTime d) {
+    final n = DateTime.now();
+    return d.year == n.year && d.month == n.month && d.day == n.day;
+  }
+
+  bool _isTomorrow(DateTime d) {
+    final t = DateTime.now().add(const Duration(days: 1));
+    return d.year == t.year && d.month == t.month && d.day == t.day;
   }
 }

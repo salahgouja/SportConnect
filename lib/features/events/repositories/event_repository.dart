@@ -11,9 +11,12 @@ class EventRepository implements IEventRepository {
 
   final FirebaseFirestore _firestore;
 
-  CollectionReference<Map<String, dynamic>> get _eventsCollection =>
-      _firestore.collection(AppConstants.eventsCollection);
-
+  CollectionReference<EventModel> get _eventsCollection =>
+      _firestore.collection(AppConstants.eventsCollection).withConverter(
+        fromFirestore: (snap, _) => EventModel.fromJson(snap.data()!),
+        toFirestore: (model, _) => model.toJson(),
+      );
+    
   @override
   Future<String> createEvent(EventModel event) async {
     final docRef = _eventsCollection.doc();
@@ -22,7 +25,7 @@ class EventRepository implements IEventRepository {
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
-    await docRef.set(eventWithId.toJson());
+    await docRef.set(eventWithId);
     return docRef.id;
   }
 
@@ -30,7 +33,7 @@ class EventRepository implements IEventRepository {
   Future<EventModel?> getEventById(String eventId) async {
     final doc = await _eventsCollection.doc(eventId).get();
     if (!doc.exists) return null;
-    return EventModel.fromJson(doc.data()!);
+    return doc.data();
   }
 
   @override
@@ -47,15 +50,37 @@ class EventRepository implements IEventRepository {
   }
 
   @override
+  Future<void> joinEvent(String eventId, String userId) async {
+    await _firestore
+        .collection(AppConstants.eventsCollection)
+        .doc(eventId)
+        .update({
+      'participantIds': FieldValue.arrayUnion([userId]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  @override
+  Future<void> leaveEvent(String eventId, String userId) async {
+    await _firestore
+        .collection(AppConstants.eventsCollection)
+        .doc(eventId)
+        .update({
+      'participantIds': FieldValue.arrayRemove([userId]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  @override
   Stream<List<EventModel>> streamUpcomingEvents() {
     return _eventsCollection
         .where('isActive', isEqualTo: true)
-        .where('startsAt', isGreaterThan: Timestamp.now())
+        .where('startsAt', isGreaterThan: FieldValue.serverTimestamp())
         .orderBy('startsAt')
         .snapshots()
         .map((snapshot) {
           return snapshot.docs
-              .map((doc) => EventModel.fromJson(doc.data()))
+              .map((doc) => doc.data())
               .toList();
         });
   }
@@ -68,7 +93,7 @@ class EventRepository implements IEventRepository {
         .snapshots()
         .map((snapshot) {
           return snapshot.docs
-              .map((doc) => EventModel.fromJson(doc.data()))
+              .map((doc) => doc.data())
               .toList();
         });
   }
@@ -77,19 +102,33 @@ class EventRepository implements IEventRepository {
   Stream<List<EventModel>> streamEventsByType(EventType type) {
     return _eventsCollection
         .where('isActive', isEqualTo: true)
-        .where('type', isEqualTo: type.name)
+        .where('type', isEqualTo: type)
         .where('startsAt', isGreaterThan: Timestamp.now())
         .orderBy('startsAt')
         .snapshots()
         .map((snapshot) {
           return snapshot.docs
-              .map((doc) => EventModel.fromJson(doc.data()))
+              .map((doc) => doc.data())
+              .toList();
+        });
+  }
+
+  @override
+  Stream<List<EventModel>> streamJoinedEvents(String userId) {
+    return _eventsCollection
+        .where('participantIds', arrayContains: userId)
+        .where('isActive', isEqualTo: true)
+        .orderBy('startsAt')
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs
+              .map((doc) => doc.data())
               .toList();
         });
   }
 }
 
 @Riverpod(keepAlive: true)
-EventRepository eventRepository(Ref ref) {
+IEventRepository eventRepository(Ref ref) {
   return EventRepository(FirebaseFirestore.instance);
 }

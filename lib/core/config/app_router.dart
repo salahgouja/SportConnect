@@ -27,6 +27,12 @@ import 'package:sport_connect/features/auth/views/forgot_password_screen.dart';
 import 'package:sport_connect/features/auth/views/email_verification_screen.dart';
 import 'package:sport_connect/features/auth/views/change_password_screen.dart';
 import 'package:sport_connect/features/auth/views/phone_otp_screen.dart';
+import 'package:sport_connect/features/events/views/create_event_screen.dart';
+import 'package:sport_connect/features/events/views/event_detail_screen.dart';
+import 'package:sport_connect/features/events/views/event_list_screen.dart';
+import 'package:sport_connect/features/events/views/edit_event_screen.dart';
+import 'package:sport_connect/features/events/views/my_events_screen.dart';
+import 'package:sport_connect/features/events/models/event_model.dart';
 
 // Feature imports - Home
 import 'package:sport_connect/features/home/views/home_screen.dart';
@@ -58,6 +64,8 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 part 'app_router.g.dart';
 
+final rootNavigatorKey = GlobalKey<NavigatorState>();
+
 /// Main router provider with centralized redirect logic
 @riverpod
 GoRouter appRouter(Ref ref) {
@@ -79,6 +87,7 @@ GoRouter appRouter(Ref ref) {
   ref.onDispose(routerListenable.dispose);
 
   return GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: AppRoutes.splash.path,
     debugLogDiagnostics: true,
     refreshListenable: routerListenable,
@@ -139,6 +148,8 @@ List<RouteBase> _buildRoutes() {
     // Review Routes
     ..._buildReviewRoutes(),
 
+    // Event Routes
+    ..._buildEventRoutes(),
   ];
 }
 
@@ -514,7 +525,76 @@ List<GoRoute> _buildReviewRoutes() {
   ];
 }
 
-// �🔔 ROUTER REFRESH LISTENABLE
+// =============================================================================
+// 🏆 EVENT ROUTES
+// =============================================================================
+List<GoRoute> _buildEventRoutes() {
+  return [
+    // Browse / Discover
+    GoRoute(
+      path: AppRoutes.events.path,
+      name: AppRoutes.events.name,
+      parentNavigatorKey: rootNavigatorKey,
+      pageBuilder: (context, state) => SlideRightTransitionPage(
+        key: state.pageKey,
+        child: const EventListScreen(),
+      ),
+    ),
+
+    // Create
+    GoRoute(
+      path: AppRoutes.createEvent.path,
+      name: AppRoutes.createEvent.name,
+      parentNavigatorKey: rootNavigatorKey,
+      pageBuilder: (context, state) => SlideUpTransitionPage(
+        key: state.pageKey,
+        child: const CreateEventScreen(),
+      ),
+    ),
+
+    // My Events
+    GoRoute(
+      path: AppRoutes.myEvents.path,
+      name: AppRoutes.myEvents.name,
+      parentNavigatorKey: rootNavigatorKey,
+      pageBuilder: (context, state) => SlideRightTransitionPage(
+        key: state.pageKey,
+        child: const MyEventsScreen(),
+      ),
+    ),
+
+    // Event Detail (must be after /events/create and /events/mine
+    // so GoRouter matches specific paths first)
+    GoRoute(
+      path: AppRoutes.eventDetail.path,
+      name: AppRoutes.eventDetail.name,
+      parentNavigatorKey: rootNavigatorKey,
+      pageBuilder: (context, state) {
+        final eventId = state.params.getStringOrThrow('id');
+        return SlideRightTransitionPage(
+          key: state.pageKey,
+          child: EventDetailScreen(eventId: eventId),
+        );
+      },
+    ),
+
+    // Edit Event
+    GoRoute(
+      path: AppRoutes.editEvent.path,
+      name: AppRoutes.editEvent.name,
+      parentNavigatorKey: rootNavigatorKey,
+      pageBuilder: (context, state) {
+        final event = state.params.getExtraOrThrow<EventModel>();
+        return SlideUpTransitionPage(
+          key: state.pageKey,
+          child: EditEventScreen(event: event),
+        );
+      },
+    ),
+  ];
+}
+
+// 🔔 ROUTER REFRESH LISTENABLE
 // =============================================================================
 
 /// A simple ChangeNotifier that forwards auth state changes to the GoRouter

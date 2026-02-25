@@ -1073,6 +1073,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             tooltip: AppLocalizations.of(context).nearbyRides,
           ),
           SizedBox(height: 8.h),
+          // Browse Events
+          _buildMapControl(
+            icon: Icons.emoji_events_outlined,
+            onTap: () {
+              HapticFeedback.selectionClick();
+              context.push(AppRoutes.events.path);
+            },
+            tooltip: 'Events',
+          ),
+          SizedBox(height: 8.h),
           // Toggle Follow User
           _buildMapControl(
             icon: _isFollowingUser ? Icons.gps_fixed : Icons.gps_not_fixed,

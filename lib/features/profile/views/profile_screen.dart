@@ -770,6 +770,13 @@ class ProfileScreen extends ConsumerWidget {
         ),
       ),
       _MenuItem(
+        icon: Icons.event_rounded,
+        title: 'My Events',
+        subtitle: 'Created & joined events',
+        color: AppColors.primaryLight,
+        onTap: () => context.push(AppRoutes.myEvents.path),
+      ),
+      _MenuItem(
         icon: Icons.emoji_events_outlined,
         title: 'Achievements',
         subtitle: 'View your badges & rewards',
