@@ -1,0 +1,167 @@
+[
+  {
+    "_ownerIndex": 12, "_createdAtDaysAgo": 340,
+    "ownerName": "Ali Ben Amor",
+    "make": "Toyota", "model": "Corolla", "year": 2019, "color": "White",
+    "licensePlate": "TN-234-A", "type": "car", "capacity": 4,
+    "fuelType": "gasoline", "isActive": true, "isDefault": true,
+    "verificationStatus": "verified", "verificationNote": null,
+    "hasAC": true, "hasCharger": true, "hasWifi": false,
+    "petsAllowed": false, "smokingAllowed": false, "hasLuggage": true,
+    "totalRides": 45, "averageRating": 4.8, "imageUrl": null, "imageUrls": []
+  },
+  {
+    "_ownerIndex": 12, "_createdAtDaysAgo": 120,
+    "ownerName": "Ali Ben Amor",
+    "make": "Peugeot", "model": "308", "year": 2022, "color": "Silver",
+    "licensePlate": "TN-897-B", "type": "car", "capacity": 4,
+    "fuelType": "diesel", "isActive": true, "isDefault": false,
+    "verificationStatus": "pending", "verificationNote": null,
+    "hasAC": true, "hasCharger": true, "hasWifi": true,
+    "petsAllowed": false, "smokingAllowed": false, "hasLuggage": true,
+    "totalRides": 12, "averageRating": 4.7, "imageUrl": null, "imageUrls": []
+  },
+  {
+    "_ownerIndex": 13, "_createdAtDaysAgo": 260,
+    "ownerName": "Saida Trabelsi",
+    "make": "Renault", "model": "Clio", "year": 2018, "color": "Red",
+    "licensePlate": "SS-112-C", "type": "car", "capacity": 4,
+    "fuelType": "gasoline", "isActive": true, "isDefault": true,
+    "verificationStatus": "verified", "verificationNote": null,
+    "hasAC": true, "hasCharger": false, "hasWifi": false,
+    "petsAllowed": false, "smokingAllowed": false, "hasLuggage": true,
+    "totalRides": 28, "averageRating": 4.6, "imageUrl": null, "imageUrls": []
+  },
+  {
+    "_ownerIndex": 13, "_createdAtDaysAgo": 30,
+    "ownerName": "Saida Trabelsi",
+    "make": "Dacia", "model": "Logan", "year": 2020, "color": "Blue",
+    "licensePlate": "SS-445-D", "type": "car", "capacity": 4,
+    "fuelType": "gasoline", "isActive": true, "isDefault": false,
+    "verificationStatus": "pending", "verificationNote": null,
+    "hasAC": true, "hasCharger": false, "hasWifi": false,
+    "petsAllowed": true, "smokingAllowed": false, "hasLuggage": true,
+    "totalRides": 5, "averageRating": 4.8, "imageUrl": null, "imageUrls": []
+  },
+  {
+    "_ownerIndex": 14, "_createdAtDaysAgo": 410,
+    "ownerName": "Bilel Mammeri",
+    "make": "Volkswagen", "model": "Golf", "year": 2017, "color": "Black",
+    "licensePlate": "BZ-678-E", "type": "car", "capacity": 4,
+    "fuelType": "diesel", "isActive": true, "isDefault": true,
+    "verificationStatus": "verified", "verificationNote": null,
+    "hasAC": true, "hasCharger": true, "hasWifi": false,
+    "petsAllowed": false, "smokingAllowed": false, "hasLuggage": true,
+    "totalRides": 60, "averageRating": 4.5, "imageUrl": null, "imageUrls": []
+  },
+  {
+    "_ownerIndex": 14, "_createdAtDaysAgo": 200,
+    "ownerName": "Bilel Mammeri",
+    "make": "Ford", "model": "Focus", "year": 2021, "color": "Gray",
+    "licensePlate": "BZ-321-F", "type": "car", "capacity": 4,
+    "fuelType": "gasoline", "isActive": true, "isDefault": false,
+    "verificationStatus": "pending", "verificationNote": null,
+    "hasAC": true, "hasCharger": true, "hasWifi": true,
+    "petsAllowed": false, "smokingAllowed": false, "hasLuggage": true,
+    "totalRides": 18, "averageRating": 4.4, "imageUrl": null, "imageUrls": []
+  },
+  {
+    "_ownerIndex": 15, "_createdAtDaysAgo": 185,
+    "ownerName": "Nadia Ben Abdallah",
+    "make": "Hyundai", "model": "Tucson", "year": 2020, "color": "Pearl White",
+    "licensePlate": "SF-099-G", "type": "car", "capacity": 5,
+    "fuelType": "gasoline", "isActive": true, "isDefault": true,
+    "verificationStatus": "verified", "verificationNote": null,
+    "hasAC": true, "hasCharger": true, "hasWifi": true,
+    "petsAllowed": false, "smokingAllowed": false, "hasLuggage": true,
+    "totalRides": 42, "averageRating": 4.9, "imageUrl": null, "imageUrls": []
+  },
+  {
+    "_ownerIndex": 16, "_createdAtDaysAgo": 370,
+    "ownerName": "Maher Khalil",
+    "make": "Kia", "model": "Sportage", "year": 2018, "color": "Dark Blue",
+    "licensePlate": "TN-567-H", "type": "car", "capacity": 5,
+    "fuelType": "diesel", "isActive": true, "isDefault": true,
+    "verificationStatus": "verified", "verificationNote": null,
+    "hasAC": true, "hasCharger": false, "hasWifi": false,
+    "petsAllowed": false, "smokingAllowed": false, "hasLuggage": true,
+    "totalRides": 55, "averageRating": 4.7, "imageUrl": null, "imageUrls": []
+  },
+  {
+    "_ownerIndex": 16, "_createdAtDaysAgo": 90,
+    "ownerName": "Maher Khalil",
+    "make": "Toyota", "model": "Yaris", "year": 2023, "color": "Black",
+    "licensePlate": "TN-901-I", "type": "car", "capacity": 4,
+    "fuelType": "hybrid", "isActive": true, "isDefault": false,
+    "verificationStatus": "pending", "verificationNote": null,
+    "hasAC": true, "hasCharger": true, "hasWifi": true,
+    "petsAllowed": false, "smokingAllowed": false, "hasLuggage": false,
+    "totalRides": 8, "averageRating": 4.9, "imageUrl": null, "imageUrls": []
+  },
+  {
+    "_ownerIndex": 17, "_createdAtDaysAgo": 145,
+    "ownerName": "Leila Bouzid",
+    "make": "Suzuki", "model": "Swift", "year": 2019, "color": "Orange",
+    "licensePlate": "MN-234-J", "type": "car", "capacity": 4,
+    "fuelType": "gasoline", "isActive": true, "isDefault": true,
+    "verificationStatus": "verified", "verificationNote": null,
+    "hasAC": true, "hasCharger": false, "hasWifi": false,
+    "petsAllowed": true, "smokingAllowed": false, "hasLuggage": false,
+    "totalRides": 28, "averageRating": 4.6, "imageUrl": null, "imageUrls": []
+  },
+  {
+    "_ownerIndex": 18, "_createdAtDaysAgo": 220,
+    "ownerName": "Zied Brahim",
+    "make": "Skoda", "model": "Octavia", "year": 2016, "color": "Green",
+    "licensePlate": "NB-456-K", "type": "car", "capacity": 4,
+    "fuelType": "diesel", "isActive": true, "isDefault": true,
+    "verificationStatus": "verified", "verificationNote": null,
+    "hasAC": true, "hasCharger": false, "hasWifi": false,
+    "petsAllowed": false, "smokingAllowed": true, "hasLuggage": true,
+    "totalRides": 38, "averageRating": 4.4, "imageUrl": null, "imageUrls": []
+  },
+  {
+    "_ownerIndex": 18, "_createdAtDaysAgo": 70,
+    "ownerName": "Zied Brahim",
+    "make": "Renault", "model": "Megane", "year": 2021, "color": "White",
+    "licensePlate": "NB-789-L", "type": "car", "capacity": 4,
+    "fuelType": "gasoline", "isActive": true, "isDefault": false,
+    "verificationStatus": "pending", "verificationNote": null,
+    "hasAC": true, "hasCharger": true, "hasWifi": false,
+    "petsAllowed": false, "smokingAllowed": false, "hasLuggage": true,
+    "totalRides": 10, "averageRating": 4.5, "imageUrl": null, "imageUrls": []
+  },
+  {
+    "_ownerIndex": 19, "_createdAtDaysAgo": 100,
+    "ownerName": "Ines Marzouki",
+    "make": "BMW", "model": "Series 1", "year": 2020, "color": "Black",
+    "licensePlate": "TN-123-M", "type": "car", "capacity": 4,
+    "fuelType": "gasoline", "isActive": true, "isDefault": true,
+    "verificationStatus": "verified", "verificationNote": null,
+    "hasAC": true, "hasCharger": true, "hasWifi": true,
+    "petsAllowed": false, "smokingAllowed": false, "hasLuggage": true,
+    "totalRides": 22, "averageRating": 4.8, "imageUrl": null, "imageUrls": []
+  },
+  {
+    "_ownerIndex": 15, "_createdAtDaysAgo": 50,
+    "ownerName": "Nadia Ben Abdallah",
+    "make": "Volkswagen", "model": "Polo", "year": 2022, "color": "Silver",
+    "licensePlate": "SF-555-N", "type": "car", "capacity": 4,
+    "fuelType": "gasoline", "isActive": true, "isDefault": false,
+    "verificationStatus": "pending", "verificationNote": null,
+    "hasAC": true, "hasCharger": false, "hasWifi": false,
+    "petsAllowed": false, "smokingAllowed": false, "hasLuggage": true,
+    "totalRides": 7, "averageRating": 4.9, "imageUrl": null, "imageUrls": []
+  },
+  {
+    "_ownerIndex": 17, "_createdAtDaysAgo": 40,
+    "ownerName": "Leila Bouzid",
+    "make": "Peugeot", "model": "208", "year": 2021, "color": "Blue",
+    "licensePlate": "MN-777-O", "type": "car", "capacity": 4,
+    "fuelType": "gasoline", "isActive": true, "isDefault": false,
+    "verificationStatus": "pending", "verificationNote": null,
+    "hasAC": true, "hasCharger": false, "hasWifi": false,
+    "petsAllowed": false, "smokingAllowed": false, "hasLuggage": true,
+    "totalRides": 4, "averageRating": 4.8, "imageUrl": null, "imageUrls": []
+  }
+]

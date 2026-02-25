@@ -239,7 +239,7 @@ return $default(_that.id,_that.rideId,_that.riderId,_that.riderName,_that.driver
 @JsonSerializable()
 
 class _PaymentTransaction extends PaymentTransaction {
-  const _PaymentTransaction({required this.id, required this.rideId, required this.riderId, required this.riderName, required this.driverId, required this.driverName, required this.amount, required this.currency, required this.status, this.paymentMethodType, this.paymentMethodLast4, this.stripePaymentIntentId, this.stripeCustomerId, this.stripeChargeId, required this.platformFee, required this.stripeFee, required this.driverEarnings, this.seatsBooked, @TimestampConverter() this.createdAt, @TimestampConverter() this.updatedAt, @TimestampConverter() this.completedAt, @TimestampConverter() this.refundedAt, this.failureReason, this.refundReason, final  Map<String, dynamic> metadata = const {}}): _metadata = metadata,super._();
+  const _PaymentTransaction({required this.id, required this.rideId, required this.riderId, required this.riderName, required this.driverId, required this.driverName, required this.amount, required this.currency, required this.status, this.paymentMethodType, this.paymentMethodLast4, this.stripePaymentIntentId, this.stripeCustomerId, this.stripeChargeId, required this.platformFee, this.stripeFee = 0, required this.driverEarnings, this.seatsBooked, @TimestampConverter() this.createdAt, @TimestampConverter() this.updatedAt, @TimestampConverter() this.completedAt, @TimestampConverter() this.refundedAt, this.failureReason, this.refundReason, final  Map<String, dynamic> metadata = const {}}): _metadata = metadata,super._();
   factory _PaymentTransaction.fromJson(Map<String, dynamic> json) => _$PaymentTransactionFromJson(json);
 
 @override final  String id;
@@ -261,7 +261,7 @@ class _PaymentTransaction extends PaymentTransaction {
 @override final  String? stripeChargeId;
 // Fee breakdown
 @override final  double platformFee;
-@override final  double stripeFee;
+@override@JsonKey() final  double stripeFee;
 @override final  double driverEarnings;
 @override final  int? seatsBooked;
 // Timestamps

@@ -26,6 +26,7 @@ class ChatRepository implements IChatRepository {
   // ==================== CHAT OPERATIONS ====================
 
   /// Create a new chat
+  @override
   Future<String> createChat(ChatModel chat) async {
     final docRef = _chatsCollection.doc();
     final now = DateTime.now();
@@ -117,6 +118,7 @@ class ChatRepository implements IChatRepository {
   }
 
   /// Get chat by ID
+  @override
   Future<ChatModel?> getChatById(String chatId) async {
     final doc = await _chatsCollection.doc(chatId).get();
     if (!doc.exists) return null;
@@ -195,6 +197,7 @@ class ChatRepository implements IChatRepository {
   // ==================== MESSAGE OPERATIONS ====================
 
   /// Send a message
+  @override
   Future<String> sendMessage(MessageModel message) async {
     final docRef = _messagesCollection(message.chatId).doc();
     final messageWithId = message.copyWith(

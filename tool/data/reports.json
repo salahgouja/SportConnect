@@ -1,0 +1,10 @@
+[
+  {"_reporterIndex":1,"_reportedUserIndex":15,"_createdAtDaysAgo":2,"type":"harassment","reason":"User sent offensive messages after I declined their ride request.","status":"pending","isResolved":false,"resolvedAt":null,"moderatorNote":null},
+  {"_reporterIndex":3,"_reportedUserIndex":18,"_createdAtDaysAgo":5,"type":"spam","reason":"This user keeps sending the same message to all drivers asking for free rides.","status":"reviewed","isResolved":true,"moderatorNote":"User warned with a temporary restriction on messaging."},
+  {"_reporterIndex":7,"_reportedUserIndex":11,"_createdAtDaysAgo":3,"type":"fake_profile","reason":"Profile picture appears to be stolen from a celebrity; suspicious bio.","status":"pending","isResolved":false,"resolvedAt":null,"moderatorNote":null},
+  {"_reporterIndex":0,"_reportedUserIndex":16,"_createdAtDaysAgo":6,"type":"inappropriate_content","reason":"User listed a ride with offensive language in the description.","status":"reviewed","isResolved":true,"moderatorNote":"Ride removed and user warned."},
+  {"_reporterIndex":5,"_reportedUserIndex":2,"_createdAtDaysAgo":1,"type":"scam","reason":"Driver asked for payment outside the app in cash and then didn't show up.","status":"under_review","isResolved":false,"resolvedAt":null,"moderatorNote":null},
+  {"_reporterIndex":10,"_reportedUserIndex":13,"_createdAtDaysAgo":8,"type":"inappropriate_behavior","reason":"Passenger was smoking in the vehicle despite my no-smoking preference.","status":"reviewed","isResolved":true,"moderatorNote":"User received a warning and note added to profile."},
+  {"_reporterIndex":14,"_reportedUserIndex":19,"_createdAtDaysAgo":4,"type":"harassment","reason":"User left a revenge review after I rejected their ride. Review was false.","status":"pending","isResolved":false,"resolvedAt":null,"moderatorNote":null},
+  {"_reporterIndex":8,"_reportedUserIndex":6,"_createdAtDaysAgo":9,"type":"privacy","reason":"Driver shared my phone number in a public group chat.","status":"under_review","isResolved":false,"resolvedAt":null,"moderatorNote":null}
+]

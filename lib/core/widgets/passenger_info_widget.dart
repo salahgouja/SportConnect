@@ -28,7 +28,7 @@ class PassengerInfoWidget extends ConsumerWidget {
         return builder(context, passenger);
       },
       loading: () => const CircularProgressIndicator.adaptive(),
-      error: (_, __) => const Text('Error loading passenger'),
+      error: (_, _) => const Text('Error loading passenger'),
     );
   }
 }
@@ -65,7 +65,7 @@ class PassengerNameWidget extends ConsumerWidget {
         maxLines: maxLines,
         overflow: overflow,
       ),
-      error: (_, __) => Text(
+      error: (_, _) => Text(
         'Unknown',
         style: style?.copyWith(color: AppColors.error),
         maxLines: maxLines,
@@ -119,7 +119,7 @@ class PassengerAvatarWidget extends ConsumerWidget {
           child: const CircularProgressIndicator.adaptive(strokeWidth: 2),
         ),
       ),
-      error: (_, __) => CircleAvatar(
+      error: (_, _) => CircleAvatar(
         radius: radius,
         backgroundColor: AppColors.error.withOpacity(0.1),
         child: Icon(Icons.error, size: radius * 0.7, color: AppColors.error),
@@ -150,7 +150,7 @@ class PassengerPhoneWidget extends ConsumerWidget {
         'Loading...',
         style: style?.copyWith(color: AppColors.textTertiary),
       ),
-      error: (_, __) =>
+      error: (_, _) =>
           Text('N/A', style: style?.copyWith(color: AppColors.error)),
     );
   }

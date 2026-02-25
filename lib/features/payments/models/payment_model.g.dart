@@ -26,7 +26,7 @@ _PaymentTransaction _$PaymentTransactionFromJson(Map json) =>
       stripeCustomerId: json['stripeCustomerId'] as String?,
       stripeChargeId: json['stripeChargeId'] as String?,
       platformFee: (json['platformFee'] as num).toDouble(),
-      stripeFee: (json['stripeFee'] as num).toDouble(),
+      stripeFee: (json['stripeFee'] as num?)?.toDouble() ?? 0,
       driverEarnings: (json['driverEarnings'] as num).toDouble(),
       seatsBooked: (json['seatsBooked'] as num?)?.toInt(),
       createdAt: const TimestampConverter().fromJson(json['createdAt']),

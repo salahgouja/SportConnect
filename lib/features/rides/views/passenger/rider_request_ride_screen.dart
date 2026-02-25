@@ -678,7 +678,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
     final count = rides.when(
       data: (list) => list.length,
       loading: () => 0,
-      error: (_, __) => 0,
+      error: (_, _) => 0,
     );
 
     return Container(

@@ -51,7 +51,7 @@ abstract class PaymentTransaction with _$PaymentTransaction {
 
     // Fee breakdown
     required double platformFee,
-    required double stripeFee,
+    @Default(0) double stripeFee,
     required double driverEarnings,
     int? seatsBooked,
 
@@ -71,13 +71,16 @@ abstract class PaymentTransaction with _$PaymentTransaction {
       _$PaymentTransactionFromJson(json);
 
   /// Get formatted amount
-  String get formattedAmount => '\$$amount';
+  String get formattedAmount =>
+      '${amount.toStringAsFixed(2)} ${currency.toUpperCase()}';
 
   /// Get formatted platform fee
-  String get formattedPlatformFee => '\$$platformFee';
+  String get formattedPlatformFee =>
+      '${platformFee.toStringAsFixed(2)} ${currency.toUpperCase()}';
 
   /// Get formatted driver earnings
-  String get formattedDriverEarnings => '\$$driverEarnings';
+  String get formattedDriverEarnings =>
+      '${driverEarnings.toStringAsFixed(2)} ${currency.toUpperCase()}';
 
   /// Check if payment is successful
   bool get isSuccessful => status == PaymentStatus.succeeded;
@@ -132,7 +135,8 @@ abstract class DriverPayout with _$DriverPayout {
       _$DriverPayoutFromJson(json);
 
   /// Get formatted amount
-  String get formattedAmount => '\$$amount';
+  String get formattedAmount =>
+      '${amount.toStringAsFixed(2)} ${currency.toUpperCase()}';
 
   /// Check if payout is completed
   bool get isCompleted => status == PayoutStatus.paid;
@@ -193,11 +197,23 @@ abstract class DriverConnectedAccount with _$DriverConnectedAccount {
   bool get needsOnboarding =>
       !chargesEnabled || !payoutsEnabled || !detailsSubmitted;
 
+  /// Default currency based on country
+  String get defaultCurrency {
+    const countryToCurrency = {
+      'FR': 'EUR', 'DE': 'EUR', 'ES': 'EUR', 'IT': 'EUR',
+      'NL': 'EUR', 'BE': 'EUR', 'AT': 'EUR', 'PT': 'EUR',
+      'US': 'USD', 'GB': 'GBP', 'CA': 'CAD', 'AU': 'AUD',
+    };
+    return countryToCurrency[country.toUpperCase()] ?? 'EUR';
+  }
+
   /// Get formatted total earnings
-  String get formattedTotalEarnings => '\$$totalEarnings';
+  String get formattedTotalEarnings =>
+      '${totalEarnings.toStringAsFixed(2)} $defaultCurrency';
 
   /// Get formatted available balance
-  String get formattedAvailableBalance => '\$$availableBalance';
+  String get formattedAvailableBalance =>
+      '${availableBalance.toStringAsFixed(2)} $defaultCurrency';
 }
 
 /// Rider Payment Method Model
@@ -279,12 +295,6 @@ abstract class EarningsSummary with _$EarningsSummary {
 
   factory EarningsSummary.fromJson(Map<String, dynamic> json) =>
       _$EarningsSummaryFromJson(json);
-
-  /// Get formatted total earnings
-  String get formattedTotal => '\$${totalEarnings.toStringAsFixed(2)}';
-
-  /// Get formatted available balance
-  String get formattedAvailable => '\$${availableBalance.toStringAsFixed(2)}';
 
   /// Get average earnings per ride
   double get averagePerRide =>

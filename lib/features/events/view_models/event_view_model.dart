@@ -113,10 +113,14 @@ class EventSelectionViewModel extends _$EventSelectionViewModel {
           .read(eventRepositoryProvider)
           .createEvent(event);
 
+      // Guard against provider disposal during the async gap
+      if (!ref.mounted) return null;
+
       final created = event.copyWith(id: eventId);
       state = state.copyWith(isLoading: false, selectedEvent: created);
       return created;
     } catch (_) {
+      if (!ref.mounted) return null;
       state = state.copyWith(
         isLoading: false,
         error: 'Unable to create event. Please try again.',

@@ -3,6 +3,34 @@
 part of 'payment_view_model.dart';
 
 // **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+_DriverStripeStatus _$DriverStripeStatusFromJson(Map json) =>
+    _DriverStripeStatus(
+      isConnected: json['isConnected'] as bool? ?? false,
+      payoutsEnabled: json['payoutsEnabled'] as bool? ?? false,
+      chargesEnabled: json['chargesEnabled'] as bool? ?? false,
+      detailsSubmitted: json['detailsSubmitted'] as bool? ?? false,
+      availableBalance: (json['availableBalance'] as num?)?.toDouble() ?? 0.0,
+      pendingBalance: (json['pendingBalance'] as num?)?.toDouble() ?? 0.0,
+      currency: json['currency'] as String? ?? 'EUR',
+      stripeAccountId: json['stripeAccountId'] as String?,
+    );
+
+Map<String, dynamic> _$DriverStripeStatusToJson(_DriverStripeStatus instance) =>
+    <String, dynamic>{
+      'isConnected': instance.isConnected,
+      'payoutsEnabled': instance.payoutsEnabled,
+      'chargesEnabled': instance.chargesEnabled,
+      'detailsSubmitted': instance.detailsSubmitted,
+      'availableBalance': instance.availableBalance,
+      'pendingBalance': instance.pendingBalance,
+      'currency': instance.currency,
+      'stripeAccountId': instance.stripeAccountId,
+    };
+
+// **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
 
@@ -36,7 +64,7 @@ final class PaymentViewModelProvider
   PaymentViewModel create() => PaymentViewModel();
 }
 
-String _$paymentViewModelHash() => r'afed9d600ff6ab2047fac07f256678be2e233eb3';
+String _$paymentViewModelHash() => r'd26aab70c20ecca678d4113f9a3c5e7166881424';
 
 /// Payment Processing View Model
 
@@ -285,7 +313,7 @@ final class DriverConnectedAccountViewModelProvider
 }
 
 String _$driverConnectedAccountViewModelHash() =>
-    r'b11ea36b4b453b1210debe974871e8b8b61b6df9';
+    r'59d7ffda13e94685cddb1c5d2537cbd40fbd9c77';
 
 /// Driver Connected Account View Model
 
@@ -623,6 +651,90 @@ final class DriverPayoutsFamily extends $Family
   String toString() => r'driverPayoutsProvider';
 }
 
+/// Single Payout Detail Provider
+
+@ProviderFor(payoutDetail)
+final payoutDetailProvider = PayoutDetailFamily._();
+
+/// Single Payout Detail Provider
+
+final class PayoutDetailProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<DriverPayout?>,
+          DriverPayout?,
+          FutureOr<DriverPayout?>
+        >
+    with $FutureModifier<DriverPayout?>, $FutureProvider<DriverPayout?> {
+  /// Single Payout Detail Provider
+  PayoutDetailProvider._({
+    required PayoutDetailFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'payoutDetailProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$payoutDetailHash();
+
+  @override
+  String toString() {
+    return r'payoutDetailProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<DriverPayout?> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<DriverPayout?> create(Ref ref) {
+    final argument = this.argument as String;
+    return payoutDetail(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is PayoutDetailProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$payoutDetailHash() => r'7b4cf155b28194b183197de0a166425c31e62b5b';
+
+/// Single Payout Detail Provider
+
+final class PayoutDetailFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<DriverPayout?>, String> {
+  PayoutDetailFamily._()
+    : super(
+        retry: null,
+        name: r'payoutDetailProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Single Payout Detail Provider
+
+  PayoutDetailProvider call(String payoutId) =>
+      PayoutDetailProvider._(argument: payoutId, from: this);
+
+  @override
+  String toString() => r'payoutDetailProvider';
+}
+
 /// Driver Payout View Model
 
 @ProviderFor(DriverPayoutViewModel)
@@ -652,7 +764,7 @@ final class DriverPayoutViewModelProvider
 }
 
 String _$driverPayoutViewModelHash() =>
-    r'44e7c0ac0b20dfa5720362756d383912ff8e5fa9';
+    r'c027fd4956fcabeabaf5f6db625b8957c9988698';
 
 /// Driver Payout View Model
 
@@ -719,4 +831,4 @@ final class DriverStripeStatusProvider
 }
 
 String _$driverStripeStatusHash() =>
-    r'1122794ebb3cdf0db26a661cf3ece12e5a50311d';
+    r'5e008715c9cf5c97752ef23c1ca43a09c6db7887';

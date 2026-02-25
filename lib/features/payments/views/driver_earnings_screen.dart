@@ -17,6 +17,12 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
 
 /// Driver Earnings Screen  - View earnings with real Firestore data
+///
+/// Uses [driverStatsProvider] from the rides feature (denormalized aggregate
+/// in `driver_stats` collection) for performance — single document read
+/// instead of aggregating all payment transactions on-the-fly.
+/// The payments feature's [driverEarningsSummaryProvider] computes the same
+/// data from the `payments` collection and can be used for reconciliation.
 class DriverEarningsScreen extends ConsumerStatefulWidget {
   const DriverEarningsScreen({super.key});
 
@@ -26,13 +32,35 @@ class DriverEarningsScreen extends ConsumerStatefulWidget {
 }
 
 class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
-  String _selectedPeriod = 'This Week';
-  final List<String> _periods = [
-    'Today',
-    'This Week',
-    'This Month',
-    'All Time',
+  String _selectedPeriod = 'thisWeek';
+  static const List<String> _periodKeys = [
+    'today',
+    'thisWeek',
+    'thisMonth',
+    'allTime',
   ];
+
+  String _periodLabel(String key) {
+    final l10n = AppLocalizations.of(context);
+    switch (key) {
+      case 'today':
+        return l10n.periodToday;
+      case 'thisWeek':
+        return l10n.periodThisWeek;
+      case 'thisMonth':
+        return l10n.periodThisMonth;
+      case 'allTime':
+        return l10n.periodAllTime;
+      default:
+        return key;
+    }
+  }
+
+  /// Resolves the driver's currency code from their Stripe connected account.
+  String get _currencyCode {
+    final stripeStatus = ref.read(driverStripeStatusProvider).value;
+    return stripeStatus?.currency ?? 'EUR';
+  }
 
   void _exportEarnings() {
     final driverStats = ref.read(driverStatsProvider);
@@ -52,32 +80,33 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
       return;
     }
 
+    final l10n = AppLocalizations.of(context);
     final dateFormat = DateFormat('MMM dd, yyyy HH:mm');
     final now = DateFormat('yyyy-MM-dd').format(DateTime.now());
     final buffer = StringBuffer()
-      ..writeln('SportConnect - Earnings Report')
-      ..writeln('Generated: $now')
+      ..writeln('SportConnect - ${l10n.exportEarningsReport}')
+      ..writeln('${l10n.exportGenerated}: $now')
       ..writeln('================================')
       ..writeln()
-      ..writeln('EARNINGS SUMMARY')
-      ..writeln('  Today:      \$${stats.earningsToday.toStringAsFixed(2)}')
-      ..writeln('  This Week:  \$${stats.earningsThisWeek.toStringAsFixed(2)}')
-      ..writeln('  This Month: \$${stats.earningsThisMonth.toStringAsFixed(2)}')
-      ..writeln('  Total:      \$${stats.totalEarnings.toStringAsFixed(2)}')
+      ..writeln(l10n.exportEarningsSummary)
+      ..writeln('  ${l10n.periodToday}:      ${stats.earningsToday.toStringAsFixed(2)} $_currencyCode')
+      ..writeln('  ${l10n.periodThisWeek}:  ${stats.earningsThisWeek.toStringAsFixed(2)} $_currencyCode')
+      ..writeln('  ${l10n.periodThisMonth}: ${stats.earningsThisMonth.toStringAsFixed(2)} $_currencyCode')
+      ..writeln('  ${l10n.periodAllTime}:      ${stats.totalEarnings.toStringAsFixed(2)} $_currencyCode')
       ..writeln()
-      ..writeln('RIDE STATISTICS')
-      ..writeln('  Total Rides: ${stats.totalRides}')
-      ..writeln('  CO2 Saved:   ${stats.co2Saved.toStringAsFixed(1)} kg')
+      ..writeln(l10n.exportRideStatistics)
+      ..writeln('  ${l10n.statRides}: ${stats.totalRides}')
+      ..writeln('  CO2:   ${stats.co2Saved.toStringAsFixed(1)} kg')
       ..writeln();
 
     if (txList != null && txList.isNotEmpty) {
       buffer
-        ..writeln('RECENT TRANSACTIONS')
+        ..writeln(l10n.exportRecentTransactions)
         ..writeln('--------------------------------');
       for (final tx in txList.take(20)) {
         final date = dateFormat.format(tx.createdAt);
         buffer.writeln(
-          '  $date | \$${tx.amount.toStringAsFixed(2)} | ${tx.description}',
+          '  $date | ${tx.amount.toStringAsFixed(2)} $_currencyCode | ${tx.description}',
         );
       }
     }
@@ -89,6 +118,8 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
   Widget build(BuildContext context) {
     final driverStats = ref.watch(driverStatsProvider);
     final transactions = ref.watch(earningsTransactionsProvider);
+    // Watch the Stripe status to reactively resolve the driver's currency.
+    ref.watch(driverStripeStatusProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -232,8 +263,8 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
                     ),
                     _HeaderStat(
                       value: stats.totalRides > 0
-                          ? '${(stats.totalEarnings / stats.totalRides).toStringAsFixed(0)} €'
-                          : '0 €',
+                          ? '${(stats.totalEarnings / stats.totalRides).toStringAsFixed(0)} $_currencyCode'
+                          : '0 $_currencyCode',
                       label: AppLocalizations.of(context).avgPerRide,
                     ),
                     Container(
@@ -310,7 +341,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
-          children: _periods.map((period) {
+          children: _periodKeys.map((period) {
             final isSelected = period == _selectedPeriod;
             return Padding(
               padding: EdgeInsets.only(right: 8.w),
@@ -331,7 +362,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
                     boxShadow: isSelected ? AppSpacing.shadowSm : null,
                   ),
                   child: Text(
-                    period,
+                    _periodLabel(period),
                     style: TextStyle(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
@@ -356,15 +387,15 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
         int displayRides;
 
         switch (_selectedPeriod) {
-          case 'Today':
+          case 'today':
             displayEarnings = stats.earningsToday;
             displayRides = stats.ridesCompleted;
             break;
-          case 'This Week':
+          case 'thisWeek':
             displayEarnings = stats.earningsThisWeek;
             displayRides = stats.ridesThisWeek;
             break;
-          case 'This Month':
+          case 'thisMonth':
             displayEarnings = stats.earningsThisMonth;
             displayRides = stats.ridesThisMonth;
             break;
@@ -383,7 +414,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
                     child: _StatCard(
                       icon: Icons.directions_car_rounded,
                       iconColor: AppColors.primary,
-                      title: 'Rides',
+                      title: AppLocalizations.of(context).statRides,
                       value: displayRides.toString(),
                     ),
                   ),
@@ -392,8 +423,8 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
                     child: _StatCard(
                       icon: Icons.attach_money_rounded,
                       iconColor: AppColors.success,
-                      title: 'Earnings',
-                      value: '${displayEarnings.toStringAsFixed(0)} €',
+                      title: AppLocalizations.of(context).statEarnings,
+                      value: '${displayEarnings.toStringAsFixed(0)} $_currencyCode',
                     ),
                   ),
                 ],
@@ -405,7 +436,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
                     child: _StatCard(
                       icon: Icons.timer_outlined,
                       iconColor: AppColors.warning,
-                      title: 'Online Hours',
+                      title: AppLocalizations.of(context).statOnlineHours,
                       value: '${stats.hoursOnlineThisWeek.toStringAsFixed(1)}h',
                     ),
                   ),
@@ -414,7 +445,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
                     child: _StatCard(
                       icon: Icons.star_rounded,
                       iconColor: AppColors.starFilled,
-                      title: 'Avg Rating',
+                      title: AppLocalizations.of(context).statAvgRating,
                       value: stats.rating > 0
                           ? stats.rating.toStringAsFixed(2)
                           : '-',
@@ -468,7 +499,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
           SizedBox(width: 12.w),
           Expanded(
             child: Text(
-              'Unable to load data. Pull to refresh.',
+              AppLocalizations.of(context).unableToLoadData,
               style: TextStyle(fontSize: 13.sp, color: AppColors.error),
             ),
           ),
@@ -543,17 +574,11 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
               ],
             ),
             SizedBox(height: 20.h),
-            // Simple earnings breakdown
+            // Total earnings breakdown
             _buildEarningsBreakdownItem(
-              AppLocalizations.of(context).ridesEarnings,
-              stats.totalEarnings * 0.85,
+              AppLocalizations.of(context).statEarnings,
+              stats.totalEarnings,
               AppColors.primary,
-            ),
-            SizedBox(height: 12.h),
-            _buildEarningsBreakdownItem(
-              AppLocalizations.of(context).tipsBonuses,
-              stats.totalEarnings * 0.15,
-              AppColors.success,
             ),
             SizedBox(height: 20.h),
             // CO2 Impact
@@ -814,7 +839,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
                     ),
                   ),
                   PremiumButton(
-                    text: 'Withdraw',
+                    text: AppLocalizations.of(context).withdraw,
                     onPressed: availableBalance > 0 && stripeAccountId != null
                         ? () => _requestPayout(
                             userId,
@@ -834,7 +859,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
             SizedBox(
               width: double.infinity,
               child: PremiumButton(
-                text: 'Connect Stripe Account',
+                text: AppLocalizations.of(context).connectStripeAccount,
                 onPressed: () =>
                     context.push(AppRoutes.driverStripeOnboarding.path),
                 style: PremiumButtonStyle.primary,
@@ -846,7 +871,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
             SizedBox(
               width: double.infinity,
               child: PremiumButton(
-                text: 'Complete Verification',
+                text: AppLocalizations.of(context).completeVerification,
                 onPressed: () =>
                     context.push(AppRoutes.driverStripeOnboarding.path),
                 style: PremiumButtonStyle.primary,
@@ -916,7 +941,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
         userId: userId,
         stripeAccountId: stripeAccountId,
         amount: amount,
-        currency: 'eur',
+        currency: _currencyCode,
         isFullySetup: isFullySetup,
       );
 

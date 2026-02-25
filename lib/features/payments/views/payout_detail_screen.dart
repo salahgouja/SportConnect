@@ -1,92 +1,31 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/features/payments/models/payment_model.dart';
+import 'package:sport_connect/features/payments/view_models/payment_view_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
-/// Detailed view of a single driver payout with transaction breakdown.
-class PayoutDetailScreen extends ConsumerStatefulWidget {
+/// Detailed view of a single driver payout with status, amount, and timeline.
+class PayoutDetailScreen extends ConsumerWidget {
   const PayoutDetailScreen({required this.payoutId, super.key});
 
   final String payoutId;
 
   @override
-  ConsumerState<PayoutDetailScreen> createState() => _PayoutDetailScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final payoutAsync = ref.watch(payoutDetailProvider(payoutId));
 
-class _PayoutDetailScreenState extends ConsumerState<PayoutDetailScreen> {
-  Map<String, dynamic>? _payoutData;
-  List<Map<String, dynamic>> _transactions = [];
-  bool _isLoading = true;
-  String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadPayoutDetails();
-  }
-
-  Future<void> _loadPayoutDetails() async {
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) return;
-
-      final payoutDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('payouts')
-          .doc(widget.payoutId)
-          .get();
-
-      if (mounted && !payoutDoc.exists) {
-        setState(() {
-          _error = 'Payout not found';
-          _isLoading = false;
-        });
-        return;
-      }
-
-      final transactionsSnap = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('payouts')
-          .doc(widget.payoutId)
-          .collection('transactions')
-          .orderBy('createdAt', descending: true)
-          .get();
-
-      if (mounted) {
-        setState(() {
-          _payoutData = payoutDoc.data();
-          _transactions = transactionsSnap.docs
-              .map((d) => {'id': d.id, ...d.data()})
-              .toList();
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = 'Failed to load payout details';
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
-          'Payout Details',
+          l10n.payoutDetails,
           style: TextStyle(
             fontSize: 18.sp,
             fontWeight: FontWeight.w700,
@@ -98,15 +37,352 @@ class _PayoutDetailScreenState extends ConsumerState<PayoutDetailScreen> {
           onPressed: () => context.pop(),
         ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-          ? _buildErrorView()
-          : _buildContent(),
+      body: payoutAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (_, _) => _buildErrorView(context, l10n, ref),
+        data: (payout) => payout == null
+            ? _buildNotFoundView(context, l10n)
+            : _buildPayoutContent(context, l10n, ref, payout),
+      ),
     );
   }
 
-  Widget _buildErrorView() {
+  Widget _buildPayoutContent(
+    BuildContext context,
+    AppLocalizations l10n,
+    WidgetRef ref,
+    DriverPayout payout,
+  ) {
+    final dateFormat = DateFormat('MMM dd, yyyy HH:mm');
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        ref.invalidate(payoutDetailProvider(payoutId));
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.all(20.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Amount Card
+            _buildAmountCard(context, l10n, payout),
+            SizedBox(height: 20.h),
+
+            // Status Card
+            _buildStatusCard(context, l10n, payout),
+            SizedBox(height: 20.h),
+
+            // Details Section
+            _buildDetailsSection(context, l10n, payout, dateFormat),
+            SizedBox(height: 20.h),
+
+            // Actions
+            if (payout.isPending)
+              _buildCancelButton(context, l10n, ref, payout),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAmountCard(
+    BuildContext context,
+    AppLocalizations l10n,
+    DriverPayout payout,
+  ) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(24.w),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.primary,
+            AppColors.primary.withValues(alpha: 0.8),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20.r),
+      ),
+      child: Column(
+        children: [
+          Text(
+            l10n.payoutAmount,
+            style: TextStyle(
+              fontSize: 14.sp,
+              color: Colors.white.withValues(alpha: 0.8),
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            '${payout.amount.toStringAsFixed(2)} ${payout.currency.toUpperCase()}',
+            style: TextStyle(
+              fontSize: 36.sp,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+            ),
+          ),
+          if (payout.isInstantPayout == true) ...[
+            SizedBox(height: 8.h),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              child: Text(
+                l10n.instantPayout,
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusCard(
+    BuildContext context,
+    AppLocalizations l10n,
+    DriverPayout payout,
+  ) {
+    final statusInfo = _getPayoutStatusInfo(l10n, payout.status);
+
+    return Container(
+      padding: EdgeInsets.all(20.w),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(
+          color: statusInfo.color.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(12.w),
+            decoration: BoxDecoration(
+              color: statusInfo.color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+            child: Icon(statusInfo.icon, color: statusInfo.color, size: 24.sp),
+          ),
+          SizedBox(width: 16.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  statusInfo.label,
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  statusInfo.description,
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailsSection(
+    BuildContext context,
+    AppLocalizations l10n,
+    DriverPayout payout,
+    DateFormat dateFormat,
+  ) {
+    return Container(
+      padding: EdgeInsets.all(20.w),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16.r),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.payoutDetailsSection,
+            style: TextStyle(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          SizedBox(height: 16.h),
+          if (payout.createdAt != null)
+            _buildDetailRow(l10n.date, dateFormat.format(payout.createdAt!)),
+          if (payout.expectedArrivalDate != null)
+            _buildDetailRow(
+              l10n.expectedArrival,
+              dateFormat.format(payout.expectedArrivalDate!),
+            ),
+          if (payout.arrivedAt != null)
+            _buildDetailRow(
+              l10n.arrivedAt,
+              dateFormat.format(payout.arrivedAt!),
+            ),
+          if (payout.bankName != null)
+            _buildDetailRow(l10n.bankName, payout.bankName!),
+          if (payout.bankAccountLast4 != null)
+            _buildDetailRow(
+              l10n.accountEnding,
+              '•••• ${payout.bankAccountLast4}',
+            ),
+          if (payout.stripePayoutId != null)
+            _buildDetailRow(
+              l10n.transactionId,
+              payout.stripePayoutId!.length > 20
+                  ? '${payout.stripePayoutId!.substring(0, 20)}...'
+                  : payout.stripePayoutId!,
+            ),
+          if (payout.failureReason != null)
+            _buildDetailRow(l10n.failureReason, payout.failureReason!),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 8.h),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
+          ),
+          Flexible(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+              textAlign: TextAlign.end,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCancelButton(
+    BuildContext context,
+    AppLocalizations l10n,
+    WidgetRef ref,
+    DriverPayout payout,
+  ) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: () => _confirmCancel(context, l10n, ref, payout),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.error.withValues(alpha: 0.1),
+          foregroundColor: AppColors.error,
+          padding: EdgeInsets.symmetric(vertical: 16.h),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+        ),
+        child: Text(l10n.cancelPayout),
+      ),
+    );
+  }
+
+  Future<void> _confirmCancel(
+    BuildContext context,
+    AppLocalizations l10n,
+    WidgetRef ref,
+    DriverPayout payout,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.cancelPayout),
+        content: Text(l10n.cancelPayoutConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.actionCancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: Text(l10n.actionConfirm),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final success = await ref
+        .read(driverPayoutViewModelProvider.notifier)
+        .cancelPayout(payout.id);
+
+    if (context.mounted) {
+      if (success) {
+        ref.invalidate(payoutDetailProvider(payoutId));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.payoutCancelled),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.payoutCancelFailed),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _buildNotFoundView(BuildContext context, AppLocalizations l10n) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.receipt_long_outlined,
+            size: 48.sp,
+            color: AppColors.textTertiary,
+          ),
+          SizedBox(height: 12.h),
+          Text(
+            l10n.payoutNotFound,
+            style: TextStyle(fontSize: 16.sp, color: AppColors.textSecondary),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorView(
+    BuildContext context,
+    AppLocalizations l10n,
+    WidgetRef ref,
+  ) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -118,473 +394,73 @@ class _PayoutDetailScreenState extends ConsumerState<PayoutDetailScreen> {
           ),
           SizedBox(height: 12.h),
           Text(
-            _error!,
+            l10n.payoutNotFound,
             style: TextStyle(fontSize: 16.sp, color: AppColors.textSecondary),
           ),
           SizedBox(height: 16.h),
           TextButton(
-            onPressed: () {
-              setState(() {
-                _isLoading = true;
-                _error = null;
-              });
-              _loadPayoutDetails();
-            },
-            child: const Text('Retry'),
+            onPressed: () => ref.invalidate(payoutDetailProvider(payoutId)),
+            child: Text(l10n.retry),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildContent() {
-    final data = _payoutData!;
-    final amount = (data['amount'] as num?)?.toDouble() ?? 0;
-    final status = (data['status'] as String?) ?? 'pending';
-    final createdAt = data['createdAt'] as Timestamp?;
-    final completedAt = data['completedAt'] as Timestamp?;
-    final ridesCount =
-        (data['ridesCount'] as num?)?.toInt() ?? _transactions.length;
-    final fees = (data['fees'] as num?)?.toDouble() ?? 0;
-    final netAmount = amount - fees;
-
-    return ListView(
-      padding: EdgeInsets.symmetric(horizontal: 24.w),
-      children: [
-        SizedBox(height: 16.h),
-
-        // Amount card
-        Container(
-          padding: EdgeInsets.all(24.w),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [AppColors.primary, AppColors.primaryDark],
-            ),
-            borderRadius: BorderRadius.circular(20.r),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.3),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              Text(
-                'Total Payout',
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  color: Colors.white.withValues(alpha: 0.8),
-                ),
-              ),
-              SizedBox(height: 8.h),
-              Text(
-                '\$${netAmount.toStringAsFixed(2)}',
-                style: TextStyle(
-                  fontSize: 36.sp,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                  letterSpacing: -1,
-                ),
-              ),
-              SizedBox(height: 12.h),
-              _buildStatusBadge(status),
-              SizedBox(height: 16.h),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildPayoutMeta('Rides', '$ridesCount'),
-                  Container(
-                    width: 1,
-                    height: 30.h,
-                    color: Colors.white.withValues(alpha: 0.2),
-                  ),
-                  _buildPayoutMeta(
-                    'Date',
-                    createdAt != null
-                        ? DateFormat('MMM dd').format(createdAt.toDate())
-                        : '--',
-                  ),
-                  Container(
-                    width: 1,
-                    height: 30.h,
-                    color: Colors.white.withValues(alpha: 0.2),
-                  ),
-                  _buildPayoutMeta('Fees', '\$${fees.toStringAsFixed(2)}'),
-                ],
-              ),
-            ],
-          ),
-        ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.05),
-
-        SizedBox(height: 24.h),
-
-        // Breakdown
-        Text(
-          'Breakdown',
-          style: TextStyle(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ).animate().fadeIn(delay: 200.ms),
-        SizedBox(height: 12.h),
-
-        Container(
-          padding: EdgeInsets.all(16.w),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14.r),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              _buildBreakdownRow(
-                'Gross Earnings',
-                '\$${amount.toStringAsFixed(2)}',
-              ),
-              Divider(height: 20.h, color: AppColors.border),
-              _buildBreakdownRow(
-                'Platform Fee',
-                '-\$${fees.toStringAsFixed(2)}',
-                isDeduction: true,
-              ),
-              Divider(height: 20.h, color: AppColors.border),
-              _buildBreakdownRow(
-                'Net Payout',
-                '\$${netAmount.toStringAsFixed(2)}',
-                isBold: true,
-              ),
-            ],
-          ),
-        ).animate().fadeIn(delay: 300.ms),
-
-        SizedBox(height: 24.h),
-
-        // Timeline
-        Text(
-          'Timeline',
-          style: TextStyle(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ).animate().fadeIn(delay: 350.ms),
-        SizedBox(height: 12.h),
-
-        Container(
-          padding: EdgeInsets.all(16.w),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14.r),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              _buildTimelineItem(
-                'Payout Created',
-                createdAt != null
-                    ? DateFormat(
-                        'MMM dd, yyyy • HH:mm',
-                      ).format(createdAt.toDate())
-                    : 'N/A',
-                Icons.add_circle_outline_rounded,
-                isComplete: true,
-              ),
-              _buildTimelineItem(
-                'Processing',
-                status == 'pending' ? 'In progress...' : 'Completed',
-                Icons.sync_rounded,
-                isComplete: status != 'pending',
-              ),
-              _buildTimelineItem(
-                'Completed',
-                completedAt != null
-                    ? DateFormat(
-                        'MMM dd, yyyy • HH:mm',
-                      ).format(completedAt.toDate())
-                    : status == 'completed'
-                    ? 'Completed'
-                    : 'Pending',
-                Icons.check_circle_outline_rounded,
-                isComplete: status == 'completed',
-                isLast: true,
-              ),
-            ],
-          ),
-        ).animate().fadeIn(delay: 400.ms),
-
-        SizedBox(height: 24.h),
-
-        // Transactions list
-        if (_transactions.isNotEmpty) ...[
-          Text(
-            'Rides Included',
-            style: TextStyle(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ).animate().fadeIn(delay: 450.ms),
-          SizedBox(height: 12.h),
-          ..._transactions.asMap().entries.map((entry) {
-            final index = entry.key;
-            final txn = entry.value;
-            final txnAmount = (txn['amount'] as num?)?.toDouble() ?? 0;
-            final txnDate = txn['createdAt'] as Timestamp?;
-            final from = txn['from'] as String? ?? 'Unknown';
-            final to = txn['to'] as String? ?? 'Unknown';
-
-            return Container(
-                  margin: EdgeInsets.only(bottom: 8.h),
-                  padding: EdgeInsets.all(14.w),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12.r),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.all(8.w),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8.r),
-                        ),
-                        child: Icon(
-                          Icons.directions_car_rounded,
-                          size: 18.sp,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                      SizedBox(width: 12.w),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '$from → $to',
-                              style: TextStyle(
-                                fontSize: 13.sp,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textPrimary,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            SizedBox(height: 2.h),
-                            Text(
-                              txnDate != null
-                                  ? DateFormat(
-                                      'MMM dd, HH:mm',
-                                    ).format(txnDate.toDate())
-                                  : '--',
-                              style: TextStyle(
-                                fontSize: 11.sp,
-                                color: AppColors.textTertiary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Text(
-                        '+\$${txnAmount.toStringAsFixed(2)}',
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.success,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-                .animate()
-                .fadeIn(delay: (500 + index * 50).ms)
-                .slideX(begin: 0.03);
-          }),
-        ],
-
-        SizedBox(height: 32.h),
-      ],
-    );
+  _PayoutStatusInfo _getPayoutStatusInfo(
+    AppLocalizations l10n,
+    PayoutStatus status,
+  ) {
+    switch (status) {
+      case PayoutStatus.pending:
+        return _PayoutStatusInfo(
+          label: l10n.statusPending,
+          description: l10n.payoutPendingDesc,
+          icon: Icons.schedule_rounded,
+          color: AppColors.warning,
+        );
+      case PayoutStatus.inTransit:
+        return _PayoutStatusInfo(
+          label: l10n.payoutInTransit,
+          description: l10n.payoutInTransitDesc,
+          icon: Icons.local_shipping_rounded,
+          color: AppColors.info,
+        );
+      case PayoutStatus.paid:
+        return _PayoutStatusInfo(
+          label: l10n.payoutPaid,
+          description: l10n.payoutPaidDesc,
+          icon: Icons.check_circle_rounded,
+          color: AppColors.success,
+        );
+      case PayoutStatus.failed:
+        return _PayoutStatusInfo(
+          label: l10n.statusFailed,
+          description: l10n.payoutFailedDesc,
+          icon: Icons.error_rounded,
+          color: AppColors.error,
+        );
+      case PayoutStatus.cancelled:
+        return _PayoutStatusInfo(
+          label: l10n.statusCancelled,
+          description: l10n.payoutCancelledDesc,
+          icon: Icons.cancel_rounded,
+          color: AppColors.textSecondary,
+        );
+    }
   }
+}
 
-  Widget _buildStatusBadge(String status) {
-    final isCompleted = status == 'completed';
-    final isPending = status == 'pending';
+class _PayoutStatusInfo {
+  final String label;
+  final String description;
+  final IconData icon;
+  final Color color;
 
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(20.r),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            isCompleted
-                ? Icons.check_circle_rounded
-                : isPending
-                ? Icons.hourglass_top_rounded
-                : Icons.error_rounded,
-            size: 14.sp,
-            color: Colors.white,
-          ),
-          SizedBox(width: 6.w),
-          Text(
-            status[0].toUpperCase() + status.substring(1),
-            style: TextStyle(
-              fontSize: 12.sp,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPayoutMeta(String label, String value) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
-        ),
-        SizedBox(height: 2.h),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11.sp,
-            color: Colors.white.withValues(alpha: 0.7),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBreakdownRow(
-    String label,
-    String value, {
-    bool isBold = false,
-    bool isDeduction = false,
-  }) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: isBold ? FontWeight.w700 : FontWeight.w400,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: isBold ? FontWeight.w700 : FontWeight.w500,
-            color: isDeduction
-                ? AppColors.error
-                : isBold
-                ? AppColors.primary
-                : AppColors.textPrimary,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTimelineItem(
-    String title,
-    String subtitle,
-    IconData icon, {
-    required bool isComplete,
-    bool isLast = false,
-  }) {
-    return IntrinsicHeight(
-      child: Row(
-        children: [
-          Column(
-            children: [
-              Container(
-                padding: EdgeInsets.all(6.w),
-                decoration: BoxDecoration(
-                  color: isComplete
-                      ? AppColors.success.withValues(alpha: 0.15)
-                      : AppColors.surfaceVariant,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  icon,
-                  size: 16.sp,
-                  color: isComplete
-                      ? AppColors.success
-                      : AppColors.textTertiary,
-                ),
-              ),
-              if (!isLast)
-                Expanded(
-                  child: Container(
-                    width: 2,
-                    margin: EdgeInsets.symmetric(vertical: 4.h),
-                    color: isComplete
-                        ? AppColors.success.withValues(alpha: 0.3)
-                        : AppColors.border,
-                  ),
-                ),
-            ],
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(bottom: isLast ? 0 : 16.h),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  SizedBox(height: 2.h),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      color: AppColors.textTertiary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  const _PayoutStatusInfo({
+    required this.label,
+    required this.description,
+    required this.icon,
+    required this.color,
+  });
 }

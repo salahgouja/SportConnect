@@ -10,14 +10,23 @@ import 'package:sport_connect/features/auth/models/models.dart';
 class RouteGuardService {
   final bool isLoading;
   final UserModel? user;
+  final bool isEmailVerified;
 
-  const RouteGuardService({required this.isLoading, required this.user});
+  const RouteGuardService({
+    required this.isLoading,
+    required this.user,
+    this.isEmailVerified = false,
+  });
 
   /// Factory to create from provider state
-  factory RouteGuardService.fromAuthState(AsyncValue<UserModel?> userState) {
+  factory RouteGuardService.fromAuthState(
+    AsyncValue<UserModel?> userState, {
+    bool isEmailVerified = false,
+  }) {
     return RouteGuardService(
       isLoading: userState.isLoading,
       user: userState.value,
+      isEmailVerified: isEmailVerified,
     );
   }
 
@@ -57,6 +66,7 @@ class RouteGuardService {
         AppRoutes.roleSelection.path,
         AppRoutes.driverOnboarding.path,
         AppRoutes.riderOnboarding.path,
+        AppRoutes.emailVerification.path,
         AppRoutes.home.path,
         AppRoutes.driverHome.path,
       ];
@@ -86,6 +96,11 @@ class RouteGuardService {
       return AppRoutes.login.path;
     }
 
+    // 5b. Enforce email verification before allowing app access
+    if (!isEmailVerified && currentPath != AppRoutes.emailVerification.path) {
+      return AppRoutes.emailVerification.path;
+    }
+
     // 6. Driver-specific route protection
     if (_isDriverRoute(currentPath) && !_isDriverOnboardingRoute(currentPath)) {
       if (!hasCompletedDriverOnboarding) {
@@ -100,6 +115,9 @@ class RouteGuardService {
   String _getInitialRoute() {
     if (!isLoggedIn) {
       return AppRoutes.login.path;
+    }
+    if (!isEmailVerified) {
+      return AppRoutes.emailVerification.path;
     }
     return _getDashboardRoute();
   }
@@ -131,10 +149,9 @@ class RouteGuardService {
   bool _isPublicRoute(String path) {
     return path == AppRoutes.onboarding.path ||
         path == AppRoutes.login.path ||
-        path == AppRoutes.register.path ||
         path == AppRoutes.signupWizard.path ||
         path == AppRoutes.forgotPassword.path ||
-        path == AppRoutes.emailVerification.path;
+        path == AppRoutes.phoneOtp.path;
   }
 
   /// Check if route is a driver-specific route
@@ -146,19 +163,4 @@ class RouteGuardService {
   bool _isDriverOnboardingRoute(String path) {
     return path == AppRoutes.driverOnboarding.path;
   }
-}
-
-/// Public route paths for external reference
-class PublicRoutes {
-  static const List<String> paths = [
-    '/',
-    '/onboarding',
-    '/login',
-    '/register',
-    '/signup',
-    '/forgot-password',
-    '/email-verification',
-  ];
-
-  static bool isPublic(String path) => paths.contains(path);
 }

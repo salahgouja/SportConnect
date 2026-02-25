@@ -50,7 +50,7 @@ class DriverInfoWidget extends ConsumerWidget {
         height: 16,
         child: CircularProgressIndicator(strokeWidth: 2),
       ),
-      error: (_, __) => const Text('Error loading driver'),
+      error: (_, _) => const Text('Error loading driver'),
     );
   }
 }
@@ -66,7 +66,7 @@ class DriverNameWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return DriverInfoWidget(
       driverId: driverId,
-      builder: (context, displayName, _, __) => Text(displayName, style: style),
+      builder: (context, displayName, _, _) => Text(displayName, style: style),
     );
   }
 }
@@ -114,7 +114,7 @@ class DriverRatingWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return DriverInfoWidget(
       driverId: driverId,
-      builder: (context, _, __, rating) => Row(
+      builder: (context, _, _, rating) => Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (showIcon) ...[

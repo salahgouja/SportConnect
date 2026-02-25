@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,11 +8,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:device_preview/device_preview.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 // Config & Services
 import 'package:sport_connect/core/config/app_router.dart';
 import 'package:sport_connect/core/config/stripe_config.dart';
+import 'package:sport_connect/core/services/analytics_service.dart';
 import 'package:sport_connect/core/services/deep_link_service.dart';
 import 'package:sport_connect/core/services/firebase_service.dart';
 import 'package:sport_connect/core/services/push_notification_service.dart';
@@ -26,8 +30,28 @@ import 'package:sport_connect/core/providers/user_providers.dart';
 /// Application entry point
 ///
 /// Initializes all services and runs the app with proper error handling.
+/// Crashlytics captures both Flutter framework errors and asynchronous errors.
 void main() async {
   await _initializeApp();
+
+  // Capture Flutter framework errors (widget build failures, etc.)
+  FlutterError.onError = (details) {
+    FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+    // Also log locally for debug visibility
+    TalkerService.error(
+      'FlutterError: ${details.exceptionAsString()}',
+      details.exception,
+      details.stack,
+    );
+  };
+
+  // Capture asynchronous errors not caught by Flutter framework
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    TalkerService.error('PlatformDispatcher error', error, stack);
+    return true;
+  };
+
   _runApp();
 }
 
@@ -53,6 +77,9 @@ Future<void> _initializeApp() async {
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   await PushNotificationService.instance.initialize();
   TalkerService.info('✅ Push notifications initialized');
+
+  // 4. Analytics & Crashlytics
+  await AnalyticsService.instance.initialize();
 
   // 5. Payments
   await _initializeStripe();

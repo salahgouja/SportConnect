@@ -110,7 +110,7 @@ class _EventPickerSheetState extends ConsumerState<EventPickerSheet>
                 return _buildEventList(filtered);
               },
               loading: _buildShimmer,
-              error: (_, __) => _buildErrorState(),
+              error: (_, _) => _buildErrorState(),
             ),
           ),
           _buildBottomBar(),
@@ -513,7 +513,10 @@ class _EventPickerSheetState extends ConsumerState<EventPickerSheet>
 
   Future<void> _handleCreateEvent() async {
     final created = await CreateEventSheet.show(context);
-    if (created != null && mounted) setState(() => _selected = created);
+    if (created != null && mounted) {
+      // Auto-confirm the freshly created event and close the picker.
+      Navigator.of(context).pop(created);
+    }
   }
 }
 

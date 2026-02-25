@@ -254,7 +254,7 @@ class PremiumListTile extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (trailing != null) trailing!,
+                ?trailing,
                 if (showChevron && trailing == null) ...[
                   SizedBox(width: 8.w),
                   Icon(

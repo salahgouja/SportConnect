@@ -18,11 +18,11 @@ final paymentRepositoryProvider = PaymentRepositoryProvider._();
 final class PaymentRepositoryProvider
     extends
         $FunctionalProvider<
-          PaymentRepository,
-          PaymentRepository,
-          PaymentRepository
+          IPaymentRepository,
+          IPaymentRepository,
+          IPaymentRepository
         >
-    with $Provider<PaymentRepository> {
+    with $Provider<IPaymentRepository> {
   /// Payment Repository Provider
   PaymentRepositoryProvider._()
     : super(
@@ -40,22 +40,22 @@ final class PaymentRepositoryProvider
 
   @$internal
   @override
-  $ProviderElement<PaymentRepository> $createElement(
+  $ProviderElement<IPaymentRepository> $createElement(
     $ProviderPointer pointer,
   ) => $ProviderElement(pointer);
 
   @override
-  PaymentRepository create(Ref ref) {
+  IPaymentRepository create(Ref ref) {
     return paymentRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(PaymentRepository value) {
+  Override overrideWithValue(IPaymentRepository value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<PaymentRepository>(value),
+      providerOverride: $SyncValueProvider<IPaymentRepository>(value),
     );
   }
 }
 
-String _$paymentRepositoryHash() => r'3b1581369934ff589d534b987b4922979c5ee7ad';
+String _$paymentRepositoryHash() => r'ac319e20f44eb223505e547c677c3ab483308606';

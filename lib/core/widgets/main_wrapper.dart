@@ -31,8 +31,11 @@ class MainWrapper extends ConsumerWidget {
       backgroundColor: AppColors.background,
       body: navigationShell,
       bottomNavigationBar: userAsync.when(
-        loading: () => const SizedBox.shrink(),
-        error: (_, __) => const SizedBox.shrink(),
+        // Show a fixed-height placeholder while the user state is loading to
+        // prevent the shell body from expanding and then snapping back, which
+        // produces a visible layout jump.
+        loading: () => const SizedBox(height: kBottomNavigationBarHeight),
+        error: (_, _) => const SizedBox(height: kBottomNavigationBarHeight),
         data: (user) => _buildBottomNav(context, user),
       ),
     );
@@ -42,6 +45,19 @@ class MainWrapper extends ConsumerWidget {
     if (user == null) return const SizedBox.shrink();
 
     final isDriver = user is DriverModel;
+    final currentIndex = navigationShell.currentIndex;
+
+    // Detect branch-set mismatch (driver on rider branches 0-4, or vice versa)
+    final driverOnRiderBranch = isDriver && currentIndex < 5;
+    final riderOnDriverBranch = !isDriver && currentIndex >= 5;
+    if (driverOnRiderBranch || riderOnDriverBranch) {
+      // Correct mismatch after the current frame to avoid calling goBranch
+      // during a build phase.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        navigationShell.goBranch(isDriver ? 5 : 0, initialLocation: true);
+      });
+    }
+
     final activeIndex = _calculateActiveIndex(isDriver);
 
     return _CustomBottomNavBar(
@@ -51,15 +67,17 @@ class MainWrapper extends ConsumerWidget {
     );
   }
 
-  /// Calculate active local index (0-4) from navigation shell
+  /// Calculate active local index (0-4) from the global navigation shell index.
+  ///
+  /// Rider branches are 0-4, driver branches are 5-9. A mismatch returns 0
+  /// so the highlight falls back to the home tab — this is a safe default while
+  /// the post-frame correction in [_buildBottomNav] takes effect.
   int _calculateActiveIndex(bool isDriver) {
     if (isDriver) {
-      // Driver Branches: 5-9 -> Mapped to 0-4
       return (navigationShell.currentIndex >= 5)
           ? navigationShell.currentIndex - 5
           : 0;
     }
-    // Rider Branches: 0-4 -> Mapped to 0-4
     return (navigationShell.currentIndex <= 4)
         ? navigationShell.currentIndex
         : 0;

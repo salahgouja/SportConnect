@@ -3,7 +3,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'leaderboard_entry.freezed.dart';
 part 'leaderboard_entry.g.dart';
 
-/// Leaderboard entry model
+/// Leaderboard entry model for gamification / profile feature.
 @freezed
 abstract class LeaderboardEntry with _$LeaderboardEntry {
   const factory LeaderboardEntry({

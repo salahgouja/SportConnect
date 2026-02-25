@@ -757,16 +757,20 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
 
   Widget _buildPreferencesCard(RideModel ride) {
     final prefs = <MapEntry<IconData, String>>[];
-    if (ride.allowLuggage)
+    if (ride.allowLuggage) {
       prefs.add(MapEntry(Icons.luggage_rounded, 'Luggage OK'));
+    }
     if (ride.allowPets) prefs.add(MapEntry(Icons.pets_rounded, 'Pets OK'));
-    if (!ride.allowSmoking)
+    if (!ride.allowSmoking) {
       prefs.add(MapEntry(Icons.smoke_free_rounded, 'No smoking'));
-    if (ride.isWomenOnly)
+    }
+    if (ride.isWomenOnly) {
       prefs.add(MapEntry(Icons.female_rounded, 'Women only'));
+    }
     if (ride.allowChat) prefs.add(MapEntry(Icons.chat_rounded, 'Chat enabled'));
-    if (ride.isPriceNegotiable)
+    if (ride.isPriceNegotiable) {
       prefs.add(MapEntry(Icons.handshake_rounded, 'Price negotiable'));
+    }
 
     if (prefs.isEmpty) return const SizedBox.shrink();
 

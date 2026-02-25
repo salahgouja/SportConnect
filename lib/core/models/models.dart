@@ -1,5 +1,6 @@
 /// Core models barrel file
 /// Exports all shared models used across features
+library;
 
 // User models
 export 'user/user_model.dart';

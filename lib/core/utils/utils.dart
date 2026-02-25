@@ -5,7 +5,7 @@
 /// ```dart
 /// import 'package:sport_connect/core/utils/utils.dart';
 /// ```
-library utils;
+library;
 
 export 'result.dart';
 export 'command.dart';

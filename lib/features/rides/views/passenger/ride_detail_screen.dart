@@ -2092,22 +2092,21 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
         phone: user.phoneNumber,
       );
 
-      // Calculate total amount in smallest currency unit (cents/millimes)
+      // Calculate total amount in main currency unit (server converts to cents)
       final totalAmount = ride.pricePerSeat * _selectedSeats;
-      final amountInSmallestUnit = (totalAmount * 100)
-          .round(); // Convert to cents
 
       // Convert currency symbol to ISO code (Stripe requires ISO codes)
       final currencyIso = _getCurrencyIsoCode(ride.currency ?? 'eur');
 
       // Create payment intent via Firebase Cloud Function with driver's Stripe account
-      final paymentData = await StripeService().createPaymentIntent(
+      final stripeService = ref.read(stripeServiceProvider);
+      final paymentData = await stripeService.createPaymentIntent(
         rideId: ride.id,
         riderId: user.uid,
         riderName: user.displayName,
         driverId: ride.driverId,
         driverName: driverProfile.displayName,
-        amount: amountInSmallestUnit.toDouble(),
+        amount: totalAmount,
         currency: currencyIso,
         customerId: customerId,
         driverStripeAccountId:
@@ -2116,7 +2115,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
       );
 
       // Show Stripe Payment Sheet
-      final paymentSuccess = await StripeService().processPaymentWithSheet(
+      final paymentSuccess = await stripeService.processPaymentWithSheet(
         paymentIntentClientSecret: paymentData['clientSecret'],
         customerId: customerId,
         ephemeralKeySecret: paymentData['ephemeralKey'],

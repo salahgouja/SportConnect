@@ -1,14 +1,14 @@
 import 'dart:async';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:go_router/go_router.dart';
-import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Email Verification screen shown after registration.
 ///
@@ -52,21 +52,27 @@ class _EmailVerificationScreenState
   }
 
   Future<void> _checkEmailVerified() async {
-    final user = FirebaseAuth.instance.currentUser;
+    final authActions = ref.read(authActionsViewModelProvider);
+    final user = authActions.currentUser;
     if (user == null) return;
 
-    await user.reload();
-    final refreshedUser = FirebaseAuth.instance.currentUser;
+    await authActions.reloadUser();
+    final verified = await authActions.isEmailVerified();
 
-    if (refreshedUser != null && refreshedUser.emailVerified && mounted) {
+    if (verified && mounted) {
       setState(() => _isEmailVerified = true);
       _verificationTimer?.cancel();
 
-      // Auto-redirect after brief delay
+      // Wait briefly for the success animation, then let the route guard
+      // redirect to the correct dashboard (rider home vs driver home).
+      // The router's refreshListenable triggers automatically when the
+      // auth state changes from the reload above.
       await Future.delayed(const Duration(seconds: 2));
-      if (mounted) {
-        context.go(AppRoutes.home.path);
-      }
+
+      if (!mounted) return;
+      // Force the auth state provider to re-evaluate so the router redirect
+      // picks up the updated emailVerified flag.
+      ref.invalidate(authStateProvider);
     }
   }
 
@@ -75,8 +81,7 @@ class _EmailVerificationScreenState
 
     setState(() => _isSending = true);
     try {
-      final user = FirebaseAuth.instance.currentUser;
-      await user?.sendEmailVerification();
+      await ref.read(authActionsViewModelProvider).sendEmailVerification();
 
       if (mounted) {
         setState(() {
@@ -87,7 +92,7 @@ class _EmailVerificationScreenState
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Verification email sent!'),
+            content: Text(AppLocalizations.of(context).emailVerifySent),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -101,9 +106,7 @@ class _EmailVerificationScreenState
         setState(() => _isSending = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text(
-              'Failed to send verification email. Please try again.',
-            ),
+            content: Text(AppLocalizations.of(context).emailVerifySendFailed),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),
@@ -123,7 +126,8 @@ class _EmailVerificationScreenState
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
+    final l10n = AppLocalizations.of(context);
+    final user = ref.read(authActionsViewModelProvider).currentUser;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -131,7 +135,7 @@ class _EmailVerificationScreenState
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
-          'Verify Email',
+          l10n.emailVerifyTitle,
           style: TextStyle(
             fontSize: 18.sp,
             fontWeight: FontWeight.w700,
@@ -148,8 +152,8 @@ class _EmailVerificationScreenState
 
               // Animated icon
               _isEmailVerified
-                  ? _buildVerifiedState()
-                  : _buildPendingState(user?.email ?? ''),
+                  ? _buildVerifiedState(l10n)
+                  : _buildPendingState(l10n, user?.email ?? ''),
 
               const Spacer(flex: 3),
 
@@ -159,8 +163,8 @@ class _EmailVerificationScreenState
                   width: double.infinity,
                   child: PremiumButton(
                     text: _resendCooldown > 0
-                        ? 'Resend in ${_resendCooldown}s'
-                        : 'Resend Verification Email',
+                        ? l10n.emailVerifyResendIn(_resendCooldown)
+                        : l10n.emailVerifyResend,
                     onPressed: _resendCooldown > 0 || _isSending
                         ? null
                         : _resendVerification,
@@ -175,24 +179,11 @@ class _EmailVerificationScreenState
                 SizedBox(
                   width: double.infinity,
                   child: PremiumButton(
-                    text: 'I\'ve Verified My Email',
+                    text: l10n.emailVerifyCheckButton,
                     onPressed: _checkEmailVerified,
                     icon: Icons.check_circle_outline_rounded,
                   ),
                 ).animate().fadeIn(delay: 700.ms),
-
-                SizedBox(height: 12.h),
-
-                TextButton(
-                  onPressed: () => context.go(AppRoutes.home.path),
-                  child: Text(
-                    'Skip for now',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ).animate().fadeIn(delay: 800.ms),
               ],
 
               SizedBox(height: 32.h),
@@ -203,7 +194,7 @@ class _EmailVerificationScreenState
     );
   }
 
-  Widget _buildPendingState(String email) {
+  Widget _buildPendingState(AppLocalizations l10n, String email) {
     return Column(
       children: [
         Container(
@@ -227,7 +218,7 @@ class _EmailVerificationScreenState
         SizedBox(height: 28.h),
 
         Text(
-          'Verify Your Email',
+          l10n.emailVerifyHeading,
           style: TextStyle(
             fontSize: 26.sp,
             fontWeight: FontWeight.w800,
@@ -238,7 +229,7 @@ class _EmailVerificationScreenState
         SizedBox(height: 12.h),
 
         Text(
-          'We\'ve sent a verification link to:',
+          l10n.emailVerifySentTo,
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 15.sp,
@@ -281,7 +272,7 @@ class _EmailVerificationScreenState
             ),
             SizedBox(width: 8.w),
             Text(
-              'Waiting for verification...',
+              l10n.emailVerifyWaiting,
               style: TextStyle(fontSize: 13.sp, color: AppColors.textTertiary),
             ),
           ],
@@ -290,7 +281,7 @@ class _EmailVerificationScreenState
     );
   }
 
-  Widget _buildVerifiedState() {
+  Widget _buildVerifiedState(AppLocalizations l10n) {
     return Column(
       children: [
         Container(
@@ -312,7 +303,7 @@ class _EmailVerificationScreenState
         SizedBox(height: 28.h),
 
         Text(
-          'Email Verified!',
+          l10n.emailVerified,
           style: TextStyle(
             fontSize: 26.sp,
             fontWeight: FontWeight.w800,
@@ -323,7 +314,7 @@ class _EmailVerificationScreenState
         SizedBox(height: 12.h),
 
         Text(
-          'Your email has been verified. Redirecting...',
+          l10n.emailVerifiedRedirecting,
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 15.sp, color: AppColors.textSecondary),
         ).animate().fadeIn(delay: 300.ms),

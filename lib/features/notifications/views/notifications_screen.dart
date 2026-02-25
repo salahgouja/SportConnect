@@ -178,7 +178,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
         appBar: _buildAppBar(0),
         body: _buildLoadingState(),
       ),
-      error: (_, __) => Scaffold(
+      error: (_, _) => Scaffold(
         backgroundColor: AppColors.background,
         appBar: _buildAppBar(0),
         body: _buildErrorState(

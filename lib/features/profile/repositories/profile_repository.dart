@@ -23,6 +23,7 @@ class ProfileRepository implements IUserRepository {
   // ==================== USER PROFILE ====================
 
   /// Get user by ID
+  @override
   Future<UserModel?> getUserById(String uid) async {
     final doc = await _usersCollection.doc(uid).get();
     if (!doc.exists) return null;
@@ -91,6 +92,7 @@ class ProfileRepository implements IUserRepository {
   // ==================== SOCIAL FEATURES ====================
 
   /// Follow a user
+  @override
   Future<void> followUser(String currentUserId, String targetUserId) async {
     final batch = _firestore.batch();
 
@@ -106,6 +108,7 @@ class ProfileRepository implements IUserRepository {
   }
 
   /// Unfollow a user
+  @override
   Future<void> unfollowUser(String currentUserId, String targetUserId) async {
     final batch = _firestore.batch();
 
@@ -136,12 +139,14 @@ class ProfileRepository implements IUserRepository {
   }
 
   /// Get user's followers (deprecated - social features removed)
+  @override
   Future<List<UserModel>> getFollowers(String uid) async {
     // Followers feature has been removed - return empty list
     return [];
   }
 
   /// Get users that user is following (deprecated - social features removed)
+  @override
   Future<List<UserModel>> getFollowing(String uid) async {
     // Following feature has been removed - return empty list
     return [];

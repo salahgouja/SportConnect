@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
@@ -23,6 +22,7 @@ class CreateEventSheet extends ConsumerStatefulWidget {
     return showModalBottomSheet<EventModel>(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (_) => const CreateEventSheet(),

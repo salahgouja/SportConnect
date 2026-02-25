@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_pricing.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_capacity.dart';
@@ -21,7 +20,6 @@ import 'package:uuid/uuid.dart';
 import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
 import 'package:sport_connect/features/events/views/event_picker_sheet.dart';
 
@@ -61,8 +59,8 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   double _pricePerSeat = 15.0; // Default price
   bool _isPriceNegotiable = false;
   bool _acceptOnlinePayment = true;
-  bool _isRecurring = false;
-  List<int> _recurringDays = [];
+  final bool _isRecurring = false;
+  final List<int> _recurringDays = [];
 
   // Step 3: Preferences
   bool _allowPets = false;
@@ -126,9 +124,8 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
           orElse: () => vehicles.first,
         );
       }
-    } else if (_selectedVehicle == null) {
-      // Auto-select default vehicle if not already selected
-      _selectedVehicle = vehicles.firstWhere(
+    } else {
+      _selectedVehicle ??= vehicles.firstWhere(
         (v) => v.isDefault,
         orElse: () => vehicles.first,
       );
@@ -1368,7 +1365,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
           style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
         ),
       ),
-      activeColor: AppColors.primary,
+      activeThumbColor: AppColors.primary,
       contentPadding: EdgeInsets.zero,
     );
   }

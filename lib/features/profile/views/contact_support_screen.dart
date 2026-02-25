@@ -425,7 +425,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: _attachedFiles.length,
-                separatorBuilder: (_, __) => SizedBox(width: 8.w),
+                separatorBuilder: (_, _) => SizedBox(width: 8.w),
                 itemBuilder: (context, index) {
                   return Stack(
                     children: [

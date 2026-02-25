@@ -27,7 +27,6 @@ class LegalScreen extends StatefulWidget {
 
 class _LegalScreenState extends State<LegalScreen> {
   bool _isLoading = true;
-  InAppWebViewController? _webViewController;
 
   // ─── Document metadata ───────────────────────────────────────────────────
   String get _title => widget.type == LegalDocumentType.terms
@@ -332,7 +331,7 @@ class _LegalScreenState extends State<LegalScreen> {
                 disableHorizontalScroll: false,
               ),
               onWebViewCreated: (controller) {
-                _webViewController = controller;
+                // Controller available for future use if needed.
               },
               onLoadStop: (controller, url) {
                 if (mounted) {
