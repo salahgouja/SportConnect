@@ -63,7 +63,7 @@ class EventSelectionViewModel extends _$EventSelectionViewModel {
 
   /// Sets or clears the sport-type filter chip.
   void setFilterType(EventType? type) {
-    if (type == state.filterType) {
+    if (type == state.filterType || type == null) {
       state = state.copyWith(clearFilterType: true);
     } else {
       state = state.copyWith(filterType: type);

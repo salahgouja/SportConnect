@@ -54,7 +54,7 @@ final class PhoneAuthViewModelProvider
 }
 
 String _$phoneAuthViewModelHash() =>
-    r'063a65448c08ace6a84ec8fe9a9a1f512aae7cd1';
+    r'904b1cb58c037d2302abf238216899059e94f437';
 
 /// ViewModel that manages the phone-OTP verification flow.
 ///

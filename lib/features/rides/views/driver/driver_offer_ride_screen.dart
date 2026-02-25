@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/features/events/views/inline_event_selector.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_pricing.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_capacity.dart';
@@ -21,7 +22,6 @@ import 'package:sport_connect/features/profile/repositories/profile_repository.d
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
-import 'package:sport_connect/features/events/views/event_picker_sheet.dart';
 
 class DriverOfferRideScreen extends ConsumerStatefulWidget {
   final RideModel? existingRide;
@@ -407,7 +407,10 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         const SizedBox(height: 16),
         _buildWaypointsSection(),
         const SizedBox(height: 24),
-        _buildEventAttachmentCard(),
+        InlineEventSelector(
+          selected: _selectedEvent,
+          onChanged: (e) => setState(() => _selectedEvent = e),
+        ),
         const SizedBox(height: 24),
         _buildDateTimeCard(),
         const SizedBox(height: 24),
@@ -848,142 +851,6 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
       _waypoints.removeAt(index);
     });
   }
-
-  // --- Event attachment card ---
-  Widget _buildEventAttachmentCard() {
-    return GestureDetector(
-      onTap: () async {
-        final picked = await EventPickerSheet.show(
-          context,
-          preselected: _selectedEvent,
-        );
-        if (picked != null && mounted) {
-          setState(() => _selectedEvent = picked);
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: _selectedEvent != null
-              ? _selectedEvent!.type.color.withValues(alpha: 0.06)
-              : AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: _selectedEvent != null
-                ? _selectedEvent!.type.color
-                : AppColors.border,
-            width: _selectedEvent != null ? 1.5 : 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: _selectedEvent != null
-            ? _buildSelectedEventContent()
-            : _buildNoEventContent(),
-      ),
-    ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.05, end: 0);
-  }
-
-  Widget _buildNoEventContent() {
-    return Row(
-      children: [
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: AppColors.primarySurface,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Icon(Icons.event_rounded, color: AppColors.primary, size: 24),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Link to an Event',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                'Optional — attach this ride to a sport event',
-                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-              ),
-            ],
-          ),
-        ),
-        Icon(
-          Icons.add_circle_outline_rounded,
-          color: AppColors.primary,
-          size: 22,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSelectedEventContent() {
-    final event = _selectedEvent!;
-    return Row(
-      children: [
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: event.type.color.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Icon(event.type.icon, color: event.type.color, size: 24),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                event.title,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 2),
-              Text(
-                event.venueName ?? event.location.address,
-                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ),
-        IconButton(
-          tooltip: 'Clear event',
-          onPressed: () => setState(() => _selectedEvent = null),
-          icon: Icon(
-            Icons.close_rounded,
-            color: AppColors.textTertiary,
-            size: 18,
-          ),
-          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-          padding: EdgeInsets.zero,
-        ),
-      ],
-    );
-  }
-
   // --- Step 2: Details ---
   Widget _buildDetailsStep(List<VehicleModel> vehicles) {
     return ListView(

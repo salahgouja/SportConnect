@@ -27,6 +27,7 @@ import 'package:sport_connect/features/auth/views/forgot_password_screen.dart';
 import 'package:sport_connect/features/auth/views/email_verification_screen.dart';
 import 'package:sport_connect/features/auth/views/change_password_screen.dart';
 import 'package:sport_connect/features/auth/views/phone_otp_screen.dart';
+import 'package:sport_connect/features/events/views/create_event_screen.dart';
 
 // Feature imports - Home
 import 'package:sport_connect/features/home/views/home_screen.dart';
@@ -58,6 +59,8 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 part 'app_router.g.dart';
 
+final rootNavigatorKey = GlobalKey<NavigatorState>();
+
 /// Main router provider with centralized redirect logic
 @riverpod
 GoRouter appRouter(Ref ref) {
@@ -79,6 +82,7 @@ GoRouter appRouter(Ref ref) {
   ref.onDispose(routerListenable.dispose);
 
   return GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: AppRoutes.splash.path,
     debugLogDiagnostics: true,
     refreshListenable: routerListenable,
@@ -139,6 +143,15 @@ List<RouteBase> _buildRoutes() {
     // Review Routes
     ..._buildReviewRoutes(),
 
+    GoRoute(
+      path: '/events/create',
+      name: 'createEvent',
+      parentNavigatorKey: rootNavigatorKey,
+      pageBuilder: (context, state) => SlideUpTransitionPage(
+        key: state.pageKey,
+        child: const CreateEventScreen(),
+      ),
+    ),
   ];
 }
 

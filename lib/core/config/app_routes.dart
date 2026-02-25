@@ -131,4 +131,7 @@ class AppRoutes {
 
   // Payment Details
   static const payoutDetail = AppRoute('/payout/:id', 'payout-detail');
+
+  // events
+  static const createEvent = AppRoute('/events/create', 'createEvent');
 }
