@@ -1,0 +1,513 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/widgets/premium_button.dart';
+import 'package:sport_connect/core/widgets/premium_card.dart';
+import 'package:sport_connect/features/events/models/event_model.dart';
+import 'package:sport_connect/features/events/view_models/event_view_model.dart';
+
+/// Browse / discover upcoming events, filter by sport type.
+class EventListScreen extends ConsumerStatefulWidget {
+  const EventListScreen({super.key});
+
+  @override
+  ConsumerState<EventListScreen> createState() => _EventListScreenState();
+}
+
+class _EventListScreenState extends ConsumerState<EventListScreen> {
+  EventType? _selectedType;
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final eventsStream = _selectedType != null
+        ? ref.watch(eventsByTypeStreamProvider(_selectedType!))
+        : ref.watch(upcomingEventsStreamProvider);
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          // ── Header ──
+          _buildAppBar(),
+
+          // ── Search bar ──
+          SliverToBoxAdapter(child: _buildSearchBar()),
+
+          // ── Filter chips ──
+          SliverToBoxAdapter(child: _buildFilterChips()),
+
+          // ── Event list ──
+          eventsStream.when(
+            loading: () => const SliverFillRemaining(
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            error: (e, _) => SliverFillRemaining(
+              child: Center(
+                child: Text(
+                  'Unable to load events.',
+                  style: TextStyle(
+                    fontSize: 15.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ),
+            data: (events) {
+              final filtered = _applySearch(events);
+              if (filtered.isEmpty) {
+                return SliverFillRemaining(child: _buildEmptyState());
+              }
+              return _buildEventList(filtered);
+            },
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push(AppRoutes.createEvent.path),
+        backgroundColor: AppColors.primary,
+        icon: Icon(Icons.add_rounded, size: 22.sp),
+        label: Text(
+          'Create',
+          style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
+        ),
+      ).animate().scale(delay: 300.ms, duration: 400.ms, curve: Curves.easeOutBack),
+    );
+  }
+
+  // -------------------------------------------------------------------
+  // App bar
+  // -------------------------------------------------------------------
+  SliverAppBar _buildAppBar() {
+    return SliverAppBar(
+      pinned: true,
+      backgroundColor: AppColors.background,
+      surfaceTintColor: Colors.transparent,
+      leading: IconButton(
+        icon: Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary, size: 22.sp),
+        onPressed: () => context.pop(),
+      ),
+      title: Text(
+        'Discover Events',
+        style: TextStyle(
+          fontSize: 20.sp,
+          fontWeight: FontWeight.w800,
+          color: AppColors.textPrimary,
+        ),
+      ),
+      centerTitle: false,
+    );
+  }
+
+  // -------------------------------------------------------------------
+  // Search bar
+  // -------------------------------------------------------------------
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.screenPadding,
+        4.h,
+        AppSpacing.screenPadding,
+        8.h,
+      ),
+      child: TextField(
+        controller: _searchController,
+        onChanged: (v) => setState(() => _searchQuery = v.trim().toLowerCase()),
+        decoration: InputDecoration(
+          hintText: 'Search events…',
+          hintStyle: TextStyle(fontSize: 14.sp, color: AppColors.textTertiary),
+          prefixIcon: Icon(Icons.search_rounded, size: 20.sp, color: AppColors.textTertiary),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: Icon(Icons.close_rounded, size: 18.sp),
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() => _searchQuery = '');
+                  },
+                )
+              : null,
+          filled: true,
+          fillColor: AppColors.surfaceVariant,
+          contentPadding: EdgeInsets.symmetric(vertical: 12.h),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14.r),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      ),
+    ).animate().fadeIn(duration: 300.ms);
+  }
+
+  // -------------------------------------------------------------------
+  // Filter chips
+  // -------------------------------------------------------------------
+  Widget _buildFilterChips() {
+    return SizedBox(
+      height: 44.h,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
+        children: [
+          _FilterChip(
+            label: 'All',
+            isSelected: _selectedType == null,
+            onTap: () => setState(() => _selectedType = null),
+          ),
+          ...EventType.values.map((type) {
+            return _FilterChip(
+              label: type.label,
+              icon: type.icon,
+              color: type.color,
+              isSelected: _selectedType == type,
+              onTap: () => setState(() {
+                _selectedType = _selectedType == type ? null : type;
+              }),
+            );
+          }),
+        ],
+      ),
+    ).animate().fadeIn(delay: 100.ms, duration: 300.ms);
+  }
+
+  // -------------------------------------------------------------------
+  // Event list
+  // -------------------------------------------------------------------
+  SliverPadding _buildEventList(List<EventModel> events) {
+    return SliverPadding(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.screenPadding,
+        16.h,
+        AppSpacing.screenPadding,
+        100.h,
+      ),
+      sliver: SliverList.separated(
+        itemCount: events.length,
+        separatorBuilder: (_, __) => SizedBox(height: 12.h),
+        itemBuilder: (context, index) {
+          final event = events[index];
+          return _EventCard(event: event)
+              .animate()
+              .fadeIn(
+                delay: Duration(milliseconds: 50 * index.clamp(0, 10)),
+                duration: 350.ms,
+              )
+              .slideY(begin: 0.04, end: 0);
+        },
+      ),
+    );
+  }
+
+  // -------------------------------------------------------------------
+  // Empty state
+  // -------------------------------------------------------------------
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(AppSpacing.screenPadding),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.event_busy_rounded, size: 56.sp, color: AppColors.textTertiary),
+            SizedBox(height: 16.h),
+            Text(
+              'No events found',
+              style: TextStyle(
+                fontSize: 18.sp,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            SizedBox(height: 6.h),
+            Text(
+              _selectedType != null
+                  ? 'No upcoming ${_selectedType!.label.toLowerCase()} events.'
+                  : 'Be the first to create one!',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            SizedBox(height: 24.h),
+            PremiumButton(
+              text: 'Create Event',
+              icon: Icons.add_rounded,
+              size: PremiumButtonSize.small,
+              onPressed: () => context.push(AppRoutes.createEvent.path),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // -------------------------------------------------------------------
+  // Client-side search filter
+  // -------------------------------------------------------------------
+  List<EventModel> _applySearch(List<EventModel> events) {
+    if (_searchQuery.isEmpty) return events;
+    return events.where((e) {
+      return e.title.toLowerCase().contains(_searchQuery) ||
+          (e.venueName?.toLowerCase().contains(_searchQuery) ?? false) ||
+          e.type.label.toLowerCase().contains(_searchQuery);
+    }).toList();
+  }
+}
+
+// =============================================================================
+// PRIVATE WIDGETS
+// =============================================================================
+
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+    this.icon,
+    this.color,
+  });
+
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final IconData? icon;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final chipColor = isSelected ? (color ?? AppColors.primary) : AppColors.textTertiary;
+    return Padding(
+      padding: EdgeInsets.only(right: 8.w),
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        child: AnimatedContainer(
+          duration: 200.ms,
+          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+          decoration: BoxDecoration(
+            color: isSelected ? chipColor.withValues(alpha: 0.12) : Colors.transparent,
+            borderRadius: BorderRadius.circular(20.r),
+            border: Border.all(
+              color: isSelected ? chipColor : AppColors.border,
+              width: isSelected ? 1.5 : 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 16.sp, color: chipColor),
+                SizedBox(width: 4.w),
+              ],
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  color: isSelected ? chipColor : AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EventCard extends ConsumerWidget {
+  const _EventCard({required this.event});
+  final EventModel event;
+
+  static final _fmt = DateFormat('EEE, MMM d · h:mm a');
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return PremiumCard(
+      onTap: () => context.push('/events/${event.id}'),
+      padding: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Colour banner ──
+          Container(
+            height: 90.h,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  event.type.color,
+                  event.type.color.withValues(alpha: 0.7),
+                ],
+              ),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+            ),
+            child: Stack(
+              children: [
+                Center(
+                  child: Icon(
+                    event.type.icon,
+                    size: 40.sp,
+                    color: Colors.white.withValues(alpha: 0.25),
+                  ),
+                ),
+                Positioned(
+                  top: 10.h,
+                  right: 12.w,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                    decoration: BoxDecoration(
+                      color: Colors.black26,
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    child: Text(
+                      event.type.label,
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+                if (!event.isUpcoming)
+                  Positioned(
+                    top: 10.h,
+                    left: 12.w,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                      decoration: BoxDecoration(
+                        color: AppColors.error.withValues(alpha: 0.85),
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Text(
+                        'Past',
+                        style: TextStyle(
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          // ── Details ──
+          Padding(
+            padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 16.h),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  event.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                SizedBox(height: 6.h),
+                _iconRow(
+                  Icons.calendar_today_rounded,
+                  _fmt.format(event.startsAt),
+                ),
+                if (event.venueName != null) ...[
+                  SizedBox(height: 4.h),
+                  _iconRow(Icons.location_on_rounded, event.venueName!),
+                ],
+                SizedBox(height: 10.h),
+                Row(
+                  children: [
+                    _participantBadge(),
+                    const Spacer(),
+                    if (event.isUpcoming && !event.isFull)
+                      Text(
+                        'Join →',
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    if (event.isFull)
+                      Text(
+                        'Full',
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.warning,
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _iconRow(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(icon, size: 14.sp, color: AppColors.textTertiary),
+        SizedBox(width: 6.w),
+        Expanded(
+          child: Text(
+            text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _participantBadge() {
+    final color = event.isFull ? AppColors.warning : AppColors.primary;
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.group_rounded, size: 14.sp, color: color),
+          SizedBox(width: 4.w),
+          Text(
+            event.participantLabel,
+            style: TextStyle(
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

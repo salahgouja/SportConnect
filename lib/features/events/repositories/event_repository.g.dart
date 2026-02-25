@@ -14,8 +14,12 @@ final eventRepositoryProvider = EventRepositoryProvider._();
 
 final class EventRepositoryProvider
     extends
-        $FunctionalProvider<EventRepository, EventRepository, EventRepository>
-    with $Provider<EventRepository> {
+        $FunctionalProvider<
+          IEventRepository,
+          IEventRepository,
+          IEventRepository
+        >
+    with $Provider<IEventRepository> {
   EventRepositoryProvider._()
     : super(
         from: null,
@@ -32,21 +36,21 @@ final class EventRepositoryProvider
 
   @$internal
   @override
-  $ProviderElement<EventRepository> $createElement($ProviderPointer pointer) =>
+  $ProviderElement<IEventRepository> $createElement($ProviderPointer pointer) =>
       $ProviderElement(pointer);
 
   @override
-  EventRepository create(Ref ref) {
+  IEventRepository create(Ref ref) {
     return eventRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(EventRepository value) {
+  Override overrideWithValue(IEventRepository value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<EventRepository>(value),
+      providerOverride: $SyncValueProvider<IEventRepository>(value),
     );
   }
 }
 
-String _$eventRepositoryHash() => r'49c4b4b5923ca1dd1d4a822a8ed07da6ad1a6318';
+String _$eventRepositoryHash() => r'd801a70b58a5cdda5c21be865ea58b42aabb8269';

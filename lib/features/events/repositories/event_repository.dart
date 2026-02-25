@@ -50,10 +50,32 @@ class EventRepository implements IEventRepository {
   }
 
   @override
+  Future<void> joinEvent(String eventId, String userId) async {
+    await _firestore
+        .collection(AppConstants.eventsCollection)
+        .doc(eventId)
+        .update({
+      'participantIds': FieldValue.arrayUnion([userId]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  @override
+  Future<void> leaveEvent(String eventId, String userId) async {
+    await _firestore
+        .collection(AppConstants.eventsCollection)
+        .doc(eventId)
+        .update({
+      'participantIds': FieldValue.arrayRemove([userId]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  @override
   Stream<List<EventModel>> streamUpcomingEvents() {
     return _eventsCollection
         .where('isActive', isEqualTo: true)
-        .where('startsAt', isGreaterThan: DateTime.now())
+        .where('startsAt', isGreaterThan: FieldValue.serverTimestamp())
         .orderBy('startsAt')
         .snapshots()
         .map((snapshot) {
@@ -90,9 +112,23 @@ class EventRepository implements IEventRepository {
               .toList();
         });
   }
+
+  @override
+  Stream<List<EventModel>> streamJoinedEvents(String userId) {
+    return _eventsCollection
+        .where('participantIds', arrayContains: userId)
+        .where('isActive', isEqualTo: true)
+        .orderBy('startsAt')
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs
+              .map((doc) => doc.data())
+              .toList();
+        });
+  }
 }
 
 @Riverpod(keepAlive: true)
-EventRepository eventRepository(Ref ref) {
+IEventRepository eventRepository(Ref ref) {
   return EventRepository(FirebaseFirestore.instance);
 }

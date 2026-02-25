@@ -131,6 +131,116 @@ class EventSelectionViewModel extends _$EventSelectionViewModel {
 }
 
 // ---------------------------------------------------------------------------
+// Event detail view model — manages join/leave and single-event actions
+// ---------------------------------------------------------------------------
+
+class EventDetailState {
+  const EventDetailState({
+    this.isJoining = false,
+    this.isLeaving = false,
+    this.isDeleting = false,
+    this.error,
+    this.successMessage,
+  });
+
+  final bool isJoining;
+  final bool isLeaving;
+  final bool isDeleting;
+  final String? error;
+  final String? successMessage;
+
+  EventDetailState copyWith({
+    bool? isJoining,
+    bool? isLeaving,
+    bool? isDeleting,
+    String? error,
+    bool clearError = false,
+    String? successMessage,
+    bool clearSuccess = false,
+  }) {
+    return EventDetailState(
+      isJoining: isJoining ?? this.isJoining,
+      isLeaving: isLeaving ?? this.isLeaving,
+      isDeleting: isDeleting ?? this.isDeleting,
+      error: clearError ? null : (error ?? this.error),
+      successMessage:
+          clearSuccess ? null : (successMessage ?? this.successMessage),
+    );
+  }
+}
+
+@riverpod
+class EventDetailViewModel extends _$EventDetailViewModel {
+  @override
+  EventDetailState build() => const EventDetailState();
+
+  /// Joins the current user to the event.
+  Future<bool> joinEvent(String eventId, String userId) async {
+    state = state.copyWith(isJoining: true, clearError: true, clearSuccess: true);
+    try {
+      await ref.read(eventRepositoryProvider).joinEvent(eventId, userId);
+      if (!ref.mounted) return false;
+      state = state.copyWith(
+        isJoining: false,
+        successMessage: 'You joined the event!',
+      );
+      return true;
+    } catch (_) {
+      if (!ref.mounted) return false;
+      state = state.copyWith(
+        isJoining: false,
+        error: 'Unable to join event. Please try again.',
+      );
+      return false;
+    }
+  }
+
+  /// Leaves the event.
+  Future<bool> leaveEvent(String eventId, String userId) async {
+    state = state.copyWith(isLeaving: true, clearError: true, clearSuccess: true);
+    try {
+      await ref.read(eventRepositoryProvider).leaveEvent(eventId, userId);
+      if (!ref.mounted) return false;
+      state = state.copyWith(
+        isLeaving: false,
+        successMessage: 'You left the event.',
+      );
+      return true;
+    } catch (_) {
+      if (!ref.mounted) return false;
+      state = state.copyWith(
+        isLeaving: false,
+        error: 'Unable to leave event. Please try again.',
+      );
+      return false;
+    }
+  }
+
+  /// Deletes the event (only creator should call this).
+  Future<bool> deleteEvent(String eventId) async {
+    state = state.copyWith(isDeleting: true, clearError: true);
+    try {
+      await ref.read(eventRepositoryProvider).deleteEvent(eventId);
+      if (!ref.mounted) return false;
+      state = state.copyWith(isDeleting: false);
+      return true;
+    } catch (_) {
+      if (!ref.mounted) return false;
+      state = state.copyWith(
+        isDeleting: false,
+        error: 'Unable to delete event. Please try again.',
+      );
+      return false;
+    }
+  }
+
+  /// Clears any error or success message.
+  void clearMessages() {
+    state = state.copyWith(clearError: true, clearSuccess: true);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Stream providers
 // ---------------------------------------------------------------------------
 
@@ -142,4 +252,19 @@ Stream<List<EventModel>> upcomingEventsStream(Ref ref) {
 @riverpod
 Stream<List<EventModel>> eventsByTypeStream(Ref ref, EventType type) {
   return ref.watch(eventRepositoryProvider).streamEventsByType(type);
+}
+
+@riverpod
+Stream<List<EventModel>> eventsByCreatorStream(Ref ref, String creatorId) {
+  return ref.watch(eventRepositoryProvider).streamEventsByCreator(creatorId);
+}
+
+@riverpod
+Stream<List<EventModel>> joinedEventsStream(Ref ref, String userId) {
+  return ref.watch(eventRepositoryProvider).streamJoinedEvents(userId);
+}
+
+@riverpod
+Future<EventModel?> eventById(Ref ref, String eventId) async {
+  return ref.watch(eventRepositoryProvider).getEventById(eventId);
 }

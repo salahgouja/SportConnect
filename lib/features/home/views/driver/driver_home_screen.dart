@@ -670,6 +670,15 @@ class _DriverDashboard extends ConsumerWidget {
             onTap: () => context.go(AppRoutes.driverRides.path),
           ),
         ),
+        SizedBox(width: 12.w),
+        Expanded(
+          child: _QuickActionButton(
+            icon: Icons.emoji_events_rounded,
+            label: 'Events',
+            color: AppColors.xpGold,
+            onTap: () => context.push(AppRoutes.events.path),
+          ),
+        ),
       ],
     ).animate().fadeIn(duration: 400.ms, delay: 200.ms);
   }

@@ -132,6 +132,10 @@ class AppRoutes {
   // Payment Details
   static const payoutDetail = AppRoute('/payout/:id', 'payout-detail');
 
-  // events
+  // Events
+  static const events = AppRoute('/events', 'events');
+  static const eventDetail = AppRoute('/events/:id', 'event-detail');
+  static const editEvent = AppRoute('/events/:id/edit', 'edit-event');
+  static const myEvents = AppRoute('/events/mine', 'my-events');
   static const createEvent = AppRoute('/events/create', 'createEvent');
 }

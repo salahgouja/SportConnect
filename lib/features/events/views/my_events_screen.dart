@@ -1,0 +1,343 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/widgets/premium_button.dart';
+import 'package:sport_connect/core/widgets/premium_card.dart';
+import 'package:sport_connect/features/events/models/event_model.dart';
+import 'package:sport_connect/features/events/view_models/event_view_model.dart';
+
+/// Displays the user's own events split into "Created" and "Joined" tabs.
+class MyEventsScreen extends ConsumerStatefulWidget {
+  const MyEventsScreen({super.key});
+
+  @override
+  ConsumerState<MyEventsScreen> createState() => _MyEventsScreenState();
+}
+
+class _MyEventsScreenState extends ConsumerState<MyEventsScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabCtrl = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final userId = ref.watch(currentUserProvider).value?.uid ?? '';
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_rounded,
+            color: AppColors.textPrimary,
+            size: 22.sp,
+          ),
+          onPressed: () => context.pop(),
+        ),
+        title: Text(
+          'My Events',
+          style: TextStyle(
+            fontSize: 20.sp,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        centerTitle: false,
+        bottom: TabBar(
+          controller: _tabCtrl,
+          labelColor: AppColors.primary,
+          unselectedLabelColor: AppColors.textTertiary,
+          indicatorColor: AppColors.primary,
+          indicatorSize: TabBarIndicatorSize.label,
+          labelStyle: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w700),
+          unselectedLabelStyle:
+              TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500),
+          tabs: const [
+            Tab(text: 'Created'),
+            Tab(text: 'Joined'),
+          ],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabCtrl,
+        children: [
+          _CreatedTab(userId: userId),
+          _JoinedTab(userId: userId),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.push(AppRoutes.createEvent.path),
+        backgroundColor: AppColors.primary,
+        child: Icon(Icons.add_rounded, size: 24.sp),
+      )
+          .animate()
+          .scale(delay: 300.ms, duration: 400.ms, curve: Curves.easeOutBack),
+    );
+  }
+}
+
+// =============================================================================
+// Created Tab
+// =============================================================================
+class _CreatedTab extends ConsumerWidget {
+  const _CreatedTab({required this.userId});
+  final String userId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (userId.isEmpty) return const _EmptyTab(message: 'Sign in first.');
+    final stream = ref.watch(eventsByCreatorStreamProvider(userId));
+
+    return stream.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, __) => const _EmptyTab(message: 'Unable to load events.'),
+      data: (events) {
+        if (events.isEmpty) {
+          return const _EmptyTab(
+            message: "You haven't created any events yet.",
+          );
+        }
+        return _EventListView(events: events);
+      },
+    );
+  }
+}
+
+// =============================================================================
+// Joined Tab
+// =============================================================================
+class _JoinedTab extends ConsumerWidget {
+  const _JoinedTab({required this.userId});
+  final String userId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (userId.isEmpty) return const _EmptyTab(message: 'Sign in first.');
+    final stream = ref.watch(joinedEventsStreamProvider(userId));
+
+    return stream.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, __) => const _EmptyTab(message: 'Unable to load events.'),
+      data: (events) {
+        if (events.isEmpty) {
+          return const _EmptyTab(
+            message: "You haven't joined any events yet.",
+          );
+        }
+        return _EventListView(events: events);
+      },
+    );
+  }
+}
+
+// =============================================================================
+// Shared list view
+// =============================================================================
+class _EventListView extends StatelessWidget {
+  const _EventListView({required this.events});
+  final List<EventModel> events;
+
+  static final _fmt = DateFormat('EEE, MMM d · h:mm a');
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.screenPadding,
+        16.h,
+        AppSpacing.screenPadding,
+        100.h,
+      ),
+      itemCount: events.length,
+      separatorBuilder: (_, __) => SizedBox(height: 12.h),
+      itemBuilder: (context, index) {
+        final event = events[index];
+        return _MyEventCard(event: event, dateFmt: _fmt)
+            .animate()
+            .fadeIn(
+              delay: Duration(milliseconds: 40 * index.clamp(0, 12)),
+              duration: 300.ms,
+            )
+            .slideY(begin: 0.04, end: 0);
+      },
+    );
+  }
+}
+
+// =============================================================================
+// Event card
+// =============================================================================
+class _MyEventCard extends StatelessWidget {
+  const _MyEventCard({required this.event, required this.dateFmt});
+  final EventModel event;
+  final DateFormat dateFmt;
+
+  @override
+  Widget build(BuildContext context) {
+    return PremiumCard(
+      onTap: () => context.push('/events/${event.id}'),
+      child: Row(
+        children: [
+          // ── Sport icon ──
+          Container(
+            width: 52.w,
+            height: 52.w,
+            decoration: BoxDecoration(
+              color: event.type.color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(14.r),
+            ),
+            child: Icon(event.type.icon, size: 26.sp, color: event.type.color),
+          ),
+          SizedBox(width: 14.w),
+
+          // ── Info ──
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  event.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  dateFmt.format(event.startsAt),
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                SizedBox(height: 4.h),
+                Row(
+                  children: [
+                    _badge(event),
+                    const Spacer(),
+                    if (!event.isUpcoming)
+                      _statusChip('Past', AppColors.textTertiary),
+                    if (event.isUpcoming && event.isFull)
+                      _statusChip('Full', AppColors.warning),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          SizedBox(width: 8.w),
+          Icon(
+            Icons.chevron_right_rounded,
+            size: 22.sp,
+            color: AppColors.textTertiary,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _badge(EventModel e) {
+    final color = e.isFull ? AppColors.warning : AppColors.primary;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.group_rounded, size: 14.sp, color: color),
+        SizedBox(width: 4.w),
+        Text(
+          e.participantLabel,
+          style: TextStyle(
+            fontSize: 12.sp,
+            fontWeight: FontWeight.w600,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _statusChip(String label, Color color) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8.r),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11.sp,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// Empty tab placeholder
+// =============================================================================
+class _EmptyTab extends StatelessWidget {
+  const _EmptyTab({required this.message});
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(AppSpacing.screenPadding),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.event_available_rounded,
+              size: 52.sp,
+              color: AppColors.textTertiary,
+            ),
+            SizedBox(height: 16.h),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15.sp,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            SizedBox(height: 20.h),
+            PremiumButton(
+              text: 'Browse Events',
+              icon: Icons.explore_rounded,
+              size: PremiumButtonSize.small,
+              style: PremiumButtonStyle.ghost,
+              onPressed: () => context.push(AppRoutes.events.path),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
