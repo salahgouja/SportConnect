@@ -115,8 +115,7 @@ class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
             codeSent: (_) => _buildCodeInput(l10n),
             verifying: (_) => _buildCodeInput(l10n, isLoading: true),
             verified: (_) => _buildSuccessState(l10n),
-            error: (errorState) =>
-                _buildErrorState(l10n, errorState.message),
+            error: (errorState) => _buildErrorState(l10n, errorState.message),
           ),
         ),
       ),

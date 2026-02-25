@@ -47,7 +47,9 @@ class PhoneAuthViewModel extends _$PhoneAuthViewModel {
     state = const PhoneAuthState.sending();
 
     try {
-      await ref.read(authActionsViewModelProvider).verifyPhoneNumber(
+      await ref
+          .read(authActionsViewModelProvider)
+          .verifyPhoneNumber(
             phoneNumber: phoneNumber,
             onCodeSent: (verificationId, resendToken) {
               state = PhoneAuthState.codeSent(
@@ -68,8 +70,10 @@ class PhoneAuthViewModel extends _$PhoneAuthViewModel {
                 await ref
                     .read(authActionsViewModelProvider)
                     .signInWithPhoneAutoCredential(credential);
-                final uid =
-                    ref.read(authActionsViewModelProvider).currentUser?.uid;
+                final uid = ref
+                    .read(authActionsViewModelProvider)
+                    .currentUser
+                    ?.uid;
                 if (uid != null) AnalyticsService.instance.setUserId(uid);
                 AnalyticsService.instance.logLogin('phone');
                 state = const PhoneAuthState.verified();
@@ -94,7 +98,9 @@ class PhoneAuthViewModel extends _$PhoneAuthViewModel {
     state = const PhoneAuthState.verifying();
 
     try {
-      await ref.read(authActionsViewModelProvider).signInWithPhoneCredential(
+      await ref
+          .read(authActionsViewModelProvider)
+          .signInWithPhoneCredential(
             verificationId: currentState.verificationId,
             smsCode: smsCode,
           );
@@ -120,7 +126,9 @@ class PhoneAuthViewModel extends _$PhoneAuthViewModel {
     state = const PhoneAuthState.sending();
 
     try {
-      await ref.read(authActionsViewModelProvider).verifyPhoneNumber(
+      await ref
+          .read(authActionsViewModelProvider)
+          .verifyPhoneNumber(
             phoneNumber: phoneNumber,
             forceResendingToken: resendToken,
             onCodeSent: (verificationId, newToken) {
@@ -142,8 +150,10 @@ class PhoneAuthViewModel extends _$PhoneAuthViewModel {
                 await ref
                     .read(authActionsViewModelProvider)
                     .signInWithPhoneAutoCredential(credential);
-                final uid =
-                    ref.read(authActionsViewModelProvider).currentUser?.uid;
+                final uid = ref
+                    .read(authActionsViewModelProvider)
+                    .currentUser
+                    ?.uid;
                 if (uid != null) AnalyticsService.instance.setUserId(uid);
                 AnalyticsService.instance.logLogin('phone');
                 state = const PhoneAuthState.verified();

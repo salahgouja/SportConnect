@@ -106,9 +106,7 @@ class _EmailVerificationScreenState
         setState(() => _isSending = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              AppLocalizations.of(context).emailVerifySendFailed,
-            ),
+            content: Text(AppLocalizations.of(context).emailVerifySendFailed),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),
