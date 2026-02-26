@@ -119,7 +119,7 @@ void _runApp() {
         ),
       ],
       child: DevicePreview(
-        enabled: kDebugMode == false, // Enable only in debug mode
+        enabled: kDebugMode, // Enable only in debug mode
         builder: (context) => const SportConnectApp(),
       ),
     ),
