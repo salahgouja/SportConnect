@@ -1,64 +1,212 @@
 appId: com.sportconnect.sport_connect
 ---
 # ============================================
-# Auth Journey: Signup as Rider (Wizard Flow)
+# Auth Journey: Signup as Rider (Road Trip Wizard)
 # ============================================
-# Tests complete signup wizard for a new rider
-# Journey: Login -> Sign Up -> Wizard Steps -> Home
+# Tests the new 4-step card-stack signup wizard
+# UI: Tinder-style swipeable cards, speedometer
+# progress, per-step green themes, tree reveal
+#
+# Step themes (by background colour):
+#   Step 1 — 🌱 Buckle Up   (mint)
+#   Step 2 — 🛡️ Set the Route (forest dark)
+#   Step 3 — 🚗 Choose Your Ride (lime)
+#   Step 4 — 🏁 Your Profile (emerald deep)
+#
+# Journey: Login → Sign Up → Wizard Steps → Home
 # ============================================
 
+# ── Launch ────────────────────────────────────────────────────────────────────
 - launchApp:
     clearState: true
     label: Launch SportConnect fresh
 
-# Step 1: Navigate to Sign Up from Login
+# ── Login screen ──────────────────────────────────────────────────────────────
 - extendedWaitUntil:
     visible: "Welcome Back"
-    timeout: 10000
+    timeout: 15000
+
+- scroll
+
 - tapOn:
     text: "Sign Up"
-    label: Navigate to registration
+    label: Navigate to signup wizard
 
-# Step 2: Verify Register screen
-- assertVisible: "Create Account"
-- assertVisible: "Join our community of eco-friendly riders"
-- assertVisible: "Welcome Bonus"
-- assertVisible: "Get 100 XP when you complete your profile!"
-- takeScreenshot: signup-register-screen
+# ── Wizard visible ────────────────────────────────────────────────────────────
+# The top bar shows the first step label and emoji
+- extendedWaitUntil:
+    visible: "🌱 Buckle Up"
+    timeout: 10000
 
-# Step 3: Select Rider role
+# Step counter pill reads "Step 1 of 4"
+- assertVisible: "Step 1 of 4"
+
+# Welcome banner inside the card
+- assertVisible: "Join 10,000+ eco-riders"
+- assertVisible: "Get 100 XP welcome bonus!"
+
+- takeScreenshot: wizard-step1-buckle-up
+
+# ── Step 1 — Basic Info (Buckle Up / mint) ───────────────────────────────────
 - tapOn:
-    text: "Find rides"
-    label: Select Rider role
-
-# Step 4: Fill in registration form
-- tapOn: "Enter your full name"
+    text: "Full Name"
+    label: Focus name field
 - inputText: "Test Rider User"
+- tapOn: Done
 
-- tapOn: "Enter your email"
-- inputText: "newrider@sportconnect.com"
+- tapOn:
+    text: "Email Address"
+    label: Focus email field
+- inputText: "ammari.ali.0001@gmail.com"
+- tapOn: Done
 
-- tapOn: "Create a strong password"
-- inputText: "SecurePass@123"
+- tapOn:
+    text: "Phone Number (Optional)"
+    label: Focus phone field (skip — optional)
+- tapOn: Done
 
-- tapOn: "Re-enter your password"
-- inputText: "SecurePass@123"
+# Date of Birth — tap the DOB row to open the date picker
+- tapOn:
+    text: |-
+      Date of Birth *
+      Tap to select (must be 18+)
+    label: Open date of birth picker
 
-# Step 5: Agree to terms
+# Pick a year that satisfies the 18+ guard (born 1995-06-15)
+- assertVisible: "Confirm Date"
+- tapOn: "Confirm Date"
+
+- takeScreenshot: wizard-step1-filled
+
+# Advance via the CTA button (also exercisable by swiping left)
+- tapOn:
+    text: "Continue"
+    label: Advance to Step 2
+
+# ── Step 2 — Password (Set the Route / forest dark) ──────────────────────────
+- extendedWaitUntil:
+    visible: "🛡️ Set the Route"
+    timeout: 8000
+
+- assertVisible: "Step 2 of 4"
+
+# Security badge is visible
+- assertVisible: "Use 8+ characters with letters, numbers & symbols"
+
+- takeScreenshot: wizard-step2-set-the-route
+
+- tapOn:
+    text: "Create Password"
+    label: Focus password field
+- inputText: "SecurePass1!"
+- tapOn: Done
+
+# Password strength bar should now show "Strong"
+- assertVisible: "Strong"
+
+- tapOn:
+    text: "Confirm Password"
+    label: Focus confirm password field
+- inputText: "SecurePass1!"
+- tapOn: Done
+
+# Agree to terms — tap the entire terms card
 - tapOn:
     text: "I agree to the "
-    label: Accept Terms of Service
+    label: Accept Terms of Service and Privacy Policy
 
-# Step 6: Submit registration
+# Verify checkbox is checked (card border turns accent colour)
+- assertVisible: "Terms of Service"
+- assertVisible: "Privacy Policy"
+
+- takeScreenshot: wizard-step2-filled
+
+- tapOn:
+    text: "Continue"
+    label: Advance to Step 3
+
+# ── Step 3 — Role & Interests (Choose Your Ride / lime) ──────────────────────
+- extendedWaitUntil:
+    visible: "🚗 Choose Your Ride"
+    timeout: 8000
+
+- assertVisible: "Step 3 of 4"
+- assertVisible: "I want to:"
+
+- takeScreenshot: wizard-step3-choose-ride
+
+# Select the Rider role card
+- tapOn:
+    text: |-
+      Find Rides
+      Search for rides to sporting events, practices, and games
+    label: Select Rider role
+
+# Verify selection check appears
+- assertVisible: |-
+    Find Rides
+    Search for rides to sporting events, practices, and games
+
+# Pick a couple of sport interests
+- scroll
+
+- tapOn:
+    text: "🏃 Running"
+    label: Select Running interest
+- tapOn:
+    text: "🚴 Cycling"
+    label: Select Cycling interest
+
+- takeScreenshot: wizard-step3-filled
+
+- tapOn:
+    text: "Continue"
+    label: Advance to Step 4
+
+# ── Step 4 — Profile & Tree Reveal (Your Profile / emerald deep) ─────────────
+- extendedWaitUntil:
+    visible: "🏁 Your Profile"
+    timeout: 8000
+
+- assertVisible: "Step 4 of 4"
+
+# Tree growth animation should have begun — canopy area is visible
+# (We wait briefly for the animation to paint at least the trunk)
+- waitForAnimationToEnd:
+    timeout: 5000
+
+- scroll
+# Avatar picker circle is present
+- assertVisible: "Add a profile photo"
+
+# Summary card shows the submitted email and role
+- assertVisible: "Email: ammari.ali.0001@gmail.com"
+- assertVisible: "Role: Rider"
+
+- takeScreenshot: wizard-step4-profile
+
+# Optionally fill in a bio
+- tapOn:
+    text: "About You (Optional)"
+    label: Focus bio field
+- inputText: "Passionate eco-rider and cycling enthusiast."
+- tapOn: Done
+
+- takeScreenshot: wizard-step4-filled
+
+# ── Submit ────────────────────────────────────────────────────────────────────
 - tapOn:
     text: "Create Account"
-    label: Submit registration form
+    label: Submit full registration
+
 - takeScreenshot: signup-submitted
 
-# Step 7: Wait for next screen (email verification or role selection)
+# ── Post-registration screen ──────────────────────────────────────────────────
+# Router redirects to email verification OR role-selection depending on
+# whether the Firebase Auth state already has needsRoleSelection=false
 - extendedWaitUntil:
     visible:
       text: "Verify Your Email|Verify Email|Where are you going?|How will you use SportConnect?"
-    timeout: 15000
+    timeout: 20000
 
 - takeScreenshot: signup-rider-complete

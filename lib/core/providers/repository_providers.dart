@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_auth_repository.dart';
+import 'package:sport_connect/core/interfaces/repositories/i_review_repository.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_user_repository.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_ride_repository.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_chat_repository.dart';
@@ -9,6 +11,7 @@ import 'package:sport_connect/features/auth/repositories/auth_repository.dart';
 import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
 import 'package:sport_connect/features/rides/repositories/ride_repository.dart';
 import 'package:sport_connect/features/messaging/repositories/chat_repository.dart';
+import 'package:sport_connect/features/reviews/repositories/review_repository.dart';
 
 part 'repository_providers.g.dart';
 
@@ -33,6 +36,16 @@ FirebaseStorage storageInstance(Ref ref) {
   return FirebaseStorage.instance;
 }
 
+/// Auth instance provider
+///
+/// Provides the single source of truth for Firebase Auth instance.
+@riverpod
+FirebaseAuth authInstance(Ref ref) {
+  return FirebaseAuth.instance;
+}
+
+
+
 // =============================================================================
 // 📦 REPOSITORY PROVIDERS (Interface-Based for DIP Compliance)
 // =============================================================================
@@ -52,7 +65,10 @@ FirebaseStorage storageInstance(Ref ref) {
 /// ```
 @riverpod
 IAuthRepository authRepository(Ref ref) {
-  return AuthRepository();
+  final firestore = ref.watch(firestoreInstanceProvider);
+  final storage = ref.watch(storageInstanceProvider);
+  final auth = ref.watch(authInstanceProvider);
+  return AuthRepository(auth, storage, firestore);
 }
 
 /// User repository provider (interface-based)
@@ -85,4 +101,14 @@ IChatRepository chatRepository(Ref ref) {
   final firestore = ref.watch(firestoreInstanceProvider);
   final storage = ref.watch(storageInstanceProvider);
   return ChatRepository(firestore, storage);
+}
+
+/// Review repository provider (interface-based)
+/// 
+/// Returns IReviewRepository interface for review operations.
+/// Injects Firestore dependency from provider.
+@riverpod
+IReviewRepository reviewRepository(Ref ref) {
+  final firestore = ref.watch(firestoreInstanceProvider);
+  return ReviewRepository(firestore);
 }

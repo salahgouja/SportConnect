@@ -32,8 +32,8 @@ class DisputeRepository {
       'rideSummary': rideSummary,
       'attachmentUrls': <String>[],
       'status': 'pending',
-      'createdAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
+      'createdAt': DateTime.now(),
+      'updatedAt': DateTime.now(),
     });
 
     return docRef.id;

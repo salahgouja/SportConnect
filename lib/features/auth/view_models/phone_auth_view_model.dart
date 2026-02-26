@@ -1,7 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/services/analytics_service.dart';
+import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 
 part 'phone_auth_view_model.freezed.dart';
@@ -42,6 +44,36 @@ class PhoneAuthViewModel extends _$PhoneAuthViewModel {
   @override
   PhoneAuthState build() => const PhoneAuthState.idle();
 
+  Future<void> _ensureUserDocument({String? fallbackPhoneNumber}) async {
+    final authActions = ref.read(authActionsViewModelProvider);
+    final firebaseUser = authActions.currentUser;
+    if (firebaseUser == null) return;
+
+    final existingUser = await ref
+        .read(authRepositoryProvider)
+        .getUserData(firebaseUser.uid);
+    if (existingUser != null) {
+      return;
+    }
+
+    final displayName = (firebaseUser.displayName?.trim().isNotEmpty ?? false)
+        ? firebaseUser.displayName!.trim()
+        : 'User';
+
+    final user = UserModel.rider(
+      uid: firebaseUser.uid,
+      email: firebaseUser.email ?? '',
+      displayName: displayName,
+      phoneNumber: firebaseUser.phoneNumber ?? fallbackPhoneNumber,
+      isPhoneVerified: true,
+      needsRoleSelection: true,
+      createdAt: DateTime.now(),
+      lastSeenAt: DateTime.now(),
+    );
+
+    await authActions.createUserDocument(user);
+  }
+
   /// Step 1: Send verification SMS to [phoneNumber].
   Future<void> sendCode(String phoneNumber) async {
     state = const PhoneAuthState.sending();
@@ -70,6 +102,7 @@ class PhoneAuthViewModel extends _$PhoneAuthViewModel {
                 await ref
                     .read(authActionsViewModelProvider)
                     .signInWithPhoneAutoCredential(credential);
+                await _ensureUserDocument(fallbackPhoneNumber: phoneNumber);
                 final uid = ref
                     .read(authActionsViewModelProvider)
                     .currentUser
@@ -91,7 +124,7 @@ class PhoneAuthViewModel extends _$PhoneAuthViewModel {
   }
 
   /// Step 2: Verify the [smsCode] the user entered.
-  Future<void> verifyCode(String smsCode) async {
+  Future<void> verifyCode(String smsCode, {String? phoneNumber}) async {
     final currentState = state;
     if (currentState is! _CodeSent) return;
 
@@ -104,6 +137,7 @@ class PhoneAuthViewModel extends _$PhoneAuthViewModel {
             verificationId: currentState.verificationId,
             smsCode: smsCode,
           );
+      await _ensureUserDocument(fallbackPhoneNumber: phoneNumber);
       final uid = ref.read(authActionsViewModelProvider).currentUser?.uid;
       if (uid != null) AnalyticsService.instance.setUserId(uid);
       AnalyticsService.instance.logLogin('phone');
@@ -150,6 +184,7 @@ class PhoneAuthViewModel extends _$PhoneAuthViewModel {
                 await ref
                     .read(authActionsViewModelProvider)
                     .signInWithPhoneAutoCredential(credential);
+                await _ensureUserDocument(fallbackPhoneNumber: phoneNumber);
                 final uid = ref
                     .read(authActionsViewModelProvider)
                     .currentUser

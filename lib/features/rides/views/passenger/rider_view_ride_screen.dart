@@ -1452,23 +1452,11 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
           .bookRide(rideId: ride.id, booking: booking);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.check_circle_rounded, color: Colors.white),
-                SizedBox(width: 8.w),
-                Text(AppLocalizations.of(context).bookingRequestSent),
-              ],
-            ),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10.r),
-            ),
-          ),
+        // Navigate to the pending screen so the passenger can track the
+        // booking status and cancel if needed (design requirement).
+        context.push(
+          AppRoutes.rideBookingPending.path.replaceFirst(':rideId', ride.id),
         );
-        context.go(AppRoutes.riderMyRides.path);
       }
     } catch (_) {
       if (mounted) {

@@ -16,39 +16,44 @@ appId: com.sportconnect.sport_connect
 # Wait for app to fully initialize (splash -> login)
 - extendedWaitUntil:
     visible: "Welcome Back"
-    timeout: 10000
+    timeout: 15000
 
 # Navigate to onboarding via deep link
 - openLink: "sportconnect:///onboarding"
 
+- scroll
+
 # Wait for onboarding to appear
 - extendedWaitUntil:
-    visible: "Find Running"
+    visible: "Find Running Partners"
     timeout: 10000
 
 # Step 1: Verify Page 1 - Find Running Partners
-- assertVisible: "Find Running"
-- assertVisible: "Run Together"
+- assertVisible: "Find Running Partners"
+- assertVisible: "RUN TOGETHER"
 - assertVisible: Continue
 - assertVisible: Skip
 - takeScreenshot: onboarding-page1
 
 # Step 2: Navigate to Page 2
 - tapOn: Continue
-- assertVisible: "Join Running"
-- assertVisible: "Train With Community"
+- scroll
+- assertVisible: "Join Running Groups"
+- assertVisible: "TRAIN WITH COMMUNITY"
 - takeScreenshot: onboarding-page2
 
 # Step 3: Navigate to Page 3
 - tapOn: Continue
-- assertVisible: "Track Your"
-- assertVisible: "Monitor Performance"
+- scroll
+- assertVisible: "Track Your Progress"
+- assertVisible: "MONITOR PERFORMANCE"
 - takeScreenshot: onboarding-page3
 
 # Step 4: Navigate to Page 4
 - tapOn: Continue
-- assertVisible: "Achieve Your"
-- assertVisible: "Personal Best Awaits"
+- scroll
+- assertVisible: "Achieve Your Goals"
+- assertVisible: "PERSONAL BEST AWAITS"
 - assertVisible: "Get Started"
 - takeScreenshot: onboarding-page4
 

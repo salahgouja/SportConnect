@@ -10,8 +10,8 @@ import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
-import 'package:sport_connect/features/rides/repositories/vehicle_repository.dart';
-import 'package:sport_connect/features/rides/view_models/vehicle_view_model.dart';
+import 'package:sport_connect/features/vehicles/repositories/vehicle_repository.dart';
+import 'package:sport_connect/features/vehicles/view_models/vehicle_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
 

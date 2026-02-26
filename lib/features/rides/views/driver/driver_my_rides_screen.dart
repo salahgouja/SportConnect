@@ -798,7 +798,10 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
           ],
         ),
         borderRadius: BorderRadius.circular(24.r),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5), width: 2),
+        border: Border.all(
+          color: AppColors.border.withValues(alpha: 0.5),
+          width: 2,
+        ),
       ),
       child: Center(
         child: Column(
@@ -1111,7 +1114,9 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
                                   vertical: 6.h,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.success.withValues(alpha: 0.1),
+                                  color: AppColors.success.withValues(
+                                    alpha: 0.1,
+                                  ),
                                   borderRadius: BorderRadius.circular(8.r),
                                 ),
                                 child: Row(

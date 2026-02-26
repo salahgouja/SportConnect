@@ -11,6 +11,7 @@ import 'package:sport_connect/features/rides/models/ride/ride_schedule.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_preferences.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_route.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
+import 'package:sport_connect/features/rides/repositories/ride_repository.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/models/user/user_model.dart';
@@ -25,11 +26,16 @@ import 'package:sport_connect/features/events/models/event_model.dart';
 
 class DriverOfferRideScreen extends ConsumerStatefulWidget {
   final RideModel? existingRide;
+
+  /// When provided the screen fetches the ride by ID so the edit route
+  /// works correctly even after a hot-restart or deep-link (no state.extra).
+  final String? existingRideId;
   final bool isEditMode;
 
   const DriverOfferRideScreen({
     super.key,
     this.existingRide,
+    this.existingRideId,
     this.isEditMode = false,
   });
 
@@ -59,8 +65,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   double _pricePerSeat = 15.0; // Default price
   bool _isPriceNegotiable = false;
   bool _acceptOnlinePayment = true;
-  final bool _isRecurring = false;
-  final List<int> _recurringDays = [];
+  // TODO(recurring-rides): add UI toggles and hook these up when implementing recurring rides
 
   // Step 3: Preferences
   bool _allowPets = false;
@@ -76,12 +81,27 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   // State
   bool _isCreating = false;
 
+  /// Tracks the vehicleId from the prefilled ride (set by _initFromPrefill)
+  /// so _initVehicleFrom can select the correct vehicle even when the ride
+  /// was loaded asynchronously via existingRideId.
+  String? _existingVehicleId;
+
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
     if (widget.existingRide != null) {
       _initFromPrefill(widget.existingRide!);
+    } else if (widget.existingRideId != null) {
+      // Route-based edit: fetch ride from Firestore so deep-links work correctly.
+      Future.microtask(() async {
+        final ride = await ref
+            .read(rideRepositoryProvider)
+            .getRideById(widget.existingRideId!);
+        if (ride != null && mounted) {
+          setState(() => _initFromPrefill(ride));
+        }
+      });
     }
   }
 
@@ -106,17 +126,17 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
     _isWomenOnly = ride.preferences.isWomenOnly;
     _maxDetourMinutes = ride.preferences.maxDetourMinutes;
     _waypoints = ride.route.waypoints.map((wp) => wp.location).toList();
+    _existingVehicleId = ride.vehicleId;
   }
 
   /// Initialize vehicle selection based on available vehicles and prefill data
   void _initVehicleFrom(List<VehicleModel> vehicles) {
     if (vehicles.isEmpty) return;
 
-    if (widget.existingRide?.vehicleId != null) {
+    final vehicleId = _existingVehicleId ?? widget.existingRide?.vehicleId;
+    if (vehicleId != null) {
       try {
-        _selectedVehicle = vehicles.firstWhere(
-          (v) => v.id == widget.existingRide!.vehicleId,
-        );
+        _selectedVehicle = vehicles.firstWhere((v) => v.id == vehicleId);
       } catch (_) {
         // Vehicle not found, select default
         _selectedVehicle = vehicles.firstWhere(
@@ -1426,7 +1446,10 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
       );
 
       final ride = RideModel(
-        id: widget.existingRide?.id ?? const Uuid().v4(),
+        id:
+            widget.existingRide?.id ??
+            widget.existingRideId ??
+            const Uuid().v4(),
         driverId: ref.read(currentUserProvider).value!.uid,
         route: RideRoute(
           origin: LocationPoint(
@@ -1447,8 +1470,8 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         ),
         schedule: RideSchedule(
           departureTime: departureDateTime,
-          isRecurring: _isRecurring,
-          recurringDays: _recurringDays,
+          isRecurring: false,
+          recurringDays: const [],
         ),
         capacity: RideCapacity(available: _availableSeats, booked: 0),
         pricing: RidePricing(
@@ -1488,7 +1511,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
           ),
         );
         // Navigate
-        context.go(AppRoutes.driverMyRides.path);
+        context.go(AppRoutes.driverRides.path);
       }
     } catch (e) {
       if (mounted) {

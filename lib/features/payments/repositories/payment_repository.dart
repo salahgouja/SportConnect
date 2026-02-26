@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_payment_repository.dart';
 import 'package:sport_connect/core/services/stripe_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
@@ -14,15 +15,32 @@ class PaymentRepository implements IPaymentRepository {
 
   PaymentRepository(this._firestore, this._stripeService);
 
-  // Collection references
-  CollectionReference<Map<String, dynamic>> get _paymentsCollection =>
-      _firestore.collection('payments');
+  CollectionReference<PaymentTransaction> get _paymentsCollection => _firestore
+      .collection(AppConstants.paymentsCollection)
+      .withConverter<PaymentTransaction>(
+        fromFirestore: (snap, _) =>
+            PaymentTransaction.fromJson({...snap.data()!, 'id': snap.id}),
+        toFirestore: (payment, _) => payment.toJson(),
+      );
 
-  CollectionReference<Map<String, dynamic>> get _payoutsCollection =>
-      _firestore.collection('payouts');
+  CollectionReference<DriverPayout> get _payoutsCollection => _firestore
+      .collection(AppConstants.payoutsCollection)
+      .withConverter<DriverPayout>(
+        fromFirestore: (snap, _) =>
+            DriverPayout.fromJson({...snap.data()!, 'id': snap.id}),
+        toFirestore: (payout, _) => payout.toJson(),
+      );
 
-  CollectionReference<Map<String, dynamic>> get _connectedAccountsCollection =>
-      _firestore.collection('driver_connected_accounts');
+  CollectionReference<DriverConnectedAccount>
+  get _connectedAccountsCollection => _firestore
+      .collection(AppConstants.connectedAccountsCollection)
+      .withConverter<DriverConnectedAccount>(
+        fromFirestore: (snap, _) => DriverConnectedAccount.fromJson({
+          ...snap.data()!,
+          'driverId': snap.id,
+        }),
+        toFirestore: (account, _) => account.toJson(),
+      );
 
   /// Create payment transaction record
   @override
@@ -35,7 +53,7 @@ class PaymentRepository implements IPaymentRepository {
         updatedAt: DateTime.now(),
       );
 
-      await docRef.set(paymentWithId.toJson());
+      await docRef.set(paymentWithId);
       TalkerService.info('Payment transaction created: ${docRef.id}');
       return docRef.id;
     } catch (e) {
@@ -55,7 +73,7 @@ class PaymentRepository implements IPaymentRepository {
     try {
       await _paymentsCollection.doc(paymentId).update({
         'status': status.name,
-        'updatedAt': FieldValue.serverTimestamp(),
+        'updatedAt': DateTime.now(),
         'failureReason': ?failureReason,
         if (completedAt != null) 'completedAt': Timestamp.fromDate(completedAt),
       });
@@ -76,7 +94,7 @@ class PaymentRepository implements IPaymentRepository {
       final doc = await _paymentsCollection.doc(paymentId).get();
       if (!doc.exists) return null;
 
-      return PaymentTransaction.fromJson(doc.data()!);
+      return doc.data();
     } catch (e) {
       TalkerService.error('Error getting payment: $e');
       rethrow;
@@ -92,9 +110,7 @@ class PaymentRepository implements IPaymentRepository {
           .orderBy('createdAt', descending: true)
           .get();
 
-      return snapshot.docs
-          .map((doc) => PaymentTransaction.fromJson(doc.data()))
-          .toList();
+      return snapshot.docs.map((doc) => doc.data()).toList();
     } catch (e) {
       TalkerService.error('Error getting payments by ride: $e');
       rethrow;
@@ -114,9 +130,7 @@ class PaymentRepository implements IPaymentRepository {
           .limit(limit)
           .get();
 
-      return snapshot.docs
-          .map((doc) => PaymentTransaction.fromJson(doc.data()))
-          .toList();
+      return snapshot.docs.map((doc) => doc.data()).toList();
     } catch (e) {
       TalkerService.error('Error getting rider payment history: $e');
       rethrow;
@@ -134,11 +148,7 @@ class PaymentRepository implements IPaymentRepository {
         .orderBy('createdAt', descending: true)
         .limit(limit)
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => PaymentTransaction.fromJson(doc.data()))
-              .toList(),
-        );
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 
   /// Get driver's earnings transactions
@@ -150,7 +160,7 @@ class PaymentRepository implements IPaymentRepository {
     int limit = 50,
   }) async {
     try {
-      Query<Map<String, dynamic>> query = _paymentsCollection
+      Query<PaymentTransaction> query = _paymentsCollection
           .where('driverId', isEqualTo: driverId)
           .where('status', isEqualTo: PaymentStatus.succeeded.name);
 
@@ -172,9 +182,7 @@ class PaymentRepository implements IPaymentRepository {
           .limit(limit)
           .get();
 
-      return snapshot.docs
-          .map((doc) => PaymentTransaction.fromJson(doc.data()))
-          .toList();
+      return snapshot.docs.map((doc) => doc.data()).toList();
     } catch (e) {
       TalkerService.error('Error getting driver earnings: $e');
       rethrow;
@@ -197,9 +205,7 @@ class PaymentRepository implements IPaymentRepository {
           .where('status', isEqualTo: PaymentStatus.succeeded.name)
           .get();
 
-      final payments = allPayments.docs
-          .map((doc) => PaymentTransaction.fromJson(doc.data()))
-          .toList();
+      final payments = allPayments.docs.map((doc) => doc.data()).toList();
 
       // Calculate totals
       double totalEarnings = 0;
@@ -250,9 +256,7 @@ class PaymentRepository implements IPaymentRepository {
           .get();
 
       if (payoutsSnapshot.docs.isNotEmpty) {
-        final lastPayout = DriverPayout.fromJson(
-          payoutsSnapshot.docs.first.data(),
-        );
+        final lastPayout = payoutsSnapshot.docs.first.data();
         lastPayoutDate = lastPayout.arrivedAt;
       }
 
@@ -288,7 +292,7 @@ class PaymentRepository implements IPaymentRepository {
         createdAt: DateTime.now(),
       );
 
-      await docRef.set(payoutWithId.toJson());
+      await docRef.set(payoutWithId);
       TalkerService.info('Payout created: ${docRef.id}');
       return docRef.id;
     } catch (e) {
@@ -308,7 +312,7 @@ class PaymentRepository implements IPaymentRepository {
     try {
       await _payoutsCollection.doc(payoutId).update({
         'status': status.name,
-        'failureReason': ?failureReason,
+        'failureReason': failureReason,
         if (arrivedAt != null) 'arrivedAt': Timestamp.fromDate(arrivedAt),
       });
 
@@ -332,9 +336,7 @@ class PaymentRepository implements IPaymentRepository {
           .limit(limit)
           .get();
 
-      return snapshot.docs
-          .map((doc) => DriverPayout.fromJson(doc.data()))
-          .toList();
+      return snapshot.docs.map((doc) => doc.data()).toList();
     } catch (e) {
       TalkerService.error('Error getting driver payouts: $e');
       rethrow;
@@ -348,12 +350,10 @@ class PaymentRepository implements IPaymentRepository {
       await _connectedAccountsCollection
           .doc(account.driverId)
           .set(
-            account
-                .copyWith(
-                  createdAt: account.createdAt ?? DateTime.now(),
-                  updatedAt: DateTime.now(),
-                )
-                .toJson(),
+            account.copyWith(
+              createdAt: account.createdAt ?? DateTime.now(),
+              updatedAt: DateTime.now(),
+            ),
             SetOptions(merge: true),
           );
 
@@ -371,7 +371,7 @@ class PaymentRepository implements IPaymentRepository {
       final doc = await _connectedAccountsCollection.doc(driverId).get();
       if (!doc.exists) return null;
 
-      return DriverConnectedAccount.fromJson(doc.data()!);
+      return doc.data();
     } catch (e) {
       TalkerService.error('Error getting connected account: $e');
       rethrow;
@@ -393,9 +393,9 @@ class PaymentRepository implements IPaymentRepository {
         'detailsSubmitted': detailsSubmitted,
         'onboardingCompleted':
             chargesEnabled && payoutsEnabled && detailsSubmitted,
-        'updatedAt': FieldValue.serverTimestamp(),
+        'updatedAt': DateTime.now(),
         if (chargesEnabled && payoutsEnabled && detailsSubmitted)
-          'onboardingCompletedAt': FieldValue.serverTimestamp(),
+          'onboardingCompletedAt': DateTime.now(),
       });
 
       TalkerService.info('Connected account status updated: $driverId');

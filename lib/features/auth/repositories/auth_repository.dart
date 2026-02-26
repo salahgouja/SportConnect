@@ -12,27 +12,55 @@ import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_auth_repository.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/features/messaging/models/message_model.dart';
+import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 
 /// Repository for authentication operations - Firebase only
 class AuthRepository implements IAuthRepository {
   final FirebaseAuth _auth;
   final FirebaseStorage _storage;
   final FirebaseFirestore _firestore;
-  final GoogleSignIn _googleSignIn;
 
   /// Creates an [AuthRepository] with optional dependency injection.
   ///
   /// Defaults to production Firebase instances when no arguments are provided.
   /// Pass custom instances in tests to enable mocking.
-  AuthRepository({
-    FirebaseAuth? auth,
-    FirebaseStorage? storage,
-    FirebaseFirestore? firestore,
-    GoogleSignIn? googleSignIn,
-  }) : _auth = auth ?? FirebaseAuth.instance,
-       _storage = storage ?? FirebaseStorage.instance,
-       _firestore = firestore ?? FirebaseFirestore.instance,
-       _googleSignIn = googleSignIn ?? GoogleSignIn.instance;
+  AuthRepository(this._auth, this._storage, this._firestore);
+
+  CollectionReference<UserModel> get _usersCollection => _firestore
+      .collection(AppConstants.usersCollection)
+      .withConverter<UserModel>(
+        fromFirestore: (snap, _) => UserModel.fromJson(snap.data()!),
+        toFirestore: (user, _) => user.toJson(),
+      );
+
+  CollectionReference<RideModel> get _ridesCollection => _firestore
+      .collection(AppConstants.ridesCollection)
+      .withConverter<RideModel>(
+        fromFirestore: (snap, _) => RideModel.fromJson(snap.data()!),
+        toFirestore: (ride, _) => ride.toJson(),
+      );
+
+  CollectionReference<RideBooking> get _bookingsCollection => _firestore
+      .collection(AppConstants.bookingsCollection)
+      .withConverter<RideBooking>(
+        fromFirestore: (snap, _) => RideBooking.fromJson(snap.data()!),
+        toFirestore: (booking, _) => booking.toJson(),
+      );
+
+  CollectionReference<MessageModel> get _messagesCollection => _firestore
+      .collection(AppConstants.messagesCollection)
+      .withConverter<MessageModel>(
+        fromFirestore: (snap, _) => MessageModel.fromJson(snap.data()!),
+        toFirestore: (message, _) => message.toJson(),
+      );
+  CollectionReference<ChatModel> get _chatsCollection => _firestore
+      .collection(AppConstants.chatsCollection)
+      .withConverter<ChatModel>(
+        fromFirestore: (snap, _) => ChatModel.fromJson(snap.data()!),
+        toFirestore: (chat, _) => chat.toJson(),
+      );
 
   /// Get current user stream
   @override
@@ -143,10 +171,7 @@ class AuthRepository implements IAuthRepository {
           );
         }
 
-        await _firestore
-            .collection(AppConstants.usersCollection)
-            .doc(uid)
-            .set(userModel.toJson());
+        await _usersCollection.doc(uid).set(userModel);
         await credential.user!.updateDisplayName(displayName);
 
         if (photoUrl != null) {
@@ -202,13 +227,10 @@ class AuthRepository implements IAuthRepository {
   @override
   Future<UserModel?> getUserData(String uid) async {
     try {
-      final doc = await _firestore
-          .collection(AppConstants.usersCollection)
-          .doc(uid)
-          .get();
+      final doc = await _usersCollection.doc(uid).get();
 
       if (doc.exists && doc.data() != null) {
-        return UserModel.fromJson(doc.data()!);
+        return doc.data()!;
       }
     } catch (e) {
       TalkerService.error('Get user data error', e);
@@ -218,23 +240,20 @@ class AuthRepository implements IAuthRepository {
 
   @override
   Stream<UserModel?> getUserDataStream(String uid) {
-    return _firestore
-        .collection(AppConstants.usersCollection)
-        .doc(uid)
-        .snapshots()
-        .map((doc) {
-          if (doc.exists && doc.data() != null) {
-            return UserModel.fromJson(doc.data()!);
-          }
-          return null;
-        });
+    return _usersCollection.doc(uid).snapshots().map((doc) {
+      if (doc.exists && doc.data() != null) {
+        return doc.data()!;
+      }
+      return null;
+    });
   }
 
   /// Sign out
   @override
   Future<void> signOut() async {
     try {
-      await _googleSignIn.signOut();
+      GoogleSignIn googleSignIn = GoogleSignIn.instance;
+      await googleSignIn.signOut();
       await _auth.signOut();
       TalkerService.info('User signed out');
     } catch (e) {
@@ -255,34 +274,28 @@ class AuthRepository implements IAuthRepository {
       final uid = user.uid;
 
       // Collect all document references to delete
-      final refs = <DocumentReference>[
-        _firestore.collection(AppConstants.usersCollection).doc(uid),
-      ];
+      final refs = <DocumentReference>[_usersCollection.doc(uid)];
 
       // User's rides
-      final ridesQuery = await _firestore
-          .collection('rides')
+      final ridesQuery = await _ridesCollection
           .where('driverId', isEqualTo: uid)
           .get();
       refs.addAll(ridesQuery.docs.map((d) => d.reference));
 
       // User's bookings
-      final bookingsQuery = await _firestore
-          .collection('bookings')
+      final bookingsQuery = await _bookingsCollection
           .where('userId', isEqualTo: uid)
           .get();
       refs.addAll(bookingsQuery.docs.map((d) => d.reference));
 
       // User's messages
-      final messagesQuery = await _firestore
-          .collection('messages')
+      final messagesQuery = await _messagesCollection
           .where('senderId', isEqualTo: uid)
           .get();
       refs.addAll(messagesQuery.docs.map((d) => d.reference));
 
       // User's chats
-      final chatsQuery = await _firestore
-          .collection('chats')
+      final chatsQuery = await _chatsCollection
           .where('participants', arrayContains: uid)
           .get();
       refs.addAll(chatsQuery.docs.map((d) => d.reference));
@@ -321,8 +334,8 @@ class AuthRepository implements IAuthRepository {
           'Storage cleanup failed (best-effort): ${e.message}',
         );
       }
-
-      await _googleSignIn.signOut();
+      GoogleSignIn googleSignIn = GoogleSignIn.instance;
+      await googleSignIn.signOut();
       await user.delete();
 
       TalkerService.info('User account and data deleted: $uid');
@@ -345,12 +358,14 @@ class AuthRepository implements IAuthRepository {
   @override
   Future<SocialSignInResult> signInWithGoogle() async {
     try {
+      GoogleSignIn googleSignIn = GoogleSignIn.instance;
+
       // Initialize GoogleSignIn if needed (required in v7.x+)
-      await _googleSignIn.initialize();
+      await googleSignIn.initialize();
 
       // Use authenticate() instead of signIn() in v7.x+
       // authenticate() returns non-nullable account, throws on cancellation
-      final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
+      final GoogleSignInAccount googleUser = await googleSignIn.authenticate();
 
       final GoogleSignInAuthentication googleAuth = googleUser.authentication;
       final credential = GoogleAuthProvider.credential(
@@ -363,10 +378,10 @@ class AuthRepository implements IAuthRepository {
         UserModel? existingUser = await getUserData(userCredential.user!.uid);
 
         if (existingUser != null) {
-          await _firestore
-              .collection(AppConstants.usersCollection)
+          existingUser = existingUser.copyWith(lastSeenAt: DateTime.now());
+          await _usersCollection
               .doc(userCredential.user!.uid)
-              .update({'lastSeenAt': FieldValue.serverTimestamp()});
+              .set(existingUser, SetOptions(merge: true));
           return SocialSignInResult(user: existingUser, isNewUser: false);
         } else {
           // New users default to riders with pending role selection
@@ -380,10 +395,7 @@ class AuthRepository implements IAuthRepository {
             lastSeenAt: DateTime.now(),
           );
 
-          await _firestore
-              .collection(AppConstants.usersCollection)
-              .doc(userCredential.user!.uid)
-              .set(newUser.toJson());
+          await _usersCollection.doc(userCredential.user!.uid).set(newUser);
 
           TalkerService.info('New user created via Google sign in');
           return SocialSignInResult(user: newUser, isNewUser: true);
@@ -431,10 +443,10 @@ class AuthRepository implements IAuthRepository {
         UserModel? existingUser = await getUserData(userCredential.user!.uid);
 
         if (existingUser != null) {
-          await _firestore
-              .collection(AppConstants.usersCollection)
+          existingUser = existingUser.copyWith(lastSeenAt: DateTime.now());
+          await _usersCollection
               .doc(userCredential.user!.uid)
-              .update({'lastSeenAt': FieldValue.serverTimestamp()});
+              .set(existingUser, SetOptions(merge: true));
           return SocialSignInResult(user: existingUser, isNewUser: false);
         } else {
           String displayName = 'User';
@@ -456,10 +468,7 @@ class AuthRepository implements IAuthRepository {
             lastSeenAt: DateTime.now(),
           );
 
-          await _firestore
-              .collection(AppConstants.usersCollection)
-              .doc(userCredential.user!.uid)
-              .set(newUser.toJson());
+          await _usersCollection.doc(userCredential.user!.uid).set(newUser);
 
           TalkerService.info('New user created via Apple sign in');
           return SocialSignInResult(user: newUser, isNewUser: true);
@@ -502,10 +511,7 @@ class AuthRepository implements IAuthRepository {
   @override
   Future<UserModel> createUserDocument(UserModel user) async {
     try {
-      await _firestore
-          .collection(AppConstants.usersCollection)
-          .doc(user.uid)
-          .set(user.toJson(), SetOptions(merge: true));
+      await _usersCollection.doc(user.uid).set(user, SetOptions(merge: true));
       TalkerService.info('User document created/updated for ${user.uid}');
       return user;
     } catch (e) {
@@ -523,26 +529,20 @@ class AuthRepository implements IAuthRepository {
     int? ridesCompletedIncrement,
   }) async {
     try {
-      final updates = <String, dynamic>{
-        'updatedAt': FieldValue.serverTimestamp(),
-      };
+      UserModel? userModel = await getUserData(userId);
+      userModel = userModel?.copyWith(
+        updatedAt: DateTime.now(),
+        gamification: userModel.gamification.copyWith(
+          totalXP: xpIncrement != null
+              ? userModel.gamification.totalXP + xpIncrement
+              : userModel.gamification.totalXP,
+          totalRides: ridesCompletedIncrement != null
+              ? userModel.gamification.totalRides + ridesCompletedIncrement
+              : userModel.gamification.totalRides,
+        ),
+      );
 
-      if (xpIncrement != null) {
-        updates['xp'] = FieldValue.increment(xpIncrement);
-      }
-      if (ridesOfferedIncrement != null) {
-        updates['ridesOffered'] = FieldValue.increment(ridesOfferedIncrement);
-      }
-      if (ridesCompletedIncrement != null) {
-        updates['ridesCompleted'] = FieldValue.increment(
-          ridesCompletedIncrement,
-        );
-      }
-
-      await _firestore
-          .collection(AppConstants.usersCollection)
-          .doc(userId)
-          .update(updates);
+      await _usersCollection.doc(userId).update(userModel?.toJson() ?? {});
       TalkerService.info('User stats updated for $userId');
     } catch (e) {
       TalkerService.error('Update user stats error', e);
@@ -554,14 +554,11 @@ class AuthRepository implements IAuthRepository {
   @override
   Future<void> updateUserRole(String userId, UserRole role) async {
     try {
-      await _firestore
-          .collection(AppConstants.usersCollection)
-          .doc(userId)
-          .update({
-            'role': role.name,
-            'isDriver': role == UserRole.driver,
-            'updatedAt': FieldValue.serverTimestamp(),
-          });
+      await _usersCollection.doc(userId).update({
+        'role': role.name,
+        'isDriver': role == UserRole.driver,
+        'updatedAt': DateTime.now(),
+      });
       TalkerService.info('User role updated to ${role.name} for $userId');
     } catch (e) {
       TalkerService.error('Update user role error', e);
@@ -573,13 +570,10 @@ class AuthRepository implements IAuthRepository {
   @override
   Future<void> clearNeedsRoleSelection(String userId) async {
     try {
-      await _firestore
-          .collection(AppConstants.usersCollection)
-          .doc(userId)
-          .update({
-            'needsRoleSelection': false,
-            'updatedAt': FieldValue.serverTimestamp(),
-          });
+      await _usersCollection.doc(userId).update({
+        'needsRoleSelection': false,
+        'updatedAt': DateTime.now(),
+      });
       TalkerService.info('Cleared needsRoleSelection for $userId');
     } catch (e) {
       TalkerService.error('Clear needsRoleSelection error', e);
@@ -623,13 +617,10 @@ class AuthRepository implements IAuthRepository {
   @override
   Future<void> updateUserData(UserModel user) async {
     try {
-      await _firestore
-          .collection(AppConstants.usersCollection)
-          .doc(user.uid)
-          .update({
-            ...user.toJson(),
-            'updatedAt': FieldValue.serverTimestamp(),
-          });
+      await _usersCollection.doc(user.uid).update({
+        ...user.toJson(),
+        'updatedAt': DateTime.now(),
+      });
       TalkerService.info('User data updated for ${user.uid}');
     } catch (e) {
       TalkerService.error('Update user data error', e);
@@ -713,8 +704,10 @@ class AuthRepository implements IAuthRepository {
   @override
   Future<void> reauthenticateWithGoogle() async {
     try {
-      await _googleSignIn.initialize();
-      final googleUser = await _googleSignIn.authenticate();
+      GoogleSignIn googleSignIn = GoogleSignIn.instance;
+
+      await googleSignIn.initialize();
+      final googleUser = await googleSignIn.authenticate();
       final googleAuth = googleUser.authentication;
       final credential = GoogleAuthProvider.credential(
         idToken: googleAuth.idToken,

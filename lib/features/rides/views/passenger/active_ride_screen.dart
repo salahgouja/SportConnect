@@ -20,16 +20,18 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 part 'active_ride_screen.g.dart';
 
 /// Active Ride Screen  - shows real-time ride status from Firestore
-class ActiveRideScreen extends ConsumerStatefulWidget {
+class PassengerActiveRideScreen extends ConsumerStatefulWidget {
   final String rideId;
 
-  const ActiveRideScreen({super.key, required this.rideId});
+  const PassengerActiveRideScreen({super.key, required this.rideId});
 
   @override
-  ConsumerState<ActiveRideScreen> createState() => _ActiveRideScreenState();
+  ConsumerState<PassengerActiveRideScreen> createState() =>
+      _PassengerActiveRideScreenState();
 }
 
-class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
+class _PassengerActiveRideScreenState
+    extends ConsumerState<PassengerActiveRideScreen> {
   @override
   Widget build(BuildContext context) {
     final rideAsync = ref.watch(activeRideStreamProvider(widget.rideId));

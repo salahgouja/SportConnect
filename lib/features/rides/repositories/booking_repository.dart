@@ -11,29 +11,37 @@ class BookingRepository {
 
   BookingRepository(this._firestore);
 
-  CollectionReference<Map<String, dynamic>> get _bookingsCollection =>
-      _firestore.collection('bookings');
+  CollectionReference<RideBooking> get _bookingsCollection => _firestore
+      .collection('bookings')
+      .withConverter<RideBooking>(
+        fromFirestore: (snap, _) =>
+            RideBooking.fromJson({...snap.data()!, 'id': snap.id}),
+        toFirestore: (booking, _) => booking.toJson(),
+      );
+
+  /// Raw doc ref used only for writes that need FieldValue (e.g. serverTimestamp).
+  DocumentReference<Map<String, dynamic>> _rawBookingDoc(String id) =>
+      _firestore.collection('bookings').doc(id);
 
   /// Create a new booking
   Future<String> createBooking(RideBooking booking) async {
     final docRef = _bookingsCollection.doc(booking.id);
-    await docRef.set(booking.toJson());
+    await docRef.set(booking);
     return booking.id;
   }
 
   /// Get booking by ID
   Future<RideBooking?> getBookingById(String bookingId) async {
     final doc = await _bookingsCollection.doc(bookingId).get();
-    if (!doc.exists) return null;
-    return RideBooking.fromJson(doc.data()!);
+    return doc.data();
   }
 
   /// Stream booking by ID (real-time updates)
   Stream<RideBooking?> streamBookingById(String bookingId) {
-    return _bookingsCollection.doc(bookingId).snapshots().map((doc) {
-      if (!doc.exists) return null;
-      return RideBooking.fromJson(doc.data()!);
-    });
+    return _bookingsCollection
+        .doc(bookingId)
+        .snapshots()
+        .map((doc) => doc.data());
   }
 
   /// Get bookings for a specific ride
@@ -43,7 +51,7 @@ class BookingRepository {
         .orderBy('createdAt', descending: true)
         .get();
 
-    return query.docs.map((doc) => RideBooking.fromJson(doc.data())).toList();
+    return query.docs.map((doc) => doc.data()).toList();
   }
 
   /// Stream bookings for a specific ride (real-time)
@@ -52,11 +60,7 @@ class BookingRepository {
         .where('rideId', isEqualTo: rideId)
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => RideBooking.fromJson(doc.data()))
-              .toList(),
-        );
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 
   /// Get bookings for a specific passenger
@@ -66,7 +70,7 @@ class BookingRepository {
         .orderBy('createdAt', descending: true)
         .get();
 
-    return query.docs.map((doc) => RideBooking.fromJson(doc.data())).toList();
+    return query.docs.map((doc) => doc.data()).toList();
   }
 
   /// Stream bookings for a specific passenger (real-time)
@@ -75,11 +79,7 @@ class BookingRepository {
         .where('passengerId', isEqualTo: passengerId)
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => RideBooking.fromJson(doc.data()))
-              .toList(),
-        );
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 
   /// Update booking status
@@ -87,15 +87,16 @@ class BookingRepository {
     required String bookingId,
     required BookingStatus newStatus,
   }) async {
-    await _bookingsCollection.doc(bookingId).update({
-      'status': newStatus.name,
-      'respondedAt': FieldValue.serverTimestamp(),
-    });
+    await _rawBookingDoc(
+      bookingId,
+    ).update({'status': newStatus.name, 'respondedAt': DateTime.now()});
   }
 
   /// Update booking
   Future<void> updateBooking(RideBooking booking) async {
-    await _bookingsCollection.doc(booking.id).update(booking.toJson());
+    await _bookingsCollection
+        .doc(booking.id)
+        .set(booking, SetOptions(merge: true));
   }
 
   /// Delete booking
@@ -112,11 +113,7 @@ class BookingRepository {
         .where('status', whereIn: ['pending', 'accepted'])
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => RideBooking.fromJson(doc.data()))
-              .toList(),
-        );
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 
   /// Get pending bookings for a ride
@@ -126,11 +123,7 @@ class BookingRepository {
         .where('status', isEqualTo: 'pending')
         .orderBy('createdAt')
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => RideBooking.fromJson(doc.data()))
-              .toList(),
-        );
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 }
 

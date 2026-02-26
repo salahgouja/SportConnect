@@ -46,6 +46,13 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Watch the pending requests to drive the live badge count
+    final pendingCount =
+        ref
+            .watch(pendingRideRequestsProvider)
+            .whenOrNull(data: (list) => list.length) ??
+        0;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -87,25 +94,27 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(AppLocalizations.of(context).pending),
-                      SizedBox(width: 6.w),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 6.w,
-                          vertical: 2.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.warning,
-                          borderRadius: BorderRadius.circular(8.r),
-                        ),
-                        child: Text(
-                          '5',
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                      if (pendingCount > 0) ...[
+                        SizedBox(width: 6.w),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 6.w,
+                            vertical: 2.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.warning,
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                          child: Text(
+                            '$pendingCount',
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),

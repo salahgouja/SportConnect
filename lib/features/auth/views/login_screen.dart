@@ -22,7 +22,6 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 /// Professional Login Screen with clean, modern design
-/// No animated characters - just elegant branding and smooth UX
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -120,7 +119,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       return;
     }
 
-    await _saveCredentials();
     try {
       await ref
           .read(loginViewModelProvider.notifier)
@@ -129,6 +127,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             _passwordController.text,
             _rememberMe,
           );
+      await _saveCredentials();
     } catch (e) {
       if (!mounted) return;
       final errorMessage = _getAuthErrorMessage(e);
@@ -143,7 +142,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     try {
       final authActions = ref.read(authActionsViewModelProvider);
       await authActions.signInWithGoogle();
-      // Route guard handles redirect based on needsRoleSelection field in Firestore
     } catch (e) {
       if (mounted) {
         await _showAdaptiveMessage(_getAuthErrorMessage(e), isError: true);
@@ -159,7 +157,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     try {
       final authActions = ref.read(authActionsViewModelProvider);
       await authActions.signInWithApple();
-      // Route guard handles redirect based on needsRoleSelection field in Firestore
     } catch (e) {
       if (mounted) {
         await _showAdaptiveMessage(_getAuthErrorMessage(e), isError: true);
@@ -184,55 +181,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   SizedBox(height: 40.h),
-
-                  // Professional logo header
                   _buildLogoHeader(),
-
                   SizedBox(height: 32.h),
-
-                  // Welcome text
                   _buildWelcomeText(),
-
                   SizedBox(height: 32.h),
-
-                  // Social login buttons
                   _buildSocialButtons(),
-
                   SizedBox(height: 24.h),
-
-                  // Divider
                   _buildDivider(),
-
                   SizedBox(height: 24.h),
-
-                  // Email field
                   _buildEmailField(),
-
                   SizedBox(height: 16.h),
-
-                  // Password field
                   _buildPasswordField(),
-
                   SizedBox(height: 14.h),
-
-                  // Remember me & Forgot password
                   _buildOptionsRow(),
-
                   SizedBox(height: 28.h),
-
-                  // Sign in button
                   _buildSignInButton(loginState),
-
                   SizedBox(height: 28.h),
-
-                  // Sign up link
                   _buildSignUpLink(),
-
+                  SizedBox(height: 8.h),
+                  _buildAlternateAuthLinks(),
                   SizedBox(height: 16.h),
-
-                  // Terms & Privacy footer
                   _buildLegalFooter(),
-
                   SizedBox(height: 32.h),
                 ],
               ),
@@ -255,45 +224,57 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   Widget _buildLogoHeader() {
     return Column(
       children: [
-        // Logo icon
-        Container(
-              width: 80.w,
-              height: 80.w,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [AppColors.primary, AppColors.primaryDark],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.25),
-                    blurRadius: 24,
-                    spreadRadius: 0,
-                    offset: const Offset(0, 8),
+        // The logo container is purely decorative — the app name Text below
+        // already communicates the brand. We give it a label so VoiceOver
+        // reads "SportConnect logo" once, and exclude the inner Icon so its
+        // raw name isn't announced as a second node.
+        Semantics(
+          label: 'SportConnect logo',
+          image: true,
+          child:
+              Container(
+                    width: 80.w,
+                    height: 80.w,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [AppColors.primary, AppColors.primaryDark],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.25),
+                          blurRadius: 24,
+                          spreadRadius: 0,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: ExcludeSemantics(
+                        // Icon is non-interactive and already described by the
+                        // parent Semantics label — exclude to avoid duplication.
+                        child: Icon(
+                          Icons.directions_run_rounded,
+                          size: 40.sp,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  )
+                  .animate()
+                  .fadeIn(duration: 500.ms)
+                  .scale(
+                    begin: const Offset(0.8, 0.8),
+                    curve: Curves.easeOutBack,
+                    duration: 600.ms,
                   ),
-                ],
-              ),
-              child: Center(
-                child: Icon(
-                  Icons.directions_run_rounded,
-                  size: 40.sp,
-                  color: Colors.white,
-                ),
-              ),
-            )
-            .animate()
-            .fadeIn(duration: 500.ms)
-            .scale(
-              begin: const Offset(0.8, 0.8),
-              curve: Curves.easeOutBack,
-              duration: 600.ms,
-            ),
+        ),
 
         SizedBox(height: 16.h),
 
-        // App name
+        // App name — plain Text, no changes needed.
         Text(
           AppLocalizations.of(context).sportconnect,
           style: TextStyle(
@@ -308,6 +289,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Widget _buildWelcomeText() {
+    // Plain text nodes — no semantics changes needed.
     return Column(
       children: [
         Text(
@@ -340,12 +322,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            emailLabel,
-            style: TextStyle(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
+          // Visual label only — VoiceOver uses the placeholder as the field's
+          // accessible name, so this Text is purely decorative from an a11y
+          // perspective. ExcludeSemantics prevents a redundant focus stop.
+          ExcludeSemantics(
+            child: Text(
+              emailLabel,
+              style: TextStyle(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
             ),
           ),
           SizedBox(height: 8.h),
@@ -363,10 +350,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
             prefix: Padding(
               padding: EdgeInsets.only(left: 12.w),
-              child: Icon(
-                CupertinoIcons.mail,
-                size: 18.sp,
-                color: AppColors.textSecondary,
+              child: ExcludeSemantics(
+                // Decorative prefix icon — excluded so SR does not read it.
+                child: Icon(
+                  CupertinoIcons.mail,
+                  size: 18.sp,
+                  color: AppColors.textSecondary,
+                ),
               ),
             ),
             decoration: BoxDecoration(
@@ -381,6 +371,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       ).animate().fadeIn(duration: 400.ms, delay: 350.ms);
     }
 
+    // Material: TextFormField's labelText is the accessible name already.
+    // Only the decorative prefix icon needs excluding.
     return TextFormField(
       controller: _emailController,
       focusNode: _emailFocus,
@@ -394,7 +386,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       decoration: InputDecoration(
         labelText: emailLabel,
         hintText: emailHint,
-        prefixIcon: const Icon(Icons.email_outlined),
+        prefixIcon: ExcludeSemantics(child: const Icon(Icons.email_outlined)),
       ),
     ).animate().fadeIn(duration: 400.ms, delay: 350.ms);
   }
@@ -402,17 +394,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   Widget _buildPasswordField() {
     final passwordLabel = AppLocalizations.of(context).password;
     final passwordHint = AppLocalizations.of(context).enterYourPassword;
+    // Dynamic label reflects the current state so SR users know what the
+    // button will do before they activate it.
+    final toggleLabel = _obscurePassword ? 'Show password' : 'Hide password';
 
     if (_isCupertino) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            passwordLabel,
-            style: TextStyle(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
+          ExcludeSemantics(
+            child: Text(
+              passwordLabel,
+              style: TextStyle(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
             ),
           ),
           SizedBox(height: 8.h),
@@ -430,27 +427,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
             prefix: Padding(
               padding: EdgeInsets.only(left: 12.w),
-              child: Icon(
-                CupertinoIcons.lock,
-                size: 18.sp,
-                color: AppColors.textSecondary,
+              child: ExcludeSemantics(
+                child: Icon(
+                  CupertinoIcons.lock,
+                  size: 18.sp,
+                  color: AppColors.textSecondary,
+                ),
               ),
             ),
-            suffix: CupertinoButton(
-              onPressed: () {
-                setState(() {
-                  _obscurePassword = !_obscurePassword;
-                });
-              },
-              padding: EdgeInsets.only(right: 10.w),
-              minimumSize: const Size(24, 24),
-              alignment: Alignment.centerRight,
-              child: Icon(
-                _obscurePassword
-                    ? CupertinoIcons.eye
-                    : CupertinoIcons.eye_slash,
-                size: 18.sp,
-                color: AppColors.textSecondary,
+            suffix: Semantics(
+              // The toggle IS interactive — it needs its own focusable node
+              // with a meaningful label. We do NOT use excludeSemantics here.
+              // The inner icon is excluded so only this label is announced.
+              label: toggleLabel,
+              button: true,
+              child: CupertinoButton(
+                onPressed: () =>
+                    setState(() => _obscurePassword = !_obscurePassword),
+                padding: EdgeInsets.only(right: 10.w),
+                minimumSize: const Size(44, 44),
+                alignment: Alignment.centerRight,
+                child: ExcludeSemantics(
+                  child: Icon(
+                    _obscurePassword
+                        ? CupertinoIcons.eye
+                        : CupertinoIcons.eye_slash,
+                    size: 18.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
               ),
             ),
             decoration: BoxDecoration(
@@ -478,14 +483,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       decoration: InputDecoration(
         labelText: passwordLabel,
         hintText: passwordHint,
-        prefixIcon: const Icon(Icons.lock_outline_rounded),
+        prefixIcon: ExcludeSemantics(
+          child: const Icon(Icons.lock_outline_rounded),
+        ),
         suffixIcon: IconButton(
-          tooltip: _obscurePassword ? 'Show password' : 'Hide password',
-          onPressed: () {
-            setState(() {
-              _obscurePassword = !_obscurePassword;
-            });
-          },
+          // `tooltip` is used by both TalkBack and VoiceOver as the button's
+          // accessible name. Dynamic string keeps the state accurate.
+          tooltip: toggleLabel,
+          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
           icon: Icon(
             _obscurePassword
                 ? Icons.visibility_outlined
@@ -497,13 +502,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Widget _buildOptionsRow() {
+    final rememberMeLabel = AppLocalizations.of(context).rememberMe;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // Remember Me
-        Semantics(
-          toggled: _rememberMe,
-          label: AppLocalizations.of(context).rememberMe,
+        // MergeSemantics combines the Checkbox/Switch and its sibling Text
+        // into ONE focusable node: "Remember me, checkbox, checked".
+        // This avoids two separate focus stops for what is logically one
+        // control, without suppressing interactivity.
+        MergeSemantics(
           child: Padding(
             padding: EdgeInsets.symmetric(vertical: 12.h),
             child: Row(
@@ -513,9 +521,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     value: _rememberMe,
                     onChanged: (value) {
                       HapticFeedback.selectionClick();
-                      setState(() {
-                        _rememberMe = value;
-                      });
+                      setState(() => _rememberMe = value);
                     },
                     activeTrackColor: AppColors.primary,
                   )
@@ -524,15 +530,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     value: _rememberMe,
                     onChanged: (value) {
                       HapticFeedback.selectionClick();
-                      setState(() {
-                        _rememberMe = value ?? false;
-                      });
+                      setState(() => _rememberMe = value ?? false);
                     },
                     visualDensity: VisualDensity.compact,
                   ),
                 SizedBox(width: 8.w),
                 Text(
-                  AppLocalizations.of(context).rememberMe,
+                  rememberMeLabel,
                   style: TextStyle(
                     fontSize: 13.sp,
                     color: AppColors.textSecondary,
@@ -543,11 +547,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             ),
           ),
         ),
-        // Forgot Password
+
+        // Forgot password button — interactive, label is already descriptive.
         _isCupertino
             ? CupertinoButton(
-                onPressed: _showForgotPasswordDialog,
+                onPressed: () => context.push(AppRoutes.forgotPassword.path),
                 padding: EdgeInsets.zero,
+                minimumSize: const Size(44, 44),
                 child: Text(
                   AppLocalizations.of(context).authForgotPassword,
                   style: TextStyle(
@@ -558,7 +564,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                 ),
               )
             : TextButton(
-                onPressed: _showForgotPasswordDialog,
+                onPressed: () => context.push(AppRoutes.forgotPassword.path),
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.primary,
                   padding: EdgeInsets.zero,
@@ -577,6 +583,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   Widget _buildSignInButton(AsyncValue<void> loginState) {
     final isLoading = loginState.isLoading || _isSocialLoading;
+    final signInLabel = AppLocalizations.of(context).authSignIn;
 
     if (_isCupertino) {
       return SizedBox(
@@ -585,9 +592,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           onPressed: isLoading ? null : _handleLogin,
           borderRadius: BorderRadius.circular(_isCupertino ? 20.r : 14.r),
           child: isLoading
-              ? const CupertinoActivityIndicator()
+              ? Semantics(
+                  label: 'Signing in, please wait',
+                  liveRegion: true,
+                  child: const CupertinoActivityIndicator(),
+                )
               : Text(
-                  AppLocalizations.of(context).authSignIn,
+                  signInLabel,
                   style: TextStyle(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w600,
@@ -602,13 +613,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       child: ElevatedButton(
         onPressed: isLoading ? null : _handleLogin,
         child: isLoading
-            ? SizedBox(
-                height: 18.h,
-                width: 18.w,
-                child: const CircularProgressIndicator(strokeWidth: 2.5),
+            ? Semantics(
+                label: 'Signing in, please wait',
+                liveRegion: true,
+                child: SizedBox(
+                  height: 18.h,
+                  width: 18.w,
+                  child: const CircularProgressIndicator(strokeWidth: 2.5),
+                ),
               )
             : Text(
-                AppLocalizations.of(context).authSignIn,
+                signInLabel,
                 style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600),
               ),
       ),
@@ -626,36 +641,44 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       children: [
         Column(
           children: [
-            // Compliant Google Sign-In Button
             _buildGoogleButton().animate().fadeIn(
               duration: 300.ms,
               delay: 250.ms,
             ),
-
             SizedBox(height: 12.h),
-
-            // Compliant Apple Sign-In Button
             SignInWithAppleButton(
               onPressed: _handleAppleSignIn,
               text: AppLocalizations.of(context).continueWithApple,
-              height: 44.h, // Matches your original height standard
+              height: 44.h,
               borderRadius: BorderRadius.circular(14.r),
-              style: SignInWithAppleButtonStyle
-                  .black, // Use .white or .whiteOutlined for light themes
+              style: SignInWithAppleButtonStyle.black,
             ).animate().fadeIn(duration: 300.ms, delay: 300.ms),
           ],
         ),
         if (_isSocialLoading)
           Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.7),
-                borderRadius: BorderRadius.circular(14.r),
-              ),
-              child: Center(
-                child: _isCupertino
-                    ? const CupertinoActivityIndicator(radius: 14)
-                    : const CircularProgressIndicator(color: AppColors.primary),
+            child: Semantics(
+              // liveRegion announces this as soon as it appears without the
+              // user needing to navigate to it.
+              label: 'Signing in, please wait',
+              liveRegion: true,
+              // The overlay itself is not interactive. excludeSemantics here
+              // only applies to the overlay container's own node — the buttons
+              // beneath it in the Stack are not children of this widget so
+              // they are unaffected and remain fully accessible.
+              excludeSemantics: true,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.7),
+                  borderRadius: BorderRadius.circular(14.r),
+                ),
+                child: Center(
+                  child: _isCupertino
+                      ? const CupertinoActivityIndicator(radius: 14)
+                      : const CircularProgressIndicator(
+                          color: AppColors.primary,
+                        ),
+                ),
               ),
             ),
           ),
@@ -663,83 +686,92 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
   }
 
-  // Google's strict branding requires the official 'G', specific padding, and Roboto font (or system default)
   Widget _buildGoogleButton() {
-    // 1. Determine platform-specific dimensions based on the provided spec image
     final double buttonHeight = _isCupertino ? 44.h : 40.h;
     final double iconGap = _isCupertino ? 12.w : 10.w;
+    final label = AppLocalizations.of(context).continueWithGoogle;
 
-    return Semantics(
-      button: true,
-      label: AppLocalizations.of(context).continueWithGoogle,
-      child: SizedBox(
-        height: buttonHeight,
-        width: double.infinity,
-        child: OutlinedButton(
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            _handleGoogleSignIn();
-          },
-          style: OutlinedButton.styleFrom(
-            backgroundColor: Colors.white, // Fill: #FFFFFF
-            padding: EdgeInsets.zero,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14.r),
-            ),
-            // Stroke: #747775 | 1px | inside
-            side: const BorderSide(color: Color(0xFF747775), width: 1.0),
+    // OutlinedButton is already announced as a button by the framework.
+    // The only fix needed is to silence the decorative SVG icon so it is
+    // not read alongside the button label. The Text inside will naturally
+    // form the button's accessible name — no extra Semantics wrapper needed.
+    return SizedBox(
+      height: buttonHeight,
+      width: double.infinity,
+      child: OutlinedButton(
+        onPressed: () {
+          HapticFeedback.lightImpact();
+          _handleGoogleSignIn();
+        },
+        style: OutlinedButton.styleFrom(
+          backgroundColor: Colors.white,
+          padding: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14.r),
           ),
-          // Center the entire block (Icon + Gap + Text) for full-width buttons
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Icon is strictly 20x20 on both platforms
-              SvgPicture.asset(
+          side: const BorderSide(color: Color(0xFF747775), width: 1.0),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ExcludeSemantics(
+              // Decorative SVG logo — excluded so SR reads only the button
+              // label text and not a raw asset path or "image".
+              child: SvgPicture.asset(
                 'assets/icons/google_g_logo.svg',
                 height: 20.sp,
                 width: 20.sp,
               ),
-
-              // Platform-specific spacing between icon and text (10 Android, 12 iOS)
-              SizedBox(width: iconGap),
-
-              Text(
-                AppLocalizations.of(context).continueWithGoogle,
-                style: TextStyle(
-                  // Font: #1F1F1F | Roboto Medium | 14/20
-                  fontFamily: 'Roboto', // Google strongly prefers Roboto here
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w500,
-                  color: const Color(0xFF1F1F1F),
-                  height:
-                      20 / 14, // Calculates line-height of 20 for font-size 14
-                  letterSpacing: 0.2,
-                ),
+            ),
+            SizedBox(width: iconGap),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Roboto',
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF1F1F1F),
+                height: 20 / 14,
+                letterSpacing: 0.2,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildSignUpLink() {
+    final l10n = AppLocalizations.of(context);
+
+    // ROOT CAUSE OF THE DOUBLE-READ BUG:
+    // Original code: Semantics(label: 'Sign up') wrapping a GestureDetector
+    // that contained Text('Sign up'). The SR tree had two nodes both
+    // contributing "Sign up" → announced twice.
+    //
+    // CORRECT FIX:
+    // • Remove the redundant label from the Semantics wrapper.
+    // • Keep Semantics(button: true) so SR knows the Text is activatable.
+    // • The Text widget is the single source of the label — no duplication.
+    // • GestureDetector's tap handler remains fully reachable.
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          AppLocalizations.of(context).donTHaveAnAccount,
+          l10n.donTHaveAnAccount,
           style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
         ),
         Semantics(
+          // button: true tells SR this is activatable.
+          // No `label` here — the child Text('Sign up') provides it,
+          // which is the single source of truth. This eliminates the duplicate.
           button: true,
-          label: AppLocalizations.of(context).authSignUp,
           child: GestureDetector(
             onTap: () => context.push(AppRoutes.signupWizard.path),
             child: Padding(
               padding: EdgeInsets.all(8.w),
               child: Text(
-                AppLocalizations.of(context).authSignUp,
+                l10n.authSignUp,
                 style: TextStyle(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w700,
@@ -753,7 +785,44 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     ).animate().fadeIn(duration: 400.ms, delay: 550.ms);
   }
 
+  Widget _buildAlternateAuthLinks() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        TextButton(
+          onPressed: () => context.push(AppRoutes.phoneOtp.path),
+          child: Text(
+            'Use phone OTP',
+            style: TextStyle(
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primary,
+            ),
+          ),
+        ),
+        Text(
+          '•',
+          style: TextStyle(fontSize: 13.sp, color: AppColors.textTertiary),
+        ),
+        TextButton(
+          onPressed: () => context.push(AppRoutes.onboarding.path),
+          child: Text(
+            'View onboarding',
+            style: TextStyle(
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primary,
+            ),
+          ),
+        ),
+      ],
+    ).animate().fadeIn(duration: 400.ms, delay: 575.ms);
+  }
+
   Widget _buildLegalFooter() {
+    // TextSpan tappable links require `semanticsLabel` to be announced as
+    // interactive by both TalkBack and VoiceOver. Without it the spans are
+    // read as plain text with no affordance that they are tappable.
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 24.w),
       child: Text.rich(
@@ -763,28 +832,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             const TextSpan(text: 'By continuing, you agree to our '),
             TextSpan(
               text: 'Terms of Service',
+              semanticsLabel: 'Terms of Service, link',
               style: TextStyle(
                 color: AppColors.primary,
                 fontWeight: FontWeight.w600,
                 decoration: TextDecoration.underline,
               ),
               recognizer: TapGestureRecognizer()
-                ..onTap = () {
-                  context.push(AppRoutes.terms.path);
-                },
+                ..onTap = () => context.push(AppRoutes.terms.path),
             ),
             const TextSpan(text: ' and '),
             TextSpan(
               text: 'Privacy Policy',
+              semanticsLabel: 'Privacy Policy, link',
               style: TextStyle(
                 color: AppColors.primary,
                 fontWeight: FontWeight.w600,
                 decoration: TextDecoration.underline,
               ),
               recognizer: TapGestureRecognizer()
-                ..onTap = () {
-                  context.push(AppRoutes.privacy.path);
-                },
+                ..onTap = () => context.push(AppRoutes.privacy.path),
             ),
           ],
         ),
@@ -829,182 +896,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       return l10n.accountExistsError;
     }
     return l10n.signInFailedPleaseTry;
-  }
-
-  void _showForgotPasswordDialog() {
-    final resetEmailController = TextEditingController();
-
-    if (_isCupertino) {
-      final cancelLabel = MaterialLocalizations.of(context).cancelButtonLabel;
-      final resetSentMessage = AppLocalizations.of(
-        context,
-      ).passwordResetEmailSentCheck;
-      showCupertinoDialog<void>(
-        context: context,
-        builder: (dialogContext) => CupertinoAlertDialog(
-          title: Text(AppLocalizations.of(context).authResetPassword),
-          content: Padding(
-            padding: EdgeInsets.only(top: 12.h),
-            child: CupertinoTextField(
-              controller: resetEmailController,
-              keyboardType: TextInputType.emailAddress,
-              placeholder: AppLocalizations.of(context).enterYourEmail,
-            ),
-          ),
-          actions: [
-            CupertinoDialogAction(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(cancelLabel),
-            ),
-            CupertinoDialogAction(
-              isDefaultAction: true,
-              onPressed: () async {
-                final email = resetEmailController.text.trim();
-                if (email.isEmpty) return;
-                try {
-                  await ref
-                      .read(authActionsViewModelProvider)
-                      .sendPasswordResetEmail(email);
-                  if (!context.mounted) return;
-                  Navigator.of(dialogContext).pop();
-                  await _showAdaptiveMessage(resetSentMessage);
-                } catch (_) {
-                  if (!context.mounted) return;
-                  await _showAdaptiveMessage(
-                    'Could not send reset email. Please try again.',
-                    isError: true,
-                  );
-                }
-              },
-              child: const Text('Send'),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(24.r),
-              topRight: Radius.circular(24.r),
-            ),
-          ),
-          padding: EdgeInsets.all(24.w),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Handle
-              Center(
-                child: Container(
-                  width: 40.w,
-                  height: 4.h,
-                  decoration: BoxDecoration(
-                    color: AppColors.border,
-                    borderRadius: BorderRadius.circular(2.r),
-                  ),
-                ),
-              ),
-              SizedBox(height: 24.h),
-
-              // Icon
-              Container(
-                padding: EdgeInsets.all(14.w),
-                decoration: BoxDecoration(
-                  color: AppColors.primarySurface,
-                  borderRadius: BorderRadius.circular(14.r),
-                ),
-                child: Icon(
-                  Icons.lock_reset_rounded,
-                  size: 28.sp,
-                  color: AppColors.primary,
-                ),
-              ),
-
-              SizedBox(height: 20.h),
-
-              Text(
-                AppLocalizations.of(context).authResetPassword,
-                style: TextStyle(
-                  fontSize: 22.sp,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-
-              SizedBox(height: 8.h),
-
-              Text(
-                AppLocalizations.of(context).enterYourEmailAddressAnd,
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  color: AppColors.textSecondary,
-                  height: 1.5,
-                ),
-              ),
-
-              SizedBox(height: 24.h),
-
-              TextField(
-                controller: resetEmailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context).email,
-                  hintText: AppLocalizations.of(context).enterYourEmail,
-                  prefixIcon: const Icon(Icons.email_outlined),
-                ),
-              ),
-
-              SizedBox(height: 24.h),
-
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    final email = resetEmailController.text.trim();
-                    if (email.isEmpty) return;
-                    try {
-                      await ref
-                          .read(authActionsViewModelProvider)
-                          .sendPasswordResetEmail(email);
-                      if (context.mounted) {
-                        context.pop();
-                        await _showAdaptiveMessage(
-                          AppLocalizations.of(
-                            context,
-                          ).passwordResetEmailSentCheck,
-                        );
-                      }
-                    } catch (_) {
-                      if (context.mounted) {
-                        await _showAdaptiveMessage(
-                          'Could not send reset email. Please try again.',
-                          isError: true,
-                        );
-                      }
-                    }
-                  },
-                  child: const Text('Send Reset Link'),
-                ),
-              ),
-
-              SizedBox(height: 16.h),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   Future<void> _showAdaptiveMessage(

@@ -122,6 +122,58 @@ final class StorageInstanceProvider
 
 String _$storageInstanceHash() => r'a3f65dcd998c34f5f0b3b3068eba7ce2aa4c7555';
 
+/// Auth instance provider
+///
+/// Provides the single source of truth for Firebase Auth instance.
+
+@ProviderFor(authInstance)
+final authInstanceProvider = AuthInstanceProvider._();
+
+/// Auth instance provider
+///
+/// Provides the single source of truth for Firebase Auth instance.
+
+final class AuthInstanceProvider
+    extends $FunctionalProvider<FirebaseAuth, FirebaseAuth, FirebaseAuth>
+    with $Provider<FirebaseAuth> {
+  /// Auth instance provider
+  ///
+  /// Provides the single source of truth for Firebase Auth instance.
+  AuthInstanceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'authInstanceProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$authInstanceHash();
+
+  @$internal
+  @override
+  $ProviderElement<FirebaseAuth> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  FirebaseAuth create(Ref ref) {
+    return authInstance(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(FirebaseAuth value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<FirebaseAuth>(value),
+    );
+  }
+}
+
+String _$authInstanceHash() => r'09c828f78a501498e71df97e7ac68fb749bffb5f';
+
 /// Auth repository provider (interface-based)
 ///
 /// Returns IAuthRepository interface for dependency inversion.
@@ -203,7 +255,7 @@ final class AuthRepositoryProvider
   }
 }
 
-String _$authRepositoryHash() => r'd46f69c6c8b1b1a866beb6286d356d5305473d89';
+String _$authRepositoryHash() => r'124e3e585454aec1a08bf857e5666522048a3829';
 
 /// User repository provider (interface-based)
 ///
@@ -372,3 +424,64 @@ final class ChatRepositoryProvider
 }
 
 String _$chatRepositoryHash() => r'cc36250530acb581ddf98a0d38ab058dbea4d9ce';
+
+/// Review repository provider (interface-based)
+///
+/// Returns IReviewRepository interface for review operations.
+/// Injects Firestore dependency from provider.
+
+@ProviderFor(reviewRepository)
+final reviewRepositoryProvider = ReviewRepositoryProvider._();
+
+/// Review repository provider (interface-based)
+///
+/// Returns IReviewRepository interface for review operations.
+/// Injects Firestore dependency from provider.
+
+final class ReviewRepositoryProvider
+    extends
+        $FunctionalProvider<
+          IReviewRepository,
+          IReviewRepository,
+          IReviewRepository
+        >
+    with $Provider<IReviewRepository> {
+  /// Review repository provider (interface-based)
+  ///
+  /// Returns IReviewRepository interface for review operations.
+  /// Injects Firestore dependency from provider.
+  ReviewRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'reviewRepositoryProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$reviewRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<IReviewRepository> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  IReviewRepository create(Ref ref) {
+    return reviewRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(IReviewRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<IReviewRepository>(value),
+    );
+  }
+}
+
+String _$reviewRepositoryHash() => r'388239ad794f234ce79eb179d4b242638c265df0';

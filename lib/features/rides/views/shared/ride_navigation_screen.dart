@@ -112,7 +112,7 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
           .doc(widget.rideId)
           .update({
             'liveLocation': GeoPoint(position.latitude, position.longitude),
-            'lastLocationUpdate': FieldValue.serverTimestamp(),
+            'lastLocationUpdate': DateTime.now(),
           });
     } catch (_) {
       // Silent fail for location updates

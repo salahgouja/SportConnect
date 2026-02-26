@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
@@ -52,27 +54,35 @@ class _EmailVerificationScreenState
   }
 
   Future<void> _checkEmailVerified() async {
-    final authActions = ref.read(authActionsViewModelProvider);
-    final user = authActions.currentUser;
-    if (user == null) return;
+    if (!mounted) return; // ← guard before anything
 
-    await authActions.reloadUser();
-    final verified = await authActions.isEmailVerified();
+    try {
+      final authActions = ref.read(authActionsViewModelProvider);
+      final user = authActions.currentUser;
+      if (user == null) return;
 
-    if (verified && mounted) {
-      setState(() => _isEmailVerified = true);
-      _verificationTimer?.cancel();
+      await authActions.reloadUser();
 
-      // Wait briefly for the success animation, then let the route guard
-      // redirect to the correct dashboard (rider home vs driver home).
-      // The router's refreshListenable triggers automatically when the
-      // auth state changes from the reload above.
-      await Future.delayed(const Duration(seconds: 2));
+      if (!mounted) return; // ← guard after every await
 
+      final verified = await authActions.isEmailVerified();
+
+      if (!mounted) return; // ← guard again
+
+      if (verified) {
+        setState(() => _isEmailVerified = true);
+        _verificationTimer?.cancel();
+
+        await Future.delayed(const Duration(seconds: 2));
+
+        if (!mounted) return;
+        ref.invalidate(authStateProvider);
+
+        context.go(AppRoutes.login.path);
+      }
+    } catch (e) {
+      // Provider was disposed mid-poll — safe to ignore
       if (!mounted) return;
-      // Force the auth state provider to re-evaluate so the router redirect
-      // picks up the updated emailVerified flag.
-      ref.invalidate(authStateProvider);
     }
   }
 
@@ -184,6 +194,22 @@ class _EmailVerificationScreenState
                     icon: Icons.check_circle_outline_rounded,
                   ),
                 ).animate().fadeIn(delay: 700.ms),
+
+                SizedBox(height: 12.h),
+
+                TextButton(
+                  onPressed: () async {
+                    await ref.read(authActionsViewModelProvider).signOut();
+                  },
+                  child: Text(
+                    'Use a different account',
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ).animate().fadeIn(delay: 750.ms),
               ],
 
               SizedBox(height: 32.h),

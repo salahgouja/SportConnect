@@ -63,7 +63,7 @@ class EventRepository implements IEventRepository {
   Future<void> updateEvent(EventModel event) async {
     await _eventsCollection.doc(event.id).update({
       ...event.toJson(),
-      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedAt': DateTime.now(),
     });
   }
 
@@ -76,7 +76,7 @@ class EventRepository implements IEventRepository {
   Future<void> cancelEvent(String eventId) async {
     await _eventsCollection.doc(eventId).update({
       'isActive': false,
-      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedAt': DateTime.now(),
     });
   }
 
@@ -104,7 +104,7 @@ class EventRepository implements IEventRepository {
 
       tx.update(docRef, {
         'participantIds': FieldValue.arrayUnion([userId]),
-        'updatedAt': FieldValue.serverTimestamp(),
+        'updatedAt': DateTime.now(),
       });
     });
   }
@@ -113,7 +113,7 @@ class EventRepository implements IEventRepository {
   Future<void> leaveEvent(String eventId, String userId) async {
     await _eventsCollection.doc(eventId).update({
       'participantIds': FieldValue.arrayRemove([userId]),
-      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedAt': DateTime.now(),
     });
   }
 

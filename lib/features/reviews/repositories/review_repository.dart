@@ -1,8 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_review_repository.dart';
-import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/core/models/models.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/features/reviews/models/review_model.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:uuid/uuid.dart';
 
 /// Firestore Collection Structure for Reviews:
@@ -38,11 +41,6 @@ import 'package:uuid/uuid.dart';
 /// 3. Ride association: Link reviews to specific rides
 /// 4. Response feature: Reviewees can respond to reviews
 /// 5. Tag aggregation: Can compute tag statistics
-
-final reviewRepositoryProvider = Provider<ReviewRepository>((ref) {
-  final firestore = FirebaseFirestore.instance;
-  return ReviewRepository(firestore, ref);
-});
 
 /// Provider to get reviews for a specific user
 final userReviewsProvider = FutureProvider.family<List<ReviewModel>, String>((
@@ -89,18 +87,41 @@ final userReviewsStreamProvider =
 
 class ReviewRepository implements IReviewRepository {
   final FirebaseFirestore _firestore;
-  final Ref _ref;
   final _uuid = const Uuid();
 
-  ReviewRepository(this._firestore, this._ref);
+  ReviewRepository(this._firestore);
 
-  CollectionReference<Map<String, dynamic>> get _reviewsCollection =>
-      _firestore.collection('reviews');
+  CollectionReference<ReviewModel> get _reviewsCollection => _firestore
+      .collection(AppConstants.reviewsCollection)
+      .withConverter<ReviewModel>(
+        fromFirestore: (snap, _) => ReviewModel.fromJson(snap.data()!),
+        toFirestore: (review, _) => review.toJson(),
+      );
+
+  CollectionReference<UserModel> get _usersCollection => _firestore
+      .collection(AppConstants.usersCollection)
+      .withConverter<UserModel>(
+        fromFirestore: (snap, _) => UserModel.fromJson(snap.data()!),
+        toFirestore: (user, _) => user.toJson(),
+      );
+
+  CollectionReference<RideModel> get _ridesCollection => _firestore
+      .collection(AppConstants.ridesCollection)
+      .withConverter<RideModel>(
+        fromFirestore: (snap, _) => RideModel.fromJson(snap.data()!),
+        toFirestore: (ride, _) => ride.toJson(),
+      );
 
   /// Create a new review
   @override
-  Future<ReviewModel> createReview(CreateReviewRequest request) async {
-    final currentUser = _ref.read(currentUserProvider).value;
+  Future<ReviewModel> createReview(
+    String? userId,
+    CreateReviewRequest request,
+  ) async {
+    UserModel? currentUser = await _usersCollection
+        .doc(userId)
+        .get()
+        .then((doc) => doc.data());
     if (currentUser == null) {
       throw Exception('User not authenticated');
     }
@@ -136,7 +157,7 @@ class ReviewRepository implements IReviewRepository {
       createdAt: now,
     );
 
-    await _reviewsCollection.doc(reviewId).set(review.toJson());
+    await _reviewsCollection.doc(reviewId).set(review);
 
     // Update the user's aggregated rating stats
     await _updateUserRatingStats(request.revieweeId);
@@ -151,7 +172,7 @@ class ReviewRepository implements IReviewRepository {
     ReviewType? type,
     int limit = 50,
   }) async {
-    Query<Map<String, dynamic>> query = _reviewsCollection
+    Query<ReviewModel> query = _reviewsCollection
         .where('revieweeId', isEqualTo: userId)
         .where('isVisible', isEqualTo: true)
         .orderBy('createdAt', descending: true)
@@ -162,9 +183,7 @@ class ReviewRepository implements IReviewRepository {
     }
 
     final snapshot = await query.get();
-    return snapshot.docs
-        .map((doc) => ReviewModel.fromJson(doc.data()))
-        .toList();
+    return snapshot.docs.map((doc) => doc.data()).toList();
   }
 
   /// Get all reviews left by a user
@@ -179,9 +198,7 @@ class ReviewRepository implements IReviewRepository {
         .limit(limit)
         .get();
 
-    return snapshot.docs
-        .map((doc) => ReviewModel.fromJson(doc.data()))
-        .toList();
+    return snapshot.docs.map((doc) => doc.data()).toList();
   }
 
   /// Get reviews for a specific ride
@@ -192,9 +209,7 @@ class ReviewRepository implements IReviewRepository {
         .orderBy('createdAt', descending: true)
         .get();
 
-    return snapshot.docs
-        .map((doc) => ReviewModel.fromJson(doc.data()))
-        .toList();
+    return snapshot.docs.map((doc) => doc.data()).toList();
   }
 
   /// Watch reviews for a user (real-time updates)
@@ -206,11 +221,7 @@ class ReviewRepository implements IReviewRepository {
         .orderBy('createdAt', descending: true)
         .limit(50)
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => ReviewModel.fromJson(doc.data()))
-              .toList(),
-        );
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 
   /// Get rating stats for a user
@@ -222,8 +233,15 @@ class ReviewRepository implements IReviewRepository {
 
   /// Add response to a review (by the reviewee)
   @override
-  Future<void> respondToReview(String reviewId, String response) async {
-    final currentUser = _ref.read(currentUserProvider).value;
+  Future<void> respondToReview(
+    String userId,
+    String reviewId,
+    String response,
+  ) async {
+    UserModel? currentUser = await _usersCollection
+        .doc(userId)
+        .get()
+        .then((doc) => doc.data());
     if (currentUser == null) {
       throw Exception('User not authenticated');
     }
@@ -234,22 +252,25 @@ class ReviewRepository implements IReviewRepository {
       throw Exception('Review not found');
     }
 
-    final review = ReviewModel.fromJson(reviewDoc.data()!);
+    final review = reviewDoc.data()!;
     if (review.revieweeId != currentUser.uid) {
       throw Exception('Only the reviewee can respond to this review');
     }
 
     await _reviewsCollection.doc(reviewId).update({
       'response': response,
-      'responseAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
+      'responseAt': DateTime.now(),
+      'updatedAt': DateTime.now(),
     });
   }
 
   /// Delete a review (by reviewer or admin)
   @override
-  Future<void> deleteReview(String reviewId) async {
-    final currentUser = _ref.read(currentUserProvider).value;
+  Future<void> deleteReview(String userId, String reviewId) async {
+    UserModel? currentUser = await _usersCollection
+        .doc(userId)
+        .get()
+        .then((doc) => doc.data());
     if (currentUser == null) {
       throw Exception('User not authenticated');
     }
@@ -259,7 +280,7 @@ class ReviewRepository implements IReviewRepository {
       throw Exception('Review not found');
     }
 
-    final review = ReviewModel.fromJson(reviewDoc.data()!);
+    final review = reviewDoc.data()!;
     if (review.reviewerId != currentUser.uid) {
       throw Exception('Only the reviewer can delete this review');
     }
@@ -267,7 +288,7 @@ class ReviewRepository implements IReviewRepository {
     // Soft delete - just hide the review
     await _reviewsCollection.doc(reviewId).update({
       'isVisible': false,
-      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedAt': DateTime.now(),
     });
 
     // Update the user's aggregated rating stats
@@ -280,7 +301,7 @@ class ReviewRepository implements IReviewRepository {
     final stats = RatingStats.fromReviews(reviews);
 
     // Update the user document with new stats
-    await _firestore.collection('users').doc(userId).update({
+    await _usersCollection.doc(userId).update({
       'rating': {
         'total': stats.totalReviews,
         'average': stats.averageRating,
@@ -295,11 +316,15 @@ class ReviewRepository implements IReviewRepository {
 
   /// Check if user can review another user for a specific ride
   @override
-  Future<bool> canReview({
+  Future<bool> canReview(
+    String userId, {
     required String rideId,
     required String revieweeId,
   }) async {
-    final currentUser = _ref.read(currentUserProvider).value;
+    UserModel? currentUser = await _usersCollection
+        .doc(userId)
+        .get()
+        .then((doc) => doc.data());
     if (currentUser == null) return false;
 
     // Check if already reviewed
@@ -314,13 +339,15 @@ class ReviewRepository implements IReviewRepository {
 
   /// Get pending reviews (rides that user participated in but hasn't reviewed)
   @override
-  Future<List<Map<String, dynamic>>> getPendingReviews() async {
-    final currentUser = _ref.read(currentUserProvider).value;
+  Future<List<Map<String, dynamic>>> getPendingReviews(String userId) async {
+    UserModel? currentUser = await _usersCollection
+        .doc(userId)
+        .get()
+        .then((doc) => doc.data());
     if (currentUser == null) return [];
 
     // Get completed rides where user was a participant
-    final completedRides = await _firestore
-        .collection('rides')
+    final completedRides = await _ridesCollection
         .where('status', isEqualTo: 'completed')
         .where('participantIds', arrayContains: currentUser.uid)
         .orderBy('updatedAt', descending: true)
@@ -332,49 +359,59 @@ class ReviewRepository implements IReviewRepository {
     for (final rideDoc in completedRides.docs) {
       final rideData = rideDoc.data();
       final rideId = rideDoc.id;
-      final driverId = rideData['driverId'] as String;
+      final driverId = rideData.driverId;
 
       // Check if user is the driver or a passenger
       final isDriver = driverId == currentUser.uid;
 
       if (isDriver) {
         // Driver can review passengers
-        final bookings = (rideData['bookings'] as List<dynamic>?) ?? [];
+        final bookings = rideData.bookings;
         for (final booking in bookings) {
-          final passengerId = booking['passengerId'] as String;
+          final passengerId = booking.passengerId;
           final canReviewPassenger = await canReview(
+            userId,
             rideId: rideId,
             revieweeId: passengerId,
           );
+          final UserModel? passenger = await _usersCollection
+              .doc(passengerId)
+              .get()
+              .then((doc) => doc.data());
           if (canReviewPassenger) {
             pending.add({
               'rideId': rideId,
               'revieweeId': passengerId,
-              'revieweeName': booking['passengerName'] ?? 'Passenger',
-              'revieweePhotoUrl': booking['passengerPhotoUrl'],
+              'revieweeName': passenger?.displayName ?? 'Passenger',
+              'revieweePhotoUrl': passenger?.photoUrl ?? '',
               'type': ReviewType.rider,
-              'rideDate': rideData['departureTime'],
-              'origin': rideData['origin'],
-              'destination': rideData['destination'],
+              'rideDate': rideData.departureTime,
+              'origin': rideData.origin,
+              'destination': rideData.destination,
             });
           }
         }
       } else {
         // Passenger can review driver
         final canReviewDriver = await canReview(
+          userId,
           rideId: rideId,
           revieweeId: driverId,
         );
+        final UserModel? driver = await _usersCollection
+            .doc(driverId)
+            .get()
+            .then((doc) => doc.data());
         if (canReviewDriver) {
           pending.add({
             'rideId': rideId,
             'revieweeId': driverId,
-            'revieweeName': rideData['driverName'] ?? 'Driver',
-            'revieweePhotoUrl': rideData['driverPhotoUrl'],
+            'revieweeName': driver?.displayName ?? 'Driver',
+            'revieweePhotoUrl': driver?.photoUrl ?? '',
             'type': ReviewType.driver,
-            'rideDate': rideData['departureTime'],
-            'origin': rideData['origin'],
-            'destination': rideData['destination'],
+            'rideDate': rideData.departureTime,
+            'origin': rideData.origin,
+            'destination': rideData.destination,
           });
         }
       }

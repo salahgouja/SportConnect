@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/glass_panel.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
@@ -59,7 +60,9 @@ class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
   Future<void> _verifyCode() async {
     final code = _codeController.text.trim();
     if (code.length != 6) return;
-    await ref.read(phoneAuthViewModelProvider.notifier).verifyCode(code);
+    await ref
+        .read(phoneAuthViewModelProvider.notifier)
+        .verifyCode(code, phoneNumber: _phoneController.text.trim());
   }
 
   Future<void> _resendCode() async {
@@ -416,7 +419,7 @@ class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
           width: double.infinity,
           child: PremiumButton(
             text: l10n.otpContinue,
-            onPressed: () => context.pop(),
+            onPressed: () => context.go(AppRoutes.splash.path),
             icon: Icons.arrow_forward_rounded,
           ),
         ).animate().fadeIn(delay: 400.ms),

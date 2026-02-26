@@ -168,30 +168,50 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
               padding: EdgeInsets.symmetric(horizontal: 24.w),
               child: Column(
                 children: [
-                  SizedBox(
-                    width: double.infinity,
-                    child: PremiumButton(
-                      text: 'Rate & Review',
-                      onPressed: () async {
-                        HapticFeedback.mediumImpact();
+                  // Show different rating CTA depending on the user's role
+                  Builder(
+                    builder: (ctx) {
+                      final uid = ref.read(currentUserProvider).value?.uid;
+                      final isDriver = uid == ride.driverId;
 
-                        // Fetch driver profile to get name for review screen
-                        final driverProfile = await ref.read(
-                          userProfileProvider(ride.driverId).future,
-                        );
+                      return SizedBox(
+                        width: double.infinity,
+                        child: isDriver
+                            ? PremiumButton(
+                                text: 'Rate Passenger',
+                                onPressed: () {
+                                  HapticFeedback.mediumImpact();
+                                  context.push(
+                                    AppRoutes.driverRatePassenger.path
+                                        .replaceFirst(':rideId', widget.rideId),
+                                  );
+                                },
+                                icon: Icons.star_rounded,
+                              )
+                            : PremiumButton(
+                                text: 'Rate & Review',
+                                onPressed: () async {
+                                  HapticFeedback.mediumImpact();
 
-                        if (!context.mounted) return;
+                                  // Fetch driver profile to get name for review screen
+                                  final driverProfile = await ref.read(
+                                    userProfileProvider(ride.driverId).future,
+                                  );
 
-                        context.push(
-                          '${AppRoutes.submitReview.path}'
-                          '?rideId=${widget.rideId}'
-                          '&revieweeId=${ride.driverId}'
-                          '&revieweeName=${Uri.encodeComponent(driverProfile?.displayName ?? 'Driver')}'
-                          '&type=driver',
-                        );
-                      },
-                      icon: Icons.star_rounded,
-                    ),
+                                  if (!ctx.mounted) return;
+
+                                  ctx.push(
+                                    '${AppRoutes.submitReview.path}'
+                                    '?rideId=${widget.rideId}'
+                                    '&revieweeId=${ride.driverId}'
+                                    '&revieweeName=${Uri.encodeComponent(driverProfile?.displayName ?? 'Driver')}'
+                                    '&type=driver',
+                                  );
+                                },
+                                icon: Icons.star_rounded,
+                              ),
+                      );
+                    },
                   ).animate().fadeIn(delay: 550.ms),
 
                   SizedBox(height: 12.h),

@@ -461,44 +461,6 @@ class MockIUserRepository extends _i1.Mock implements _i11.IUserRepository {
           as _i8.Future<void>);
 
   @override
-  _i8.Future<void> followUser(String? followerId, String? followedId) =>
-      (super.noSuchMethod(
-            Invocation.method(#followUser, [followerId, followedId]),
-            returnValue: _i8.Future<void>.value(),
-            returnValueForMissingStub: _i8.Future<void>.value(),
-          )
-          as _i8.Future<void>);
-
-  @override
-  _i8.Future<void> unfollowUser(String? followerId, String? followedId) =>
-      (super.noSuchMethod(
-            Invocation.method(#unfollowUser, [followerId, followedId]),
-            returnValue: _i8.Future<void>.value(),
-            returnValueForMissingStub: _i8.Future<void>.value(),
-          )
-          as _i8.Future<void>);
-
-  @override
-  _i8.Future<List<_i2.UserModel>> getFollowers(String? userId) =>
-      (super.noSuchMethod(
-            Invocation.method(#getFollowers, [userId]),
-            returnValue: _i8.Future<List<_i2.UserModel>>.value(
-              <_i2.UserModel>[],
-            ),
-          )
-          as _i8.Future<List<_i2.UserModel>>);
-
-  @override
-  _i8.Future<List<_i2.UserModel>> getFollowing(String? userId) =>
-      (super.noSuchMethod(
-            Invocation.method(#getFollowing, [userId]),
-            returnValue: _i8.Future<List<_i2.UserModel>>.value(
-              <_i2.UserModel>[],
-            ),
-          )
-          as _i8.Future<List<_i2.UserModel>>);
-
-  @override
   _i8.Future<void> updateOnlineStatus(String? userId, bool? isOnline) =>
       (super.noSuchMethod(
             Invocation.method(#updateOnlineStatus, [userId, isOnline]),

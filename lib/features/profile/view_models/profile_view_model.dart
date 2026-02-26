@@ -247,24 +247,6 @@ class SocialActionsViewModel extends _$SocialActionsViewModel {
     }
   }
 
-  Future<void> toggleFollow() async {
-    state = state.copyWith(isLoading: true);
-
-    try {
-      final repository = ref.read(profileRepositoryProvider);
-
-      if (state.isFollowing) {
-        await repository.unfollowUser(currentUserId, targetUserId);
-      } else {
-        await repository.followUser(currentUserId, targetUserId);
-      }
-
-      state = state.copyWith(isFollowing: !state.isFollowing, isLoading: false);
-    } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
-    }
-  }
-
   Future<void> toggleBlock() async {
     state = state.copyWith(isLoading: true);
 
@@ -393,18 +375,4 @@ Future<List<LeaderboardEntry>> leaderboard(Ref ref) async {
 Future<int> userRank(Ref ref, String uid) async {
   final repository = ref.read(profileRepositoryProvider);
   return repository.getUserRank(uid);
-}
-
-/// Followers List Provider
-@riverpod
-Future<List<UserModel>> followers(Ref ref, String uid) async {
-  final repository = ref.read(profileRepositoryProvider);
-  return repository.getFollowers(uid);
-}
-
-/// Following List Provider
-@riverpod
-Future<List<UserModel>> following(Ref ref, String uid) async {
-  final repository = ref.read(profileRepositoryProvider);
-  return repository.getFollowing(uid);
 }

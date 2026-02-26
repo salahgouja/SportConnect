@@ -27,16 +27,17 @@ import 'package:sport_connect/core/theme/platform_adaptive.dart';
 import 'package:sport_connect/features/rides/views/widgets/ride_shared_widgets.dart';
 
 /// Active Ride Navigation Screen - Shows map and ride details for drivers during active rides
-class ActiveRideScreen extends ConsumerStatefulWidget {
+class DriverActiveRideScreen extends ConsumerStatefulWidget {
   final String? rideId;
 
-  const ActiveRideScreen({super.key, this.rideId});
+  const DriverActiveRideScreen({super.key, this.rideId});
 
   @override
-  ConsumerState<ActiveRideScreen> createState() => _ActiveRideScreenState();
+  ConsumerState<DriverActiveRideScreen> createState() =>
+      _DriverActiveRideScreenState();
 }
 
-class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
+class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
     with TickerProviderStateMixin {
   final MapController _mapController = MapController();
   late AnimationController _pulseController;

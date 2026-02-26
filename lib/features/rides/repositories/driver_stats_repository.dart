@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_driver_stats_repository.dart';
+import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/driver_stats.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/ride_request_model.dart';
@@ -15,14 +16,46 @@ class DriverStatsRepository implements IDriverStatsRepository {
 
   DriverStatsRepository(this._firestore);
 
-  CollectionReference<Map<String, dynamic>> get _driverStatsCollection =>
-      _firestore.collection('driver_stats');
+  CollectionReference<DriverStats> get _driverStatsCollection => _firestore
+      .collection(AppConstants.driverStatsCollection)
+      .withConverter<DriverStats>(
+        fromFirestore: (snap, _) => DriverStats.fromJson(snap.data()!),
+        toFirestore: (stats, _) => stats.toJson(),
+      );
 
-  CollectionReference<Map<String, dynamic>> get _ridesCollection =>
-      _firestore.collection(AppConstants.ridesCollection);
+  CollectionReference<RideModel> get _ridesCollection => _firestore
+      .collection(AppConstants.ridesCollection)
+      .withConverter<RideModel>(
+        fromFirestore: (snap, _) =>
+            RideModel.fromJson({...snap.data()!, 'id': snap.id}),
+        toFirestore: (ride, _) => ride.toJson(),
+      );
 
-  CollectionReference<Map<String, dynamic>> get _transactionsCollection =>
-      _firestore.collection('transactions');
+  CollectionReference<EarningsTransaction> get _transactionsCollection =>
+      _firestore
+          .collection(AppConstants.transactionsCollection)
+          .withConverter<EarningsTransaction>(
+            fromFirestore: (snap, _) =>
+                EarningsTransaction.fromJson({...snap.data()!, 'id': snap.id}),
+            toFirestore: (tx, _) => tx.toJson(),
+          );
+
+  CollectionReference<RideRequestModel> get _rideRequestsCollection =>
+      _firestore
+          .collection(AppConstants.rideRequestsCollection)
+          .withConverter<RideRequestModel>(
+            fromFirestore: (snap, _) =>
+                RideRequestModel.fromJson({...snap.data()!, 'id': snap.id}),
+            toFirestore: (req, _) => req.toJson(),
+          );
+
+  CollectionReference<RideBooking> get _rideBookingsCollection => _firestore
+      .collection(AppConstants.bookingsCollection)
+      .withConverter<RideBooking>(
+        fromFirestore: (snap, _) =>
+            RideBooking.fromJson({...snap.data()!, 'id': snap.id}),
+        toFirestore: (req, _) => req.toJson(),
+      );
 
   /// Get driver stats
   @override
@@ -31,30 +64,28 @@ class DriverStatsRepository implements IDriverStatsRepository {
     if (!doc.exists) {
       // Create default stats if not exists
       final stats = DriverStats(driverId: driverId);
-      await _driverStatsCollection.doc(driverId).set(stats.toJson());
+      await _driverStatsCollection.doc(driverId).set(stats);
       return stats;
     }
-    return DriverStats.fromJson(doc.data()!);
+    return doc.data()!;
   }
 
   /// Stream driver stats
   @override
   Stream<DriverStats> streamDriverStats(String driverId) {
     return _driverStatsCollection.doc(driverId).snapshots().map((doc) {
-      if (!doc.exists) {
-        return DriverStats(driverId: driverId);
-      }
-      return DriverStats.fromJson(doc.data()!);
+      return doc.data() ?? DriverStats(driverId: driverId);
     });
   }
 
   /// Update driver online status
   @override
   Future<void> setOnlineStatus(String driverId, bool isOnline) async {
-    await _driverStatsCollection.doc(driverId).set({
-      'isOnline': isOnline,
-      'lastStatusChange': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    DriverStats? currentStats = await getDriverStats(driverId);
+    final updatedStats = currentStats.copyWith(isOnline: isOnline);
+    await _driverStatsCollection
+        .doc(driverId)
+        .set(updatedStats, SetOptions(merge: true));
   }
 
   /// Streams pending ride requests for a driver.
@@ -63,49 +94,40 @@ class DriverStatsRepository implements IDriverStatsRepository {
   /// addressed to this driver.
   @override
   Stream<List<RideRequestModel>> streamPendingRequests(String driverId) {
-    return _firestore
-        .collection('rideRequests')
+    return _rideRequestsCollection
         .where('driverId', isEqualTo: driverId)
         .where('status', isEqualTo: RideRequestStatus.pending.name)
         .orderBy('createdAt', descending: true)
         .limit(50)
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs
-              .map((doc) => RideRequestModel.fromJson(doc.data()))
-              .toList();
+          return snapshot.docs.map((doc) => doc.data()).toList();
         });
   }
 
   /// Streams accepted ride requests for a driver.
   Stream<List<RideRequestModel>> streamAcceptedRequests(String driverId) {
-    return _firestore
-        .collection('rideRequests')
+    return _rideRequestsCollection
         .where('driverId', isEqualTo: driverId)
         .where('status', isEqualTo: RideRequestStatus.accepted.name)
         .orderBy('createdAt', descending: true)
         .limit(50)
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs
-              .map((doc) => RideRequestModel.fromJson(doc.data()))
-              .toList();
+          return snapshot.docs.map((doc) => doc.data()).toList();
         });
   }
 
   /// Streams rejected ride requests for a driver.
   Stream<List<RideRequestModel>> streamRejectedRequests(String driverId) {
-    return _firestore
-        .collection('rideRequests')
+    return _rideRequestsCollection
         .where('driverId', isEqualTo: driverId)
         .where('status', isEqualTo: RideRequestStatus.rejected.name)
         .orderBy('createdAt', descending: true)
         .limit(50)
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs
-              .map((doc) => RideRequestModel.fromJson(doc.data()))
-              .toList();
+          return snapshot.docs.map((doc) => doc.data()).toList();
         });
   }
 
@@ -121,9 +143,7 @@ class DriverStatsRepository implements IDriverStatsRepository {
         .limit(10)
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs.map((doc) {
-            return RideModel.fromJson({...doc.data(), 'id': doc.id});
-          }).toList();
+          return snapshot.docs.map((doc) => doc.data()).toList();
         });
   }
 
@@ -136,12 +156,7 @@ class DriverStatsRepository implements IDriverStatsRepository {
         .limit(50)
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs
-              .map(
-                (doc) =>
-                    EarningsTransaction.fromJson({...doc.data(), 'id': doc.id}),
-              )
-              .toList();
+          return snapshot.docs.map((doc) => doc.data()).toList();
         });
   }
 
@@ -151,25 +166,21 @@ class DriverStatsRepository implements IDriverStatsRepository {
   /// increments the ride's booked capacity.
   @override
   Future<void> acceptRequest(String rideId, String bookingId) async {
-    final bookingDoc = await _firestore
-        .collection('bookings')
-        .doc(bookingId)
-        .get();
+    final bookingDoc = await _rideBookingsCollection.doc(bookingId).get();
     if (!bookingDoc.exists) return;
 
-    final seatsBooked =
-        (bookingDoc.data()?['seatsBooked'] as num?)?.toInt() ?? 1;
+    final seatsBooked = bookingDoc.data()?.seatsBooked ?? 1;
 
     // Update booking status
-    await _firestore.collection('bookings').doc(bookingId).update({
+    await _rideBookingsCollection.doc(bookingId).update({
       'status': 'accepted',
-      'respondedAt': FieldValue.serverTimestamp(),
+      'respondedAt': DateTime.now(),
     });
 
     // Update ride capacity
     await _ridesCollection.doc(rideId).update({
       'capacity.booked': FieldValue.increment(seatsBooked),
-      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedAt': DateTime.now(),
     });
   }
 
@@ -178,15 +189,12 @@ class DriverStatsRepository implements IDriverStatsRepository {
   /// Updates the booking document status in the `bookings` collection.
   @override
   Future<void> declineRequest(String rideId, String bookingId) async {
-    final bookingDoc = await _firestore
-        .collection('bookings')
-        .doc(bookingId)
-        .get();
+    final bookingDoc = await _rideBookingsCollection.doc(bookingId).get();
     if (!bookingDoc.exists) return;
 
-    await _firestore.collection('bookings').doc(bookingId).update({
+    await _rideBookingsCollection.doc(bookingId).update({
       'status': 'rejected',
-      'respondedAt': FieldValue.serverTimestamp(),
+      'respondedAt': DateTime.now(),
     });
   }
 
@@ -198,19 +206,22 @@ class DriverStatsRepository implements IDriverStatsRepository {
     required double distanceKm,
   }) async {
     final co2Saved = distanceKm * 0.12; // ~120g CO2 per km saved
-
-    await _driverStatsCollection.doc(driverId).set({
-      'totalRides': FieldValue.increment(1),
-      'ridesCompleted': FieldValue.increment(1),
-      'ridesThisWeek': FieldValue.increment(1),
-      'ridesThisMonth': FieldValue.increment(1),
-      'totalEarnings': FieldValue.increment(earnings),
-      'earningsThisWeek': FieldValue.increment(earnings),
-      'earningsThisMonth': FieldValue.increment(earnings),
-      'earningsToday': FieldValue.increment(earnings),
-      'co2Saved': FieldValue.increment(co2Saved),
-      'lastRideAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    DriverStats? currentStats = await getDriverStats(driverId);
+    final updatedStats = currentStats.copyWith(
+      totalRides: currentStats.totalRides + 1,
+      ridesCompleted: currentStats.ridesCompleted + 1,
+      ridesThisWeek: currentStats.ridesThisWeek + 1,
+      ridesThisMonth: currentStats.ridesThisMonth + 1,
+      totalEarnings: currentStats.totalEarnings + earnings,
+      earningsThisWeek: currentStats.earningsThisWeek + earnings,
+      earningsThisMonth: currentStats.earningsThisMonth + earnings,
+      earningsToday: currentStats.earningsToday + earnings,
+      co2Saved: currentStats.co2Saved + co2Saved,
+      lastRideAt: DateTime.now(),
+    );
+    await _driverStatsCollection
+        .doc(driverId)
+        .set(updatedStats, SetOptions(merge: true));
   }
 }
 

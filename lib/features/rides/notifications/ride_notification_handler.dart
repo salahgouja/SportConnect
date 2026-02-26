@@ -29,10 +29,10 @@ class RideNotificationHandler {
       case 'ride_booking_rejected':
       case 'ride_booking_cancelled':
         TalkerService.info(
-          'Navigating to ride detail ($type) for ride $referenceId',
+          'Navigating to rider view ride ($type) for ride $referenceId',
         );
         context.push(
-          AppRoutes.rideDetail.path.replaceFirst(':id', referenceId),
+          AppRoutes.riderViewRide.path.replaceFirst(':id', referenceId),
         );
         return true;
 

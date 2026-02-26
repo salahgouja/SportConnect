@@ -3,21 +3,11 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sport_connect/core/interfaces/repositories/i_auth_repository.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/services/analytics_service.dart';
-import 'package:sport_connect/features/auth/repositories/auth_repository.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 
 part 'auth_view_model.g.dart';
-
-/// Auth repository provider.
-///
-/// Returns the interface type so consumers depend on the abstraction,
-/// making it easy to swap implementations or provide mocks in tests.
-@riverpod
-IAuthRepository authRepository(Ref ref) {
-  return AuthRepository();
-}
 
 /// Login view model
 @riverpod
@@ -90,6 +80,7 @@ class RegisterViewModel extends _$RegisterViewModel {
       state = const AsyncValue.data(null);
     } catch (e, stackTrace) {
       state = AsyncValue.error(e, stackTrace);
+      rethrow;
     }
   }
 }
@@ -99,7 +90,7 @@ class RegisterViewModel extends _$RegisterViewModel {
 /// Declaring this as a [Provider] at global scope is intentional: the class
 /// is a thin pass-through over [authRepositoryProvider] and carries no local
 /// state, so it does not need to be auto-disposed per-widget.
-@riverpod
+@Riverpod(keepAlive: true) 
 AuthActionsViewModel authActionsViewModel(Ref ref) => AuthActionsViewModel(ref);
 
 class AuthActionsViewModel {

@@ -184,7 +184,9 @@ class RideFormViewModel extends _$RideFormViewModel {
       );
 
       // Route through RideService so validation rules are applied consistently
-      final rideId = await ref.read(rideServiceProvider.notifier).createRide(ride);
+      final rideId = await ref
+          .read(rideServiceProvider.notifier)
+          .createRide(ride);
       state = state.copyWith(isLoading: false);
       return rideId;
     } catch (e) {

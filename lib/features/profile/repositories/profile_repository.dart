@@ -40,7 +40,7 @@ class ProfileRepository implements IUserRepository {
 
   /// Update user profile
   Future<void> updateProfile(String uid, Map<String, dynamic> updates) async {
-    updates['updatedAt'] = FieldValue.serverTimestamp();
+    updates['updatedAt'] = DateTime.now();
     await _usersCollection.doc(uid).update(updates);
   }
 
@@ -80,7 +80,7 @@ class ProfileRepository implements IUserRepository {
   Future<void> setOnlineStatus(String uid, bool isOnline) async {
     await _usersCollection.doc(uid).update({
       'isOnline': isOnline,
-      'lastSeenAt': FieldValue.serverTimestamp(),
+      'lastSeenAt': DateTime.now(),
     });
   }
 
@@ -91,41 +91,8 @@ class ProfileRepository implements IUserRepository {
 
   // ==================== SOCIAL FEATURES ====================
 
-  /// Follow a user
-  @override
-  Future<void> followUser(String currentUserId, String targetUserId) async {
-    final batch = _firestore.batch();
-
-    batch.update(_usersCollection.doc(currentUserId), {
-      'following': FieldValue.arrayUnion([targetUserId]),
-    });
-
-    batch.update(_usersCollection.doc(targetUserId), {
-      'followers': FieldValue.arrayUnion([currentUserId]),
-    });
-
-    await batch.commit();
-  }
-
-  /// Unfollow a user
-  @override
-  Future<void> unfollowUser(String currentUserId, String targetUserId) async {
-    final batch = _firestore.batch();
-
-    batch.update(_usersCollection.doc(currentUserId), {
-      'following': FieldValue.arrayRemove([targetUserId]),
-    });
-
-    batch.update(_usersCollection.doc(targetUserId), {
-      'followers': FieldValue.arrayRemove([currentUserId]),
-    });
-
-    await batch.commit();
-  }
-
   /// Block a user
   Future<void> blockUser(String currentUserId, String targetUserId) async {
-    await unfollowUser(currentUserId, targetUserId);
     await _usersCollection.doc(currentUserId).update({
       'blockedUsers': FieldValue.arrayUnion([targetUserId]),
     });
@@ -133,29 +100,22 @@ class ProfileRepository implements IUserRepository {
 
   /// Unblock a user
   Future<void> unblockUser(String currentUserId, String targetUserId) async {
-    await _usersCollection.doc(currentUserId).update({
-      'blockedUsers': FieldValue.arrayRemove([targetUserId]),
-    });
-  }
-
-  /// Get user's followers (deprecated - social features removed)
-  @override
-  Future<List<UserModel>> getFollowers(String uid) async {
-    // Followers feature has been removed - return empty list
-    return [];
-  }
-
-  /// Get users that user is following (deprecated - social features removed)
-  @override
-  Future<List<UserModel>> getFollowing(String uid) async {
-    // Following feature has been removed - return empty list
-    return [];
+    UserModel? currentUser = await getUserById(currentUserId);
+    if (currentUser == null) {
+      throw StateError('Current user not found for unblock operation');
+    }
+    currentUser.blockedUsers.remove(targetUserId);
+    await _usersCollection.doc(currentUserId).update(currentUser.toJson());
   }
 
   // ==================== VEHICLES (Driver Only) ====================
 
-  CollectionReference<Map<String, dynamic>> get _vehiclesCollection =>
-      _firestore.collection('vehicles');
+  CollectionReference<VehicleModel> get _vehiclesCollection => _firestore
+      .collection(AppConstants.vehiclesCollection)
+      .withConverter<VehicleModel>(
+        fromFirestore: (snapshot, _) => VehicleModel.fromJson(snapshot.data()!),
+        toFirestore: (vehicle, _) => vehicle.toJson(),
+      );
 
   /// Add a vehicle (only for drivers)
   Future<void> addVehicle(String uid, VehicleModel vehicle) async {
@@ -169,12 +129,11 @@ class ProfileRepository implements IUserRepository {
 
     // Store vehicle in its own collection
     final vehicleRef = _vehiclesCollection.doc(vehicle.id);
-    await vehicleRef.set(vehicle.toJson());
+    await vehicleRef.set(vehicle);
 
     // Add vehicle ID to driver's vehicleIds list
-    await _usersCollection.doc(uid).update({
-      'vehicleIds': FieldValue.arrayUnion([vehicle.id]),
-    });
+    user.vehicleIds.add(vehicle.id);
+    await _usersCollection.doc(uid).update(user.toJson());
   }
 
   /// Update a vehicle (only for drivers)
@@ -195,9 +154,8 @@ class ProfileRepository implements IUserRepository {
     await _vehiclesCollection.doc(vehicleId).delete();
 
     // Remove vehicle ID from driver's vehicleIds list
-    await _usersCollection.doc(uid).update({
-      'vehicleIds': FieldValue.arrayRemove([vehicleId]),
-    });
+    user.vehicleIds.remove(vehicleId);
+    await _usersCollection.doc(uid).update(user.toJson());
   }
 
   /// Set default vehicle (only for drivers)
@@ -228,7 +186,7 @@ class ProfileRepository implements IUserRepository {
     for (final vId in driver.vehicleIds) {
       final doc = await _vehiclesCollection.doc(vId).get();
       if (doc.exists) {
-        vehicles.add(VehicleModel.fromJson(doc.data()!));
+        vehicles.add(doc.data()!);
       }
     }
     return vehicles;
@@ -478,7 +436,7 @@ class ProfileRepository implements IUserRepository {
   Future<void> updateUser(UserModel user) async {
     await _usersCollection.doc(user.uid).update({
       ...user.toJson(),
-      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedAt': DateTime.now(),
     });
   }
 
@@ -490,7 +448,7 @@ class ProfileRepository implements IUserRepository {
   ) async {
     await _usersCollection.doc(userId).update({
       field: value,
-      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedAt': DateTime.now(),
     });
   }
 
@@ -498,7 +456,7 @@ class ProfileRepository implements IUserRepository {
   Future<void> updateOnlineStatus(String userId, bool isOnline) async {
     await _usersCollection.doc(userId).update({
       'isOnline': isOnline,
-      'lastSeenAt': FieldValue.serverTimestamp(),
+      'lastSeenAt': DateTime.now(),
     });
   }
 

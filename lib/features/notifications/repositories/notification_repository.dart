@@ -92,7 +92,7 @@ class NotificationRepository implements INotificationRepository {
   Future<void> markAsRead(String notificationId) async {
     await _notificationsCollection.doc(notificationId).update({
       'isRead': true,
-      'readAt': FieldValue.serverTimestamp(),
+      'readAt': DateTime.now(),
     });
   }
 
@@ -106,10 +106,7 @@ class NotificationRepository implements INotificationRepository {
         .get();
 
     for (final doc in snapshot.docs) {
-      batch.update(doc.reference, {
-        'isRead': true,
-        'readAt': FieldValue.serverTimestamp(),
-      });
+      batch.update(doc.reference, {'isRead': true, 'readAt': DateTime.now()});
     }
 
     await batch.commit();
