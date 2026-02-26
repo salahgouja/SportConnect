@@ -30,8 +30,12 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/core/utils/distance_formatter.dart';
 import 'package:sport_connect/core/services/deep_link_service.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
+import 'package:sport_connect/features/rides/views/widgets/ride_shared_widgets.dart';
 
-/// Ride Detail Screen with booking functionality - Uses Firestore data
+/// Full ride detail screen with map, route visualization, and booking flow.
+///
+/// Navigated to from search results, notifications, and deep links.
+/// For a rider's personal booking view, see [RiderViewRideScreen].
 class RideDetailScreen extends ConsumerStatefulWidget {
   final String rideId;
 
@@ -637,13 +641,13 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildInfoChip(
+              RideInfoChip(
                 icon: Icons.access_time_rounded,
                 value: '${ride.durationMinutes ?? 0} min',
                 label: AppLocalizations.of(context).duration,
               ),
               Container(width: 1, height: 40.h, color: AppColors.border),
-              _buildInfoChip(
+              RideInfoChip(
                 icon: Icons.straighten_rounded,
                 value: ride.distanceKm != null
                     ? ref.watch(distanceFormatterProvider)(ride.distanceKm!)
@@ -651,7 +655,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                 label: AppLocalizations.of(context).distance,
               ),
               Container(width: 1, height: 40.h, color: AppColors.border),
-              _buildInfoChip(
+              RideInfoChip(
                 icon: Icons.event_seat_rounded,
                 value: '${ride.remainingSeats}',
                 label: AppLocalizations.of(context).seatsLeft2,
@@ -660,31 +664,6 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildInfoChip({
-    required IconData icon,
-    required String value,
-    required String label,
-  }) {
-    return Column(
-      children: [
-        Icon(icon, color: AppColors.primary, size: 22.sp),
-        SizedBox(height: 6.h),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(fontSize: 11.sp, color: AppColors.textTertiary),
-        ),
-      ],
     );
   }
 
@@ -751,7 +730,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                         SizedBox(height: 8.h),
                         Row(
                           children: [
-                            _buildDriverBadge(
+                            RideDriverBadge(
                               icon: Icons.verified_user_rounded,
                               label: AppLocalizations.of(context).verified,
                               color: AppColors.success,
@@ -789,35 +768,6 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
     );
   }
 
-  Widget _buildDriverBadge({
-    required IconData icon,
-    required String label,
-    required Color color,
-  }) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(6.r),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: color, size: 12.sp),
-          SizedBox(width: 4.w),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11.sp,
-              fontWeight: FontWeight.w500,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildTripDetails(RideModel ride) {
     return Container(
       margin: EdgeInsets.all(20.w),
@@ -834,7 +784,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
               ),
             ),
             SizedBox(height: 16.h),
-            _buildDetailRow(
+            RideDetailInfoRow(
               icon: Icons.calendar_today_rounded,
               label: AppLocalizations.of(context).departure2,
               value: DateFormat(
@@ -844,48 +794,6 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildDetailRow({
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
-    return Row(
-      children: [
-        Container(
-          padding: EdgeInsets.all(10.w),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceVariant.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(10.r),
-          ),
-          child: Icon(icon, color: AppColors.primary, size: 20.sp),
-        ),
-        SizedBox(width: 12.w),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  color: AppColors.textTertiary,
-                ),
-              ),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 15.sp,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 
@@ -959,17 +867,17 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
               spacing: 8.w,
               runSpacing: 8.h,
               children: [
-                _buildAmenityItem(
+                RideAmenityChip(
                   icon: Icons.pets_rounded,
                   label: AppLocalizations.of(context).pets,
                   isAllowed: ride.allowPets,
                 ),
-                _buildAmenityItem(
+                RideAmenityChip(
                   icon: Icons.smoking_rooms_rounded,
                   label: AppLocalizations.of(context).smoking,
                   isAllowed: ride.allowSmoking,
                 ),
-                _buildAmenityItem(
+                RideAmenityChip(
                   icon: Icons.luggage_rounded,
                   label: AppLocalizations.of(context).luggage,
                   isAllowed: ride.allowLuggage,
@@ -978,49 +886,6 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildAmenityItem({
-    required IconData icon,
-    required String label,
-    required bool isAllowed,
-  }) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-      decoration: BoxDecoration(
-        color: isAllowed
-            ? AppColors.success.withValues(alpha: 0.1)
-            : AppColors.surfaceVariant.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(12.r),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 18.sp,
-            color: isAllowed ? AppColors.success : AppColors.textTertiary,
-          ),
-          SizedBox(width: 6.w),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 13.sp,
-              fontWeight: FontWeight.w500,
-              color: isAllowed ? AppColors.success : AppColors.textTertiary,
-            ),
-          ),
-          if (!isAllowed) ...[
-            SizedBox(width: 4.w),
-            Icon(
-              Icons.close_rounded,
-              size: 14.sp,
-              color: AppColors.textTertiary,
-            ),
-          ],
-        ],
       ),
     );
   }

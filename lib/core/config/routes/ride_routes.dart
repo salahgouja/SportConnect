@@ -18,6 +18,9 @@ import 'package:sport_connect/features/rides/views/shared/ride_completion_screen
 import 'package:sport_connect/features/rides/views/shared/ride_navigation_screen.dart';
 import 'package:sport_connect/features/rides/views/shared/cancellation_reason_screen.dart';
 import 'package:sport_connect/features/rides/views/shared/dispute_screen.dart';
+import 'package:sport_connect/features/rides/views/passenger/ride_booking_pending_screen.dart';
+import 'package:sport_connect/features/rides/views/passenger/ride_countdown_screen.dart';
+import 'package:sport_connect/features/rides/views/driver/driver_rate_passenger_screen.dart';
 
 /// Ride module routes with type-safe parameters
 class RideRoutes implements RouteConfig {
@@ -73,7 +76,7 @@ class RideRoutes implements RouteConfig {
           }
           return SlideUpTransitionPage(
             key: state.pageKey,
-            child: passenger_active.ActiveRideScreen(rideId: rideId),
+            child: passenger_active.PassengerActiveRideScreen(rideId: rideId),
           );
         },
       ),
@@ -130,6 +133,23 @@ class RideRoutes implements RouteConfig {
         },
       ),
 
+      // Driver: Edit Ride (route-based; fetches ride by ID — no fragile state.extra)
+      GoRoute(
+        path: AppRoutes.driverEditRide.path,
+        name: AppRoutes.driverEditRide.name,
+        pageBuilder: (context, state) {
+          final params = state.params;
+          final rideId = params.getStringOrThrow('id');
+          return SlideUpTransitionPage(
+            key: state.pageKey,
+            child: DriverOfferRideScreen(
+              existingRideId: rideId,
+              isEditMode: true,
+            ),
+          );
+        },
+      ),
+
       // Driver: Active Ride
       GoRoute(
         path: AppRoutes.driverActiveRide.path,
@@ -145,7 +165,7 @@ class RideRoutes implements RouteConfig {
           }
           return SlideUpTransitionPage(
             key: state.pageKey,
-            child: driver_active.ActiveRideScreen(rideId: rideId),
+            child: driver_active.DriverActiveRideScreen(rideId: rideId),
           );
         },
       ),
@@ -219,6 +239,48 @@ class RideRoutes implements RouteConfig {
           return SlideUpTransitionPage(
             key: state.pageKey,
             child: DisputeScreen(rideId: rideId, rideSummary: rideSummary),
+          );
+        },
+      ),
+
+      // Passenger: Booking Pending (awaiting driver confirmation)
+      GoRoute(
+        path: AppRoutes.rideBookingPending.path,
+        name: AppRoutes.rideBookingPending.name,
+        pageBuilder: (context, state) {
+          final params = state.params;
+          final rideId = params.getStringOrThrow('rideId');
+          return SlideUpTransitionPage(
+            key: state.pageKey,
+            child: RideBookingPendingScreen(rideId: rideId),
+          );
+        },
+      ),
+
+      // Passenger: Ride Countdown (booking accepted, departure approaching)
+      GoRoute(
+        path: AppRoutes.rideCountdown.path,
+        name: AppRoutes.rideCountdown.name,
+        pageBuilder: (context, state) {
+          final params = state.params;
+          final bookingId = params.getStringOrThrow('bookingId');
+          return SlideUpTransitionPage(
+            key: state.pageKey,
+            child: RideCountdownScreen(bookingId: bookingId),
+          );
+        },
+      ),
+
+      // Driver: Rate Passenger (post-ride)
+      GoRoute(
+        path: AppRoutes.driverRatePassenger.path,
+        name: AppRoutes.driverRatePassenger.name,
+        pageBuilder: (context, state) {
+          final params = state.params;
+          final rideId = params.getStringOrThrow('rideId');
+          return SlideUpTransitionPage(
+            key: state.pageKey,
+            child: DriverRatePassengerScreen(rideId: rideId),
           );
         },
       ),

@@ -24,18 +24,20 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
+import 'package:sport_connect/features/rides/views/widgets/ride_shared_widgets.dart';
 
 /// Active Ride Navigation Screen - Shows map and ride details for drivers during active rides
-class ActiveRideScreen extends ConsumerStatefulWidget {
+class DriverActiveRideScreen extends ConsumerStatefulWidget {
   final String? rideId;
 
-  const ActiveRideScreen({super.key, this.rideId});
+  const DriverActiveRideScreen({super.key, this.rideId});
 
   @override
-  ConsumerState<ActiveRideScreen> createState() => _ActiveRideScreenState();
+  ConsumerState<DriverActiveRideScreen> createState() =>
+      _DriverActiveRideScreenState();
 }
 
-class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
+class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
     with TickerProviderStateMixin {
   final MapController _mapController = MapController();
   late AnimationController _pulseController;
@@ -854,24 +856,24 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _buildTripStat(
-                      AppLocalizations.of(context).distance,
-                      AppLocalizations.of(
+                    RideTripStat(
+                      label: AppLocalizations.of(context).distance,
+                      value: AppLocalizations.of(
                         context,
                       ).valueKm(distance.toStringAsFixed(1)),
-                      Icons.straighten,
+                      icon: Icons.straighten,
                     ),
-                    _buildTripStat(
-                      AppLocalizations.of(context).duration,
-                      AppLocalizations.of(context).valueMin(duration),
-                      Icons.schedule,
+                    RideTripStat(
+                      label: AppLocalizations.of(context).duration,
+                      value: AppLocalizations.of(context).valueMin(duration),
+                      icon: Icons.schedule,
                     ),
-                    _buildTripStat(
-                      AppLocalizations.of(context).fare,
-                      AppLocalizations.of(
+                    RideTripStat(
+                      label: AppLocalizations.of(context).fare,
+                      value: AppLocalizations.of(
                         context,
                       ).value5(fare.toStringAsFixed(0)),
-                      Icons.attach_money,
+                      icon: Icons.attach_money,
                     ),
                   ],
                 ),
@@ -1229,27 +1231,6 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildTripStat(String label, String value, IconData icon) {
-    return Column(
-      children: [
-        Icon(icon, color: AppColors.textSecondary, size: 20.w),
-        SizedBox(height: 6.h),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(fontSize: 11.sp, color: AppColors.textSecondary),
-        ),
-      ],
     );
   }
 

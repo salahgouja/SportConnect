@@ -87,20 +87,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   /// Requests notification permission with a rationale dialog.
   Future<void> _requestNotificationPermission() async {
-    final settings = await FirebaseMessaging.instance.getNotificationSettings();
-    if (settings.authorizationStatus == AuthorizationStatus.notDetermined) {
-      // Only show rationale if permission hasn't been decided yet
-      await Future.delayed(const Duration(seconds: 2));
-      if (!mounted) return;
-      final accepted = await PermissionDialogHelper.showNotificationRationale(
-        context,
-      );
-      if (!accepted) return;
-      await FirebaseMessaging.instance.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
+    try {
+      final settings = await FirebaseMessaging.instance
+          .getNotificationSettings();
+
+      switch (settings.authorizationStatus) {
+        case AuthorizationStatus.authorized:
+        case AuthorizationStatus.provisional:
+          TalkerService.info(
+            'Notification permission already granted: '
+            '${settings.authorizationStatus}',
+          );
+          return;
+
+        case AuthorizationStatus.denied:
+          // User previously denied — cannot re-prompt on Android 13+.
+          // Log so the developer can diagnose "no notifications" reports.
+          TalkerService.warning(
+            'Notification permission previously denied. '
+            'User must enable manually in system settings.',
+          );
+          return;
+
+        case AuthorizationStatus.notDetermined:
+          // First time — show rationale then request
+          await Future.delayed(const Duration(seconds: 2));
+          if (!mounted) return;
+
+          final accepted =
+              await PermissionDialogHelper.showNotificationRationale(context);
+          if (!accepted) {
+            TalkerService.info('User declined notification rationale dialog.');
+            return;
+          }
+
+          final result = await FirebaseMessaging.instance.requestPermission(
+            alert: true,
+            badge: true,
+            sound: true,
+          );
+
+          TalkerService.info(
+            'Notification permission result: '
+            '${result.authorizationStatus}',
+          );
+      }
+    } catch (e) {
+      TalkerService.error('Failed to request notification permission', e);
     }
   }
 

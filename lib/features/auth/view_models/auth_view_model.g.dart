@@ -8,62 +8,6 @@ part of 'auth_view_model.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Auth repository provider.
-///
-/// Returns the interface type so consumers depend on the abstraction,
-/// making it easy to swap implementations or provide mocks in tests.
-
-@ProviderFor(authRepository)
-final authRepositoryProvider = AuthRepositoryProvider._();
-
-/// Auth repository provider.
-///
-/// Returns the interface type so consumers depend on the abstraction,
-/// making it easy to swap implementations or provide mocks in tests.
-
-final class AuthRepositoryProvider
-    extends
-        $FunctionalProvider<IAuthRepository, IAuthRepository, IAuthRepository>
-    with $Provider<IAuthRepository> {
-  /// Auth repository provider.
-  ///
-  /// Returns the interface type so consumers depend on the abstraction,
-  /// making it easy to swap implementations or provide mocks in tests.
-  AuthRepositoryProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'authRepositoryProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$authRepositoryHash();
-
-  @$internal
-  @override
-  $ProviderElement<IAuthRepository> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
-
-  @override
-  IAuthRepository create(Ref ref) {
-    return authRepository(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(IAuthRepository value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<IAuthRepository>(value),
-    );
-  }
-}
-
-String _$authRepositoryHash() => r'd46f69c6c8b1b1a866beb6286d356d5305473d89';
-
 /// Login view model
 
 @ProviderFor(LoginViewModel)
@@ -158,7 +102,7 @@ final class RegisterViewModelProvider
   }
 }
 
-String _$registerViewModelHash() => r'63d80e7718f8f43a58482fa93087293783fb40c4';
+String _$registerViewModelHash() => r'16a05c45459296ca26f889b6a55c7fb105787641';
 
 /// Register view model
 
@@ -214,7 +158,7 @@ final class AuthActionsViewModelProvider
         argument: null,
         retry: null,
         name: r'authActionsViewModelProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -243,4 +187,4 @@ final class AuthActionsViewModelProvider
 }
 
 String _$authActionsViewModelHash() =>
-    r'20b4c9a8cf70f3fe672de665a948b3d0a5bd7017';
+    r'0fec17f7c30c895f7fffe72139d248e9aa1f2ee3';

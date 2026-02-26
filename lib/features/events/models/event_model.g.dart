@@ -14,7 +14,7 @@ _EventModel _$EventModelFromJson(Map json) => _EventModel(
   location: LocationPoint.fromJson(
     Map<String, dynamic>.from(json['location'] as Map),
   ),
-  startsAt: DateTime.parse(json['startsAt'] as String),
+  startsAt: const RequiredTimestampConverter().fromJson(json['startsAt']),
   endsAt: const TimestampConverter().fromJson(json['endsAt']),
   description: json['description'] as String?,
   venueName: json['venueName'] as String?,
@@ -38,7 +38,7 @@ Map<String, dynamic> _$EventModelToJson(_EventModel instance) =>
       'title': instance.title,
       'type': _$EventTypeEnumMap[instance.type]!,
       'location': instance.location.toJson(),
-      'startsAt': instance.startsAt.toIso8601String(),
+      'startsAt': const RequiredTimestampConverter().toJson(instance.startsAt),
       'endsAt': const TimestampConverter().toJson(instance.endsAt),
       'description': instance.description,
       'venueName': instance.venueName,

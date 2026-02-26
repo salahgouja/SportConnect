@@ -1,4 +1,8 @@
+import 'dart:developer' as dev;
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_event_repository.dart';
@@ -7,16 +11,18 @@ import 'package:sport_connect/features/events/models/event_model.dart';
 part 'event_repository.g.dart';
 
 class EventRepository implements IEventRepository {
-  EventRepository(this._firestore);
+  EventRepository(this._firestore, this._storage);
 
   final FirebaseFirestore _firestore;
+  final FirebaseStorage _storage;
 
-  CollectionReference<EventModel> get _eventsCollection =>
-      _firestore.collection(AppConstants.eventsCollection).withConverter(
+  CollectionReference<EventModel> get _eventsCollection => _firestore
+      .collection(AppConstants.eventsCollection)
+      .withConverter(
         fromFirestore: (snap, _) => EventModel.fromJson(snap.data()!),
         toFirestore: (model, _) => model.toJson(),
       );
-    
+
   @override
   Future<String> createEvent(EventModel event) async {
     final docRef = _eventsCollection.doc();
@@ -25,6 +31,15 @@ class EventRepository implements IEventRepository {
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
+
+    dev.log(
+      'createEvent → docId=${docRef.id}, '
+      'title=${eventWithId.title}, '
+      'type=${eventWithId.type}, '
+      'startsAt=${eventWithId.startsAt}',
+      name: 'EventRepository',
+    );
+
     await docRef.set(eventWithId);
     return docRef.id;
   }
@@ -37,10 +52,18 @@ class EventRepository implements IEventRepository {
   }
 
   @override
+  Stream<EventModel?> streamEventById(String eventId) {
+    return _eventsCollection
+        .doc(eventId)
+        .snapshots()
+        .map((snap) => snap.exists ? snap.data() : null);
+  }
+
+  @override
   Future<void> updateEvent(EventModel event) async {
     await _eventsCollection.doc(event.id).update({
       ...event.toJson(),
-      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedAt': DateTime.now(),
     });
   }
 
@@ -50,24 +73,47 @@ class EventRepository implements IEventRepository {
   }
 
   @override
+  Future<void> cancelEvent(String eventId) async {
+    await _eventsCollection.doc(eventId).update({
+      'isActive': false,
+      'updatedAt': DateTime.now(),
+    });
+  }
+
+  @override
   Future<void> joinEvent(String eventId, String userId) async {
-    await _firestore
+    final docRef = _firestore
         .collection(AppConstants.eventsCollection)
-        .doc(eventId)
-        .update({
-      'participantIds': FieldValue.arrayUnion([userId]),
-      'updatedAt': FieldValue.serverTimestamp(),
+        .doc(eventId);
+
+    await _firestore.runTransaction((tx) async {
+      final snap = await tx.get(docRef);
+      if (!snap.exists) throw Exception('Event not found.');
+
+      final data = snap.data()!;
+      final participants = List<String>.from(
+        data['participantIds'] as List? ?? [],
+      );
+      final maxParticipants = data['maxParticipants'] as int? ?? 0;
+
+      if (participants.contains(userId)) return;
+
+      if (maxParticipants > 0 && participants.length >= maxParticipants) {
+        throw Exception('Event is full.');
+      }
+
+      tx.update(docRef, {
+        'participantIds': FieldValue.arrayUnion([userId]),
+        'updatedAt': DateTime.now(),
+      });
     });
   }
 
   @override
   Future<void> leaveEvent(String eventId, String userId) async {
-    await _firestore
-        .collection(AppConstants.eventsCollection)
-        .doc(eventId)
-        .update({
+    await _eventsCollection.doc(eventId).update({
       'participantIds': FieldValue.arrayRemove([userId]),
-      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedAt': DateTime.now(),
     });
   }
 
@@ -75,13 +121,11 @@ class EventRepository implements IEventRepository {
   Stream<List<EventModel>> streamUpcomingEvents() {
     return _eventsCollection
         .where('isActive', isEqualTo: true)
-        .where('startsAt', isGreaterThan: FieldValue.serverTimestamp())
+        .where('startsAt', isGreaterThan: Timestamp.now())
         .orderBy('startsAt')
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs
-              .map((doc) => doc.data())
-              .toList();
+          return snapshot.docs.map((doc) => doc.data()).toList();
         });
   }
 
@@ -92,9 +136,7 @@ class EventRepository implements IEventRepository {
         .orderBy('startsAt', descending: true)
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs
-              .map((doc) => doc.data())
-              .toList();
+          return snapshot.docs.map((doc) => doc.data()).toList();
         });
   }
 
@@ -102,14 +144,12 @@ class EventRepository implements IEventRepository {
   Stream<List<EventModel>> streamEventsByType(EventType type) {
     return _eventsCollection
         .where('isActive', isEqualTo: true)
-        .where('type', isEqualTo: type)
+        .where('type', isEqualTo: type.jsonValue)
         .where('startsAt', isGreaterThan: Timestamp.now())
         .orderBy('startsAt')
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs
-              .map((doc) => doc.data())
-              .toList();
+          return snapshot.docs.map((doc) => doc.data()).toList();
         });
   }
 
@@ -121,14 +161,23 @@ class EventRepository implements IEventRepository {
         .orderBy('startsAt')
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs
-              .map((doc) => doc.data())
-              .toList();
+          return snapshot.docs.map((doc) => doc.data()).toList();
         });
+  }
+
+  @override
+  Future<String> uploadEventImage(String eventId, File file) async {
+    final ref = _storage.ref().child('events/$eventId/cover.jpg');
+    final metadata = SettableMetadata(
+      contentType: 'image/jpeg',
+      customMetadata: {'eventId': eventId},
+    );
+    await ref.putFile(file, metadata);
+    return ref.getDownloadURL();
   }
 }
 
 @Riverpod(keepAlive: true)
 IEventRepository eventRepository(Ref ref) {
-  return EventRepository(FirebaseFirestore.instance);
+  return EventRepository(FirebaseFirestore.instance, FirebaseStorage.instance);
 }

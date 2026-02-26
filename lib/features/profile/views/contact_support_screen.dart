@@ -172,7 +172,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
             'message': _messageController.text.trim(),
             'attachmentUrls': <String>[],
             'status': 'open',
-            'createdAt': FieldValue.serverTimestamp(),
+            'createdAt': DateTime.now(),
           });
 
       if (_attachedFiles.isNotEmpty) {

@@ -23,7 +23,7 @@ final class RideServiceProvider
         argument: null,
         retry: null,
         name: r'rideServiceProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -36,7 +36,7 @@ final class RideServiceProvider
   RideService create() => RideService();
 }
 
-String _$rideServiceHash() => r'81a5d2185a616d40f5d7480d862727a0e58fe9d0';
+String _$rideServiceHash() => r'ed31c5da1166a510a6a21517e3173baee671c037';
 
 /// Ride service - handles ride business logic
 

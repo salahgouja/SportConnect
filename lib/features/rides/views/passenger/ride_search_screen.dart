@@ -529,6 +529,11 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
       ),
       departureDate: _selectedDate,
       minSeats: _seats,
+      maxPrice: _maxPrice < 50 ? _maxPrice : null,
+      womenOnly: _femaleOnly,
+      allowPets: _petFriendly,
+      minDriverRating: _minRating > 0 ? _minRating : null,
+      sortBy: _sortBy == 'recommended' ? 'departure_time' : _sortBy,
     );
 
     ref.read(rideSearchViewModelProvider.notifier).updateFilters(filters);
@@ -1576,7 +1581,9 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: AppSpacing.shadowSm,
         border: Border.all(
-          color: AppColors.border.withValues(alpha: 0.5),
+          color: ride.status == RideStatus.full
+              ? AppColors.textSecondary.withValues(alpha: 0.3)
+              : AppColors.border.withValues(alpha: 0.5),
           width: 1,
         ),
       ),
@@ -1794,14 +1801,21 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
                 ),
                 child: Row(
                   children: [
-                    // Seats
-                    _buildInfoChip(
-                      Icons.event_seat_rounded,
-                      AppLocalizations.of(
-                        context,
-                      ).valueSeats(ride.remainingSeats),
-                      AppColors.primary,
-                    ),
+                    // Seats chip — replaced with 'FULL' badge when all seats taken
+                    if (ride.status == RideStatus.full)
+                      _buildInfoChip(
+                        Icons.do_not_disturb_rounded,
+                        'FULL',
+                        AppColors.textSecondary,
+                      )
+                    else
+                      _buildInfoChip(
+                        Icons.event_seat_rounded,
+                        AppLocalizations.of(
+                          context,
+                        ).valueSeats(ride.remainingSeats),
+                        AppColors.primary,
+                      ),
                     SizedBox(width: 8.w),
                     // Eco badge - show if ride has no smoking preference or allows luggage
                     if (!ride.allowSmoking)
@@ -1811,22 +1825,29 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
                         AppColors.success,
                       ),
                     const Spacer(),
-                    // Book button
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12.w,
-                        vertical: 6.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
-                      child: Text(
-                        AppLocalizations.of(context).book,
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                    // Book button — dimmed when ride is full
+                    Opacity(
+                      opacity: ride.status == RideStatus.full ? 0.4 : 1.0,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 6.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: ride.status == RideStatus.full
+                              ? AppColors.textSecondary
+                              : AppColors.primary,
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        child: Text(
+                          ride.status == RideStatus.full
+                              ? 'Full'
+                              : AppLocalizations.of(context).book,
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),

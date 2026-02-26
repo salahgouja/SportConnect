@@ -1,9 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
@@ -45,6 +48,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
   DateTime? _endsAt;
   LocationPoint? _location;
   int _maxParticipants = 0;
+  File? _imageFile;
   bool _submitting = false;
 
   @override
@@ -95,6 +99,8 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
             _buildVenueField(),
             SizedBox(height: 14.h),
             _buildDescriptionField(),
+            SizedBox(height: 20.h),
+            _buildImagePicker(),
             SizedBox(height: 20.h),
             _buildLocationPicker(),
             SizedBox(height: 20.h),
@@ -189,6 +195,88 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
       textCapitalization: TextCapitalization.sentences,
       decoration: _deco('Description (optional)', Icons.notes_rounded),
     ).animate().fadeIn(duration: 250.ms, delay: 140.ms);
+  }
+
+  // ── Cover Image ──────────────────────────────────────────────
+  Widget _buildImagePicker() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _label('Cover Image (optional)'),
+        SizedBox(height: 8.h),
+        GestureDetector(
+          onTap: _pickImage,
+          child: Container(
+            height: 160.h,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(16.r),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.15),
+              ),
+              image: _imageFile != null
+                  ? DecorationImage(
+                      image: FileImage(_imageFile!),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
+            ),
+            child: _imageFile == null
+                ? Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.add_photo_alternate_outlined,
+                        size: 36.sp,
+                        color: AppColors.textSecondary,
+                      ),
+                      SizedBox(height: 8.h),
+                      Text(
+                        'Tap to add a cover photo',
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  )
+                : Align(
+                    alignment: Alignment.topRight,
+                    child: Padding(
+                      padding: EdgeInsets.all(8.r),
+                      child: CircleAvatar(
+                        radius: 16.r,
+                        backgroundColor: Colors.black54,
+                        child: IconButton(
+                          icon: Icon(
+                            Icons.close,
+                            size: 16.sp,
+                            color: Colors.white,
+                          ),
+                          padding: EdgeInsets.zero,
+                          onPressed: () => setState(() => _imageFile = null),
+                        ),
+                      ),
+                    ),
+                  ),
+          ),
+        ),
+      ],
+    ).animate().fadeIn(duration: 250.ms, delay: 160.ms);
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1200,
+      maxHeight: 800,
+      imageQuality: 85,
+    );
+    if (image != null) {
+      setState(() => _imageFile = File(image.path));
+    }
   }
 
   // ── Location ─────────────────────────────────────────────────
@@ -518,12 +606,28 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
       ).showSnackBar(const SnackBar(content: Text('Please pick a location.')));
       return;
     }
+    if (_startsAt.isBefore(DateTime.now())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Start time must be in the future.')),
+      );
+      return;
+    }
+    if (_endsAt != null && _endsAt!.isBefore(_startsAt)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('End time must be after start time.')),
+      );
+      return;
+    }
 
     setState(() => _submitting = true);
 
     final user = ref.read(authStateProvider).value;
     if (user == null) {
       setState(() => _submitting = false);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please sign in to create an event.')),
+      );
       return;
     }
 
@@ -538,19 +642,34 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
           endsAt: _endsAt,
           description: _descCtrl.text.trim(),
           venueName: _venueCtrl.text.trim(),
+          organizerName: user.displayName,
           maxParticipants: _maxParticipants,
         );
 
     if (!mounted) return;
 
     if (created != null) {
-      // GoRouter pops back to caller with result — clean, no navigator bugs
+      // Upload cover image in background if one was selected.
+      if (_imageFile != null) {
+        final url = await ref
+            .read(eventDetailViewModelProvider(created.id).notifier)
+            .uploadImage(_imageFile!);
+        if (url != null) {
+          await ref
+              .read(eventDetailViewModelProvider(created.id).notifier)
+              .updateEvent(created.copyWith(imageUrl: url));
+        }
+      }
+      if (!mounted) return;
       context.pop(created);
     } else {
       setState(() => _submitting = false);
+      final vmError =
+          ref.read(eventSelectionViewModelProvider).error ??
+          'Unable to create event.';
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Unable to create event.')));
+      ).showSnackBar(SnackBar(content: Text(vmError)));
     }
   }
 }

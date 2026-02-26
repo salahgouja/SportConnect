@@ -1,6 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/features/rides/repositories/driver_stats_repository.dart';
+import 'package:sport_connect/features/rides/services/ride_request_service.dart';
 
 part 'driver_view_model.g.dart';
 
@@ -97,17 +98,25 @@ class DriverViewModel extends _$DriverViewModel {
     state = state.copyWith(errorMessage: null);
   }
 
-  /// Accept a ride request
-  Future<bool> acceptRideRequest(String rideId, String bookingId) async {
+  /// Accept a ride request.
+  ///
+  /// Routes through [RideRequestService] so that capacity updates and
+  /// passenger notifications are handled in one consistent place.
+  Future<bool> acceptRideRequest(String rideId, String requestId) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
-      final repository = ref.read(driverStatsRepositoryProvider);
-      await repository.acceptRequest(rideId, bookingId);
+      final result = await ref
+          .read(rideRequestServiceProvider.notifier)
+          .acceptRequest(requestId);
 
       state = state.copyWith(isLoading: false);
       ref.invalidate(pendingRideRequestsProvider);
-      return true;
+
+      return switch (result) {
+        Success() => true,
+        Failure(:final message) => throw Exception(message),
+      };
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -117,17 +126,25 @@ class DriverViewModel extends _$DriverViewModel {
     }
   }
 
-  /// Decline a ride request
-  Future<bool> declineRideRequest(String rideId, String bookingId) async {
+  /// Decline a ride request.
+  ///
+  /// Routes through [RideRequestService] so rejection notification
+  /// is sent to the passenger.
+  Future<bool> declineRideRequest(String rideId, String requestId) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
-      final repository = ref.read(driverStatsRepositoryProvider);
-      await repository.declineRequest(rideId, bookingId);
+      final result = await ref
+          .read(rideRequestServiceProvider.notifier)
+          .rejectRequest(requestId, 'Declined by driver');
 
       state = state.copyWith(isLoading: false);
       ref.invalidate(pendingRideRequestsProvider);
-      return true;
+
+      return switch (result) {
+        Success() => true,
+        Failure(:final message) => throw Exception(message),
+      };
     } catch (e) {
       state = state.copyWith(
         isLoading: false,

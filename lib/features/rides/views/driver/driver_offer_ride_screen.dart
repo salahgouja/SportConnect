@@ -11,6 +11,7 @@ import 'package:sport_connect/features/rides/models/ride/ride_schedule.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_preferences.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_route.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
+import 'package:sport_connect/features/rides/repositories/ride_repository.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/models/user/user_model.dart';
@@ -25,11 +26,16 @@ import 'package:sport_connect/features/events/models/event_model.dart';
 
 class DriverOfferRideScreen extends ConsumerStatefulWidget {
   final RideModel? existingRide;
+
+  /// When provided the screen fetches the ride by ID so the edit route
+  /// works correctly even after a hot-restart or deep-link (no state.extra).
+  final String? existingRideId;
   final bool isEditMode;
 
   const DriverOfferRideScreen({
     super.key,
     this.existingRide,
+    this.existingRideId,
     this.isEditMode = false,
   });
 
@@ -59,8 +65,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   double _pricePerSeat = 15.0; // Default price
   bool _isPriceNegotiable = false;
   bool _acceptOnlinePayment = true;
-  final bool _isRecurring = false;
-  final List<int> _recurringDays = [];
+  // TODO(recurring-rides): add UI toggles and hook these up when implementing recurring rides
 
   // Step 3: Preferences
   bool _allowPets = false;
@@ -76,12 +81,27 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   // State
   bool _isCreating = false;
 
+  /// Tracks the vehicleId from the prefilled ride (set by _initFromPrefill)
+  /// so _initVehicleFrom can select the correct vehicle even when the ride
+  /// was loaded asynchronously via existingRideId.
+  String? _existingVehicleId;
+
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
     if (widget.existingRide != null) {
       _initFromPrefill(widget.existingRide!);
+    } else if (widget.existingRideId != null) {
+      // Route-based edit: fetch ride from Firestore so deep-links work correctly.
+      Future.microtask(() async {
+        final ride = await ref
+            .read(rideRepositoryProvider)
+            .getRideById(widget.existingRideId!);
+        if (ride != null && mounted) {
+          setState(() => _initFromPrefill(ride));
+        }
+      });
     }
   }
 
@@ -106,17 +126,17 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
     _isWomenOnly = ride.preferences.isWomenOnly;
     _maxDetourMinutes = ride.preferences.maxDetourMinutes;
     _waypoints = ride.route.waypoints.map((wp) => wp.location).toList();
+    _existingVehicleId = ride.vehicleId;
   }
 
   /// Initialize vehicle selection based on available vehicles and prefill data
   void _initVehicleFrom(List<VehicleModel> vehicles) {
     if (vehicles.isEmpty) return;
 
-    if (widget.existingRide?.vehicleId != null) {
+    final vehicleId = _existingVehicleId ?? widget.existingRide?.vehicleId;
+    if (vehicleId != null) {
       try {
-        _selectedVehicle = vehicles.firstWhere(
-          (v) => v.id == widget.existingRide!.vehicleId,
-        );
+        _selectedVehicle = vehicles.firstWhere((v) => v.id == vehicleId);
       } catch (_) {
         // Vehicle not found, select default
         _selectedVehicle = vehicles.firstWhere(
@@ -306,7 +326,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         color: Theme.of(context).scaffoldBackgroundColor,
         border: Border(
           bottom: BorderSide(
-            color: Theme.of(context).dividerColor.withOpacity(0.1),
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
           ),
         ),
       ),
@@ -347,7 +367,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
               boxShadow: isActive
                   ? [
                       BoxShadow(
-                        color: AppColors.primary.withOpacity(0.3),
+                        color: AppColors.primary.withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -427,7 +447,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -469,7 +489,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                     color: AppColors.primary,
                   ),
                   style: IconButton.styleFrom(
-                    backgroundColor: AppColors.primary.withOpacity(0.1),
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                   ),
                 ),
               ],
@@ -508,7 +528,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: color, size: 20),
@@ -532,7 +552,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                     style: TextStyle(
                       color: value.isNotEmpty
                           ? AppColors.textPrimary
-                          : AppColors.textSecondary.withOpacity(0.5),
+                          : AppColors.textSecondary.withValues(alpha: 0.5),
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
                     ),
@@ -560,7 +580,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -662,7 +682,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -741,7 +761,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         children: [
           Icon(
             Icons.drag_indicator_rounded,
-            color: AppColors.textSecondary.withOpacity(0.5),
+            color: AppColors.textSecondary.withValues(alpha: 0.5),
             size: 20,
           ),
           const SizedBox(width: 8),
@@ -749,7 +769,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
             width: 28,
             height: 28,
             decoration: BoxDecoration(
-              color: AppColors.warning.withOpacity(0.15),
+              color: AppColors.warning.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -851,6 +871,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
       _waypoints.removeAt(index);
     });
   }
+
   // --- Step 2: Details ---
   Widget _buildDetailsStep(List<VehicleModel> vehicles) {
     return ListView(
@@ -873,7 +894,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   Widget _buildVehicleSelector(List<VehicleModel> vehicles) {
     if (vehicles.isEmpty) {
       return Card(
-        color: AppColors.error.withOpacity(0.1),
+        color: AppColors.error.withValues(alpha: 0.1),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -917,7 +938,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? AppColors.primary.withOpacity(0.1)
+                        ? AppColors.primary.withValues(alpha: 0.1)
                         : AppColors.surface,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
@@ -1015,7 +1036,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -1164,7 +1185,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -1246,7 +1267,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         color: AppColors.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -4),
           ),
@@ -1425,7 +1446,10 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
       );
 
       final ride = RideModel(
-        id: widget.existingRide?.id ?? const Uuid().v4(),
+        id:
+            widget.existingRide?.id ??
+            widget.existingRideId ??
+            const Uuid().v4(),
         driverId: ref.read(currentUserProvider).value!.uid,
         route: RideRoute(
           origin: LocationPoint(
@@ -1446,8 +1470,8 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         ),
         schedule: RideSchedule(
           departureTime: departureDateTime,
-          isRecurring: _isRecurring,
-          recurringDays: _recurringDays,
+          isRecurring: false,
+          recurringDays: const [],
         ),
         capacity: RideCapacity(available: _availableSeats, booked: 0),
         pricing: RidePricing(
@@ -1487,7 +1511,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
           ),
         );
         // Navigate
-        context.go(AppRoutes.driverMyRides.path);
+        context.go(AppRoutes.driverRides.path);
       }
     } catch (e) {
       if (mounted) {

@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_route.dart';
@@ -10,6 +11,7 @@ import 'package:sport_connect/features/rides/models/ride/ride_preferences.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride_search_filters.dart';
 import 'package:sport_connect/features/rides/repositories/ride_repository.dart';
+import 'package:sport_connect/features/rides/services/ride_service.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/models/value_objects/money.dart';
 
@@ -63,17 +65,20 @@ final rideActionsViewModelProvider = Provider<RideActionsViewModel>((ref) {
   return RideActionsViewModel(ref);
 });
 
+/// Delegates ride operations through the [RideService] for validated
+/// business logic. Falls back to the repository only for operations
+/// that don't require additional validation (start, complete, stream).
 class RideActionsViewModel {
   RideActionsViewModel(this._ref);
 
   final Ref _ref;
 
   Future<String> createRide(RideModel ride) {
-    return _ref.read(rideRepositoryProvider).createRide(ride);
+    return _ref.read(rideServiceProvider.notifier).createRide(ride);
   }
 
   Future<void> cancelRide(String rideId, String reason) {
-    return _ref.read(rideRepositoryProvider).cancelRide(rideId, reason);
+    return _ref.read(rideServiceProvider.notifier).cancelRide(rideId, reason);
   }
 
   Future<void> startRide(String rideId) {
@@ -81,7 +86,8 @@ class RideActionsViewModel {
   }
 
   Future<void> completeRide(String rideId) {
-    return _ref.read(rideRepositoryProvider).completeRide(rideId);
+    // Route through RideService so XP reward + driver stats are recorded
+    return _ref.read(rideServiceProvider.notifier).completeRide(rideId);
   }
 
   Future<void> updateBookingStatus({
@@ -122,7 +128,7 @@ class RideActionsViewModel {
 }
 
 /// Ride Form View Model
-@riverpod
+@Riverpod(keepAlive: true)
 class RideFormViewModel extends _$RideFormViewModel {
   @override
   RideFormState build() => const RideFormState();
@@ -164,8 +170,6 @@ class RideFormViewModel extends _$RideFormViewModel {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final repository = ref.read(rideRepositoryProvider);
-
       final ride = RideModel(
         id: '',
         driverId: driverId,
@@ -179,7 +183,10 @@ class RideFormViewModel extends _$RideFormViewModel {
         status: RideStatus.active,
       );
 
-      final rideId = await repository.createRide(ride);
+      // Route through RideService so validation rules are applied consistently
+      final rideId = await ref
+          .read(rideServiceProvider.notifier)
+          .createRide(ride);
       state = state.copyWith(isLoading: false);
       return rideId;
     } catch (e) {
@@ -227,7 +234,7 @@ class RideSearchState {
 }
 
 /// Ride Search View Model
-@riverpod
+@Riverpod(keepAlive: true)
 class RideSearchViewModel extends _$RideSearchViewModel {
   @override
   RideSearchState build() => const RideSearchState();
@@ -249,7 +256,7 @@ class RideSearchViewModel extends _$RideSearchViewModel {
     final filters = state.filters;
 
     try {
-      final rides = await repository.searchRides(
+      var rides = await repository.searchRides(
         originLat: filters.origin!.latitude,
         originLng: filters.origin!.longitude,
         destLat: filters.destination!.latitude,
@@ -258,6 +265,19 @@ class RideSearchViewModel extends _$RideSearchViewModel {
         minSeats: filters.minSeats,
         maxPrice: filters.maxPrice,
       );
+
+      // Post-filter by preferences not supported in Firestore query
+      if (filters.womenOnly) {
+        rides = rides.where((r) => r.preferences.isWomenOnly).toList();
+      }
+      if (filters.allowPets) {
+        rides = rides.where((r) => r.preferences.allowPets).toList();
+      }
+      if (filters.minDriverRating != null) {
+        rides = rides
+            .where((r) => r.averageRating >= filters.minDriverRating!)
+            .toList();
+      }
 
       // If provider was disposed while awaiting, bail out safely
       if (!ref.mounted) return;
@@ -300,7 +320,7 @@ class RideDetailViewModel extends _$RideDetailViewModel {
       final repository = ref.read(rideRepositoryProvider);
 
       final booking = RideBooking(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: const Uuid().v4(),
         rideId: ride.id,
         passengerId: passengerId,
         seatsBooked: seats,
@@ -372,8 +392,8 @@ class RideDetailViewModel extends _$RideDetailViewModel {
     if (ride == null) return false;
 
     try {
-      final repository = ref.read(rideRepositoryProvider);
-      await repository.completeRide(ride.id);
+      // Route through RideService so XP reward + driver stats are recorded
+      await ref.read(rideServiceProvider.notifier).completeRide(ride.id);
       ref.invalidateSelf();
       return true;
     } catch (e) {
@@ -386,8 +406,10 @@ class RideDetailViewModel extends _$RideDetailViewModel {
     if (ride == null) return false;
 
     try {
-      final repository = ref.read(rideRepositoryProvider);
-      await repository.cancelRide(ride.id, 'Cancelled by user');
+      // Route through RideService so validation + passenger notifications fire
+      await ref
+          .read(rideServiceProvider.notifier)
+          .cancelRide(ride.id, 'Cancelled by user');
       ref.invalidateSelf();
       return true;
     } catch (e) {

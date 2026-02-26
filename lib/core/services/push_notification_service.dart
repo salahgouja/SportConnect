@@ -101,22 +101,32 @@ class PushNotificationService {
   // ---------------------------------------------------------------------------
 
   /// Save the current FCM token to the user's Firestore document.
+  ///
+  /// Uses `set` with merge so it works even if the document does not yet
+  /// contain an `fcmToken` field (avoids the `update`-on-missing-field
+  /// silent failure).
   Future<void> saveFcmToken(String userId) async {
     try {
       final token = await _messaging.getToken();
-      if (token == null) return;
+      if (token == null) {
+        TalkerService.warning(
+          'FCM getToken() returned null for user $userId — '
+          'push notifications will not work.',
+        );
+        return;
+      }
 
-      await FirebaseFirestore.instance.collection('users').doc(userId).update({
+      await FirebaseFirestore.instance.collection('users').doc(userId).set({
         'fcmToken': token,
-      });
+      }, SetOptions(merge: true));
 
       TalkerService.info('FCM token saved for user $userId');
 
       // Listen for token refreshes
       _messaging.onTokenRefresh.listen((newToken) async {
-        await FirebaseFirestore.instance.collection('users').doc(userId).update(
-          {'fcmToken': newToken},
-        );
+        await FirebaseFirestore.instance.collection('users').doc(userId).set({
+          'fcmToken': newToken,
+        }, SetOptions(merge: true));
         TalkerService.info('FCM token refreshed for user $userId');
       });
     } catch (e) {
@@ -256,7 +266,16 @@ class PushNotificationService {
           AppRoutes.chatDetail.path.replaceFirst(':id', referenceId),
         );
       case 'ride_request':
+      case 'ride_booking_request':
+        context.push(AppRoutes.driverRequests.path);
       case 'ride_update':
+      case 'ride_booking_accepted':
+      case 'ride_booking_rejected':
+      case 'ride_booking_cancelled':
+      case 'ride_starting_soon':
+      case 'ride_started':
+      case 'ride_completed':
+      case 'ride_cancelled':
         context.push(
           AppRoutes.rideDetail.path.replaceFirst(':id', referenceId),
         );
@@ -275,6 +294,14 @@ class PushNotificationService {
         return NotificationChannels.messagesId;
       case 'ride_request':
       case 'ride_update':
+      case 'ride_booking_request':
+      case 'ride_booking_accepted':
+      case 'ride_booking_rejected':
+      case 'ride_booking_cancelled':
+      case 'ride_starting_soon':
+      case 'ride_started':
+      case 'ride_completed':
+      case 'ride_cancelled':
         return NotificationChannels.ridesId;
       default:
         return NotificationChannels.generalId;

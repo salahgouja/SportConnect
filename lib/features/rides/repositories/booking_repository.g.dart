@@ -26,7 +26,7 @@ final class BookingRepositoryProvider
         argument: null,
         retry: null,
         name: r'bookingRepositoryProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -54,4 +54,4 @@ final class BookingRepositoryProvider
   }
 }
 
-String _$bookingRepositoryHash() => r'175bf857dc34a1236c9915e1869d2d742662c307';
+String _$bookingRepositoryHash() => r'b3fdd6f71291f1bd8a3a073d9ba26cf1c620bad1';

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
@@ -14,11 +16,30 @@ class RideRepository implements IRideRepository {
 
   RideRepository(this._firestore);
 
-  CollectionReference<Map<String, dynamic>> get _ridesCollection =>
-      _firestore.collection(AppConstants.ridesCollection);
+  CollectionReference<RideModel> get _ridesCollection => _firestore
+      .collection(AppConstants.ridesCollection)
+      .withConverter<RideModel>(
+        fromFirestore: (snap, _) =>
+            RideModel.fromJson({...snap.data()!, 'id': snap.id}),
+        toFirestore: (ride, _) => ride.toJson(),
+      );
 
-  CollectionReference<Map<String, dynamic>> get _rideRequestsCollection =>
-      _firestore.collection('rideRequests');
+  CollectionReference<RideRequestModel> get _rideRequestsCollection =>
+      _firestore
+          .collection(AppConstants.rideRequestsCollection)
+          .withConverter<RideRequestModel>(
+            fromFirestore: (snap, _) =>
+                RideRequestModel.fromJson({...snap.data()!, 'id': snap.id}),
+            toFirestore: (request, _) => request.toJson(),
+          );
+
+  CollectionReference<RideBooking> get _rideBookingsCollection => _firestore
+      .collection(AppConstants.bookingsCollection)
+      .withConverter<RideBooking>(
+        fromFirestore: (snap, _) =>
+            RideBooking.fromJson({...snap.data()!, 'id': snap.id}),
+        toFirestore: (booking, _) => booking.toJson(),
+      );
 
   /// Create a new ride
   @override
@@ -29,7 +50,7 @@ class RideRepository implements IRideRepository {
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
-    await docRef.set(rideWithId.toJson());
+    await docRef.set(rideWithId);
     return docRef.id;
   }
 
@@ -37,25 +58,22 @@ class RideRepository implements IRideRepository {
   @override
   Future<RideModel?> getRideById(String rideId) async {
     final doc = await _ridesCollection.doc(rideId).get();
-    if (!doc.exists) return null;
-    return RideModel.fromJson(doc.data()!);
+    return doc.data();
   }
 
   /// Stream ride by ID (real-time updates)
   Stream<RideModel?> streamRideById(String rideId) {
-    return _ridesCollection.doc(rideId).snapshots().map((doc) {
-      if (!doc.exists) return null;
-      return RideModel.fromJson(doc.data()!);
-    });
+    return _ridesCollection.doc(rideId).snapshots().map((doc) => doc.data());
   }
 
   /// Update ride
   @override
   Future<void> updateRide(RideModel ride) async {
-    await _ridesCollection.doc(ride.id).update({
-      ...ride.toJson(),
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+    final json = ride.toJson()
+      ..remove('id')
+      ..remove('createdAt');
+    json['updatedAt'] = DateTime.now();
+    await _ridesCollection.doc(ride.id).update(json);
   }
 
   /// Update ride with map (helper method)
@@ -63,7 +81,7 @@ class RideRepository implements IRideRepository {
     String rideId,
     Map<String, dynamic> updates,
   ) async {
-    updates['updatedAt'] = FieldValue.serverTimestamp();
+    updates['updatedAt'] = DateTime.now();
     await _ridesCollection.doc(rideId).update(updates);
   }
 
@@ -83,11 +101,7 @@ class RideRepository implements IRideRepository {
         .where('schedule.departureTime', isGreaterThan: Timestamp.now())
         .orderBy('schedule.departureTime')
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => RideModel.fromJson(doc.data()))
-              .toList(),
-        );
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 
   @override
@@ -98,22 +112,19 @@ class RideRepository implements IRideRepository {
         .orderBy('schedule.departureTime', descending: true)
         .limit(50)
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => RideModel.fromJson(doc.data()))
-              .toList(),
-        );
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 
   @override
   Future<String> createRideRequest(RideRequestModel request) async {
-    final docRef = _rideRequestsCollection.doc();
-    final requestWithId = request.copyWith(
-      id: docRef.id,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-    await docRef.set(requestWithId.toJson());
+    final rawCol = _firestore.collection(AppConstants.rideRequestsCollection);
+    final docRef = rawCol.doc();
+    final requestWithId = request.copyWith(id: docRef.id);
+    final json = requestWithId.toJson();
+    // Use server timestamps for consistent chronological ordering
+    json['createdAt'] = DateTime.now();
+    json['updatedAt'] = DateTime.now();
+    await docRef.set(json);
     return docRef.id;
   }
 
@@ -121,8 +132,8 @@ class RideRepository implements IRideRepository {
   Future<void> acceptRideRequest(String requestId) async {
     await _rideRequestsCollection.doc(requestId).update({
       'status': RideRequestStatus.accepted.name,
-      'respondedAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
+      'respondedAt': DateTime.now(),
+      'updatedAt': DateTime.now(),
     });
   }
 
@@ -130,24 +141,24 @@ class RideRepository implements IRideRepository {
   Future<void> rejectRideRequest(String requestId) async {
     await _rideRequestsCollection.doc(requestId).update({
       'status': RideRequestStatus.rejected.name,
-      'respondedAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
+      'respondedAt': DateTime.now(),
+      'updatedAt': DateTime.now(),
     });
   }
 
   @override
   Future<RideRequestModel?> getRideRequest(String requestId) async {
     final doc = await _rideRequestsCollection.doc(requestId).get();
-    if (!doc.exists) return null;
-    return RideRequestModel.fromJson(doc.data()!);
+    return doc.data();
   }
 
   @override
   Future<void> updateRideRequest(RideRequestModel request) async {
-    await _rideRequestsCollection.doc(request.id).update({
-      ...request.toJson(),
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+    final json = request.toJson()
+      ..remove('id')
+      ..remove('createdAt');
+    json['updatedAt'] = DateTime.now();
+    await _rideRequestsCollection.doc(request.id).update(json);
   }
 
   @override
@@ -157,11 +168,7 @@ class RideRepository implements IRideRepository {
         .where('status', isEqualTo: RideRequestStatus.pending.name)
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => RideRequestModel.fromJson(doc.data()))
-              .toList(),
-        );
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 
   @override
@@ -177,37 +184,34 @@ class RideRepository implements IRideRepository {
     final radiusKm = 10.0;
     final latRange = radiusKm / 111.0;
 
-    Query<Map<String, dynamic>> query = _ridesCollection
+    Query<RideModel> query = _ridesCollection
         .where('status', isEqualTo: 'active')
         .where('route.origin.latitude', isGreaterThan: originLat - latRange)
         .where('route.origin.latitude', isLessThan: originLat + latRange);
 
     final results = await query.get();
 
-    final rides = results.docs
-        .map((doc) => RideModel.fromJson(doc.data()))
-        .where((ride) {
-          if (date != null && !_isSameDay(ride.schedule.departureTime, date)) {
-            return false;
-          }
-          if (minSeats != null && ride.capacity.available < minSeats) {
-            return false;
-          }
-          if (maxPrice != null && ride.pricing.pricePerSeat.amount > maxPrice) {
-            return false;
-          }
+    final rides = results.docs.map((doc) => doc.data()).where((ride) {
+      if (date != null && !_isSameDay(ride.schedule.departureTime, date)) {
+        return false;
+      }
+      if (minSeats != null && ride.capacity.available < minSeats) {
+        return false;
+      }
+      if (maxPrice != null && ride.pricing.pricePerSeat.amount > maxPrice) {
+        return false;
+      }
 
-          final destDistance = _calculateDistance(
-            ride.route.destination.latitude,
-            ride.route.destination.longitude,
-            destLat,
-            destLng,
-          );
-          if (destDistance > radiusKm) return false;
+      final destDistance = _calculateDistance(
+        ride.route.destination.latitude,
+        ride.route.destination.longitude,
+        destLat,
+        destLng,
+      );
+      if (destDistance > radiusKm) return false;
 
-          return true;
-        })
-        .toList();
+      return true;
+    }).toList();
 
     rides.sort(
       (a, b) => a.schedule.departureTime.compareTo(b.schedule.departureTime),
@@ -220,7 +224,7 @@ class RideRepository implements IRideRepository {
     await _ridesCollection.doc(rideId).update({
       'status': RideStatus.cancelled.name,
       'cancellationReason': reason,
-      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedAt': DateTime.now(),
     });
   }
 
@@ -233,7 +237,7 @@ class RideRepository implements IRideRepository {
         .orderBy('schedule.departureTime', descending: true)
         .get();
 
-    return query.docs.map((doc) => RideModel.fromJson(doc.data())).toList();
+    return query.docs.map((doc) => doc.data()).toList();
   }
 
   /// Stream rides by driver (real-time)
@@ -242,11 +246,7 @@ class RideRepository implements IRideRepository {
         .where('driverId', isEqualTo: driverId)
         .orderBy('schedule.departureTime', descending: true)
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => RideModel.fromJson(doc.data()))
-              .toList(),
-        );
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 
   /// Stream rides where user is a passenger.
@@ -255,7 +255,9 @@ class RideRepository implements IRideRepository {
   /// rides the user is booked on, then fetches the ride documents.
   Stream<List<RideModel>> streamRidesAsPassenger(String userId) {
     // Query the bookings collection for this passenger's active bookings
-    final bookingsCollection = _firestore.collection('bookings');
+    final bookingsCollection = _firestore.collection(
+      AppConstants.bookingsCollection,
+    );
     return bookingsCollection
         .where('passengerId', isEqualTo: userId)
         .where('status', whereIn: ['pending', 'accepted'])
@@ -281,9 +283,7 @@ class RideRepository implements IRideRepository {
             final query = await _ridesCollection
                 .where(FieldPath.documentId, whereIn: batch)
                 .get();
-            rides.addAll(
-              query.docs.map((doc) => RideModel.fromJson(doc.data())),
-            );
+            rides.addAll(query.docs.map((doc) => doc.data()));
           }
 
           // Sort by departure time descending
@@ -297,7 +297,9 @@ class RideRepository implements IRideRepository {
   /// Queries the bookings collection to find active bookings,
   /// then filters to upcoming rides only.
   Future<List<RideModel>> getUpcomingRidesAsPassenger(String userId) async {
-    final bookingsCollection = _firestore.collection('bookings');
+    final bookingsCollection = _firestore.collection(
+      AppConstants.bookingsCollection,
+    );
     final bookingSnapshot = await bookingsCollection
         .where('passengerId', isEqualTo: userId)
         .where('status', whereIn: ['pending', 'accepted'])
@@ -320,7 +322,7 @@ class RideRepository implements IRideRepository {
       final query = await _ridesCollection
           .where(FieldPath.documentId, whereIn: batch)
           .get();
-      rides.addAll(query.docs.map((doc) => RideModel.fromJson(doc.data())));
+      rides.addAll(query.docs.map((doc) => doc.data()));
     }
 
     // Filter to only future rides and sort ascending
@@ -332,28 +334,38 @@ class RideRepository implements IRideRepository {
     return upcoming;
   }
 
-  /// Stream rides near location (real-time)
+  /// Stream rides near location (real-time).
+  ///
+  /// Firestore only allows a range/inequality filter on a **single** field per
+  /// query. We apply the departure-time inequality in Firestore (the most
+  /// selective filter) and then post-filter by latitude/longitude in memory
+  /// using the Haversine formula so we don't need a composite index.
   Stream<List<RideModel>> streamNearbyRides({
     required double latitude,
     required double longitude,
     double radiusKm = 20.0,
   }) {
-    final latRange = radiusKm / 111.0;
-
     return _ridesCollection
         .where('status', isEqualTo: 'active')
         .where('schedule.departureTime', isGreaterThan: Timestamp.now())
-        .where('route.origin.latitude', isGreaterThan: latitude - latRange)
-        .where('route.origin.latitude', isLessThan: latitude + latRange)
-        .orderBy('route.origin.latitude')
         .orderBy('schedule.departureTime')
-        .limit(50)
+        .limit(100) // Fetch a larger set so post-filtering still returns enough
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => RideModel.fromJson(doc.data()))
-              .toList(),
-        );
+        .map((snapshot) {
+          return snapshot.docs
+              .map((doc) => doc.data())
+              .where((ride) {
+                final dist = _calculateDistance(
+                  ride.route.origin.latitude,
+                  ride.route.origin.longitude,
+                  latitude,
+                  longitude,
+                );
+                return dist <= radiusKm;
+              })
+              .take(50)
+              .toList();
+        });
   }
 
   /// Stream all active rides (for search screen)
@@ -364,62 +376,74 @@ class RideRepository implements IRideRepository {
         .orderBy('schedule.departureTime')
         .limit(50)
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => RideModel.fromJson(doc.data()))
-              .toList(),
-        );
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 
   /// Books a ride by creating a booking document in the bookings
-  /// collection and updating the ride's booking IDs and capacity.
+  /// collection and recording the booking ID on the ride.
+  ///
+  /// **Capacity is NOT incremented here.** Seats are only reserved when
+  /// the driver accepts the booking (via [updateBookingStatus] with
+  /// [BookingStatus.accepted]). This prevents over-restricting seat
+  /// availability for rides that use manual acceptance.
   Future<void> bookRide({
     required String rideId,
     required RideBooking booking,
   }) async {
     // Store the booking in the bookings collection
-    await _firestore
-        .collection('bookings')
-        .doc(booking.id)
-        .set(booking.toJson());
+    await _rideBookingsCollection.doc(booking.id).set(booking);
 
-    // Update ride's bookingIds list and increment booked capacity
+    // Track the booking ID on the ride document (but don't touch capacity yet)
     await _ridesCollection.doc(rideId).update({
       'bookingIds': FieldValue.arrayUnion([booking.id]),
-      'capacity.booked': FieldValue.increment(booking.seatsBooked),
-      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedAt': DateTime.now(),
     });
   }
 
   /// Updates booking status in the bookings collection and adjusts
-  /// ride capacity when a booking is cancelled.
+  /// ride capacity when a booking is cancelled or rejected.
+  ///
+  /// Reads `seatsBooked` BEFORE updating the status to avoid a
+  /// TOCTOU race condition where the booking document is already
+  /// overwritten by the time we read it back.
   Future<void> updateBookingStatus({
     required String rideId,
     required String bookingId,
     required BookingStatus newStatus,
   }) async {
-    // Update the booking document directly
-    await _firestore.collection('bookings').doc(bookingId).update({
+    // Read seatsBooked first (before any writes) to avoid TOCTOU race
+    int seatsBooked = 1;
+    if (newStatus == BookingStatus.cancelled ||
+        newStatus == BookingStatus.rejected ||
+        newStatus == BookingStatus.accepted) {
+      final bookingDoc = await _rideBookingsCollection.doc(bookingId).get();
+      if (bookingDoc.exists) {
+        seatsBooked = bookingDoc.data()?.seatsBooked ?? 1;
+      }
+    }
+
+    // Now update the booking document
+    await _rideBookingsCollection.doc(bookingId).update({
       'status': newStatus.name,
-      'respondedAt': FieldValue.serverTimestamp(),
+      'respondedAt': DateTime.now(),
     });
 
-    // If cancelled, free up the seats on the ride
+    // If accepted, reserve the seats on the ride
+    if (newStatus == BookingStatus.accepted) {
+      await _ridesCollection.doc(rideId).update({
+        'capacity.booked': FieldValue.increment(seatsBooked),
+        'updatedAt': DateTime.now(),
+      });
+    }
+
+    // If cancelled/rejected, free up the seats using the value read above
     if (newStatus == BookingStatus.cancelled ||
         newStatus == BookingStatus.rejected) {
-      final bookingDoc = await _firestore
-          .collection('bookings')
-          .doc(bookingId)
-          .get();
-      if (bookingDoc.exists) {
-        final seatsBooked =
-            (bookingDoc.data()?['seatsBooked'] as num?)?.toInt() ?? 1;
-        await _ridesCollection.doc(rideId).update({
-          'bookingIds': FieldValue.arrayRemove([bookingId]),
-          'capacity.booked': FieldValue.increment(-seatsBooked),
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-      }
+      await _ridesCollection.doc(rideId).update({
+        'bookingIds': FieldValue.arrayRemove([bookingId]),
+        'capacity.booked': FieldValue.increment(-seatsBooked),
+        'updatedAt': DateTime.now(),
+      });
     }
   }
 
@@ -438,20 +462,37 @@ class RideRepository implements IRideRepository {
   /// Adds a review for a ride.
   ///
   /// Stores the review in the reviews collection and updates the
-  /// ride's aggregated review count and average rating.
+  /// ride's aggregated review count and recalculates the average rating
+  /// atomically inside a Firestore transaction.
   Future<void> addReview({
     required String rideId,
     required Map<String, dynamic> reviewData,
   }) async {
     final reviewId = reviewData['id'] as String? ?? '';
+    final newRating = (reviewData['rating'] as num?)?.toDouble() ?? 0.0;
 
-    // Store the review in the reviews collection
-    await _firestore.collection('reviews').doc(reviewId).set(reviewData);
+    await _firestore.runTransaction((transaction) async {
+      // Store the review document
+      final reviewRef = _firestore.collection('reviews').doc(reviewId);
+      transaction.set(reviewRef, reviewData);
 
-    // Update ride's aggregated stats
-    await _ridesCollection.doc(rideId).update({
-      'reviewCount': FieldValue.increment(1),
-      'updatedAt': FieldValue.serverTimestamp(),
+      // Read current ride stats
+      final rideRef = _ridesCollection.doc(rideId);
+      final rideSnap = await transaction.get(rideRef);
+      if (!rideSnap.exists) return;
+
+      final currentCount = (rideSnap.data()!.reviewCount.toInt());
+      final currentAvg = (rideSnap.data()!.averageRating).toDouble();
+
+      // Incremental average: newAvg = (oldAvg * count + newRating) / (count + 1)
+      final newCount = currentCount + 1;
+      final newAvg = ((currentAvg * currentCount) + newRating) / newCount;
+
+      transaction.update(rideRef, {
+        'reviewCount': newCount,
+        'averageRating': double.parse(newAvg.toStringAsFixed(2)),
+        'updatedAt': DateTime.now(),
+      });
     });
   }
 
@@ -460,17 +501,20 @@ class RideRepository implements IRideRepository {
   Future<void> startRide(String rideId) async {
     await _ridesCollection.doc(rideId).update({
       'status': RideStatus.inProgress.name,
-      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedAt': DateTime.now(),
     });
   }
 
   /// Complete ride
+  ///
+  /// Writes `arrivalTime` inside the `schedule` sub-object to match the
+  /// `RideSchedule` model structure (not at the document root level).
   @override
   Future<void> completeRide(String rideId) async {
     await _ridesCollection.doc(rideId).update({
       'status': RideStatus.completed.name,
-      'arrivalTime': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
+      'schedule.arrivalTime': DateTime.now(),
+      'updatedAt': DateTime.now(),
     });
   }
 
@@ -478,6 +522,8 @@ class RideRepository implements IRideRepository {
   bool _isSameDay(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month && a.day == b.day;
   }
+
+  double _degToRad(double deg) => deg * math.pi / 180;
 
   double _calculateDistance(
     double lat1,
@@ -490,20 +536,17 @@ class RideRepository implements IRideRepository {
     final dLat = _degToRad(lat2 - lat1);
     final dLon = _degToRad(lon2 - lon1);
     final a =
-        _sinSquared(dLat / 2) +
-        cosDeg(lat1) * cosDeg(lat2) * _sinSquared(dLon / 2);
-    final c = 2 * _atan2(a);
+        math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(_degToRad(lat1)) *
+            math.cos(_degToRad(lat2)) *
+            math.sin(dLon / 2) *
+            math.sin(dLon / 2);
+    final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
     return earthRadius * c;
   }
-
-  double _degToRad(double deg) => deg * 3.141592653589793 / 180;
-  double cosDeg(double deg) => _cos(_degToRad(deg));
-  double _cos(double rad) => rad; // Simplified - use dart:math in production
-  double _sinSquared(double x) => x * x; // Simplified
-  double _atan2(double x) => x; // Simplified
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 RideRepository rideRepository(Ref ref) {
   return RideRepository(FirebaseFirestore.instance);
 }

@@ -21,12 +21,24 @@ const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 const PLATFORM_FEE_PERCENT = 0.15; // 15%
 
 // ============================================
-// Helper: Send FCM Push Notification
+// Helper: Clean up a single stale FCM token
 // ============================================
 
-/**
- * Look up a user's FCM token and send a push notification.
- */
+async function removeStaleToken(userId: string): Promise<void> {
+  logger.info(`Removing stale FCM token for user ${userId}`);
+  await admin
+    .firestore()
+    .collection("users")
+    .doc(userId)
+    .update({fcmToken: admin.firestore.FieldValue.delete()});
+}
+
+// ============================================
+// Helper: Send FCM Push Notification (single user)
+// Used for single-recipient notifications only.
+// For multi-recipient use sendPushToMultipleUsers().
+// ============================================
+
 async function sendPushToUser(
   userId: string,
   title: string,
@@ -66,7 +78,9 @@ async function sendPushToUser(
         payload: {
           aps: {
             sound: "default",
-            badge: 1,
+            // FIX: badge removed — hardcoding 1 was wrong.
+            // Badge counts must be managed client-side or via a counter,
+            // not hardcoded to 1 on the server.
           },
         },
       },
@@ -75,23 +89,113 @@ async function sendPushToUser(
     logger.info(`Push sent to ${userId}: "${title}"`);
   } catch (error: unknown) {
     const e = error as {code?: string};
-    // Token may be stale — clean it up
+    // FIX: Added all valid FCM v1 API invalid-token error codes.
+    // The HTTP v1 API maps stale/invalid tokens to both
+    // "messaging/registration-token-not-registered" (UNREGISTERED)
+    // and "messaging/invalid-argument" (INVALID_ARGUMENT).
     if (
+      e.code === "messaging/registration-token-not-registered" ||
       e.code === "messaging/invalid-registration-token" ||
-      e.code === "messaging/registration-token-not-registered"
+      e.code === "messaging/invalid-argument"
     ) {
-      logger.info(`Removing stale FCM token for user ${userId}`);
-      await admin
-        .firestore()
-        .collection("users")
-        .doc(userId)
-        .update({
-          fcmToken: admin.firestore.FieldValue.delete(),
-        });
+      await removeStaleToken(userId);
     } else {
       logger.error(`Failed to send push to ${userId}:`, error);
     }
   }
+}
+
+// ============================================
+// Helper: Send FCM Push to Multiple Users (batch)
+// FIX: Replaced N individual sendPushToUser() calls with a single
+// sendEachForMulticast() to avoid N Firestore reads + N FCM HTTP calls.
+// Uses admin.firestore().getAll() to batch-fetch all tokens in one read,
+// then sends one multicast request. Stale tokens are cleaned up per-response.
+// ============================================
+
+async function sendPushToMultipleUsers(
+  userIds: string[],
+  title: string,
+  body: string,
+  data: Record<string, string>,
+): Promise<void> {
+  if (userIds.length === 0) return;
+
+  // Batch-fetch all user documents in a single Firestore call
+  const userRefs = userIds.map((id) =>
+    admin.firestore().collection("users").doc(id),
+  );
+  const userDocs = await admin.firestore().getAll(...userRefs);
+
+  // Map tokens back to userIds so we can clean up stale ones later
+  const tokenToUserId: Record<string, string> = {};
+  const tokens: string[] = [];
+
+  userDocs.forEach((doc, idx) => {
+    const token = doc.data()?.fcmToken as string | undefined;
+    if (token) {
+      tokens.push(token);
+      tokenToUserId[token] = userIds[idx];
+    } else {
+      logger.info(`No FCM token for user ${userIds[idx]}, skipping`);
+    }
+  });
+
+  if (tokens.length === 0) return;
+
+  const channelId =
+    data.type === "message"
+      ? "sport_connect_messages"
+      : data.type === "ride_request" || data.type === "ride_update"
+        ? "sport_connect_rides"
+        : "sport_connect_general";
+
+  const response = await admin.messaging().sendEachForMulticast({
+    tokens,
+    notification: {title, body},
+    data,
+    android: {
+      priority: "high",
+      notification: {
+        channelId,
+        sound: "default",
+      },
+    },
+    apns: {
+      payload: {
+        aps: {
+          sound: "default",
+          // FIX: No hardcoded badge — managed client-side
+        },
+      },
+    },
+  });
+
+  // Handle per-token failures — clean up stale tokens
+  if (response.failureCount > 0) {
+    const cleanupPromises: Promise<void>[] = [];
+    response.responses.forEach((resp, idx) => {
+      if (!resp.success && resp.error) {
+        const code = resp.error.code;
+        const staleToken = tokens[idx];
+        const userId = tokenToUserId[staleToken];
+        if (
+          code === "messaging/registration-token-not-registered" ||
+          code === "messaging/invalid-registration-token" ||
+          code === "messaging/invalid-argument"
+        ) {
+          cleanupPromises.push(removeStaleToken(userId));
+        } else {
+          logger.error(`FCM send failed for user ${userId}:`, resp.error);
+        }
+      }
+    });
+    await Promise.all(cleanupPromises);
+  }
+
+  logger.info(
+    `Multicast sent: ${response.successCount} success, ${response.failureCount} failure out of ${tokens.length}`,
+  );
 }
 
 // ============================================
@@ -106,10 +210,13 @@ export const onNewMessage = onDocumentCreated(
 
     const senderId = message.senderId as string;
     const senderName = message.senderName as string;
-    const content = message.content as string;
     const chatId = event.params.chatId;
 
-    // Get chat document to find other participants
+    // FIX: Do NOT include raw message content in the push payload.
+    // Sending real content through FCM exposes it on Google's infrastructure.
+    // Use a generic body and let the app fetch the actual message on open.
+    const notificationBody = "You have a new message";
+
     const chatDoc = await admin
       .firestore()
       .collection("chats")
@@ -119,26 +226,21 @@ export const onNewMessage = onDocumentCreated(
     if (!chatData) return;
 
     const participantIds = (chatData.participantIds as string[]) || [];
+    const recipients = participantIds.filter((id: string) => id !== senderId);
 
-    // Send push to all participants except the sender
-    const pushPromises = participantIds
-      .filter((id: string) => id !== senderId)
-      .map((recipientId: string) =>
-        sendPushToUser(
-          recipientId,
-          senderName,
-          content.length > 100
-            ? content.substring(0, 100) + "..."
-            : content,
-          {
-            type: "message",
-            referenceId: chatId,
-            senderId,
-          },
-        ),
-      );
+    if (recipients.length === 0) return;
 
-    await Promise.all(pushPromises);
+    // FIX: Use batch multicast instead of N individual calls
+    await sendPushToMultipleUsers(
+      recipients,
+      senderName,
+      notificationBody,
+      {
+        type: "message",
+        referenceId: chatId,
+        senderId,
+      },
+    );
   },
 );
 
@@ -160,9 +262,7 @@ export const onNewRideRequest = onDocumentCreated(
     await sendPushToUser(
       driverId,
       "New Ride Request",
-      `${riderName} wants to join your ride${
-        pickup ? " from " + pickup : ""
-      }`,
+      `${riderName} wants to join your ride${pickup ? " from " + pickup : ""}`,
       {
         type: "ride_request",
         referenceId: rideId,
@@ -183,7 +283,6 @@ export const onRideRequestUpdated = onDocumentUpdated(
     const after = event.data?.after.data();
     if (!before || !after) return;
 
-    // Only trigger on status changes
     if (before.status === after.status) return;
 
     const riderId = after.riderId as string;
@@ -207,7 +306,7 @@ export const onRideRequestUpdated = onDocumentUpdated(
       body = "A ride you were part of has been cancelled.";
       break;
     default:
-      return; // No push for other statuses
+      return;
     }
 
     await sendPushToUser(riderId, title, body, {
@@ -234,40 +333,34 @@ export const onRideStatusChanged = onDocumentUpdated(
       const passengerIds = (after.passengerIds as string[]) || [];
       const driverName = (after.driverName as string) || "Your driver";
 
-      const pushPromises = passengerIds.map((passengerId: string) =>
-        sendPushToUser(
-          passengerId,
-          "Your Ride Has Started! 🚗",
-          `${driverName} has started the ride. Track your trip in the app.`,
-          {
-            type: "ride_update",
-            referenceId: event.params.rideId,
-            status: "active",
-          },
-        ),
+      // FIX: Use batch multicast
+      await sendPushToMultipleUsers(
+        passengerIds,
+        "Your Ride Has Started! 🚗",
+        `${driverName} has started the ride. Track your trip in the app.`,
+        {
+          type: "ride_update",
+          referenceId: event.params.rideId,
+          status: "active",
+        },
       );
-
-      await Promise.all(pushPromises);
     }
 
     // Notify passengers when ride is completed
     if (before.status !== "completed" && after.status === "completed") {
       const passengerIds = (after.passengerIds as string[]) || [];
 
-      const pushPromises = passengerIds.map((passengerId: string) =>
-        sendPushToUser(
-          passengerId,
-          "Ride Completed ✅",
-          "Your ride is complete. Don't forget to rate your driver!",
-          {
-            type: "ride_update",
-            referenceId: event.params.rideId,
-            status: "completed",
-          },
-        ),
+      // FIX: Use batch multicast
+      await sendPushToMultipleUsers(
+        passengerIds,
+        "Ride Completed ✅",
+        "Your ride is complete. Don't forget to rate your driver!",
+        {
+          type: "ride_update",
+          referenceId: event.params.rideId,
+          status: "completed",
+        },
       );
-
-      await Promise.all(pushPromises);
     }
   },
 );
@@ -287,7 +380,6 @@ export const onNewEvent = onDocumentCreated(
     const eventType = (data.type as string) || "sport";
     const eventId = event.params.eventId;
 
-    // Notify the creator that their event is live
     await sendPushToUser(
       creatorId,
       "Your event is live! 🎉",
@@ -316,7 +408,6 @@ export const onEventUpdated = onDocumentUpdated(
     const eventTitle = (after.title as string) || "An event";
     const creatorId = after.creatorId as string;
 
-    // ── 1. A new participant joined ──────────────────────────────────────
     const participantsBefore = (before.participantIds as string[]) || [];
     const participantsAfter = (after.participantIds as string[]) || [];
 
@@ -324,10 +415,9 @@ export const onEventUpdated = onDocumentUpdated(
       (id: string) => !participantsBefore.includes(id),
     );
 
+    // ── 1. New participant joined ─────────────────────────────────────────
     for (const participantId of newParticipants) {
-      // Notify the event creator about the new participant
       if (participantId !== creatorId) {
-        // Look up the joining user's name for a personalised message
         let joinerName = "A new player";
         try {
           const userDoc = await admin
@@ -337,7 +427,7 @@ export const onEventUpdated = onDocumentUpdated(
             .get();
           joinerName = (userDoc.data()?.displayName as string) || joinerName;
         } catch {
-          // Graceful fallback — name is just cosmetic
+          // Graceful fallback — name is cosmetic only
         }
 
         await sendPushToUser(
@@ -352,7 +442,7 @@ export const onEventUpdated = onDocumentUpdated(
         );
       }
 
-      // Confirm to the participant that they are in
+      // Confirm to the joining participant
       await sendPushToUser(
         participantId,
         "You're in! ✅",
@@ -364,28 +454,25 @@ export const onEventUpdated = onDocumentUpdated(
       );
     }
 
-    // ── 2. Event cancelled (isActive flipped from true → false) ─────────
+    // ── 2. Event cancelled ────────────────────────────────────────────────
     if (before.isActive === true && after.isActive === false) {
       const allParticipants = participantsAfter.filter(
         (id: string) => id !== creatorId,
       );
 
-      const cancelPushes = allParticipants.map((participantId: string) =>
-        sendPushToUser(
-          participantId,
-          "Event cancelled 😞",
-          `Unfortunately "${eventTitle}" has been cancelled by the organiser.`,
-          {
-            type: "event_cancelled",
-            referenceId: eventId,
-          },
-        ),
+      // FIX: Use batch multicast for cancellation notifications
+      await sendPushToMultipleUsers(
+        allParticipants,
+        "Event cancelled 😞",
+        `Unfortunately "${eventTitle}" has been cancelled by the organiser.`,
+        {
+          type: "event_cancelled",
+          referenceId: eventId,
+        },
       );
-
-      await Promise.all(cancelPushes);
     }
 
-    // ── 3. Event is now full ─────────────────────────────────────────────
+    // ── 3. Event is now full ──────────────────────────────────────────────
     const maxParticipants = (after.maxParticipants as number) || 0;
     if (
       maxParticipants > 0 &&
@@ -449,13 +536,13 @@ export const createConnectedAccount = onCall(
       addressLine1,
       city,
     } = request.data;
+
     logger.info("Parsed - userId:", userId, "email:", email, "country:", country);
 
     if (!email) {
       throw new HttpsError("invalid-argument", "Email is required");
     }
 
-    // Get the Stripe API key from secret
     let stripeApiKey: string;
     try {
       stripeApiKey = stripeSecretKey.value().trim();
@@ -465,13 +552,9 @@ export const createConnectedAccount = onCall(
       throw new HttpsError("internal", "Failed to load Stripe API key");
     }
 
-    logger.info("Creating Stripe client...");
     const stripe = getStripeClient(stripeApiKey);
-    logger.info("Stripe client created successfully");
-
     const db = admin.firestore();
 
-    // Try to get driver info from users collection (where user data is stored)
     const userDoc = await db.collection("users").doc(userId).get();
     const userData = userDoc.data();
 
@@ -479,18 +562,16 @@ export const createConnectedAccount = onCall(
       throw new HttpsError("not-found", "User not found in database");
     }
 
-    // Check if user is a driver
     if (userData.role !== "driver") {
       throw new HttpsError(
         "failed-precondition",
-        "User is not registered as a driver"
+        "User is not registered as a driver",
       );
     }
 
     let accountId = userData.stripeAccountId;
     logger.info("User data - role:", userData.role, "stripeAccountId:", accountId);
 
-    // If there's an existing accountId, verify it exists in Stripe
     if (accountId) {
       logger.info("Found existing stripeAccountId:", accountId);
       try {
@@ -498,7 +579,6 @@ export const createConnectedAccount = onCall(
         logger.info("Existing Stripe account found:", existingAccount.id);
       } catch (error) {
         logger.info("Existing Stripe account not valid, creating new one:", error);
-        // Clear invalid accountId and create new one
         accountId = null;
         await db.collection("users").doc(userId).update({
           stripeAccountId: admin.firestore.FieldValue.delete(),
@@ -511,18 +591,14 @@ export const createConnectedAccount = onCall(
     }
 
     if (!accountId) {
-      // Create new Stripe Connect account with prefilled individual info
-      // Prefilling reduces onboarding friction - Stripe won't ask for prefilled fields
       logger.info("Creating new Stripe Connect account for:", email);
 
-      // Build individual info from user profile data
       const individual: Record<string, unknown> = {};
       if (firstName) individual.first_name = firstName;
       if (lastName) individual.last_name = lastName;
       if (email) individual.email = email;
       if (phone) individual.phone = phone;
 
-      // Prefill date of birth if available
       if (dateOfBirth) {
         const dob = new Date(dateOfBirth);
         if (!isNaN(dob.getTime())) {
@@ -534,7 +610,6 @@ export const createConnectedAccount = onCall(
         }
       }
 
-      // Prefill address if available
       if (addressLine1 || city) {
         individual.address = {
           ...(addressLine1 && {line1: addressLine1}),
@@ -553,7 +628,7 @@ export const createConnectedAccount = onCall(
         },
         business_type: "individual",
         business_profile: {
-          mcc: "4121", // Taxicabs/Limousines - standard MCC for rideshare/carpooling
+          mcc: "4121",
           product_description:
             "Carpooling driver on SportConnect - providing shared ride services to passengers for cost-sharing commutes and sports events",
         },
@@ -564,7 +639,6 @@ export const createConnectedAccount = onCall(
       accountId = account.id;
       logger.info("New Stripe account created:", accountId);
 
-      // Save Stripe account ID to user document
       await db.collection("users").doc(userId).update({
         stripeAccountId: accountId,
         stripeAccountStatus: "pending",
@@ -575,8 +649,6 @@ export const createConnectedAccount = onCall(
       });
     }
 
-    // Stripe requires valid HTTP/HTTPS URLs for return/refresh
-    // Using Firebase Hosting with redirect pages
     const baseUrl = "https://marathon-connect.web.app";
 
     const accountLink = await stripe.accountLinks.create({
@@ -608,8 +680,6 @@ export const createAccountLink = onCall(
     }
 
     const stripe = getStripeClient(stripeSecretKey.value().trim());
-
-    // Use Firebase Hosting pages as fallback for deep links
     const baseUrl = "https://marathon-connect.web.app";
 
     const accountLink = await stripe.accountLinks.create({
@@ -644,7 +714,6 @@ export const getAccountStatus = onCall(
 
     try {
       const account = await stripe.accounts.retrieve(accountId);
-
       return {
         chargesEnabled: account.charges_enabled ?? false,
         payoutsEnabled: account.payouts_enabled ?? false,
@@ -652,11 +721,13 @@ export const getAccountStatus = onCall(
         requirements: account.requirements?.currently_due ?? [],
         disabledReason: account.requirements?.disabled_reason ?? null,
       };
-    } catch (error: any) {
-      logger.error("getAccountStatus failed", {accountId, error: error.message});
+    } catch (error: unknown) {
+      // FIX: Use typed error handling instead of `any`
+      const e = error as {message?: string};
+      logger.error("getAccountStatus failed", {accountId, error: e.message});
       throw new HttpsError(
         "not-found",
-        `Stripe account not found: ${error.message}`,
+        `Stripe account not found: ${e.message ?? "unknown error"}`,
       );
     }
   },
@@ -685,7 +756,6 @@ export const createInstantPayout = onCall(
     const stripe = getStripeClient(stripeSecretKey.value().trim());
     const db = admin.firestore();
 
-    // Authorization: verify the caller owns this Stripe connected account
     const callerDoc = await db.collection("users").doc(request.auth.uid).get();
     const callerData = callerDoc.data();
     if (!callerData || callerData.stripeAccountId !== stripeAccountId) {
@@ -695,32 +765,32 @@ export const createInstantPayout = onCall(
       );
     }
 
-    // Convert from main currency unit to cents for Stripe API
     const amountInCents = Math.round(amount * 100);
 
-    // Verify the connected account exists and has payouts enabled
-    try {
-      const account = await stripe.accounts.retrieve(stripeAccountId);
-      if (!account.payouts_enabled) {
+    // FIX: Moved charges_enabled check OUTSIDE the try/catch so the
+    // meaningful HttpsError message is preserved and not caught+re-wrapped.
+    const account = await stripe.accounts.retrieve(stripeAccountId).catch(
+      (error: unknown) => {
+        const e = error as {message?: string};
+        logger.error("createInstantPayout: account verification failed", {
+          stripeAccountId,
+          uid: request.auth?.uid,
+          error: e.message,
+        });
         throw new HttpsError(
-          "failed-precondition",
-          "Payouts are not enabled for this account",
+          "not-found",
+          `Stripe account verification failed: ${e.message ?? "unknown error"}`,
         );
-      }
-    } catch (error: any) {
-      if (error instanceof HttpsError) throw error;
-      logger.error("createInstantPayout: account verification failed", {
-        stripeAccountId,
-        uid: request.auth.uid,
-        error: error.message,
-      });
+      },
+    );
+
+    if (!account.payouts_enabled) {
       throw new HttpsError(
-        "not-found",
-        `Stripe account verification failed: ${error.message}`,
+        "failed-precondition",
+        "Payouts are not enabled for this account",
       );
     }
 
-    // Create instant payout on the connected account
     const payout = await stripe.payouts.create(
       {
         amount: amountInCents,
@@ -730,8 +800,6 @@ export const createInstantPayout = onCall(
       {stripeAccount: stripeAccountId},
     );
 
-    // Save payout record to Firestore (top-level payouts collection)
-    // Store amount in main currency unit to match client models
     const payoutRef = await db.collection("payouts").add({
       driverId: request.auth.uid,
       stripePayoutId: payout.id,
@@ -770,23 +838,23 @@ export const refundPayment = onCall(
       request.data;
 
     if (!paymentIntentId) {
-      throw new HttpsError(
-        "invalid-argument",
-        "paymentIntentId is required",
-      );
+      throw new HttpsError("invalid-argument", "paymentIntentId is required");
     }
 
     const stripe = getStripeClient(stripeSecretKey.value().trim());
     const db = admin.firestore();
 
-    // Authorization: verify the caller is associated with this payment
+    // FIX: Single Firestore query — reuse paymentSnap for both auth check
+    // and update loop. The original code queried the same collection twice.
     const paymentSnap = await db
       .collection("payments")
       .where("paymentIntentId", "==", paymentIntentId)
       .get();
+
     if (paymentSnap.empty) {
       throw new HttpsError("not-found", "Payment not found");
     }
+
     const paymentDoc = paymentSnap.docs[0].data();
     if (
       paymentDoc.passengerId !== request.auth.uid &&
@@ -798,8 +866,6 @@ export const refundPayment = onCall(
       );
     }
 
-    // Create refund
-    // Convert from main currency unit to cents for Stripe API
     const refundParams: Record<string, unknown> = {
       payment_intent: paymentIntentId,
       reason,
@@ -813,13 +879,8 @@ export const refundPayment = onCall(
       refundParams as Parameters<typeof stripe.refunds.create>[0],
     );
 
-    // Update payment record in Firestore
-    const payments = await db
-      .collection("payments")
-      .where("paymentIntentId", "==", paymentIntentId)
-      .get();
-
-    for (const doc of payments.docs) {
+    // FIX: Reuse paymentSnap.docs instead of running a second identical query
+    for (const doc of paymentSnap.docs) {
       const isFullRefund = !amount || amount >= (doc.data().amount ?? 0);
       await doc.ref.update({
         status: isFullRefund ? "refunded" : "partiallyRefunded",
@@ -858,7 +919,6 @@ export const getOrCreateCustomer = onCall(
     const db = admin.firestore();
     const userId = request.auth.uid;
 
-    // If an existing customer ID was provided, verify it still exists
     if (existingCustomerId) {
       try {
         const existing = await stripe.customers.retrieve(existingCustomerId);
@@ -870,7 +930,6 @@ export const getOrCreateCustomer = onCall(
       }
     }
 
-    // Check if user already has a Stripe customer ID in Firestore
     const userDoc = await db.collection("users").doc(userId).get();
     const userData = userDoc.data();
     if (userData?.stripeCustomerId) {
@@ -886,7 +945,6 @@ export const getOrCreateCustomer = onCall(
       }
     }
 
-    // Create new Stripe customer
     const customer = await stripe.customers.create({
       email,
       ...(name && {name}),
@@ -894,7 +952,6 @@ export const getOrCreateCustomer = onCall(
       metadata: {userId},
     });
 
-    // Save customer ID to user document
     await db.collection("users").doc(userId).update({
       stripeCustomerId: customer.id,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -926,13 +983,16 @@ export const createPaymentIntent = onCall(
       driverStripeAccountId,
       description,
       customerId,
+      // FIX: The client SDK's required API version must be passed from Flutter.
+      // The ephemeral key apiVersion must match the Flutter stripe package version,
+      // not the server's Stripe API version. Pass it as `stripeApiVersion`.
+      stripeApiVersion,
     } = request.data;
 
     if (!amount || !rideId || !driverId || !riderId) {
       throw new HttpsError("invalid-argument", "Missing required fields");
     }
 
-    // Check if driver's Stripe account ID was provided
     if (!driverStripeAccountId) {
       throw new HttpsError(
         "failed-precondition",
@@ -943,43 +1003,39 @@ export const createPaymentIntent = onCall(
     const stripe = getStripeClient(stripeSecretKey.value().trim());
     const db = admin.firestore();
 
-    // Verify the Stripe account exists and is active
-    try {
-      const account = await stripe.accounts.retrieve(driverStripeAccountId);
-      
-      if (!account.charges_enabled) {
+    // FIX: Moved charges_enabled check OUTSIDE the try/catch to preserve
+    // the meaningful error message. The original swallowed it into a generic catch.
+    const account = await stripe.accounts.retrieve(driverStripeAccountId).catch(
+      (error: unknown) => {
+        const e = error as {message?: string};
+        logger.error("Error retrieving Stripe account:", {
+          driverStripeAccountId,
+          driverId,
+          error: e.message,
+        });
         throw new HttpsError(
           "failed-precondition",
-          "Driver's Stripe account is not fully activated. Charges are not enabled.",
+          `Driver's Stripe account verification failed: ${e.message ?? "unknown error"}`,
         );
-      }
+      },
+    );
 
-      if (!account.payouts_enabled) {
-        logger.warn(
-          `Driver ${driverId} has charges enabled but payouts disabled`,
-        );
-      }
-    } catch (error: any) {
-      logger.error("Error verifying Stripe account:", {
-        driverStripeAccountId,
-        driverId,
-        error: error.message,
-      });
+    if (!account.charges_enabled) {
       throw new HttpsError(
         "failed-precondition",
-        `Driver's Stripe account verification failed: ${error.message}`,
+        "Driver's Stripe account is not fully activated. Charges are not enabled.",
       );
+    }
+
+    if (!account.payouts_enabled) {
+      logger.warn(`Driver ${driverId} has charges enabled but payouts disabled`);
     }
 
     const amountInCents = Math.round(amount * 100);
     const {platformFee, driverAmount} = calculateFees(amountInCents);
 
-    // Generate idempotency key to prevent duplicate charges on retries
     const idempotencyKey = `pi_${rideId}_${riderId}_${amountInCents}`;
 
-    // Create payment intent with destination charge
-    // - automatic_payment_methods enables all eligible payment methods for better conversion
-    // - Funds are transferred to driver's connected account after platform fee
     const paymentIntent = await stripe.paymentIntents.create(
       {
         amount: amountInCents,
@@ -993,8 +1049,6 @@ export const createPaymentIntent = onCall(
       {idempotencyKey},
     );
 
-    // Save payment record to Firestore
-    // Store amounts in main currency units (e.g., euros) to match client models
     await db.collection("payments").add({
       paymentIntentId: paymentIntent.id,
       rideId,
@@ -1012,12 +1066,16 @@ export const createPaymentIntent = onCall(
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
-    // Create ephemeral key for Payment Sheet (needed for saved cards)
+    // FIX: The ephemeral key apiVersion MUST be the version required by the
+    // Flutter stripe SDK (client-side), NOT the server API version.
+    // The client passes its required version as `stripeApiVersion`.
+    // Stripe enforces that ephemeral keys must be created with the client's version.
     let ephemeralKey: string | undefined;
     if (customerId) {
+      const ephemeralKeyVersion = stripeApiVersion || "2025-12-15.clover";
       const ephemeralKeyObj = await stripe.ephemeralKeys.create(
         {customer: customerId},
-        {apiVersion: "2025-12-15.clover"} // Use latest API version
+        {apiVersion: ephemeralKeyVersion},
       );
       ephemeralKey = ephemeralKeyObj.secret;
     }
@@ -1035,7 +1093,9 @@ export const createPaymentIntent = onCall(
 // ============================================
 
 export const stripeWebhook = onRequest(
-  {secrets: [stripeSecretKey, stripeWebhookSecret], cors: true},
+  // FIX: Webhooks do NOT need cors:true — they are called by Stripe, not by browsers.
+  // Enabling CORS on a webhook can expose it unnecessarily.
+  {secrets: [stripeSecretKey, stripeWebhookSecret]},
   async (req, res) => {
     const stripe = getStripeClient(stripeSecretKey.value().trim());
     const sig = req.headers["stripe-signature"];
@@ -1069,10 +1129,10 @@ export const stripeWebhook = onRequest(
           .where("paymentIntentId", "==", pi.id)
           .get();
 
-        // Extract card details for payment history display
-        const paymentMethodId = typeof pi.payment_method === "string"
-          ? pi.payment_method
-          : pi.payment_method?.id;
+        const paymentMethodId =
+          typeof pi.payment_method === "string"
+            ? pi.payment_method
+            : pi.payment_method?.id;
 
         let last4: string | null = null;
         let brand: string | null = null;
@@ -1125,7 +1185,6 @@ export const stripeWebhook = onRequest(
           account.payouts_enabled &&
           account.details_submitted;
 
-        // Determine detailed onboarding status
         let onboardingStatus = "pending";
         if (isActive) {
           onboardingStatus = "active";
@@ -1135,7 +1194,6 @@ export const stripeWebhook = onRequest(
           onboardingStatus = "incomplete";
         }
 
-        // Update the user's Stripe account status with detailed info
         await db.collection("users").doc(userId).update({
           stripeAccountStatus: onboardingStatus,
           chargesEnabled: account.charges_enabled ?? false,
@@ -1143,14 +1201,12 @@ export const stripeWebhook = onRequest(
           detailsSubmitted: account.details_submitted ?? false,
           isStripeEnabled: account.charges_enabled ?? false,
           isStripeOnboarded: isActive,
-          stripeRequirements:
-            account.requirements?.currently_due ?? [],
+          stripeRequirements: account.requirements?.currently_due ?? [],
           stripeDisabledReason:
             account.requirements?.disabled_reason ?? null,
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
 
-        // Notify driver on final activation
         if (isActive) {
           await sendPushToUser(
             userId,
@@ -1159,7 +1215,6 @@ export const stripeWebhook = onRequest(
             {type: "stripe", referenceId: userId},
           );
         } else if (onboardingStatus === "incomplete") {
-          // Gently remind if there are outstanding requirements
           await sendPushToUser(
             userId,
             "Complete Your Stripe Setup",

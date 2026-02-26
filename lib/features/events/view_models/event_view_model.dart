@@ -1,3 +1,6 @@
+import 'dart:developer' as dev;
+import 'dart:io';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
@@ -46,7 +49,7 @@ class EventSelectionState {
   }
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 class EventSelectionViewModel extends _$EventSelectionViewModel {
   @override
   EventSelectionState build() => const EventSelectionState();
@@ -107,6 +110,7 @@ class EventSelectionViewModel extends _$EventSelectionViewModel {
             ? null
             : organizerName!.trim(),
         maxParticipants: maxParticipants,
+        participantIds: [creatorId],
       );
 
       final eventId = await ref
@@ -119,11 +123,12 @@ class EventSelectionViewModel extends _$EventSelectionViewModel {
       final created = event.copyWith(id: eventId);
       state = state.copyWith(isLoading: false, selectedEvent: created);
       return created;
-    } catch (_) {
+    } catch (e, st) {
+      dev.log('createEvent failed', error: e, stackTrace: st);
       if (!ref.mounted) return null;
       state = state.copyWith(
         isLoading: false,
-        error: 'Unable to create event. Please try again.',
+        error: 'Unable to create event: $e',
       );
       return null;
     }
@@ -136,6 +141,7 @@ class EventSelectionViewModel extends _$EventSelectionViewModel {
 
 class EventDetailState {
   const EventDetailState({
+    this.isLoading = false,
     this.isJoining = false,
     this.isLeaving = false,
     this.isDeleting = false,
@@ -143,6 +149,7 @@ class EventDetailState {
     this.successMessage,
   });
 
+  final bool isLoading;
   final bool isJoining;
   final bool isLeaving;
   final bool isDeleting;
@@ -150,6 +157,7 @@ class EventDetailState {
   final String? successMessage;
 
   EventDetailState copyWith({
+    bool? isLoading,
     bool? isJoining,
     bool? isLeaving,
     bool? isDeleting,
@@ -159,12 +167,14 @@ class EventDetailState {
     bool clearSuccess = false,
   }) {
     return EventDetailState(
+      isLoading: isLoading ?? this.isLoading,
       isJoining: isJoining ?? this.isJoining,
       isLeaving: isLeaving ?? this.isLeaving,
       isDeleting: isDeleting ?? this.isDeleting,
       error: clearError ? null : (error ?? this.error),
-      successMessage:
-          clearSuccess ? null : (successMessage ?? this.successMessage),
+      successMessage: clearSuccess
+          ? null
+          : (successMessage ?? this.successMessage),
     );
   }
 }
@@ -172,11 +182,15 @@ class EventDetailState {
 @riverpod
 class EventDetailViewModel extends _$EventDetailViewModel {
   @override
-  EventDetailState build() => const EventDetailState();
+  EventDetailState build(String eventId) => const EventDetailState();
 
   /// Joins the current user to the event.
-  Future<bool> joinEvent(String eventId, String userId) async {
-    state = state.copyWith(isJoining: true, clearError: true, clearSuccess: true);
+  Future<bool> joinEvent(String userId) async {
+    state = state.copyWith(
+      isJoining: true,
+      clearError: true,
+      clearSuccess: true,
+    );
     try {
       await ref.read(eventRepositoryProvider).joinEvent(eventId, userId);
       if (!ref.mounted) return false;
@@ -185,7 +199,8 @@ class EventDetailViewModel extends _$EventDetailViewModel {
         successMessage: 'You joined the event!',
       );
       return true;
-    } catch (_) {
+    } catch (e, st) {
+      dev.log('joinEvent failed', error: e, stackTrace: st);
       if (!ref.mounted) return false;
       state = state.copyWith(
         isJoining: false,
@@ -196,8 +211,12 @@ class EventDetailViewModel extends _$EventDetailViewModel {
   }
 
   /// Leaves the event.
-  Future<bool> leaveEvent(String eventId, String userId) async {
-    state = state.copyWith(isLeaving: true, clearError: true, clearSuccess: true);
+  Future<bool> leaveEvent(String userId) async {
+    state = state.copyWith(
+      isLeaving: true,
+      clearError: true,
+      clearSuccess: true,
+    );
     try {
       await ref.read(eventRepositoryProvider).leaveEvent(eventId, userId);
       if (!ref.mounted) return false;
@@ -206,7 +225,8 @@ class EventDetailViewModel extends _$EventDetailViewModel {
         successMessage: 'You left the event.',
       );
       return true;
-    } catch (_) {
+    } catch (e, st) {
+      dev.log('leaveEvent failed', error: e, stackTrace: st);
       if (!ref.mounted) return false;
       state = state.copyWith(
         isLeaving: false,
@@ -216,15 +236,80 @@ class EventDetailViewModel extends _$EventDetailViewModel {
     }
   }
 
-  /// Deletes the event (only creator should call this).
-  Future<bool> deleteEvent(String eventId) async {
+  /// Updates the event with new data.
+  Future<bool> updateEvent(EventModel event) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      await ref.read(eventRepositoryProvider).updateEvent(event);
+      if (!ref.mounted) return false;
+      state = state.copyWith(
+        isLoading: false,
+        successMessage: 'Event updated successfully.',
+      );
+      return true;
+    } catch (e, st) {
+      dev.log('updateEvent failed', error: e, stackTrace: st);
+      if (!ref.mounted) return false;
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Unable to update event. Please try again.',
+      );
+      return false;
+    }
+  }
+
+  /// Uploads a cover image and updates the event's imageUrl.
+  Future<String?> uploadImage(File file) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final repo = ref.read(eventRepositoryProvider);
+      final url = await repo.uploadEventImage(eventId, file);
+      if (!ref.mounted) return null;
+      state = state.copyWith(isLoading: false);
+      return url;
+    } catch (e, st) {
+      dev.log('uploadImage failed', error: e, stackTrace: st);
+      if (!ref.mounted) return null;
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Unable to upload image. Please try again.',
+      );
+      return null;
+    }
+  }
+
+  /// Soft-deletes the event by setting isActive to false.
+  Future<bool> cancelEvent() async {
+    state = state.copyWith(isDeleting: true, clearError: true);
+    try {
+      await ref.read(eventRepositoryProvider).cancelEvent(eventId);
+      if (!ref.mounted) return false;
+      state = state.copyWith(
+        isDeleting: false,
+        successMessage: 'Event cancelled.',
+      );
+      return true;
+    } catch (e, st) {
+      dev.log('cancelEvent failed', error: e, stackTrace: st);
+      if (!ref.mounted) return false;
+      state = state.copyWith(
+        isDeleting: false,
+        error: 'Unable to cancel event. Please try again.',
+      );
+      return false;
+    }
+  }
+
+  /// Hard-deletes the event (only creator should call this).
+  Future<bool> deleteEvent() async {
     state = state.copyWith(isDeleting: true, clearError: true);
     try {
       await ref.read(eventRepositoryProvider).deleteEvent(eventId);
       if (!ref.mounted) return false;
       state = state.copyWith(isDeleting: false);
       return true;
-    } catch (_) {
+    } catch (e, st) {
+      dev.log('deleteEvent failed', error: e, stackTrace: st);
       if (!ref.mounted) return false;
       state = state.copyWith(
         isDeleting: false,
@@ -265,6 +350,6 @@ Stream<List<EventModel>> joinedEventsStream(Ref ref, String userId) {
 }
 
 @riverpod
-Future<EventModel?> eventById(Ref ref, String eventId) async {
-  return ref.watch(eventRepositoryProvider).getEventById(eventId);
+Stream<EventModel?> eventById(Ref ref, String eventId) {
+  return ref.watch(eventRepositoryProvider).streamEventById(eventId);
 }

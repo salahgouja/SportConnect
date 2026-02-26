@@ -47,7 +47,7 @@ final class DriverViewModelProvider
   }
 }
 
-String _$driverViewModelHash() => r'99766faf311b4fecb9c4e4fe62648c756f369793';
+String _$driverViewModelHash() => r'bc79e25a181421ca38755e2048ea3485284f73dd';
 
 /// ViewModel for driver-related operations
 /// Manages driver online status, ride requests, and dashboard state

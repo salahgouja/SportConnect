@@ -267,7 +267,7 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
                 AppLocalizations.of(context).changePassword,
                 AppLocalizations.of(context).updateYourAccountPassword,
                 Icons.lock,
-                () {},
+                () => context.push(AppRoutes.changePassword.path),
               ),
               _buildDivider(),
               _buildNavigationTile(

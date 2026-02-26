@@ -65,9 +65,7 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              AppLocalizations.of(context).roleSelectionError,
-            ),
+            content: Text(AppLocalizations.of(context).roleSelectionError),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(

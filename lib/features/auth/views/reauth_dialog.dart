@@ -66,8 +66,7 @@ class _ReauthBottomSheetState extends State<_ReauthBottomSheet> {
         final l10n = AppLocalizations.of(context);
         setState(() {
           _isLoading = false;
-          _errorText =
-              (e is AuthException && e.code == 'wrong-password')
+          _errorText = (e is AuthException && e.code == 'wrong-password')
               ? l10n.reauthWrongPassword
               : l10n.reauthFailed;
         });

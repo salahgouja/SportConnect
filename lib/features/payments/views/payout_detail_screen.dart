@@ -98,10 +98,7 @@ class PayoutDetailScreen extends ConsumerWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            AppColors.primary,
-            AppColors.primary.withValues(alpha: 0.8),
-          ],
+          colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
         ),
         borderRadius: BorderRadius.circular(20.r),
       ),
@@ -158,9 +155,7 @@ class PayoutDetailScreen extends ConsumerWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(
-          color: statusInfo.color.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: statusInfo.color.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [

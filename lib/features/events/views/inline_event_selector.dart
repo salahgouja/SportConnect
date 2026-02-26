@@ -47,10 +47,7 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
       curve: Curves.easeOutCubic,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildTrigger(),
-          if (_expanded) _buildExpandedContent(),
-        ],
+        children: [_buildTrigger(), if (_expanded) _buildExpandedContent()],
       ),
     );
   }
@@ -75,8 +72,8 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
             color: hasEvent
                 ? widget.selected!.type.color
                 : _expanded
-                    ? AppColors.primary
-                    : AppColors.border,
+                ? AppColors.primary
+                : AppColors.border,
             width: hasEvent || _expanded ? 1.5 : 1,
           ),
           boxShadow: [
@@ -95,15 +92,15 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
                 hasEvent
                     ? widget.selected!.type.icon
                     : _expanded
-                        ? Icons.keyboard_arrow_up_rounded
-                        : Icons.event_rounded,
+                    ? Icons.keyboard_arrow_up_rounded
+                    : Icons.event_rounded,
                 key: ValueKey(hasEvent ? widget.selected!.id : _expanded),
                 size: 20.sp,
                 color: hasEvent
                     ? widget.selected!.type.color
                     : _expanded
-                        ? AppColors.primary
-                        : AppColors.textTertiary,
+                    ? AppColors.primary
+                    : AppColors.textTertiary,
               ),
             ),
             SizedBox(width: 12.w),
@@ -122,8 +119,9 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          DateFormat('EEE d MMM · HH:mm')
-                              .format(widget.selected!.startsAt),
+                          DateFormat(
+                            'EEE d MMM · HH:mm',
+                          ).format(widget.selected!.startsAt),
                           style: TextStyle(
                             fontSize: 12.sp,
                             color: AppColors.textSecondary,
@@ -153,8 +151,11 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
                 behavior: HitTestBehavior.opaque,
                 child: Padding(
                   padding: EdgeInsets.only(left: 8.w),
-                  child: Icon(Icons.close_rounded,
-                      size: 18.sp, color: AppColors.textTertiary),
+                  child: Icon(
+                    Icons.close_rounded,
+                    size: 18.sp,
+                    color: AppColors.textTertiary,
+                  ),
                 ),
               )
             else
@@ -174,22 +175,22 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
   // ── Expanded content ─────────────────────────────────────────
   Widget _buildExpandedContent() {
     return Padding(
-      padding: EdgeInsets.only(top: 8.h),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Sport-type filter chips
-          _buildTypeFilterRow(),
-          SizedBox(height: 10.h),
-          // Event cards scroll
-          _buildEventList(),
-          SizedBox(height: 10.h),
-          // Create new event CTA
-          _buildCreateEventButton(),
-          SizedBox(height: 4.h),
-        ],
-      ),
-    )
+          padding: EdgeInsets.only(top: 8.h),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Sport-type filter chips
+              _buildTypeFilterRow(),
+              SizedBox(height: 10.h),
+              // Event cards scroll
+              _buildEventList(),
+              SizedBox(height: 10.h),
+              // Create new event CTA
+              _buildCreateEventButton(),
+              SizedBox(height: 4.h),
+            ],
+          ),
+        )
         .animate()
         .fadeIn(duration: 200.ms)
         .slideY(begin: -0.05, end: 0, curve: Curves.easeOutCubic);
@@ -202,7 +203,12 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
-          _filterChip(null, 'All', Icons.auto_awesome_rounded, AppColors.primary),
+          _filterChip(
+            null,
+            'All',
+            Icons.auto_awesome_rounded,
+            AppColors.primary,
+          ),
           ...EventType.values.map(
             (t) => _filterChip(t, t.label, t.icon, t.color),
           ),
@@ -212,7 +218,11 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
   }
 
   Widget _filterChip(
-      EventType? type, String label, IconData icon, Color color) {
+    EventType? type,
+    String label,
+    IconData icon,
+    Color color,
+  ) {
     final active = _filterType == type;
     return GestureDetector(
       onTap: () {
@@ -227,14 +237,18 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
           color: active ? color.withValues(alpha: 0.12) : AppColors.background,
           borderRadius: BorderRadius.circular(20.r),
           border: Border.all(
-              color: active ? color : AppColors.border,
-              width: active ? 1.5 : 1),
+            color: active ? color : AppColors.border,
+            width: active ? 1.5 : 1,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon,
-                size: 13.sp, color: active ? color : AppColors.textSecondary),
+            Icon(
+              icon,
+              size: 13.sp,
+              color: active ? color : AppColors.textSecondary,
+            ),
             SizedBox(width: 5.w),
             Text(
               label,
@@ -258,14 +272,13 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
       loading: () => _shimmerRow(),
       error: (_, __) => Padding(
         padding: EdgeInsets.symmetric(vertical: 8.h),
-        child: Text('Could not load events',
-            style: TextStyle(
-                fontSize: 13.sp, color: AppColors.textSecondary)),
+        child: Text(
+          'Could not load events',
+          style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
+        ),
       ),
       data: (events) {
-        var filtered = events
-            .where((e) => e.isUpcoming && e.isActive)
-            .toList()
+        var filtered = events.where((e) => e.isUpcoming && e.isActive).toList()
           ..sort((a, b) => a.startsAt.compareTo(b.startsAt));
 
         if (_filterType != null) {
@@ -277,8 +290,7 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
             padding: EdgeInsets.symmetric(vertical: 12.h),
             child: Text(
               'No upcoming events${_filterType != null ? ' for ${_filterType!.label}' : ''}',
-              style:
-                  TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
             ),
           );
         }
@@ -339,8 +351,11 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
                   ),
                 ),
                 if (isSelected)
-                  Icon(Icons.check_circle_rounded,
-                      size: 16.sp, color: event.type.color),
+                  Icon(
+                    Icons.check_circle_rounded,
+                    size: 16.sp,
+                    color: event.type.color,
+                  ),
               ],
             ),
             SizedBox(height: 5.h),
@@ -359,14 +374,12 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
             // Date
             Text(
               DateFormat('EEE d MMM').format(event.startsAt),
-              style:
-                  TextStyle(fontSize: 11.sp, color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 11.sp, color: AppColors.textSecondary),
             ),
             const Spacer(),
             // Countdown
             Container(
-              padding:
-                  EdgeInsets.symmetric(horizontal: 7.w, vertical: 3.h),
+              padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 3.h),
               decoration: BoxDecoration(
                 color: diff.inHours < 24
                     ? AppColors.warning.withValues(alpha: 0.12)
@@ -396,16 +409,17 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: 3,
-        itemBuilder: (_, __) => Container(
-          width: 190.w,
-          margin: EdgeInsets.only(right: 10.w),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceVariant,
-            borderRadius: BorderRadius.circular(14.r),
-          ),
-        )
-            .animate(onPlay: (c) => c.repeat())
-            .shimmer(duration: 1200.ms, color: Colors.white38),
+        itemBuilder: (_, __) =>
+            Container(
+                  width: 190.w,
+                  margin: EdgeInsets.only(right: 10.w),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceVariant,
+                    borderRadius: BorderRadius.circular(14.r),
+                  ),
+                )
+                .animate(onPlay: (c) => c.repeat())
+                .shimmer(duration: 1200.ms, color: Colors.white38),
       ),
     );
   }
@@ -416,16 +430,19 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
       onPressed: () async {
         // Navigate to dedicated create event screen
         // GoRouter handles this cleanly — no sheets, no navigator bugs
-        final created =
-            await context.push<EventModel>(AppRoutes.createEvent.path);
+        final created = await context.push<EventModel>(
+          AppRoutes.createEvent.path,
+        );
         if (created != null && mounted) {
           widget.onChanged(created);
           setState(() => _expanded = false);
         }
       },
       icon: Icon(Icons.add_rounded, size: 18.sp),
-      label: Text('Create new event',
-          style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600)),
+      label: Text(
+        'Create new event',
+        style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
+      ),
       style: OutlinedButton.styleFrom(
         foregroundColor: AppColors.primary,
         side: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),

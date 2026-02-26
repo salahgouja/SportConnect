@@ -58,6 +58,7 @@ import 'package:sport_connect/features/reviews/views/reviews_list_screen.dart';
 // Feature imports - Other
 import 'package:sport_connect/features/legal/views/legal_screen.dart';
 import 'package:sport_connect/features/onboarding/views/onboarding_screen.dart';
+import 'package:sport_connect/features/onboarding/repositories/onboarding_repository.dart';
 import 'package:sport_connect/features/payments/views/driver_earnings_screen.dart';
 
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -84,6 +85,11 @@ GoRouter appRouter(Ref ref) {
   ref.listen(authStateProvider, (previous, next) {
     routerListenable.notify();
   });
+  // Listen to onboarding completion so splash redirect can switch between
+  // onboarding and login without recreating the router.
+  ref.listen(isOnboardingCompleteProvider, (previous, next) {
+    routerListenable.notify();
+  });
   ref.onDispose(routerListenable.dispose);
 
   return GoRouter(
@@ -95,11 +101,14 @@ GoRouter appRouter(Ref ref) {
     redirect: (context, state) {
       // Read current user state at redirect time
       final userState = ref.read(currentUserProvider);
+      final onboardingState = ref.read(isOnboardingCompleteProvider);
       final firebaseUser = FirebaseAuth.instance.currentUser;
       return _handleRedirect(
         userState,
+        onboardingState,
         state,
         isEmailVerified: firebaseUser?.emailVerified ?? false,
+        hasVerifiableEmail: (firebaseUser?.email?.isNotEmpty ?? false),
       );
     },
     routes: _buildRoutes(),
@@ -110,14 +119,19 @@ GoRouter appRouter(Ref ref) {
 /// Centralized redirect handler using RouteGuardService
 String? _handleRedirect(
   AsyncValue<UserModel?> userState,
+  AsyncValue<bool> onboardingState,
   GoRouterState state, {
   bool isEmailVerified = false,
+  bool hasVerifiableEmail = false,
 }) {
   final guard = RouteGuardService.fromAuthState(
     userState,
+    isOnboardingLoading: onboardingState.isLoading,
+    hasCompletedOnboarding: onboardingState.value ?? true,
     isEmailVerified: isEmailVerified,
+    hasVerifiableEmail: hasVerifiableEmail,
   );
-  return guard.getRedirect(state.uri.path);
+  return guard.getRedirect(state.uri);
 }
 
 /// Modular route configurations

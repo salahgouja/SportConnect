@@ -1699,7 +1699,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
 
   void _editRide(RideModel ride) {
     HapticFeedback.lightImpact();
-    context.push(AppRoutes.driverOfferRide.path, extra: ride);
+    context.push(AppRoutes.driverEditRide.path.replaceFirst(':id', ride.id));
   }
 
   Future<void> _shareRide(RideModel ride) async {

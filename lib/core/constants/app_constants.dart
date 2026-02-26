@@ -15,6 +15,16 @@ class AppConstants {
   static const String chatsCollection = 'chats';
   static const String notificationsCollection = 'notifications';
   static const String vehiclesCollection = 'vehicles';
+  static const String paymentsCollection = 'payments';
+  static const String payoutsCollection = 'payouts';
+  static const String reviewsCollection = 'reviews';
+  static const String reportsCollection = 'reports';
+  static const String rideRequestsCollection = 'rideRequests';
+  static const String transactionsCollection = 'transactions';
+  static const String bookingsCollection = 'bookings';
+  static const String supportTicketsCollection = 'support_tickets';
+  static const String connectedAccountsCollection = 'driver_connected_accounts';
+  static const String driverStatsCollection = 'driver_stats';
 
   // Storage Paths
   static const String profileImagesPath = 'profile_images';

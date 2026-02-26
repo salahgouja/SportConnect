@@ -71,8 +71,10 @@ class _MyEventsScreenState extends ConsumerState<MyEventsScreen>
           indicatorColor: AppColors.primary,
           indicatorSize: TabBarIndicatorSize.label,
           labelStyle: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w700),
-          unselectedLabelStyle:
-              TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500),
+          unselectedLabelStyle: TextStyle(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w500,
+          ),
           tabs: const [
             Tab(text: 'Created'),
             Tab(text: 'Joined'),
@@ -86,13 +88,16 @@ class _MyEventsScreenState extends ConsumerState<MyEventsScreen>
           _JoinedTab(userId: userId),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push(AppRoutes.createEvent.path),
-        backgroundColor: AppColors.primary,
-        child: Icon(Icons.add_rounded, size: 24.sp),
-      )
-          .animate()
-          .scale(delay: 300.ms, duration: 400.ms, curve: Curves.easeOutBack),
+      floatingActionButton:
+          FloatingActionButton(
+            onPressed: () => context.push(AppRoutes.createEvent.path),
+            backgroundColor: AppColors.primary,
+            child: Icon(Icons.add_rounded, size: 24.sp),
+          ).animate().scale(
+            delay: 300.ms,
+            duration: 400.ms,
+            curve: Curves.easeOutBack,
+          ),
     );
   }
 }
@@ -141,9 +146,7 @@ class _JoinedTab extends ConsumerWidget {
       error: (_, __) => const _EmptyTab(message: 'Unable to load events.'),
       data: (events) {
         if (events.isEmpty) {
-          return const _EmptyTab(
-            message: "You haven't joined any events yet.",
-          );
+          return const _EmptyTab(message: "You haven't joined any events yet.");
         }
         return _EventListView(events: events);
       },
@@ -322,10 +325,7 @@ class _EmptyTab extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 15.sp,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 15.sp, color: AppColors.textSecondary),
             ),
             SizedBox(height: 20.h),
             PremiumButton(

@@ -1,8 +1,5 @@
 import 'dart:io';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -11,6 +8,8 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/features/rides/repositories/dispute_repository.dart';
 
 /// Dispute filing screen for ride fare or service disagreements.
 class DisputeScreen extends ConsumerStatefulWidget {
@@ -162,27 +161,6 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
     setState(() => _attachedFiles.add(file));
   }
 
-  Future<List<String>> _uploadAttachments(String docId) async {
-    final urls = <String>[];
-    final storage = FirebaseStorage.instance;
-
-    for (var i = 0; i < _attachedFiles.length; i++) {
-      final file = _attachedFiles[i];
-      final ext = file.path.split('.').last;
-      final ref = storage
-          .ref()
-          .child('dispute_attachments')
-          .child(docId)
-          .child('file_$i.$ext');
-
-      await ref.putFile(file);
-      final url = await ref.getDownloadURL();
-      urls.add(url);
-    }
-
-    return urls;
-  }
-
   Future<void> _submitDispute() async {
     if (!_formKey.currentState!.validate() || _selectedDisputeType == null) {
       return;
@@ -191,27 +169,25 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
     setState(() => _isSubmitting = true);
 
     try {
-      final user = FirebaseAuth.instance.currentUser;
+      final user = ref.read(currentUserProvider).value;
       if (user == null) return;
 
-      final docRef = await FirebaseFirestore.instance
-          .collection('disputes')
-          .add({
-            'rideId': widget.rideId,
-            'userId': user.uid,
-            'userEmail': user.email,
-            'disputeType': _selectedDisputeType,
-            'description': _descriptionController.text.trim(),
-            'rideSummary': widget.rideSummary,
-            'attachmentUrls': <String>[],
-            'status': 'pending',
-            'createdAt': FieldValue.serverTimestamp(),
-            'updatedAt': FieldValue.serverTimestamp(),
-          });
+      final repo = ref.read(disputeRepositoryProvider);
+
+      final disputeId = await repo.submitDispute(
+        rideId: widget.rideId,
+        userId: user.uid,
+        userEmail: user.email,
+        disputeType: _selectedDisputeType!,
+        description: _descriptionController.text.trim(),
+        rideSummary: widget.rideSummary,
+      );
 
       if (_attachedFiles.isNotEmpty) {
-        final urls = await _uploadAttachments(docRef.id);
-        await docRef.update({'attachmentUrls': urls});
+        await repo.uploadAttachments(
+          disputeId: disputeId,
+          files: _attachedFiles,
+        );
       }
 
       if (mounted) {

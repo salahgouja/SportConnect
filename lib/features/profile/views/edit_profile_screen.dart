@@ -848,7 +848,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               onPrimary: Colors.white,
               surface: AppColors.surface,
               onSurface: AppColors.textPrimary,
-            ), dialogTheme: DialogThemeData(backgroundColor: AppColors.surface),
+            ),
+            dialogTheme: DialogThemeData(backgroundColor: AppColors.surface),
           ),
           child: child!,
         );

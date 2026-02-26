@@ -82,13 +82,16 @@ class AppRoutes {
   static const chatRide = AppRoute('/chat/ride/:id', 'chat-ride');
 
   // Rides
-  static const createRide = AppRoute('/ride/create', 'create-ride');
   static const rideDetail = AppRoute('/ride/detail/:id', 'ride-detail');
   static const searchRides = AppRoute('/ride/search', 'search-rides');
   static const driverOfferRide = AppRoute('/driver/offer', 'driver-offer-ride');
   static const driverViewRide = AppRoute(
     '/driver/ride/:id',
     'driver-view-ride',
+  );
+  static const driverEditRide = AppRoute(
+    '/driver/ride/:id/edit',
+    'driver-edit-ride',
   );
   static const driverMyRides = AppRoute('/driver/my-rides', 'driver-my-rides');
 
@@ -119,6 +122,22 @@ class AppRoutes {
     'cancellation-reason',
   );
   static const dispute = AppRoute('/dispute/:id', 'dispute');
+
+  // Booking lifecycle (passenger)
+  static const rideBookingPending = AppRoute(
+    '/ride/booking-pending/:rideId',
+    'ride-booking-pending',
+  );
+  static const rideCountdown = AppRoute(
+    '/ride/countdown/:bookingId',
+    'ride-countdown',
+  );
+
+  // Post-ride rating
+  static const driverRatePassenger = AppRoute(
+    '/driver/rate-passenger/:rideId',
+    'driver-rate-passenger',
+  );
 
   // Support & Legal
   static const helpCenter = AppRoute('/help', 'help-center');

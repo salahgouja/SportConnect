@@ -10,7 +10,6 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/features/rides/models/ride_request_model.dart';
 import 'package:sport_connect/features/rides/view_models/driver_view_model.dart';
-import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/repositories/driver_stats_repository.dart';
 
@@ -125,9 +124,9 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      AppColors.primary.withOpacity(0.03),
+                      AppColors.primary.withValues(alpha: 0.03),
                       AppColors.scaffoldBg,
-                      AppColors.accent.withOpacity(0.02),
+                      AppColors.accent.withValues(alpha: 0.02),
                     ],
                   ),
                 ),
@@ -138,7 +137,7 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
               .animate(onPlay: (controller) => controller.repeat())
               .shimmer(
                 duration: 3000.ms,
-                color: AppColors.primary.withOpacity(0.02),
+                color: AppColors.primary.withValues(alpha: 0.02),
               ),
     );
   }
@@ -157,7 +156,7 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
               borderRadius: BorderRadius.circular(20.r),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primary.withOpacity(0.3),
+                  color: AppColors.primary.withValues(alpha: 0.3),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -187,7 +186,7 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
                       DateFormat('EEE, MMM d').format(DateTime.now()),
                       style: TextStyle(
                         fontSize: 11.sp,
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                       ),
                     ),
                   ],
@@ -209,7 +208,7 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
                 gradient: AppColors.primaryGradient,
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.4),
+                    color: AppColors.primary.withValues(alpha: 0.4),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -247,7 +246,7 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
                             vertical: 12.h,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.7),
+                            color: Colors.black.withValues(alpha: 0.7),
                             borderRadius: BorderRadius.circular(16.r),
                           ),
                           child: Row(
@@ -384,14 +383,14 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Colors.white, Colors.white.withOpacity(0.95)],
+          colors: [Colors.white, Colors.white.withValues(alpha: 0.95)],
         ),
         borderRadius: BorderRadius.circular(24.r),
         boxShadow: [
           BoxShadow(
             color: isTopCard
-                ? AppColors.primary.withOpacity(0.2)
-                : Colors.black.withOpacity(0.05),
+                ? AppColors.primary.withValues(alpha: 0.2)
+                : Colors.black.withValues(alpha: 0.05),
             blurRadius: isTopCard ? 20 : 10,
             offset: Offset(0, isTopCard ? 8 : 4),
           ),
@@ -406,8 +405,8 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      AppColors.success.withOpacity(0.3),
-                      AppColors.success.withOpacity(0.1),
+                      AppColors.success.withValues(alpha: 0.3),
+                      AppColors.success.withValues(alpha: 0.1),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(24.r),
@@ -445,8 +444,8 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      AppColors.error.withOpacity(0.3),
-                      AppColors.error.withOpacity(0.1),
+                      AppColors.error.withValues(alpha: 0.3),
+                      AppColors.error.withValues(alpha: 0.1),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(24.r),
@@ -494,7 +493,7 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
                         gradient: AppColors.primaryGradient,
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withOpacity(0.3),
+                            color: AppColors.primary.withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -560,8 +559,8 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        AppColors.primary.withOpacity(0.05),
-                        AppColors.accent.withOpacity(0.05),
+                        AppColors.primary.withValues(alpha: 0.05),
+                        AppColors.accent.withValues(alpha: 0.05),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(16.r),
@@ -731,7 +730,7 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
         child: Container(
           padding: EdgeInsets.symmetric(vertical: 14.h),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(16.r),
             border: Border.all(color: color, width: 2),
           ),
@@ -794,12 +793,15 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppColors.primary.withOpacity(0.05),
-            AppColors.accent.withOpacity(0.05),
+            AppColors.primary.withValues(alpha: 0.05),
+            AppColors.accent.withValues(alpha: 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(24.r),
-        border: Border.all(color: AppColors.border.withOpacity(0.5), width: 2),
+        border: Border.all(
+          color: AppColors.border.withValues(alpha: 0.5),
+          width: 2,
+        ),
       ),
       child: Center(
         child: Column(
@@ -859,7 +861,7 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
       height: 460.h,
       margin: EdgeInsets.symmetric(horizontal: 20.w),
       decoration: BoxDecoration(
-        color: AppColors.error.withOpacity(0.1),
+        color: AppColors.error.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(24.r),
       ),
       child: Center(
@@ -936,7 +938,7 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
                       Container(
                         padding: EdgeInsets.all(8.w),
                         decoration: BoxDecoration(
-                          color: AppColors.error.withOpacity(0.1),
+                          color: AppColors.error.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -1021,7 +1023,7 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
                 gradient: AppColors.primaryGradient,
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.4),
+                    color: AppColors.primary.withValues(alpha: 0.4),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -1049,7 +1051,7 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
                     end: Alignment.bottomCenter,
                     colors: [
                       AppColors.primary,
-                      AppColors.primary.withOpacity(0.3),
+                      AppColors.primary.withValues(alpha: 0.3),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(2.r),
@@ -1074,7 +1076,7 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
                         borderRadius: BorderRadius.circular(20.r),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.06),
+                            color: Colors.black.withValues(alpha: 0.06),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -1112,7 +1114,9 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
                                   vertical: 6.h,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.success.withOpacity(0.1),
+                                  color: AppColors.success.withValues(
+                                    alpha: 0.1,
+                                  ),
                                   borderRadius: BorderRadius.circular(8.r),
                                 ),
                                 child: Row(
@@ -1201,8 +1205,8 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.primary.withOpacity(0.05),
-            AppColors.accent.withOpacity(0.05),
+            AppColors.primary.withValues(alpha: 0.05),
+            AppColors.accent.withValues(alpha: 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(20.r),
@@ -1212,7 +1216,7 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
           Icon(
             Icons.calendar_today_rounded,
             size: 48.sp,
-            color: AppColors.primary.withOpacity(0.4),
+            color: AppColors.primary.withValues(alpha: 0.4),
           ),
           SizedBox(height: 16.h),
           Text(
@@ -1245,7 +1249,7 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
       margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 32.h),
       padding: EdgeInsets.all(32.w),
       decoration: BoxDecoration(
-        color: AppColors.error.withOpacity(0.1),
+        color: AppColors.error.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20.r),
       ),
       child: Column(
@@ -1301,7 +1305,7 @@ class _DriverMyRidesScreenState extends ConsumerState<DriverMyRidesScreen>
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withOpacity(0.4),
+              color: AppColors.primary.withValues(alpha: 0.4),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -1323,7 +1327,7 @@ class _ParallaxPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = AppColors.primary.withOpacity(0.02)
+      ..color = AppColors.primary.withValues(alpha: 0.02)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5;
 

@@ -147,7 +147,7 @@ class ChatRepository implements IChatRepository {
     await _chatsCollection.doc(chatId).update({
       'participantIds': FieldValue.arrayUnion([participant.odid]),
       'participants': FieldValue.arrayUnion([participant.toJson()]),
-      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedAt': DateTime.now(),
     });
   }
 
@@ -166,7 +166,7 @@ class ChatRepository implements IChatRepository {
     await _chatsCollection.doc(chatId).update({
       'participantIds': FieldValue.arrayRemove([odid]),
       'participants': updatedParticipants.map((p) => p.toJson()).toList(),
-      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedAt': DateTime.now(),
     });
   }
 
@@ -178,7 +178,7 @@ class ChatRepository implements IChatRepository {
   }) async {
     await _chatsCollection.doc(chatId).update({
       'mutedBy.$odid': mute,
-      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedAt': DateTime.now(),
     });
   }
 
@@ -190,7 +190,7 @@ class ChatRepository implements IChatRepository {
   }) async {
     await _chatsCollection.doc(chatId).update({
       'pinnedBy.$odid': pin,
-      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedAt': DateTime.now(),
     });
   }
 
@@ -219,8 +219,8 @@ class ChatRepository implements IChatRepository {
       'lastMessageSenderId': message.senderId,
       'lastMessageSenderName': message.senderName,
       'lastMessageType': message.type.name,
-      'lastMessageAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
+      'lastMessageAt': DateTime.now(),
+      'updatedAt': DateTime.now(),
     }, SetOptions(merge: true));
 
     await batch.commit();
@@ -368,7 +368,7 @@ class ChatRepository implements IChatRepository {
         'odid': userId,
         'chatId': chatId,
         'displayName': '', // Would need to pass this
-        'startedAt': FieldValue.serverTimestamp(),
+        'startedAt': DateTime.now(),
       });
     } else {
       await typingRef.delete();
@@ -420,7 +420,7 @@ class ChatRepository implements IChatRepository {
     await _messagesCollection(chatId).doc(messageId).update({
       'content': newContent,
       'isEdited': true,
-      'editedAt': FieldValue.serverTimestamp(),
+      'editedAt': DateTime.now(),
     });
   }
 
@@ -467,7 +467,7 @@ class ChatRepository implements IChatRepository {
         'odid': odid,
         'displayName': displayName,
         'chatId': chatId,
-        'startedAt': FieldValue.serverTimestamp(),
+        'startedAt': DateTime.now(),
       });
     } else {
       await typingRef.delete();
@@ -523,7 +523,7 @@ class ChatRepository implements IChatRepository {
     // Set a 'clearedAt' timestamp for this user so the client
     // filters out messages sent before this point.
     await _chatsCollection.doc(chatId).update({
-      'clearedAt.$userId': FieldValue.serverTimestamp(),
+      'clearedAt.$userId': DateTime.now(),
     });
   }
 
@@ -539,7 +539,7 @@ class ChatRepository implements IChatRepository {
         .doc(userId)
         .collection('blockedUsers');
     await userBlocksRef.doc(blockedUserId).set({
-      'blockedAt': FieldValue.serverTimestamp(),
+      'blockedAt': DateTime.now(),
       'chatId': chatId,
     });
 

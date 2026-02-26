@@ -1,11 +1,17 @@
+import 'dart:io';
+
 import 'package:sport_connect/features/events/models/event_model.dart';
 
 /// Events operations repository interface.
 abstract class IEventRepository {
   Future<String> createEvent(EventModel event);
   Future<EventModel?> getEventById(String eventId);
+  Stream<EventModel?> streamEventById(String eventId);
   Future<void> updateEvent(EventModel event);
   Future<void> deleteEvent(String eventId);
+
+  /// Soft-deletes the event by setting isActive to false.
+  Future<void> cancelEvent(String eventId);
 
   /// Adds [userId] to the event's participant list atomically.
   Future<void> joinEvent(String eventId, String userId);
@@ -19,4 +25,7 @@ abstract class IEventRepository {
 
   /// Streams events the given [userId] has joined.
   Stream<List<EventModel>> streamJoinedEvents(String userId);
+
+  /// Uploads an event cover image and returns its download URL.
+  Future<String> uploadEventImage(String eventId, File file);
 }

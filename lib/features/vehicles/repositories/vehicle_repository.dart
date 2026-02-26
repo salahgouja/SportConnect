@@ -16,21 +16,30 @@ class VehicleRepository implements IVehicleRepository {
 
   VehicleRepository(this._firestore, this._storage);
 
-  CollectionReference<Map<String, dynamic>> get _vehiclesCollection =>
-      _firestore.collection(AppConstants.vehiclesCollection);
+  CollectionReference<VehicleModel> get _vehiclesCollection => _firestore
+      .collection(AppConstants.vehiclesCollection)
+      .withConverter<VehicleModel>(
+        fromFirestore: (snap, _) =>
+            VehicleModel.fromJson({...snap.data()!, 'id': snap.id}),
+        toFirestore: (vehicle, _) => vehicle.toJson(),
+      );
+
+  DocumentReference<Map<String, dynamic>> _rawVehicleDoc(String id) =>
+      _firestore.collection(AppConstants.vehiclesCollection).doc(id);
 
   // ==================== VEHICLE OPERATIONS ====================
 
   /// Create a new vehicle
   @override
   Future<String> createVehicle(VehicleModel vehicle) async {
-    final docRef = _vehiclesCollection.doc();
-    final vehicleWithId = vehicle.copyWith(
-      id: docRef.id,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-    await docRef.set(vehicleWithId.toJson());
+    final rawCol = _firestore.collection(AppConstants.vehiclesCollection);
+    final docRef = rawCol.doc();
+    final vehicleWithId = vehicle.copyWith(id: docRef.id);
+    final json = vehicleWithId.toJson();
+    // Use server timestamps for consistency across time zones
+    json['createdAt'] = DateTime.now();
+    json['updatedAt'] = DateTime.now();
+    await docRef.set(json);
     return docRef.id;
   }
 
@@ -38,8 +47,7 @@ class VehicleRepository implements IVehicleRepository {
   @override
   Future<VehicleModel?> getVehicleById(String id) async {
     final doc = await _vehiclesCollection.doc(id).get();
-    if (!doc.exists) return null;
-    return VehicleModel.fromJson(doc.data()!);
+    return doc.data();
   }
 
   /// Stream user's vehicles
@@ -49,11 +57,7 @@ class VehicleRepository implements IVehicleRepository {
         .where('ownerId', isEqualTo: userId)
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => VehicleModel.fromJson(doc.data()))
-              .toList(),
-        );
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 
   /// Get user's vehicles
@@ -63,9 +67,7 @@ class VehicleRepository implements IVehicleRepository {
         .where('ownerId', isEqualTo: userId)
         .orderBy('createdAt', descending: true)
         .get();
-    return snapshot.docs
-        .map((doc) => VehicleModel.fromJson(doc.data()))
-        .toList();
+    return snapshot.docs.map((doc) => doc.data()).toList();
   }
 
   /// Get user's active vehicle
@@ -78,7 +80,7 @@ class VehicleRepository implements IVehicleRepository {
         .get();
 
     if (snapshot.docs.isEmpty) return null;
-    return VehicleModel.fromJson(snapshot.docs.first.data());
+    return snapshot.docs.first.data();
   }
 
   /// Stream user's active vehicle
@@ -91,17 +93,16 @@ class VehicleRepository implements IVehicleRepository {
         .snapshots()
         .map((snapshot) {
           if (snapshot.docs.isEmpty) return null;
-          return VehicleModel.fromJson(snapshot.docs.first.data());
+          return snapshot.docs.first.data();
         });
   }
 
   /// Update vehicle
   @override
   Future<void> updateVehicle(VehicleModel vehicle) async {
-    await _vehiclesCollection.doc(vehicle.id).update({
-      ...vehicle.toJson(),
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+    await _rawVehicleDoc(
+      vehicle.id,
+    ).update({...vehicle.toJson(), 'updatedAt': DateTime.now()});
   }
 
   /// Set vehicle as active (deactivates others)
@@ -119,7 +120,7 @@ class VehicleRepository implements IVehicleRepository {
     }
 
     // Activate the selected vehicle
-    batch.update(_vehiclesCollection.doc(vehicleId), {'isActive': true});
+    batch.update(_rawVehicleDoc(vehicleId), {'isActive': true});
 
     await batch.commit();
   }
@@ -145,7 +146,7 @@ class VehicleRepository implements IVehicleRepository {
       }
     }
 
-    await _vehiclesCollection.doc(vehicleId).delete();
+    await _rawVehicleDoc(vehicleId).delete();
   }
 
   /// Upload vehicle image
@@ -170,10 +171,10 @@ class VehicleRepository implements IVehicleRepository {
     required VehicleVerificationStatus status,
     String? note,
   }) async {
-    await _vehiclesCollection.doc(vehicleId).update({
+    await _rawVehicleDoc(vehicleId).update({
       'verificationStatus': status.name,
       'verificationNote': note,
-      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedAt': DateTime.now(),
     });
   }
 
@@ -191,15 +192,15 @@ class VehicleRepository implements IVehicleRepository {
         ((vehicle.averageRating * vehicle.totalRides) + newRating) /
         newTotalRides;
 
-    await _vehiclesCollection.doc(vehicleId).update({
+    await _rawVehicleDoc(vehicleId).update({
       'totalRides': newTotalRides,
       'averageRating': newAverageRating,
-      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedAt': DateTime.now(),
     });
   }
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 VehicleRepository vehicleRepository(Ref ref) {
   return VehicleRepository(
     FirebaseFirestore.instance,

@@ -1,9 +1,0 @@
-appId: com.sportconnect.sport_connect
----
-- launchApp:
-    clearState: true
-- waitForAnimationToEnd
-- takeScreenshot: debug-after-launch-1
-- scroll
-- waitForAnimationToEnd
-- takeScreenshot: debug-after-launch-2

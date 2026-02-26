@@ -36,6 +36,18 @@ enum EventType {
 
 /// Extension to provide display helpers for [EventType].
 extension EventTypeX on EventType {
+  /// The JSON string value stored in Firestore for this type.
+  ///
+  /// Must match the `@JsonValue` annotations above.
+  String get jsonValue {
+    switch (this) {
+      case EventType.martialArts:
+        return 'martial_arts';
+      default:
+        return name; // enum name matches @JsonValue for all others
+    }
+  }
+
   String get label {
     switch (this) {
       case EventType.football:
@@ -134,7 +146,7 @@ abstract class EventModel with _$EventModel {
     required String title,
     required EventType type,
     required LocationPoint location,
-    @TimestampConverter() required DateTime startsAt,
+    @RequiredTimestampConverter() required DateTime startsAt,
     @TimestampConverter() DateTime? endsAt,
     String? description,
 
@@ -162,7 +174,7 @@ abstract class EventModel with _$EventModel {
       maxParticipants > 0 && participantIds.length >= maxParticipants;
 
   int get seatsLeft {
-    if (maxParticipants <= 0) return 0;
+    if (maxParticipants <= 0) return -1; // -1 means unlimited
     return (maxParticipants - participantIds.length).clamp(0, maxParticipants);
   }
 

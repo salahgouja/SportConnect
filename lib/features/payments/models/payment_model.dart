@@ -200,9 +200,18 @@ abstract class DriverConnectedAccount with _$DriverConnectedAccount {
   /// Default currency based on country
   String get defaultCurrency {
     const countryToCurrency = {
-      'FR': 'EUR', 'DE': 'EUR', 'ES': 'EUR', 'IT': 'EUR',
-      'NL': 'EUR', 'BE': 'EUR', 'AT': 'EUR', 'PT': 'EUR',
-      'US': 'USD', 'GB': 'GBP', 'CA': 'CAD', 'AU': 'AUD',
+      'FR': 'EUR',
+      'DE': 'EUR',
+      'ES': 'EUR',
+      'IT': 'EUR',
+      'NL': 'EUR',
+      'BE': 'EUR',
+      'AT': 'EUR',
+      'PT': 'EUR',
+      'US': 'USD',
+      'GB': 'GBP',
+      'CA': 'CAD',
+      'AU': 'AUD',
     };
     return countryToCurrency[country.toUpperCase()] ?? 'EUR';
   }

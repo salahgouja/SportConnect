@@ -1,7 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/features/reviews/models/review_model.dart';
-import 'package:sport_connect/features/reviews/repositories/review_repository.dart';
 
 part 'review_view_model.g.dart';
 
@@ -144,6 +144,7 @@ class ReviewFormViewModel extends _$ReviewFormViewModel {
       final tagStrings = state.selectedTags.map((tag) => tag.name).toList();
 
       await repo.createReview(
+        currentUser.uid,
         CreateReviewRequest(
           rideId: rideId,
           revieweeId: revieweeId,
@@ -222,7 +223,7 @@ class ReviewResponseViewModel extends _$ReviewResponseViewModel {
       }
 
       final repo = ref.read(reviewRepositoryProvider);
-      await repo.respondToReview(reviewId, response);
+      await repo.respondToReview(currentUser.uid, reviewId, response);
 
       state = const AsyncValue.data(null);
       return true;

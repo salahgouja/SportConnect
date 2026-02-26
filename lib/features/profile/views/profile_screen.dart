@@ -766,7 +766,7 @@ class ProfileScreen extends ConsumerWidget {
         subtitle: 'View your ride history',
         color: AppColors.info,
         onTap: () => context.push(
-          isDriver ? AppRoutes.driverMyRides.path : AppRoutes.riderMyRides.path,
+          isDriver ? AppRoutes.driverRides.path : AppRoutes.riderMyRides.path,
         ),
       ),
       _MenuItem(
@@ -921,7 +921,7 @@ class ProfileScreen extends ConsumerWidget {
                     .doc(currentUser.uid)
                     .collection('blockedUsers')
                     .doc(userId)
-                    .set({'blockedAt': FieldValue.serverTimestamp()});
+                    .set({'blockedAt': DateTime.now()});
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(

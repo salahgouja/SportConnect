@@ -197,7 +197,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
             'description': _descriptionController.text.trim(),
             'attachmentUrls': <String>[],
             'status': 'pending',
-            'createdAt': FieldValue.serverTimestamp(),
+            'createdAt': DateTime.now(),
           });
 
       if (_attachedFiles.isNotEmpty) {

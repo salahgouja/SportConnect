@@ -18,7 +18,6 @@ import 'package:sport_connect/features/events/views/inline_event_selector.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/ride_search_filters.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
-import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Two-phase screen:
 ///   Phase 1 → compact search form (no scroll needed)

@@ -125,25 +125,33 @@ class _DriverStripeOnboardingScreenState
                       _buildBenefitItem(
                         icon: Icons.bolt_rounded,
                         title: AppLocalizations.of(context).instantPayouts,
-                        description: AppLocalizations.of(context).benefitInstantPayoutsDesc,
+                        description: AppLocalizations.of(
+                          context,
+                        ).benefitInstantPayoutsDesc,
                         delay: 400,
                       ),
                       _buildBenefitItem(
                         icon: Icons.security_rounded,
                         title: AppLocalizations.of(context).secureProtected,
-                        description: AppLocalizations.of(context).benefitSecureDesc,
+                        description: AppLocalizations.of(
+                          context,
+                        ).benefitSecureDesc,
                         delay: 500,
                       ),
                       _buildBenefitItem(
                         icon: Icons.receipt_long_rounded,
                         title: AppLocalizations.of(context).clearTracking,
-                        description: AppLocalizations.of(context).benefitTrackingDesc,
+                        description: AppLocalizations.of(
+                          context,
+                        ).benefitTrackingDesc,
                         delay: 600,
                       ),
                       _buildBenefitItem(
                         icon: Icons.percent_rounded,
                         title: AppLocalizations.of(context).lowFees,
-                        description: AppLocalizations.of(context).benefitLowFeesDesc,
+                        description: AppLocalizations.of(
+                          context,
+                        ).benefitLowFeesDesc,
                         delay: 700,
                       ),
 
@@ -197,7 +205,9 @@ class _DriverStripeOnboardingScreenState
                               SizedBox(width: 12.w),
                               Expanded(
                                 child: Text(
-                                  AppLocalizations.of(context).stripeVerifyingAccount,
+                                  AppLocalizations.of(
+                                    context,
+                                  ).stripeVerifyingAccount,
                                   style: TextStyle(
                                     color: AppColors.primary,
                                     fontSize: 14.sp,
@@ -364,7 +374,9 @@ class _DriverStripeOnboardingScreenState
         });
       } else {
         setState(() {
-          _errorMessage = AppLocalizations.of(context).stripeAccountCreationFailed;
+          _errorMessage = AppLocalizations.of(
+            context,
+          ).stripeAccountCreationFailed;
           _isLoading = false;
         });
       }
@@ -454,7 +466,9 @@ class _DriverStripeOnboardingScreenState
             onReceivedError: (controller, request, error) {
               TalkerService.error('Error loading: ${error.description}');
               setState(() {
-                _errorMessage = AppLocalizations.of(context).stripePageLoadFailed;
+                _errorMessage = AppLocalizations.of(
+                  context,
+                ).stripePageLoadFailed;
                 _showWebView = false;
                 _onboardingUrl = null;
               });
@@ -578,9 +592,7 @@ class _DriverStripeOnboardingScreenState
       context: context,
       builder: (context) => AlertDialog(
         title: Text(AppLocalizations.of(context).cancelSetupTitle),
-        content: Text(
-          AppLocalizations.of(context).cancelSetupMessage,
-        ),
+        content: Text(AppLocalizations.of(context).cancelSetupMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),

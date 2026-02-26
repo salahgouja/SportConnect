@@ -26,7 +26,7 @@ final class ProfileRepositoryProvider
         argument: null,
         retry: null,
         name: r'profileRepositoryProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -54,7 +54,7 @@ final class ProfileRepositoryProvider
   }
 }
 
-String _$profileRepositoryHash() => r'219a79f79df11794cb000246f8501c472b4f600d';
+String _$profileRepositoryHash() => r'ed8a9d9d4cb14ad223998b3ebf860ddc876eb490';
 
 /// Stream provider for current user
 

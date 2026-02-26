@@ -1535,7 +1535,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                                                     child,
                                                     loadingProgress,
                                                   ) {
-                                                    if (loadingProgress == null) {
+                                                    if (loadingProgress ==
+                                                        null) {
                                                       return child;
                                                     }
                                                     return Container(
