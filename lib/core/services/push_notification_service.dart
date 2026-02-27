@@ -141,9 +141,10 @@ class PushNotificationService {
 
       // Listen for token refreshes
       _messaging.onTokenRefresh.listen((newToken) async {
-        await _usersCollection
-            .doc(userId)
-            .set(user!, SetOptions(merge: true));
+        await _usersCollection.doc(userId).set(
+          <String, dynamic>{'fcmToken': newToken},
+          SetOptions(merge: true),
+        );
         TalkerService.info('FCM token refreshed for user $userId');
       });
     } catch (e) {
