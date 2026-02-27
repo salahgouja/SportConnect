@@ -127,23 +127,26 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
   }
 
   Future<void> _completeOnboarding() async {
-    await _showWelcomeDialog();
-
     final repository = await ref.read(onboardingRepositoryProvider.future);
     await repository.completeOnboarding();
+    ref.invalidate(isOnboardingCompleteProvider);
+
+    if (!mounted) return;
+    await _showWelcomeDialog();
   }
 
   Future<void> _showWelcomeDialog() async {
     HapticFeedback.mediumImpact();
+    final router = GoRouter.of(context);
 
     await showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Dialog(
+      builder: (dialogContext) => Dialog(
         backgroundColor: Colors.transparent,
         // Wraps the dialog content to give the modal a title for screen readers
         child: Semantics(
-          label: AppLocalizations.of(context).youReReadyToRun,
+          label: AppLocalizations.of(dialogContext).youReReadyToRun,
           explicitChildNodes: true,
           child: Container(
             padding: EdgeInsets.all(28.w),
@@ -188,7 +191,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                 Semantics(
                   header: true,
                   child: Text(
-                    AppLocalizations.of(context).youReReadyToRun,
+                    AppLocalizations.of(dialogContext).youReReadyToRun,
                     style: TextStyle(
                       fontSize: 22.sp,
                       fontWeight: FontWeight.w700,
@@ -201,7 +204,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                 SizedBox(height: 10.h),
 
                 Text(
-                  AppLocalizations.of(context).createAnAccountToStart,
+                  AppLocalizations.of(dialogContext).createAnAccountToStart,
                   style: TextStyle(
                     fontSize: 14.sp,
                     color: AppColors.textSecondary,
@@ -215,10 +218,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                 // Native FilledButton: 100% guaranteed to be read as a button
                 SizedBox(
                   width: double.infinity,
-                  height: 56
-                      .h, // Replaces your vertical padding to keep exact sizing
+                  height: 56.h,
                   child: FilledButton(
-                    onPressed: () => context.go(AppRoutes.login.path),
+                    onPressed: () {
+                      Navigator.of(dialogContext).pop();
+                      router.go(AppRoutes.login.path);
+                    },
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       shape: RoundedRectangleBorder(
@@ -227,7 +232,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                       padding: EdgeInsets.zero,
                     ),
                     child: Text(
-                      AppLocalizations.of(context).kContinue,
+                      AppLocalizations.of(dialogContext).kContinue,
                       style: TextStyle(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.w600,
