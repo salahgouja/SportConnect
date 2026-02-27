@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
+import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -134,6 +137,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     },
                     icon: Icons.chat_bubble_outline_rounded,
                     enabled: notificationsEnabled,
+                  ),
+                  _buildDivider(),
+                  _buildNavigationTile(
+                    title: 'Notification Permission',
+                    subtitle: 'Re-allow push notifications for this device',
+                    icon: Icons.notifications_none_rounded,
+                    onTap: _resetAndRequestNotificationPermission,
                   ),
                 ]),
 
@@ -419,6 +429,92 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Clears the `notification_dialog_shown` flag and re-runs the full
+  /// rationale → OS permission flow, allowing the user to grant notifications
+  /// even if they dismissed the dialog on first launch or the OS returned an
+  /// unexpected `denied` status on a fresh install.
+  Future<void> _resetAndRequestNotificationPermission() async {
+    // Clear the flag so the logic treats this as a first-time ask.
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('notification_dialog_shown', false);
+
+    final status = (await FirebaseMessaging.instance
+            .getNotificationSettings())
+        .authorizationStatus;
+
+    // Already granted — just tell the user.
+    if (status == AuthorizationStatus.authorized ||
+        status == AuthorizationStatus.provisional) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Notifications are already enabled.'),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+        ),
+      );
+      return;
+    }
+
+    // For `deniedForever` on Android the only path is the system settings page.
+    if (status == AuthorizationStatus.denied) {
+      // Try requesting via OS — on Android 13+ this is a no-op when denied,
+      // but on iOS it opens the system settings prompt.
+      final result = await FirebaseMessaging.instance.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      if (!mounted) return;
+      final granted =
+          result.authorizationStatus == AuthorizationStatus.authorized ||
+          result.authorizationStatus == AuthorizationStatus.provisional;
+      if (!granted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'Notifications are blocked. '
+              'Please enable them in your device Settings > App > Notifications.',
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+          ),
+        );
+      }
+      return;
+    }
+
+    // `notDetermined` — show our rationale dialog then request.
+    if (!mounted) return;
+    final accepted =
+        await PermissionDialogHelper.showNotificationRationale(context);
+    await prefs.setBool('notification_dialog_shown', true);
+    if (!accepted) return;
+
+    await FirebaseMessaging.instance.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Notification permission requested.'),
+        backgroundColor: AppColors.primary,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.r),
+        ),
       ),
     );
   }

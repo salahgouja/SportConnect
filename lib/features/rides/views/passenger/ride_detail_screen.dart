@@ -243,16 +243,18 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
 
                   // Passengers section - show for both but with different context
                   if (bookings.isNotEmpty)
-                    _buildPassengers(ride, bookings: bookings, isDriver: isDriver)
+                    _buildPassengers(
+                          ride,
+                          bookings: bookings,
+                          isDriver: isDriver,
+                        )
                         .animate()
                         .fadeIn(duration: 400.ms, delay: 300.ms)
                         .slideY(begin: 0.2, curve: Curves.easeOutCubic),
 
                   // Pending requests - only show for drivers
                   if (isDriver &&
-                      bookings.any(
-                        (b) => b.status == BookingStatus.pending,
-                      ))
+                      bookings.any((b) => b.status == BookingStatus.pending))
                     _buildPendingRequests(ride, bookings)
                         .animate()
                         .fadeIn(duration: 400.ms, delay: 350.ms)

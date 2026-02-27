@@ -21,7 +21,6 @@ import 'package:sport_connect/features/home/models/home_models.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 
 /// Modern Carpooling Home Screen  - Uses proper MVVM architecture with repository
 class HomeScreen extends ConsumerStatefulWidget {
@@ -33,12 +32,11 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen>
     with TickerProviderStateMixin {
-  late final AnimationController _fabAnimationController;
   late final AnimationController _pulseAnimationController;
 
   // Map controller and state
   final MapController _mapController = MapController();
-  LatLng _currentLocation = const LatLng(37.7749, -122.4194);
+  LatLng _currentLocation = const LatLng(48.8566, 2.3522);
   bool _isLoadingLocation = true;
   double _currentZoom = 14;
   String _selectedMapStyle = 'standard';
@@ -56,9 +54,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   // OSRM Routing state
   RouteInfo? _activeRoute;
   List<RouteInfo> _alternativeRoutes = [];
-  final bool _isLoadingRoute = false;
+  bool _isLoadingRoute = false;
   bool _showRouteInfo = false;
-  final int _selectedRouteIndex = 0;
+  int _selectedRouteIndex = 0;
 
   // Map styles available
   final Map<String, String> _mapStyles = {
@@ -74,128 +72,83 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   void initState() {
     super.initState();
 
-    _fabAnimationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
     _pulseAnimationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat();
-    _getCurrentLocation();
-    _startLocationTracking();
-    _requestNotificationPermission();
-  }
-
-  /// Requests notification permission with a rationale dialog.
-  Future<void> _requestNotificationPermission() async {
-    try {
-      final settings = await FirebaseMessaging.instance
-          .getNotificationSettings();
-
-      switch (settings.authorizationStatus) {
-        case AuthorizationStatus.authorized:
-        case AuthorizationStatus.provisional:
-          TalkerService.info(
-            'Notification permission already granted: '
-            '${settings.authorizationStatus}',
-          );
-          return;
-
-        case AuthorizationStatus.denied:
-          // User previously denied — cannot re-prompt on Android 13+.
-          // Log so the developer can diagnose "no notifications" reports.
-          TalkerService.warning(
-            'Notification permission previously denied. '
-            'User must enable manually in system settings.',
-          );
-          return;
-
-        case AuthorizationStatus.notDetermined:
-          // First time — show rationale then request
-          await Future.delayed(const Duration(seconds: 2));
-          if (!mounted) return;
-
-          final accepted =
-              await PermissionDialogHelper.showNotificationRationale(context);
-          if (!accepted) {
-            TalkerService.info('User declined notification rationale dialog.');
-            return;
-          }
-
-          final result = await FirebaseMessaging.instance.requestPermission(
-            alert: true,
-            badge: true,
-            sound: true,
-          );
-
-          TalkerService.info(
-            'Notification permission result: '
-            '${result.authorizationStatus}',
-          );
-      }
-    } catch (e) {
-      TalkerService.error('Failed to request notification permission', e);
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _getCurrentLocation();
+      if (mounted) _startLocationTracking();
+    });
   }
 
   void _startLocationTracking() {
-    const locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 20, // Reduce update frequency for smoother UI
-    );
+    Geolocator.checkPermission().then((permission) {
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        TalkerService.debug('Skipping location stream: permission not granted');
+        return;
+      }
+      const locationSettings = LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 20, // Reduce update frequency for smoother UI
+      );
 
-    _positionStreamSubscription =
-        Geolocator.getPositionStream(
-          locationSettings: locationSettings,
-        ).listen((Position position) {
-          if (mounted) {
-            final nextLocation = LatLng(position.latitude, position.longitude);
-            final movedDistance = Geolocator.distanceBetween(
-              _currentLocation.latitude,
-              _currentLocation.longitude,
-              nextLocation.latitude,
-              nextLocation.longitude,
-            );
+      _positionStreamSubscription =
+          Geolocator.getPositionStream(
+            locationSettings: locationSettings,
+          ).listen((Position position) {
+            if (mounted) {
+              final nextLocation = LatLng(
+                position.latitude,
+                position.longitude,
+              );
+              final movedDistance = Geolocator.distanceBetween(
+                _currentLocation.latitude,
+                _currentLocation.longitude,
+                nextLocation.latitude,
+                nextLocation.longitude,
+              );
 
-            final headingDelta = (_userHeading - position.heading).abs();
-            final shouldRefreshUi = movedDistance >= 12 || headingDelta >= 8;
+              final headingDelta = (_userHeading - position.heading).abs();
+              final shouldRefreshUi = movedDistance >= 12 || headingDelta >= 8;
 
-            if (!shouldRefreshUi) {
-              return;
-            }
-
-            setState(() {
-              _currentLocation = nextLocation;
-              _userHeading = position.heading;
-
-              final anchor = _nearbyQueryAnchor;
-              if (anchor == null ||
-                  Geolocator.distanceBetween(
-                        anchor.latitude,
-                        anchor.longitude,
-                        nextLocation.latitude,
-                        nextLocation.longitude,
-                      ) >=
-                      1000) {
-                _nearbyQueryAnchor = nextLocation;
+              if (!shouldRefreshUi) {
+                return;
               }
-            });
 
-            if (_isFollowingUser) {
-              final now = DateTime.now();
-              final canMoveMap =
-                  _lastMapMoveAt == null ||
-                  now.difference(_lastMapMoveAt!) >=
-                      const Duration(milliseconds: 700);
+              setState(() {
+                _currentLocation = nextLocation;
+                _userHeading = position.heading;
 
-              if (canMoveMap) {
-                _mapController.move(_currentLocation, _currentZoom);
-                _lastMapMoveAt = now;
+                final anchor = _nearbyQueryAnchor;
+                if (anchor == null ||
+                    Geolocator.distanceBetween(
+                          anchor.latitude,
+                          anchor.longitude,
+                          nextLocation.latitude,
+                          nextLocation.longitude,
+                        ) >=
+                        1000) {
+                  _nearbyQueryAnchor = nextLocation;
+                }
+              });
+
+              if (_isFollowingUser) {
+                final now = DateTime.now();
+                final canMoveMap =
+                    _lastMapMoveAt == null ||
+                    now.difference(_lastMapMoveAt!) >=
+                        const Duration(milliseconds: 700);
+
+                if (canMoveMap) {
+                  _mapController.move(_currentLocation, _currentZoom);
+                  setState(() => _lastMapMoveAt = now);
+                }
               }
             }
-          }
-        });
+          });
+    });
   }
 
   Future<void> _getCurrentLocation() async {
@@ -204,6 +157,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       if (!serviceEnabled) {
         TalkerService.debug('Location services are disabled');
         setState(() => _isLoadingLocation = false);
+        // if (mounted) {
+        //   final opened = await PermissionDialogHelper.showLocationRationale(
+        //     context,
+        //   );
+        //   TalkerService.debug('Location settings opened: $opened');
+        // }
         return;
       }
 
@@ -255,7 +214,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   @override
   void dispose() {
-    _fabAnimationController.dispose();
     _pulseAnimationController.dispose();
     _positionStreamSubscription?.cancel();
     super.dispose();
@@ -381,9 +339,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
         // Map Style Selector
         _buildMapStyleSelector(),
-
-        // Scale Bar
-        _buildScaleBar(),
 
         // Radius Slider (when active)
         if (_showDistanceRadius) _buildRadiusSlider(),
@@ -601,62 +556,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         );
       },
     );
-  }
-
-  /// Build scale bar for map
-  Widget _buildScaleBar() {
-    // Calculate approximate scale based on zoom level
-    // At zoom 14, 1km ≈ ~100 pixels (varies by latitude)
-    final scaleKm =
-        156543.03392 *
-        math.cos(_currentLocation.latitude * math.pi / 180) /
-        math.pow(2, _currentZoom);
-    String scaleText;
-    if (scaleKm < 1) {
-      scaleText = '${(scaleKm * 1000).toInt()} m';
-    } else {
-      scaleText = '${scaleKm.toStringAsFixed(1)} km';
-    }
-
-    return Positioned(
-      left: 16.w,
-      bottom: 80.h,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-        decoration: BoxDecoration(
-          color: AppColors.surface.withValues(alpha: 0.9),
-          borderRadius: BorderRadius.circular(8.r),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 4,
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 50.w,
-              height: 3.h,
-              decoration: BoxDecoration(
-                color: AppColors.textPrimary,
-                borderRadius: BorderRadius.circular(1.r),
-              ),
-            ),
-            SizedBox(width: 6.w),
-            Text(
-              scaleText,
-              style: TextStyle(
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    ).animate().fadeIn(delay: 300.ms);
   }
 
   /// Build radius slider when distance radius is enabled
@@ -986,7 +885,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final l10n = AppLocalizations.of(context);
     final filters = [
       {'id': 'all', 'label': l10n.filterAll, 'icon': Icons.apps},
-      {'id': 'available', 'label': l10n.availableSeats, 'icon': Icons.event_seat},
+      {
+        'id': 'available',
+        'label': l10n.availableSeats,
+        'icon': Icons.event_seat,
+      },
       {'id': 'premium', 'label': l10n.premium, 'icon': Icons.star},
       {'id': 'eco', 'label': l10n.eco, 'icon': Icons.eco},
     ];
@@ -1396,151 +1299,188 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   nearbyRidesStreamProvider(queryAnchor, _searchRadius),
                 );
 
-            return Container(
-              height: MediaQuery.of(context).size.height * 0.85,
-              decoration: BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-              ),
-              child: Column(
-                children: [
-                  // Handle bar
-                  Container(
-                    margin: EdgeInsets.only(top: 12.h),
-                    width: 40.w,
-                    height: 4.h,
-                    decoration: BoxDecoration(
-                      color: AppColors.border,
-                      borderRadius: BorderRadius.circular(2.r),
+                return Container(
+                  height: MediaQuery.of(context).size.height * 0.85,
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(24.r),
                     ),
                   ),
+                  child: Column(
+                    children: [
+                      // Handle bar
+                      Container(
+                        margin: EdgeInsets.only(top: 12.h),
+                        width: 40.w,
+                        height: 4.h,
+                        decoration: BoxDecoration(
+                          color: AppColors.border,
+                          borderRadius: BorderRadius.circular(2.r),
+                        ),
+                      ),
 
-                  // Header
-                  Padding(
-                    padding: EdgeInsets.all(16.w),
-                    child: Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () => context.pop(),
-                          child: Icon(
-                            Icons.close_rounded,
-                            color: AppColors.textPrimary,
-                            size: 24.sp,
-                          ),
+                      // Header
+                      Padding(
+                        padding: EdgeInsets.all(16.w),
+                        child: Row(
+                          children: [
+                            GestureDetector(
+                              onTap: () => context.pop(),
+                              child: Icon(
+                                Icons.close_rounded,
+                                color: AppColors.textPrimary,
+                                size: 24.sp,
+                              ),
+                            ),
+                            SizedBox(width: 16.w),
+                            Text(
+                              AppLocalizations.of(context).findARide,
+                              style: TextStyle(
+                                fontSize: 20.sp,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const Spacer(),
+                            TextButton.icon(
+                              onPressed: () {
+                                context.pop();
+                              },
+                              icon: Icon(Icons.tune_rounded, size: 18.sp),
+                              label: Text(AppLocalizations.of(context).filters),
+                            ),
+                          ],
                         ),
-                        SizedBox(width: 16.w),
-                        Text(
-                          AppLocalizations.of(context).findARide,
-                          style: TextStyle(
-                            fontSize: 20.sp,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const Spacer(),
-                        TextButton.icon(
-                          onPressed: () {
-                            context.pop();
-                          },
-                          icon: Icon(Icons.tune_rounded, size: 18.sp),
-                          label: Text(AppLocalizations.of(context).filters),
-                        ),
-                      ],
-                    ),
-                  ),
+                      ),
 
-                  // Search inputs
-                  Container(
-                    margin: EdgeInsets.symmetric(horizontal: 16.w),
-                    padding: EdgeInsets.all(16.w),
-                    decoration: BoxDecoration(
-                      color: AppColors.cardBg,
-                      borderRadius: BorderRadius.circular(16.r),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          blurRadius: 10,
+                      // Search inputs
+                      Container(
+                        margin: EdgeInsets.symmetric(horizontal: 16.w),
+                        padding: EdgeInsets.all(16.w),
+                        decoration: BoxDecoration(
+                          color: AppColors.cardBg,
+                          borderRadius: BorderRadius.circular(16.r),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.05),
+                              blurRadius: 10,
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        // From field
-                        TextField(
-                          controller: fromController,
-                          onChanged: (_) => setModalState(() {}),
-                          decoration: InputDecoration(
-                            hintText: AppLocalizations.of(context).fromWhere,
-                            hintStyle: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 14.sp,
-                            ),
-                            prefixIcon: Icon(
-                              Icons.circle,
-                              color: AppColors.primary,
-                              size: 12.sp,
-                            ),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 12.w,
-                              vertical: 8.h,
-                            ),
-                          ),
-                        ),
-                        Divider(color: AppColors.border, height: 1),
-                        // To field
-                        TextField(
-                          controller: toController,
-                          onChanged: (_) => setModalState(() {}),
-                          decoration: InputDecoration(
-                            hintText: AppLocalizations.of(context).toWhere,
-                            hintStyle: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 14.sp,
-                            ),
-                            prefixIcon: Icon(
-                              Icons.location_on,
-                              color: AppColors.error,
-                              size: 16.sp,
-                            ),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 12.w,
-                              vertical: 8.h,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  SizedBox(height: 12.h),
-
-                  // Quick date & seat selection
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16.w),
-                    child: Row(
-                      children: [
-                        // Date picker
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () async {
-                              final date = await showDatePicker(
-                                context: context,
-                                initialDate: selectedDate,
-                                firstDate: DateTime.now(),
-                                lastDate: DateTime.now().add(
-                                  const Duration(days: 90),
+                        child: Column(
+                          children: [
+                            // From field
+                            TextField(
+                              controller: fromController,
+                              onChanged: (_) => setModalState(() {}),
+                              decoration: InputDecoration(
+                                hintText: AppLocalizations.of(
+                                  context,
+                                ).fromWhere,
+                                hintStyle: TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 14.sp,
                                 ),
-                              );
-                              if (date != null) {
-                                setModalState(() => selectedDate = date);
-                              }
-                            },
-                            child: Container(
+                                prefixIcon: Icon(
+                                  Icons.circle,
+                                  color: AppColors.primary,
+                                  size: 12.sp,
+                                ),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 12.w,
+                                  vertical: 8.h,
+                                ),
+                              ),
+                            ),
+                            Divider(color: AppColors.border, height: 1),
+                            // To field
+                            TextField(
+                              controller: toController,
+                              onChanged: (_) => setModalState(() {}),
+                              decoration: InputDecoration(
+                                hintText: AppLocalizations.of(context).toWhere,
+                                hintStyle: TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 14.sp,
+                                ),
+                                prefixIcon: Icon(
+                                  Icons.location_on,
+                                  color: AppColors.error,
+                                  size: 16.sp,
+                                ),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 12.w,
+                                  vertical: 8.h,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: 12.h),
+
+                      // Quick date & seat selection
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16.w),
+                        child: Row(
+                          children: [
+                            // Date picker
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () async {
+                                  final date = await showDatePicker(
+                                    context: context,
+                                    initialDate: selectedDate,
+                                    firstDate: DateTime.now(),
+                                    lastDate: DateTime.now().add(
+                                      const Duration(days: 90),
+                                    ),
+                                  );
+                                  if (date != null) {
+                                    setModalState(() => selectedDate = date);
+                                  }
+                                },
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 12.w,
+                                    vertical: 10.h,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.cardBg,
+                                    borderRadius: BorderRadius.circular(12.r),
+                                    border: Border.all(color: AppColors.border),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.calendar_today_rounded,
+                                        size: 18.sp,
+                                        color: AppColors.primary,
+                                      ),
+                                      SizedBox(width: 8.w),
+                                      Text(
+                                        _formatDateShort(selectedDate),
+                                        style: TextStyle(
+                                          fontSize: 13.sp,
+                                          fontWeight: FontWeight.w500,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 12.w),
+                            // Seat selector
+                            Container(
                               padding: EdgeInsets.symmetric(
                                 horizontal: 12.w,
-                                vertical: 10.h,
+                                vertical: 6.h,
                               ),
                               decoration: BoxDecoration(
                                 color: AppColors.cardBg,
@@ -1550,221 +1490,192 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                               child: Row(
                                 children: [
                                   Icon(
-                                    Icons.calendar_today_rounded,
+                                    Icons.person_rounded,
                                     size: 18.sp,
                                     color: AppColors.primary,
                                   ),
                                   SizedBox(width: 8.w),
-                                  Text(
-                                    _formatDateShort(selectedDate),
-                                    style: TextStyle(
-                                      fontSize: 13.sp,
-                                      fontWeight: FontWeight.w500,
-                                      color: AppColors.textPrimary,
+                                  GestureDetector(
+                                    onTap: () {
+                                      if (selectedSeats > 1) {
+                                        setModalState(() => selectedSeats--);
+                                      }
+                                    },
+                                    child: Icon(
+                                      Icons.remove_circle_outline,
+                                      size: 20.sp,
+                                      color: selectedSeats > 1
+                                          ? AppColors.primary
+                                          : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 8.w,
+                                    ),
+                                    child: Text(
+                                      AppLocalizations.of(
+                                        context,
+                                      ).value2(selectedSeats),
+                                      style: TextStyle(
+                                        fontSize: 14.sp,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () {
+                                      if (selectedSeats < 4) {
+                                        setModalState(() => selectedSeats++);
+                                      }
+                                    },
+                                    child: Icon(
+                                      Icons.add_circle_outline,
+                                      size: 20.sp,
+                                      color: selectedSeats < 4
+                                          ? AppColors.primary
+                                          : AppColors.textSecondary,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                          ),
+                          ],
                         ),
-                        SizedBox(width: 12.w),
-                        // Seat selector
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 12.w,
-                            vertical: 6.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.cardBg,
-                            borderRadius: BorderRadius.circular(12.r),
-                            border: Border.all(color: AppColors.border),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.person_rounded,
-                                size: 18.sp,
-                                color: AppColors.primary,
-                              ),
-                              SizedBox(width: 8.w),
-                              GestureDetector(
-                                onTap: () {
-                                  if (selectedSeats > 1) {
-                                    setModalState(() => selectedSeats--);
-                                  }
-                                },
-                                child: Icon(
-                                  Icons.remove_circle_outline,
-                                  size: 20.sp,
-                                  color: selectedSeats > 1
-                                      ? AppColors.primary
-                                      : AppColors.textSecondary,
-                                ),
-                              ),
-                              Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 8.w),
-                                child: Text(
-                                  AppLocalizations.of(
-                                    context,
-                                  ).value2(selectedSeats),
-                                  style: TextStyle(
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.textPrimary,
-                                  ),
-                                ),
-                              ),
-                              GestureDetector(
-                                onTap: () {
-                                  if (selectedSeats < 4) {
-                                    setModalState(() => selectedSeats++);
-                                  }
-                                },
-                                child: Icon(
-                                  Icons.add_circle_outline,
-                                  size: 20.sp,
-                                  color: selectedSeats < 4
-                                      ? AppColors.primary
-                                      : AppColors.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                      ),
 
-                  SizedBox(height: 16.h),
+                      SizedBox(height: 16.h),
 
-                  // Results header
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16.w),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          AppLocalizations.of(context).nearbyRides,
-                          style: TextStyle(
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        nearbyRides.when(
-                          data: (rides) => Text(
-                            AppLocalizations.of(
-                              context,
-                            ).valueAvailable(rides.length),
-                            style: TextStyle(
-                              fontSize: 13.sp,
-                              color: AppColors.textSecondary,
+                      // Results header
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16.w),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              AppLocalizations.of(context).nearbyRides,
+                              style: TextStyle(
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
                             ),
-                          ),
-                          loading: () => SizedBox(
-                            width: 16.w,
-                            height: 16.w,
+                            nearbyRides.when(
+                              data: (rides) => Text(
+                                AppLocalizations.of(
+                                  context,
+                                ).valueAvailable(rides.length),
+                                style: TextStyle(
+                                  fontSize: 13.sp,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                              loading: () => SizedBox(
+                                width: 16.w,
+                                height: 16.w,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                              error: (_, _) => const SizedBox.shrink(),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: 12.h),
+
+                      // Ride list
+                      Expanded(
+                        child: nearbyRides.when(
+                          data: (rides) {
+                            final filteredRides = _filterSearchSheetRides(
+                              rides,
+                              fromText: fromController.text,
+                              toText: toController.text,
+                              date: selectedDate,
+                              seats: selectedSeats,
+                            );
+                            if (filteredRides.isEmpty) {
+                              return Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.directions_car_outlined,
+                                      size: 64.sp,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                    SizedBox(height: 16.h),
+                                    Text(
+                                      AppLocalizations.of(
+                                        context,
+                                      ).noRidesAvailableNearby,
+                                      style: TextStyle(
+                                        fontSize: 16.sp,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                    SizedBox(height: 8.h),
+                                    Text(
+                                      AppLocalizations.of(
+                                        context,
+                                      ).tryExpandingYourSearchRadius,
+                                      style: TextStyle(
+                                        fontSize: 13.sp,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+
+                            return ListView.builder(
+                              padding: EdgeInsets.symmetric(horizontal: 16.w),
+                              itemCount: filteredRides.length,
+                              itemBuilder: (context, index) {
+                                final ride = filteredRides[index];
+                                return _buildSearchRideCard(ride, context);
+                              },
+                            );
+                          },
+                          loading: () => Center(
                             child: CircularProgressIndicator(
-                              strokeWidth: 2,
                               color: AppColors.primary,
                             ),
                           ),
-                          error: (_, _) => const SizedBox.shrink(),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  SizedBox(height: 12.h),
-
-                  // Ride list
-                  Expanded(
-                    child: nearbyRides.when(
-                      data: (rides) {
-                        final filteredRides = _filterSearchSheetRides(
-                          rides,
-                          fromText: fromController.text,
-                          toText: toController.text,
-                          date: selectedDate,
-                          seats: selectedSeats,
-                        );
-                        if (filteredRides.isEmpty) {
-                          return Center(
+                          error: (error, _) => Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(
-                                  Icons.directions_car_outlined,
-                                  size: 64.sp,
-                                  color: AppColors.textSecondary,
+                                  Icons.error_outline,
+                                  size: 48.sp,
+                                  color: AppColors.error,
                                 ),
-                                SizedBox(height: 16.h),
+                                SizedBox(height: 12.h),
                                 Text(
                                   AppLocalizations.of(
                                     context,
-                                  ).noRidesAvailableNearby,
+                                  ).failedToLoadRides,
                                   style: TextStyle(
-                                    fontSize: 16.sp,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                                SizedBox(height: 8.h),
-                                Text(
-                                  AppLocalizations.of(
-                                    context,
-                                  ).tryExpandingYourSearchRadius,
-                                  style: TextStyle(
-                                    fontSize: 13.sp,
+                                    fontSize: 14.sp,
                                     color: AppColors.textSecondary,
                                   ),
                                 ),
                               ],
                             ),
-                          );
-                        }
-
-                        return ListView.builder(
-                          padding: EdgeInsets.symmetric(horizontal: 16.w),
-                          itemCount: filteredRides.length,
-                          itemBuilder: (context, index) {
-                            final ride = filteredRides[index];
-                            return _buildSearchRideCard(ride, context);
-                          },
-                        );
-                      },
-                      loading: () => Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.primary,
+                          ),
                         ),
                       ),
-                      error: (error, _) => Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.error_outline,
-                              size: 48.sp,
-                              color: AppColors.error,
-                            ),
-                            SizedBox(height: 12.h),
-                            Text(
-                              AppLocalizations.of(context).failedToLoadRides,
-                              style: TextStyle(
-                                fontSize: 14.sp,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
-            );
-          }, // closes Consumer builder
-        );   // closes Consumer
+                );
+              }, // closes Consumer builder
+            ); // closes Consumer
           },
         );
       },

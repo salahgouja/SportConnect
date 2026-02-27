@@ -147,7 +147,11 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
           return [
             _buildSliverAppBar(ride, confirmedBookings),
             SliverToBoxAdapter(
-              child: _buildStatsBar(ride, pendingBookings.length, confirmedBookings),
+              child: _buildStatsBar(
+                ride,
+                pendingBookings.length,
+                confirmedBookings,
+              ),
             ),
             SliverPersistentHeader(
               pinned: true,
@@ -241,7 +245,10 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
     );
   }
 
-  Widget _buildSliverAppBar(RideModel ride, List<RideBooking> confirmedBookings) {
+  Widget _buildSliverAppBar(
+    RideModel ride,
+    List<RideBooking> confirmedBookings,
+  ) {
     return SliverAppBar(
       expandedHeight: 200.h,
       floating: false,
@@ -470,7 +477,11 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
     );
   }
 
-  Widget _buildStatsBar(RideModel ride, int pendingCount, List<RideBooking> confirmedBookings) {
+  Widget _buildStatsBar(
+    RideModel ride,
+    int pendingCount,
+    List<RideBooking> confirmedBookings,
+  ) {
     final confirmedSeats = confirmedBookings
         .where((b) => b.status == BookingStatus.accepted)
         .fold(0, (sum, b) => sum + b.seatsBooked);

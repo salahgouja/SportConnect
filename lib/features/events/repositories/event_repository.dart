@@ -89,9 +89,7 @@ class EventRepository implements IEventRepository {
       if (!snap.exists) throw Exception('Event not found.');
 
       final data = snap.data()!;
-      final participants = List<String>.from(
-        data.participantIds,
-      );
+      final participants = List<String>.from(data.participantIds);
       final maxParticipants = data.maxParticipants;
 
       if (participants.contains(userId)) return;

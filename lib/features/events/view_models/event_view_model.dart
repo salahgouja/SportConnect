@@ -353,4 +353,3 @@ Stream<List<EventModel>> joinedEventsStream(Ref ref, String userId) {
 Stream<EventModel?> eventById(Ref ref, String eventId) {
   return ref.watch(eventRepositoryProvider).streamEventById(eventId);
 }
-

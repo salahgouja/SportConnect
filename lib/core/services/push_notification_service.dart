@@ -125,7 +125,10 @@ class PushNotificationService {
         );
         return;
       }
-      UserModel? user = await _usersCollection.doc(userId).get().then((snap) => snap.data());
+      UserModel? user = await _usersCollection
+          .doc(userId)
+          .get()
+          .then((snap) => snap.data());
       if (user == null) {
         TalkerService.warning(
           'User document not found for user $userId — cannot save FCM token.',
@@ -133,18 +136,15 @@ class PushNotificationService {
         return;
       }
       user = user.copyWith(fcmToken: token);
-      await _usersCollection
-          .doc(userId)
-          .set(user, SetOptions(merge: true));
+      await _usersCollection.doc(userId).set(user, SetOptions(merge: true));
 
       TalkerService.info('FCM token saved for user $userId');
 
       // Listen for token refreshes
       _messaging.onTokenRefresh.listen((newToken) async {
-        await _usersCollection.doc(userId).set(
-          user!.copyWith(fcmToken: newToken),
-          SetOptions(merge: true),
-        );
+        await _usersCollection
+            .doc(userId)
+            .set(user!.copyWith(fcmToken: newToken), SetOptions(merge: true));
         TalkerService.info('FCM token refreshed for user $userId');
       });
     } catch (e) {

@@ -59,10 +59,7 @@ abstract class IChatRepository {
     required String odid,
     required bool mute,
   });
-  Future<void> clearChat({
-    required String chatId,
-    required String userId,
-  });
+  Future<void> clearChat({required String chatId, required String userId});
   Future<void> blockUser({
     required String chatId,
     required String userId,

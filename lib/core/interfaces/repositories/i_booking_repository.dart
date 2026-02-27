@@ -17,6 +17,8 @@ abstract class IBookingRepository {
 
   Future<void> updateBooking(RideBooking booking);
   Future<void> deleteBooking(String bookingId);
-  Stream<List<RideBooking>> streamActiveBookingsByPassengerId(String passengerId);
+  Stream<List<RideBooking>> streamActiveBookingsByPassengerId(
+    String passengerId,
+  );
   Stream<List<RideBooking>> streamPendingBookingsByRideId(String rideId);
 }

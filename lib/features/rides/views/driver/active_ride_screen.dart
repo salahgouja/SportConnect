@@ -1733,8 +1733,9 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
 
   /// Step 4: Navigates to the review screen so driver can rate a passenger.
   Future<void> _navigateToRating(RideModel ride) async {
-    final allBookings =
-        await ref.read(bookingRepositoryProvider).getBookingsByRideId(ride.id);
+    final allBookings = await ref
+        .read(bookingRepositoryProvider)
+        .getBookingsByRideId(ride.id);
     final booking = allBookings
         .where((b) => b.status == BookingStatus.accepted)
         .firstOrNull;

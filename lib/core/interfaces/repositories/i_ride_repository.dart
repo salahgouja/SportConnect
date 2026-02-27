@@ -44,10 +44,7 @@ abstract class IRideRepository {
   Stream<List<RideRequestModel>> getRideRequests(String rideId);
 
   // Bookings
-  Future<void> bookRide({
-    required String rideId,
-    required RideBooking booking,
-  });
+  Future<void> bookRide({required String rideId, required RideBooking booking});
   Future<void> updateBookingStatus({
     required String rideId,
     required String bookingId,

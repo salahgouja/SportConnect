@@ -17,6 +17,9 @@ import 'package:sport_connect/core/widgets/utility_widgets.dart';
 import 'package:sport_connect/features/auth/models/auth_exception.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -58,6 +61,73 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         statusBarIconBrightness: Brightness.dark,
       ),
     );
+
+    // Show notification rationale after the first frame so the screen is
+    // fully visible before any dialog appears.
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _requestNotificationPermission(),
+    );
+  }
+
+  /// Requests notification permission, always preceded by our rationale dialog.
+  ///
+  /// On some Android OEMs / Android < 13, Firebase reports `denied` on a
+  /// fresh install instead of `notDetermined`, which would make us skip the
+  /// dialog entirely.  We guard against this by persisting a
+  /// `notification_dialog_shown` flag: we only treat `denied` as a genuine
+  /// previous refusal when that flag is already `true`.
+  Future<void> _requestNotificationPermission() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final alreadyAsked = prefs.getBool('notification_dialog_shown') ?? false;
+
+      final settings = await FirebaseMessaging.instance
+          .getNotificationSettings();
+      final status = settings.authorizationStatus;
+
+      // Already granted — nothing to do.
+      if (status == AuthorizationStatus.authorized ||
+          status == AuthorizationStatus.provisional) {
+        TalkerService.info('Notification permission already granted: $status');
+        return;
+      }
+
+      // Genuinely denied after a previous explicit OS prompt — cannot re-ask.
+      if (status == AuthorizationStatus.denied && alreadyAsked) {
+        TalkerService.info(
+          'Notification permission denied; user must re-enable from settings.',
+        );
+        return;
+      }
+
+      // `notDetermined` OR `denied` on first launch (OEM quirk):
+      // show our rationale dialog, then request from the OS.
+      await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) return;
+
+      final accepted = await PermissionDialogHelper.showNotificationRationale(
+        context,
+      );
+
+      // Mark that we have now shown the dialog regardless of the user's choice.
+      await prefs.setBool('notification_dialog_shown', true);
+
+      if (!accepted) {
+        TalkerService.info('User dismissed notification rationale.');
+        return;
+      }
+
+      final result = await FirebaseMessaging.instance.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      TalkerService.info(
+        'Notification permission result: ${result.authorizationStatus}',
+      );
+    } catch (e) {
+      TalkerService.error('Failed to request notification permission', e);
+    }
   }
 
   void _setupAnimations() {

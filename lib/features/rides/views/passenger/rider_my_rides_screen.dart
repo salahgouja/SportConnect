@@ -1353,8 +1353,9 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
                         final allBookings = await ref
                             .read(bookingRepositoryProvider)
                             .getBookingsByRideId(ride.id);
-                        final matches = allBookings
-                            .where((b) => b.passengerId == currentUser.uid);
+                        final matches = allBookings.where(
+                          (b) => b.passengerId == currentUser.uid,
+                        );
                         booking = matches.isNotEmpty ? matches.first : null;
                       } catch (e) {
                         booking = null;

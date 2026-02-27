@@ -633,9 +633,7 @@ class ChatRepository implements IChatRepository {
     required File audioFile,
     required String fileName,
   }) async {
-    final storageRef = _storage
-        .ref()
-        .child('chats/$chatId/audio/$fileName');
+    final storageRef = _storage.ref().child('chats/$chatId/audio/$fileName');
     await storageRef.putFile(audioFile);
     return storageRef.getDownloadURL();
   }
