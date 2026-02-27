@@ -308,11 +308,8 @@ class _DriverStripeOnboardingScreenState
     if (user == null) return;
 
     try {
-      final accountStatus = await ref
-          .read(paymentViewModelProvider.notifier)
-          .getConnectedAccountStatus(user.uid);
-
-      if (accountStatus['isConnected'] == true) {
+      final status = await ref.read(driverStripeStatusProvider.future);
+      if (status.isConnected) {
         // Already connected - return to previous screen
         if (mounted) {
           context.pop(true);
@@ -351,7 +348,7 @@ class _DriverStripeOnboardingScreenState
           : null;
 
       final result = await ref
-          .read(paymentViewModelProvider.notifier)
+          .read(driverOnboardingViewModelProvider.notifier)
           .createConnectedAccount(
             userId: user.uid,
             email: user.email,
@@ -365,10 +362,10 @@ class _DriverStripeOnboardingScreenState
           );
 
       if (result != null &&
-          result['onboardingUrl'] != null &&
-          result['accountId'] != null) {
+          result.onboardingUrl != null &&
+          result.stripeAccountId.isNotEmpty) {
         setState(() {
-          _onboardingUrl = result['onboardingUrl'];
+          _onboardingUrl = result.onboardingUrl;
           _showWebView = true;
           _isLoading = false;
         });
@@ -532,11 +529,10 @@ class _DriverStripeOnboardingScreenState
       final user = ref.read(currentUserProvider).value;
       if (user == null) return;
 
-      final accountStatus = await ref
-          .read(paymentViewModelProvider.notifier)
-          .getConnectedAccountStatus(user.uid);
+      ref.invalidate(driverStripeStatusProvider);
+      final status = await ref.read(driverStripeStatusProvider.future);
 
-      if (accountStatus['isConnected'] == true) {
+      if (status.isConnected) {
         // Success!
         if (mounted) {
           context.pop(true);
@@ -555,7 +551,7 @@ class _DriverStripeOnboardingScreenState
             ),
           );
         }
-      } else if (accountStatus['requiresMoreInfo'] == true) {
+      } else if (!status.isConnected) {
         // Incomplete - show message but don't close
         setState(() {
           _isVerifying = false;

@@ -4,11 +4,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sport_connect/core/constants/app_constants.dart';
+import 'package:sport_connect/core/interfaces/repositories/i_dispute_repository.dart';
+import 'package:sport_connect/core/providers/firebase_providers.dart';
 
 part 'dispute_repository.g.dart';
 
 /// Repository for filing and managing ride disputes.
-class DisputeRepository {
+class DisputeRepository implements IDisputeRepository {
   final FirebaseFirestore _firestore;
   final FirebaseStorage _storage;
 
@@ -23,18 +26,20 @@ class DisputeRepository {
     required String description,
     String? rideSummary,
   }) async {
-    final docRef = await _firestore.collection('disputes').add({
-      'rideId': rideId,
-      'userId': userId,
-      'userEmail': userEmail,
-      'disputeType': disputeType,
-      'description': description,
-      'rideSummary': rideSummary,
-      'attachmentUrls': <String>[],
-      'status': 'pending',
-      'createdAt': DateTime.now(),
-      'updatedAt': DateTime.now(),
-    });
+    final docRef = await _firestore
+        .collection(AppConstants.disputesCollection)
+        .add({
+          'rideId': rideId,
+          'userId': userId,
+          'userEmail': userEmail,
+          'disputeType': disputeType,
+          'description': description,
+          'rideSummary': rideSummary,
+          'attachmentUrls': <String>[],
+          'status': 'pending',
+          'createdAt': DateTime.now(),
+          'updatedAt': DateTime.now(),
+        });
 
     return docRef.id;
   }
@@ -61,9 +66,10 @@ class DisputeRepository {
     }
 
     if (urls.isNotEmpty) {
-      await _firestore.collection('disputes').doc(disputeId).update({
-        'attachmentUrls': urls,
-      });
+      await _firestore
+          .collection(AppConstants.disputesCollection)
+          .doc(disputeId)
+          .update({'attachmentUrls': urls});
     }
 
     return urls;
@@ -71,9 +77,9 @@ class DisputeRepository {
 }
 
 @riverpod
-DisputeRepository disputeRepository(Ref ref) {
+IDisputeRepository disputeRepository(Ref ref) {
   return DisputeRepository(
-    FirebaseFirestore.instance,
-    FirebaseStorage.instance,
+    ref.watch(firestoreInstanceProvider),
+    ref.watch(storageInstanceProvider),
   );
 }

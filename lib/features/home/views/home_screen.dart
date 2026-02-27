@@ -13,11 +13,13 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/services/routing_service.dart';
 import 'package:sport_connect/features/home/repositories/home_repository.dart';
 import 'package:sport_connect/features/home/models/home_models.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
@@ -267,9 +269,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   Widget _buildMapHome() {
     final queryAnchor = _nearbyQueryAnchor ?? _currentLocation;
     final nearbyRides = ref.watch(
-      nearbyRidesStreamProvider(
-        NearbyRidesQuery(location: queryAnchor, radiusKm: _searchRadius),
-      ),
+      nearbyRidesStreamProvider(queryAnchor, _searchRadius),
     );
     final filteredNearbyRides = nearbyRides.whenData(_filterRides);
     final hotspots = ref.watch(hotspotsStreamProvider);
@@ -444,7 +444,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   /// Filter rides based on selected filter - uses proper model classes
-  List<NearbyRidePreview> _filterRides(List<NearbyRidePreview> rides) {
+  List<RideModel> _filterRides(List<RideModel> rides) {
     switch (_selectedFilter) {
       case 'available':
         return rides.where((r) => r.availableSeats > 0).toList();
@@ -457,8 +457,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     }
   }
 
-  /// Build ride markers using proper NearbyRidePreview model
-  List<Marker> _buildRideMarkers(List<NearbyRidePreview> rides) {
+  /// Build ride markers using proper RideModel model
+  List<Marker> _buildRideMarkers(List<RideModel> rides) {
     return rides.map((ride) {
       return Marker(
         point: ride.origin.toLatLng(),
@@ -609,7 +609,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     // At zoom 14, 1km ≈ ~100 pixels (varies by latitude)
     final scaleKm =
         156543.03392 *
-        math.cos(_currentLocation.latitude * pi / 180) /
+        math.cos(_currentLocation.latitude * math.pi / 180) /
         math.pow(2, _currentZoom);
     String scaleText;
     if (scaleKm < 1) {
@@ -750,7 +750,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   /// Build quick stats bar showing nearby rides count - uses proper model
-  Widget _buildQuickStatsBar(AsyncValue<List<NearbyRidePreview>> nearbyRides) {
+  Widget _buildQuickStatsBar(AsyncValue<List<RideModel>> nearbyRides) {
     return Positioned(
       left: 16.w,
       bottom: 24.h,
@@ -837,6 +837,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               button: true,
               label: 'Profile',
               child: GestureDetector(
+                onTap: () => context.push(AppRoutes.profile.path),
                 child: Container(
                   padding: EdgeInsets.all(3.w),
                   decoration: BoxDecoration(
@@ -982,11 +983,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Widget _buildFilterBar() {
+    final l10n = AppLocalizations.of(context);
     final filters = [
-      {'id': 'all', 'label': 'All', 'icon': Icons.apps},
-      {'id': 'available', 'label': 'Available', 'icon': Icons.event_seat},
-      {'id': 'premium', 'label': 'Premium', 'icon': Icons.star},
-      {'id': 'eco', 'label': 'Eco', 'icon': Icons.eco},
+      {'id': 'all', 'label': l10n.filterAll, 'icon': Icons.apps},
+      {'id': 'available', 'label': l10n.availableSeats, 'icon': Icons.event_seat},
+      {'id': 'premium', 'label': l10n.premium, 'icon': Icons.star},
+      {'id': 'eco', 'label': l10n.eco, 'icon': Icons.eco},
     ];
 
     return Positioned(
@@ -1311,6 +1313,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     AppLocalizations.of(context).dark2,
                     Icons.dark_mode,
                   ),
+                  SizedBox(width: 12.w),
+                  _buildStyleOption(
+                    'satellite',
+                    'Satellite',
+                    Icons.satellite_alt,
+                  ),
                 ],
               ),
               SizedBox(height: 20.h),
@@ -1378,18 +1386,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) {
+      builder: (sheetContext) {
         return StatefulBuilder(
           builder: (context, setModalState) {
             final queryAnchor = _nearbyQueryAnchor ?? _currentLocation;
-            final nearbyRides = ref.watch(
-              nearbyRidesStreamProvider(
-                NearbyRidesQuery(
-                  location: queryAnchor,
-                  radiusKm: _searchRadius,
-                ),
-              ),
-            );
+            return Consumer(
+              builder: (context, consumerRef, _) {
+                final nearbyRides = consumerRef.watch(
+                  nearbyRidesStreamProvider(queryAnchor, _searchRadius),
+                );
 
             return Container(
               height: MediaQuery.of(context).size.height * 0.85,
@@ -1758,14 +1763,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 ],
               ),
             );
+          }, // closes Consumer builder
+        );   // closes Consumer
           },
         );
       },
-    );
+    ).whenComplete(() {
+      fromController.dispose();
+      toController.dispose();
+    });
   }
 
-  List<NearbyRidePreview> _filterSearchSheetRides(
-    List<NearbyRidePreview> rides, {
+  List<RideModel> _filterSearchSheetRides(
+    List<RideModel> rides, {
     required String fromText,
     required String toText,
     required DateTime date,
@@ -1799,11 +1809,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     }).toList();
   }
 
-  /// Builds a ride card for the search sheet - uses proper NearbyRidePreview model
-  Widget _buildSearchRideCard(
-    NearbyRidePreview ride,
-    BuildContext sheetContext,
-  ) {
+  /// Builds a ride card for the search sheet - uses proper RideModel model
+  Widget _buildSearchRideCard(RideModel ride, BuildContext sheetContext) {
     final formattedTime = _formatTime(ride.departureTime);
 
     return GestureDetector(
@@ -1837,95 +1844,98 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         child: Column(
           children: [
             // Driver row
-            Row(
-              children: [
-                PremiumAvatar(
-                  imageUrl: ride.driverPhotoUrl,
-                  name: ride.driverName,
-                  size: 44.w,
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            ride.driverName,
-                            style: TextStyle(
-                              fontSize: 15.sp,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
+            DriverInfoWidget(
+              driverId: ride.driverId,
+              builder: (context, displayName, photoUrl, rating) => Row(
+                children: [
+                  PremiumAvatar(
+                    imageUrl: photoUrl,
+                    name: displayName,
+                    size: 44.w,
+                  ),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              displayName,
+                              style: TextStyle(
+                                fontSize: 15.sp,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
                             ),
-                          ),
-                          if (ride.isPremium) ...[
-                            SizedBox(width: 6.w),
+                            if (ride.isPremium) ...[
+                              SizedBox(width: 6.w),
+                              Icon(
+                                Icons.verified,
+                                color: AppColors.starFilled,
+                                size: 16.sp,
+                              ),
+                            ],
+                          ],
+                        ),
+                        SizedBox(height: 2.h),
+                        Row(
+                          children: [
                             Icon(
-                              Icons.verified,
+                              Icons.star_rounded,
                               color: AppColors.starFilled,
-                              size: 16.sp,
+                              size: 14.sp,
+                            ),
+                            SizedBox(width: 4.w),
+                            Text(
+                              rating.average.toStringAsFixed(1),
+                              style: TextStyle(
+                                fontSize: 13.sp,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            SizedBox(width: 8.w),
+                            Icon(
+                              Icons.access_time_rounded,
+                              size: 13.sp,
+                              color: AppColors.textSecondary,
+                            ),
+                            SizedBox(width: 4.w),
+                            Text(
+                              formattedTime,
+                              style: TextStyle(
+                                fontSize: 13.sp,
+                                color: AppColors.textSecondary,
+                              ),
                             ),
                           ],
-                        ],
-                      ),
-                      SizedBox(height: 2.h),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.star_rounded,
-                            color: AppColors.starFilled,
-                            size: 14.sp,
-                          ),
-                          SizedBox(width: 4.w),
-                          Text(
-                            ride.driverRating.toStringAsFixed(1),
-                            style: TextStyle(
-                              fontSize: 13.sp,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          SizedBox(width: 8.w),
-                          Icon(
-                            Icons.access_time_rounded,
-                            size: 13.sp,
-                            color: AppColors.textSecondary,
-                          ),
-                          SizedBox(width: 4.w),
-                          Text(
-                            formattedTime,
-                            style: TextStyle(
-                              fontSize: 13.sp,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                // Price
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 12.w,
-                    vertical: 6.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20.r),
-                  ),
-                  child: Text(
-                    AppLocalizations.of(
-                      context,
-                    ).value5(ride.pricePerSeat.toStringAsFixed(0)),
-                    style: TextStyle(
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
+                  // Price
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 12.w,
+                      vertical: 6.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20.r),
+                    ),
+                    child: Text(
+                      AppLocalizations.of(
+                        context,
+                      ).value5(ride.pricePerSeat.toStringAsFixed(0)),
+                      style: TextStyle(
+                        fontSize: 15.sp,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
 
             SizedBox(height: 12.h),
@@ -2052,8 +2062,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final tomorrow = today.add(const Duration(days: 1));
     final dateOnly = DateTime(date.year, date.month, date.day);
 
-    if (dateOnly == today) return 'Today';
-    if (dateOnly == tomorrow) return 'Tomorrow';
+    if (dateOnly == today) return AppLocalizations.of(context).today;
+    if (dateOnly == tomorrow) return AppLocalizations.of(context).tomorrow;
     return '${date.day}/${date.month}';
   }
 
@@ -2063,8 +2073,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     return '$hour:$minute';
   }
 
-  /// Show ride details using proper NearbyRidePreview model
-  void _showRideDetails(NearbyRidePreview ride) {
+  /// Show ride details using proper RideModel model
+  void _showRideDetails(RideModel ride) {
     HapticFeedback.mediumImpact();
     showModalBottomSheet(
       context: context,
@@ -2133,67 +2143,70 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               SizedBox(height: 16.h),
 
               // Driver info
-              Row(
-                children: [
-                  PremiumAvatar(
-                    imageUrl: ride.driverPhotoUrl,
-                    name: ride.driverName,
-                    size: 50.w,
-                  ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          ride.driverName,
-                          style: TextStyle(
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+              DriverInfoWidget(
+                driverId: ride.driverId,
+                builder: (context, displayName, photoUrl, rating) => Row(
+                  children: [
+                    PremiumAvatar(
+                      imageUrl: photoUrl,
+                      name: displayName,
+                      size: 50.w,
+                    ),
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            displayName,
+                            style: TextStyle(
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
                           ),
-                        ),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.star,
-                              color: AppColors.starFilled,
-                              size: 16.sp,
-                            ),
-                            SizedBox(width: 4.w),
-                            Text(
-                              ride.driverRating.toStringAsFixed(1),
-                              style: TextStyle(
-                                fontSize: 13.sp,
-                                color: AppColors.textSecondary,
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.star,
+                                color: AppColors.starFilled,
+                                size: 16.sp,
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 16.w,
-                      vertical: 8.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(20.r),
-                    ),
-                    child: Text(
-                      AppLocalizations.of(
-                        context,
-                      ).value5(ride.pricePerSeat.toStringAsFixed(0)),
-                      style: TextStyle(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                              SizedBox(width: 4.w),
+                              Text(
+                                rating.average.toStringAsFixed(1),
+                                style: TextStyle(
+                                  fontSize: 13.sp,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                ],
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 8.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(20.r),
+                      ),
+                      child: Text(
+                        AppLocalizations.of(
+                          context,
+                        ).value5(ride.pricePerSeat.toStringAsFixed(0)),
+                        style: TextStyle(
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
 
               SizedBox(height: 16.h),

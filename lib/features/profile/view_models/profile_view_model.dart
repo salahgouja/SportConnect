@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
+import 'package:sport_connect/features/profile/repositories/support_repository.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 
 part 'profile_view_model.g.dart';
@@ -117,6 +118,54 @@ class ProfileActionsViewModel {
 
   Future<void> addVehicle(String uid, VehicleModel vehicle) {
     return _ref.read(profileRepositoryProvider).addVehicle(uid, vehicle);
+  }
+
+  /// Submits a report about a user or ride.
+  Future<String> submitReport({
+    required String reporterId,
+    required String reporterEmail,
+    required String type,
+    required String severity,
+    required String description,
+    String? reportedUserId,
+    String? rideId,
+    List<File> attachments = const [],
+  }) {
+    return _ref
+        .read(supportRepositoryProvider)
+        .submitReport(
+          reporterId: reporterId,
+          reporterEmail: reporterEmail,
+          type: type,
+          severity: severity,
+          description: description,
+          reportedUserId: reportedUserId,
+          rideId: rideId,
+          attachments: attachments,
+        );
+  }
+
+  /// Submits a support ticket on behalf of the user.
+  Future<String> submitSupportTicket({
+    required String userId,
+    required String userEmail,
+    required String userName,
+    required String category,
+    required String subject,
+    required String message,
+    List<File> attachments = const [],
+  }) {
+    return _ref
+        .read(supportRepositoryProvider)
+        .submitSupportTicket(
+          userId: userId,
+          userEmail: userEmail,
+          userName: userName,
+          category: category,
+          subject: subject,
+          message: message,
+          attachments: attachments,
+        );
   }
 }
 

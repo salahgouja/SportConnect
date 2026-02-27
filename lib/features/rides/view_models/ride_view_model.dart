@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -10,6 +12,8 @@ import 'package:sport_connect/features/rides/models/ride/ride_pricing.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_preferences.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride_search_filters.dart';
+import 'package:sport_connect/features/rides/repositories/booking_repository.dart';
+import 'package:sport_connect/features/rides/repositories/dispute_repository.dart';
 import 'package:sport_connect/features/rides/repositories/ride_repository.dart';
 import 'package:sport_connect/features/rides/services/ride_service.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
@@ -125,6 +129,20 @@ class RideActionsViewModel {
   Stream<RideModel?> streamRideById(String rideId) {
     return _ref.read(rideRepositoryProvider).streamRideById(rideId);
   }
+
+  /// Pushes the driver's GPS coordinates to Firestore.
+  ///
+  /// Failures are silently swallowed — a missed location ping must not
+  /// interrupt the navigation flow.
+  Future<void> updateLiveLocation(
+    String rideId,
+    double latitude,
+    double longitude,
+  ) {
+    return _ref
+        .read(rideRepositoryProvider)
+        .updateLiveLocation(rideId, latitude, longitude);
+  }
 }
 
 /// Ride Form View Model
@@ -234,7 +252,7 @@ class RideSearchState {
 }
 
 /// Ride Search View Model
-@Riverpod(keepAlive: true)
+@riverpod
 class RideSearchViewModel extends _$RideSearchViewModel {
   @override
   RideSearchState build() => const RideSearchState();
@@ -450,6 +468,16 @@ Stream<List<RideModel>> nearbyRides(
   return repository.streamNearbyRides(latitude: latitude, longitude: longitude);
 }
 
+/// Real-time stream of all bookings for a given ride.
+///
+/// Use this alongside [rideDetailViewModelProvider] in any screen that needs
+/// booking data (requests tab, passenger list, earnings, etc.) — the
+/// [RideModel.bookings] field is never populated from Firestore.
+@riverpod
+Stream<List<RideBooking>> bookingsByRide(Ref ref, String rideId) {
+  return ref.read(bookingRepositoryProvider).streamBookingsByRideId(rideId);
+}
+
 /// All Active Rides Stream Provider (for search screen)
 @riverpod
 Stream<List<RideModel>> activeRides(Ref ref) {
@@ -462,4 +490,46 @@ Stream<List<RideModel>> activeRides(Ref ref) {
 Stream<RideModel?> rideStream(Ref ref, String rideId) {
   final repository = ref.read(rideRepositoryProvider);
   return repository.streamRideById(rideId);
+}
+
+// ─── Dispute ──────────────────────────────────────────────────────────────────
+
+final disputeViewModelProvider = Provider<DisputeViewModel>((ref) {
+  return DisputeViewModel(ref);
+});
+
+/// Delegates dispute submission through [DisputeRepository].
+class DisputeViewModel {
+  DisputeViewModel(this._ref);
+
+  final Ref _ref;
+
+  /// Submits a dispute and optionally uploads file attachments.
+  ///
+  /// Returns the new dispute document ID.
+  Future<String> submitDispute({
+    required String rideId,
+    required String userId,
+    required String? userEmail,
+    required String disputeType,
+    required String description,
+    String? rideSummary,
+    List<File> attachments = const [],
+  }) async {
+    final repo = _ref.read(disputeRepositoryProvider);
+    final disputeId = await repo.submitDispute(
+      rideId: rideId,
+      userId: userId,
+      userEmail: userEmail,
+      disputeType: disputeType,
+      description: description,
+      rideSummary: rideSummary,
+    );
+
+    if (attachments.isNotEmpty) {
+      await repo.uploadAttachments(disputeId: disputeId, files: attachments);
+    }
+
+    return disputeId;
+  }
 }

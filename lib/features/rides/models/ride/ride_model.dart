@@ -148,6 +148,12 @@ abstract class RideModel with _$RideModel {
   ///Is ride full
   bool get isFull => capacity.isFull;
 
+  /// Is a premium ride (tagged by driver as premium)
+  bool get isPremium => tags.contains('premium');
+
+  /// Is an eco-friendly ride (driver tagged it as eco)
+  bool get isEco => tags.contains('eco');
+
   /// Accepted bookings (bookings with accepted status)
   List<RideBooking> get acceptedBookings =>
       bookings.where((b) => b.status == BookingStatus.accepted).toList();

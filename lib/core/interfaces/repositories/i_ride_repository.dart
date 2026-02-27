@@ -1,3 +1,4 @@
+import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/ride_request_model.dart';
 
@@ -6,7 +7,9 @@ abstract class IRideRepository {
   // Ride CRUD
   Future<String> createRide(RideModel ride);
   Future<RideModel?> getRideById(String rideId);
+  Stream<RideModel?> streamRideById(String rideId);
   Future<void> updateRide(RideModel ride);
+  Future<void> updateRideFields(String rideId, Map<String, dynamic> updates);
   Future<void> deleteRide(String rideId);
 
   // Ride Discovery
@@ -22,6 +25,15 @@ abstract class IRideRepository {
 
   Stream<List<RideModel>> getActiveRides(String userId);
   Stream<List<RideModel>> getRideHistory(String userId);
+  Future<List<RideModel>> getRidesByDriver(String driverId);
+  Stream<List<RideModel>> streamRidesByDriver(String driverId);
+  Stream<List<RideModel>> streamRidesAsPassenger(String userId);
+  Stream<List<RideModel>> streamNearbyRides({
+    required double latitude,
+    required double longitude,
+    double radiusKm = 20.0,
+  });
+  Stream<List<RideModel>> streamActiveRides();
 
   // Ride Requests
   Future<String> createRideRequest(RideRequestModel request);
@@ -31,8 +43,28 @@ abstract class IRideRepository {
   Future<void> rejectRideRequest(String requestId);
   Stream<List<RideRequestModel>> getRideRequests(String rideId);
 
+  // Bookings
+  Future<void> bookRide({
+    required String rideId,
+    required RideBooking booking,
+  });
+  Future<void> updateBookingStatus({
+    required String rideId,
+    required String bookingId,
+    required BookingStatus newStatus,
+  });
+  Future<void> cancelBooking({
+    required String rideId,
+    required String bookingId,
+  });
+
   // Ride Status
   Future<void> startRide(String rideId);
   Future<void> completeRide(String rideId);
   Future<void> cancelRide(String rideId, String reason);
+  Future<void> updateLiveLocation(
+    String rideId,
+    double latitude,
+    double longitude,
+  );
 }

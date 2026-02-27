@@ -65,6 +65,20 @@ class ChatActionsViewModel {
         );
   }
 
+  Future<String> uploadAudioMessage({
+    required String chatId,
+    required File audioFile,
+    required String fileName,
+  }) {
+    return _ref
+        .read(chatRepositoryProvider)
+        .uploadAudioMessage(
+          chatId: chatId,
+          audioFile: audioFile,
+          fileName: fileName,
+        );
+  }
+
   Future<void> toggleMute({
     required String chatId,
     required String userId,

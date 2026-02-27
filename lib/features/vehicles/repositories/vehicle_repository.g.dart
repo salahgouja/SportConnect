@@ -15,18 +15,18 @@ final vehicleRepositoryProvider = VehicleRepositoryProvider._();
 final class VehicleRepositoryProvider
     extends
         $FunctionalProvider<
-          VehicleRepository,
-          VehicleRepository,
-          VehicleRepository
+          IVehicleRepository,
+          IVehicleRepository,
+          IVehicleRepository
         >
-    with $Provider<VehicleRepository> {
+    with $Provider<IVehicleRepository> {
   VehicleRepositoryProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'vehicleRepositoryProvider',
-        isAutoDispose: false,
+        isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -36,25 +36,25 @@ final class VehicleRepositoryProvider
 
   @$internal
   @override
-  $ProviderElement<VehicleRepository> $createElement(
+  $ProviderElement<IVehicleRepository> $createElement(
     $ProviderPointer pointer,
   ) => $ProviderElement(pointer);
 
   @override
-  VehicleRepository create(Ref ref) {
+  IVehicleRepository create(Ref ref) {
     return vehicleRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(VehicleRepository value) {
+  Override overrideWithValue(IVehicleRepository value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<VehicleRepository>(value),
+      providerOverride: $SyncValueProvider<IVehicleRepository>(value),
     );
   }
 }
 
-String _$vehicleRepositoryHash() => r'55c9f56734224c5f21bfeb286b4106652d552f5b';
+String _$vehicleRepositoryHash() => r'ac07025ef3b54af9c0c4cfd1511c638f183fffd3';
 
 /// Provider for streaming user vehicles
 

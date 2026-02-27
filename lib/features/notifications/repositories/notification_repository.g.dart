@@ -15,18 +15,18 @@ final notificationRepositoryProvider = NotificationRepositoryProvider._();
 final class NotificationRepositoryProvider
     extends
         $FunctionalProvider<
-          NotificationRepository,
-          NotificationRepository,
-          NotificationRepository
+          INotificationRepository,
+          INotificationRepository,
+          INotificationRepository
         >
-    with $Provider<NotificationRepository> {
+    with $Provider<INotificationRepository> {
   NotificationRepositoryProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'notificationRepositoryProvider',
-        isAutoDispose: false,
+        isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -36,26 +36,26 @@ final class NotificationRepositoryProvider
 
   @$internal
   @override
-  $ProviderElement<NotificationRepository> $createElement(
+  $ProviderElement<INotificationRepository> $createElement(
     $ProviderPointer pointer,
   ) => $ProviderElement(pointer);
 
   @override
-  NotificationRepository create(Ref ref) {
+  INotificationRepository create(Ref ref) {
     return notificationRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(NotificationRepository value) {
+  Override overrideWithValue(INotificationRepository value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<NotificationRepository>(value),
+      providerOverride: $SyncValueProvider<INotificationRepository>(value),
     );
   }
 }
 
 String _$notificationRepositoryHash() =>
-    r'dd0d28357d2182e3c0da9d2c7d3eee6117b929b6';
+    r'b21d3bfe6a00ed91caef51966bd67a200411881f';
 
 /// Provider for streaming user notifications
 

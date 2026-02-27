@@ -945,14 +945,13 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
     if (confirmed != true) return;
 
     try {
-      final paymentViewModel = ref.read(paymentViewModelProvider.notifier);
-      final success = await paymentViewModel.requestInstantPayout(
-        userId: userId,
-        stripeAccountId: stripeAccountId,
-        amount: amount,
-        currency: _currencyCode,
-        isFullySetup: isFullySetup,
-      );
+      final success = await ref
+          .read(driverPayoutViewModelProvider.notifier)
+          .requestInstantPayout(
+            stripeAccountId: stripeAccountId,
+            amount: amount,
+            currency: _currencyCode,
+          );
 
       if (success) {
         if (!mounted) return;

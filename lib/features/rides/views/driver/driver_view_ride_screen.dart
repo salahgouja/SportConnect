@@ -58,10 +58,14 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
   @override
   Widget build(BuildContext context) {
     final rideAsync = ref.watch(rideDetailViewModelProvider(widget.rideId));
+    // Bookings are stored in a separate collection — watch them alongside the ride
+    final bookings =
+        ref.watch(bookingsByRideProvider(widget.rideId)).value ??
+        const <RideBooking>[];
 
     return rideAsync.when(
       data: (ride) => ride != null
-          ? _buildContent(ride)
+          ? _buildContent(ride, bookings)
           : _buildErrorState(AppLocalizations.of(context).rideNotFound),
       loading: () => _buildLoadingState(),
       error: (error, _) => _buildErrorState(error.toString()),
@@ -128,11 +132,11 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
     );
   }
 
-  Widget _buildContent(RideModel ride) {
-    final pendingBookings = ride.bookings
+  Widget _buildContent(RideModel ride, List<RideBooking> bookings) {
+    final pendingBookings = bookings
         .where((b) => b.status == BookingStatus.pending)
         .toList();
-    final confirmedBookings = ride.bookings
+    final confirmedBookings = bookings
         .where((b) => b.status == BookingStatus.accepted)
         .toList();
 
@@ -141,9 +145,9 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [
-            _buildSliverAppBar(ride),
+            _buildSliverAppBar(ride, confirmedBookings),
             SliverToBoxAdapter(
-              child: _buildStatsBar(ride, pendingBookings.length),
+              child: _buildStatsBar(ride, pendingBookings.length, confirmedBookings),
             ),
             SliverPersistentHeader(
               pinned: true,
@@ -237,7 +241,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
     );
   }
 
-  Widget _buildSliverAppBar(RideModel ride) {
+  Widget _buildSliverAppBar(RideModel ride, List<RideBooking> confirmedBookings) {
     return SliverAppBar(
       expandedHeight: 200.h,
       floating: false,
@@ -390,7 +394,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                             ),
                           ),
                           Text(
-                            '\$${_calculateEarnings(ride).toStringAsFixed(0)}',
+                            '\$${_calculateEarnings(ride, confirmedBookings).toStringAsFixed(0)}',
                             style: TextStyle(
                               fontSize: 22.sp,
                               fontWeight: FontWeight.bold,
@@ -466,8 +470,8 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
     );
   }
 
-  Widget _buildStatsBar(RideModel ride, int pendingCount) {
-    final confirmedSeats = ride.bookings
+  Widget _buildStatsBar(RideModel ride, int pendingCount, List<RideBooking> confirmedBookings) {
+    final confirmedSeats = confirmedBookings
         .where((b) => b.status == BookingStatus.accepted)
         .fold(0, (sum, b) => sum + b.seatsBooked);
 
@@ -1290,8 +1294,8 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
 
   // === Actions ===
 
-  double _calculateEarnings(RideModel ride) {
-    return ride.bookings
+  double _calculateEarnings(RideModel ride, List<RideBooking> bookings) {
+    return bookings
         .where((b) => b.status == BookingStatus.accepted)
         .fold(0.0, (sum, b) => sum + (ride.pricePerSeat * b.seatsBooked));
   }

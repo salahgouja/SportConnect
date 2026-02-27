@@ -1,27 +1,26 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sport_connect/core/constants/app_constants.dart';
+import 'package:sport_connect/core/interfaces/repositories/i_booking_repository.dart';
+import 'package:sport_connect/core/providers/firebase_providers.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 
 part 'booking_repository.g.dart';
 
 /// Repository for managing ride bookings
 /// Bookings are now stored separately from rides for better scalability
-class BookingRepository {
+class BookingRepository implements IBookingRepository {
   final FirebaseFirestore _firestore;
 
   BookingRepository(this._firestore);
 
   CollectionReference<RideBooking> get _bookingsCollection => _firestore
-      .collection('bookings')
+      .collection(AppConstants.bookingsCollection)
       .withConverter<RideBooking>(
         fromFirestore: (snap, _) =>
             RideBooking.fromJson({...snap.data()!, 'id': snap.id}),
         toFirestore: (booking, _) => booking.toJson(),
       );
-
-  /// Raw doc ref used only for writes that need FieldValue (e.g. serverTimestamp).
-  DocumentReference<Map<String, dynamic>> _rawBookingDoc(String id) =>
-      _firestore.collection('bookings').doc(id);
 
   /// Create a new booking
   Future<String> createBooking(RideBooking booking) async {
@@ -87,9 +86,10 @@ class BookingRepository {
     required String bookingId,
     required BookingStatus newStatus,
   }) async {
-    await _rawBookingDoc(
-      bookingId,
-    ).update({'status': newStatus.name, 'respondedAt': DateTime.now()});
+    await _bookingsCollection.doc(bookingId).update({
+      'status': newStatus.name,
+      'respondedAt': DateTime.now(),
+    });
   }
 
   /// Update booking
@@ -127,7 +127,7 @@ class BookingRepository {
   }
 }
 
-@Riverpod(keepAlive: true)
-BookingRepository bookingRepository(Ref ref) {
-  return BookingRepository(FirebaseFirestore.instance);
+@riverpod
+IBookingRepository bookingRepository(Ref ref) {
+  return BookingRepository(ref.watch(firestoreInstanceProvider));
 }

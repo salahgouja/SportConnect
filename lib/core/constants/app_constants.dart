@@ -25,6 +25,10 @@ class AppConstants {
   static const String supportTicketsCollection = 'support_tickets';
   static const String connectedAccountsCollection = 'driver_connected_accounts';
   static const String driverStatsCollection = 'driver_stats';
+  static const String hotspotsCollection = 'hotspots';
+  static const String typingCollection = 'typing';
+  static const String blockedUsersCollection = 'blockedUsers';
+  static const String disputesCollection = 'disputes';
 
   // Storage Paths
   static const String profileImagesPath = 'profile_images';

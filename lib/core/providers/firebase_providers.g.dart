@@ -8,18 +8,14 @@ part of 'firebase_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Firestore instance provider
-///
-/// Provides the single source of truth for Firestore instance.
-/// This enables easy mocking in tests and switching implementations.
+/// Provides the single source of truth for the Firestore instance.
+/// Enables easy mocking in tests by overriding this provider.
 
 @ProviderFor(firestoreInstance)
 final firestoreInstanceProvider = FirestoreInstanceProvider._();
 
-/// Firestore instance provider
-///
-/// Provides the single source of truth for Firestore instance.
-/// This enables easy mocking in tests and switching implementations.
+/// Provides the single source of truth for the Firestore instance.
+/// Enables easy mocking in tests by overriding this provider.
 
 final class FirestoreInstanceProvider
     extends
@@ -29,10 +25,8 @@ final class FirestoreInstanceProvider
           FirebaseFirestore
         >
     with $Provider<FirebaseFirestore> {
-  /// Firestore instance provider
-  ///
-  /// Provides the single source of truth for Firestore instance.
-  /// This enables easy mocking in tests and switching implementations.
+  /// Provides the single source of truth for the Firestore instance.
+  /// Enables easy mocking in tests by overriding this provider.
   FirestoreInstanceProvider._()
     : super(
         from: null,
@@ -67,26 +61,23 @@ final class FirestoreInstanceProvider
   }
 }
 
-String _$firestoreInstanceHash() => r'0f2e17bd314d9ddd815f276c6b7b295c892bca8a';
+String _$firestoreInstanceHash() => r'8f725e5183ee91c5ee36ce18ed53be1d7252c608';
 
-/// Storage instance provider
-///
-/// Provides the single source of truth for Firebase Storage instance.
+/// Provides the single source of truth for the Firebase Storage instance.
+/// Enables easy mocking in tests by overriding this provider.
 
 @ProviderFor(storageInstance)
 final storageInstanceProvider = StorageInstanceProvider._();
 
-/// Storage instance provider
-///
-/// Provides the single source of truth for Firebase Storage instance.
+/// Provides the single source of truth for the Firebase Storage instance.
+/// Enables easy mocking in tests by overriding this provider.
 
 final class StorageInstanceProvider
     extends
         $FunctionalProvider<FirebaseStorage, FirebaseStorage, FirebaseStorage>
     with $Provider<FirebaseStorage> {
-  /// Storage instance provider
-  ///
-  /// Provides the single source of truth for Firebase Storage instance.
+  /// Provides the single source of truth for the Firebase Storage instance.
+  /// Enables easy mocking in tests by overriding this provider.
   StorageInstanceProvider._()
     : super(
         from: null,
@@ -120,4 +111,53 @@ final class StorageInstanceProvider
   }
 }
 
-String _$storageInstanceHash() => r'a3f65dcd998c34f5f0b3b3068eba7ce2aa4c7555';
+String _$storageInstanceHash() => r'7d251ba752a3143eca777e6e8e5ee88ec7cea868';
+
+/// Provides the single source of truth for the FirebaseAuth instance.
+/// Enables easy mocking in tests by overriding this provider.
+
+@ProviderFor(authInstance)
+final authInstanceProvider = AuthInstanceProvider._();
+
+/// Provides the single source of truth for the FirebaseAuth instance.
+/// Enables easy mocking in tests by overriding this provider.
+
+final class AuthInstanceProvider
+    extends $FunctionalProvider<FirebaseAuth, FirebaseAuth, FirebaseAuth>
+    with $Provider<FirebaseAuth> {
+  /// Provides the single source of truth for the FirebaseAuth instance.
+  /// Enables easy mocking in tests by overriding this provider.
+  AuthInstanceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'authInstanceProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$authInstanceHash();
+
+  @$internal
+  @override
+  $ProviderElement<FirebaseAuth> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  FirebaseAuth create(Ref ref) {
+    return authInstance(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(FirebaseAuth value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<FirebaseAuth>(value),
+    );
+  }
+}
+
+String _$authInstanceHash() => r'af1038d1e284332b5c6c20ddd8ccaed7305c7dcf';

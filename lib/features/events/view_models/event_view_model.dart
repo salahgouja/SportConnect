@@ -1,8 +1,8 @@
-import 'dart:developer' as dev;
 import 'dart:io';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
+import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
 import 'package:sport_connect/features/events/repositories/event_repository.dart';
 
@@ -124,7 +124,7 @@ class EventSelectionViewModel extends _$EventSelectionViewModel {
       state = state.copyWith(isLoading: false, selectedEvent: created);
       return created;
     } catch (e, st) {
-      dev.log('createEvent failed', error: e, stackTrace: st);
+      TalkerService.error('createEvent failed', e, st);
       if (!ref.mounted) return null;
       state = state.copyWith(
         isLoading: false,
@@ -200,7 +200,7 @@ class EventDetailViewModel extends _$EventDetailViewModel {
       );
       return true;
     } catch (e, st) {
-      dev.log('joinEvent failed', error: e, stackTrace: st);
+      TalkerService.error('joinEvent failed', e, st);
       if (!ref.mounted) return false;
       state = state.copyWith(
         isJoining: false,
@@ -226,7 +226,7 @@ class EventDetailViewModel extends _$EventDetailViewModel {
       );
       return true;
     } catch (e, st) {
-      dev.log('leaveEvent failed', error: e, stackTrace: st);
+      TalkerService.error('leaveEvent failed', e, st);
       if (!ref.mounted) return false;
       state = state.copyWith(
         isLeaving: false,
@@ -248,7 +248,7 @@ class EventDetailViewModel extends _$EventDetailViewModel {
       );
       return true;
     } catch (e, st) {
-      dev.log('updateEvent failed', error: e, stackTrace: st);
+      TalkerService.error('updateEvent failed', e, st);
       if (!ref.mounted) return false;
       state = state.copyWith(
         isLoading: false,
@@ -268,7 +268,7 @@ class EventDetailViewModel extends _$EventDetailViewModel {
       state = state.copyWith(isLoading: false);
       return url;
     } catch (e, st) {
-      dev.log('uploadImage failed', error: e, stackTrace: st);
+      TalkerService.error('uploadImage failed', e, st);
       if (!ref.mounted) return null;
       state = state.copyWith(
         isLoading: false,
@@ -290,7 +290,7 @@ class EventDetailViewModel extends _$EventDetailViewModel {
       );
       return true;
     } catch (e, st) {
-      dev.log('cancelEvent failed', error: e, stackTrace: st);
+      TalkerService.error('cancelEvent failed', e, st);
       if (!ref.mounted) return false;
       state = state.copyWith(
         isDeleting: false,
@@ -309,7 +309,7 @@ class EventDetailViewModel extends _$EventDetailViewModel {
       state = state.copyWith(isDeleting: false);
       return true;
     } catch (e, st) {
-      dev.log('deleteEvent failed', error: e, stackTrace: st);
+      TalkerService.error('deleteEvent failed', e, st);
       if (!ref.mounted) return false;
       state = state.copyWith(
         isDeleting: false,
@@ -353,3 +353,4 @@ Stream<List<EventModel>> joinedEventsStream(Ref ref, String userId) {
 Stream<EventModel?> eventById(Ref ref, String eventId) {
   return ref.watch(eventRepositoryProvider).streamEventById(eventId);
 }
+

@@ -12,6 +12,7 @@ import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/premium_card.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
 import 'package:sport_connect/features/events/view_models/event_view_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Browse / discover upcoming events, filter by sport type.
 class EventListScreen extends ConsumerStatefulWidget {
@@ -59,12 +60,37 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
             ),
             error: (e, _) => SliverFillRemaining(
               child: Center(
-                child: Text(
-                  'Unable to load events.',
-                  style: TextStyle(
-                    fontSize: 15.sp,
-                    color: AppColors.textSecondary,
-                  ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.error_outline_rounded,
+                      size: 48.sp,
+                      color: AppColors.textSecondary,
+                    ),
+                    SizedBox(height: 12.h),
+                    Text(
+                      AppLocalizations.of(context).unableToLoadData,
+                      style: TextStyle(
+                        fontSize: 15.sp,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    SizedBox(height: 16.h),
+                    TextButton.icon(
+                      onPressed: () {
+                        if (_selectedType != null) {
+                          ref.invalidate(
+                            eventsByTypeStreamProvider(_selectedType!),
+                          );
+                        } else {
+                          ref.invalidate(upcomingEventsStreamProvider);
+                        }
+                      },
+                      icon: const Icon(Icons.refresh_rounded),
+                      label: Text(AppLocalizations.of(context).retry),
+                    ),
+                  ],
                 ),
               ),
             ),

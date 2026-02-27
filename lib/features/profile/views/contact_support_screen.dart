@@ -1,8 +1,5 @@
 import 'dart:io';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,9 +7,11 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/premium_text_field.dart';
+import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// In-app contact support screen with message submission.
@@ -133,52 +132,24 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
     setState(() => _attachedFiles.add(file));
   }
 
-  Future<List<String>> _uploadAttachments(String docId) async {
-    final urls = <String>[];
-    final storage = FirebaseStorage.instance;
-
-    for (var i = 0; i < _attachedFiles.length; i++) {
-      final file = _attachedFiles[i];
-      final ext = file.path.split('.').last;
-      final ref = storage
-          .ref()
-          .child('support_attachments')
-          .child(docId)
-          .child('file_$i.$ext');
-
-      await ref.putFile(file);
-      final url = await ref.getDownloadURL();
-      urls.add(url);
-    }
-
-    return urls;
-  }
-
   Future<void> _submitTicket() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSubmitting = true);
 
     try {
-      final user = FirebaseAuth.instance.currentUser;
-      final docRef = await FirebaseFirestore.instance
-          .collection('support_tickets')
-          .add({
-            'userId': user?.uid ?? 'anonymous',
-            'userEmail': user?.email ?? '',
-            'userName': user?.displayName ?? '',
-            'category': _selectedCategory,
-            'subject': _subjectController.text.trim(),
-            'message': _messageController.text.trim(),
-            'attachmentUrls': <String>[],
-            'status': 'open',
-            'createdAt': DateTime.now(),
-          });
-
-      if (_attachedFiles.isNotEmpty) {
-        final urls = await _uploadAttachments(docRef.id);
-        await docRef.update({'attachmentUrls': urls});
-      }
+      final user = ref.read(currentUserProvider).value;
+      await ref
+          .read(profileActionsViewModelProvider)
+          .submitSupportTicket(
+            userId: user?.uid ?? 'anonymous',
+            userEmail: user?.email ?? '',
+            userName: user?.displayName ?? '',
+            category: _selectedCategory,
+            subject: _subjectController.text.trim(),
+            message: _messageController.text.trim(),
+            attachments: _attachedFiles,
+          );
 
       if (mounted) {
         HapticFeedback.mediumImpact();

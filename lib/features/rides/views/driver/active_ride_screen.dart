@@ -18,7 +18,9 @@ import 'package:sport_connect/core/services/map_service.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
+import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
+import 'package:sport_connect/features/rides/repositories/booking_repository.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
@@ -231,13 +233,17 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
 
     // Watch the ride stream for real-time updates
     final rideAsync = ref.watch(rideStreamProvider(widget.rideId!));
+    // Bookings are stored in a separate collection — watch them alongside the ride
+    final bookings =
+        ref.watch(bookingsByRideProvider(widget.rideId!)).value ??
+        const <RideBooking>[];
 
     return rideAsync.when(
       data: (ride) {
         if (ride == null) {
           return _buildNoRideState();
         }
-        return _buildRideContent(ride);
+        return _buildRideContent(ride, bookings);
       },
       loading: () => const Scaffold(
         backgroundColor: AppColors.background,
@@ -304,7 +310,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
     );
   }
 
-  Widget _buildRideContent(RideModel ride) {
+  Widget _buildRideContent(RideModel ride, List<RideBooking> bookings) {
     // Handle cancelled ride
     if (ride.status == RideStatus.cancelled) {
       return _buildCancelledState();
@@ -333,10 +339,10 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
           if (_isNavigationExpanded) _buildNavigationPanel(ride),
 
           // Bottom Panel with Ride Info
-          _buildBottomPanel(ride, pickupLocation, dropoffLocation),
+          _buildBottomPanel(ride, pickupLocation, dropoffLocation, bookings),
 
           // Passenger Details Sheet
-          if (_showPassengerDetails) _buildPassengerSheet(ride),
+          if (_showPassengerDetails) _buildPassengerSheet(ride, bookings),
         ],
       ),
     );
@@ -801,6 +807,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
     RideModel ride,
     LatLng pickupLocation,
     LatLng dropoffLocation,
+    List<RideBooking> bookings,
   ) {
     final distance = ride.distanceKm ?? 0.0;
     final duration = ride.durationMinutes ?? 0;
@@ -846,7 +853,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
               _buildRideStatusBanner(ride),
 
               // Passenger Info
-              _buildPassengerInfo(ride),
+              _buildPassengerInfo(ride, bookings),
 
               Divider(color: AppColors.border),
 
@@ -890,8 +897,8 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: () {
-                          final booking = ride.bookings.isNotEmpty
-                              ? ride.bookings.first
+                          final booking = bookings.isNotEmpty
+                              ? bookings.first
                               : null;
                           if (booking != null) {
                             _callPassenger(booking.passengerId);
@@ -914,8 +921,8 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: () async {
-                          final booking = ride.bookings.isNotEmpty
-                              ? ride.bookings.first
+                          final booking = bookings.isNotEmpty
+                              ? bookings.first
                               : null;
                           if (booking == null) return;
 
@@ -1126,9 +1133,9 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
     );
   }
 
-  Widget _buildPassengerInfo(RideModel ride) {
-    // Get first booking as primary passenger
-    final booking = ride.bookings.isNotEmpty ? ride.bookings.first : null;
+  Widget _buildPassengerInfo(RideModel ride, List<RideBooking> bookings) {
+    // Get first accepted booking as primary passenger
+    final booking = bookings.isNotEmpty ? bookings.first : null;
     if (booking == null) {
       return Padding(
         padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
@@ -1234,8 +1241,8 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
     );
   }
 
-  Widget _buildPassengerSheet(RideModel ride) {
-    final booking = ride.bookings.isNotEmpty ? ride.bookings.first : null;
+  Widget _buildPassengerSheet(RideModel ride, List<RideBooking> bookings) {
+    final booking = bookings.isNotEmpty ? bookings.first : null;
     if (booking == null) {
       return const SizedBox.shrink();
     }
@@ -1385,7 +1392,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                     SizedBox(height: 16.h),
 
                     // Notes (if any ride notes exist)
-                    if (ride.bookings.isNotEmpty)
+                    if (bookings.isNotEmpty)
                       Container(
                         padding: EdgeInsets.all(16.w),
                         decoration: BoxDecoration(
@@ -1408,8 +1415,8 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                                 AppLocalizations.of(
                                   context,
                                 ).valuePassengerValueBookedFor(
-                                  ride.bookings.length,
-                                  ride.bookings.length > 1 ? 's' : '',
+                                  bookings.length,
+                                  bookings.length > 1 ? 's' : '',
                                 ),
                                 style: TextStyle(
                                   fontSize: 13.sp,
@@ -1726,7 +1733,11 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
 
   /// Step 4: Navigates to the review screen so driver can rate a passenger.
   Future<void> _navigateToRating(RideModel ride) async {
-    final booking = ride.bookings.isNotEmpty ? ride.bookings.first : null;
+    final allBookings =
+        await ref.read(bookingRepositoryProvider).getBookingsByRideId(ride.id);
+    final booking = allBookings
+        .where((b) => b.status == BookingStatus.accepted)
+        .firstOrNull;
     if (booking == null) {
       // No passengers to rate — go to completion screen
       context.pushReplacement(

@@ -58,6 +58,26 @@ abstract class INotificationRepository {
     required String rideName,
   });
 
+  /// Send ride booking rejected notification
+  Future<void> sendRideBookingRejected({
+    required String toUserId,
+    required String driverName,
+    String? driverPhoto,
+    required String rideId,
+    required String rideName,
+    String? reason,
+  });
+
+  /// Send ride cancelled notification
+  Future<void> sendRideCancelled({
+    required String toUserId,
+    required String driverName,
+    String? driverPhoto,
+    required String rideId,
+    required String rideName,
+    String? reason,
+  });
+
   /// Send new message notification
   Future<void> sendNewMessageNotification({
     required String toUserId,

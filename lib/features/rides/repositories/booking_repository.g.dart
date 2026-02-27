@@ -15,18 +15,18 @@ final bookingRepositoryProvider = BookingRepositoryProvider._();
 final class BookingRepositoryProvider
     extends
         $FunctionalProvider<
-          BookingRepository,
-          BookingRepository,
-          BookingRepository
+          IBookingRepository,
+          IBookingRepository,
+          IBookingRepository
         >
-    with $Provider<BookingRepository> {
+    with $Provider<IBookingRepository> {
   BookingRepositoryProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'bookingRepositoryProvider',
-        isAutoDispose: false,
+        isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -36,22 +36,22 @@ final class BookingRepositoryProvider
 
   @$internal
   @override
-  $ProviderElement<BookingRepository> $createElement(
+  $ProviderElement<IBookingRepository> $createElement(
     $ProviderPointer pointer,
   ) => $ProviderElement(pointer);
 
   @override
-  BookingRepository create(Ref ref) {
+  IBookingRepository create(Ref ref) {
     return bookingRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(BookingRepository value) {
+  Override overrideWithValue(IBookingRepository value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<BookingRepository>(value),
+      providerOverride: $SyncValueProvider<IBookingRepository>(value),
     );
   }
 }
 
-String _$bookingRepositoryHash() => r'b3fdd6f71291f1bd8a3a073d9ba26cf1c620bad1';
+String _$bookingRepositoryHash() => r'6b8724c37f61431e6539f489f40bd253639d5edc';

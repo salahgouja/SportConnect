@@ -8,7 +8,6 @@ import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
@@ -916,12 +915,14 @@ class ProfileScreen extends ConsumerWidget {
               try {
                 final currentUser = ref.read(currentUserProvider).value;
                 if (currentUser == null) return;
-                await FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(currentUser.uid)
-                    .collection('blockedUsers')
-                    .doc(userId)
-                    .set({'blockedAt': DateTime.now()});
+                await ref
+                    .read(
+                      socialActionsViewModelProvider(
+                        currentUser.uid,
+                        userId!,
+                      ).notifier,
+                    )
+                    .toggleBlock();
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(

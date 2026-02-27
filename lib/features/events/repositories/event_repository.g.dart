@@ -26,7 +26,7 @@ final class EventRepositoryProvider
         argument: null,
         retry: null,
         name: r'eventRepositoryProvider',
-        isAutoDispose: false,
+        isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -53,4 +53,4 @@ final class EventRepositoryProvider
   }
 }
 
-String _$eventRepositoryHash() => r'95a12c0377978d44311c3eba8f62d9e68150521a';
+String _$eventRepositoryHash() => r'018e162fec5f8af537608cec4a311d34896dc1bd';

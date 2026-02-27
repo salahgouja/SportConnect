@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'firebase_service_impl.dart';
+part of 'firebase_service.dart';
 
 // **************************************************************************
 // RiverpodGenerator
@@ -57,4 +57,4 @@ final class FirebaseServiceProvider
   }
 }
 
-String _$firebaseServiceHash() => r'027dac9132f1c9f45572cd11b26745a459d76396';
+String _$firebaseServiceHash() => r'd992ad78be9e141dccaa9ccda194dd220b339177';

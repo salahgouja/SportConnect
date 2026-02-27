@@ -17,6 +17,8 @@ class SettingsRepository {
   static const String _showLocationKey = 'show_location';
   static const String _publicProfileKey = 'public_profile';
   static const String _distanceUnitKey = 'distance_unit';
+  static const String _savedEmailKey = 'saved_email';
+  static const String _rememberMeKey = 'remember_me';
 
   final SharedPreferences _prefs;
 
@@ -143,6 +145,28 @@ class SettingsRepository {
   /// Save distance unit preference
   Future<void> setDistanceUnit(String unit) async {
     await _prefs.setString(_distanceUnitKey, unit);
+  }
+
+  // ============================================================
+  // Login Credentials
+  // ============================================================
+
+  /// Last email saved by the "remember me" feature.
+  String? get savedEmail => _prefs.getString(_savedEmailKey);
+
+  /// Whether the user opted to have their email pre-filled on next login.
+  bool get rememberMe => _prefs.getBool(_rememberMeKey) ?? false;
+
+  /// Persists the [email] and sets the remember-me flag to true.
+  Future<void> saveCredentials({required String email}) async {
+    await _prefs.setString(_savedEmailKey, email);
+    await _prefs.setBool(_rememberMeKey, true);
+  }
+
+  /// Clears saved credentials and resets the remember-me flag.
+  Future<void> clearCredentials() async {
+    await _prefs.remove(_savedEmailKey);
+    await _prefs.setBool(_rememberMeKey, false);
   }
 }
 

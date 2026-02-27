@@ -3,19 +3,59 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sport_connect/core/constants/app_constants.dart';
+import 'package:sport_connect/core/interfaces/services/i_firebase_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/firebase_options.dart';
 import 'package:sport_connect/core/config/app_config.dart';
+import 'package:sport_connect/features/auth/models/models.dart';
 
-/// Centralized Firebase service initialization
-class FirebaseService {
-  static FirebaseAuth get auth => FirebaseAuth.instance;
-  static FirebaseFirestore get firestore => FirebaseFirestore.instance;
-  static FirebaseStorage get storage => FirebaseStorage.instance;
-  static FirebaseMessaging get messaging => FirebaseMessaging.instance;
+part 'firebase_service.g.dart';
 
-  /// Initialize Firebase and all services
-  static Future<void> initialize() async {
+/// Injectable Firebase service implementation
+class FirebaseService implements IFirebaseService {
+  FirebaseService._();
+
+  static FirebaseService? _instance;
+  static FirebaseService get instance {
+    _instance ??= FirebaseService._();
+    return _instance!;
+  }
+
+  @override
+  FirebaseAuth get auth => FirebaseAuth.instance;
+
+  @override
+  FirebaseFirestore get firestore => FirebaseFirestore.instance;
+
+  @override
+  FirebaseStorage get storage => FirebaseStorage.instance;
+
+  @override
+  FirebaseMessaging get messaging => FirebaseMessaging.instance;
+
+  @override
+  User? get currentUser => auth.currentUser;
+
+  @override
+  Stream<User?> get authStateChanges => auth.authStateChanges();
+
+  @override
+  bool get useEmulators => AppConfig.useEmulators;
+
+  @override
+  CollectionReference<UserModel> get usersCollection {
+    return firestore
+        .collection(AppConstants.usersCollection)
+        .withConverter<UserModel>(
+          fromFirestore: (snapshot, _) => UserModel.fromJson(snapshot.data()!),
+          toFirestore: (user, _) => user.toJson(),
+        );
+  }
+
+  @override
+  Future<void> initialize() async {
     try {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
@@ -23,12 +63,10 @@ class FirebaseService {
       TalkerService.info('Firebase initialized successfully');
       TalkerService.info('Environment: ${AppConfig.environmentStatus}');
 
-      // Connect to emulators if in emulator mode
-      if (AppConfig.useEmulators) {
-        await _connectToEmulators();
+      if (useEmulators) {
+        await connectToEmulators();
       }
 
-      // Initialize Firestore settings
       firestore.settings = const Settings(
         persistenceEnabled: true,
         cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
@@ -42,24 +80,21 @@ class FirebaseService {
     }
   }
 
-  /// Connect to Firebase emulators for local development
-  static Future<void> _connectToEmulators() async {
+  @override
+  Future<void> connectToEmulators() async {
     final host = AppConfig.emulatorHost;
 
     try {
-      // Connect to Auth emulator
       await auth.useAuthEmulator(host, AppConfig.authEmulatorPort);
       TalkerService.info(
         'Connected to Auth emulator at $host:${AppConfig.authEmulatorPort}',
       );
 
-      // Connect to Firestore emulator
       firestore.useFirestoreEmulator(host, AppConfig.firestoreEmulatorPort);
       TalkerService.info(
         'Connected to Firestore emulator at $host:${AppConfig.firestoreEmulatorPort}',
       );
 
-      // Connect to Storage emulator
       await storage.useStorageEmulator(host, AppConfig.storageEmulatorPort);
       TalkerService.info(
         'Connected to Storage emulator at $host:${AppConfig.storageEmulatorPort}',
@@ -71,33 +106,10 @@ class FirebaseService {
       TalkerService.warning('Falling back to production Firebase services');
     }
   }
+}
 
-  /// Request notification permissions
-  static Future<void> _requestNotificationPermissions() async {
-    try {
-      NotificationSettings settings = await messaging.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-        provisional: false,
-      );
-
-      TalkerService.info(
-        'Notification permission status: ${settings.authorizationStatus}',
-      );
-
-      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-        String? token = await messaging.getToken();
-        TalkerService.info('FCM Token: $token');
-      }
-    } catch (e) {
-      TalkerService.warning('Failed to request notification permissions $e');
-    }
-  }
-
-  /// Get current user
-  static User? get currentUser => auth.currentUser;
-
-  /// Check if user is authenticated
-  static bool get isAuthenticated => currentUser != null;
+/// Riverpod provider for Firebase service
+@riverpod
+IFirebaseService firebaseService(Ref ref) {
+  return FirebaseService.instance;
 }

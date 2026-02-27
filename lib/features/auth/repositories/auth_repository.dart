@@ -12,9 +12,6 @@ import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_auth_repository.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
-import 'package:sport_connect/features/messaging/models/message_model.dart';
-import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
-import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 
 /// Repository for authentication operations - Firebase only
 class AuthRepository implements IAuthRepository {
@@ -33,33 +30,6 @@ class AuthRepository implements IAuthRepository {
       .withConverter<UserModel>(
         fromFirestore: (snap, _) => UserModel.fromJson(snap.data()!),
         toFirestore: (user, _) => user.toJson(),
-      );
-
-  CollectionReference<RideModel> get _ridesCollection => _firestore
-      .collection(AppConstants.ridesCollection)
-      .withConverter<RideModel>(
-        fromFirestore: (snap, _) => RideModel.fromJson(snap.data()!),
-        toFirestore: (ride, _) => ride.toJson(),
-      );
-
-  CollectionReference<RideBooking> get _bookingsCollection => _firestore
-      .collection(AppConstants.bookingsCollection)
-      .withConverter<RideBooking>(
-        fromFirestore: (snap, _) => RideBooking.fromJson(snap.data()!),
-        toFirestore: (booking, _) => booking.toJson(),
-      );
-
-  CollectionReference<MessageModel> get _messagesCollection => _firestore
-      .collection(AppConstants.messagesCollection)
-      .withConverter<MessageModel>(
-        fromFirestore: (snap, _) => MessageModel.fromJson(snap.data()!),
-        toFirestore: (message, _) => message.toJson(),
-      );
-  CollectionReference<ChatModel> get _chatsCollection => _firestore
-      .collection(AppConstants.chatsCollection)
-      .withConverter<ChatModel>(
-        fromFirestore: (snap, _) => ChatModel.fromJson(snap.data()!),
-        toFirestore: (chat, _) => chat.toJson(),
       );
 
   /// Get current user stream
@@ -206,7 +176,7 @@ class AuthRepository implements IAuthRepository {
           .ref()
           .child('users') // Hardcode 'users' to match rules exactly
           .child(uid)
-          .child('profile') // <--- Added this folder to match rules
+          // .child('profile') // <--- Added this folder to match rules
           .child('profile.jpg');
 
       // Upload the file
@@ -277,25 +247,29 @@ class AuthRepository implements IAuthRepository {
       final refs = <DocumentReference>[_usersCollection.doc(uid)];
 
       // User's rides
-      final ridesQuery = await _ridesCollection
+      final ridesQuery = await _firestore
+          .collection(AppConstants.ridesCollection)
           .where('driverId', isEqualTo: uid)
           .get();
       refs.addAll(ridesQuery.docs.map((d) => d.reference));
 
       // User's bookings
-      final bookingsQuery = await _bookingsCollection
+      final bookingsQuery = await _firestore
+          .collection(AppConstants.bookingsCollection)
           .where('userId', isEqualTo: uid)
           .get();
       refs.addAll(bookingsQuery.docs.map((d) => d.reference));
 
       // User's messages
-      final messagesQuery = await _messagesCollection
+      final messagesQuery = await _firestore
+          .collection(AppConstants.messagesCollection)
           .where('senderId', isEqualTo: uid)
           .get();
       refs.addAll(messagesQuery.docs.map((d) => d.reference));
 
       // User's chats
-      final chatsQuery = await _chatsCollection
+      final chatsQuery = await _firestore
+          .collection(AppConstants.chatsCollection)
           .where('participants', arrayContains: uid)
           .get();
       refs.addAll(chatsQuery.docs.map((d) => d.reference));

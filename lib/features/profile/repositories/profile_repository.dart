@@ -4,6 +4,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_user_repository.dart';
+import 'package:sport_connect/core/providers/firebase_providers.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
@@ -17,8 +18,12 @@ class ProfileRepository implements IUserRepository {
 
   ProfileRepository(this._firestore, this._storage);
 
-  CollectionReference<Map<String, dynamic>> get _usersCollection =>
-      _firestore.collection(AppConstants.usersCollection);
+  CollectionReference<UserModel> get _usersCollection => _firestore
+      .collection(AppConstants.usersCollection)
+      .withConverter<UserModel>(
+        fromFirestore: (snapshot, _) => UserModel.fromJson(snapshot.data()!),
+        toFirestore: (user, _) => user.toJson(),
+      );
 
   // ==================== USER PROFILE ====================
 
@@ -27,14 +32,14 @@ class ProfileRepository implements IUserRepository {
   Future<UserModel?> getUserById(String uid) async {
     final doc = await _usersCollection.doc(uid).get();
     if (!doc.exists) return null;
-    return UserModel.fromJson(doc.data()!);
+    return doc.data();
   }
 
   /// Stream user profile
   Stream<UserModel?> streamUser(String uid) {
     return _usersCollection.doc(uid).snapshots().map((doc) {
       if (!doc.exists) return null;
-      return UserModel.fromJson(doc.data()!);
+      return doc.data();
     });
   }
 
@@ -46,7 +51,7 @@ class ProfileRepository implements IUserRepository {
 
   /// Upload profile photo
   Future<String> uploadProfilePhoto(String uid, File file) async {
-    final ref = _storage.ref().child('users/$uid/profile.jpg');
+    final ref = _storage.ref().child('users').child(uid).child('profile.jpg');
 
     final metadata = SettableMetadata(
       contentType: 'image/jpeg',
@@ -66,7 +71,7 @@ class ProfileRepository implements IUserRepository {
   /// Delete profile photo
   Future<void> deleteProfilePhoto(String uid) async {
     try {
-      final ref = _storage.ref().child('users/$uid/profile.jpg');
+      final ref = _storage.ref().child('users').child(uid).child('profile.jpg');
       await ref.delete();
       await updateProfile(uid, {'photoUrl': null});
     } catch (e) {
@@ -91,21 +96,39 @@ class ProfileRepository implements IUserRepository {
 
   // ==================== SOCIAL FEATURES ====================
 
-  /// Block a user
+  CollectionReference _blockedUsersCollection(String userId) => _firestore
+      .collection(AppConstants.usersCollection)
+      .doc(userId)
+      .collection(AppConstants.blockedUsersCollection);
+
+  /// Block a user atomically:
+  /// 1. Writes metadata to blocked-users sub-collection.
+  /// 2. Appends UID to [UserModel.blockedUsers] array for fast query filtering.
   Future<void> blockUser(String currentUserId, String targetUserId) async {
-    await _usersCollection.doc(currentUserId).update({
+    final batch = _firestore.batch();
+
+    batch.set(_blockedUsersCollection(currentUserId).doc(targetUserId), {
+      'blockedAt': FieldValue.serverTimestamp(),
+    });
+
+    batch.update(_usersCollection.doc(currentUserId), {
       'blockedUsers': FieldValue.arrayUnion([targetUserId]),
     });
+
+    await batch.commit();
   }
 
-  /// Unblock a user
+  /// Unblock a user atomically — exact reverse of [blockUser].
   Future<void> unblockUser(String currentUserId, String targetUserId) async {
-    UserModel? currentUser = await getUserById(currentUserId);
-    if (currentUser == null) {
-      throw StateError('Current user not found for unblock operation');
-    }
-    currentUser.blockedUsers.remove(targetUserId);
-    await _usersCollection.doc(currentUserId).update(currentUser.toJson());
+    final batch = _firestore.batch();
+
+    batch.delete(_blockedUsersCollection(currentUserId).doc(targetUserId));
+
+    batch.update(_usersCollection.doc(currentUserId), {
+      'blockedUsers': FieldValue.arrayRemove([targetUserId]),
+    });
+
+    await batch.commit();
   }
 
   // ==================== VEHICLES (Driver Only) ====================
@@ -368,7 +391,7 @@ class ProfileRepository implements IUserRepository {
     int rank = 0;
     return query.docs.map((doc) {
       rank++;
-      final user = UserModel.fromJson(doc.data());
+      final user = doc.data();
       return LeaderboardEntry(
         odid: user.uid,
         displayName: user.displayName,
@@ -417,7 +440,7 @@ class ProfileRepository implements IUserRepository {
   }) async {
     if (query == null || query.isEmpty) return [];
 
-    Query<Map<String, dynamic>> queryRef = _usersCollection
+    Query<UserModel> queryRef = _usersCollection
         .where('displayName', isGreaterThanOrEqualTo: query)
         .where('displayName', isLessThanOrEqualTo: '$query\uf8ff');
 
@@ -427,7 +450,7 @@ class ProfileRepository implements IUserRepository {
 
     final results = await queryRef.limit(limit ?? 20).get();
 
-    return results.docs.map((doc) => UserModel.fromJson(doc.data())).toList();
+    return results.docs.map((doc) => doc.data()).toList();
   }
 
   // ==================== INTERFACE METHODS ====================
@@ -465,16 +488,16 @@ class ProfileRepository implements IUserRepository {
     return _usersCollection.doc(userId).snapshots().map((doc) {
       if (!doc.exists) return false;
       final data = doc.data();
-      return data?['isOnline'] as bool? ?? false;
+      return data?.isOnline ?? false;
     });
   }
 }
 
-@Riverpod(keepAlive: true)
-ProfileRepository profileRepository(Ref ref) {
+@riverpod
+IUserRepository profileRepository(Ref ref) {
   return ProfileRepository(
-    FirebaseFirestore.instance,
-    FirebaseStorage.instance,
+    ref.watch(firestoreInstanceProvider),
+    ref.watch(storageInstanceProvider),
   );
 }
 

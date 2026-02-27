@@ -7,6 +7,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/constants/app_constants.dart';
+import 'package:sport_connect/core/models/models.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 
 part 'push_notification_service.g.dart';
@@ -48,6 +50,14 @@ class PushNotificationService {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
+
+  CollectionReference<UserModel> get _usersCollection => FirebaseFirestore
+      .instance
+      .collection(AppConstants.usersCollection)
+      .withConverter<UserModel>(
+        fromFirestore: (snap, _) => UserModel.fromJson(snap.data()!),
+        toFirestore: (user, _) => user.toJson(),
+      );
 
   bool _isInitialized = false;
 
@@ -115,18 +125,25 @@ class PushNotificationService {
         );
         return;
       }
-
-      await FirebaseFirestore.instance.collection('users').doc(userId).set({
-        'fcmToken': token,
-      }, SetOptions(merge: true));
+      UserModel? user = await _usersCollection.doc(userId).get().then((snap) => snap.data());
+      if (user == null) {
+        TalkerService.warning(
+          'User document not found for user $userId — cannot save FCM token.',
+        );
+        return;
+      }
+      user = user.copyWith(fcmToken: token);
+      await _usersCollection
+          .doc(userId)
+          .set(user, SetOptions(merge: true));
 
       TalkerService.info('FCM token saved for user $userId');
 
       // Listen for token refreshes
       _messaging.onTokenRefresh.listen((newToken) async {
-        await FirebaseFirestore.instance.collection('users').doc(userId).set({
-          'fcmToken': newToken,
-        }, SetOptions(merge: true));
+        await _usersCollection
+            .doc(userId)
+            .set(user!, SetOptions(merge: true));
         TalkerService.info('FCM token refreshed for user $userId');
       });
     } catch (e) {

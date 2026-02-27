@@ -26,6 +26,7 @@ sealed class UserModel with _$UserModel {
     @TimestampConverter() DateTime? dateOfBirth,
     String? gender,
     @Default([]) List<String> interests,
+    @Default("") String fcmToken,
 
     // Address & location
     String? address,
@@ -79,6 +80,7 @@ sealed class UserModel with _$UserModel {
     @TimestampConverter() DateTime? dateOfBirth,
     String? gender,
     @Default([]) List<String> interests,
+    @Default("") String fcmToken,
 
     // Address & location
     String? address,
@@ -105,7 +107,6 @@ sealed class UserModel with _$UserModel {
     @Default(RatingBreakdown()) RatingBreakdown rating,
 
     // Driver-specific: Gamification
-    // CHANGED: Use the factory constructor .driver()
     @Default(GamificationStats.driver()) GamificationStats gamification,
 
     // Driver-specific: Stripe Connect (fields mirror Cloud Function writes)

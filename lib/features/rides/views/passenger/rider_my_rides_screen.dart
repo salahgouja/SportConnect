@@ -15,6 +15,7 @@ import 'package:sport_connect/features/profile/view_models/profile_view_model.da
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
+import 'package:sport_connect/features/rides/repositories/booking_repository.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -1349,9 +1350,12 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
                       if (currentUser == null) return;
                       RideBooking? booking;
                       try {
-                        booking = ride.bookings.firstWhere(
-                          (b) => b.passengerId == currentUser.uid,
-                        );
+                        final allBookings = await ref
+                            .read(bookingRepositoryProvider)
+                            .getBookingsByRideId(ride.id);
+                        final matches = allBookings
+                            .where((b) => b.passengerId == currentUser.uid);
+                        booking = matches.isNotEmpty ? matches.first : null;
                       } catch (e) {
                         booking = null;
                       }

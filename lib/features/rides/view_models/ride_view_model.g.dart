@@ -81,7 +81,7 @@ final class RideSearchViewModelProvider
         argument: null,
         retry: null,
         name: r'rideSearchViewModelProvider',
-        isAutoDispose: false,
+        isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -103,7 +103,7 @@ final class RideSearchViewModelProvider
 }
 
 String _$rideSearchViewModelHash() =>
-    r'633f457f3ba883c2eed48c5472c7ebbd3737a856';
+    r'bbac61e361c4c1ffa947980ff5dd81b4b0511e6c';
 
 /// Ride Search View Model
 
@@ -575,6 +575,112 @@ final class NearbyRidesFamily extends $Family
 
   @override
   String toString() => r'nearbyRidesProvider';
+}
+
+/// Real-time stream of all bookings for a given ride.
+///
+/// Use this alongside [rideDetailViewModelProvider] in any screen that needs
+/// booking data (requests tab, passenger list, earnings, etc.) — the
+/// [RideModel.bookings] field is never populated from Firestore.
+
+@ProviderFor(bookingsByRide)
+final bookingsByRideProvider = BookingsByRideFamily._();
+
+/// Real-time stream of all bookings for a given ride.
+///
+/// Use this alongside [rideDetailViewModelProvider] in any screen that needs
+/// booking data (requests tab, passenger list, earnings, etc.) — the
+/// [RideModel.bookings] field is never populated from Firestore.
+
+final class BookingsByRideProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<RideBooking>>,
+          List<RideBooking>,
+          Stream<List<RideBooking>>
+        >
+    with
+        $FutureModifier<List<RideBooking>>,
+        $StreamProvider<List<RideBooking>> {
+  /// Real-time stream of all bookings for a given ride.
+  ///
+  /// Use this alongside [rideDetailViewModelProvider] in any screen that needs
+  /// booking data (requests tab, passenger list, earnings, etc.) — the
+  /// [RideModel.bookings] field is never populated from Firestore.
+  BookingsByRideProvider._({
+    required BookingsByRideFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'bookingsByRideProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$bookingsByRideHash();
+
+  @override
+  String toString() {
+    return r'bookingsByRideProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<RideBooking>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<RideBooking>> create(Ref ref) {
+    final argument = this.argument as String;
+    return bookingsByRide(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is BookingsByRideProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$bookingsByRideHash() => r'bd8ef54a82d42e88969f06a85f3b94db67275434';
+
+/// Real-time stream of all bookings for a given ride.
+///
+/// Use this alongside [rideDetailViewModelProvider] in any screen that needs
+/// booking data (requests tab, passenger list, earnings, etc.) — the
+/// [RideModel.bookings] field is never populated from Firestore.
+
+final class BookingsByRideFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<RideBooking>>, String> {
+  BookingsByRideFamily._()
+    : super(
+        retry: null,
+        name: r'bookingsByRideProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Real-time stream of all bookings for a given ride.
+  ///
+  /// Use this alongside [rideDetailViewModelProvider] in any screen that needs
+  /// booking data (requests tab, passenger list, earnings, etc.) — the
+  /// [RideModel.bookings] field is never populated from Firestore.
+
+  BookingsByRideProvider call(String rideId) =>
+      BookingsByRideProvider._(argument: rideId, from: this);
+
+  @override
+  String toString() => r'bookingsByRideProvider';
 }
 
 /// All Active Rides Stream Provider (for search screen)

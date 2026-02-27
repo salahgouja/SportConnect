@@ -13,15 +13,16 @@ part of 'ride_repository.dart';
 final rideRepositoryProvider = RideRepositoryProvider._();
 
 final class RideRepositoryProvider
-    extends $FunctionalProvider<RideRepository, RideRepository, RideRepository>
-    with $Provider<RideRepository> {
+    extends
+        $FunctionalProvider<IRideRepository, IRideRepository, IRideRepository>
+    with $Provider<IRideRepository> {
   RideRepositoryProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'rideRepositoryProvider',
-        isAutoDispose: false,
+        isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -31,21 +32,21 @@ final class RideRepositoryProvider
 
   @$internal
   @override
-  $ProviderElement<RideRepository> $createElement($ProviderPointer pointer) =>
+  $ProviderElement<IRideRepository> $createElement($ProviderPointer pointer) =>
       $ProviderElement(pointer);
 
   @override
-  RideRepository create(Ref ref) {
+  IRideRepository create(Ref ref) {
     return rideRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(RideRepository value) {
+  Override overrideWithValue(IRideRepository value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<RideRepository>(value),
+      providerOverride: $SyncValueProvider<IRideRepository>(value),
     );
   }
 }
 
-String _$rideRepositoryHash() => r'c58693a59b563a6ab029d7d41f65db0a81bf96e3';
+String _$rideRepositoryHash() => r'f2c5fa146196cddf9e4505d79ba9c8f5114212d2';

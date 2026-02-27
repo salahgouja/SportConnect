@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_ride_repository.dart';
+import 'package:sport_connect/core/providers/firebase_providers.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride_request_model.dart';
@@ -117,14 +118,13 @@ class RideRepository implements IRideRepository {
 
   @override
   Future<String> createRideRequest(RideRequestModel request) async {
-    final rawCol = _firestore.collection(AppConstants.rideRequestsCollection);
-    final docRef = rawCol.doc();
-    final requestWithId = request.copyWith(id: docRef.id);
-    final json = requestWithId.toJson();
-    // Use server timestamps for consistent chronological ordering
-    json['createdAt'] = DateTime.now();
-    json['updatedAt'] = DateTime.now();
-    await docRef.set(json);
+    final docRef = _rideRequestsCollection.doc();
+    var requestWithId = request.copyWith(id: docRef.id);
+    requestWithId = requestWithId.copyWith(
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+    await docRef.set(requestWithId);
     return docRef.id;
   }
 
@@ -254,11 +254,7 @@ class RideRepository implements IRideRepository {
   /// Queries the bookings collection via [BookingRepository] to find
   /// rides the user is booked on, then fetches the ride documents.
   Stream<List<RideModel>> streamRidesAsPassenger(String userId) {
-    // Query the bookings collection for this passenger's active bookings
-    final bookingsCollection = _firestore.collection(
-      AppConstants.bookingsCollection,
-    );
-    return bookingsCollection
+    return _rideBookingsCollection
         .where('passengerId', isEqualTo: userId)
         .where('status', whereIn: ['pending', 'accepted'])
         .orderBy('createdAt', descending: true)
@@ -266,7 +262,7 @@ class RideRepository implements IRideRepository {
         .snapshots()
         .asyncMap((bookingSnapshot) async {
           final rideIds = bookingSnapshot.docs
-              .map((doc) => doc.data()['rideId'] as String?)
+              .map((doc) => doc.data().rideId)
               .whereType<String>()
               .toSet()
               .toList();
@@ -297,16 +293,13 @@ class RideRepository implements IRideRepository {
   /// Queries the bookings collection to find active bookings,
   /// then filters to upcoming rides only.
   Future<List<RideModel>> getUpcomingRidesAsPassenger(String userId) async {
-    final bookingsCollection = _firestore.collection(
-      AppConstants.bookingsCollection,
-    );
-    final bookingSnapshot = await bookingsCollection
+    final bookingSnapshot = await _rideBookingsCollection
         .where('passengerId', isEqualTo: userId)
         .where('status', whereIn: ['pending', 'accepted'])
         .get();
 
     final rideIds = bookingSnapshot.docs
-        .map((doc) => doc.data()['rideId'] as String?)
+        .map((doc) => doc.data().rideId)
         .whereType<String>()
         .toSet()
         .toList();
@@ -403,26 +396,29 @@ class RideRepository implements IRideRepository {
   /// Updates booking status in the bookings collection and adjusts
   /// ride capacity when a booking is cancelled or rejected.
   ///
-  /// Reads `seatsBooked` BEFORE updating the status to avoid a
-  /// TOCTOU race condition where the booking document is already
-  /// overwritten by the time we read it back.
+  /// Reads `seatsBooked` AND `previousStatus` BEFORE updating to avoid a
+  /// TOCTOU race condition. Capacity is only freed when the booking was
+  /// previously `accepted` (seats were actually reserved). Rejecting or
+  /// cancelling a still-pending booking must NOT decrement capacity.
   Future<void> updateBookingStatus({
     required String rideId,
     required String bookingId,
     required BookingStatus newStatus,
   }) async {
-    // Read seatsBooked first (before any writes) to avoid TOCTOU race
+    // Read booking data first (before any writes) to avoid TOCTOU race
     int seatsBooked = 1;
+    BookingStatus? previousStatus;
     if (newStatus == BookingStatus.cancelled ||
         newStatus == BookingStatus.rejected ||
         newStatus == BookingStatus.accepted) {
       final bookingDoc = await _rideBookingsCollection.doc(bookingId).get();
       if (bookingDoc.exists) {
         seatsBooked = bookingDoc.data()?.seatsBooked ?? 1;
+        previousStatus = bookingDoc.data()?.status;
       }
     }
 
-    // Now update the booking document
+    // Update the booking document
     await _rideBookingsCollection.doc(bookingId).update({
       'status': newStatus.name,
       'respondedAt': DateTime.now(),
@@ -436,14 +432,24 @@ class RideRepository implements IRideRepository {
       });
     }
 
-    // If cancelled/rejected, free up the seats using the value read above
+    // Free up seats ONLY if the booking was previously accepted (i.e. seats
+    // were actually reserved). Rejecting a pending booking must not touch
+    // capacity — seats were never reserved for it.
     if (newStatus == BookingStatus.cancelled ||
         newStatus == BookingStatus.rejected) {
-      await _ridesCollection.doc(rideId).update({
-        'bookingIds': FieldValue.arrayRemove([bookingId]),
-        'capacity.booked': FieldValue.increment(-seatsBooked),
-        'updatedAt': DateTime.now(),
-      });
+      if (previousStatus == BookingStatus.accepted) {
+        await _ridesCollection.doc(rideId).update({
+          'bookingIds': FieldValue.arrayRemove([bookingId]),
+          'capacity.booked': FieldValue.increment(-seatsBooked),
+          'updatedAt': DateTime.now(),
+        });
+      } else {
+        // Booking was pending/rejected — only remove from bookingIds, no capacity change
+        await _ridesCollection.doc(rideId).update({
+          'bookingIds': FieldValue.arrayRemove([bookingId]),
+          'updatedAt': DateTime.now(),
+        });
+      }
     }
   }
 
@@ -473,7 +479,9 @@ class RideRepository implements IRideRepository {
 
     await _firestore.runTransaction((transaction) async {
       // Store the review document
-      final reviewRef = _firestore.collection('reviews').doc(reviewId);
+      final reviewRef = _firestore
+          .collection(AppConstants.reviewsCollection)
+          .doc(reviewId);
       transaction.set(reviewRef, reviewData);
 
       // Read current ride stats
@@ -518,6 +526,21 @@ class RideRepository implements IRideRepository {
     });
   }
 
+  /// Writes the driver's current GPS coordinates to the ride document.
+  ///
+  /// Failures are expected to be swallowed by the caller \u2014 a missed
+  /// location ping must not interrupt the navigation flow.
+  Future<void> updateLiveLocation(
+    String rideId,
+    double latitude,
+    double longitude,
+  ) async {
+    await _ridesCollection.doc(rideId).update({
+      'liveLocation': GeoPoint(latitude, longitude),
+      'lastLocationUpdate': DateTime.now(),
+    });
+  }
+
   // Helper methods
   bool _isSameDay(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month && a.day == b.day;
@@ -546,7 +569,7 @@ class RideRepository implements IRideRepository {
   }
 }
 
-@Riverpod(keepAlive: true)
-RideRepository rideRepository(Ref ref) {
-  return RideRepository(FirebaseFirestore.instance);
+@riverpod
+IRideRepository rideRepository(Ref ref) {
+  return RideRepository(ref.watch(firestoreInstanceProvider));
 }
