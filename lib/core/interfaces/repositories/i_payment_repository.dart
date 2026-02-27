@@ -79,4 +79,20 @@ abstract class IPaymentRepository {
     double? amount,
     String? reason,
   });
+
+  /// Get payout by ID
+  Future<DriverPayout?> getPayoutById(String payoutId);
+
+  /// Create driver connected account via Stripe and persist it to Firestore.
+  Future<DriverConnectedAccount?> createConnectedAccount({
+    required String userId,
+    required String email,
+    required String country,
+    String? firstName,
+    String? lastName,
+    String? phone,
+    DateTime? dateOfBirth,
+    String? addressLine1,
+    String? city,
+  });
 }

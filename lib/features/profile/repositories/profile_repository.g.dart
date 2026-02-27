@@ -14,19 +14,15 @@ final profileRepositoryProvider = ProfileRepositoryProvider._();
 
 final class ProfileRepositoryProvider
     extends
-        $FunctionalProvider<
-          ProfileRepository,
-          ProfileRepository,
-          ProfileRepository
-        >
-    with $Provider<ProfileRepository> {
+        $FunctionalProvider<IUserRepository, IUserRepository, IUserRepository>
+    with $Provider<IUserRepository> {
   ProfileRepositoryProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'profileRepositoryProvider',
-        isAutoDispose: false,
+        isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -36,25 +32,24 @@ final class ProfileRepositoryProvider
 
   @$internal
   @override
-  $ProviderElement<ProfileRepository> $createElement(
-    $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
+  $ProviderElement<IUserRepository> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
 
   @override
-  ProfileRepository create(Ref ref) {
+  IUserRepository create(Ref ref) {
     return profileRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(ProfileRepository value) {
+  Override overrideWithValue(IUserRepository value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<ProfileRepository>(value),
+      providerOverride: $SyncValueProvider<IUserRepository>(value),
     );
   }
 }
 
-String _$profileRepositoryHash() => r'ed8a9d9d4cb14ad223998b3ebf860ddc876eb490';
+String _$profileRepositoryHash() => r'cd1e9af875ee01347d8dbed891f4017261bdf768';
 
 /// Stream provider for current user
 

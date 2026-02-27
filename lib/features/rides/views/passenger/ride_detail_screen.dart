@@ -98,6 +98,10 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final rideAsync = ref.watch(rideDetailViewModelProvider(widget.rideId));
+    // Bookings are stored in a separate collection — watch them alongside the ride
+    final bookings =
+        ref.watch(bookingsByRideProvider(widget.rideId)).value ??
+        const <RideBooking>[];
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -114,7 +118,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
             _loadRoute(ride);
           });
 
-          return _buildContent(ride);
+          return _buildContent(ride, bookings);
         },
       ),
     );
@@ -189,7 +193,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
     );
   }
 
-  Widget _buildContent(RideModel ride) {
+  Widget _buildContent(RideModel ride, List<RideBooking> bookings) {
     // Check if current user is the driver
     final currentUser = ref.watch(currentUserProvider).value;
     final isDriver = currentUser?.uid == ride.driverId;
@@ -238,18 +242,18 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                       .slideX(begin: -0.1, curve: Curves.easeOutCubic),
 
                   // Passengers section - show for both but with different context
-                  if (ride.bookings.isNotEmpty)
-                    _buildPassengers(ride, isDriver: isDriver)
+                  if (bookings.isNotEmpty)
+                    _buildPassengers(ride, bookings: bookings, isDriver: isDriver)
                         .animate()
                         .fadeIn(duration: 400.ms, delay: 300.ms)
                         .slideY(begin: 0.2, curve: Curves.easeOutCubic),
 
                   // Pending requests - only show for drivers
                   if (isDriver &&
-                      ride.bookings.any(
+                      bookings.any(
                         (b) => b.status == BookingStatus.pending,
                       ))
-                    _buildPendingRequests(ride)
+                    _buildPendingRequests(ride, bookings)
                         .animate()
                         .fadeIn(duration: 400.ms, delay: 350.ms)
                         .slideY(begin: 0.2, curve: Curves.easeOutCubic),
@@ -268,7 +272,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
           right: 0,
           bottom: 0,
           child: isDriver
-              ? _buildDriverActionSheet(ride)
+              ? _buildDriverActionSheet(ride, bookings)
               : _buildBookingSheet(ride),
         ),
       ],
@@ -890,8 +894,12 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
     );
   }
 
-  Widget _buildPassengers(RideModel ride, {bool isDriver = false}) {
-    final acceptedBookings = ride.bookings
+  Widget _buildPassengers(
+    RideModel ride, {
+    required List<RideBooking> bookings,
+    bool isDriver = false,
+  }) {
+    final acceptedBookings = bookings
         .where((b) => b.status == BookingStatus.accepted)
         .toList();
 
@@ -1059,8 +1067,8 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
   }
 
   /// Build pending requests section for drivers
-  Widget _buildPendingRequests(RideModel ride) {
-    final pendingBookings = ride.bookings
+  Widget _buildPendingRequests(RideModel ride, List<RideBooking> bookings) {
+    final pendingBookings = bookings
         .where((b) => b.status == BookingStatus.pending)
         .toList();
 
@@ -1260,12 +1268,12 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
   }
 
   /// Build driver action sheet (instead of booking sheet)
-  Widget _buildDriverActionSheet(RideModel ride) {
+  Widget _buildDriverActionSheet(RideModel ride, List<RideBooking> bookings) {
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
-    final pendingCount = ride.bookings
+    final pendingCount = bookings
         .where((b) => b.status == BookingStatus.pending)
         .length;
-    final acceptedCount = ride.bookings
+    final acceptedCount = bookings
         .where((b) => b.status == BookingStatus.accepted)
         .length;
 

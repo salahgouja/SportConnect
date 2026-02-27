@@ -9,7 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
-import 'package:sport_connect/features/rides/repositories/dispute_repository.dart';
+import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 
 /// Dispute filing screen for ride fare or service disagreements.
 class DisputeScreen extends ConsumerStatefulWidget {
@@ -172,23 +172,17 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
       final user = ref.read(currentUserProvider).value;
       if (user == null) return;
 
-      final repo = ref.read(disputeRepositoryProvider);
-
-      final disputeId = await repo.submitDispute(
-        rideId: widget.rideId,
-        userId: user.uid,
-        userEmail: user.email,
-        disputeType: _selectedDisputeType!,
-        description: _descriptionController.text.trim(),
-        rideSummary: widget.rideSummary,
-      );
-
-      if (_attachedFiles.isNotEmpty) {
-        await repo.uploadAttachments(
-          disputeId: disputeId,
-          files: _attachedFiles,
-        );
-      }
+      await ref
+          .read(disputeViewModelProvider)
+          .submitDispute(
+            rideId: widget.rideId,
+            userId: user.uid,
+            userEmail: user.email,
+            disputeType: _selectedDisputeType!,
+            description: _descriptionController.text.trim(),
+            rideSummary: widget.rideSummary,
+            attachments: _attachedFiles,
+          );
 
       if (mounted) {
         setState(() {

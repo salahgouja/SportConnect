@@ -11,7 +11,7 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
-import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
+import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 part 'profile_search_screen.g.dart';
@@ -22,8 +22,8 @@ part 'profile_search_screen.g.dart';
 Future<List<UserModel>> searchResults(Ref ref, String query) async {
   if (query.isEmpty || query.length < 2) return [];
 
-  final repository = ref.watch(profileRepositoryProvider);
-  return repository.searchUsers(query: query);
+  final vm = ref.watch(profileActionsViewModelProvider);
+  return vm.searchUsers(query: query);
 }
 
 /// Premium Profile Search Screen with autocomplete

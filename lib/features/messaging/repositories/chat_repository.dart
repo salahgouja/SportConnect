@@ -4,6 +4,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_chat_repository.dart';
+import 'package:sport_connect/core/models/models.dart';
+import 'package:sport_connect/core/providers/firebase_providers.dart';
 import 'package:sport_connect/features/messaging/models/message_model.dart';
 
 part 'chat_repository.g.dart';
@@ -13,15 +15,46 @@ class ChatRepository implements IChatRepository {
   final FirebaseFirestore _firestore;
   final FirebaseStorage _storage;
 
-  ChatRepository(this._firestore, [FirebaseStorage? storage])
-    : _storage = storage ?? FirebaseStorage.instance;
+  ChatRepository(this._firestore, this._storage);
 
-  CollectionReference<Map<String, dynamic>> get _chatsCollection =>
-      _firestore.collection(AppConstants.chatsCollection);
+  CollectionReference<ChatModel> get _chatsCollection => _firestore
+      .collection(AppConstants.chatsCollection)
+      .withConverter<ChatModel>(
+        fromFirestore: (snapshot, _) => ChatModel.fromJson(snapshot.data()!),
+        toFirestore: (chat, _) => chat.toJson(),
+      );
 
-  CollectionReference<Map<String, dynamic>> _messagesCollection(
-    String chatId,
-  ) => _chatsCollection.doc(chatId).collection('messages');
+  CollectionReference<MessageModel> _messagesCollection(String chatId) =>
+      _chatsCollection
+          .doc(chatId)
+          .collection(AppConstants.messagesCollection)
+          .withConverter<MessageModel>(
+            fromFirestore: (snapshot, _) =>
+                MessageModel.fromJson(snapshot.data()!),
+            toFirestore: (message, _) => message.toJson(),
+          );
+  CollectionReference<TypingIndicator> _typingCollection(String chatId) =>
+      _chatsCollection
+          .doc(chatId)
+          .collection(AppConstants.typingCollection)
+          .withConverter<TypingIndicator>(
+            fromFirestore: (snapshot, _) =>
+                TypingIndicator.fromJson(snapshot.data()!),
+            toFirestore: (typing, _) => typing.toJson(),
+          );
+  CollectionReference<UserModel> get _usersCollection => _firestore
+      .collection(AppConstants.usersCollection)
+      .withConverter<UserModel>(
+        fromFirestore: (snapshot, _) => UserModel.fromJson(snapshot.data()!),
+        toFirestore: (user, _) => user.toJson(),
+      );
+
+  /// Sub-collection stores metadata only: {blockedAt, chatId}.
+  /// No [UserModel] converter — the documents are not user documents.
+  CollectionReference _blockedUsersCollection(String userId) => _firestore
+      .collection(AppConstants.usersCollection)
+      .doc(userId)
+      .collection(AppConstants.blockedUsersCollection);
 
   // ==================== CHAT OPERATIONS ====================
 
@@ -37,7 +70,7 @@ class ChatRepository implements IChatRepository {
       // Initialize lastMessageAt so chat appears in queries ordered by this field
       lastMessageAt: chat.lastMessageAt ?? now,
     );
-    await docRef.set(chatWithId.toJson());
+    await docRef.set(chatWithId);
     return docRef.id;
   }
 
@@ -57,7 +90,7 @@ class ChatRepository implements IChatRepository {
         .get();
 
     for (final doc in query.docs) {
-      final chat = ChatModel.fromJson(doc.data());
+      final chat = doc.data();
       if (chat.participantIds.contains(userId2)) {
         return chat;
       }
@@ -122,7 +155,7 @@ class ChatRepository implements IChatRepository {
   Future<ChatModel?> getChatById(String chatId) async {
     final doc = await _chatsCollection.doc(chatId).get();
     if (!doc.exists) return null;
-    return ChatModel.fromJson(doc.data()!);
+    return doc.data();
   }
 
   /// Stream user's chats
@@ -132,11 +165,7 @@ class ChatRepository implements IChatRepository {
         // .where('isActive', isEqualTo: true)
         .orderBy('lastMessageAt', descending: true)
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => ChatModel.fromJson(doc.data()))
-              .toList(),
-        );
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 
   /// Add participant to chat
@@ -234,11 +263,7 @@ class ChatRepository implements IChatRepository {
         .orderBy('createdAt', descending: true)
         .limit(limit)
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => MessageModel.fromJson(doc.data()))
-              .toList(),
-        );
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 
   /// Load more messages (pagination)
@@ -254,7 +279,7 @@ class ChatRepository implements IChatRepository {
         .limit(limit)
         .get();
 
-    return query.docs.map((doc) => MessageModel.fromJson(doc.data())).toList();
+    return query.docs.map((doc) => doc.data()).toList();
   }
 
   /// Mark messages as read
@@ -310,11 +335,7 @@ class ChatRepository implements IChatRepository {
         .where('participantIds', arrayContains: userId)
         .orderBy('lastMessageAt', descending: true)
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => ChatModel.fromJson(doc.data()))
-              .toList(),
-        );
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 
   @override
@@ -329,7 +350,7 @@ class ChatRepository implements IChatRepository {
         .get();
 
     for (final doc in query.docs) {
-      final chat = ChatModel.fromJson(doc.data());
+      final chat = doc.data();
       if (chat.participantIds.contains(userId2)) {
         return chat;
       }
@@ -345,11 +366,7 @@ class ChatRepository implements IChatRepository {
         .orderBy('timestamp', descending: true)
         .limit(limit)
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => MessageModel.fromJson(doc.data()))
-              .toList(),
-        );
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 
   @override
@@ -358,18 +375,17 @@ class ChatRepository implements IChatRepository {
     String userId,
     bool isTyping,
   ) async {
-    final typingRef = _chatsCollection
-        .doc(chatId)
-        .collection('typing')
-        .doc(userId);
+    final typingRef = _typingCollection(chatId).doc(userId);
 
     if (isTyping) {
-      await typingRef.set({
-        'odid': userId,
-        'chatId': chatId,
-        'displayName': '', // Would need to pass this
-        'startedAt': DateTime.now(),
-      });
+      await typingRef.set(
+        TypingIndicator(
+          odid: userId,
+          chatId: chatId,
+          displayName: '',
+          startedAt: DateTime.now(),
+        ),
+      );
     } else {
       await typingRef.delete();
     }
@@ -377,15 +393,9 @@ class ChatRepository implements IChatRepository {
 
   @override
   Stream<Map<String, bool>> getTypingStatus(String chatId) {
-    return _chatsCollection.doc(chatId).collection('typing').snapshots().map((
-      snapshot,
-    ) {
-      final Map<String, bool> typingUsers = {};
-      for (final doc in snapshot.docs) {
-        typingUsers[doc.id] = true;
-      }
-      return typingUsers;
-    });
+    return _typingCollection(chatId).snapshots().map(
+      (snapshot) => {for (final doc in snapshot.docs) doc.id: true},
+    );
   }
 
   // ==================== EXISTING HELPER METHODS ====================
@@ -457,18 +467,17 @@ class ChatRepository implements IChatRepository {
     required String displayName,
     required bool isTyping,
   }) async {
-    final typingRef = _chatsCollection
-        .doc(chatId)
-        .collection('typing')
-        .doc(odid);
+    final typingRef = _typingCollection(chatId).doc(odid);
 
     if (isTyping) {
-      await typingRef.set({
-        'odid': odid,
-        'displayName': displayName,
-        'chatId': chatId,
-        'startedAt': DateTime.now(),
-      });
+      await typingRef.set(
+        TypingIndicator(
+          odid: odid,
+          displayName: displayName,
+          chatId: chatId,
+          startedAt: DateTime.now(),
+        ),
+      );
     } else {
       await typingRef.delete();
     }
@@ -476,15 +485,9 @@ class ChatRepository implements IChatRepository {
 
   /// Stream typing indicators
   Stream<List<TypingIndicator>> streamTypingIndicators(String chatId) {
-    return _chatsCollection
-        .doc(chatId)
-        .collection('typing')
-        .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => TypingIndicator.fromJson(doc.data()))
-              .toList(),
-        );
+    return _typingCollection(chatId).snapshots().map(
+      (snapshot) => snapshot.docs.map((doc) => doc.data()).toList(),
+    );
   }
 
   // ==================== ONLINE STATUS ====================
@@ -527,27 +530,88 @@ class ChatRepository implements IChatRepository {
     });
   }
 
-  /// Block a user within a chat context
+  /// Block a user atomically:
+  /// 1. Writes metadata to the blocked-users sub-collection.
+  /// 2. Adds the UID to the [UserModel.blockedUsers] array for fast query filtering.
+  /// 3. Auto-mutes the chat in the same batch.
   Future<void> blockUser({
     required String chatId,
     required String userId,
     required String blockedUserId,
   }) async {
-    // Store the block in the user's sub-document so queries can filter
-    final userBlocksRef = _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('blockedUsers');
-    await userBlocksRef.doc(blockedUserId).set({
-      'blockedAt': DateTime.now(),
+    final batch = _firestore.batch();
+
+    // 1. Write block metadata to sub-collection
+    final blockDoc = _blockedUsersCollection(userId).doc(blockedUserId);
+    batch.set(blockDoc, {
+      'blockedAt': FieldValue.serverTimestamp(),
       'chatId': chatId,
     });
 
-    // Also mute the chat automatically
-    await toggleMute(chatId: chatId, odid: userId, mute: true);
+    // 2. Mirror the UID into the UserModel.blockedUsers array for fast Firestore queries
+    final userDoc = _usersCollection.doc(userId);
+    batch.update(userDoc, {
+      'blockedUsers': FieldValue.arrayUnion([blockedUserId]),
+    });
+
+    // 3. Mute the chat for the blocker
+    batch.set(_chatsCollection.doc(chatId), {
+      'mutedBy.$userId': true,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    await batch.commit();
+  }
+
+  /// Unblock a user atomically — reverses every write done in [blockUser].
+  Future<void> unblockUser({
+    required String userId,
+    required String blockedUserId,
+    String? chatId,
+  }) async {
+    final batch = _firestore.batch();
+
+    // 1. Remove sub-collection document
+    final blockDoc = _blockedUsersCollection(userId).doc(blockedUserId);
+    batch.delete(blockDoc);
+
+    // 2. Remove from UserModel.blockedUsers array
+    final userDoc = _usersCollection.doc(userId);
+    batch.update(userDoc, {
+      'blockedUsers': FieldValue.arrayRemove([blockedUserId]),
+    });
+
+    // 3. Unmute the chat if provided
+    if (chatId != null) {
+      batch.set(_chatsCollection.doc(chatId), {
+        'mutedBy.$userId': FieldValue.delete(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    }
+
+    await batch.commit();
+  }
+
+  /// Returns whether [blockedUserId] is blocked by [userId].
+  /// Reads a single document — O(1), safe to call before sending messages.
+  Future<bool> isUserBlocked({
+    required String userId,
+    required String blockedUserId,
+  }) async {
+    final doc = await _blockedUsersCollection(userId).doc(blockedUserId).get();
+    return doc.exists;
+  }
+
+  /// Streams the list of blocked UIDs for [userId].
+  /// Backed by the sub-collection so the UI reacts in real time.
+  Stream<List<String>> streamBlockedUserIds(String userId) {
+    return _blockedUsersCollection(userId).snapshots().map(
+      (snapshot) => snapshot.docs.map((doc) => doc.id).toList(),
+    );
   }
 
   /// Upload chat image to Firebase Storage and return download URL
+  @override
   Future<String> uploadChatImage({
     required String chatId,
     required File imageFile,
@@ -558,13 +622,29 @@ class ChatRepository implements IChatRepository {
         .child('chat_images')
         .child(chatId)
         .child(fileName);
-
     await storageRef.putFile(imageFile);
-    return await storageRef.getDownloadURL();
+    return storageRef.getDownloadURL();
+  }
+
+  /// Upload audio message to Firebase Storage and return download URL
+  @override
+  Future<String> uploadAudioMessage({
+    required String chatId,
+    required File audioFile,
+    required String fileName,
+  }) async {
+    final storageRef = _storage
+        .ref()
+        .child('chats/$chatId/audio/$fileName');
+    await storageRef.putFile(audioFile);
+    return storageRef.getDownloadURL();
   }
 }
 
 @riverpod
-ChatRepository chatRepository(Ref ref) {
-  return ChatRepository(FirebaseFirestore.instance);
+IChatRepository chatRepository(Ref ref) {
+  return ChatRepository(
+    ref.watch(firestoreInstanceProvider),
+    ref.watch(storageInstanceProvider),
+  );
 }

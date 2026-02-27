@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_notification_repository.dart';
+import 'package:sport_connect/core/providers/firebase_providers.dart';
 import 'package:sport_connect/features/notifications/models/notification_model.dart';
 
 part 'notification_repository.g.dart';
@@ -12,8 +13,14 @@ class NotificationRepository implements INotificationRepository {
 
   NotificationRepository(this._firestore);
 
-  CollectionReference<Map<String, dynamic>> get _notificationsCollection =>
-      _firestore.collection(AppConstants.notificationsCollection);
+  CollectionReference<NotificationModel> get _notificationsCollection =>
+      _firestore
+          .collection(AppConstants.notificationsCollection)
+          .withConverter<NotificationModel>(
+            fromFirestore: (snapshot, _) =>
+                NotificationModel.fromJson(snapshot.data()!),
+            toFirestore: (notification, _) => notification.toJson(),
+          );
 
   // ==================== NOTIFICATION OPERATIONS ====================
 
@@ -25,7 +32,7 @@ class NotificationRepository implements INotificationRepository {
       id: docRef.id,
       createdAt: DateTime.now(),
     );
-    await docRef.set(notificationWithId.toJson());
+    await docRef.set(notificationWithId);
     return docRef.id;
   }
 
@@ -34,7 +41,7 @@ class NotificationRepository implements INotificationRepository {
   Future<NotificationModel?> getNotificationById(String id) async {
     final doc = await _notificationsCollection.doc(id).get();
     if (!doc.exists) return null;
-    return NotificationModel.fromJson(doc.data()!);
+    return doc.data();
   }
 
   /// Stream user's notifications
@@ -46,11 +53,7 @@ class NotificationRepository implements INotificationRepository {
         .orderBy('createdAt', descending: true)
         .limit(50)
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => NotificationModel.fromJson(doc.data()))
-              .toList(),
-        );
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 
   /// Stream unread notification count
@@ -82,9 +85,7 @@ class NotificationRepository implements INotificationRepository {
     }
 
     final snapshot = await query.get();
-    return snapshot.docs
-        .map((doc) => NotificationModel.fromJson(doc.data()))
-        .toList();
+    return snapshot.docs.map((doc) => doc.data()).toList();
   }
 
   /// Mark notification as read
@@ -298,9 +299,9 @@ class NotificationRepository implements INotificationRepository {
   }
 }
 
-@Riverpod(keepAlive: true)
-NotificationRepository notificationRepository(Ref ref) {
-  return NotificationRepository(FirebaseFirestore.instance);
+@riverpod
+INotificationRepository notificationRepository(Ref ref) {
+  return NotificationRepository(ref.watch(firestoreInstanceProvider));
 }
 
 /// Provider for streaming user notifications

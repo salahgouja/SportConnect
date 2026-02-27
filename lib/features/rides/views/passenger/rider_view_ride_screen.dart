@@ -55,9 +55,12 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
   @override
   Widget build(BuildContext context) {
     final rideAsync = ref.watch(rideDetailViewModelProvider(widget.rideId));
+    final bookings =
+        ref.watch(bookingsByRideProvider(widget.rideId)).value ??
+        const <RideBooking>[];
 
     return rideAsync.when(
-      data: (ride) => _buildContent(ride),
+      data: (ride) => _buildContent(ride, bookings),
       loading: () => _buildLoadingState(),
       error: (error, _) => _buildErrorState(error.toString()),
     );
@@ -123,7 +126,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
     );
   }
 
-  Widget _buildContent(RideModel? ride) {
+  Widget _buildContent(RideModel? ride, List<RideBooking> bookings) {
     if (ride == null) {
       return _buildErrorState(AppLocalizations.of(context).rideNotFound);
     }
@@ -133,7 +136,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
       body: CustomScrollView(
         slivers: [
           _buildSliverAppBar(ride),
-          SliverToBoxAdapter(child: _buildDriverCard(ride)),
+          SliverToBoxAdapter(child: _buildDriverCard(ride, bookings)),
           SliverToBoxAdapter(child: _buildRouteCard(ride)),
           SliverToBoxAdapter(child: _buildDetailsCard(ride)),
           SliverToBoxAdapter(child: _buildPreferencesCard(ride)),
@@ -316,7 +319,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
     );
   }
 
-  Widget _buildDriverCard(RideModel ride) {
+  Widget _buildDriverCard(RideModel ride, List<RideBooking> bookings) {
     return Container(
       margin: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 8.h),
       padding: EdgeInsets.all(16.w),
@@ -371,7 +374,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
                         Text(
                           AppLocalizations.of(
                             context,
-                          ).valueRides(ride.bookings.length),
+                          ).valueRides(bookings.length),
                           style: TextStyle(
                             fontSize: 13.sp,
                             color: AppColors.textSecondary,

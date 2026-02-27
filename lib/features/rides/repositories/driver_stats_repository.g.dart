@@ -15,18 +15,18 @@ final driverStatsRepositoryProvider = DriverStatsRepositoryProvider._();
 final class DriverStatsRepositoryProvider
     extends
         $FunctionalProvider<
-          DriverStatsRepository,
-          DriverStatsRepository,
-          DriverStatsRepository
+          IDriverStatsRepository,
+          IDriverStatsRepository,
+          IDriverStatsRepository
         >
-    with $Provider<DriverStatsRepository> {
+    with $Provider<IDriverStatsRepository> {
   DriverStatsRepositoryProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'driverStatsRepositoryProvider',
-        isAutoDispose: false,
+        isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -36,26 +36,26 @@ final class DriverStatsRepositoryProvider
 
   @$internal
   @override
-  $ProviderElement<DriverStatsRepository> $createElement(
+  $ProviderElement<IDriverStatsRepository> $createElement(
     $ProviderPointer pointer,
   ) => $ProviderElement(pointer);
 
   @override
-  DriverStatsRepository create(Ref ref) {
+  IDriverStatsRepository create(Ref ref) {
     return driverStatsRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(DriverStatsRepository value) {
+  Override overrideWithValue(IDriverStatsRepository value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<DriverStatsRepository>(value),
+      providerOverride: $SyncValueProvider<IDriverStatsRepository>(value),
     );
   }
 }
 
 String _$driverStatsRepositoryHash() =>
-    r'4f86dd23045cd374c392daca991e7b7eab4a8c87';
+    r'2455a9ea7422598ca46a91e3500984ef1eaaad80';
 
 @ProviderFor(driverStats)
 final driverStatsProvider = DriverStatsProvider._();

@@ -71,7 +71,7 @@ final class SearchResultsProvider
   }
 }
 
-String _$searchResultsHash() => r'83b8c25d11d61301a840186e8098f81bff203aab';
+String _$searchResultsHash() => r'8f752371f5f36bf9f38902cfdf79506c2307f908';
 
 /// Search results provider — accepts the query as a family parameter
 /// so ephemeral search state stays local to the widget.

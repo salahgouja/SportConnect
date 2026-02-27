@@ -18,6 +18,7 @@ import 'package:sport_connect/features/events/views/inline_event_selector.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/ride_search_filters.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Two-phase screen:
 ///   Phase 1 → compact search form (no scroll needed)
@@ -282,10 +283,11 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
 
   // ── Date · Time · Passengers ────────────────────────────────
   Widget _buildParamsRow() {
+    final l10n = AppLocalizations.of(context);
     final dateLabel = _isToday(_date)
-        ? 'Today'
+        ? l10n.today
         : _isTomorrow(_date)
-        ? 'Tomorrow'
+        ? l10n.tomorrow
         : DateFormat('d MMM').format(_date);
     final timeLabel = _time.format(context);
 
@@ -517,7 +519,9 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
           // Param pills
           _pill(
             Icons.calendar_today_rounded,
-            _isToday(_date) ? 'Today' : DateFormat('d MMM').format(_date),
+            _isToday(_date)
+                ? AppLocalizations.of(context).today
+                : DateFormat('d MMM').format(_date),
           ),
           SizedBox(width: 6.w),
           _pill(Icons.people_rounded, '$_passengers'),
@@ -552,26 +556,30 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
   }
 
   Widget _buildResultsList() {
-    final rides = ref.watch(activeRidesProvider);
-    return rides.when(
-      data: (list) {
-        if (list.isEmpty) return _buildEmptyState();
-        final sorted = _sortRides(List.of(list));
-        return Column(
-          children: [
-            _buildResultsHeader(sorted.length),
-            Expanded(
-              child: ListView.builder(
-                padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 32.h),
-                itemCount: sorted.length,
-                itemBuilder: (_, i) => _buildRideCard(sorted[i]),
-              ),
-            ),
-          ],
-        );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => _buildErrorState(e.toString()),
+    final searchState = ref.watch(rideSearchViewModelProvider);
+
+    if (searchState.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (searchState.error != null) {
+      return _buildErrorState(searchState.error!);
+    }
+    if (searchState.rides.isEmpty) {
+      return _buildEmptyState();
+    }
+
+    final sorted = _sortRides(List.of(searchState.rides));
+    return Column(
+      children: [
+        _buildResultsHeader(sorted.length),
+        Expanded(
+          child: ListView.builder(
+            padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 32.h),
+            itemCount: sorted.length,
+            itemBuilder: (_, i) => _buildRideCard(sorted[i]),
+          ),
+        ),
+      ],
     );
   }
 
@@ -1014,6 +1022,8 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
         list.sort((a, b) => a.departureTime.compareTo(b.departureTime));
       case 'price':
         list.sort((a, b) => a.pricePerSeat.compareTo(b.pricePerSeat));
+      case 'rating':
+        list.sort((a, b) => b.averageRating.compareTo(a.averageRating));
       default:
         break;
     }

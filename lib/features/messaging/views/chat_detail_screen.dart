@@ -13,7 +13,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
@@ -375,15 +374,15 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     );
 
     try {
-      // Upload audio to Firebase Storage
+      // Upload audio via ChatActionsViewModel (proper DI layer)
       final file = File(audioPath);
       final fileName = 'audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
-      final storageRef = FirebaseStorage.instance.ref().child(
-        'chats/${widget.chatId}/audio/$fileName',
+      final chatActions = ref.read(chatActionsViewModelProvider);
+      final audioUrl = await chatActions.uploadAudioMessage(
+        chatId: widget.chatId,
+        audioFile: file,
+        fileName: fileName,
       );
-
-      await storageRef.putFile(file);
-      final audioUrl = await storageRef.getDownloadURL();
 
       // Delete local file
       if (await file.exists()) {
@@ -2421,39 +2420,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         );
       }
     }
-  }
-
-  void _startVoiceRecording() {
-    HapticFeedback.heavyImpact();
-    setState(() => _isRecording = true);
-
-    // Show voice recording indicator
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Container(
-              width: 12.w,
-              height: 12.w,
-              decoration: const BoxDecoration(
-                color: Colors.red,
-                shape: BoxShape.circle,
-              ),
-            ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Text(AppLocalizations.of(context).recordingReleaseToSend),
-            ),
-            Text(
-              AppLocalizations.of(context).voiceNote,
-              style: TextStyle(color: Colors.white70, fontSize: 12.sp),
-            ),
-          ],
-        ),
-        backgroundColor: AppColors.primary,
-        duration: const Duration(minutes: 1),
-      ),
-    );
   }
 }
 

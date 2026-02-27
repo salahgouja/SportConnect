@@ -5,6 +5,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_vehicle_repository.dart';
+import 'package:sport_connect/core/providers/firebase_providers.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 
 part 'vehicle_repository.g.dart';
@@ -23,9 +24,6 @@ class VehicleRepository implements IVehicleRepository {
             VehicleModel.fromJson({...snap.data()!, 'id': snap.id}),
         toFirestore: (vehicle, _) => vehicle.toJson(),
       );
-
-  DocumentReference<Map<String, dynamic>> _rawVehicleDoc(String id) =>
-      _firestore.collection(AppConstants.vehiclesCollection).doc(id);
 
   // ==================== VEHICLE OPERATIONS ====================
 
@@ -100,9 +98,10 @@ class VehicleRepository implements IVehicleRepository {
   /// Update vehicle
   @override
   Future<void> updateVehicle(VehicleModel vehicle) async {
-    await _rawVehicleDoc(
-      vehicle.id,
-    ).update({...vehicle.toJson(), 'updatedAt': DateTime.now()});
+    await _vehiclesCollection.doc(vehicle.id).update({
+      ...vehicle.toJson(),
+      'updatedAt': DateTime.now(),
+    });
   }
 
   /// Set vehicle as active (deactivates others)
@@ -120,7 +119,7 @@ class VehicleRepository implements IVehicleRepository {
     }
 
     // Activate the selected vehicle
-    batch.update(_rawVehicleDoc(vehicleId), {'isActive': true});
+    batch.update(_vehiclesCollection.doc(vehicleId), {'isActive': true});
 
     await batch.commit();
   }
@@ -146,7 +145,7 @@ class VehicleRepository implements IVehicleRepository {
       }
     }
 
-    await _rawVehicleDoc(vehicleId).delete();
+    await _vehiclesCollection.doc(vehicleId).delete();
   }
 
   /// Upload vehicle image
@@ -156,7 +155,11 @@ class VehicleRepository implements IVehicleRepository {
     required String imagePath,
     required List<int> imageBytes,
   }) async {
-    final ref = _storage.ref().child('vehicles/$vehicleId/$imagePath');
+    final ref = _storage
+        .ref()
+        .child('vehicles')
+        .child(vehicleId)
+        .child(imagePath);
     await ref.putData(
       Uint8List.fromList(imageBytes),
       SettableMetadata(contentType: 'image/jpeg'),
@@ -171,7 +174,7 @@ class VehicleRepository implements IVehicleRepository {
     required VehicleVerificationStatus status,
     String? note,
   }) async {
-    await _rawVehicleDoc(vehicleId).update({
+    await _vehiclesCollection.doc(vehicleId).update({
       'verificationStatus': status.name,
       'verificationNote': note,
       'updatedAt': DateTime.now(),
@@ -192,7 +195,7 @@ class VehicleRepository implements IVehicleRepository {
         ((vehicle.averageRating * vehicle.totalRides) + newRating) /
         newTotalRides;
 
-    await _rawVehicleDoc(vehicleId).update({
+    await _vehiclesCollection.doc(vehicleId).update({
       'totalRides': newTotalRides,
       'averageRating': newAverageRating,
       'updatedAt': DateTime.now(),
@@ -200,11 +203,11 @@ class VehicleRepository implements IVehicleRepository {
   }
 }
 
-@Riverpod(keepAlive: true)
-VehicleRepository vehicleRepository(Ref ref) {
+@riverpod
+IVehicleRepository vehicleRepository(Ref ref) {
   return VehicleRepository(
-    FirebaseFirestore.instance,
-    FirebaseStorage.instance,
+    ref.watch(firestoreInstanceProvider),
+    ref.watch(storageInstanceProvider),
   );
 }
 

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_payment_repository.dart';
+import 'package:sport_connect/core/providers/firebase_providers.dart';
 import 'package:sport_connect/core/services/stripe_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/payments/models/payment_model.dart';
@@ -431,13 +432,76 @@ class PaymentRepository implements IPaymentRepository {
       rethrow;
     }
   }
+
+  /// Get payout by ID
+  @override
+  Future<DriverPayout?> getPayoutById(String payoutId) async {
+    try {
+      final doc = await _payoutsCollection.doc(payoutId).get();
+      if (!doc.exists) return null;
+      return doc.data();
+    } catch (e) {
+      TalkerService.error('Error getting payout: $e');
+      rethrow;
+    }
+  }
+
+  /// Create driver connected account via Stripe and persist it to Firestore.
+  @override
+  Future<DriverConnectedAccount?> createConnectedAccount({
+    required String userId,
+    required String email,
+    required String country,
+    String? firstName,
+    String? lastName,
+    String? phone,
+    DateTime? dateOfBirth,
+    String? addressLine1,
+    String? city,
+  }) async {
+    try {
+      final result = await _stripeService.createDriverConnectedAccount(
+        userId: userId,
+        email: email,
+        country: country,
+        firstName: firstName,
+        lastName: lastName,
+        phone: phone,
+        dateOfBirth: dateOfBirth,
+        addressLine1: addressLine1,
+        city: city,
+      );
+
+      if (result['accountId'] == null) return null;
+
+      final account = DriverConnectedAccount(
+        id: result['accountId'] as String,
+        driverId: userId,
+        stripeAccountId: result['accountId'] as String,
+        email: email,
+        country: country,
+        chargesEnabled: false,
+        payoutsEnabled: false,
+        detailsSubmitted: false,
+        onboardingCompleted: false,
+        onboardingUrl: result['onboardingUrl'] as String?,
+      );
+
+      await saveConnectedAccount(account);
+      TalkerService.info('Connected account created: $userId');
+      return account;
+    } catch (e) {
+      TalkerService.error('Error creating connected account: $e');
+      rethrow;
+    }
+  }
 }
 
 /// Payment Repository Provider
 @riverpod
 IPaymentRepository paymentRepository(Ref ref) {
   return PaymentRepository(
-    FirebaseFirestore.instance,
+    ref.watch(firestoreInstanceProvider),
     ref.read(stripeServiceProvider),
   );
 }

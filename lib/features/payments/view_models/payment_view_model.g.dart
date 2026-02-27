@@ -64,11 +64,70 @@ final class PaymentViewModelProvider
   PaymentViewModel create() => PaymentViewModel();
 }
 
-String _$paymentViewModelHash() => r'd26aab70c20ecca678d4113f9a3c5e7166881424';
+String _$paymentViewModelHash() => r'e3457e3879f707871183b51a4e166532931191b9';
 
 /// Payment Processing View Model
 
 abstract class _$PaymentViewModel extends $AsyncNotifier<void> {
+  FutureOr<void> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<void>, void>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<void>, void>,
+              AsyncValue<void>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
+
+/// Driver Onboarding View Model
+///
+/// Handles Stripe Connect account creation and onboarding for drivers.
+
+@ProviderFor(DriverOnboardingViewModel)
+final driverOnboardingViewModelProvider = DriverOnboardingViewModelProvider._();
+
+/// Driver Onboarding View Model
+///
+/// Handles Stripe Connect account creation and onboarding for drivers.
+final class DriverOnboardingViewModelProvider
+    extends $AsyncNotifierProvider<DriverOnboardingViewModel, void> {
+  /// Driver Onboarding View Model
+  ///
+  /// Handles Stripe Connect account creation and onboarding for drivers.
+  DriverOnboardingViewModelProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'driverOnboardingViewModelProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$driverOnboardingViewModelHash();
+
+  @$internal
+  @override
+  DriverOnboardingViewModel create() => DriverOnboardingViewModel();
+}
+
+String _$driverOnboardingViewModelHash() =>
+    r'1effa473cefef35163c08a99edc10c31c1558092';
+
+/// Driver Onboarding View Model
+///
+/// Handles Stripe Connect account creation and onboarding for drivers.
+
+abstract class _$DriverOnboardingViewModel extends $AsyncNotifier<void> {
   FutureOr<void> build();
   @$mustCallSuper
   @override
@@ -149,7 +208,7 @@ final class RiderPaymentHistoryProvider
 }
 
 String _$riderPaymentHistoryHash() =>
-    r'fd998f8add167a933b227ec8ad0d4267ac260248';
+    r'c0e588f34bfc17cbaabf55f4271a9e4087720a48';
 
 /// Rider Payment History Provider
 
@@ -237,7 +296,7 @@ final class RiderPaymentHistoryStreamProvider
 }
 
 String _$riderPaymentHistoryStreamHash() =>
-    r'da19f75a68f80a8a3d84775f5323350986f82cbf';
+    r'd355c5ec9451e50bbd860c86449040c59d623549';
 
 /// Rider Payment History Stream Provider
 
@@ -313,7 +372,7 @@ final class DriverConnectedAccountViewModelProvider
 }
 
 String _$driverConnectedAccountViewModelHash() =>
-    r'59d7ffda13e94685cddb1c5d2537cbd40fbd9c77';
+    r'f4aa30b926d6fe6735605b5cf2dbedb21fc4889b';
 
 /// Driver Connected Account View Model
 
@@ -437,7 +496,7 @@ final class DriverEarningsSummaryProvider
 }
 
 String _$driverEarningsSummaryHash() =>
-    r'b114f8219aba3b990907d3f1e72687f5b29bd052';
+    r'3b93788a1a85d89368016f36d3564f007a506163';
 
 /// Driver Earnings Summary Provider
 
@@ -531,7 +590,7 @@ final class DriverEarningsTransactionsProvider
 }
 
 String _$driverEarningsTransactionsHash() =>
-    r'aafc3a45cf804e67c053e0cdec85c58175968fff';
+    r'dfa0e8c81f20c61ecf7a893c9bd9939e1688e77d';
 
 /// Driver Earnings Transactions Provider
 
@@ -627,7 +686,7 @@ final class DriverPayoutsProvider
   }
 }
 
-String _$driverPayoutsHash() => r'd2d2495c556117b32aa19c801fbe9f985370f1f3';
+String _$driverPayoutsHash() => r'582751cc4fae7553aacfe18a70d7fe546ef7cf5c';
 
 /// Driver Payouts Provider
 
@@ -711,7 +770,7 @@ final class PayoutDetailProvider
   }
 }
 
-String _$payoutDetailHash() => r'7b4cf155b28194b183197de0a166425c31e62b5b';
+String _$payoutDetailHash() => r'c08b3e396e5d2c1e337c078ee77cdc6eefcbc854';
 
 /// Single Payout Detail Provider
 
@@ -764,7 +823,7 @@ final class DriverPayoutViewModelProvider
 }
 
 String _$driverPayoutViewModelHash() =>
-    r'c027fd4956fcabeabaf5f6db625b8957c9988698';
+    r'1ab465b43ba9e568ed32a0f350d105bdfc3e23fa';
 
 /// Driver Payout View Model
 
@@ -831,4 +890,4 @@ final class DriverStripeStatusProvider
 }
 
 String _$driverStripeStatusHash() =>
-    r'5e008715c9cf5c97752ef23c1ca43a09c6db7887';
+    r'4b4d5f624b832014c926e1b19c0379dd23a40ada';

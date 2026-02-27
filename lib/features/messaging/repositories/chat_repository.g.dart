@@ -13,8 +13,9 @@ part of 'chat_repository.dart';
 final chatRepositoryProvider = ChatRepositoryProvider._();
 
 final class ChatRepositoryProvider
-    extends $FunctionalProvider<ChatRepository, ChatRepository, ChatRepository>
-    with $Provider<ChatRepository> {
+    extends
+        $FunctionalProvider<IChatRepository, IChatRepository, IChatRepository>
+    with $Provider<IChatRepository> {
   ChatRepositoryProvider._()
     : super(
         from: null,
@@ -31,21 +32,21 @@ final class ChatRepositoryProvider
 
   @$internal
   @override
-  $ProviderElement<ChatRepository> $createElement($ProviderPointer pointer) =>
+  $ProviderElement<IChatRepository> $createElement($ProviderPointer pointer) =>
       $ProviderElement(pointer);
 
   @override
-  ChatRepository create(Ref ref) {
+  IChatRepository create(Ref ref) {
     return chatRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(ChatRepository value) {
+  Override overrideWithValue(IChatRepository value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<ChatRepository>(value),
+      providerOverride: $SyncValueProvider<IChatRepository>(value),
     );
   }
 }
 
-String _$chatRepositoryHash() => r'83100ab83bfd07c8fee6adb16071887b14cebb49';
+String _$chatRepositoryHash() => r'f5942c1072f0094712058a2a18b85e7553d3dc5d';

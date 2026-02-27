@@ -8,8 +8,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/repositories/settings_repository.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/utils/validators.dart';
@@ -74,26 +74,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Future<void> _loadSavedCredentials() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedEmail = prefs.getString('saved_email');
-    final rememberMe = prefs.getBool('remember_me') ?? false;
-
-    if (rememberMe && savedEmail != null) {
+    final settings = await ref.read(settingsRepositoryProvider.future);
+    if (settings.rememberMe && settings.savedEmail != null) {
       setState(() {
-        _emailController.text = savedEmail;
+        _emailController.text = settings.savedEmail!;
         _rememberMe = true;
       });
     }
   }
 
   Future<void> _saveCredentials() async {
-    final prefs = await SharedPreferences.getInstance();
+    final settings = await ref.read(settingsRepositoryProvider.future);
     if (_rememberMe) {
-      await prefs.setString('saved_email', _emailController.text.trim());
-      await prefs.setBool('remember_me', true);
+      await settings.saveCredentials(email: _emailController.text.trim());
     } else {
-      await prefs.remove('saved_email');
-      await prefs.setBool('remember_me', false);
+      await settings.clearCredentials();
     }
   }
 

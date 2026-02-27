@@ -16,8 +16,9 @@ final homeRepositoryProvider = HomeRepositoryProvider._();
 /// Provider for HomeRepository
 
 final class HomeRepositoryProvider
-    extends $FunctionalProvider<HomeRepository, HomeRepository, HomeRepository>
-    with $Provider<HomeRepository> {
+    extends
+        $FunctionalProvider<IHomeRepository, IHomeRepository, IHomeRepository>
+    with $Provider<IHomeRepository> {
   /// Provider for HomeRepository
   HomeRepositoryProvider._()
     : super(
@@ -35,24 +36,24 @@ final class HomeRepositoryProvider
 
   @$internal
   @override
-  $ProviderElement<HomeRepository> $createElement($ProviderPointer pointer) =>
+  $ProviderElement<IHomeRepository> $createElement($ProviderPointer pointer) =>
       $ProviderElement(pointer);
 
   @override
-  HomeRepository create(Ref ref) {
+  IHomeRepository create(Ref ref) {
     return homeRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(HomeRepository value) {
+  Override overrideWithValue(IHomeRepository value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<HomeRepository>(value),
+      providerOverride: $SyncValueProvider<IHomeRepository>(value),
     );
   }
 }
 
-String _$homeRepositoryHash() => r'955b1e3d0ff132ee69f8ed919072bb905127acfd';
+String _$homeRepositoryHash() => r'f491d9e14f8df40bdd03313ea2e582f4f030819f';
 
 /// Stream provider for nearby rides
 
@@ -64,17 +65,15 @@ final nearbyRidesStreamProvider = NearbyRidesStreamFamily._();
 final class NearbyRidesStreamProvider
     extends
         $FunctionalProvider<
-          AsyncValue<List<NearbyRidePreview>>,
-          List<NearbyRidePreview>,
-          Stream<List<NearbyRidePreview>>
+          AsyncValue<List<RideModel>>,
+          List<RideModel>,
+          Stream<List<RideModel>>
         >
-    with
-        $FutureModifier<List<NearbyRidePreview>>,
-        $StreamProvider<List<NearbyRidePreview>> {
+    with $FutureModifier<List<RideModel>>, $StreamProvider<List<RideModel>> {
   /// Stream provider for nearby rides
   NearbyRidesStreamProvider._({
     required NearbyRidesStreamFamily super.from,
-    required NearbyRidesQuery super.argument,
+    required (LatLng, double) super.argument,
   }) : super(
          retry: null,
          name: r'nearbyRidesStreamProvider',
@@ -90,19 +89,19 @@ final class NearbyRidesStreamProvider
   String toString() {
     return r'nearbyRidesStreamProvider'
         ''
-        '($argument)';
+        '$argument';
   }
 
   @$internal
   @override
-  $StreamProviderElement<List<NearbyRidePreview>> $createElement(
+  $StreamProviderElement<List<RideModel>> $createElement(
     $ProviderPointer pointer,
   ) => $StreamProviderElement(pointer);
 
   @override
-  Stream<List<NearbyRidePreview>> create(Ref ref) {
-    final argument = this.argument as NearbyRidesQuery;
-    return nearbyRidesStream(ref, argument);
+  Stream<List<RideModel>> create(Ref ref) {
+    final argument = this.argument as (LatLng, double);
+    return nearbyRidesStream(ref, argument.$1, argument.$2);
   }
 
   @override
@@ -116,16 +115,12 @@ final class NearbyRidesStreamProvider
   }
 }
 
-String _$nearbyRidesStreamHash() => r'ec49c5ba09c60a898487d3a20a04f114838307d7';
+String _$nearbyRidesStreamHash() => r'fb1810db342e59fa54c98cffc6ebf28e4fdd6644';
 
 /// Stream provider for nearby rides
 
 final class NearbyRidesStreamFamily extends $Family
-    with
-        $FunctionalFamilyOverride<
-          Stream<List<NearbyRidePreview>>,
-          NearbyRidesQuery
-        > {
+    with $FunctionalFamilyOverride<Stream<List<RideModel>>, (LatLng, double)> {
   NearbyRidesStreamFamily._()
     : super(
         retry: null,
@@ -137,8 +132,8 @@ final class NearbyRidesStreamFamily extends $Family
 
   /// Stream provider for nearby rides
 
-  NearbyRidesStreamProvider call(NearbyRidesQuery query) =>
-      NearbyRidesStreamProvider._(argument: query, from: this);
+  NearbyRidesStreamProvider call(LatLng location, double radiusKm) =>
+      NearbyRidesStreamProvider._(argument: (location, radiusKm), from: this);
 
   @override
   String toString() => r'nearbyRidesStreamProvider';

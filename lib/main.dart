@@ -70,7 +70,7 @@ Future<void> _initializeApp() async {
   TalkerService.info('🚀 Starting SportConnect App...');
 
   // 2. Firebase - Core infrastructure
-  await FirebaseService.initialize();
+  await FirebaseService.instance.initialize();
   TalkerService.info('✅ Firebase initialized');
 
   // 3. Push notifications — register background handler, init channels

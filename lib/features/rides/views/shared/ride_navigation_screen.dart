@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -107,13 +106,13 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
 
   Future<void> _updateLocationInFirebase(Position position) async {
     try {
-      await FirebaseFirestore.instance
-          .collection('rides')
-          .doc(widget.rideId)
-          .update({
-            'liveLocation': GeoPoint(position.latitude, position.longitude),
-            'lastLocationUpdate': DateTime.now(),
-          });
+      await ref
+          .read(rideActionsViewModelProvider)
+          .updateLiveLocation(
+            widget.rideId,
+            position.latitude,
+            position.longitude,
+          );
     } catch (_) {
       // Silent fail for location updates
     }

@@ -36,7 +36,7 @@ import 'package:sport_connect/features/events/models/event_model.dart';
 
 // Feature imports - Home
 import 'package:sport_connect/features/home/views/home_screen.dart';
-import 'package:sport_connect/features/home/views/driver/driver_home_screen.dart';
+import 'package:sport_connect/features/home/views/driver_home_screen.dart';
 
 // Feature imports - Profile (used in StatefulShellRoute)
 import 'package:sport_connect/features/profile/views/profile_screen.dart';

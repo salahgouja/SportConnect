@@ -34,4 +34,10 @@ abstract class IDriverStatsRepository {
     required double earnings,
     required double distanceKm,
   });
+
+  /// Get accepted ride requests for driver
+  Stream<List<RideRequestModel>> streamAcceptedRequests(String driverId);
+
+  /// Get rejected ride requests for driver
+  Stream<List<RideRequestModel>> streamRejectedRequests(String driverId);
 }

@@ -1,8 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
-import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_driver_stats_repository.dart';
+import 'package:sport_connect/core/providers/firebase_providers.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/driver_stats.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
@@ -225,9 +226,9 @@ class DriverStatsRepository implements IDriverStatsRepository {
   }
 }
 
-@Riverpod(keepAlive: true)
-DriverStatsRepository driverStatsRepository(Ref ref) {
-  return DriverStatsRepository(FirebaseFirestore.instance);
+@riverpod
+IDriverStatsRepository driverStatsRepository(Ref ref) {
+  return DriverStatsRepository(ref.watch(firestoreInstanceProvider));
 }
 
 @riverpod

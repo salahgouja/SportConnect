@@ -15,11 +15,11 @@ final disputeRepositoryProvider = DisputeRepositoryProvider._();
 final class DisputeRepositoryProvider
     extends
         $FunctionalProvider<
-          DisputeRepository,
-          DisputeRepository,
-          DisputeRepository
+          IDisputeRepository,
+          IDisputeRepository,
+          IDisputeRepository
         >
-    with $Provider<DisputeRepository> {
+    with $Provider<IDisputeRepository> {
   DisputeRepositoryProvider._()
     : super(
         from: null,
@@ -36,22 +36,22 @@ final class DisputeRepositoryProvider
 
   @$internal
   @override
-  $ProviderElement<DisputeRepository> $createElement(
+  $ProviderElement<IDisputeRepository> $createElement(
     $ProviderPointer pointer,
   ) => $ProviderElement(pointer);
 
   @override
-  DisputeRepository create(Ref ref) {
+  IDisputeRepository create(Ref ref) {
     return disputeRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(DisputeRepository value) {
+  Override overrideWithValue(IDisputeRepository value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<DisputeRepository>(value),
+      providerOverride: $SyncValueProvider<IDisputeRepository>(value),
     );
   }
 }
 
-String _$disputeRepositoryHash() => r'0e698fbe474beaba8b82ff2b8305387b9606def3';
+String _$disputeRepositoryHash() => r'dc5932d348e8114c84e5640d0f4036ac7f7e0de1';

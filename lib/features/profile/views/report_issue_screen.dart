@@ -1,8 +1,5 @@
 import 'dart:io';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,9 +7,11 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
+import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 
 /// Report Issue screen for reporting ride problems, safety concerns, or users.
 ///
@@ -131,27 +130,6 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
     setState(() => _attachedFiles.add(file));
   }
 
-  Future<List<String>> _uploadAttachments(String docId) async {
-    final urls = <String>[];
-    final storage = FirebaseStorage.instance;
-
-    for (var i = 0; i < _attachedFiles.length; i++) {
-      final file = _attachedFiles[i];
-      final ext = file.path.split('.').last;
-      final ref = storage
-          .ref()
-          .child('report_attachments')
-          .child(docId)
-          .child('file_$i.$ext');
-
-      await ref.putFile(file);
-      final url = await ref.getDownloadURL();
-      urls.add(url);
-    }
-
-    return urls;
-  }
-
   Future<void> _submitReport() async {
     if (_selectedType == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -184,26 +162,19 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
     setState(() => _isSubmitting = true);
 
     try {
-      final user = FirebaseAuth.instance.currentUser;
-      final docRef = await FirebaseFirestore.instance
-          .collection('reports')
-          .add({
-            'reporterId': user?.uid ?? 'anonymous',
-            'reporterEmail': user?.email ?? '',
-            'reportedUserId': widget.reportedUserId,
-            'rideId': widget.rideId,
-            'type': _selectedType!.label,
-            'severity': _severity.name,
-            'description': _descriptionController.text.trim(),
-            'attachmentUrls': <String>[],
-            'status': 'pending',
-            'createdAt': DateTime.now(),
-          });
-
-      if (_attachedFiles.isNotEmpty) {
-        final urls = await _uploadAttachments(docRef.id);
-        await docRef.update({'attachmentUrls': urls});
-      }
+      final user = ref.read(currentUserProvider).value;
+      await ref
+          .read(profileActionsViewModelProvider)
+          .submitReport(
+            reporterId: user?.uid ?? 'anonymous',
+            reporterEmail: user?.email ?? '',
+            type: _selectedType!.label,
+            severity: _severity.name,
+            description: _descriptionController.text.trim(),
+            reportedUserId: widget.reportedUserId,
+            rideId: widget.rideId,
+            attachments: _attachedFiles,
+          );
 
       if (mounted) {
         HapticFeedback.mediumImpact();

@@ -1,4 +1,3 @@
-import 'dart:developer' as dev;
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -6,6 +5,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_event_repository.dart';
+import 'package:sport_connect/core/providers/firebase_providers.dart';
+import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
 
 part 'event_repository.g.dart';
@@ -32,12 +33,11 @@ class EventRepository implements IEventRepository {
       updatedAt: DateTime.now(),
     );
 
-    dev.log(
+    TalkerService.info(
       'createEvent → docId=${docRef.id}, '
       'title=${eventWithId.title}, '
       'type=${eventWithId.type}, '
       'startsAt=${eventWithId.startsAt}',
-      name: 'EventRepository',
     );
 
     await docRef.set(eventWithId);
@@ -82,9 +82,7 @@ class EventRepository implements IEventRepository {
 
   @override
   Future<void> joinEvent(String eventId, String userId) async {
-    final docRef = _firestore
-        .collection(AppConstants.eventsCollection)
-        .doc(eventId);
+    final docRef = _eventsCollection.doc(eventId);
 
     await _firestore.runTransaction((tx) async {
       final snap = await tx.get(docRef);
@@ -92,9 +90,9 @@ class EventRepository implements IEventRepository {
 
       final data = snap.data()!;
       final participants = List<String>.from(
-        data['participantIds'] as List? ?? [],
+        data.participantIds,
       );
-      final maxParticipants = data['maxParticipants'] as int? ?? 0;
+      final maxParticipants = data.maxParticipants;
 
       if (participants.contains(userId)) return;
 
@@ -167,7 +165,11 @@ class EventRepository implements IEventRepository {
 
   @override
   Future<String> uploadEventImage(String eventId, File file) async {
-    final ref = _storage.ref().child('events/$eventId/cover.jpg');
+    final ref = _storage
+        .ref()
+        .child('events')
+        .child(eventId)
+        .child('cover.jpg');
     final metadata = SettableMetadata(
       contentType: 'image/jpeg',
       customMetadata: {'eventId': eventId},
@@ -177,7 +179,10 @@ class EventRepository implements IEventRepository {
   }
 }
 
-@Riverpod(keepAlive: true)
+@riverpod
 IEventRepository eventRepository(Ref ref) {
-  return EventRepository(FirebaseFirestore.instance, FirebaseStorage.instance);
+  return EventRepository(
+    ref.watch(firestoreInstanceProvider),
+    ref.watch(storageInstanceProvider),
+  );
 }

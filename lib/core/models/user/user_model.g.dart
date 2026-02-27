@@ -18,6 +18,7 @@ RiderModel _$RiderModelFromJson(Map json) => RiderModel(
   interests:
       (json['interests'] as List<dynamic>?)?.map((e) => e as String).toList() ??
       const [],
+  fcmToken: json['fcmToken'] as String? ?? "",
   address: json['address'] as String?,
   latitude: (json['latitude'] as num?)?.toDouble(),
   longitude: (json['longitude'] as num?)?.toDouble(),
@@ -72,6 +73,7 @@ Map<String, dynamic> _$RiderModelToJson(RiderModel instance) =>
       'dateOfBirth': const TimestampConverter().toJson(instance.dateOfBirth),
       'gender': instance.gender,
       'interests': instance.interests,
+      'fcmToken': instance.fcmToken,
       'address': instance.address,
       'latitude': instance.latitude,
       'longitude': instance.longitude,
@@ -107,6 +109,7 @@ DriverModel _$DriverModelFromJson(Map json) => DriverModel(
   interests:
       (json['interests'] as List<dynamic>?)?.map((e) => e as String).toList() ??
       const [],
+  fcmToken: json['fcmToken'] as String? ?? "",
   address: json['address'] as String?,
   latitude: (json['latitude'] as num?)?.toDouble(),
   longitude: (json['longitude'] as num?)?.toDouble(),
@@ -175,6 +178,7 @@ Map<String, dynamic> _$DriverModelToJson(DriverModel instance) =>
       'dateOfBirth': const TimestampConverter().toJson(instance.dateOfBirth),
       'gender': instance.gender,
       'interests': instance.interests,
+      'fcmToken': instance.fcmToken,
       'address': instance.address,
       'latitude': instance.latitude,
       'longitude': instance.longitude,

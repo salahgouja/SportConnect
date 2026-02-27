@@ -1,4 +1,3 @@
-import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/reviews/models/review_model.dart';
 
 abstract class IReviewRepository {

@@ -21,7 +21,7 @@ class LoginViewModel extends _$LoginViewModel {
       await ref
           .read(authRepositoryProvider)
           .signInWithEmail(email, password, rememberMe);
-      final uid = FirebaseAuth.instance.currentUser?.uid;
+      final uid = ref.read(authRepositoryProvider).currentUserId;
       if (uid != null) AnalyticsService.instance.setUserId(uid);
       AnalyticsService.instance.logLogin('email');
       state = const AsyncValue.data(null);
@@ -74,7 +74,7 @@ class RegisterViewModel extends _$RegisterViewModel {
             interests: interests,
             profileImage: profileImage,
           );
-      final uid = FirebaseAuth.instance.currentUser?.uid;
+      final uid = ref.read(authRepositoryProvider).currentUserId;
       if (uid != null) AnalyticsService.instance.setUserId(uid);
       AnalyticsService.instance.logSignUp('email');
       state = const AsyncValue.data(null);
@@ -90,7 +90,7 @@ class RegisterViewModel extends _$RegisterViewModel {
 /// Declaring this as a [Provider] at global scope is intentional: the class
 /// is a thin pass-through over [authRepositoryProvider] and carries no local
 /// state, so it does not need to be auto-disposed per-widget.
-@Riverpod(keepAlive: true) 
+@Riverpod(keepAlive: true)
 AuthActionsViewModel authActionsViewModel(Ref ref) => AuthActionsViewModel(ref);
 
 class AuthActionsViewModel {
@@ -116,7 +116,7 @@ class AuthActionsViewModel {
 
   Future<SocialSignInResult> signInWithGoogle() async {
     final result = await _ref.read(authRepositoryProvider).signInWithGoogle();
-    final uid = FirebaseAuth.instance.currentUser?.uid;
+    final uid = _ref.read(authRepositoryProvider).currentUserId;
     if (uid != null) AnalyticsService.instance.setUserId(uid);
     AnalyticsService.instance.logLogin('google');
     return result;
@@ -124,7 +124,7 @@ class AuthActionsViewModel {
 
   Future<SocialSignInResult> signInWithApple() async {
     final result = await _ref.read(authRepositoryProvider).signInWithApple();
-    final uid = FirebaseAuth.instance.currentUser?.uid;
+    final uid = _ref.read(authRepositoryProvider).currentUserId;
     if (uid != null) AnalyticsService.instance.setUserId(uid);
     AnalyticsService.instance.logLogin('apple');
     return result;
@@ -207,5 +207,13 @@ class AuthActionsViewModel {
     return _ref
         .read(authRepositoryProvider)
         .signInWithPhoneAutoCredential(credential);
+  }
+
+  /// Updates the current user's password.
+  ///
+  /// Throws [AuthException] with code `requires-recent-login` if the session
+  /// is too old — callers should show a re-auth dialog and retry.
+  Future<void> updatePassword(String newPassword) {
+    return _ref.read(authRepositoryProvider).updatePassword(newPassword);
   }
 }

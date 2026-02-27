@@ -67,6 +67,8 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
         '${d.inSeconds.remainder(60).toString().padLeft(2, '0')}';
   }
 
+  bool _hasNavigated = false;
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<RideBooking?>(
@@ -135,6 +137,18 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
 
   Widget _buildContent(RideModel ride, RideBooking booking) {
     _startTimer(ride.schedule.departureTime);
+
+    // Auto-navigate to active ride when driver has started the ride
+    if (ride.status == RideStatus.inProgress && !_hasNavigated) {
+      _hasNavigated = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          context.push(
+            '${AppRoutes.riderActiveRide.path}?rideId=${booking.rideId}',
+          );
+        }
+      });
+    }
 
     final isInPast = _timeUntilDeparture == Duration.zero;
     final isImminent = !isInPast && _timeUntilDeparture.inMinutes <= 15;

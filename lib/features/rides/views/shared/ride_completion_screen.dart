@@ -17,6 +17,7 @@ import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
+import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -47,6 +48,9 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
   @override
   Widget build(BuildContext context) {
     final rideAsync = ref.watch(rideStreamProvider(widget.rideId));
+    final bookings =
+        ref.watch(bookingsByRideProvider(widget.rideId)).value ??
+        const <RideBooking>[];
     final l10n = AppLocalizations.of(context);
 
     return Scaffold(
@@ -96,7 +100,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
           if (ride == null) {
             return Center(child: Text(l10n.rideNotFound));
           }
-          return _buildContent(context, ref, ride, l10n);
+          return _buildContent(context, ref, ride, l10n, bookings);
         },
       ),
     );
@@ -107,6 +111,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
     WidgetRef ref,
     RideModel ride,
     AppLocalizations l10n,
+    List<RideBooking> bookings,
   ) {
     final dateFormat = DateFormat('MMM d, yyyy');
     final timeFormat = DateFormat('h:mm a');
@@ -129,6 +134,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
             _buildImpactCard(
               context,
               ride,
+              bookings,
             ).animate().fadeIn(delay: 150.ms).slideY(begin: 0.05),
 
             SizedBox(height: 16.h),
@@ -140,6 +146,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
               dateFormat,
               timeFormat,
               l10n,
+              bookings,
             ).animate().fadeIn(delay: 250.ms).slideY(begin: 0.05),
 
             SizedBox(height: 16.h),
@@ -247,8 +254,9 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                         child: PremiumButton(
                           text: 'Report Issue',
                           onPressed: () {
-                            context.push(
-                              '${AppRoutes.reportIssue.path}?rideId=${widget.rideId}',
+                            context.pushNamed(
+                              AppRoutes.dispute.name,
+                              pathParameters: {'id': widget.rideId},
                             );
                           },
                           style: PremiumButtonStyle.ghost,
@@ -394,9 +402,13 @@ Ride ID: ${ride.id}''';
     );
   }
 
-  Widget _buildImpactCard(BuildContext context, RideModel ride) {
+  Widget _buildImpactCard(
+    BuildContext context,
+    RideModel ride,
+    List<RideBooking> bookings,
+  ) {
     // Estimate: carpooling saves ~120g CO2/km on average
-    final riders = ride.bookings.length.clamp(1, 10);
+    final riders = bookings.length.clamp(1, 10);
     final co2SavedKg = (riders * 0.12 * 15).toStringAsFixed(1); // ~15km avg
 
     return Container(
@@ -466,12 +478,13 @@ Ride ID: ${ride.id}''';
     DateFormat dateFormat,
     DateFormat timeFormat,
     AppLocalizations l10n,
+    List<RideBooking> bookings,
   ) {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 24.w),
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBg,
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
@@ -526,7 +539,7 @@ Ride ID: ${ride.id}''';
               _buildStatDivider(),
               _buildStatItem(
                 Icons.people_rounded,
-                '${ride.bookings.length}',
+                '${bookings.length}',
                 'Riders',
               ),
             ],
@@ -603,7 +616,7 @@ Ride ID: ${ride.id}''';
       margin: EdgeInsets.symmetric(horizontal: 24.w),
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBg,
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
@@ -693,7 +706,7 @@ Ride ID: ${ride.id}''';
       margin: EdgeInsets.symmetric(horizontal: 24.w),
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBg,
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
