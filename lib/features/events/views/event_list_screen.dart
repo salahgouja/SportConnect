@@ -23,9 +23,7 @@ class EventListScreen extends ConsumerStatefulWidget {
 }
 
 class _EventListScreenState extends ConsumerState<EventListScreen> {
-  EventType? _selectedType;
   final _searchController = TextEditingController();
-  String _searchQuery = '';
 
   @override
   void dispose() {
@@ -35,9 +33,7 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final eventsStream = _selectedType != null
-        ? ref.watch(eventsByTypeStreamProvider(_selectedType!))
-        : ref.watch(upcomingEventsStreamProvider);
+    final vm = ref.watch(eventListViewModelProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -48,17 +44,18 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
           _buildAppBar(),
 
           // ── Search bar ──
-          SliverToBoxAdapter(child: _buildSearchBar()),
+          SliverToBoxAdapter(child: _buildSearchBar(vm)),
 
           // ── Filter chips ──
-          SliverToBoxAdapter(child: _buildFilterChips()),
+          SliverToBoxAdapter(child: _buildFilterChips(vm)),
 
           // ── Event list ──
-          eventsStream.when(
-            loading: () => const SliverFillRemaining(
+          if (vm.isLoading)
+            const SliverFillRemaining(
               child: Center(child: CircularProgressIndicator()),
-            ),
-            error: (e, _) => SliverFillRemaining(
+            )
+          else if (vm.error != null)
+            SliverFillRemaining(
               child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -78,30 +75,19 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
                     ),
                     SizedBox(height: 16.h),
                     TextButton.icon(
-                      onPressed: () {
-                        if (_selectedType != null) {
-                          ref.invalidate(
-                            eventsByTypeStreamProvider(_selectedType!),
-                          );
-                        } else {
-                          ref.invalidate(upcomingEventsStreamProvider);
-                        }
-                      },
+                      onPressed: () =>
+                          ref.invalidate(eventListViewModelProvider),
                       icon: const Icon(Icons.refresh_rounded),
                       label: Text(AppLocalizations.of(context).retry),
                     ),
                   ],
                 ),
               ),
-            ),
-            data: (events) {
-              final filtered = _applySearch(events);
-              if (filtered.isEmpty) {
-                return SliverFillRemaining(child: _buildEmptyState());
-              }
-              return _buildEventList(filtered);
-            },
-          ),
+            )
+          else if (vm.filteredEvents.isEmpty)
+            SliverFillRemaining(child: _buildEmptyState(vm.filterType))
+          else
+            _buildEventList(vm.filteredEvents),
         ],
       ),
       floatingActionButton:
@@ -152,7 +138,7 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
   // -------------------------------------------------------------------
   // Search bar
   // -------------------------------------------------------------------
-  Widget _buildSearchBar() {
+  Widget _buildSearchBar(EventListState vm) {
     return Padding(
       padding: EdgeInsets.fromLTRB(
         AppSpacing.screenPadding,
@@ -162,7 +148,8 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
       ),
       child: TextField(
         controller: _searchController,
-        onChanged: (v) => setState(() => _searchQuery = v.trim().toLowerCase()),
+        onChanged: (v) =>
+            ref.read(eventListViewModelProvider.notifier).setSearchQuery(v),
         decoration: InputDecoration(
           hintText: 'Search events…',
           hintStyle: TextStyle(fontSize: 14.sp, color: AppColors.textTertiary),
@@ -171,12 +158,14 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
             size: 20.sp,
             color: AppColors.textTertiary,
           ),
-          suffixIcon: _searchQuery.isNotEmpty
+          suffixIcon: vm.searchQuery.isNotEmpty
               ? IconButton(
                   icon: Icon(Icons.close_rounded, size: 18.sp),
                   onPressed: () {
                     _searchController.clear();
-                    setState(() => _searchQuery = '');
+                    ref
+                        .read(eventListViewModelProvider.notifier)
+                        .setSearchQuery('');
                   },
                 )
               : null,
@@ -195,7 +184,7 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
   // -------------------------------------------------------------------
   // Filter chips
   // -------------------------------------------------------------------
-  Widget _buildFilterChips() {
+  Widget _buildFilterChips(EventListState vm) {
     return SizedBox(
       height: 44.h,
       child: ListView(
@@ -204,18 +193,20 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
         children: [
           _FilterChip(
             label: 'All',
-            isSelected: _selectedType == null,
-            onTap: () => setState(() => _selectedType = null),
+            isSelected: vm.filterType == null,
+            onTap: () => ref
+                .read(eventListViewModelProvider.notifier)
+                .setFilterType(null),
           ),
           ...EventType.values.map((type) {
             return _FilterChip(
               label: type.label,
               icon: type.icon,
               color: type.color,
-              isSelected: _selectedType == type,
-              onTap: () => setState(() {
-                _selectedType = _selectedType == type ? null : type;
-              }),
+              isSelected: vm.filterType == type,
+              onTap: () => ref
+                  .read(eventListViewModelProvider.notifier)
+                  .setFilterType(vm.filterType == type ? null : type),
             );
           }),
         ],
@@ -254,7 +245,7 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
   // -------------------------------------------------------------------
   // Empty state
   // -------------------------------------------------------------------
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(EventType? filterType) {
     return Center(
       child: Padding(
         padding: EdgeInsets.all(AppSpacing.screenPadding),
@@ -277,8 +268,8 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
             ),
             SizedBox(height: 6.h),
             Text(
-              _selectedType != null
-                  ? 'No upcoming ${_selectedType!.label.toLowerCase()} events.'
+              filterType != null
+                  ? 'No upcoming ${filterType.label.toLowerCase()} events.'
                   : 'Be the first to create one!',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
@@ -294,18 +285,6 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
         ),
       ),
     );
-  }
-
-  // -------------------------------------------------------------------
-  // Client-side search filter
-  // -------------------------------------------------------------------
-  List<EventModel> _applySearch(List<EventModel> events) {
-    if (_searchQuery.isEmpty) return events;
-    return events.where((e) {
-      return e.title.toLowerCase().contains(_searchQuery) ||
-          (e.venueName?.toLowerCase().contains(_searchQuery) ?? false) ||
-          e.type.label.toLowerCase().contains(_searchQuery);
-    }).toList();
   }
 }
 
@@ -390,17 +369,25 @@ class _EventCard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Colour banner ──
+          // ── Image banner or colour fallback ──
           Container(
             height: 90.h,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  event.type.color,
-                  event.type.color.withValues(alpha: 0.7),
-                ],
-              ),
+              gradient: event.imageUrl == null || event.imageUrl!.isEmpty
+                  ? LinearGradient(
+                      colors: [
+                        event.type.color,
+                        event.type.color.withValues(alpha: 0.7),
+                      ],
+                    )
+                  : null,
               borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+              image: event.imageUrl != null && event.imageUrl!.isNotEmpty
+                  ? DecorationImage(
+                      image: NetworkImage(event.imageUrl!),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
             ),
             child: Stack(
               children: [
@@ -484,6 +471,14 @@ class _EventCard extends ConsumerWidget {
                 if (event.venueName != null) ...[
                   SizedBox(height: 4.h),
                   _iconRow(Icons.location_on_rounded, event.venueName!),
+                ],
+                if (event.organizerName != null &&
+                    event.organizerName!.isNotEmpty) ...[
+                  SizedBox(height: 4.h),
+                  _iconRow(
+                    Icons.person_outline_rounded,
+                    'by ${event.organizerName}',
+                  ),
                 ],
                 SizedBox(height: 10.h),
                 Row(

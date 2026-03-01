@@ -5,7 +5,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_vehicle_repository.dart';
-import 'package:sport_connect/core/providers/firebase_providers.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 
 part 'vehicle_repository.g.dart';
@@ -201,14 +201,6 @@ class VehicleRepository implements IVehicleRepository {
       'updatedAt': DateTime.now(),
     });
   }
-}
-
-@riverpod
-IVehicleRepository vehicleRepository(Ref ref) {
-  return VehicleRepository(
-    ref.watch(firestoreInstanceProvider),
-    ref.watch(storageInstanceProvider),
-  );
 }
 
 /// Provider for streaming user vehicles

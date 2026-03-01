@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
 
 part 'onboarding_repository.g.dart';
 
@@ -38,19 +39,6 @@ class OnboardingRepository {
   Future<void> resetOnboarding() async {
     await _prefs.setBool(_onboardingCompleteKey, false);
   }
-}
-
-/// Provider for SharedPreferences
-@riverpod
-Future<SharedPreferences> sharedPreferences(Ref ref) async {
-  return SharedPreferences.getInstance();
-}
-
-/// Provider for OnboardingRepository
-@riverpod
-Future<OnboardingRepository> onboardingRepository(Ref ref) async {
-  final prefs = await ref.watch(sharedPreferencesProvider.future);
-  return OnboardingRepository(prefs);
 }
 
 /// Provider for checking if onboarding is complete

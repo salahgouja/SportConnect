@@ -33,6 +33,7 @@ class _DriverStripeOnboardingScreenState
   String? _onboardingUrl;
   bool _showWebView = false;
   bool _isVerifying = false;
+  bool _completionHandled = false;
   double _progress = 0.0;
 
   @override
@@ -456,7 +457,8 @@ class _DriverStripeOnboardingScreenState
                 // User clicked "Refresh" - reload the page
                 await controller.reload();
               } else if (urlStr.contains('stripe-return')) {
-                // User completed onboarding - verify and close
+                // User completed onboarding - verify and close (guard against double-fire)
+                _completionHandled = true;
                 await _handleOnboardingComplete();
               }
             },
@@ -481,8 +483,14 @@ class _DriverStripeOnboardingScreenState
                   url.contains('verify.stripe.com') ||
                   url.contains('uploads.stripe.com') ||
                   url.contains('hooks.stripe.com') ||
-                  url.contains('marathon-connect.web.app')) {
-                return NavigationActionPolicy.ALLOW;
+                  url.contains('marathon-connect.web.app') ||
+                  url.startsWith('sportconnect://')) {
+                // Deep link back to app — handle completion then cancel the navigation
+                if (url.startsWith('sportconnect://') && !_completionHandled) {
+                  _completionHandled = true;
+                  await _handleOnboardingComplete();
+                }
+                return NavigationActionPolicy.CANCEL;
               }
 
               // Block external navigation
@@ -573,12 +581,20 @@ class _DriverStripeOnboardingScreenState
           _isVerifying = false;
         });
       }
-    } catch (_) {
-      setState(() {
-        _isVerifying = false;
-        _errorMessage = AppLocalizations.of(context).stripeVerifyFailed;
-        _showWebView = false;
-      });
+    } catch (e, stack) {
+      TalkerService.error(
+        'Stripe onboarding verification failed: $e',
+        e,
+        stack,
+      );
+      if (mounted) {
+        setState(() {
+          _isVerifying = false;
+          _completionHandled = false; // Allow retry
+          _errorMessage = AppLocalizations.of(context).stripeVerifyFailed;
+          _showWebView = false;
+        });
+      }
     }
   }
 

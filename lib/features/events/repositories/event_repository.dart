@@ -2,14 +2,10 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_event_repository.dart';
-import 'package:sport_connect/core/providers/firebase_providers.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
-
-part 'event_repository.g.dart';
 
 class EventRepository implements IEventRepository {
   EventRepository(this._firestore, this._storage);
@@ -119,6 +115,7 @@ class EventRepository implements IEventRepository {
         .where('isActive', isEqualTo: true)
         .where('startsAt', isGreaterThan: Timestamp.now())
         .orderBy('startsAt')
+        .limit(50)
         .snapshots()
         .map((snapshot) {
           return snapshot.docs.map((doc) => doc.data()).toList();
@@ -130,6 +127,7 @@ class EventRepository implements IEventRepository {
     return _eventsCollection
         .where('creatorId', isEqualTo: creatorId)
         .orderBy('startsAt', descending: true)
+        .limit(50)
         .snapshots()
         .map((snapshot) {
           return snapshot.docs.map((doc) => doc.data()).toList();
@@ -143,6 +141,7 @@ class EventRepository implements IEventRepository {
         .where('type', isEqualTo: type.jsonValue)
         .where('startsAt', isGreaterThan: Timestamp.now())
         .orderBy('startsAt')
+        .limit(50)
         .snapshots()
         .map((snapshot) {
           return snapshot.docs.map((doc) => doc.data()).toList();
@@ -155,6 +154,7 @@ class EventRepository implements IEventRepository {
         .where('participantIds', arrayContains: userId)
         .where('isActive', isEqualTo: true)
         .orderBy('startsAt')
+        .limit(50)
         .snapshots()
         .map((snapshot) {
           return snapshot.docs.map((doc) => doc.data()).toList();
@@ -175,12 +175,4 @@ class EventRepository implements IEventRepository {
     await ref.putFile(file, metadata);
     return ref.getDownloadURL();
   }
-}
-
-@riverpod
-IEventRepository eventRepository(Ref ref) {
-  return EventRepository(
-    ref.watch(firestoreInstanceProvider),
-    ref.watch(storageInstanceProvider),
-  );
 }

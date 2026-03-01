@@ -35,7 +35,7 @@ import 'package:sport_connect/features/events/views/my_events_screen.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
 
 // Feature imports - Home
-import 'package:sport_connect/features/home/views/home_screen.dart';
+import 'package:sport_connect/features/home/views/rider_home_screen.dart';
 import 'package:sport_connect/features/home/views/driver_home_screen.dart';
 
 // Feature imports - Profile (used in StatefulShellRoute)
@@ -309,8 +309,10 @@ List<StatefulShellBranch> _buildRiderBranches() {
         GoRoute(
           path: AppRoutes.home.path,
           name: AppRoutes.home.name,
-          pageBuilder: (context, state) =>
-              FadeTransitionPage(key: state.pageKey, child: const HomeScreen()),
+          pageBuilder: (context, state) => FadeTransitionPage(
+            key: state.pageKey,
+            child: const RiderHomeScreen(),
+          ),
         ),
       ],
     ),

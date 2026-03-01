@@ -1,7 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/features/reviews/models/review_model.dart';
-import 'package:sport_connect/features/reviews/repositories/review_repository.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
 
 part 'review_view_model.g.dart';
 
@@ -47,6 +47,7 @@ class ReviewsListState {
   final bool isLoading;
   final String? error;
   final ReviewType? filterType;
+  final bool hasMore;
 
   const ReviewsListState({
     this.reviews = const [],
@@ -54,6 +55,7 @@ class ReviewsListState {
     this.isLoading = false,
     this.error,
     this.filterType,
+    this.hasMore = true,
   });
 
   ReviewsListState copyWith({
@@ -62,6 +64,7 @@ class ReviewsListState {
     bool? isLoading,
     String? error,
     ReviewType? filterType,
+    bool? hasMore,
   }) {
     return ReviewsListState(
       reviews: reviews ?? this.reviews,
@@ -69,13 +72,15 @@ class ReviewsListState {
       isLoading: isLoading ?? this.isLoading,
       error: error,
       filterType: filterType,
+      hasMore: hasMore ?? this.hasMore,
     );
   }
 
   /// Filter reviews by type if filter is set
   List<ReviewModel> get filteredReviews {
-    if (filterType == null) return reviews;
-    return reviews.where((r) => r.type == filterType).toList();
+    final visible = reviews.where((r) => r.isVisible);
+    if (filterType == null) return visible.toList();
+    return visible.where((r) => r.type == filterType).toList();
   }
 
   /// Get average rating
@@ -178,13 +183,20 @@ class ReviewsListViewModel extends _$ReviewsListViewModel {
     return _loadReviews();
   }
 
+  static const _pageSize = 20;
+
   Future<ReviewsListState> _loadReviews() async {
     try {
       final repo = ref.read(reviewRepositoryProvider);
-      final reviews = await repo.getReviewsForUser(userId);
+      final reviews = await repo.getReviewsForUser(userId, limit: _pageSize);
       final stats = await repo.getRatingStatsForUser(userId);
 
-      return ReviewsListState(reviews: reviews, stats: stats, isLoading: false);
+      return ReviewsListState(
+        reviews: reviews,
+        stats: stats,
+        isLoading: false,
+        hasMore: reviews.length >= _pageSize,
+      );
     } catch (e) {
       return ReviewsListState(
         isLoading: false,
@@ -203,6 +215,44 @@ class ReviewsListViewModel extends _$ReviewsListViewModel {
   Future<void> refresh() async {
     state = const AsyncValue.loading();
     state = AsyncValue.data(await _loadReviews());
+  }
+
+  /// Load next page of reviews using cursor-based pagination.
+  Future<void> loadMore() async {
+    final current = state.value;
+    if (current == null || !current.hasMore || current.isLoading) return;
+
+    state = AsyncValue.data(current.copyWith(isLoading: true));
+
+    try {
+      final repo = ref.read(reviewRepositoryProvider);
+      // Use the last review's createdAt as cursor for Firestore startAfter
+      final cursor = current.reviews.isNotEmpty
+          ? current.reviews.last.createdAt
+          : null;
+      final more = await repo.getReviewsForUser(
+        userId,
+        limit: _pageSize,
+        startAfter: cursor,
+      );
+
+      if (!ref.mounted) return;
+      state = AsyncValue.data(
+        current.copyWith(
+          reviews: [...current.reviews, ...more],
+          isLoading: false,
+          hasMore: more.length >= _pageSize,
+        ),
+      );
+    } catch (e) {
+      if (!ref.mounted) return;
+      state = AsyncValue.data(
+        current.copyWith(
+          isLoading: false,
+          error: 'Failed to load more: ${e.toString()}',
+        ),
+      );
+    }
   }
 }
 
@@ -232,4 +282,11 @@ class ReviewResponseViewModel extends _$ReviewResponseViewModel {
       return false;
     }
   }
+}
+
+/// VM-layer provider to get reviews for a specific ride
+@riverpod
+Future<List<ReviewModel>> rideReviews(Ref ref, String rideId) async {
+  final repo = ref.read(reviewRepositoryProvider);
+  return repo.getReviewsForRide(rideId);
 }

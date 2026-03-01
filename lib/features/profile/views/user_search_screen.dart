@@ -14,7 +14,7 @@ import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
-part 'profile_search_screen.g.dart';
+part 'user_search_screen.g.dart';
 
 /// Search results provider — accepts the query as a family parameter
 /// so ephemeral search state stays local to the widget.
@@ -26,16 +26,15 @@ Future<List<UserModel>> searchResults(Ref ref, String query) async {
   return vm.searchUsers(query: query);
 }
 
-/// Premium Profile Search Screen with autocomplete
-class ProfileSearchScreen extends ConsumerStatefulWidget {
-  const ProfileSearchScreen({super.key});
+/// Premium User Search Screen with autocomplete
+class UserSearchScreen extends ConsumerStatefulWidget {
+  const UserSearchScreen({super.key});
 
   @override
-  ConsumerState<ProfileSearchScreen> createState() =>
-      _ProfileSearchScreenState();
+  ConsumerState<UserSearchScreen> createState() => _UserSearchScreenState();
 }
 
-class _ProfileSearchScreenState extends ConsumerState<ProfileSearchScreen>
+class _UserSearchScreenState extends ConsumerState<UserSearchScreen>
     with SingleTickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocus = FocusNode();

@@ -10,16 +10,15 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/location_service.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
+import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/rides/models/driver_stats.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/ride_request_model.dart';
-import 'package:sport_connect/features/rides/repositories/driver_stats_repository.dart';
 import 'package:sport_connect/features/rides/view_models/driver_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -188,17 +187,16 @@ class _DriverDashboard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(currentUserProvider);
-    final driverStats = ref.watch(driverStatsProvider);
-    final pendingRequests = ref.watch(pendingRideRequestsProvider);
-    final upcomingRides = ref.watch(upcomingDriverRidesProvider);
+    final driverState = ref.watch(driverViewModelProvider);
+    final user = driverState.user;
+    final driverStats = driverState.stats;
+    final pendingRequests = driverState.pendingRequests;
+    final upcomingRides = driverState.upcomingRides;
     final l10n = AppLocalizations.of(context);
 
     return RefreshIndicator(
       onRefresh: () async {
-        ref.invalidate(driverStatsProvider);
-        ref.invalidate(pendingRideRequestsProvider);
-        ref.invalidate(upcomingDriverRidesProvider);
+        ref.read(driverViewModelProvider.notifier).refresh();
       },
       child: OrientationBuilder(
         builder: (context, orientation) {
@@ -340,7 +338,7 @@ class _DriverDashboard extends ConsumerWidget {
   Widget _buildHeader(
     BuildContext context,
     WidgetRef ref,
-    AsyncValue<dynamic> user,
+    AsyncValue<UserModel?> user,
     AppLocalizations l10n,
     double hPad,
   ) {
@@ -436,9 +434,9 @@ class _DriverDashboard extends ConsumerWidget {
 
   String _getGreeting(AppLocalizations l10n) {
     final hour = DateTime.now().hour;
-    if (hour < 12) return '${l10n.goodMorning} \u{1F44B}';
-    if (hour < 17) return '${l10n.goodAfternoon} \u{1F44B}';
-    return '${l10n.goodEvening} \u{1F44B}';
+    if (hour < 12) return l10n.goodMorning;
+    if (hour < 17) return l10n.goodAfternoon;
+    return l10n.goodEvening;
   }
 
   Widget _buildLocationBanner(AppLocalizations l10n) {
@@ -519,14 +517,18 @@ class _DriverDashboard extends ConsumerWidget {
     return stats.when(
       data: (driverStats) {
         final isOnline = driverStats.isOnline;
+        final isLoading = ref.watch(driverViewModelProvider).isLoading;
         final iconSize = isSmall ? 40.w : 56.w;
         return GestureDetector(
-          onTap: () async {
-            HapticFeedback.mediumImpact();
-            await ref
-                .read(driverViewModelProvider.notifier)
-                .toggleOnlineStatus();
-          },
+          onTap: isLoading
+              ? null
+              : () async {
+                  HapticFeedback.mediumImpact();
+                  await ref
+                      .read(driverViewModelProvider.notifier)
+                      .toggleOnlineStatus();
+                },
+          behavior: HitTestBehavior.opaque,
           child: Container(
             padding: EdgeInsets.all(isSmall ? 14.w : 20.w),
             decoration: BoxDecoration(

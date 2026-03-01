@@ -212,7 +212,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                                     '?rideId=${widget.rideId}'
                                     '&revieweeId=${ride.driverId}'
                                     '&revieweeName=${Uri.encodeComponent(driverProfile?.displayName ?? 'Driver')}'
-                                    '&type=driver',
+                                    '&reviewType=driverReview',
                                   );
                                 },
                                 icon: Icons.star_rounded,
@@ -314,6 +314,16 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
       final baseFare = ride.pricePerSeat;
       final serviceFee = (baseFare * 0.10).roundToDouble();
 
+      // Find the current passenger's booking to get the actual seats booked
+      final currentUid = currentUser?.uid;
+      final allBookings = ref.read(bookingsByRideProvider(ride.id)).value ?? [];
+      final seatsBooked =
+          allBookings
+              .where((b) => b.passengerId == currentUid)
+              .firstOrNull
+              ?.seatsBooked ??
+          1;
+
       // Generate PDF receipt
       final pdfBytes = await PdfReceiptService.instance.generateRideReceipt(
         rideId: ride.id,
@@ -324,7 +334,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
         driverName: driverName,
         driverPhone: driverPhone,
         pricePerSeat: ride.pricePerSeat,
-        seatsBooked: 1,
+        seatsBooked: seatsBooked,
         serviceFee: serviceFee,
         passengerName: passengerName,
       );
@@ -352,9 +362,9 @@ To: ${ride.destination.address}
 Date: ${DateFormat('MMM d, yyyy h:mm a').format(ride.departureTime)}
 Driver: $driverName
 
-Base Fare: €${baseFare.toStringAsFixed(2)}
-Service Fee: €${serviceFee.toStringAsFixed(2)}
-Total: €${total.toStringAsFixed(2)}
+Base Fare: ${baseFare.toStringAsFixed(2)} ${ride.currency ?? 'EUR'}
+Service Fee: ${serviceFee.toStringAsFixed(2)} ${ride.currency ?? 'EUR'}
+Total: ${total.toStringAsFixed(2)} ${ride.currency ?? 'EUR'}
 ${'=' * 30}
 Ride ID: ${ride.id}''';
 
@@ -409,7 +419,8 @@ Ride ID: ${ride.id}''';
   ) {
     // Estimate: carpooling saves ~120g CO2/km on average
     final riders = bookings.length.clamp(1, 10);
-    final co2SavedKg = (riders * 0.12 * 15).toStringAsFixed(1); // ~15km avg
+    final distanceKm = ride.route.distanceKm ?? 15.0;
+    final co2SavedKg = (riders * 0.12 * distanceKm).toStringAsFixed(1);
 
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 24.w),
@@ -659,14 +670,21 @@ Ride ID: ${ride.id}''';
             ],
           ),
           SizedBox(height: 16.h),
-          _buildFareRow('Base Fare', '€${baseFare.toStringAsFixed(2)}'),
+          _buildFareRow(
+            'Base Fare',
+            '${baseFare.toStringAsFixed(2)} ${ride.currency ?? 'EUR'}',
+          ),
           SizedBox(height: 8.h),
           _buildFareRow(
             'Service Fee (10%)',
-            '€${serviceFee.toStringAsFixed(2)}',
+            '${serviceFee.toStringAsFixed(2)} ${ride.currency ?? 'EUR'}',
           ),
           Divider(height: 24.h),
-          _buildFareRow('Total', '€${total.toStringAsFixed(2)}', isBold: true),
+          _buildFareRow(
+            'Total',
+            '${total.toStringAsFixed(2)} ${ride.currency ?? 'EUR'}',
+            isBold: true,
+          ),
         ],
       ),
     );

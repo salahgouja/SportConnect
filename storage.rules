@@ -1,76 +1,77 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // ⚠️ DEVELOPMENT MODE - Set to false before production!
-    function isDevMode() {
-      return true; // Set to false before deploying to production
-    }
-    
     // Helper functions
     function isAuthenticated() {
       return request.auth != null;
     }
-    
+
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
-    
+
     function isValidImage() {
       return request.resource.contentType.matches('image/.*')
              && request.resource.size < 5 * 1024 * 1024; // 5MB max
     }
-    
+
     function isValidDocument() {
       return request.resource.contentType.matches('application/pdf')
              && request.resource.size < 10 * 1024 * 1024; // 10MB max
     }
-    
+
     // User profile photos
     match /users/{userId}/profile/{fileName} {
-      allow read: if isDevMode() || isAuthenticated();
-      allow write: if isDevMode() || (isOwner(userId) && isValidImage());
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId) && isValidImage();
     }
-    
+
     // User cover photos
     match /users/{userId}/cover/{fileName} {
-      allow read: if isDevMode() || isAuthenticated();
-      allow write: if isDevMode() || (isOwner(userId) && isValidImage());
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId) && isValidImage();
     }
-    
+
     // Vehicle photos
     match /vehicles/{vehicleId}/{fileName} {
-      allow read: if isDevMode() || isAuthenticated();
-      allow write: if isDevMode() || (isAuthenticated() && isValidImage());
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isValidImage();
     }
-    
+
     // Driver documents (license, insurance, etc.)
     match /drivers/{userId}/documents/{fileName} {
-      allow read: if isDevMode() || isOwner(userId);
-      allow write: if isDevMode() || (isOwner(userId) && (isValidImage() || isValidDocument()));
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId) && (isValidImage() || isValidDocument());
     }
-    
+
     // Chat attachments
     match /chats/{chatId}/attachments/{fileName} {
-      allow read: if isDevMode() || isAuthenticated();
-      allow write: if isDevMode() || (isAuthenticated() && request.resource.size < 10 * 1024 * 1024);
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.resource.size < 10 * 1024 * 1024;
     }
-    
+
     // Event cover images
     match /events/{eventId}/{fileName} {
-      allow read: if isDevMode() || isAuthenticated();
-      allow write: if isDevMode() || (isAuthenticated() && isValidImage());
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isValidImage();
     }
 
     // Chat audio messages (voice notes)
     match /chats/{chatId}/audio/{fileName} {
-      allow read: if isDevMode() || isAuthenticated();
-      allow write: if isDevMode() || (isAuthenticated() && request.resource.contentType.matches('audio/.*') && request.resource.size < 10 * 1024 * 1024);
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.resource.contentType.matches('audio/.*') && request.resource.size < 10 * 1024 * 1024;
     }
-    
+
     // Ride photos (for drop-off/pick-up verification)
     match /rides/{rideId}/photos/{fileName} {
-      allow read: if isDevMode() || isAuthenticated();
-      allow write: if isDevMode() || (isAuthenticated() && isValidImage());
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isValidImage();
+    }
+
+    // Dispute attachments
+    match /dispute_attachments/{disputeId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.resource.size < 10 * 1024 * 1024;
     }
   }
 }

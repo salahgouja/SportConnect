@@ -5,16 +5,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/reviews/models/review_model.dart';
-import 'package:sport_connect/features/reviews/repositories/review_repository.dart';
+import 'package:sport_connect/features/reviews/view_models/review_view_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
-import 'package:sport_connect/features/rides/repositories/booking_repository.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Post-ride screen where a driver rates their passenger(s).
 ///
@@ -53,44 +52,36 @@ class _DriverRatePassengerScreenState
 
   @override
   Widget build(BuildContext context) {
-    final rideAsync = ref.watch(rideDetailViewModelProvider(widget.rideId));
+    final vmState = ref.watch(rideDetailViewModelProvider(widget.rideId));
 
-    return rideAsync.when(
+    final bookings = vmState.bookings
+        .where(
+          (b) =>
+              b.status == BookingStatus.accepted ||
+              b.status == BookingStatus.completed,
+        )
+        .toList();
+
+    // Auto-select if exactly one passenger
+    if (bookings.length == 1 && _selectedBookingId == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _selectedBookingId = bookings.first.id;
+            _selectedPassengerId = bookings.first.passengerId;
+          });
+        }
+      });
+    }
+
+    return vmState.ride.when(
       data: (ride) {
         if (ride == null) {
           return _buildScaffold(
             body: const Center(child: Text('Ride not found.')),
           );
         }
-
-        return StreamBuilder<List<RideBooking>>(
-          stream: ref
-              .watch(bookingRepositoryProvider)
-              .streamBookingsByRideId(widget.rideId),
-          builder: (context, snap) {
-            final bookings = (snap.data ?? [])
-                .where(
-                  (b) =>
-                      b.status == BookingStatus.accepted ||
-                      b.status == BookingStatus.completed,
-                )
-                .toList();
-
-            // Auto-select if exactly one passenger
-            if (bookings.length == 1 && _selectedBookingId == null) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted) {
-                  setState(() {
-                    _selectedBookingId = bookings.first.id;
-                    _selectedPassengerId = bookings.first.passengerId;
-                  });
-                }
-              });
-            }
-
-            return _buildContent(ride, bookings);
-          },
-        );
+        return _buildContent(ride, bookings);
       },
       loading: () => _buildScaffold(
         body: const Center(child: CircularProgressIndicator()),
@@ -439,11 +430,12 @@ class _DriverRatePassengerScreenState
   }
 
   String _getRatingLabel(double rating) {
-    if (rating >= 5) return 'Excellent!';
-    if (rating >= 4) return 'Good';
-    if (rating >= 3) return 'Average';
-    if (rating >= 2) return 'Below Average';
-    return 'Poor';
+    final l10n = AppLocalizations.of(context);
+    if (rating >= 5) return l10n.ratingExcellent;
+    if (rating >= 4) return l10n.ratingGood;
+    if (rating >= 3) return l10n.ratingAverage;
+    if (rating >= 2) return l10n.ratingBelowAverage;
+    return l10n.ratingPoor;
   }
 
   Future<void> _submitRating(RideModel ride) async {
@@ -457,41 +449,47 @@ class _DriverRatePassengerScreenState
           .read(userProfileProvider(_selectedPassengerId!))
           .value;
 
-      await ref
-          .read(reviewRepositoryProvider)
-          .createReview(
-            ref.read(currentUserProvider).value?.uid,
-            CreateReviewRequest(
-              rideId: widget.rideId,
-              revieweeId: _selectedPassengerId!,
-              revieweeName: passengerProfile?.displayName ?? 'Passenger',
-              revieweePhotoUrl: passengerProfile?.photoUrl,
-              type: ReviewType.rider,
-              rating: _rating,
-              comment: _commentController.text.trim().isEmpty
-                  ? null
-                  : _commentController.text.trim(),
-            ),
-          );
+      final notifier = ref.read(reviewFormViewModelProvider.notifier);
+      notifier.setRating(_rating.round());
+      notifier.setComment(_commentController.text.trim());
+
+      final success = await notifier.submitReview(
+        rideId: widget.rideId,
+        revieweeId: _selectedPassengerId!,
+        revieweeName: passengerProfile?.displayName ?? 'Passenger',
+        revieweePhotoUrl: passengerProfile?.photoUrl,
+        type: ReviewType.rider,
+      );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(
-              children: [
-                Icon(Icons.check_circle_rounded, color: Colors.white),
-                SizedBox(width: 8),
-                Text('Rating submitted — thank you!'),
-              ],
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Row(
+                children: [
+                  Icon(Icons.check_circle_rounded, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text('Rating submitted — thank you!'),
+                ],
+              ),
+              backgroundColor: AppColors.success,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
+          );
+          context.go(AppRoutes.driverRides.path);
+        } else {
+          final vmError = ref.read(reviewFormViewModelProvider).error;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(vmError ?? 'Failed to submit rating'),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
             ),
-          ),
-        );
-        context.go(AppRoutes.driverRides.path);
+          );
+        }
       }
     } catch (e) {
       if (mounted) {

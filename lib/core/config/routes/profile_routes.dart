@@ -3,17 +3,17 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/config/routes/route_config.dart';
 import 'package:sport_connect/core/config/routes/route_params.dart';
 import 'package:sport_connect/core/config/page_transitions.dart';
-import 'package:sport_connect/features/profile/views/profile_search_screen.dart';
+import 'package:sport_connect/features/profile/views/user_search_screen.dart';
+import 'package:sport_connect/features/profile/views/profile_screen.dart';
 import 'package:sport_connect/features/profile/views/settings_screen.dart';
 import 'package:sport_connect/features/profile/views/edit_profile_screen.dart';
 import 'package:sport_connect/features/profile/views/achievements_screen.dart';
-import 'package:sport_connect/features/profile/views/driver_vehicle_screen.dart';
-import 'package:sport_connect/features/profile/views/driver_profile_screen.dart';
+import 'package:sport_connect/features/vehicles/views/vehicle_management_screen.dart';
+import 'package:sport_connect/features/profile/views/driver_stats_screen.dart';
 import 'package:sport_connect/features/profile/views/driver_settings_screen.dart';
 import 'package:sport_connect/features/profile/views/help_center_screen.dart';
 import 'package:sport_connect/features/profile/views/contact_support_screen.dart';
 import 'package:sport_connect/features/profile/views/report_issue_screen.dart';
-import 'package:sport_connect/features/profile/views/terms_privacy_screen.dart';
 import 'package:sport_connect/features/profile/views/about_screen.dart';
 import 'package:sport_connect/features/notifications/views/notifications_screen.dart';
 import 'package:sport_connect/features/payments/views/payment_history_screen.dart';
@@ -40,8 +40,21 @@ class ProfileRoutes implements RouteConfig {
         name: AppRoutes.profileSearch.name,
         pageBuilder: (context, state) => SlideUpTransitionPage(
           key: state.pageKey,
-          child: const ProfileSearchScreen(),
+          child: const UserSearchScreen(),
         ),
+      ),
+
+      // View any user's public profile by ID
+      GoRoute(
+        path: AppRoutes.userProfile.path,
+        name: AppRoutes.userProfile.name,
+        pageBuilder: (context, state) {
+          final userId = state.pathParameters['id']!;
+          return SlideRightTransitionPage(
+            key: state.pageKey,
+            child: ProfileScreen(userId: userId),
+          );
+        },
       ),
 
       // Edit Profile
@@ -100,16 +113,7 @@ class ProfileRoutes implements RouteConfig {
         name: AppRoutes.driverVehicles.name,
         pageBuilder: (context, state) => SlideRightTransitionPage(
           key: state.pageKey,
-          child: const DriverVehicleScreen(),
-        ),
-      ),
-
-      GoRoute(
-        path: AppRoutes.vehicles.path,
-        name: AppRoutes.vehicles.name,
-        pageBuilder: (context, state) => SlideRightTransitionPage(
-          key: state.pageKey,
-          child: const DriverVehicleScreen(),
+          child: const VehicleManagementScreen(),
         ),
       ),
 
@@ -122,12 +126,26 @@ class ProfileRoutes implements RouteConfig {
         ),
       ),
 
+      // Deep-link to another driver's public profile (uses ProfileScreen with userId)
       GoRoute(
         path: AppRoutes.driverProfile.path,
         name: AppRoutes.driverProfile.name,
+        pageBuilder: (context, state) {
+          final userId = state.pathParameters['id']!;
+          return SlideRightTransitionPage(
+            key: state.pageKey,
+            child: ProfileScreen(userId: userId),
+          );
+        },
+      ),
+
+      // Driver Stats - current driver's own performance, ratings, and ride history
+      GoRoute(
+        path: AppRoutes.driverStats.path,
+        name: AppRoutes.driverStats.name,
         pageBuilder: (context, state) => SlideRightTransitionPage(
           key: state.pageKey,
-          child: const DriverProfileScreen(),
+          child: const DriverStatsScreen(),
         ),
       ),
 
@@ -170,20 +188,6 @@ class ProfileRoutes implements RouteConfig {
           key: state.pageKey,
           child: const ReportIssueScreen(),
         ),
-      ),
-
-      // Terms & Privacy
-      GoRoute(
-        path: AppRoutes.termsPrivacy.path,
-        name: AppRoutes.termsPrivacy.name,
-        pageBuilder: (context, state) {
-          final params = state.params;
-          final type = params.getStringOrThrow('type');
-          return SlideRightTransitionPage(
-            key: state.pageKey,
-            child: TermsPrivacyScreen(type: type),
-          );
-        },
       ),
 
       // About

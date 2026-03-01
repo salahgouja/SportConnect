@@ -12,24 +12,22 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
-import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/passenger_info_widget.dart';
+import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/premium_card.dart';
-import 'package:sport_connect/core/widgets/gamification_widgets.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/services/routing_service.dart';
-import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
-import 'package:sport_connect/core/services/stripe_service.dart';
-import 'package:sport_connect/core/models/user/user_model.dart';
+
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
+import 'package:sport_connect/core/models/location/location_point.dart';
+import 'package:sport_connect/core/widgets/map_location_picker.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
-import 'package:sport_connect/features/payments/view_models/payment_view_model.dart';
+
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/core/utils/distance_formatter.dart';
 import 'package:sport_connect/core/services/deep_link_service.dart';
-import 'package:sport_connect/core/theme/platform_adaptive.dart';
 import 'package:sport_connect/features/rides/views/widgets/ride_shared_widgets.dart';
 
 /// Full ride detail screen with map, route visualization, and booking flow.
@@ -48,6 +46,10 @@ class RideDetailScreen extends ConsumerStatefulWidget {
 class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
   int _selectedSeats = 1;
   bool _isBooking = false;
+
+  /// Passenger pickup location — optional, set in the booking sheet.
+  /// Stored on the booking and shown as a waypoint on the route when accepted.
+  LocationPoint? _pickupLocation;
 
   // Map and route state
   final MapController _mapController = MapController();
@@ -97,15 +99,12 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final rideAsync = ref.watch(rideDetailViewModelProvider(widget.rideId));
-    // Bookings are stored in a separate collection — watch them alongside the ride
-    final bookings =
-        ref.watch(bookingsByRideProvider(widget.rideId)).value ??
-        const <RideBooking>[];
+    final vmState = ref.watch(rideDetailViewModelProvider(widget.rideId));
+    final bookings = vmState.bookings;
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: rideAsync.when(
+      body: vmState.ride.when(
         loading: () => _buildLoadingSkeleton(),
         error: (error, _) => _buildErrorState(error.toString()),
         data: (ride) {
@@ -1461,21 +1460,22 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                 ),
                 SizedBox(width: 12.w),
               ],
-              // Start ride button (if ride is upcoming and has passengers)
+              // Start / view-active button
               Expanded(
                 child: PremiumButton(
-                  text: ride.status == RideStatus.active
-                      ? 'View Active'
+                  text: ride.status == RideStatus.inProgress
+                      ? 'View Active Ride'
                       : 'Start Ride',
-                  onPressed: acceptedCount > 0
+                  onPressed:
+                      ride.status == RideStatus.inProgress || acceptedCount > 0
                       ? () => context.pushNamed(
                           AppRoutes.driverActiveRide.name,
                           queryParameters: {'rideId': ride.id},
                         )
                       : null,
                   style: PremiumButtonStyle.primary,
-                  icon: ride.status == RideStatus.active
-                      ? Icons.visibility_rounded
+                  icon: ride.status == RideStatus.inProgress
+                      ? Icons.navigation_rounded
                       : Icons.play_arrow_rounded,
                 ),
               ),
@@ -1717,7 +1717,12 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
             ],
           ),
 
-          SizedBox(height: 20.h),
+          SizedBox(height: 16.h),
+
+          // ── Pickup location (optional) ──
+          _buildPickupLocationTile(),
+
+          SizedBox(height: 16.h),
 
           // Price breakdown
           Container(
@@ -1876,6 +1881,97 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
     );
   }
 
+  /// Tappable tile that lets the passenger set an optional pickup location.
+  Widget _buildPickupLocationTile() {
+    return InkWell(
+      onTap: () async {
+        final result = await MapLocationPicker.show(
+          context,
+          title: 'Set pickup location',
+          initialLocation: _pickupLocation != null
+              ? LatLng(_pickupLocation!.latitude, _pickupLocation!.longitude)
+              : null,
+        );
+        if (result != null && mounted) {
+          setState(() {
+            _pickupLocation = LocationPoint(
+              latitude: result.location.latitude,
+              longitude: result.location.longitude,
+              address: result.address,
+            );
+          });
+        }
+      },
+      borderRadius: BorderRadius.circular(14.r),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(14.r),
+          border: Border.all(
+            color: _pickupLocation != null
+                ? AppColors.primary.withValues(alpha: 0.4)
+                : AppColors.border.withValues(alpha: 0.4),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.my_location_rounded,
+              color: _pickupLocation != null
+                  ? AppColors.primary
+                  : AppColors.textTertiary,
+              size: 20.sp,
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Pickup location',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    _pickupLocation?.address ??
+                        'Optional – set your pickup point',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: _pickupLocation != null
+                          ? AppColors.textPrimary
+                          : AppColors.textSecondary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            if (_pickupLocation != null)
+              GestureDetector(
+                onTap: () => setState(() => _pickupLocation = null),
+                child: Icon(
+                  Icons.close_rounded,
+                  size: 18.sp,
+                  color: AppColors.textTertiary,
+                ),
+              )
+            else
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 20.sp,
+                color: AppColors.textTertiary,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildPriceRow(String label, String value) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1911,8 +2007,8 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
     return symbolMap[currency.toLowerCase()] ?? '€';
   }
 
-  /// Book ride with Stripe payment
-  /// Flow: Create Payment Intent → Show Payment Sheet → Confirm Booking
+  /// Book ride – creates a pending booking and navigates to the pending screen.
+  /// Payment (if applicable) is collected after the driver accepts.
   void _bookRide(RideModel ride) async {
     final user = ref.read(currentUserProvider).value;
     if (user == null) {
@@ -1922,224 +2018,6 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
       return;
     }
 
-    // Check if driver has set up payments
-    if (!ride.acceptsOnlinePayment) {
-      // Show cash payment option or driver hasn't enabled payments
-      _showPaymentMethodDialog(ride, user);
-      return;
-    }
-
-    HapticFeedback.heavyImpact();
-    setState(() => _isBooking = true);
-
-    try {
-      // Import payment providers
-      final paymentViewModel = ref.read(paymentViewModelProvider.notifier);
-
-      // Fetch driver profile to get Stripe account ID and name
-      final driverProfile = await ref.read(
-        userProfileProvider(ride.driverId).future,
-      );
-
-      if (driverProfile == null) {
-        throw Exception('Driver profile not found');
-      }
-
-      // Verify driver has Stripe Connect account for destination charges
-      // Cast to DriverModel to access stripeAccountId
-      final driverModel = driverProfile.asDriver;
-      if (driverModel == null) {
-        throw Exception('Driver profile is not a driver account');
-      }
-
-      final driverStripeAccountId = driverModel.stripeAccountId;
-      if (driverStripeAccountId == null || driverStripeAccountId.isEmpty) {
-        throw StripePaymentException(
-          'Driver has not set up payment processing yet. Please contact the driver or choose cash payment.',
-        );
-      }
-
-      // Get or create Stripe customer for the rider
-      final customerId = await paymentViewModel.getOrCreateCustomer(
-        userId: user.uid,
-        email: user.email,
-        name: user.displayName,
-        phone: user.phoneNumber,
-      );
-
-      // Calculate total amount in main currency unit (server converts to cents)
-      final totalAmount = ride.pricePerSeat * _selectedSeats;
-
-      // Convert currency symbol to ISO code (Stripe requires ISO codes)
-      final currencyIso = _getCurrencyIsoCode(ride.currency ?? 'eur');
-
-      // Create payment intent via Firebase Cloud Function with driver's Stripe account
-      final stripeService = ref.read(stripeServiceProvider);
-      final paymentData = await stripeService.createPaymentIntent(
-        rideId: ride.id,
-        riderId: user.uid,
-        riderName: user.displayName,
-        driverId: ride.driverId,
-        driverName: driverProfile.displayName,
-        amount: totalAmount,
-        currency: currencyIso,
-        customerId: customerId,
-        driverStripeAccountId:
-            driverStripeAccountId, // Pass driver's Stripe account
-        description: '${ride.origin.address} → ${ride.destination.address}',
-      );
-
-      // Show Stripe Payment Sheet
-      final paymentSuccess = await stripeService.processPaymentWithSheet(
-        paymentIntentClientSecret: paymentData['clientSecret'],
-        customerId: customerId,
-        ephemeralKeySecret: paymentData['ephemeralKey'],
-      );
-
-      if (paymentSuccess) {
-        // Payment successful - create the booking
-        final bookingSuccess = await ref
-            .read(rideDetailViewModelProvider(widget.rideId).notifier)
-            .bookRide(
-              passengerId: user.uid,
-              seats: _selectedSeats,
-              note: 'Payment: ${paymentData['paymentIntentId']}',
-            );
-
-        if (!mounted) return;
-        setState(() => _isBooking = false);
-
-        if (bookingSuccess) {
-          _showPaymentSuccessDialog(totalAmount, ride.currency ?? '€');
-        } else {
-          // Payment succeeded but booking failed - this shouldn't happen
-          // Payment will be auto-refunded or can be manually refunded
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                AppLocalizations.of(context).paymentSucceededButBookingFailed,
-              ),
-            ),
-          );
-        }
-      } else {
-        // Payment cancelled by user
-        if (!mounted) return;
-        setState(() => _isBooking = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).paymentCancelled),
-          ),
-        );
-      }
-    } on StripePaymentException catch (e) {
-      if (!mounted) return;
-      setState(() => _isBooking = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            AppLocalizations.of(context).paymentFailedValue(e.message),
-          ),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _isBooking = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).errorValue(e))),
-      );
-    }
-  }
-
-  /// Show dialog for cash payment option
-  void _showPaymentMethodDialog(RideModel ride, user) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
-        ),
-        title: Text(AppLocalizations.of(context).paymentMethod),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              AppLocalizations.of(context).thisDriverAcceptsCashPayment,
-              style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
-            ),
-            SizedBox(height: 16.h),
-            _buildPaymentOption(
-              icon: Icons.money_rounded,
-              title: AppLocalizations.of(context).payWithCash,
-              subtitle:
-                  '${(ride.pricePerSeat * _selectedSeats).toStringAsFixed(0)} ${ride.currency ?? '€'}',
-              onTap: () {
-                context.pop();
-                _bookWithCash(ride, user);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPaymentOption({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12.r),
-      child: Container(
-        padding: EdgeInsets.all(16.w),
-        decoration: BoxDecoration(
-          border: Border.all(color: AppColors.border),
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: EdgeInsets.all(12.w),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12.r),
-              ),
-              child: Icon(icon, color: AppColors.primary, size: 24.sp),
-            ),
-            SizedBox(width: 16.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16.sp,
-                    ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 13.sp,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Book ride with cash payment (no Stripe)
-  void _bookWithCash(RideModel ride, user) async {
     HapticFeedback.heavyImpact();
     setState(() => _isBooking = true);
 
@@ -2149,14 +2027,16 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
           .bookRide(
             passengerId: user.uid,
             seats: _selectedSeats,
-            note: 'Payment: Cash',
+            pickupLocation: _pickupLocation,
           );
 
       if (!mounted) return;
       setState(() => _isBooking = false);
 
       if (success) {
-        _showSuccessDialog();
+        context.push(
+          AppRoutes.rideBookingPending.path.replaceFirst(':rideId', ride.id),
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -2171,218 +2051,5 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
         SnackBar(content: Text(AppLocalizations.of(context).errorValue(e))),
       );
     }
-  }
-
-  /// Show payment success dialog with receipt info
-  void _showPaymentSuccessDialog(double amount, String currency) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: EdgeInsets.all(20.w),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.green.shade400, Colors.green.shade600],
-                ),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.check_rounded,
-                color: Colors.white,
-                size: 48.sp,
-              ),
-            ),
-            SizedBox(height: 20.h),
-            Text(
-              AppLocalizations.of(context).paymentSuccessful,
-              style: TextStyle(
-                fontSize: 22.sp,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            SizedBox(height: 8.h),
-            Text(
-              AppLocalizations.of(
-                context,
-              ).youPaidValueValue(amount.toStringAsFixed(2), currency),
-              style: TextStyle(fontSize: 16.sp, color: AppColors.textSecondary),
-            ),
-            SizedBox(height: 8.h),
-            Text(
-              AppLocalizations.of(context).yourRideHasBeenBooked,
-              style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 12.h),
-            PointsBadge(points: 25),
-            SizedBox(height: 8.h),
-            Text(
-              AppLocalizations.of(context).youEarned25Xp,
-              style: TextStyle(
-                fontSize: 13.sp,
-                color: AppColors.secondary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            SizedBox(height: 24.h),
-            PremiumButton(
-              text: 'View My Rides',
-              onPressed: () {
-                context.pop();
-                context.go(AppRoutes.riderMyRides.path);
-              },
-              style: PremiumButtonStyle.primary,
-            ),
-            SizedBox(height: 12.h),
-            TextButton(
-              onPressed: () {
-                context.pop();
-                context.pop();
-              },
-              child: Text(
-                AppLocalizations.of(context).backToSearch,
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Show success dialog for cash booking
-  void _showSuccessDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: EdgeInsets.all(20.w),
-              decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.check_rounded,
-                color: Colors.white,
-                size: 48.sp,
-              ),
-            ),
-            SizedBox(height: 20.h),
-            Text(
-              AppLocalizations.of(context).bookingConfirmed,
-              style: TextStyle(
-                fontSize: 22.sp,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            SizedBox(height: 8.h),
-            Text(
-              AppLocalizations.of(context).yourRideHasBeenBooked2,
-              style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 12.h),
-            PointsBadge(points: 25),
-            SizedBox(height: 8.h),
-            Text(
-              AppLocalizations.of(context).youEarned25Xp,
-              style: TextStyle(
-                fontSize: 13.sp,
-                color: AppColors.secondary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            SizedBox(height: 24.h),
-            PremiumButton(
-              text: 'View My Rides',
-              onPressed: () {
-                context.pop();
-                context.go(AppRoutes.riderMyRides.path);
-              },
-              style: PremiumButtonStyle.primary,
-            ),
-            SizedBox(height: 12.h),
-            TextButton(
-              onPressed: () {
-                context.pop();
-                context.pop();
-              },
-              child: Text(
-                AppLocalizations.of(context).backToSearch,
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Converts currency symbols to ISO codes for Stripe
-  String _getCurrencyIsoCode(String currency) {
-    // Map of common currency symbols to ISO codes
-    const currencyMap = {
-      '€': 'eur',
-      '\$': 'usd',
-      '£': 'gbp',
-      '¥': 'jpy',
-      '₹': 'inr',
-      'CHF': 'chf',
-      'A\$': 'aud',
-      'C\$': 'cad',
-      'kr': 'sek',
-      '₽': 'rub',
-      '₩': 'krw',
-      '฿': 'thb',
-      '₪': 'ils',
-      'R': 'zar',
-      '₱': 'php',
-      'RM': 'myr',
-      'Rp': 'idr',
-      '₫': 'vnd',
-      '₺': 'try',
-      'zł': 'pln',
-      'Kč': 'czk',
-      'Ft': 'huf',
-      'lei': 'ron',
-      'лв': 'bgn',
-      'din': 'rsd',
-      'DKK': 'dkk',
-      'NOK': 'nok',
-      'NZ\$': 'nzd',
-      'S\$': 'sgd',
-      'HK\$': 'hkd',
-    };
-
-    // Check if it's already an ISO code (3 letters lowercase)
-    final lower = currency.toLowerCase();
-    if (lower.length == 3 && RegExp(r'^[a-z]{3}$').hasMatch(lower)) {
-      return lower;
-    }
-
-    // Look up symbol in map
-    return currencyMap[currency] ?? 'eur'; // Default to EUR
   }
 }

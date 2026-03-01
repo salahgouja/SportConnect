@@ -6785,6 +6785,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save & Continue'**
   String get driverSaveAndContinue;
+
+  /// No description provided for @ratingExcellent.
+  ///
+  /// In en, this message translates to:
+  /// **'Excellent!'**
+  String get ratingExcellent;
+
+  /// No description provided for @ratingGood.
+  ///
+  /// In en, this message translates to:
+  /// **'Good'**
+  String get ratingGood;
+
+  /// No description provided for @ratingAverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Average'**
+  String get ratingAverage;
+
+  /// No description provided for @ratingBelowAverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Below Average'**
+  String get ratingBelowAverage;
+
+  /// No description provided for @ratingPoor.
+  ///
+  /// In en, this message translates to:
+  /// **'Poor'**
+  String get ratingPoor;
 }
 
 class _AppLocalizationsDelegate

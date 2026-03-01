@@ -9,54 +9,6 @@ part of 'driver_stats_repository.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
-@ProviderFor(driverStatsRepository)
-final driverStatsRepositoryProvider = DriverStatsRepositoryProvider._();
-
-final class DriverStatsRepositoryProvider
-    extends
-        $FunctionalProvider<
-          IDriverStatsRepository,
-          IDriverStatsRepository,
-          IDriverStatsRepository
-        >
-    with $Provider<IDriverStatsRepository> {
-  DriverStatsRepositoryProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'driverStatsRepositoryProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$driverStatsRepositoryHash();
-
-  @$internal
-  @override
-  $ProviderElement<IDriverStatsRepository> $createElement(
-    $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
-
-  @override
-  IDriverStatsRepository create(Ref ref) {
-    return driverStatsRepository(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(IDriverStatsRepository value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<IDriverStatsRepository>(value),
-    );
-  }
-}
-
-String _$driverStatsRepositoryHash() =>
-    r'2455a9ea7422598ca46a91e3500984ef1eaaad80';
-
 @ProviderFor(driverStats)
 final driverStatsProvider = DriverStatsProvider._();
 

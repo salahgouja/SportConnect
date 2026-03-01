@@ -9,7 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/repositories/settings_repository.dart';
+import 'package:sport_connect/core/providers/settings_provider.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/utils/validators.dart';
@@ -144,21 +144,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Future<void> _loadSavedCredentials() async {
-    final settings = await ref.read(settingsRepositoryProvider.future);
-    if (settings.rememberMe && settings.savedEmail != null) {
+    final credentials = await ref.read(savedCredentialsProvider.future);
+    if (credentials.rememberMe && credentials.email != null) {
       setState(() {
-        _emailController.text = settings.savedEmail!;
+        _emailController.text = credentials.email!;
         _rememberMe = true;
       });
     }
   }
 
   Future<void> _saveCredentials() async {
-    final settings = await ref.read(settingsRepositoryProvider.future);
+    final notifier = ref.read(savedCredentialsProvider.notifier);
     if (_rememberMe) {
-      await settings.saveCredentials(email: _emailController.text.trim());
+      await notifier.save(_emailController.text.trim());
     } else {
-      await settings.clearCredentials();
+      await notifier.clear();
     }
   }
 

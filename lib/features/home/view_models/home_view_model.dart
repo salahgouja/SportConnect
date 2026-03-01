@@ -1,9 +1,16 @@
 import 'dart:async';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/routing_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
+import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/features/home/models/home_models.dart';
+import 'package:sport_connect/features/home/repositories/home_repository.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 
 part 'home_view_model.g.dart';
 
@@ -38,6 +45,13 @@ class HomeState {
   final bool showRouteInfo;
   final int selectedRouteIndex;
 
+  // Aggregated data (via ref.listen in build())
+  /// Current authenticated user.
+  final AsyncValue<UserModel?> user;
+
+  /// Live hotspot list.
+  final AsyncValue<List<Hotspot>> hotspots;
+
   const HomeState({
     this.selectedTabIndex = 0,
     this.isMapExpanded = true,
@@ -58,6 +72,8 @@ class HomeState {
     this.isLoadingRoute = false,
     this.showRouteInfo = false,
     this.selectedRouteIndex = 0,
+    this.user = const AsyncLoading(),
+    this.hotspots = const AsyncLoading(),
   });
 
   HomeState copyWith({
@@ -80,6 +96,8 @@ class HomeState {
     bool? isLoadingRoute,
     bool? showRouteInfo,
     int? selectedRouteIndex,
+    AsyncValue<UserModel?>? user,
+    AsyncValue<List<Hotspot>>? hotspots,
   }) {
     return HomeState(
       selectedTabIndex: selectedTabIndex ?? this.selectedTabIndex,
@@ -101,6 +119,8 @@ class HomeState {
       isLoadingRoute: isLoadingRoute ?? this.isLoadingRoute,
       showRouteInfo: showRouteInfo ?? this.showRouteInfo,
       selectedRouteIndex: selectedRouteIndex ?? this.selectedRouteIndex,
+      user: user ?? this.user,
+      hotspots: hotspots ?? this.hotspots,
     );
   }
 }
@@ -118,7 +138,20 @@ class HomeViewModel extends _$HomeViewModel {
       _positionStreamSubscription?.cancel();
     });
 
-    return const HomeState();
+    // Subscribe to user and hotspots streams via ref.listen so that Firestore
+    // emissions do NOT re-run build() (which would reset location state).
+    ref.listen(currentUserProvider, (_, next) {
+      state = state.copyWith(user: next);
+    });
+
+    ref.listen(hotspotsStreamProvider, (_, next) {
+      state = state.copyWith(hotspots: next);
+    });
+
+    return HomeState(
+      user: ref.read(currentUserProvider),
+      hotspots: ref.read(hotspotsStreamProvider),
+    );
   }
 
   /// Initializes location services and starts tracking.
@@ -370,5 +403,15 @@ const Map<String, String> availableMapStyles = {
       'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
 };
 
-// Note: Use nearbyRidesStreamProvider and hotspotsStreamProvider from home_repository.dart
-// instead of creating duplicate providers here.
+// Note: nearbyRidesStreamProvider is defined below as a VM-layer provider.
+
+/// VM-layer stream provider for nearby rides (wraps home repository).
+@riverpod
+Stream<List<RideModel>> nearbyRidesStream(
+  Ref ref,
+  LatLng location,
+  double radiusKm,
+) {
+  final repository = ref.watch(homeRepositoryProvider);
+  return repository.streamNearbyRides(center: location, radiusKm: radiusKm);
+}

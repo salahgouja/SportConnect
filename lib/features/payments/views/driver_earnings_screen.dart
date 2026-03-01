@@ -5,12 +5,11 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/rides/models/driver_stats.dart';
-import 'package:sport_connect/features/rides/repositories/driver_stats_repository.dart';
+import 'package:sport_connect/features/rides/view_models/driver_view_model.dart';
 import 'package:sport_connect/features/payments/view_models/payment_view_model.dart';
 import 'package:intl/intl.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -58,13 +57,14 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
 
   /// Resolves the driver's currency code from their Stripe connected account.
   String get _currencyCode {
-    final stripeStatus = ref.read(driverStripeStatusProvider).value;
+    final stripeStatus = ref.watch(driverStripeStatusProvider).value;
     return stripeStatus?.currency ?? 'EUR';
   }
 
   void _exportEarnings() {
-    final driverStats = ref.read(driverStatsProvider);
-    final transactions = ref.read(earningsTransactionsProvider);
+    final driverState = ref.read(driverViewModelProvider);
+    final driverStats = driverState.stats;
+    final transactions = driverState.earningsTransactions;
 
     final stats = driverStats.value;
     final txList = transactions.value;
@@ -124,17 +124,17 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final driverStats = ref.watch(driverStatsProvider);
-    final transactions = ref.watch(earningsTransactionsProvider);
-    // Watch the Stripe status to reactively resolve the driver's currency.
+    final driverState = ref.watch(driverViewModelProvider);
+    final driverStats = driverState.stats;
+    final transactions = driverState.earningsTransactions;
+    // Watch Stripe status to reactively resolve the driver's currency.
     ref.watch(driverStripeStatusProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: RefreshIndicator(
         onRefresh: () async {
-          ref.invalidate(driverStatsProvider);
-          ref.invalidate(earningsTransactionsProvider);
+          ref.read(driverViewModelProvider.notifier).refresh();
         },
         child: CustomScrollView(
           slivers: [
@@ -206,7 +206,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 Text(
-                  AppLocalizations.of(context).totalEarnings,
+                  '${AppLocalizations.of(context).totalEarnings} · ${_periodLabel(_selectedPeriod)}',
                   style: TextStyle(
                     fontSize: 14.sp,
                     color: Colors.white.withValues(alpha: 0.8),
@@ -329,7 +329,8 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
               ),
               SizedBox(height: 12.h),
               TextButton.icon(
-                onPressed: () => ref.invalidate(driverStatsProvider),
+                onPressed: () =>
+                    ref.read(driverViewModelProvider.notifier).refresh(),
                 icon: const Icon(Icons.refresh_rounded, color: Colors.white),
                 label: Text(
                   AppLocalizations.of(context).tryAgain,
@@ -676,7 +677,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
 
   /// Build the payout section with Stripe integration
   Widget _buildPayoutSection() {
-    final user = ref.watch(currentUserProvider);
+    final user = ref.watch(driverViewModelProvider).user;
     final stripeStatus = ref.watch(driverStripeStatusProvider);
 
     return user.when(
@@ -966,7 +967,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
           ),
         );
         ref.invalidate(driverStripeStatusProvider);
-        ref.invalidate(earningsTransactionsProvider);
+        ref.read(driverViewModelProvider.notifier).refresh();
       } else {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1048,6 +1049,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
                   description: transaction.description,
                   amount: transaction.amount,
                   type: transaction.type,
+                  currency: _currencyCode,
                   date: DateFormat(
                     'MMM d, h:mm a',
                   ).format(transaction.createdAt),
@@ -1187,12 +1189,14 @@ class _TransactionItem extends StatelessWidget {
   final String description;
   final double amount;
   final String type;
+  final String currency;
   final String date;
 
   const _TransactionItem({
     required this.description,
     required this.amount,
     required this.type,
+    required this.currency,
     required this.date,
   });
 
@@ -1266,9 +1270,7 @@ class _TransactionItem extends StatelessWidget {
             ),
           ),
           Text(
-            AppLocalizations.of(
-              context,
-            ).valueValue3(amount >= 0 ? '+' : '', amount.toStringAsFixed(0)),
+            '${amount >= 0 ? '+' : ''}${amount.toStringAsFixed(0)} $currency',
             style: TextStyle(
               fontSize: 16.sp,
               fontWeight: FontWeight.w700,

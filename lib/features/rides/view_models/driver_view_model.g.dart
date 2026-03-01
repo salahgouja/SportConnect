@@ -8,18 +8,45 @@ part of 'driver_view_model.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// ViewModel for driver-related operations
-/// Manages driver online status, ride requests, and dashboard state
+/// ViewModel for all driver dashboard screens.
+///
+/// Aggregates all stream data so views only need to watch this single
+/// provider — following Flutter Architecture's MVVM recommendation that
+/// views should not reference repository / stream providers directly.
+///
+/// Design notes:
+/// - Data streams are subscribed via [ref.listen] so that build() is NOT
+///   re-called on each emission (which would reset [isLoading]/[errorMessage]).
+/// - The state is mutated granularly inside the listeners, preserving transient
+///   action state across Firestore updates.
 
 @ProviderFor(DriverViewModel)
 final driverViewModelProvider = DriverViewModelProvider._();
 
-/// ViewModel for driver-related operations
-/// Manages driver online status, ride requests, and dashboard state
+/// ViewModel for all driver dashboard screens.
+///
+/// Aggregates all stream data so views only need to watch this single
+/// provider — following Flutter Architecture's MVVM recommendation that
+/// views should not reference repository / stream providers directly.
+///
+/// Design notes:
+/// - Data streams are subscribed via [ref.listen] so that build() is NOT
+///   re-called on each emission (which would reset [isLoading]/[errorMessage]).
+/// - The state is mutated granularly inside the listeners, preserving transient
+///   action state across Firestore updates.
 final class DriverViewModelProvider
     extends $NotifierProvider<DriverViewModel, DriverState> {
-  /// ViewModel for driver-related operations
-  /// Manages driver online status, ride requests, and dashboard state
+  /// ViewModel for all driver dashboard screens.
+  ///
+  /// Aggregates all stream data so views only need to watch this single
+  /// provider — following Flutter Architecture's MVVM recommendation that
+  /// views should not reference repository / stream providers directly.
+  ///
+  /// Design notes:
+  /// - Data streams are subscribed via [ref.listen] so that build() is NOT
+  ///   re-called on each emission (which would reset [isLoading]/[errorMessage]).
+  /// - The state is mutated granularly inside the listeners, preserving transient
+  ///   action state across Firestore updates.
   DriverViewModelProvider._()
     : super(
         from: null,
@@ -47,10 +74,19 @@ final class DriverViewModelProvider
   }
 }
 
-String _$driverViewModelHash() => r'bc79e25a181421ca38755e2048ea3485284f73dd';
+String _$driverViewModelHash() => r'684050c239143000b7f3ff9a8f891e2fb1218c0b';
 
-/// ViewModel for driver-related operations
-/// Manages driver online status, ride requests, and dashboard state
+/// ViewModel for all driver dashboard screens.
+///
+/// Aggregates all stream data so views only need to watch this single
+/// provider — following Flutter Architecture's MVVM recommendation that
+/// views should not reference repository / stream providers directly.
+///
+/// Design notes:
+/// - Data streams are subscribed via [ref.listen] so that build() is NOT
+///   re-called on each emission (which would reset [isLoading]/[errorMessage]).
+/// - The state is mutated granularly inside the listeners, preserving transient
+///   action state across Firestore updates.
 
 abstract class _$DriverViewModel extends $Notifier<DriverState> {
   DriverState build();

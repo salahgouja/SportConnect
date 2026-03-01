@@ -1,11 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
-import 'package:sport_connect/features/notifications/repositories/notification_repository.dart';
-import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/ride_request_model.dart';
-import 'package:sport_connect/features/rides/repositories/ride_repository.dart';
 
 part 'ride_request_service.g.dart';
 

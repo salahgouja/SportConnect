@@ -5,8 +5,15 @@ abstract class IBookingRepository {
   Future<String> createBooking(RideBooking booking);
   Future<RideBooking?> getBookingById(String bookingId);
   Stream<RideBooking?> streamBookingById(String bookingId);
-  Future<List<RideBooking>> getBookingsByRideId(String rideId);
-  Stream<List<RideBooking>> streamBookingsByRideId(String rideId);
+  Future<List<RideBooking>> getBookingsByRideId(String rideId, String driverId);
+  Stream<List<RideBooking>> streamBookingsByRideId(
+    String rideId,
+    String driverId,
+  );
+  Future<RideBooking?> getPassengerBookingForRide(
+    String rideId,
+    String passengerId,
+  );
   Future<List<RideBooking>> getBookingsByPassengerId(String passengerId);
   Stream<List<RideBooking>> streamBookingsByPassengerId(String passengerId);
 

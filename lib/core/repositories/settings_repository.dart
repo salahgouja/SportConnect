@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-part 'settings_repository.g.dart';
 
 /// Repository for user settings persistence
 ///
@@ -168,17 +165,4 @@ class SettingsRepository {
     await _prefs.remove(_savedEmailKey);
     await _prefs.setBool(_rememberMeKey, false);
   }
-}
-
-/// Provider for SharedPreferences
-@riverpod
-Future<SharedPreferences> sharedPreferences(Ref ref) async {
-  return SharedPreferences.getInstance();
-}
-
-/// Provider for SettingsRepository
-@riverpod
-Future<SettingsRepository> settingsRepository(Ref ref) async {
-  final prefs = await ref.watch(sharedPreferencesProvider.future);
-  return SettingsRepository(prefs);
 }

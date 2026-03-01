@@ -20,6 +20,16 @@ const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 
 const PLATFORM_FEE_PERCENT = 0.15; // 15%
 
+// Stripe Express Connect is only available in specific countries.
+// If the driver's detected country is not supported, fall back to "FR".
+const STRIPE_EXPRESS_COUNTRIES = new Set([
+  "AU", "AT", "BE", "BR", "BG", "CA", "HR", "CY", "CZ", "DK", "EE",
+  "FI", "FR", "DE", "GH", "GI", "GR", "HK", "HU", "IN", "ID", "IE",
+  "IT", "JP", "KE", "LV", "LI", "LT", "LU", "MY", "MT", "MX", "NL",
+  "NZ", "NG", "NO", "PL", "PT", "RO", "SG", "SK", "SI", "ZA", "ES",
+  "SE", "CH", "TH", "GB", "US",
+]);
+
 // ============================================
 // Helper: Clean up a single stale FCM token
 // ============================================
@@ -328,12 +338,29 @@ export const onRideStatusChanged = onDocumentUpdated(
     const after = event.data?.after.data();
     if (!before || !after) return;
 
-    // Notify passengers when ride starts
-    if (before.status !== "active" && after.status === "active") {
-      const passengerIds = (after.passengerIds as string[]) || [];
-      const driverName = (after.driverName as string) || "Your driver";
+    // Notify passengers when ride starts or completes.
+    // passengerIds are NOT embedded on the ride document — they live in the
+    // separate `bookings` collection.  Query accepted bookings to get them.
+    const isStarting = before.status !== "active" && after.status === "active";
+    const isCompleting = before.status !== "completed" && after.status === "completed";
 
-      // FIX: Use batch multicast
+    if (!isStarting && !isCompleting) return;
+
+    const db = admin.firestore();
+    const bookingsSnap = await db
+      .collection("bookings")
+      .where("rideId", "==", event.params.rideId)
+      .where("status", "==", "accepted")
+      .get();
+
+    const passengerIds = bookingsSnap.docs
+      .map((doc) => doc.data().passengerId as string)
+      .filter(Boolean);
+
+    if (passengerIds.length === 0) return;
+
+    if (isStarting) {
+      const driverName = (after.driverName as string) || "Your driver";
       await sendPushToMultipleUsers(
         passengerIds,
         "Your Ride Has Started! 🚗",
@@ -346,11 +373,7 @@ export const onRideStatusChanged = onDocumentUpdated(
       );
     }
 
-    // Notify passengers when ride is completed
-    if (before.status !== "completed" && after.status === "completed") {
-      const passengerIds = (after.passengerIds as string[]) || [];
-
-      // FIX: Use batch multicast
+    if (isCompleting) {
       await sendPushToMultipleUsers(
         passengerIds,
         "Ride Completed ✅",
@@ -536,11 +559,27 @@ export const createConnectedAccount = onCall(
       addressLine1,
       city,
     } = request.data;
-
     logger.info("Parsed - userId:", userId, "email:", email, "country:", country);
+
+    if (!userId) {
+      throw new HttpsError("invalid-argument", "userId is required");
+    }
 
     if (!email) {
       throw new HttpsError("invalid-argument", "Email is required");
+    }
+
+    // Normalize and validate country — Stripe Express only supports ~44 countries.
+    // Fall back to FR if the user's detected country is not in the list.
+    const normalizedCountry = (country as string).toUpperCase();
+    const stripeCountry = STRIPE_EXPRESS_COUNTRIES.has(normalizedCountry)
+      ? normalizedCountry
+      : "FR";
+    if (stripeCountry !== normalizedCountry) {
+      logger.warn(
+        `Country "${normalizedCountry}" is not supported for Stripe Express. Falling back to "FR".`,
+        {userId, country: normalizedCountry},
+      );
     }
 
     let stripeApiKey: string;
@@ -597,7 +636,15 @@ export const createConnectedAccount = onCall(
       if (firstName) individual.first_name = firstName;
       if (lastName) individual.last_name = lastName;
       if (email) individual.email = email;
-      if (phone) individual.phone = phone;
+      if (phone) {
+        // Use phone as-is if it already contains a + prefix (E.164),
+        // otherwise don't include it (Stripe accepts blank phone)
+        const normalizedPhone = String(phone).trim();
+        if (normalizedPhone.startsWith('+')) {
+          individual.phone = "+216" + normalizedPhone;
+        }
+        // Do NOT blindly prepend +216 — that only applies for Tunisian numbers
+      }
 
       if (dateOfBirth) {
         const dob = new Date(dateOfBirth);
@@ -614,29 +661,45 @@ export const createConnectedAccount = onCall(
         individual.address = {
           ...(addressLine1 && {line1: addressLine1}),
           ...(city && {city}),
-          country,
+          country: stripeCountry,
         };
       }
 
-      const account = await stripe.accounts.create({
-        type: "express",
-        country,
-        email,
-        capabilities: {
-          card_payments: {requested: true},
-          transfers: {requested: true},
-        },
-        business_type: "individual",
-        business_profile: {
-          mcc: "4121",
-          product_description:
-            "Carpooling driver on SportConnect - providing shared ride services to passengers for cost-sharing commutes and sports events",
-        },
-        individual: individual as Stripe.AccountCreateParams.Individual,
-        metadata: {userId, userType: "driver"},
-      });
+      let createdAccount: Stripe.Account;
+      try {
+        createdAccount = await stripe.accounts.create({
+          type: "express",
+          country: stripeCountry,
+          email,
+          capabilities: {
+            card_payments: {requested: true},
+            transfers: {requested: true},
+          },
+          business_type: "individual",
+          business_profile: {
+            mcc: "4121",
+            product_description:
+              "Carpooling driver on SportConnect - providing shared ride services to passengers for cost-sharing commutes and sports events",
+          },
+          individual: individual as Stripe.AccountCreateParams.Individual,
+          metadata: {userId, userType: "driver"},
+        });
+      } catch (stripeError: unknown) {
+        const e = stripeError as {message?: string; type?: string; code?: string};
+        logger.error("stripe.accounts.create failed", {
+          error: e.message,
+          type: e.type,
+          code: e.code,
+          userId,
+          country: stripeCountry,
+        });
+        throw new HttpsError(
+          "internal",
+          `Stripe account creation failed: ${e.message ?? "unknown error"}`,
+        );
+      }
 
-      accountId = account.id;
+      accountId = createdAccount.id;
       logger.info("New Stripe account created:", accountId);
 
       await db.collection("users").doc(userId).update({
@@ -651,12 +714,26 @@ export const createConnectedAccount = onCall(
 
     const baseUrl = "https://marathon-connect.web.app";
 
-    const accountLink = await stripe.accountLinks.create({
-      account: accountId,
-      refresh_url: `${baseUrl}/stripe-refresh.html?userId=${userId}`,
-      return_url: `${baseUrl}/stripe-return.html?userId=${userId}`,
-      type: "account_onboarding",
-    });
+    let accountLink: Stripe.AccountLink;
+    try {
+      accountLink = await stripe.accountLinks.create({
+        account: accountId,
+        refresh_url: `${baseUrl}/stripe-refresh.html?userId=${userId}`,
+        return_url: `${baseUrl}/stripe-return.html?userId=${userId}`,
+        type: "account_onboarding",
+      });
+    } catch (stripeError: unknown) {
+      const e = stripeError as {message?: string};
+      logger.error("stripe.accountLinks.create failed", {
+        error: e.message,
+        accountId,
+        userId,
+      });
+      throw new HttpsError(
+        "internal",
+        `Failed to generate Stripe onboarding link: ${e.message ?? "unknown error"}`,
+      );
+    }
 
     return {accountId, onboardingUrl: accountLink.url};
   },

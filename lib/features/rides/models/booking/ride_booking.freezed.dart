@@ -15,8 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$RideBooking {
 
- String get id; String get rideId;// Added: reference to the ride
- String get passengerId; int get seatsBooked; BookingStatus get status; LocationPoint? get pickupLocation; LocationPoint? get dropoffLocation; String? get note;// No denormalized user data - fetch via passengerId for single source of truth
+ String get id; String get rideId; String get passengerId; String? get driverId; int get seatsBooked; BookingStatus get status; LocationPoint? get pickupLocation; LocationPoint? get dropoffLocation; String? get note;// No denormalized user data - fetch via passengerId for single source of truth
 @TimestampConverter() DateTime? get createdAt;@TimestampConverter() DateTime? get respondedAt;
 /// Create a copy of RideBooking
 /// with the given fields replaced by the non-null parameter values.
@@ -30,16 +29,16 @@ $RideBookingCopyWith<RideBooking> get copyWith => _$RideBookingCopyWithImpl<Ride
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RideBooking&&(identical(other.id, id) || other.id == id)&&(identical(other.rideId, rideId) || other.rideId == rideId)&&(identical(other.passengerId, passengerId) || other.passengerId == passengerId)&&(identical(other.seatsBooked, seatsBooked) || other.seatsBooked == seatsBooked)&&(identical(other.status, status) || other.status == status)&&(identical(other.pickupLocation, pickupLocation) || other.pickupLocation == pickupLocation)&&(identical(other.dropoffLocation, dropoffLocation) || other.dropoffLocation == dropoffLocation)&&(identical(other.note, note) || other.note == note)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.respondedAt, respondedAt) || other.respondedAt == respondedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RideBooking&&(identical(other.id, id) || other.id == id)&&(identical(other.rideId, rideId) || other.rideId == rideId)&&(identical(other.passengerId, passengerId) || other.passengerId == passengerId)&&(identical(other.driverId, driverId) || other.driverId == driverId)&&(identical(other.seatsBooked, seatsBooked) || other.seatsBooked == seatsBooked)&&(identical(other.status, status) || other.status == status)&&(identical(other.pickupLocation, pickupLocation) || other.pickupLocation == pickupLocation)&&(identical(other.dropoffLocation, dropoffLocation) || other.dropoffLocation == dropoffLocation)&&(identical(other.note, note) || other.note == note)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.respondedAt, respondedAt) || other.respondedAt == respondedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,rideId,passengerId,seatsBooked,status,pickupLocation,dropoffLocation,note,createdAt,respondedAt);
+int get hashCode => Object.hash(runtimeType,id,rideId,passengerId,driverId,seatsBooked,status,pickupLocation,dropoffLocation,note,createdAt,respondedAt);
 
 @override
 String toString() {
-  return 'RideBooking(id: $id, rideId: $rideId, passengerId: $passengerId, seatsBooked: $seatsBooked, status: $status, pickupLocation: $pickupLocation, dropoffLocation: $dropoffLocation, note: $note, createdAt: $createdAt, respondedAt: $respondedAt)';
+  return 'RideBooking(id: $id, rideId: $rideId, passengerId: $passengerId, driverId: $driverId, seatsBooked: $seatsBooked, status: $status, pickupLocation: $pickupLocation, dropoffLocation: $dropoffLocation, note: $note, createdAt: $createdAt, respondedAt: $respondedAt)';
 }
 
 
@@ -50,7 +49,7 @@ abstract mixin class $RideBookingCopyWith<$Res>  {
   factory $RideBookingCopyWith(RideBooking value, $Res Function(RideBooking) _then) = _$RideBookingCopyWithImpl;
 @useResult
 $Res call({
- String id, String rideId, String passengerId, int seatsBooked, BookingStatus status, LocationPoint? pickupLocation, LocationPoint? dropoffLocation, String? note,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? respondedAt
+ String id, String rideId, String passengerId, String? driverId, int seatsBooked, BookingStatus status, LocationPoint? pickupLocation, LocationPoint? dropoffLocation, String? note,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? respondedAt
 });
 
 
@@ -67,12 +66,13 @@ class _$RideBookingCopyWithImpl<$Res>
 
 /// Create a copy of RideBooking
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? rideId = null,Object? passengerId = null,Object? seatsBooked = null,Object? status = null,Object? pickupLocation = freezed,Object? dropoffLocation = freezed,Object? note = freezed,Object? createdAt = freezed,Object? respondedAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? rideId = null,Object? passengerId = null,Object? driverId = freezed,Object? seatsBooked = null,Object? status = null,Object? pickupLocation = freezed,Object? dropoffLocation = freezed,Object? note = freezed,Object? createdAt = freezed,Object? respondedAt = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,rideId: null == rideId ? _self.rideId : rideId // ignore: cast_nullable_to_non_nullable
 as String,passengerId: null == passengerId ? _self.passengerId : passengerId // ignore: cast_nullable_to_non_nullable
-as String,seatsBooked: null == seatsBooked ? _self.seatsBooked : seatsBooked // ignore: cast_nullable_to_non_nullable
+as String,driverId: freezed == driverId ? _self.driverId : driverId // ignore: cast_nullable_to_non_nullable
+as String?,seatsBooked: null == seatsBooked ? _self.seatsBooked : seatsBooked // ignore: cast_nullable_to_non_nullable
 as int,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as BookingStatus,pickupLocation: freezed == pickupLocation ? _self.pickupLocation : pickupLocation // ignore: cast_nullable_to_non_nullable
 as LocationPoint?,dropoffLocation: freezed == dropoffLocation ? _self.dropoffLocation : dropoffLocation // ignore: cast_nullable_to_non_nullable
@@ -188,10 +188,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String rideId,  String passengerId,  int seatsBooked,  BookingStatus status,  LocationPoint? pickupLocation,  LocationPoint? dropoffLocation,  String? note, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? respondedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String rideId,  String passengerId,  String? driverId,  int seatsBooked,  BookingStatus status,  LocationPoint? pickupLocation,  LocationPoint? dropoffLocation,  String? note, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? respondedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _RideBooking() when $default != null:
-return $default(_that.id,_that.rideId,_that.passengerId,_that.seatsBooked,_that.status,_that.pickupLocation,_that.dropoffLocation,_that.note,_that.createdAt,_that.respondedAt);case _:
+return $default(_that.id,_that.rideId,_that.passengerId,_that.driverId,_that.seatsBooked,_that.status,_that.pickupLocation,_that.dropoffLocation,_that.note,_that.createdAt,_that.respondedAt);case _:
   return orElse();
 
 }
@@ -209,10 +209,10 @@ return $default(_that.id,_that.rideId,_that.passengerId,_that.seatsBooked,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String rideId,  String passengerId,  int seatsBooked,  BookingStatus status,  LocationPoint? pickupLocation,  LocationPoint? dropoffLocation,  String? note, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? respondedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String rideId,  String passengerId,  String? driverId,  int seatsBooked,  BookingStatus status,  LocationPoint? pickupLocation,  LocationPoint? dropoffLocation,  String? note, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? respondedAt)  $default,) {final _that = this;
 switch (_that) {
 case _RideBooking():
-return $default(_that.id,_that.rideId,_that.passengerId,_that.seatsBooked,_that.status,_that.pickupLocation,_that.dropoffLocation,_that.note,_that.createdAt,_that.respondedAt);case _:
+return $default(_that.id,_that.rideId,_that.passengerId,_that.driverId,_that.seatsBooked,_that.status,_that.pickupLocation,_that.dropoffLocation,_that.note,_that.createdAt,_that.respondedAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -229,10 +229,10 @@ return $default(_that.id,_that.rideId,_that.passengerId,_that.seatsBooked,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String rideId,  String passengerId,  int seatsBooked,  BookingStatus status,  LocationPoint? pickupLocation,  LocationPoint? dropoffLocation,  String? note, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? respondedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String rideId,  String passengerId,  String? driverId,  int seatsBooked,  BookingStatus status,  LocationPoint? pickupLocation,  LocationPoint? dropoffLocation,  String? note, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? respondedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _RideBooking() when $default != null:
-return $default(_that.id,_that.rideId,_that.passengerId,_that.seatsBooked,_that.status,_that.pickupLocation,_that.dropoffLocation,_that.note,_that.createdAt,_that.respondedAt);case _:
+return $default(_that.id,_that.rideId,_that.passengerId,_that.driverId,_that.seatsBooked,_that.status,_that.pickupLocation,_that.dropoffLocation,_that.note,_that.createdAt,_that.respondedAt);case _:
   return null;
 
 }
@@ -244,13 +244,13 @@ return $default(_that.id,_that.rideId,_that.passengerId,_that.seatsBooked,_that.
 @JsonSerializable()
 
 class _RideBooking implements RideBooking {
-  const _RideBooking({required this.id, required this.rideId, required this.passengerId, this.seatsBooked = 1, this.status = BookingStatus.pending, this.pickupLocation, this.dropoffLocation, this.note, @TimestampConverter() this.createdAt, @TimestampConverter() this.respondedAt});
+  const _RideBooking({required this.id, required this.rideId, required this.passengerId, this.driverId, this.seatsBooked = 1, this.status = BookingStatus.pending, this.pickupLocation, this.dropoffLocation, this.note, @TimestampConverter() this.createdAt, @TimestampConverter() this.respondedAt});
   factory _RideBooking.fromJson(Map<String, dynamic> json) => _$RideBookingFromJson(json);
 
 @override final  String id;
 @override final  String rideId;
-// Added: reference to the ride
 @override final  String passengerId;
+@override final  String? driverId;
 @override@JsonKey() final  int seatsBooked;
 @override@JsonKey() final  BookingStatus status;
 @override final  LocationPoint? pickupLocation;
@@ -273,16 +273,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RideBooking&&(identical(other.id, id) || other.id == id)&&(identical(other.rideId, rideId) || other.rideId == rideId)&&(identical(other.passengerId, passengerId) || other.passengerId == passengerId)&&(identical(other.seatsBooked, seatsBooked) || other.seatsBooked == seatsBooked)&&(identical(other.status, status) || other.status == status)&&(identical(other.pickupLocation, pickupLocation) || other.pickupLocation == pickupLocation)&&(identical(other.dropoffLocation, dropoffLocation) || other.dropoffLocation == dropoffLocation)&&(identical(other.note, note) || other.note == note)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.respondedAt, respondedAt) || other.respondedAt == respondedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RideBooking&&(identical(other.id, id) || other.id == id)&&(identical(other.rideId, rideId) || other.rideId == rideId)&&(identical(other.passengerId, passengerId) || other.passengerId == passengerId)&&(identical(other.driverId, driverId) || other.driverId == driverId)&&(identical(other.seatsBooked, seatsBooked) || other.seatsBooked == seatsBooked)&&(identical(other.status, status) || other.status == status)&&(identical(other.pickupLocation, pickupLocation) || other.pickupLocation == pickupLocation)&&(identical(other.dropoffLocation, dropoffLocation) || other.dropoffLocation == dropoffLocation)&&(identical(other.note, note) || other.note == note)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.respondedAt, respondedAt) || other.respondedAt == respondedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,rideId,passengerId,seatsBooked,status,pickupLocation,dropoffLocation,note,createdAt,respondedAt);
+int get hashCode => Object.hash(runtimeType,id,rideId,passengerId,driverId,seatsBooked,status,pickupLocation,dropoffLocation,note,createdAt,respondedAt);
 
 @override
 String toString() {
-  return 'RideBooking(id: $id, rideId: $rideId, passengerId: $passengerId, seatsBooked: $seatsBooked, status: $status, pickupLocation: $pickupLocation, dropoffLocation: $dropoffLocation, note: $note, createdAt: $createdAt, respondedAt: $respondedAt)';
+  return 'RideBooking(id: $id, rideId: $rideId, passengerId: $passengerId, driverId: $driverId, seatsBooked: $seatsBooked, status: $status, pickupLocation: $pickupLocation, dropoffLocation: $dropoffLocation, note: $note, createdAt: $createdAt, respondedAt: $respondedAt)';
 }
 
 
@@ -293,7 +293,7 @@ abstract mixin class _$RideBookingCopyWith<$Res> implements $RideBookingCopyWith
   factory _$RideBookingCopyWith(_RideBooking value, $Res Function(_RideBooking) _then) = __$RideBookingCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String rideId, String passengerId, int seatsBooked, BookingStatus status, LocationPoint? pickupLocation, LocationPoint? dropoffLocation, String? note,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? respondedAt
+ String id, String rideId, String passengerId, String? driverId, int seatsBooked, BookingStatus status, LocationPoint? pickupLocation, LocationPoint? dropoffLocation, String? note,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? respondedAt
 });
 
 
@@ -310,12 +310,13 @@ class __$RideBookingCopyWithImpl<$Res>
 
 /// Create a copy of RideBooking
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? rideId = null,Object? passengerId = null,Object? seatsBooked = null,Object? status = null,Object? pickupLocation = freezed,Object? dropoffLocation = freezed,Object? note = freezed,Object? createdAt = freezed,Object? respondedAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? rideId = null,Object? passengerId = null,Object? driverId = freezed,Object? seatsBooked = null,Object? status = null,Object? pickupLocation = freezed,Object? dropoffLocation = freezed,Object? note = freezed,Object? createdAt = freezed,Object? respondedAt = freezed,}) {
   return _then(_RideBooking(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,rideId: null == rideId ? _self.rideId : rideId // ignore: cast_nullable_to_non_nullable
 as String,passengerId: null == passengerId ? _self.passengerId : passengerId // ignore: cast_nullable_to_non_nullable
-as String,seatsBooked: null == seatsBooked ? _self.seatsBooked : seatsBooked // ignore: cast_nullable_to_non_nullable
+as String,driverId: freezed == driverId ? _self.driverId : driverId // ignore: cast_nullable_to_non_nullable
+as String?,seatsBooked: null == seatsBooked ? _self.seatsBooked : seatsBooked // ignore: cast_nullable_to_non_nullable
 as int,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as BookingStatus,pickupLocation: freezed == pickupLocation ? _self.pickupLocation : pickupLocation // ignore: cast_nullable_to_non_nullable
 as LocationPoint?,dropoffLocation: freezed == dropoffLocation ? _self.dropoffLocation : dropoffLocation // ignore: cast_nullable_to_non_nullable

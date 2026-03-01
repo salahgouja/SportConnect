@@ -57,15 +57,12 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
 
   @override
   Widget build(BuildContext context) {
-    final rideAsync = ref.watch(rideDetailViewModelProvider(widget.rideId));
-    // Bookings are stored in a separate collection — watch them alongside the ride
-    final bookings =
-        ref.watch(bookingsByRideProvider(widget.rideId)).value ??
-        const <RideBooking>[];
+    // Watch only the ViewModel — it already aggregates ride + bookings.
+    final vmState = ref.watch(rideDetailViewModelProvider(widget.rideId));
 
-    return rideAsync.when(
+    return vmState.ride.when(
       data: (ride) => ride != null
-          ? _buildContent(ride, bookings)
+          ? _buildContent(ride, vmState.bookings)
           : _buildErrorState(AppLocalizations.of(context).rideNotFound),
       loading: () => _buildLoadingState(),
       error: (error, _) => _buildErrorState(error.toString()),
@@ -308,6 +305,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
               children: [
                 TileLayer(
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.sportconnect.app',
                 ),
                 MarkerLayer(
                   markers: [
@@ -674,6 +672,66 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
             ],
           ),
 
+          // Waypoints / intermediate stops
+          if (ride.route.waypoints.isNotEmpty) ...[
+            ...(ride.route.waypoints.toList()
+                  ..sort((a, b) => a.order.compareTo(b.order)))
+                .map((wp) {
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Column(
+                        children: [
+                          Container(
+                            width: 10.w,
+                            height: 10.w,
+                            decoration: BoxDecoration(
+                              color: AppColors.warning,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 1.5,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            width: 2.w,
+                            height: 32.h,
+                            color: AppColors.warning.withValues(alpha: 0.4),
+                          ),
+                        ],
+                      ),
+                      SizedBox(width: 13.w),
+                      Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.only(bottom: 4.h),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Stop ${wp.order + 1}',
+                                style: TextStyle(
+                                  fontSize: 10.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.warning,
+                                ),
+                              ),
+                              Text(
+                                wp.location.address,
+                                style: TextStyle(
+                                  fontSize: 13.sp,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }),
+          ],
+
           // Destination
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -707,6 +765,46 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                         color: AppColors.textSecondary,
                       ),
                     ),
+                    // Event badge
+                    if (ride.eventId != null) ...[
+                      SizedBox(height: 6.h),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 10.w,
+                          vertical: 4.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primarySurface,
+                          borderRadius: BorderRadius.circular(8.r),
+                          border: Border.all(
+                            color: AppColors.primary.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.emoji_events_rounded,
+                              size: 12.sp,
+                              color: AppColors.primary,
+                            ),
+                            SizedBox(width: 4.w),
+                            Flexible(
+                              child: Text(
+                                ride.eventName ?? 'Event',
+                                style: TextStyle(
+                                  fontSize: 11.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.primary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -1269,12 +1367,21 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
         child: Row(
           children: [
             Expanded(
-              child: PremiumButton(
-                text: 'Edit Ride',
-                onPressed: () => _editRide(ride),
-                style: PremiumButtonStyle.secondary,
-                icon: Icons.edit_rounded,
-              ),
+              child: ride.status == RideStatus.inProgress
+                  ? PremiumButton(
+                      text: 'Active Ride',
+                      onPressed: () => context.push(
+                        '${AppRoutes.driverActiveRide.path}?rideId=${ride.id}',
+                      ),
+                      style: PremiumButtonStyle.success,
+                      icon: Icons.navigation_rounded,
+                    )
+                  : PremiumButton(
+                      text: 'Edit Ride',
+                      onPressed: () => _editRide(ride),
+                      style: PremiumButtonStyle.secondary,
+                      icon: Icons.edit_rounded,
+                    ),
             ),
             SizedBox(width: 12.w),
             if (ride.status == RideStatus.active)
@@ -1402,7 +1509,10 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
               onTap: () {
                 Navigator.pop(context);
                 context.push(
-                  '${AppRoutes.profile.path}/${booking.passengerId}',
+                  AppRoutes.userProfile.path.replaceFirst(
+                    ':id',
+                    booking.passengerId,
+                  ),
                 );
               },
             ),
@@ -1448,12 +1558,8 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       final passengerName = passengerProfile?.displayName ?? 'Passenger';
 
       await ref
-          .read(rideActionsViewModelProvider)
-          .updateBookingStatus(
-            rideId: ride.id,
-            bookingId: booking.id,
-            newStatus: BookingStatus.accepted,
-          );
+          .read(rideDetailViewModelProvider(ride.id).notifier)
+          .acceptBooking(booking.id);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1490,6 +1596,9 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
   }
 
   Future<void> _rejectBooking(RideModel ride, RideBooking booking) async {
+    if (_isProcessing) return;
+    setState(() => _isProcessing = true);
+
     // Fetch passenger profile for dialog message
     final passengerProfile = await ref.read(
       userProfileProvider(booking.passengerId).future,
@@ -1525,10 +1634,12 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       ),
     );
 
-    if (confirmed != true) return;
+    if (confirmed != true) {
+      if (mounted) setState(() => _isProcessing = false);
+      return;
+    }
 
     HapticFeedback.mediumImpact();
-    setState(() => _isProcessing = true);
 
     try {
       await ref
@@ -1789,6 +1900,10 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
 
     try {
       await ref.read(rideActionsViewModelProvider).startRide(ride.id);
+      // Navigate directly to the active ride management screen
+      if (mounted) {
+        context.push('${AppRoutes.driverActiveRide.path}?rideId=${ride.id}');
+      }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

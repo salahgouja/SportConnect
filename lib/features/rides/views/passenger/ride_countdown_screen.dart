@@ -5,12 +5,17 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
+import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
+import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
-import 'package:sport_connect/features/rides/repositories/booking_repository.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 
 /// Pre-departure countdown screen for accepted bookings.
@@ -71,55 +76,65 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<RideBooking?>(
-      stream: ref
-          .watch(bookingRepositoryProvider)
-          .streamBookingById(widget.bookingId),
-      builder: (context, bookingSnap) {
-        final booking = bookingSnap.data;
+    final bookingAsync = ref.watch(bookingStreamProvider(widget.bookingId));
+    final booking = bookingAsync.value;
+    final vmState = booking != null
+        ? ref.watch(rideDetailViewModelProvider(booking.rideId))
+        : null;
 
-        if (!bookingSnap.hasData && !bookingSnap.hasError) {
-          return _buildScaffold(
-            title: 'Your Ride',
-            body: const Center(child: CircularProgressIndicator()),
-          );
-        }
+    if (bookingAsync.isLoading) {
+      return _buildScaffold(
+        title: 'Your Ride',
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
 
-        if (booking == null) {
-          return _buildScaffold(
-            title: 'Your Ride',
-            body: Center(
-              child: Padding(
-                padding: EdgeInsets.all(24.w),
-                child: const Text(
-                  'Booking not found. It may have been cancelled.',
-                ),
-              ),
-            ),
-          );
-        }
-
-        final rideAsync = ref.watch(
-          rideDetailViewModelProvider(booking.rideId),
-        );
-
-        return rideAsync.when(
-          data: (ride) => ride == null
-              ? _buildScaffold(
-                  title: 'Your Ride',
-                  body: const Center(child: Text('Ride not found')),
-                )
-              : _buildContent(ride, booking),
-          loading: () => _buildScaffold(
-            title: 'Your Ride',
-            body: const Center(child: CircularProgressIndicator()),
+    if (bookingAsync.hasError) {
+      return _buildScaffold(
+        title: 'Your Ride',
+        body: Center(
+          child: Padding(
+            padding: EdgeInsets.all(24.w),
+            child: Text('Failed to load booking: ${bookingAsync.error}'),
           ),
-          error: (e, _) => _buildScaffold(
-            title: 'Your Ride',
-            body: Center(child: Text('Error: $e')),
+        ),
+      );
+    }
+
+    if (booking == null) {
+      return _buildScaffold(
+        title: 'Your Ride',
+        body: Center(
+          child: Padding(
+            padding: EdgeInsets.all(24.w),
+            child: const Text('Booking not found. It may have been cancelled.'),
           ),
-        );
-      },
+        ),
+      );
+    }
+
+    if (vmState == null) {
+      return _buildScaffold(
+        title: 'Your Ride',
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    return vmState.ride.when(
+      data: (ride) => ride == null
+          ? _buildScaffold(
+              title: 'Your Ride',
+              body: const Center(child: Text('Ride not found')),
+            )
+          : _buildContent(ride, booking),
+      loading: () => _buildScaffold(
+        title: 'Your Ride',
+        body: const Center(child: CircularProgressIndicator()),
+      ),
+      error: (e, _) => _buildScaffold(
+        title: 'Your Ride',
+        body: Center(child: Text('Error: $e')),
+      ),
     );
   }
 
@@ -143,7 +158,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
       _hasNavigated = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          context.push(
+          context.pushReplacement(
             '${AppRoutes.riderActiveRide.path}?rideId=${booking.rideId}',
           );
         }
@@ -196,13 +211,24 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
                     duration: 1.seconds,
                   ),
             ] else
-              Text(
-                '🚗  Ride has started!',
-                style: TextStyle(
-                  fontSize: 22.sp,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.success,
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.directions_car_filled_rounded,
+                    color: AppColors.success,
+                    size: 28.sp,
+                  ),
+                  SizedBox(width: 10.w),
+                  Text(
+                    'Ride has started!',
+                    style: TextStyle(
+                      fontSize: 22.sp,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.success,
+                    ),
+                  ),
+                ],
               ).animate().scale(duration: 400.ms, curve: Curves.elasticOut),
 
             SizedBox(height: 32.h),
@@ -211,8 +237,15 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
             _buildRouteCard(ride).animate().slideY(delay: 200.ms),
             SizedBox(height: 16.h),
 
+            // Driver info + contact buttons
+            _buildDriverCard(ride).animate().slideY(delay: 250.ms),
+            SizedBox(height: 16.h),
+
             // Booking info card
-            _buildBookingInfoCard(booking).animate().slideY(delay: 300.ms),
+            _buildBookingInfoCard(
+              ride,
+              booking,
+            ).animate().slideY(delay: 300.ms),
             SizedBox(height: 32.h),
 
             // Action buttons
@@ -268,6 +301,161 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildDriverCard(RideModel ride) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: DriverInfoWidget(
+        driverId: ride.driverId,
+        builder: (context, displayName, photoUrl, rating) {
+          return Column(
+            children: [
+              Row(
+                children: [
+                  DriverAvatarWidget(driverId: ride.driverId, radius: 24),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          displayName,
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.star_rounded,
+                              size: 14.sp,
+                              color: AppColors.warning,
+                            ),
+                            SizedBox(width: 2.w),
+                            Text(
+                              rating.average.toStringAsFixed(1),
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    'Your Driver',
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 12.h),
+              Row(
+                children: [
+                  Expanded(
+                    child: PremiumButton(
+                      text: 'Message',
+                      icon: Icons.chat_bubble_outline_rounded,
+                      style: PremiumButtonStyle.secondary,
+                      onPressed: () =>
+                          _openDriverChat(ride, displayName, photoUrl),
+                    ),
+                  ),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: PremiumButton(
+                      text: 'Call',
+                      icon: Icons.phone_outlined,
+                      style: PremiumButtonStyle.ghost,
+                      onPressed: () => _callDriver(ride.driverId),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _openDriverChat(
+    RideModel ride,
+    String driverName,
+    String? driverPhotoUrl,
+  ) async {
+    final currentUser = ref.read(currentUserProvider).value;
+    if (currentUser == null) return;
+
+    try {
+      final chat = await ref.read(
+        getOrCreateChatProvider(
+          userId1: currentUser.uid,
+          userId2: ride.driverId,
+          userName1: currentUser.displayName,
+          userName2: driverName,
+        ).future,
+      );
+
+      if (!mounted) return;
+
+      final driverUser = UserModel.driver(
+        uid: ride.driverId,
+        email: '',
+        displayName: driverName,
+        photoUrl: driverPhotoUrl,
+      );
+
+      context.pushNamed(
+        AppRoutes.chatDetail.name,
+        pathParameters: {'id': chat.id},
+        extra: driverUser,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Failed to open chat. Please try again.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  Future<void> _callDriver(String driverId) async {
+    try {
+      final profile = await ref.read(userProfileProvider(driverId).future);
+      final phone = profile?.phoneNumber;
+      if (phone == null || phone.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Driver phone number not available.')),
+        );
+        return;
+      }
+      final uri = Uri(scheme: 'tel', path: phone);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not launch phone dialer.')),
+      );
+    }
   }
 
   Widget _buildRouteCard(RideModel ride) {
@@ -352,7 +540,9 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
     );
   }
 
-  Widget _buildBookingInfoCard(RideBooking booking) {
+  Widget _buildBookingInfoCard(RideModel ride, RideBooking booking) {
+    final totalPrice = booking.seatsBooked * ride.pricePerSeat;
+    final currency = ride.currency ?? '€';
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(16.w),
@@ -376,6 +566,12 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
                 ? booking.id.substring(0, 6).toUpperCase()
                 : booking.id.toUpperCase(),
             label: 'Ref #',
+          ),
+          Container(width: 1.w, height: 32.h, color: AppColors.divider),
+          _buildInfoItem(
+            icon: Icons.payments_outlined,
+            value: '$currency${totalPrice.toStringAsFixed(2)}',
+            label: 'Total',
           ),
         ],
       ),

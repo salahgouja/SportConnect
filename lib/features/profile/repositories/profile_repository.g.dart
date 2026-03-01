@@ -8,49 +8,6 @@ part of 'profile_repository.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-
-@ProviderFor(profileRepository)
-final profileRepositoryProvider = ProfileRepositoryProvider._();
-
-final class ProfileRepositoryProvider
-    extends
-        $FunctionalProvider<IUserRepository, IUserRepository, IUserRepository>
-    with $Provider<IUserRepository> {
-  ProfileRepositoryProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'profileRepositoryProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$profileRepositoryHash();
-
-  @$internal
-  @override
-  $ProviderElement<IUserRepository> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
-
-  @override
-  IUserRepository create(Ref ref) {
-    return profileRepository(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(IUserRepository value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<IUserRepository>(value),
-    );
-  }
-}
-
-String _$profileRepositoryHash() => r'cd1e9af875ee01347d8dbed891f4017261bdf768';
-
 /// Stream provider for current user
 
 @ProviderFor(currentUserStream)

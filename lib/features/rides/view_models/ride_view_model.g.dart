@@ -67,14 +67,29 @@ abstract class _$RideFormViewModel extends $Notifier<RideFormState> {
 }
 
 /// Ride Search View Model
+///
+/// Uses client-side batching: the Firestore geo query returns all matches
+/// (up to 100) since cursor pagination isn't possible with latitude
+/// inequality filters. Results are stored in [_allResults] and surfaced
+/// in pages of [_pageSize] via [loadMore].
 
 @ProviderFor(RideSearchViewModel)
 final rideSearchViewModelProvider = RideSearchViewModelProvider._();
 
 /// Ride Search View Model
+///
+/// Uses client-side batching: the Firestore geo query returns all matches
+/// (up to 100) since cursor pagination isn't possible with latitude
+/// inequality filters. Results are stored in [_allResults] and surfaced
+/// in pages of [_pageSize] via [loadMore].
 final class RideSearchViewModelProvider
     extends $NotifierProvider<RideSearchViewModel, RideSearchState> {
   /// Ride Search View Model
+  ///
+  /// Uses client-side batching: the Firestore geo query returns all matches
+  /// (up to 100) since cursor pagination isn't possible with latitude
+  /// inequality filters. Results are stored in [_allResults] and surfaced
+  /// in pages of [_pageSize] via [loadMore].
   RideSearchViewModelProvider._()
     : super(
         from: null,
@@ -103,9 +118,14 @@ final class RideSearchViewModelProvider
 }
 
 String _$rideSearchViewModelHash() =>
-    r'bbac61e361c4c1ffa947980ff5dd81b4b0511e6c';
+    r'197846cc6968996779c47b877753f02ce614db24';
 
 /// Ride Search View Model
+///
+/// Uses client-side batching: the Firestore geo query returns all matches
+/// (up to 100) since cursor pagination isn't possible with latitude
+/// inequality filters. Results are stored in [_allResults] and surfaced
+/// in pages of [_pageSize] via [loadMore].
 
 abstract class _$RideSearchViewModel extends $Notifier<RideSearchState> {
   RideSearchState build();
@@ -125,15 +145,18 @@ abstract class _$RideSearchViewModel extends $Notifier<RideSearchState> {
   }
 }
 
-/// Single Ride Detail View Model (real-time updates)
+/// Single Ride Detail View Model — views watch only this, never separate
+/// stream/booking providers directly.
 
 @ProviderFor(RideDetailViewModel)
 final rideDetailViewModelProvider = RideDetailViewModelFamily._();
 
-/// Single Ride Detail View Model (real-time updates)
+/// Single Ride Detail View Model — views watch only this, never separate
+/// stream/booking providers directly.
 final class RideDetailViewModelProvider
-    extends $StreamNotifierProvider<RideDetailViewModel, RideModel?> {
-  /// Single Ride Detail View Model (real-time updates)
+    extends $NotifierProvider<RideDetailViewModel, RideDetailState> {
+  /// Single Ride Detail View Model — views watch only this, never separate
+  /// stream/booking providers directly.
   RideDetailViewModelProvider._({
     required RideDetailViewModelFamily super.from,
     required String super.argument,
@@ -159,6 +182,14 @@ final class RideDetailViewModelProvider
   @override
   RideDetailViewModel create() => RideDetailViewModel();
 
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(RideDetailState value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<RideDetailState>(value),
+    );
+  }
+
   @override
   bool operator ==(Object other) {
     return other is RideDetailViewModelProvider && other.argument == argument;
@@ -171,17 +202,18 @@ final class RideDetailViewModelProvider
 }
 
 String _$rideDetailViewModelHash() =>
-    r'152510f0e83063689d1ce1c5cd4f0e3b19f89c1c';
+    r'9e6c7cc2f579d0dac9362c3e127f5bc395c88e59';
 
-/// Single Ride Detail View Model (real-time updates)
+/// Single Ride Detail View Model — views watch only this, never separate
+/// stream/booking providers directly.
 
 final class RideDetailViewModelFamily extends $Family
     with
         $ClassFamilyOverride<
           RideDetailViewModel,
-          AsyncValue<RideModel?>,
-          RideModel?,
-          Stream<RideModel?>,
+          RideDetailState,
+          RideDetailState,
+          RideDetailState,
           String
         > {
   RideDetailViewModelFamily._()
@@ -193,7 +225,8 @@ final class RideDetailViewModelFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Single Ride Detail View Model (real-time updates)
+  /// Single Ride Detail View Model — views watch only this, never separate
+  /// stream/booking providers directly.
 
   RideDetailViewModelProvider call(String rideId) =>
       RideDetailViewModelProvider._(argument: rideId, from: this);
@@ -202,22 +235,131 @@ final class RideDetailViewModelFamily extends $Family
   String toString() => r'rideDetailViewModelProvider';
 }
 
-/// Single Ride Detail View Model (real-time updates)
+/// Single Ride Detail View Model — views watch only this, never separate
+/// stream/booking providers directly.
 
-abstract class _$RideDetailViewModel extends $StreamNotifier<RideModel?> {
+abstract class _$RideDetailViewModel extends $Notifier<RideDetailState> {
   late final _$args = ref.$arg as String;
   String get rideId => _$args;
 
-  Stream<RideModel?> build(String rideId);
+  RideDetailState build(String rideId);
   @$mustCallSuper
   @override
   void runBuild() {
-    final ref = this.ref as $Ref<AsyncValue<RideModel?>, RideModel?>;
+    final ref = this.ref as $Ref<RideDetailState, RideDetailState>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<AsyncValue<RideModel?>, RideModel?>,
-              AsyncValue<RideModel?>,
+              AnyNotifier<RideDetailState, RideDetailState>,
+              RideDetailState,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, () => build(_$args));
+  }
+}
+
+/// ViewModel for active-ride screens — views watch only this provider.
+
+@ProviderFor(ActiveRideViewModel)
+final activeRideViewModelProvider = ActiveRideViewModelFamily._();
+
+/// ViewModel for active-ride screens — views watch only this provider.
+final class ActiveRideViewModelProvider
+    extends $NotifierProvider<ActiveRideViewModel, ActiveRideState> {
+  /// ViewModel for active-ride screens — views watch only this provider.
+  ActiveRideViewModelProvider._({
+    required ActiveRideViewModelFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'activeRideViewModelProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$activeRideViewModelHash();
+
+  @override
+  String toString() {
+    return r'activeRideViewModelProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  ActiveRideViewModel create() => ActiveRideViewModel();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ActiveRideState value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ActiveRideState>(value),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is ActiveRideViewModelProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$activeRideViewModelHash() =>
+    r'5de98b89bea7f3946d19bf41f32d920b9ba50192';
+
+/// ViewModel for active-ride screens — views watch only this provider.
+
+final class ActiveRideViewModelFamily extends $Family
+    with
+        $ClassFamilyOverride<
+          ActiveRideViewModel,
+          ActiveRideState,
+          ActiveRideState,
+          ActiveRideState,
+          String
+        > {
+  ActiveRideViewModelFamily._()
+    : super(
+        retry: null,
+        name: r'activeRideViewModelProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// ViewModel for active-ride screens — views watch only this provider.
+
+  ActiveRideViewModelProvider call(String rideId) =>
+      ActiveRideViewModelProvider._(argument: rideId, from: this);
+
+  @override
+  String toString() => r'activeRideViewModelProvider';
+}
+
+/// ViewModel for active-ride screens — views watch only this provider.
+
+abstract class _$ActiveRideViewModel extends $Notifier<ActiveRideState> {
+  late final _$args = ref.$arg as String;
+  String get rideId => _$args;
+
+  ActiveRideState build(String rideId);
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<ActiveRideState, ActiveRideState>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<ActiveRideState, ActiveRideState>,
+              ActiveRideState,
               Object?,
               Object?
             >;
@@ -651,7 +793,7 @@ final class BookingsByRideProvider
   }
 }
 
-String _$bookingsByRideHash() => r'bd8ef54a82d42e88969f06a85f3b94db67275434';
+String _$bookingsByRideHash() => r'10a217065614cc6c32deb98418892f9cba3de9e9';
 
 /// Real-time stream of all bookings for a given ride.
 ///
@@ -681,6 +823,207 @@ final class BookingsByRideFamily extends $Family
 
   @override
   String toString() => r'bookingsByRideProvider';
+}
+
+/// Real-time stream of a single booking by ID.
+///
+/// Wraps [BookingRepository.streamBookingById] so views never import the
+/// repository layer directly.
+
+@ProviderFor(bookingStream)
+final bookingStreamProvider = BookingStreamFamily._();
+
+/// Real-time stream of a single booking by ID.
+///
+/// Wraps [BookingRepository.streamBookingById] so views never import the
+/// repository layer directly.
+
+final class BookingStreamProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<RideBooking?>,
+          RideBooking?,
+          Stream<RideBooking?>
+        >
+    with $FutureModifier<RideBooking?>, $StreamProvider<RideBooking?> {
+  /// Real-time stream of a single booking by ID.
+  ///
+  /// Wraps [BookingRepository.streamBookingById] so views never import the
+  /// repository layer directly.
+  BookingStreamProvider._({
+    required BookingStreamFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'bookingStreamProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$bookingStreamHash();
+
+  @override
+  String toString() {
+    return r'bookingStreamProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<RideBooking?> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<RideBooking?> create(Ref ref) {
+    final argument = this.argument as String;
+    return bookingStream(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is BookingStreamProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$bookingStreamHash() => r'351f839d789404896c93b1583525689f5d093c59';
+
+/// Real-time stream of a single booking by ID.
+///
+/// Wraps [BookingRepository.streamBookingById] so views never import the
+/// repository layer directly.
+
+final class BookingStreamFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<RideBooking?>, String> {
+  BookingStreamFamily._()
+    : super(
+        retry: null,
+        name: r'bookingStreamProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Real-time stream of a single booking by ID.
+  ///
+  /// Wraps [BookingRepository.streamBookingById] so views never import the
+  /// repository layer directly.
+
+  BookingStreamProvider call(String bookingId) =>
+      BookingStreamProvider._(argument: bookingId, from: this);
+
+  @override
+  String toString() => r'bookingStreamProvider';
+}
+
+/// Real-time stream of all bookings for a given passenger.
+///
+/// Used on the pending-booking screen where the passenger polls for
+/// status changes before being auto-navigated.
+
+@ProviderFor(bookingsByPassenger)
+final bookingsByPassengerProvider = BookingsByPassengerFamily._();
+
+/// Real-time stream of all bookings for a given passenger.
+///
+/// Used on the pending-booking screen where the passenger polls for
+/// status changes before being auto-navigated.
+
+final class BookingsByPassengerProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<RideBooking>>,
+          List<RideBooking>,
+          Stream<List<RideBooking>>
+        >
+    with
+        $FutureModifier<List<RideBooking>>,
+        $StreamProvider<List<RideBooking>> {
+  /// Real-time stream of all bookings for a given passenger.
+  ///
+  /// Used on the pending-booking screen where the passenger polls for
+  /// status changes before being auto-navigated.
+  BookingsByPassengerProvider._({
+    required BookingsByPassengerFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'bookingsByPassengerProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$bookingsByPassengerHash();
+
+  @override
+  String toString() {
+    return r'bookingsByPassengerProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<RideBooking>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<RideBooking>> create(Ref ref) {
+    final argument = this.argument as String;
+    return bookingsByPassenger(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is BookingsByPassengerProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$bookingsByPassengerHash() =>
+    r'94b8132120cbca4ff2f4449e466d83b9893b2344';
+
+/// Real-time stream of all bookings for a given passenger.
+///
+/// Used on the pending-booking screen where the passenger polls for
+/// status changes before being auto-navigated.
+
+final class BookingsByPassengerFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<RideBooking>>, String> {
+  BookingsByPassengerFamily._()
+    : super(
+        retry: null,
+        name: r'bookingsByPassengerProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Real-time stream of all bookings for a given passenger.
+  ///
+  /// Used on the pending-booking screen where the passenger polls for
+  /// status changes before being auto-navigated.
+
+  BookingsByPassengerProvider call(String passengerId) =>
+      BookingsByPassengerProvider._(argument: passengerId, from: this);
+
+  @override
+  String toString() => r'bookingsByPassengerProvider';
 }
 
 /// All Active Rides Stream Provider (for search screen)

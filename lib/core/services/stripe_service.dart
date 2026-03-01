@@ -8,7 +8,7 @@ import 'package:sport_connect/core/config/app_config.dart';
 part 'stripe_service.g.dart';
 
 /// Riverpod provider for StripeService singleton
-@riverpod
+@Riverpod(keepAlive: true)
 StripeService stripeService(Ref ref) => StripeService();
 
 /// Stripe Service for payment processing and Connect functionality
@@ -127,7 +127,7 @@ class StripeService {
           customerId: customerId,
           customerEphemeralKeySecret: ephemeralKeySecret,
           // Enable Apple Pay / Google Pay for faster checkout
-          applePay: const PaymentSheetApplePay(merchantCountryCode: 'FR'),
+          // applePay: const PaymentSheetApplePay(merchantCountryCode: 'FR'),
           googlePay: const PaymentSheetGooglePay(
             merchantCountryCode: 'FR',
             testEnv: true, // Set to false in production
@@ -135,12 +135,7 @@ class StripeService {
           // Allow delayed payment methods (e.g., SEPA direct debit)
           allowsDelayedPaymentMethods: true,
           appearance: const PaymentSheetAppearance(
-            colors: PaymentSheetAppearanceColors(
-              primary: Color(0xFF1E88E5),
-              background: Color(0xFFFFFFFF),
-              componentBackground: Color(0xFFF5F5F5),
-              componentBorder: Color(0xFFE0E0E0),
-            ),
+            colors: PaymentSheetAppearanceColors(primary: Color(0xFF1E88E5)),
             shapes: PaymentSheetShape(borderWidth: 1),
             primaryButton: PaymentSheetPrimaryButtonAppearance(
               shapes: PaymentSheetPrimaryButtonShape(),

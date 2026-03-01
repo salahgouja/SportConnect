@@ -3,8 +3,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
-import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Premium Achievements Screen with gamification UI
@@ -33,7 +33,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final userAsync = ref.watch(currentUserStreamProvider);
+    final userAsync = ref.watch(currentUserProvider);
 
     return userAsync.when(
       data: (user) => _buildContent(context, user!),
@@ -299,25 +299,25 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _buildStatItem(
-            AppLocalizations.of(context).text4,
+            Icons.emoji_events_rounded,
             AppLocalizations.of(context).value2(badges),
             AppLocalizations.of(context).badges,
           ),
           _buildStatDivider(),
           _buildStatItem(
-            AppLocalizations.of(context).text5,
+            Icons.track_changes_rounded,
             AppLocalizations.of(context).value2(challenges),
             AppLocalizations.of(context).challenges,
           ),
           _buildStatDivider(),
           _buildStatItem(
-            AppLocalizations.of(context).text6,
+            Icons.directions_car_rounded,
             AppLocalizations.of(context).value2(rides),
             AppLocalizations.of(context).navRides,
           ),
           _buildStatDivider(),
           _buildStatItem(
-            AppLocalizations.of(context).text7,
+            Icons.eco_rounded,
             _formatCO2(co2),
             AppLocalizations.of(context).kgCo,
           ),
@@ -326,10 +326,10 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
     );
   }
 
-  Widget _buildStatItem(String emoji, String value, String label) {
+  Widget _buildStatItem(IconData icon, String value, String label) {
     return Column(
       children: [
-        Text(emoji, style: TextStyle(fontSize: 24.sp)),
+        Icon(icon, size: 24.sp, color: Colors.white),
         SizedBox(height: 4.h),
         Text(
           value,
@@ -912,16 +912,42 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
         children: [
           SizedBox(
             width: 32.w,
-            child: Text(
-              isTop3
-                  ? ['🥇', '🥈', '🥉'][entry.rank - 1]
-                  : AppLocalizations.of(context).value3(entry.rank),
-              style: TextStyle(
-                fontSize: isTop3 ? 18.sp : 14.sp,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
+            child: isTop3
+                ? Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 4.w,
+                      vertical: 2.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: [
+                        const Color(0xFFFFD700),
+                        const Color(0xFFC0C0C0),
+                        const Color(0xFFCD7F32),
+                      ][entry.rank - 1].withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(6.r),
+                    ),
+                    child: Text(
+                      '#${entry.rank}',
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w800,
+                        color: [
+                          const Color(0xFFB8860B),
+                          const Color(0xFF707070),
+                          const Color(0xFF8B4513),
+                        ][entry.rank - 1],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  )
+                : Text(
+                    AppLocalizations.of(context).value3(entry.rank),
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
           ),
           SizedBox(width: 12.w),
           Container(

@@ -19,8 +19,13 @@ import 'package:sport_connect/core/theme/platform_adaptive.dart';
 /// - Confirmation dialog
 class CancellationReasonScreen extends ConsumerStatefulWidget {
   final String rideId;
+  final bool isDriver;
 
-  const CancellationReasonScreen({super.key, required this.rideId});
+  const CancellationReasonScreen({
+    super.key,
+    required this.rideId,
+    this.isDriver = false,
+  });
 
   @override
   ConsumerState<CancellationReasonScreen> createState() =>
@@ -33,7 +38,10 @@ class _CancellationReasonScreenState
   final _commentController = TextEditingController();
   bool _isSubmitting = false;
 
-  static const _reasons = [
+  List<_CancelReason> get _reasons =>
+      widget.isDriver ? _driverReasons : _riderReasons;
+
+  static const _riderReasons = [
     _CancelReason(
       'Change of plans',
       Icons.event_busy_rounded,
@@ -76,6 +84,49 @@ class _CancellationReasonScreenState
     ),
   ];
 
+  static const _driverReasons = [
+    _CancelReason(
+      'Vehicle issue',
+      Icons.car_repair_rounded,
+      'My vehicle has a mechanical problem or is unavailable.',
+    ),
+    _CancelReason(
+      'Passenger not at pickup',
+      Icons.person_off_rounded,
+      'The passenger was not at the agreed pickup location.',
+    ),
+    _CancelReason(
+      'Change of plans',
+      Icons.event_busy_rounded,
+      'My schedule changed and I can no longer make this ride.',
+    ),
+    _CancelReason(
+      'Safety concern',
+      Icons.shield_outlined,
+      'I have concerns about the safety of this ride.',
+    ),
+    _CancelReason(
+      'Passenger not responding',
+      Icons.chat_bubble_outline_rounded,
+      'The passenger is not responding to messages.',
+    ),
+    _CancelReason(
+      'Route issue',
+      Icons.wrong_location_rounded,
+      'There is a road closure or route problem.',
+    ),
+    _CancelReason(
+      'Emergency',
+      Icons.emergency_rounded,
+      'I have an unexpected emergency.',
+    ),
+    _CancelReason(
+      'Other',
+      Icons.more_horiz_rounded,
+      'Another reason not listed above.',
+    ),
+  ];
+
   @override
   void dispose() {
     _commentController.dispose();
@@ -103,8 +154,9 @@ class _CancellationReasonScreenState
     setState(() => _isSubmitting = true);
 
     try {
-      final reason = _commentController.text.isNotEmpty
-          ? '$_selectedReason: ${_commentController.text}'
+      final comment = _commentController.text.trim();
+      final reason = comment.isNotEmpty
+          ? '$_selectedReason | $comment'
           : _selectedReason!;
 
       await ref

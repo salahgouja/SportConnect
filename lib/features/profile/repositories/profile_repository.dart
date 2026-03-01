@@ -4,7 +4,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_user_repository.dart';
-import 'package:sport_connect/core/providers/firebase_providers.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
@@ -51,7 +51,12 @@ class ProfileRepository implements IUserRepository {
 
   /// Upload profile photo
   Future<String> uploadProfilePhoto(String uid, File file) async {
-    final ref = _storage.ref().child('users').child(uid).child('profile.jpg');
+    final ref = _storage
+        .ref()
+        .child('users')
+        .child(uid)
+        .child('profile')
+        .child('profile.jpg');
 
     final metadata = SettableMetadata(
       contentType: 'image/jpeg',
@@ -71,7 +76,12 @@ class ProfileRepository implements IUserRepository {
   /// Delete profile photo
   Future<void> deleteProfilePhoto(String uid) async {
     try {
-      final ref = _storage.ref().child('users').child(uid).child('profile.jpg');
+      final ref = _storage
+          .ref()
+          .child('users')
+          .child(uid)
+          .child('profile')
+          .child('profile.jpg');
       await ref.delete();
       await updateProfile(uid, {'photoUrl': null});
     } catch (e) {
@@ -154,9 +164,11 @@ class ProfileRepository implements IUserRepository {
     final vehicleRef = _vehiclesCollection.doc(vehicle.id);
     await vehicleRef.set(vehicle);
 
-    // Add vehicle ID to driver's vehicleIds list
-    user.vehicleIds.add(vehicle.id);
-    await _usersCollection.doc(uid).update(user.toJson());
+    // Add vehicle ID to driver's vehicleIds list using arrayUnion to avoid
+    // mutating the immutable freezed list.
+    await _usersCollection.doc(uid).update({
+      'vehicleIds': FieldValue.arrayUnion([vehicle.id]),
+    });
   }
 
   /// Update a vehicle (only for drivers)
@@ -176,9 +188,11 @@ class ProfileRepository implements IUserRepository {
     // Remove from vehicles collection
     await _vehiclesCollection.doc(vehicleId).delete();
 
-    // Remove vehicle ID from driver's vehicleIds list
-    user.vehicleIds.remove(vehicleId);
-    await _usersCollection.doc(uid).update(user.toJson());
+    // Remove vehicle ID from driver's vehicleIds list using arrayRemove to
+    // avoid mutating the immutable freezed list.
+    await _usersCollection.doc(uid).update({
+      'vehicleIds': FieldValue.arrayRemove([vehicleId]),
+    });
   }
 
   /// Set default vehicle (only for drivers)
@@ -491,14 +505,6 @@ class ProfileRepository implements IUserRepository {
       return data?.isOnline ?? false;
     });
   }
-}
-
-@riverpod
-IUserRepository profileRepository(Ref ref) {
-  return ProfileRepository(
-    ref.watch(firestoreInstanceProvider),
-    ref.watch(storageInstanceProvider),
-  );
 }
 
 /// Stream provider for current user

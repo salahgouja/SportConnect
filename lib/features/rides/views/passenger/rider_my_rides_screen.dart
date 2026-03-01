@@ -15,7 +15,6 @@ import 'package:sport_connect/features/profile/view_models/profile_view_model.da
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
-import 'package:sport_connect/features/rides/repositories/booking_repository.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -234,20 +233,36 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
                 )
                 .length;
 
-            return Row(
+            final co2Saved = rides.fold<double>(
+              0,
+              (sum, r) =>
+                  sum +
+                  (r.status == RideStatus.completed
+                      ? r.co2SavedPerPassenger
+                      : 0),
+            );
+
+            return Wrap(
+              spacing: 12.w,
+              runSpacing: 8.h,
               children: [
                 _buildStatChip(
                   icon: Icons.route_rounded,
                   value: '$totalRides',
                   label: AppLocalizations.of(context).totalTrips,
                 ),
-                SizedBox(width: 12.w),
                 _buildStatChip(
                   icon: Icons.local_taxi_rounded,
                   value: '$activeRides',
                   label: AppLocalizations.of(context).active,
                   highlighted: activeRides > 0,
                 ),
+                if (co2Saved > 0)
+                  _buildStatChip(
+                    icon: Icons.eco_rounded,
+                    value: '${co2Saved.toStringAsFixed(1)} kg',
+                    label: 'CO\u2082 saved',
+                  ),
               ],
             ).animate().fadeIn(delay: 200.ms);
           },
@@ -707,7 +722,8 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
           data: (rides) {
             final upcomingRides =
                 rides.where((r) {
-                    return r.status == RideStatus.active &&
+                    return (r.status == RideStatus.active ||
+                            r.status == RideStatus.full) &&
                         r.departureTime.isAfter(DateTime.now());
                   }).toList()
                   ..sort((a, b) => a.departureTime.compareTo(b.departureTime));
@@ -986,7 +1002,9 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
                     .where(
                       (r) =>
                           r.status == RideStatus.completed ||
-                          r.status == RideStatus.cancelled,
+                          r.status == RideStatus.cancelled ||
+                          (r.status == RideStatus.full &&
+                              r.departureTime.isBefore(DateTime.now())),
                     )
                     .toList()
                   ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
@@ -1350,13 +1368,12 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
                       if (currentUser == null) return;
                       RideBooking? booking;
                       try {
-                        final allBookings = await ref
-                            .read(bookingRepositoryProvider)
-                            .getBookingsByRideId(ride.id);
-                        final matches = allBookings.where(
-                          (b) => b.passengerId == currentUser.uid,
-                        );
-                        booking = matches.isNotEmpty ? matches.first : null;
+                        booking = await ref
+                            .read(rideActionsViewModelProvider)
+                            .getPassengerBookingForRide(
+                              ride.id,
+                              currentUser.uid,
+                            );
                       } catch (e) {
                         booking = null;
                       }
@@ -1405,8 +1422,82 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
 
   void _showRebookDialog(RideModel ride) {
     HapticFeedback.lightImpact();
-    // Navigate to request ride with pre-filled locations
-    context.go(AppRoutes.riderRequestRide.path);
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Rebook this route?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.radio_button_checked_rounded,
+                  size: 14,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    ride.origin.shortDisplay,
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Icon(
+                  Icons.location_on_rounded,
+                  size: 14,
+                  color: AppColors.error,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    ride.destination.shortDisplay,
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'You\'ll be taken to the search screen. Enter this route to find available rides.',
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => ctx.pop(), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () {
+              ctx.pop();
+              context.go(
+                AppRoutes.riderRequestRide.path,
+                extra: <String, dynamic>{
+                  'fromAddress': ride.origin.address,
+                  'fromLat': ride.origin.latitude,
+                  'fromLng': ride.origin.longitude,
+                  'toAddress': ride.destination.address,
+                  'toLat': ride.destination.latitude,
+                  'toLng': ride.destination.longitude,
+                },
+              );
+            },
+            child: Text(
+              'Search',
+              style: TextStyle(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Opens chat with the driver

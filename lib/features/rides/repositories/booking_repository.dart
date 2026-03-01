@@ -1,11 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_booking_repository.dart';
-import 'package:sport_connect/core/providers/firebase_providers.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
-
-part 'booking_repository.g.dart';
 
 /// Repository for managing ride bookings
 /// Bookings are now stored separately from rides for better scalability
@@ -43,23 +39,53 @@ class BookingRepository implements IBookingRepository {
         .map((doc) => doc.data());
   }
 
-  /// Get bookings for a specific ride
-  Future<List<RideBooking>> getBookingsByRideId(String rideId) async {
+  /// Get bookings for a specific ride (driver-side).
+  ///
+  /// Includes [driverId] in the query so that Firestore security rules can
+  /// verify `resource.data.driverId == request.auth.uid` and allow the
+  /// collection query (a query filtered only by rideId would be denied).
+  Future<List<RideBooking>> getBookingsByRideId(
+    String rideId,
+    String driverId,
+  ) async {
     final query = await _bookingsCollection
         .where('rideId', isEqualTo: rideId)
+        .where('driverId', isEqualTo: driverId)
         .orderBy('createdAt', descending: true)
         .get();
 
     return query.docs.map((doc) => doc.data()).toList();
   }
 
-  /// Stream bookings for a specific ride (real-time)
-  Stream<List<RideBooking>> streamBookingsByRideId(String rideId) {
+  /// Stream bookings for a specific ride (driver-side, real-time).
+  ///
+  /// See [getBookingsByRideId] for the security-rule rationale.
+  Stream<List<RideBooking>> streamBookingsByRideId(
+    String rideId,
+    String driverId,
+  ) {
     return _bookingsCollection
         .where('rideId', isEqualTo: rideId)
+        .where('driverId', isEqualTo: driverId)
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+  }
+
+  /// Returns the passenger's own booking for a given ride, or null.
+  ///
+  /// Queries by [passengerId] so that Firestore security rules can verify
+  /// `resource.data.passengerId == request.auth.uid`.
+  Future<RideBooking?> getPassengerBookingForRide(
+    String rideId,
+    String passengerId,
+  ) async {
+    final query = await _bookingsCollection
+        .where('passengerId', isEqualTo: passengerId)
+        .where('rideId', isEqualTo: rideId)
+        .limit(1)
+        .get();
+    return query.docs.isNotEmpty ? query.docs.first.data() : null;
   }
 
   /// Get bookings for a specific passenger
@@ -125,9 +151,4 @@ class BookingRepository implements IBookingRepository {
         .snapshots()
         .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
-}
-
-@riverpod
-IBookingRepository bookingRepository(Ref ref) {
-  return BookingRepository(ref.watch(firestoreInstanceProvider));
 }

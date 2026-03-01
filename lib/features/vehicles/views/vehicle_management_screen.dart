@@ -6,25 +6,24 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
-import 'package:sport_connect/features/vehicles/repositories/vehicle_repository.dart';
 import 'package:sport_connect/features/vehicles/view_models/vehicle_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
 
-/// Driver Vehicle Management Screen with Firestore
-class DriverVehicleScreen extends ConsumerStatefulWidget {
-  const DriverVehicleScreen({super.key});
+/// Vehicle Management Screen - manage driver vehicles in Firestore
+class VehicleManagementScreen extends ConsumerStatefulWidget {
+  const VehicleManagementScreen({super.key});
 
   @override
-  ConsumerState<DriverVehicleScreen> createState() =>
-      _DriverVehicleScreenState();
+  ConsumerState<VehicleManagementScreen> createState() =>
+      _VehicleManagementScreenState();
 }
 
-class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
+class _VehicleManagementScreenState
+    extends ConsumerState<VehicleManagementScreen> {
   @override
   void initState() {
     super.initState();
@@ -38,56 +37,38 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authStateAsync = ref.watch(authStateProvider);
+    final vmState = ref.watch(vehicleViewModelProvider);
 
-    return authStateAsync.when(
-      data: (user) {
-        if (user == null) {
-          return Scaffold(
-            backgroundColor: AppColors.background,
-            appBar: _buildAppBar(),
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.lock_outline,
-                    size: 64.sp,
-                    color: AppColors.textSecondary,
-                  ),
-                  SizedBox(height: 16.h),
-                  Text(
-                    AppLocalizations.of(context).pleaseSignInToManage,
-                    style: TextStyle(
-                      fontSize: 16.sp,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
+    if (vmState.userId == null) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: _buildAppBar(),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.lock_outline,
+                size: 64.sp,
+                color: AppColors.textSecondary,
               ),
-            ),
-          );
-        }
-
-        final userId = user.uid;
-        final vehiclesAsync = ref.watch(userVehiclesStreamProvider(userId));
-
-        return vehiclesAsync.when(
-          data: (vehicles) => _buildContent(vehicles, userId),
-          loading: () => Scaffold(
-            backgroundColor: AppColors.background,
-            appBar: _buildAppBar(),
-            body: const Center(child: CircularProgressIndicator()),
+              SizedBox(height: 16.h),
+              Text(
+                AppLocalizations.of(context).pleaseSignInToManage,
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
           ),
-          error: (e, _) => Scaffold(
-            backgroundColor: AppColors.background,
-            appBar: _buildAppBar(),
-            body: Center(
-              child: Text(AppLocalizations.of(context).errorValue(e)),
-            ),
-          ),
-        );
-      },
+        ),
+      );
+    }
+
+    final userId = vmState.userId!;
+    return vmState.vehicles.when(
+      data: (vehicles) => _buildContent(vehicles, userId),
       loading: () => Scaffold(
         backgroundColor: AppColors.background,
         appBar: _buildAppBar(),
@@ -236,10 +217,10 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) => _AddVehicleSheet(
         onSave: (vehicle) async {
-          final user = ref.read(currentUserProvider).value;
-          if (user == null) return;
+          final userId = ref.read(vehicleViewModelProvider).userId;
+          if (userId == null) return;
 
-          final newVehicle = vehicle.copyWith(ownerId: user.uid);
+          final newVehicle = vehicle.copyWith(ownerId: userId);
           await ref
               .read(vehicleViewModelProvider.notifier)
               .createVehicle(newVehicle);

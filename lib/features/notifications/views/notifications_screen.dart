@@ -4,14 +4,12 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/models/user/user_model.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/notifications/models/notification_model.dart';
-import 'package:sport_connect/features/notifications/repositories/notification_repository.dart';
 import 'package:sport_connect/features/notifications/view_models/notification_view_model.dart';
 import 'package:intl/intl.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -58,8 +56,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
   }
 
   void _clearAll() {
-    final user = ref.read(currentUserProvider).value;
-    if (user == null) return;
+    final userId = ref.read(notificationViewModelProvider).userId;
+    if (userId == null) return;
 
     final scaffoldContext =
         context; // capture outer context to avoid using a deactivated dialog context
@@ -120,69 +118,49 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final authStateAsync = ref.watch(authStateProvider);
+    final vmState = ref.watch(notificationViewModelProvider);
 
-    return authStateAsync.when(
-      data: (user) {
-        if (user == null) {
-          return Scaffold(
-            backgroundColor: AppColors.background,
-            appBar: _buildAppBar(0),
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.lock_outline,
-                    size: 64.sp,
-                    color: AppColors.textSecondary,
-                  ),
-                  SizedBox(height: 16.h),
-                  Text(
-                    AppLocalizations.of(context).pleaseSignInToView,
-                    style: TextStyle(
-                      fontSize: 16.sp,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
+    if (vmState.userId == null) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: _buildAppBar(0),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.lock_outline,
+                size: 64.sp,
+                color: AppColors.textSecondary,
               ),
-            ),
-          );
-        }
-
-        final userId = user.uid;
-        final notificationsAsync = ref.watch(
-          userNotificationsStreamProvider(userId),
-        );
-
-        return notificationsAsync.when(
-          data: (notifications) => _buildContent(notifications, userId),
-          loading: () => Scaffold(
-            backgroundColor: AppColors.background,
-            appBar: _buildAppBar(0),
-            body: _buildLoadingState(),
+              SizedBox(height: 16.h),
+              Text(
+                AppLocalizations.of(context).pleaseSignInToView,
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
           ),
-          error: (e, _) => Scaffold(
-            backgroundColor: AppColors.background,
-            appBar: _buildAppBar(0),
-            body: _buildErrorState(
-              onRetry: () =>
-                  ref.invalidate(userNotificationsStreamProvider(userId)),
-            ),
-          ),
-        );
-      },
+        ),
+      );
+    }
+
+    final userId = vmState.userId!;
+    return vmState.notifications.when(
+      data: (notifications) => _buildContent(notifications, userId),
       loading: () => Scaffold(
         backgroundColor: AppColors.background,
         appBar: _buildAppBar(0),
         body: _buildLoadingState(),
       ),
-      error: (_, _) => Scaffold(
+      error: (e, _) => Scaffold(
         backgroundColor: AppColors.background,
         appBar: _buildAppBar(0),
         body: _buildErrorState(
-          onRetry: () => ref.invalidate(authStateProvider),
+          onRetry: () =>
+              ref.read(notificationViewModelProvider.notifier).refresh(),
         ),
       ),
     );
@@ -574,23 +552,22 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
   }
 
   Future<void> _navigateToChatFromNotification(String chatId) async {
-    final user = ref.read(currentUserProvider).value;
-    if (user == null) return;
+    final userId = ref.read(notificationViewModelProvider).userId;
+    if (userId == null) return;
 
     try {
-      // Fetch chat to get participant information
       final chatController = ref.read(chatActionsViewModelProvider);
       final chat = await chatController.getChatById(chatId);
 
       if (chat != null && mounted) {
-        final otherParticipant = chat.getOtherParticipant(user.uid);
-        final title = chat.getChatTitle(user.uid);
-        final photoUrl = chat.getChatPhoto(user.uid);
+        final title = chat.getChatTitle(userId);
+        final photoUrl = chat.getChatPhoto(userId);
 
-        // Create minimal UserModel for the other participant
+        // For group chats or if other participant is missing, use chat title
+        final otherParticipant = chat.getOtherParticipant(userId);
         final receiverUser = UserModel.rider(
-          uid: otherParticipant?.odid ?? '',
-          email: '', // Not needed for chat display
+          uid: otherParticipant?.odid ?? chatId,
+          email: '',
           displayName: title,
           photoUrl: photoUrl,
         );

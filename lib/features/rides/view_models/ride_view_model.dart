@@ -12,9 +12,8 @@ import 'package:sport_connect/features/rides/models/ride/ride_pricing.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_preferences.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride_search_filters.dart';
-import 'package:sport_connect/features/rides/repositories/booking_repository.dart';
-import 'package:sport_connect/features/rides/repositories/dispute_repository.dart';
-import 'package:sport_connect/features/rides/repositories/ride_repository.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/features/rides/services/ride_service.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/models/value_objects/money.dart';
@@ -128,6 +127,37 @@ class RideActionsViewModel {
 
   Stream<RideModel?> streamRideById(String rideId) {
     return _ref.read(rideRepositoryProvider).streamRideById(rideId);
+  }
+
+  /// Fetches a one-shot list of all bookings for a ride (driver-side).
+  ///
+  /// Used by screens that need to look up a specific booking ID before
+  /// performing a follow-up action (e.g. rating, cancellation).
+  Future<List<RideBooking>> getBookingsByRideId(
+    String rideId,
+    String driverId,
+  ) {
+    return _ref
+        .read(bookingRepositoryProvider)
+        .getBookingsByRideId(rideId, driverId);
+  }
+
+  /// Returns the current passenger's booking for a ride, or null.
+  Future<RideBooking?> getPassengerBookingForRide(
+    String rideId,
+    String passengerId,
+  ) {
+    return _ref
+        .read(bookingRepositoryProvider)
+        .getPassengerBookingForRide(rideId, passengerId);
+  }
+
+  /// One-shot fetch of a single ride by ID.
+  ///
+  /// Used for deep-link / route-based prefill scenarios where we only
+  /// need the current snapshot, not a live stream.
+  Future<RideModel?> getRideById(String rideId) {
+    return _ref.read(rideRepositoryProvider).getRideById(rideId);
   }
 
   /// Pushes the driver's GPS coordinates to Firestore.
@@ -252,8 +282,18 @@ class RideSearchState {
 }
 
 /// Ride Search View Model
+///
+/// Uses client-side batching: the Firestore geo query returns all matches
+/// (up to 100) since cursor pagination isn't possible with latitude
+/// inequality filters. Results are stored in [_allResults] and surfaced
+/// in pages of [_pageSize] via [loadMore].
 @riverpod
 class RideSearchViewModel extends _$RideSearchViewModel {
+  static const _pageSize = 20;
+
+  /// Full result set from the last Firestore query (post client-side filter).
+  List<RideModel> _allResults = [];
+
   @override
   RideSearchState build() => const RideSearchState();
 
@@ -300,10 +340,14 @@ class RideSearchViewModel extends _$RideSearchViewModel {
       // If provider was disposed while awaiting, bail out safely
       if (!ref.mounted) return;
 
+      // Store full result set, surface first page
+      _allResults = rides;
+      final firstPage = rides.take(_pageSize).toList();
+
       state = state.copyWith(
-        rides: rides,
+        rides: firstPage,
         isLoading: false,
-        hasMore: rides.length >= 20,
+        hasMore: rides.length > _pageSize,
       );
     } catch (e, _) {
       if (!ref.mounted) return;
@@ -313,126 +357,242 @@ class RideSearchViewModel extends _$RideSearchViewModel {
   }
 
   void clearResults() {
+    _allResults = [];
     state = state.copyWith(rides: [], hasMore: true);
+  }
+
+  /// Reveals the next page of results from the cached [_allResults].
+  void loadMore() {
+    if (!state.hasMore || state.isLoading) return;
+
+    final currentCount = state.rides.length;
+    final nextPage = _allResults.skip(currentCount).take(_pageSize).toList();
+    final allShown = currentCount + nextPage.length >= _allResults.length;
+
+    state = state.copyWith(
+      rides: [...state.rides, ...nextPage],
+      hasMore: !allShown,
+    );
   }
 }
 
-/// Single Ride Detail View Model (real-time updates)
+// ---------------------------------------------------------------------------
+// Ride Detail State — aggregates ride stream + bookings stream
+// ---------------------------------------------------------------------------
+
+/// Immutable UI state for any screen that shows a single ride with bookings.
+class RideDetailState {
+  const RideDetailState({
+    this.ride = const AsyncValue.loading(),
+    this.bookings = const [],
+    this.actionError,
+  });
+
+  /// Real-time ride data from Firestore.
+  final AsyncValue<RideModel?> ride;
+
+  /// Live bookings for this ride (from the separate bookings sub-collection).
+  final List<RideBooking> bookings;
+
+  /// Error from the last action (book, accept, reject, cancel, etc.).
+  final String? actionError;
+
+  // Sentinel to distinguish "not passed" from "explicitly null".
+  static const _unset = Object();
+
+  RideDetailState copyWith({
+    AsyncValue<RideModel?>? ride,
+    List<RideBooking>? bookings,
+    Object? actionError = _unset,
+  }) => RideDetailState(
+    ride: ride ?? this.ride,
+    bookings: bookings ?? this.bookings,
+    actionError: actionError == _unset
+        ? this.actionError
+        : actionError as String?,
+  );
+}
+
+/// Single Ride Detail View Model — views watch only this, never separate
+/// stream/booking providers directly.
 @riverpod
 class RideDetailViewModel extends _$RideDetailViewModel {
   @override
-  Stream<RideModel?> build(String rideId) {
-    final repository = ref.read(rideRepositoryProvider);
-    return repository.streamRideById(rideId);
+  RideDetailState build(String rideId) {
+    final rideAsync = ref.watch(rideStreamProvider(rideId));
+    final bookings =
+        ref.watch(bookingsByRideProvider(rideId)).value ?? const [];
+    return RideDetailState(ride: rideAsync, bookings: bookings);
   }
 
   Future<bool> bookRide({
     required String passengerId,
     int seats = 1,
     String? note,
+
+    /// Optional passenger pickup location — stored on the booking and later
+    /// added to the ride's route as a waypoint when the driver accepts.
+    LocationPoint? pickupLocation,
   }) async {
-    final ride = state.value;
+    final ride = state.ride.value;
     if (ride == null) return false;
 
     try {
-      final repository = ref.read(rideRepositoryProvider);
-
       final booking = RideBooking(
         id: const Uuid().v4(),
         rideId: ride.id,
         passengerId: passengerId,
+        driverId: ride.driverId,
         seatsBooked: seats,
         status: BookingStatus.pending,
         note: note,
+        pickupLocation: pickupLocation,
         createdAt: DateTime.now(),
       );
-
-      await repository.bookRide(rideId: ride.id, booking: booking);
-      ref.invalidateSelf();
+      await ref
+          .read(rideRepositoryProvider)
+          .bookRide(rideId: ride.id, booking: booking);
+      state = state.copyWith(actionError: null);
       return true;
     } catch (e) {
+      state = state.copyWith(actionError: e.toString());
       return false;
     }
   }
 
   Future<bool> acceptBooking(String bookingId) async {
-    final ride = state.value;
+    final ride = state.ride.value;
     if (ride == null) return false;
-
     try {
-      final repository = ref.read(rideRepositoryProvider);
-      await repository.updateBookingStatus(
-        rideId: ride.id,
-        bookingId: bookingId,
-        newStatus: BookingStatus.accepted,
-      );
-      ref.invalidateSelf();
+      // 1. Mark booking as accepted.
+      await ref
+          .read(rideRepositoryProvider)
+          .updateBookingStatus(
+            rideId: ride.id,
+            bookingId: bookingId,
+            newStatus: BookingStatus.accepted,
+          );
+
+      // 2. If the passenger specified a pickup location, add it as a
+      //    RouteWaypoint so the driver can see the stop on the route card.
+      final idx = state.bookings.indexWhere((b) => b.id == bookingId);
+      if (idx >= 0) {
+        final booking = state.bookings[idx];
+        if (booking.pickupLocation != null) {
+          final existing = ride.route.waypoints;
+          final nextOrder = existing.isEmpty
+              ? 0
+              : existing.map((w) => w.order).reduce((a, b) => a > b ? a : b) +
+                    1;
+          final updated = [
+            ...existing,
+            RouteWaypoint(location: booking.pickupLocation!, order: nextOrder),
+          ];
+          await ref.read(rideRepositoryProvider).updateRideFields(ride.id, {
+            'route.waypoints': updated.map((w) => w.toJson()).toList(),
+          });
+        }
+      }
+
+      state = state.copyWith(actionError: null);
       return true;
     } catch (e) {
+      state = state.copyWith(actionError: e.toString());
       return false;
     }
   }
 
   Future<bool> rejectBooking(String bookingId) async {
-    final ride = state.value;
+    final ride = state.ride.value;
     if (ride == null) return false;
-
     try {
-      final repository = ref.read(rideRepositoryProvider);
-      await repository.updateBookingStatus(
-        rideId: ride.id,
-        bookingId: bookingId,
-        newStatus: BookingStatus.rejected,
-      );
-      ref.invalidateSelf();
+      await ref
+          .read(rideRepositoryProvider)
+          .updateBookingStatus(
+            rideId: ride.id,
+            bookingId: bookingId,
+            newStatus: BookingStatus.rejected,
+          );
+      state = state.copyWith(actionError: null);
       return true;
     } catch (e) {
+      state = state.copyWith(actionError: e.toString());
       return false;
     }
   }
 
   Future<bool> startRide() async {
-    final ride = state.value;
+    final ride = state.ride.value;
     if (ride == null) return false;
-
     try {
-      final repository = ref.read(rideRepositoryProvider);
-      await repository.startRide(ride.id);
-      ref.invalidateSelf();
+      await ref.read(rideRepositoryProvider).startRide(ride.id);
+      state = state.copyWith(actionError: null);
       return true;
     } catch (e) {
+      state = state.copyWith(actionError: e.toString());
       return false;
     }
   }
 
   Future<bool> completeRide() async {
-    final ride = state.value;
+    final ride = state.ride.value;
     if (ride == null) return false;
-
     try {
-      // Route through RideService so XP reward + driver stats are recorded
       await ref.read(rideServiceProvider.notifier).completeRide(ride.id);
-      ref.invalidateSelf();
+      state = state.copyWith(actionError: null);
       return true;
     } catch (e) {
+      state = state.copyWith(actionError: e.toString());
       return false;
     }
   }
 
-  Future<bool> cancelRide() async {
-    final ride = state.value;
+  Future<bool> cancelRide({String reason = 'Cancelled by user'}) async {
+    final ride = state.ride.value;
     if (ride == null) return false;
-
     try {
-      // Route through RideService so validation + passenger notifications fire
-      await ref
-          .read(rideServiceProvider.notifier)
-          .cancelRide(ride.id, 'Cancelled by user');
-      ref.invalidateSelf();
+      await ref.read(rideServiceProvider.notifier).cancelRide(ride.id, reason);
+      state = state.copyWith(actionError: null);
       return true;
     } catch (e) {
+      state = state.copyWith(actionError: e.toString());
       return false;
     }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Active Ride State — for driver / passenger active-ride screens
+// ---------------------------------------------------------------------------
+
+/// Immutable state for active-ride screens that need live ride + bookings.
+class ActiveRideState {
+  const ActiveRideState({
+    this.ride = const AsyncValue.loading(),
+    this.bookings = const [],
+  });
+
+  final AsyncValue<RideModel?> ride;
+  final List<RideBooking> bookings;
+
+  ActiveRideState copyWith({
+    AsyncValue<RideModel?>? ride,
+    List<RideBooking>? bookings,
+  }) => ActiveRideState(
+    ride: ride ?? this.ride,
+    bookings: bookings ?? this.bookings,
+  );
+}
+
+/// ViewModel for active-ride screens — views watch only this provider.
+@riverpod
+class ActiveRideViewModel extends _$ActiveRideViewModel {
+  @override
+  ActiveRideState build(String rideId) {
+    final rideAsync = ref.watch(rideStreamProvider(rideId));
+    final bookings =
+        ref.watch(bookingsByRideProvider(rideId)).value ?? const [];
+    return ActiveRideState(ride: rideAsync, bookings: bookings);
   }
 }
 
@@ -475,7 +635,31 @@ Stream<List<RideModel>> nearbyRides(
 /// [RideModel.bookings] field is never populated from Firestore.
 @riverpod
 Stream<List<RideBooking>> bookingsByRide(Ref ref, String rideId) {
-  return ref.read(bookingRepositoryProvider).streamBookingsByRideId(rideId);
+  final uid = ref.watch(currentUserProvider).value?.uid;
+  if (uid == null) return const Stream.empty();
+  return ref
+      .read(bookingRepositoryProvider)
+      .streamBookingsByRideId(rideId, uid);
+}
+
+/// Real-time stream of a single booking by ID.
+///
+/// Wraps [BookingRepository.streamBookingById] so views never import the
+/// repository layer directly.
+@riverpod
+Stream<RideBooking?> bookingStream(Ref ref, String bookingId) {
+  return ref.read(bookingRepositoryProvider).streamBookingById(bookingId);
+}
+
+/// Real-time stream of all bookings for a given passenger.
+///
+/// Used on the pending-booking screen where the passenger polls for
+/// status changes before being auto-navigated.
+@riverpod
+Stream<List<RideBooking>> bookingsByPassenger(Ref ref, String passengerId) {
+  return ref
+      .read(bookingRepositoryProvider)
+      .streamBookingsByPassengerId(passengerId);
 }
 
 /// All Active Rides Stream Provider (for search screen)

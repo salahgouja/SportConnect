@@ -1,11 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
-import 'package:sport_connect/features/notifications/repositories/notification_repository.dart';
-import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
-import 'package:sport_connect/features/rides/repositories/booking_repository.dart';
-import 'package:sport_connect/features/rides/repositories/driver_stats_repository.dart';
-import 'package:sport_connect/features/rides/repositories/ride_repository.dart';
 
 part 'ride_service.g.dart';
 
@@ -191,7 +187,10 @@ class RideService extends _$RideService {
       final rideName = '$origin \u2192 $dest';
 
       // Fetch all bookings for this ride and notify each passenger
-      final bookings = await bookingRepo.getBookingsByRideId(ride.id);
+      final bookings = await bookingRepo.getBookingsByRideId(
+        ride.id,
+        ride.driverId,
+      );
       for (final booking in bookings) {
         await notificationRepo.sendRideCancelled(
           toUserId: booking.passengerId,

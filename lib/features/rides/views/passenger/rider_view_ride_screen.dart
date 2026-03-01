@@ -20,10 +20,11 @@ import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:sport_connect/features/reviews/repositories/review_repository.dart';
+import 'package:sport_connect/features/reviews/view_models/review_view_model.dart';
 import 'package:sport_connect/features/reviews/models/review_model.dart';
 import 'package:sport_connect/core/utils/distance_formatter.dart';
 import 'package:sport_connect/core/services/deep_link_service.dart';
+import 'package:uuid/uuid.dart';
 
 /// Rider's personal ride view with booking and review sections.
 ///
@@ -44,23 +45,19 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
   int _seatsToBook = 1;
   String _note = '';
   bool _isBooking = false;
-  final _noteController = TextEditingController();
 
   @override
   void dispose() {
-    _noteController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final rideAsync = ref.watch(rideDetailViewModelProvider(widget.rideId));
-    final bookings =
-        ref.watch(bookingsByRideProvider(widget.rideId)).value ??
-        const <RideBooking>[];
+    // Watch only the ViewModel — it already aggregates ride + bookings.
+    final vmState = ref.watch(rideDetailViewModelProvider(widget.rideId));
 
-    return rideAsync.when(
-      data: (ride) => _buildContent(ride, bookings),
+    return vmState.ride.when(
+      data: (ride) => _buildContent(ride, vmState.bookings),
       loading: () => _buildLoadingState(),
       error: (error, _) => _buildErrorState(error.toString()),
     );
@@ -205,6 +202,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
               children: [
                 TileLayer(
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.sportconnect.app',
                 ),
                 MarkerLayer(
                   markers: [
@@ -547,6 +545,66 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
                 ],
               ),
 
+              // Waypoints / intermediate stops
+              if (ride.route.waypoints.isNotEmpty) ...[
+                ...(ride.route.waypoints.toList()
+                      ..sort((a, b) => a.order.compareTo(b.order)))
+                    .map((wp) {
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Column(
+                            children: [
+                              Container(
+                                width: 10.w,
+                                height: 10.w,
+                                decoration: BoxDecoration(
+                                  color: AppColors.warning,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 1.5,
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                width: 2.w,
+                                height: 32.h,
+                                color: AppColors.warning.withValues(alpha: 0.4),
+                              ),
+                            ],
+                          ),
+                          SizedBox(width: 13.w),
+                          Expanded(
+                            child: Padding(
+                              padding: EdgeInsets.only(bottom: 4.h),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Stop ${wp.order + 1}',
+                                    style: TextStyle(
+                                      fontSize: 10.sp,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.warning,
+                                    ),
+                                  ),
+                                  Text(
+                                    wp.location.address,
+                                    style: TextStyle(
+                                      fontSize: 13.sp,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }),
+              ],
+
               // Destination
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -589,6 +647,46 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
                             color: AppColors.textSecondary,
                           ),
                         ),
+                        // Event badge
+                        if (ride.eventId != null) ...[
+                          SizedBox(height: 6.h),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 10.w,
+                              vertical: 4.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.primarySurface,
+                              borderRadius: BorderRadius.circular(8.r),
+                              border: Border.all(
+                                color: AppColors.primary.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.emoji_events_rounded,
+                                  size: 12.sp,
+                                  color: AppColors.primary,
+                                ),
+                                SizedBox(width: 4.w),
+                                Flexible(
+                                  child: Text(
+                                    ride.eventName ?? 'Event',
+                                    style: TextStyle(
+                                      fontSize: 11.sp,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.primary,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -1085,6 +1183,57 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
   Widget _buildBookingBar(RideModel ride) {
     final currentUser = ref.watch(currentUserProvider).value;
     final isOwnRide = currentUser?.uid == ride.driverId;
+
+    // Use the passenger-scoped provider to find the rider's own booking for
+    // this ride. The ride-scoped provider filters by driverId and returns
+    // nothing when the current user is a passenger.
+    final existingBooking = currentUser != null
+        ? ref
+              .watch(bookingsByPassengerProvider(currentUser.uid))
+              .value
+              ?.where((b) => b.rideId == ride.id)
+              .firstOrNull
+        : null;
+
+    // Rider has an accepted booking on a ride that requires online payment
+    // → show "Complete Payment" so they can finish the flow.
+    if (existingBooking != null &&
+        existingBooking.status == BookingStatus.accepted &&
+        ride.acceptsOnlinePayment) {
+      return _buildExistingBookingBar(
+        label: 'Complete Payment',
+        icon: Icons.payment_rounded,
+        onPressed: () => context.push(
+          AppRoutes.rideBookingPending.path
+              .replaceFirst(':rideId', ride.id),
+        ),
+      );
+    }
+
+    // Rider has a pending booking → show status instead of a second book button
+    if (existingBooking != null &&
+        existingBooking.status == BookingStatus.pending) {
+      return _buildExistingBookingBar(
+        label: 'Waiting for driver approval',
+        icon: Icons.hourglass_top_rounded,
+        onPressed: () => context.push(
+          AppRoutes.rideBookingPending.path
+              .replaceFirst(':rideId', ride.id),
+        ),
+      );
+    }
+
+    // Rider already has an accepted booking (cash ride) → show confirmed
+    if (existingBooking != null &&
+        existingBooking.status == BookingStatus.accepted) {
+      return _buildExistingBookingBar(
+        label: 'Booking Confirmed',
+        icon: Icons.check_circle_rounded,
+        onPressed: null,
+        style: PremiumButtonStyle.secondary,
+      );
+    }
+
     final canBook = ride.isBookable && !isOwnRide;
 
     return Container(
@@ -1194,6 +1343,36 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
     );
   }
 
+  Widget _buildExistingBookingBar({
+    required String label,
+    required IconData icon,
+    required VoidCallback? onPressed,
+    PremiumButtonStyle style = PremiumButtonStyle.primary,
+  }) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 24.h),
+      decoration: BoxDecoration(
+        color: AppColors.cardBg,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 15,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: PremiumButton(
+          text: label,
+          onPressed: onPressed,
+          style: style,
+          icon: icon,
+        ),
+      ),
+    );
+  }
+
   // === Actions ===
 
   Future<void> _shareRide(RideModel ride) async {
@@ -1292,141 +1471,15 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
       ),
-      builder: (context) {
-        return Padding(
-          padding: EdgeInsets.all(20.w),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40.w,
-                  height: 4.h,
-                  decoration: BoxDecoration(
-                    color: AppColors.border,
-                    borderRadius: BorderRadius.circular(2.r),
-                  ),
-                ),
-              ),
-              SizedBox(height: 20.h),
-              Text(
-                AppLocalizations.of(context).confirmBooking,
-                style: TextStyle(
-                  fontSize: 20.sp,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              SizedBox(height: 16.h),
-
-              // Summary
-              Container(
-                padding: EdgeInsets.all(16.w),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant,
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                child: Column(
-                  children: [
-                    _buildSummaryRow(
-                      AppLocalizations.of(context).seats2,
-                      AppLocalizations.of(context).value2(_seatsToBook),
-                    ),
-                    SizedBox(height: 8.h),
-                    _buildSummaryRow(
-                      AppLocalizations.of(context).pricePerSeat2,
-                      '\$${ride.pricePerSeat.toStringAsFixed(0)}',
-                    ),
-                    SizedBox(height: 8.h),
-                    Divider(color: AppColors.divider),
-                    SizedBox(height: 8.h),
-                    _buildSummaryRow(
-                      AppLocalizations.of(context).total,
-                      '\$${(ride.pricePerSeat * _seatsToBook).toStringAsFixed(0)}',
-                      isBold: true,
-                    ),
-                  ],
-                ),
-              ),
-
-              SizedBox(height: 16.h),
-
-              // Optional note
-              TextField(
-                controller: _noteController,
-                decoration: InputDecoration(
-                  hintText: AppLocalizations.of(context).addANoteToThe,
-                  hintStyle: TextStyle(
-                    fontSize: 13.sp,
-                    color: AppColors.textTertiary,
-                  ),
-                  filled: true,
-                  fillColor: AppColors.inputFill,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: EdgeInsets.all(12.w),
-                ),
-                maxLines: 2,
-                onChanged: (v) => _note = v,
-              ),
-
-              SizedBox(height: 20.h),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: PremiumButton(
-                      text: 'Cancel',
-                      onPressed: () => Navigator.pop(context),
-                      style: PremiumButtonStyle.secondary,
-                    ),
-                  ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    flex: 2,
-                    child: PremiumButton(
-                      text: 'Confirm Booking',
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _bookRide(ride);
-                      },
-                      style: PremiumButtonStyle.primary,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildSummaryRow(String label, String value, {bool isBold = false}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: isBold ? FontWeight.w600 : FontWeight.w400,
-            color: AppColors.textSecondary,
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: isBold ? 18.sp : 14.sp,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
-            color: isBold ? AppColors.primary : AppColors.textPrimary,
-          ),
-        ),
-      ],
+      builder: (context) => _BookingConfirmationSheet(
+        ride: ride,
+        seatsToBook: _seatsToBook,
+        initialNote: _note,
+        onConfirm: (note) {
+          _note = note;
+          _bookRide(ride);
+        },
+      ),
     );
   }
 
@@ -1441,9 +1494,10 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
       }
 
       final booking = RideBooking(
-        id: '', // Will be set by repository
+        id: const Uuid().v4(),
         rideId: widget.rideId,
         passengerId: currentUser.uid,
+        driverId: ride.driverId,
         seatsBooked: _seatsToBook,
         status: BookingStatus.pending,
         note: _note.isNotEmpty ? _note : null,
@@ -1476,5 +1530,176 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
         setState(() => _isBooking = false);
       }
     }
+  }
+}
+
+/// Bottom sheet content for booking confirmation.
+///
+/// Owned as a [StatefulWidget] so that [TextEditingController] lifecycle is
+/// managed by Flutter's element tree — [dispose] fires only after the sheet's
+/// dismiss animation fully completes, preventing the
+/// "controller used after dispose" crash that occurs when using
+/// `.whenComplete()` (which resolves the moment the route is popped, before
+/// the animation ends).
+class _BookingConfirmationSheet extends StatefulWidget {
+  final RideModel ride;
+  final int seatsToBook;
+  final String initialNote;
+  final void Function(String note) onConfirm;
+
+  const _BookingConfirmationSheet({
+    required this.ride,
+    required this.seatsToBook,
+    required this.initialNote,
+    required this.onConfirm,
+  });
+
+  @override
+  State<_BookingConfirmationSheet> createState() =>
+      _BookingConfirmationSheetState();
+}
+
+class _BookingConfirmationSheetState
+    extends State<_BookingConfirmationSheet> {
+  late final TextEditingController _noteController;
+
+  @override
+  void initState() {
+    super.initState();
+    _noteController = TextEditingController(text: widget.initialNote);
+  }
+
+  @override
+  void dispose() {
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Padding(
+      padding: EdgeInsets.all(20.w),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40.w,
+              height: 4.h,
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2.r),
+              ),
+            ),
+          ),
+          SizedBox(height: 20.h),
+          Text(
+            l10n.confirmBooking,
+            style: TextStyle(
+              fontSize: 20.sp,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          SizedBox(height: 16.h),
+          Container(
+            padding: EdgeInsets.all(16.w),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceVariant,
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+            child: Column(
+              children: [
+                _buildRow(l10n.seats2, l10n.value2(widget.seatsToBook)),
+                SizedBox(height: 8.h),
+                _buildRow(
+                  l10n.pricePerSeat2,
+                  '\$${widget.ride.pricePerSeat.toStringAsFixed(0)}',
+                ),
+                SizedBox(height: 8.h),
+                Divider(color: AppColors.divider),
+                SizedBox(height: 8.h),
+                _buildRow(
+                  l10n.total,
+                  '\$${(widget.ride.pricePerSeat * widget.seatsToBook).toStringAsFixed(0)}',
+                  isBold: true,
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 16.h),
+          TextField(
+            controller: _noteController,
+            decoration: InputDecoration(
+              hintText: l10n.addANoteToThe,
+              hintStyle: TextStyle(
+                fontSize: 13.sp,
+                color: AppColors.textTertiary,
+              ),
+              filled: true,
+              fillColor: AppColors.inputFill,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.r),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: EdgeInsets.all(12.w),
+            ),
+            maxLines: 2,
+          ),
+          SizedBox(height: 20.h),
+          Row(
+            children: [
+              Expanded(
+                child: PremiumButton(
+                  text: 'Cancel',
+                  onPressed: () => Navigator.pop(context),
+                  style: PremiumButtonStyle.secondary,
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                flex: 2,
+                child: PremiumButton(
+                  text: 'Confirm Booking',
+                  onPressed: () {
+                    final note = _noteController.text;
+                    Navigator.pop(context);
+                    widget.onConfirm(note);
+                  },
+                  style: PremiumButtonStyle.primary,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRow(String label, String value, {bool isBold = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 14.sp,
+            fontWeight: isBold ? FontWeight.w600 : FontWeight.w400,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: isBold ? 18.sp : 14.sp,
+            fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
+            color: isBold ? AppColors.primary : AppColors.textPrimary,
+          ),
+        ),
+      ],
+    );
   }
 }

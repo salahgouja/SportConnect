@@ -3,7 +3,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_home_repository.dart';
-import 'package:sport_connect/core/providers/firebase_providers.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/features/home/models/home_models.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 
@@ -108,23 +108,6 @@ class HomeRepository implements IHomeRepository {
     final docRef = await _hotspotsCollection.add(hotspot);
     return docRef.id;
   }
-}
-
-/// Provider for HomeRepository
-@riverpod
-IHomeRepository homeRepository(Ref ref) {
-  return HomeRepository(ref.watch(firestoreInstanceProvider));
-}
-
-/// Stream provider for nearby rides
-@riverpod
-Stream<List<RideModel>> nearbyRidesStream(
-  Ref ref,
-  LatLng location,
-  double radiusKm,
-) {
-  final repository = ref.watch(homeRepositoryProvider);
-  return repository.streamNearbyRides(center: location, radiusKm: radiusKm);
 }
 
 /// Stream provider for hotspots

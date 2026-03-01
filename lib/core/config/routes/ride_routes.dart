@@ -37,10 +37,13 @@ class RideRoutes implements RouteConfig {
       GoRoute(
         path: AppRoutes.searchRides.path,
         name: AppRoutes.searchRides.name,
-        pageBuilder: (context, state) => SlideRightTransitionPage(
-          key: state.pageKey,
-          child: const RideSearchScreen(),
-        ),
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return SlideRightTransitionPage(
+            key: state.pageKey,
+            child: RideSearchScreen(initialDestination: extra),
+          );
+        },
       ),
 
       // NOTE: riderRequestRide and riderMyRides are defined as StatefulShellBranches
@@ -219,10 +222,11 @@ class RideRoutes implements RouteConfig {
         pageBuilder: (context, state) {
           final params = state.params;
           final rideId = params.getStringOrThrow('id');
+          final isDriver = params.getQuery('isDriver') == 'true';
 
           return SlideUpTransitionPage(
             key: state.pageKey,
-            child: CancellationReasonScreen(rideId: rideId),
+            child: CancellationReasonScreen(rideId: rideId, isDriver: isDriver),
           );
         },
       ),

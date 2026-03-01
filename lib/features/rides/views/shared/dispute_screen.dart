@@ -29,6 +29,7 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
   final List<File> _attachedFiles = [];
   String? _selectedDisputeType;
   bool _isSubmitting = false;
+  bool _showTypeError = false;
   bool _isSubmitted = false;
 
   static const _maxAttachments = 5;
@@ -163,6 +164,9 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
 
   Future<void> _submitDispute() async {
     if (!_formKey.currentState!.validate() || _selectedDisputeType == null) {
+      if (_selectedDisputeType == null) {
+        setState(() => _showTypeError = true);
+      }
       return;
     }
 
@@ -170,7 +174,10 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
 
     try {
       final user = ref.read(currentUserProvider).value;
-      if (user == null) return;
+      if (user == null) {
+        if (mounted) setState(() => _isSubmitting = false);
+        return;
+      }
 
       await ref
           .read(disputeViewModelProvider)
@@ -462,11 +469,11 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
             );
           }),
 
-          if (_selectedDisputeType == null) ...[
+          if (_selectedDisputeType == null && _showTypeError) ...[
             SizedBox(height: 4.h),
             Text(
               'Please select a dispute type',
-              style: TextStyle(fontSize: 12.sp, color: Colors.transparent),
+              style: TextStyle(fontSize: 12.sp, color: AppColors.error),
             ),
           ],
 

@@ -1,13 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_payment_repository.dart';
-import 'package:sport_connect/core/providers/firebase_providers.dart';
 import 'package:sport_connect/core/services/stripe_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/payments/models/payment_model.dart';
-
-part 'payment_repository.g.dart';
 
 /// Payment Repository for Firestore operations
 class PaymentRepository implements IPaymentRepository {
@@ -495,13 +491,4 @@ class PaymentRepository implements IPaymentRepository {
       rethrow;
     }
   }
-}
-
-/// Payment Repository Provider
-@riverpod
-IPaymentRepository paymentRepository(Ref ref) {
-  return PaymentRepository(
-    ref.watch(firestoreInstanceProvider),
-    ref.read(stripeServiceProvider),
-  );
 }

@@ -11,7 +11,6 @@ import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
-import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
@@ -103,7 +102,7 @@ class _PassengerActiveRideScreenState
   }
 
   Widget _buildActiveRideContent(BuildContext context, RideModel ride) {
-    final driverAsync = ref.watch(userStreamProvider(ride.driverId));
+    final driverAsync = ref.watch(currentUserProfileProvider(ride.driverId));
 
     return CustomScrollView(
       slivers: [
@@ -460,14 +459,26 @@ class _PassengerActiveRideScreenState
               ),
               IconButton(
                 tooltip: 'Call driver',
-                onPressed: () => _callDriver(driver.phoneNumber),
+                onPressed: driver.phoneNumber != null
+                    ? () => _callDriver(driver.phoneNumber)
+                    : null,
                 icon: Container(
                   padding: EdgeInsets.all(10.w),
                   decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.1),
+                    color:
+                        (driver.phoneNumber != null
+                                ? Colors.green
+                                : Colors.grey)
+                            .withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12.r),
                   ),
-                  child: Icon(Icons.phone, color: Colors.green, size: 20.sp),
+                  child: Icon(
+                    Icons.phone,
+                    color: driver.phoneNumber != null
+                        ? Colors.green
+                        : Colors.grey,
+                    size: 20.sp,
+                  ),
                 ),
               ),
             ],
@@ -562,6 +573,71 @@ class _PassengerActiveRideScreenState
               ),
             ),
           ),
+          // Waypoints
+          if (ride.route.waypoints.isNotEmpty)
+            ...ride.route.waypoints.map(
+              (wp) => Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(8.w),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        child: Icon(
+                          Icons.flag_circle,
+                          size: 18.sp,
+                          color: Colors.orange,
+                        ),
+                      ),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Waypoint ${wp.order + 1}',
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: AppColors.textTertiary,
+                              ),
+                            ),
+                            SizedBox(height: 2.h),
+                            Text(
+                              wp.location.address,
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: EdgeInsets.only(left: 16.w),
+                    height: 24.h,
+                    width: 2,
+                    margin: EdgeInsets.symmetric(vertical: 4.h),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        left: BorderSide(
+                          color: AppColors.border,
+                          width: 2,
+                          style: BorderStyle.solid,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           // Destination
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -692,7 +768,7 @@ class _PassengerActiveRideScreenState
   }
 
   Widget _buildPassengerItem(String passengerId) {
-    final passengerAsync = ref.watch(userStreamProvider(passengerId));
+    final passengerAsync = ref.watch(currentUserProfileProvider(passengerId));
 
     return passengerAsync.when(
       data: (passenger) {
@@ -770,9 +846,9 @@ class _PassengerActiveRideScreenState
             PremiumButton(
               text: 'View on Map',
               icon: Icons.map_outlined,
-              onPressed: () {
-                // Open map view
-              },
+              onPressed: () => context.push(
+                AppRoutes.rideNavigation.path.replaceFirst(':id', ride.id),
+              ),
               style: PremiumButtonStyle.primary,
             ),
           SizedBox(height: 12.h),
@@ -801,22 +877,33 @@ class _PassengerActiveRideScreenState
     if (currentUser == null) return;
 
     try {
+      // Fetch recipient's actual profile for correct display name and avatar
+      final recipientProfile = await ref.read(
+        userProfileProvider(recipientId).future,
+      );
+      final recipientName = recipientProfile?.displayName ?? 'User';
+      final recipientPhotoUrl = recipientProfile?.photoUrl;
+
       final chat = await ref.read(
         getOrCreateChatProvider(
           userId1: currentUser.uid,
           userId2: recipientId,
           userName1: currentUser.displayName,
-          userName2: 'Driver',
+          userName2: recipientName,
         ).future,
       );
 
       if (!mounted) return;
 
-      final receiverUser = UserModel.driver(
-        uid: recipientId,
-        email: '',
-        displayName: 'Driver',
-      );
+      // Pass the actual UserModel so the chat screen can show the correct info
+      final receiverUser =
+          recipientProfile ??
+          UserModel.rider(
+            uid: recipientId,
+            email: '',
+            displayName: recipientName,
+            photoUrl: recipientPhotoUrl,
+          );
 
       context.pushNamed(
         AppRoutes.chatDetail.name,
@@ -894,9 +981,32 @@ class _PassengerActiveRideScreenState
 
   void _cancelRide(RideModel ride) async {
     try {
+      final currentUser = ref.read(currentUserProvider).value;
+      if (currentUser == null) return;
+
+      // Find the passenger's booking for this ride to cancel only their booking
+      final allBookings = await ref.read(
+        bookingsByPassengerProvider(currentUser.uid).future,
+      );
+      final myBooking = allBookings
+          .where((b) => b.rideId == ride.id)
+          .firstOrNull;
+
+      if (myBooking == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Booking not found. Please try again.'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+        return;
+      }
+
       await ref
           .read(rideActionsViewModelProvider)
-          .cancelRide(ride.id, 'Cancelled by passenger');
+          .cancelBooking(rideId: ride.id, bookingId: myBooking.id);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

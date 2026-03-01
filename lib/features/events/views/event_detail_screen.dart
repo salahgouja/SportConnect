@@ -6,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
@@ -13,6 +14,8 @@ import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/premium_card.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
 import 'package:sport_connect/features/events/view_models/event_view_model.dart';
+import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Full-screen event detail with hero banner, info sections and join/leave CTA.
 class EventDetailScreen extends ConsumerStatefulWidget {
@@ -148,14 +151,10 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                   SizedBox(height: 12.h),
                 ],
 
-                if (event.organizerName != null) ...[
-                  _InfoRow(
-                    icon: Icons.person_rounded,
-                    label: event.organizerName!,
-                    sublabel: 'Organizer',
-                  ).animate().fadeIn(delay: 200.ms, duration: 350.ms),
-                  SizedBox(height: 12.h),
-                ],
+                _OrganizerRow(
+                  creatorId: event.creatorId,
+                ).animate().fadeIn(delay: 200.ms, duration: 350.ms),
+                SizedBox(height: 12.h),
 
                 // ── Participants chip ──
                 _ParticipantChip(
@@ -230,6 +229,26 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                     detailState,
                   ).animate().fadeIn(delay: 400.ms, duration: 400.ms),
 
+                // ── Find Rides CTA ──
+                if (event.isUpcoming) ...[
+                  SizedBox(height: 16.h),
+                  PremiumButton(
+                    text: 'Find Rides to Event',
+                    icon: Icons.directions_car_rounded,
+                    style: PremiumButtonStyle.secondary,
+                    fullWidth: true,
+                    onPressed: () => context.push(
+                      AppRoutes.searchRides.path,
+                      extra: {
+                        'destinationAddress':
+                            event.venueName ?? event.location.address,
+                        'destinationLat': event.location.latitude,
+                        'destinationLng': event.location.longitude,
+                      },
+                    ),
+                  ).animate().fadeIn(delay: 450.ms, duration: 350.ms),
+                ],
+
                 // Bottom safe-area padding
                 SizedBox(height: MediaQuery.of(context).padding.bottom + 32.h),
               ],
@@ -252,6 +271,14 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
       leading: _CircleBackButton(onTap: () => context.pop()),
       actions: [
         IconButton(
+          icon: Icon(
+            Icons.calendar_month_rounded,
+            color: Colors.white,
+            size: 22.sp,
+          ),
+          onPressed: () => _addToCalendar(event),
+        ),
+        IconButton(
           icon: Icon(Icons.share_rounded, color: Colors.white, size: 22.sp),
           onPressed: () {
             final dateStr = DateFormat(
@@ -263,7 +290,8 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                     '${event.title} — ${event.type.label}\n'
                     '$dateStr\n'
                     '${event.location.address}\n\n'
-                    'Join me on SportConnect!',
+                    'Join me on SportConnect!\n'
+                    'https://sportconnect.app/events/${event.id}',
               ),
             );
           },
@@ -382,6 +410,33 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
           ),
         ) ??
         false;
+  }
+
+  void _addToCalendar(EventModel event) {
+    final start = event.startsAt.toUtc().toIso8601String().replaceAll(
+      RegExp(r'[-:]'),
+      '',
+    );
+    final end = (event.endsAt ?? event.startsAt.add(const Duration(hours: 2)))
+        .toUtc()
+        .toIso8601String()
+        .replaceAll(RegExp(r'[-:]'), '');
+    final title = Uri.encodeComponent(event.title);
+    final location = Uri.encodeComponent(
+      event.venueName ?? event.location.address,
+    );
+    final details = Uri.encodeComponent(
+      event.description ?? '${event.type.label} on SportConnect',
+    );
+    final url = Uri.parse(
+      'https://calendar.google.com/calendar/render'
+      '?action=TEMPLATE'
+      '&text=$title'
+      '&dates=$start/$end'
+      '&location=$location'
+      '&details=$details',
+    );
+    launchUrl(url, mode: LaunchMode.externalApplication);
   }
 }
 
@@ -581,6 +636,64 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
+class _OrganizerRow extends ConsumerWidget {
+  const _OrganizerRow({required this.creatorId});
+  final String creatorId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final organizerAsync = ref.watch(userProfileProvider(creatorId));
+    final organizer = organizerAsync.value;
+    final name = organizer?.displayName ?? 'Organizer';
+
+    return PremiumCard(
+      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 18.r,
+            backgroundColor: AppColors.primarySurface,
+            backgroundImage: organizer?.photoUrl != null
+                ? NetworkImage(organizer!.photoUrl!)
+                : null,
+            child: organizer?.photoUrl == null
+                ? Icon(
+                    Icons.person_rounded,
+                    size: 18.sp,
+                    color: AppColors.primary,
+                  )
+                : null,
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  'Organizer',
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ParticipantChip extends StatelessWidget {
   const _ParticipantChip({required this.event});
   final EventModel event;
@@ -624,28 +737,33 @@ class _ParticipantChip extends StatelessWidget {
   }
 }
 
-class _ParticipantAvatars extends StatelessWidget {
+class _ParticipantAvatars extends ConsumerWidget {
   const _ParticipantAvatars({required this.participantIds});
   final List<String> participantIds;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final displayCount = participantIds.length.clamp(0, 8);
     final overflow = participantIds.length - displayCount;
 
     return Row(
       children: [
         ...List.generate(displayCount, (i) {
+          final userAsync = ref.watch(userProfileProvider(participantIds[i]));
+          final photoUrl = userAsync.value?.photoUrl;
           return Padding(
             padding: EdgeInsets.only(right: 4.w),
             child: CircleAvatar(
               radius: 18.r,
               backgroundColor: AppColors.primarySurface,
-              child: Icon(
-                Icons.person_rounded,
-                size: 18.sp,
-                color: AppColors.primary,
-              ),
+              backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+              child: photoUrl == null
+                  ? Icon(
+                      Icons.person_rounded,
+                      size: 18.sp,
+                      color: AppColors.primary,
+                    )
+                  : null,
             ),
           );
         }),

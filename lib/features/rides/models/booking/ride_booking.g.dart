@@ -10,6 +10,7 @@ _RideBooking _$RideBookingFromJson(Map json) => _RideBooking(
   id: json['id'] as String,
   rideId: json['rideId'] as String,
   passengerId: json['passengerId'] as String,
+  driverId: json['driverId'] as String?,
   seatsBooked: (json['seatsBooked'] as num?)?.toInt() ?? 1,
   status:
       $enumDecodeNullable(_$BookingStatusEnumMap, json['status']) ??
@@ -34,6 +35,7 @@ Map<String, dynamic> _$RideBookingToJson(_RideBooking instance) =>
       'id': instance.id,
       'rideId': instance.rideId,
       'passengerId': instance.passengerId,
+      'driverId': instance.driverId,
       'seatsBooked': instance.seatsBooked,
       'status': _$BookingStatusEnumMap[instance.status]!,
       'pickupLocation': instance.pickupLocation?.toJson(),

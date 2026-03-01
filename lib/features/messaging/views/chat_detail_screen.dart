@@ -127,7 +127,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
-
     HapticFeedback.lightImpact();
     _messageController.clear();
     setState(() => _showEmojiPicker = false);
@@ -142,6 +141,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     final state = ref.read(
       chatDetailViewModelProvider(widget.chatId, currentUser?.uid ?? ''),
     );
+    TalkerService.info("the message is sent: $text and the replyToMessage is ${state.replyToMessage?.content} with id ${state.replyToMessage?.id} and the sender is ${currentUser?.displayName} and the sender photo url is ${currentUser?.photoUrl} and the chat id is ${widget.chatId} and the user id is ${currentUser?.uid}");
 
     await viewModel.sendMessage(
       content: text,
@@ -217,7 +217,84 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       );
 
       await viewModel.sendMessage(
-        content: '📷 Photo',
+        content: 'Photo',
+        senderName: currentUser?.displayName ?? 'User',
+        senderPhotoUrl: currentUser?.photoUrl,
+        type: MessageType.image,
+        imageUrl: imageUrl,
+      );
+
+      _scrollToBottom();
+    } catch (e) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context).failedToSendImageValue(e)),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  Future<void> _sendImageFromCamera() async {
+    final accepted = await PermissionDialogHelper.showCameraRationale(
+      context,
+      customMessage:
+          'Camera access is needed to take and send '
+          'photos in this chat.',
+    );
+    if (!accepted) return;
+
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.camera);
+
+    if (pickedFile == null) return;
+
+    HapticFeedback.lightImpact();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            SizedBox(
+              width: 20.w,
+              height: 20.w,
+              child: const CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            ),
+            SizedBox(width: 12.w),
+            Text(AppLocalizations.of(context).sendingImage),
+          ],
+        ),
+        backgroundColor: AppColors.primary,
+        duration: const Duration(seconds: 30),
+      ),
+    );
+
+    try {
+      final file = File(pickedFile.path);
+      final fileName =
+          '${DateTime.now().millisecondsSinceEpoch}_${pickedFile.name}';
+      final chatController = ref.read(chatActionsViewModelProvider);
+      final imageUrl = await chatController.uploadChatImage(
+        chatId: widget.chatId,
+        imageFile: file,
+        fileName: fileName,
+      );
+
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+      final viewModel = ref.read(
+        chatDetailViewModelProvider(
+          widget.chatId,
+          currentUser?.uid ?? '',
+        ).notifier,
+      );
+
+      await viewModel.sendMessage(
+        content: 'Photo',
         senderName: currentUser?.displayName ?? 'User',
         senderPhotoUrl: currentUser?.photoUrl,
         type: MessageType.image,
@@ -404,7 +481,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
           '${duration.inMinutes}:${(duration.inSeconds % 60).toString().padLeft(2, '0')}';
 
       await viewModel.sendMessage(
-        content: '🎤 Voice message ($durationText)',
+        content: 'Voice message ($durationText)',
         senderName: currentUser?.displayName ?? 'User',
         senderPhotoUrl: currentUser?.photoUrl,
         type: MessageType.audio,
@@ -700,6 +777,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
 
   @override
   Widget build(BuildContext context) {
+    if (currentUser == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     final chatState = ref.watch(
       chatDetailViewModelProvider(widget.chatId, currentUser!.uid),
     );
@@ -893,110 +974,123 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-                width: 120.w,
-                height: 120.w,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      AppColors.primaryLight.withOpacity(0.15),
-                      AppColors.accentLight.withOpacity(0.08),
-                    ],
-                  ),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.15),
-                      blurRadius: 30,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  Icons.chat_bubble_outline_rounded,
-                  size: 50.sp,
-                  color: AppColors.primary,
-                ),
-              )
-              .animate(onPlay: (c) => c.repeat())
-              .shimmer(duration: 2000.ms, delay: 2000.ms)
-              .scale(
-                begin: const Offset(1, 1),
-                end: const Offset(1.05, 1.05),
-                duration: 1500.ms,
-              )
-              .then()
-              .scale(
-                begin: const Offset(1.05, 1.05),
-                end: const Offset(1, 1),
-                duration: 1500.ms,
-              ),
-          SizedBox(height: 24.h),
-          Container(
-                padding: EdgeInsets.symmetric(horizontal: 32.w, vertical: 16.h),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.primarySurface.withOpacity(0.5),
-                      AppColors.accentSurface.withOpacity(0.3),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(20.r),
-                  border: Border.all(color: AppColors.primary.withOpacity(0.1)),
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      AppLocalizations.of(context).noMessagesYet,
-                      style: TextStyle(
-                        fontSize: 20.sp,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                      width: 120.w,
+                      height: 120.w,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            AppColors.primaryLight.withOpacity(0.15),
+                            AppColors.accentLight.withOpacity(0.08),
+                          ],
+                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withOpacity(0.15),
+                            blurRadius: 30,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
                       ),
-                    ),
-                    SizedBox(height: 8.h),
-                    Text(
-                      AppLocalizations.of(context).sendAMessageToStart,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        color: AppColors.textSecondary,
-                        height: 1.5,
+                      child: Icon(
+                        Icons.chat_bubble_outline_rounded,
+                        size: 50.sp,
+                        color: AppColors.primary,
                       ),
+                    )
+                    .animate(onPlay: (c) => c.repeat())
+                    .shimmer(duration: 2000.ms, delay: 2000.ms)
+                    .scale(
+                      begin: const Offset(1, 1),
+                      end: const Offset(1.05, 1.05),
+                      duration: 1500.ms,
+                    )
+                    .then()
+                    .scale(
+                      begin: const Offset(1.05, 1.05),
+                      end: const Offset(1, 1),
+                      duration: 1500.ms,
                     ),
-                  ],
-                ),
-              )
-              .animate()
-              .fadeIn(duration: 400.ms, delay: 200.ms)
-              .slideY(begin: 0.1),
-          SizedBox(height: 32.h),
-          Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildQuickActionChip(
-                    Icons.emoji_emotions_rounded,
-                    'Send Emoji',
-                    AppColors.warning,
-                  ),
-                  SizedBox(width: 12.w),
-                  _buildQuickActionChip(
-                    Icons.image_rounded,
-                    'Send Photo',
-                    AppColors.info,
-                  ),
-                ],
-              )
-              .animate()
-              .fadeIn(duration: 400.ms, delay: 400.ms)
-              .slideY(begin: 0.15),
-        ],
+                SizedBox(height: 24.h),
+                Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 32.w,
+                        vertical: 16.h,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.primarySurface.withOpacity(0.5),
+                            AppColors.accentSurface.withOpacity(0.3),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(20.r),
+                        border: Border.all(
+                          color: AppColors.primary.withOpacity(0.1),
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            AppLocalizations.of(context).noMessagesYet,
+                            style: TextStyle(
+                              fontSize: 20.sp,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          SizedBox(height: 8.h),
+                          Text(
+                            AppLocalizations.of(context).sendAMessageToStart,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              color: AppColors.textSecondary,
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                    .animate()
+                    .fadeIn(duration: 400.ms, delay: 200.ms)
+                    .slideY(begin: 0.1),
+                SizedBox(height: 32.h),
+                Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildQuickActionChip(
+                          Icons.emoji_emotions_rounded,
+                          'Send Emoji',
+                          AppColors.warning,
+                        ),
+                        SizedBox(width: 12.w),
+                        _buildQuickActionChip(
+                          Icons.image_rounded,
+                          'Send Photo',
+                          AppColors.info,
+                        ),
+                      ],
+                    )
+                    .animate()
+                    .fadeIn(duration: 400.ms, delay: 400.ms)
+                    .slideY(begin: 0.15),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1854,213 +1948,201 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
 
   Widget _buildInputArea() {
     return Container(
-      padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 16.h),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [AppColors.cardBg, AppColors.primarySurface.withOpacity(0.3)],
+        color: AppColors.cardBg,
+        border: Border(
+          top: BorderSide(color: AppColors.primary.withOpacity(0.08), width: 1),
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, -8),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, -3),
           ),
         ],
-        border: Border(
-          top: BorderSide(color: AppColors.primary.withOpacity(0.1), width: 1),
-        ),
       ),
       child: SafeArea(
         top: false,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            // Attachment button
-            GestureDetector(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    _showAttachmentOptions();
-                  },
-                  child: Container(
-                    padding: EdgeInsets.all(12.w),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.accentLight.withOpacity(0.2),
-                          AppColors.accent.withOpacity(0.1),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(14.r),
-                      border: Border.all(
-                        color: AppColors.accent.withOpacity(0.3),
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.attach_file_rounded,
-                      color: AppColors.primary,
-                      size: 22.sp,
-                    ),
-                  ),
-                )
-                .animate(onPlay: (c) => c.repeat())
-                .shimmer(duration: 2000.ms, delay: 3000.ms),
-
-            SizedBox(width: 10.w),
-
-            // Text input
-            Expanded(
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(24.r),
-                  border: Border.all(
-                    color: _focusNode.hasFocus
-                        ? AppColors.primary
-                        : AppColors.border.withOpacity(0.5),
-                    width: _focusNode.hasFocus ? 2 : 1,
-                  ),
-                  boxShadow: _focusNode.hasFocus
-                      ? [
-                          BoxShadow(
-                            color: AppColors.primary.withOpacity(0.15),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ]
-                      : [],
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              // Attachment
+              IconButton(
+                tooltip: 'Attach file',
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  _showAttachmentOptions();
+                },
+                icon: Icon(
+                  Icons.attach_file_rounded,
+                  size: 22.sp,
+                  color: AppColors.primary,
                 ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _messageController,
-                        focusNode: _focusNode,
-                        onTap: () => setState(() => _showEmojiPicker = false),
-                        decoration: InputDecoration(
-                          hintText: AppLocalizations.of(context).typeAMessage,
-                          hintStyle: TextStyle(
-                            color: AppColors.textTertiary,
-                            fontSize: 15.sp,
-                            fontWeight: FontWeight.w400,
-                          ),
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(vertical: 12.h),
-                        ),
-                        style: TextStyle(
-                          fontSize: 15.sp,
-                          color: AppColors.textPrimary,
-                          height: 1.4,
-                        ),
-                        maxLines: 5,
-                        minLines: 1,
-                      ),
-                    ),
-                    SizedBox(width: 8.w),
-                    Semantics(
-                      button: true,
-                      label: _showEmojiPicker
-                          ? 'Show keyboard'
-                          : 'Show emoji picker',
-                      child: GestureDetector(
-                        onTap: _toggleEmojiPicker,
-                        child: Container(
-                          padding: EdgeInsets.all(6.w),
-                          decoration: BoxDecoration(
-                            color: _showEmojiPicker
-                                ? AppColors.primary.withOpacity(0.1)
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                          child: Icon(
-                            _showEmojiPicker
-                                ? Icons.keyboard_rounded
-                                : Icons.emoji_emotions_rounded,
-                            color: _showEmojiPicker
-                                ? AppColors.primary
-                                : AppColors.textSecondary,
-                            size: 22.sp,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                style: IconButton.styleFrom(
+                  backgroundColor: AppColors.primarySurface.withOpacity(0.6),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  minimumSize: Size(44.w, 44.w),
+                  maximumSize: Size(44.w, 44.w),
+                  padding: EdgeInsets.zero,
                 ),
               ),
-            ),
-
-            SizedBox(width: 8.w),
-
-            // Send button (or mic for voice recording)
-            Semantics(
-              button: true,
-              label: 'Send message',
-              child: GestureDetector(
-                onTap: () {
-                  if (_messageController.text.trim().isNotEmpty) {
-                    _sendMessage();
-                  } else if (_isRecording) {
-                    _stopRecording();
-                  } else {
-                    _startRecording();
-                  }
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: EdgeInsets.all(12.w),
-                  decoration: BoxDecoration(
-                    gradient: _isRecording
-                        ? const LinearGradient(
-                            colors: [Color(0xFFE91E63), Color(0xFFF44336)],
-                          )
-                        : AppColors.primaryGradient,
-                    borderRadius: BorderRadius.circular(12.r),
-                    boxShadow: [
-                      BoxShadow(
-                        color:
-                            (_isRecording
-                                    ? const Color(0xFFE91E63)
-                                    : AppColors.primary)
-                                .withValues(alpha: 0.3),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
+              SizedBox(width: 8.w),
+              // Text field with reactive focus border
+              Expanded(
+                child: ListenableBuilder(
+                  listenable: _focusNode,
+                  builder: (context, child) => AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(24.r),
+                      border: Border.all(
+                        color: _focusNode.hasFocus
+                            ? AppColors.primary
+                            : AppColors.border.withOpacity(0.4),
+                        width: _focusNode.hasFocus ? 1.5 : 1,
+                      ),
+                      boxShadow: _focusNode.hasFocus
+                          ? [
+                              BoxShadow(
+                                color: AppColors.primary.withOpacity(0.1),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ]
+                          : const [],
+                    ),
+                    child: child,
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _messageController,
+                          focusNode: _focusNode,
+                          onTap: () {
+                            if (_showEmojiPicker) {
+                              setState(() => _showEmojiPicker = false);
+                            }
+                          },
+                          decoration: InputDecoration(
+                            hintText: AppLocalizations.of(context).typeAMessage,
+                            hintStyle: TextStyle(
+                              color: AppColors.textTertiary,
+                              fontSize: 15.sp,
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.fromLTRB(
+                              16.w,
+                              10.h,
+                              4.w,
+                              10.h,
+                            ),
+                          ),
+                          style: TextStyle(
+                            fontSize: 15.sp,
+                            color: AppColors.textPrimary,
+                            height: 1.4,
+                          ),
+                          maxLines: 5,
+                          minLines: 1,
+                          keyboardType: TextInputType.multiline,
+                          textInputAction: TextInputAction.newline,
+                        ),
+                      ),
+                      // Emoji / keyboard toggle
+                      IconButton(
+                        tooltip: _showEmojiPicker
+                            ? 'Show keyboard'
+                            : 'Show emoji picker',
+                        onPressed: _toggleEmojiPicker,
+                        icon: Icon(
+                          _showEmojiPicker
+                              ? Icons.keyboard_rounded
+                              : Icons.emoji_emotions_rounded,
+                          size: 22.sp,
+                        ),
+                        color: _showEmojiPicker
+                            ? AppColors.primary
+                            : AppColors.textSecondary,
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.fromLTRB(4.w, 8.h, 12.w, 8.h),
                       ),
                     ],
                   ),
-                  child: _isRecording
-                      ? Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.mic_rounded,
-                              color: Colors.white,
-                              size: 22.sp,
-                            ),
-                            SizedBox(width: 8.w),
-                            Text(
-                              '${_recordingDuration.inMinutes}:${(_recordingDuration.inSeconds % 60).toString().padLeft(2, '0')}',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w600,
-                              ),
+                ),
+              ),
+              SizedBox(width: 8.w),
+              // Send / Mic / Stop — rebuilt reactively when text changes
+              ValueListenableBuilder<TextEditingValue>(
+                valueListenable: _messageController,
+                builder: (context, value, _) {
+                  final hasText = value.text.trim().isNotEmpty;
+                  return Semantics(
+                    button: true,
+                    label: _isRecording
+                        ? 'Stop recording'
+                        : hasText
+                        ? 'Send message'
+                        : 'Record voice message',
+                    child: GestureDetector(
+                      onTap: () {
+                        // Recording takes priority over send so tapping while
+                        // recording always stops it regardless of typed text.
+                        if (_isRecording) {
+                          _stopRecording();
+                        } else if (hasText) {
+                          _sendMessage();
+                        } else {
+                          _startRecording();
+                        }
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: EdgeInsets.all(11.w),
+                        decoration: BoxDecoration(
+                          gradient: _isRecording
+                              ? const LinearGradient(
+                                  colors: [
+                                    Color(0xFFE91E63),
+                                    Color(0xFFF44336),
+                                  ],
+                                )
+                              : AppColors.primaryGradient,
+                          borderRadius: BorderRadius.circular(14.r),
+                          boxShadow: [
+                            BoxShadow(
+                              color:
+                                  (_isRecording
+                                          ? const Color(0xFFE91E63)
+                                          : AppColors.primary)
+                                      .withValues(alpha: 0.3),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
                             ),
                           ],
-                        )
-                      : Icon(
-                          _messageController.text.trim().isNotEmpty
+                        ),
+                        child: Icon(
+                          _isRecording
+                              ? Icons.stop_rounded
+                              : hasText
                               ? Icons.send_rounded
                               : Icons.mic_rounded,
                           color: Colors.white,
                           size: 22.sp,
                         ),
-                ),
+                      ),
+                    ),
+                  );
+                },
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -2095,15 +2177,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                   Icons.camera_alt_rounded,
                   AppLocalizations.of(context).camera,
                   const Color(0xFFE91E63),
-                  () async {
+                  () {
                     context.pop();
-                    final picker = ImagePicker();
-                    final pickedFile = await picker.pickImage(
-                      source: ImageSource.camera,
-                    );
-                    if (pickedFile != null) {
-                      // Handle camera image
-                    }
+                    _sendImageFromCamera();
                   },
                 ),
                 _buildAttachmentOption(
@@ -2114,12 +2190,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                     context.pop();
                     _sendImage();
                   },
-                ),
-                _buildAttachmentOption(
-                  Icons.insert_drive_file_rounded,
-                  AppLocalizations.of(context).document,
-                  const Color(0xFF2196F3),
-                  () => context.pop(),
                 ),
                 _buildAttachmentOption(
                   Icons.location_on_rounded,
@@ -2274,7 +2344,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       );
 
       final success = await viewModel.sendMessage(
-        content: '📍 $locationName',
+        content: locationName,
         senderName: currentUser?.displayName ?? 'User',
         senderPhotoUrl: currentUser?.photoUrl,
         type: MessageType.location,

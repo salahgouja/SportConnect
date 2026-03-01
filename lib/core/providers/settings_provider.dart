@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sport_connect/core/repositories/settings_repository.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
 
 part 'settings_provider.g.dart';
 
@@ -170,5 +170,40 @@ class DistanceUnitProvider extends _$DistanceUnitProvider {
     final repository = await ref.read(settingsRepositoryProvider.future);
     await repository.setDistanceUnit(unit);
     state = AsyncValue.data(unit);
+  }
+}
+
+/// Saved login credentials (remember-me feature).
+///
+/// Wraps [SettingsRepository.savedEmail] and [SettingsRepository.rememberMe]
+/// so the login screen never imports the repository layer directly.
+class SavedCredentials {
+  final String? email;
+  final bool rememberMe;
+
+  const SavedCredentials({this.email, this.rememberMe = false});
+}
+
+@riverpod
+class SavedCredentialsNotifier extends _$SavedCredentialsNotifier {
+  @override
+  Future<SavedCredentials> build() async {
+    final repository = await ref.watch(settingsRepositoryProvider.future);
+    return SavedCredentials(
+      email: repository.savedEmail,
+      rememberMe: repository.rememberMe,
+    );
+  }
+
+  Future<void> save(String email) async {
+    final repository = await ref.read(settingsRepositoryProvider.future);
+    await repository.saveCredentials(email: email);
+    state = AsyncValue.data(SavedCredentials(email: email, rememberMe: true));
+  }
+
+  Future<void> clear() async {
+    final repository = await ref.read(settingsRepositoryProvider.future);
+    await repository.clearCredentials();
+    state = const AsyncValue.data(SavedCredentials());
   }
 }

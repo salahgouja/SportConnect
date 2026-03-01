@@ -113,7 +113,7 @@ final class ReviewsListViewModelProvider
 }
 
 String _$reviewsListViewModelHash() =>
-    r'cc1c4bbc41b3e61dee3a9eb595d22328f17f9750';
+    r'1934703bd3af1d32f6e4d0e2b5ee518903079d8b';
 
 /// ViewModel for viewing reviews list
 
@@ -225,4 +225,90 @@ abstract class _$ReviewResponseViewModel extends $Notifier<AsyncValue<void>> {
             >;
     element.handleCreate(ref, build);
   }
+}
+
+/// VM-layer provider to get reviews for a specific ride
+
+@ProviderFor(rideReviews)
+final rideReviewsProvider = RideReviewsFamily._();
+
+/// VM-layer provider to get reviews for a specific ride
+
+final class RideReviewsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<ReviewModel>>,
+          List<ReviewModel>,
+          FutureOr<List<ReviewModel>>
+        >
+    with
+        $FutureModifier<List<ReviewModel>>,
+        $FutureProvider<List<ReviewModel>> {
+  /// VM-layer provider to get reviews for a specific ride
+  RideReviewsProvider._({
+    required RideReviewsFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'rideReviewsProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$rideReviewsHash();
+
+  @override
+  String toString() {
+    return r'rideReviewsProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<List<ReviewModel>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<ReviewModel>> create(Ref ref) {
+    final argument = this.argument as String;
+    return rideReviews(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is RideReviewsProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$rideReviewsHash() => r'b789dc4bd9982dc1f28acbeb9707cb91238558de';
+
+/// VM-layer provider to get reviews for a specific ride
+
+final class RideReviewsFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<List<ReviewModel>>, String> {
+  RideReviewsFamily._()
+    : super(
+        retry: null,
+        name: r'rideReviewsProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// VM-layer provider to get reviews for a specific ride
+
+  RideReviewsProvider call(String rideId) =>
+      RideReviewsProvider._(argument: rideId, from: this);
+
+  @override
+  String toString() => r'rideReviewsProvider';
 }

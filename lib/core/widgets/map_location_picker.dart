@@ -638,7 +638,7 @@ class _MapLocationPickerState extends State<MapLocationPicker>
   Widget _buildQuickPicks() {
     return Container(
       height: 100.h,
-      padding: EdgeInsets.symmetric(vertical: 8.h),
+      padding: EdgeInsets.symmetric(vertical: 6.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

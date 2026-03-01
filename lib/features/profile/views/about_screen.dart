@@ -137,14 +137,14 @@ class AboutScreen extends ConsumerWidget {
 
             SizedBox(height: 24.h),
 
-            // Stats
+            // Features
             Row(
               children: [
-                _buildStatCard('10K+', 'Users', Icons.people_rounded),
+                _buildStatCard('Eco', 'Ride-Share', Icons.eco_rounded),
                 SizedBox(width: 12.w),
-                _buildStatCard('50K+', 'Rides', Icons.directions_car_rounded),
+                _buildStatCard('Live', 'Tracking', Icons.gps_fixed_rounded),
                 SizedBox(width: 12.w),
-                _buildStatCard('25+', 'Cities', Icons.location_city_rounded),
+                _buildStatCard('Sport', 'Community', Icons.sports_rounded),
               ],
             ).animate().fadeIn(delay: 400.ms),
 
@@ -154,9 +154,7 @@ class AboutScreen extends ConsumerWidget {
             _buildLinkCard(
               icon: Icons.description_outlined,
               title: l10n.settingsTermsConditions,
-              onTap: () => context.push(
-                AppRoutes.termsPrivacy.path.replaceFirst(':type', 'terms'),
-              ),
+              onTap: () => context.push(AppRoutes.terms.path),
             ).animate().fadeIn(delay: 500.ms).slideX(begin: 0.05),
 
             SizedBox(height: 8.h),
@@ -164,9 +162,7 @@ class AboutScreen extends ConsumerWidget {
             _buildLinkCard(
               icon: Icons.privacy_tip_outlined,
               title: l10n.settingsPrivacyPolicy,
-              onTap: () => context.push(
-                AppRoutes.termsPrivacy.path.replaceFirst(':type', 'privacy'),
-              ),
+              onTap: () => context.push(AppRoutes.privacy.path),
             ).animate().fadeIn(delay: 550.ms).slideX(begin: 0.05),
 
             SizedBox(height: 8.h),

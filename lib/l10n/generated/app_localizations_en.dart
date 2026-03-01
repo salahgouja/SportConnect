@@ -3675,4 +3675,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get driverSaveAndContinue => 'Save & Continue';
+
+  @override
+  String get ratingExcellent => 'Excellent!';
+
+  @override
+  String get ratingGood => 'Good';
+
+  @override
+  String get ratingAverage => 'Average';
+
+  @override
+  String get ratingBelowAverage => 'Below Average';
+
+  @override
+  String get ratingPoor => 'Poor';
 }

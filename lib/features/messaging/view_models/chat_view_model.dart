@@ -4,7 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:sport_connect/features/messaging/models/message_model.dart';
-import 'package:sport_connect/features/messaging/repositories/chat_repository.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
 
 part 'chat_view_model.g.dart';
 
@@ -297,7 +297,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
 
   Future<void> deleteMessage(String messageId) async {
     final repository = ref.read(chatRepositoryProvider);
-    await repository.deleteMessage(messageId);
+    await repository.deleteMessage(chatId: chatId, messageId: messageId);
   }
 
   Future<void> editMessage(String messageId, String newContent) async {

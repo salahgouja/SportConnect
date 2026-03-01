@@ -30,23 +30,5 @@ ios:
   image: "assets/images/splash_icon.png"
   image_dark: "assets/images/splash_icon_dark.png"
 
-web:
-  background_color: "#FFFFFF"
-  image: "assets/images/splash_icon.png"
-  image_dark: "assets/images/splash_icon_dark.png"
-
-windows:
-  background_color: "#FFFFFF"
-  image: "assets/images/splash_icon.png"
-
-macos:
-  background_color: "#FFFFFF"
-  image: "assets/images/splash_icon.png"
-  image_dark: "assets/images/splash_icon_dark.png"
-
-linux:
-  background_color: "#FFFFFF"
-  image: "assets/images/splash_icon.png"
-
 # Additional options
 info_block: true

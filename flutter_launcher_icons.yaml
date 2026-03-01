@@ -8,26 +8,7 @@ flutter_launcher_icons:
   
   # iOS app icon
   ios: true
-  
-  # Web configuration
-  web:
-    generate: true
-    theme_color: "#FFFFFF"
-    background_color: "#FFFFFF"
-  
-  # Windows configuration
-  windows:
-    generate: true
-    icon_size: 48  # Min: 48, Max: 256
-  
-  # macOS configuration
-  macos:
-    generate: true
-  
-  # Linux configuration
-  linux:
-    generate: true
-  
+    
   # Source image paths
   image_path: "assets/icons/app_icon.png"           # Main icon (1024x1024, should be square)
   image_path_ios: "assets/icons/app_icon_ios.png"   # iOS-specific icon (optional, 1024x1024)

@@ -20,7 +20,6 @@ import 'package:sport_connect/features/messaging/view_models/chat_view_model.dar
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
-import 'package:sport_connect/features/rides/repositories/booking_repository.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
@@ -214,8 +213,16 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
             action: SnackBarAction(
               label: 'Navigate',
               textColor: Colors.white,
-              onPressed: () {
-                // Could open external navigation
+              onPressed: () async {
+                final lat = poi.location.latitude;
+                final lng = poi.location.longitude;
+                final name = Uri.encodeComponent(poi.name ?? '');
+                final uri = Uri.parse(
+                  'https://www.google.com/maps/search/?api=1&query=$lat,$lng&query_place_id=$name',
+                );
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
               },
             ),
           ),
@@ -1734,8 +1741,8 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
   /// Step 4: Navigates to the review screen so driver can rate a passenger.
   Future<void> _navigateToRating(RideModel ride) async {
     final allBookings = await ref
-        .read(bookingRepositoryProvider)
-        .getBookingsByRideId(ride.id);
+        .read(rideActionsViewModelProvider)
+        .getBookingsByRideId(ride.id, ride.driverId);
     final booking = allBookings
         .where((b) => b.status == BookingStatus.accepted)
         .firstOrNull;

@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -12,6 +13,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/services/routing_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
@@ -42,6 +44,7 @@ class RideNavigationScreen extends ConsumerStatefulWidget {
 
 class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
     with TickerProviderStateMixin {
+  final MapController _mapController = MapController();
   StreamSubscription<Position>? _positionSubscription;
   Position? _currentPosition;
   double _progress = 0.0;
@@ -55,6 +58,7 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
   int? _totalDurationMinutes;
   LatLng? _originLatLng;
   LatLng? _destinationLatLng;
+  String? _lastRideId;
 
   @override
   void initState() {
@@ -70,6 +74,7 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
   void dispose() {
     _positionSubscription?.cancel();
     _pulseController.dispose();
+    _mapController.dispose();
     super.dispose();
   }
 
@@ -101,6 +106,15 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
           });
           _updateLocationInFirebase(position);
           _calculateProgress(position);
+          // Keep map centred on current position
+          try {
+            _mapController.move(
+              LatLng(position.latitude, position.longitude),
+              15,
+            );
+          } catch (_) {
+            // Map may not be built yet on first GPS fix
+          }
         });
   }
 
@@ -122,11 +136,13 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
     // Speed from GPS (m/s → km/h)
     final speedKmh = (position.speed * 3.6).clamp(0.0, 200.0);
 
-    // Lazy-initialize ride data from the current ride stream value
-    if (_originLatLng == null || _destinationLatLng == null) {
-      final rideAsync = ref.read(rideStreamProvider(widget.rideId));
-      final ride = rideAsync.value;
-      if (ride != null) {
+    // Initialize / re-sync ride data from current ride stream value
+    final rideAsync = ref.read(rideStreamProvider(widget.rideId));
+    final ride = rideAsync.value;
+    if (ride != null) {
+      final rideId = ride.id;
+      if (_lastRideId != rideId) {
+        // Ride changed or first load — reset cached route state
         _originLatLng = LatLng(ride.origin.latitude, ride.origin.longitude);
         _destinationLatLng = LatLng(
           ride.destination.latitude,
@@ -134,6 +150,7 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
         );
         _totalDistanceKm = ride.distanceKm;
         _totalDurationMinutes = ride.durationMinutes;
+        _lastRideId = rideId;
       }
     }
 
@@ -169,8 +186,14 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
       // Stationary - estimate from total duration and progress
       remainingMinutes = ((1 - progress) * _totalDurationMinutes!).round();
     } else {
-      // Fallback: assume 40 km/h average
-      remainingMinutes = (distToDest / 40 * 60).round();
+      // Fallback: derive average speed from total route data, else use 30 km/h
+      final avgSpeedKmh =
+          (_totalDistanceKm != null &&
+              _totalDurationMinutes != null &&
+              _totalDurationMinutes! > 0)
+          ? _totalDistanceKm! / (_totalDurationMinutes! / 60)
+          : 30.0;
+      remainingMinutes = (distToDest / avgSpeedKmh * 60).round();
     }
 
     // Format remaining distance
@@ -218,6 +241,29 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
   }
 
   double _degToRad(double deg) => deg * math.pi / 180;
+
+  /// Builds the polyline points for the route.
+  /// Uses the encoded polyline from the ride model if available,
+  /// otherwise falls back to waypoints between current and destination.
+  List<LatLng> _buildRoutePoints(
+    RideModel ride,
+    LatLng currentLatLng,
+    LatLng destLatLng,
+  ) {
+    final encoded = ride.route.polylineEncoded;
+    if (encoded != null && encoded.isNotEmpty) {
+      return RoutingService.decodePolyline(encoded, 5);
+    }
+    // Fallback: current position → sorted waypoints → destination
+    final points = <LatLng>[currentLatLng];
+    final waypoints = List.of(ride.route.waypoints)
+      ..sort((a, b) => a.order.compareTo(b.order));
+    for (final wp in waypoints) {
+      points.add(LatLng(wp.location.latitude, wp.location.longitude));
+    }
+    points.add(destLatLng);
+    return points;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -316,112 +362,169 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
   }
 
   Widget _buildMapArea(RideModel ride) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            AppColors.primarySurface.withValues(alpha: 0.5),
-            AppColors.primarySurface.withValues(alpha: 0.2),
-            AppColors.background,
-          ],
-        ),
-      ),
-      child: CustomPaint(
-        painter: _MapGridPainter(),
+    final originLatLng = LatLng(ride.origin.latitude, ride.origin.longitude);
+    final destLatLng = LatLng(
+      ride.destination.latitude,
+      ride.destination.longitude,
+    );
+    final currentLatLng = _currentPosition != null
+        ? LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
+        : originLatLng;
+
+    if (_currentPosition == null) {
+      // Show a loading state while waiting for first GPS fix
+      return Container(
+        color: AppColors.background,
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Animated pulsing location indicator
-              AnimatedBuilder(
-                animation: _pulseController,
-                builder: (context, child) {
-                  return Container(
-                    padding: EdgeInsets.all(
-                      20.w + (_pulseController.value * 10),
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(
-                        alpha: 0.12 - (_pulseController.value * 0.08),
-                      ),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Container(
-                      padding: EdgeInsets.all(14.w),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Container(
-                        padding: EdgeInsets.all(10.w),
-                        decoration: const BoxDecoration(
-                          color: AppColors.primary,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.navigation_rounded,
-                          color: Colors.white,
-                          size: 28.sp,
-                        ),
-                      ),
-                    ),
-                  );
-                },
+              SizedBox(
+                width: 48.w,
+                height: 48.w,
+                child: CircularProgressIndicator(
+                  color: AppColors.primary,
+                  strokeWidth: 3,
+                ),
               ),
-              SizedBox(height: 20.h),
-              if (_currentPosition != null)
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 12.w,
-                    vertical: 6.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.9),
-                    borderRadius: BorderRadius.circular(8.r),
-                  ),
-                  child: Text(
-                    '${_currentPosition!.latitude.toStringAsFixed(5)}, '
-                    '${_currentPosition!.longitude.toStringAsFixed(5)}',
-                    style: TextStyle(
-                      fontSize: 11.sp,
-                      color: AppColors.textTertiary,
-                      fontFamily: 'monospace',
-                    ),
-                  ),
-                ),
-              SizedBox(height: 10.h),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20.r),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.gps_fixed_rounded,
-                      size: 14.sp,
-                      color: AppColors.primary,
-                    ),
-                    SizedBox(width: 6.w),
-                    Text(
-                      'Live Navigation Active',
-                      style: TextStyle(
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ],
+              SizedBox(height: 16.h),
+              Text(
+                'Getting your location...',
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  color: AppColors.textSecondary,
                 ),
               ),
             ],
           ),
         ),
-      ),
+      );
+    }
+
+    return FlutterMap(
+      mapController: _mapController,
+      options: MapOptions(initialCenter: currentLatLng, initialZoom: 15),
+      children: [
+        TileLayer(
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          userAgentPackageName: 'com.sportconnect.app',
+        ),
+
+        // Route polyline — decode actual route if available, else straight line
+        PolylineLayer(
+          polylines: [
+            Polyline(
+              points: _buildRoutePoints(ride, currentLatLng, destLatLng),
+              color: AppColors.primary,
+              strokeWidth: 4,
+            ),
+          ],
+        ),
+
+        // Markers
+        MarkerLayer(
+          markers: [
+            // Current position marker (animated via AnimatedBuilder not possible in marker,
+            // so use a static pulsing style)
+            Marker(
+              point: currentLatLng,
+              width: 50.w,
+              height: 50.w,
+              child: AnimatedBuilder(
+                animation: _pulseController,
+                builder: (context, child) {
+                  return Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Container(
+                        width: 50.w * (1 + _pulseController.value * 0.3),
+                        height: 50.w * (1 + _pulseController.value * 0.3),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(
+                            alpha: 0.3 * (1 - _pulseController.value),
+                          ),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      Container(
+                        width: 30.w,
+                        height: 30.w,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 3),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          Icons.navigation_rounded,
+                          color: Colors.white,
+                          size: 18.w,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+
+            // Origin marker
+            Marker(
+              point: originLatLng,
+              width: 40.w,
+              height: 40.w,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.success,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 6,
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.trip_origin_rounded,
+                  color: Colors.white,
+                  size: 20.w,
+                ),
+              ),
+            ),
+
+            // Destination marker
+            Marker(
+              point: destLatLng,
+              width: 40.w,
+              height: 40.w,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.error,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 6,
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.location_on_rounded,
+                  color: Colors.white,
+                  size: 20.w,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -947,26 +1050,4 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
       ],
     );
   }
-}
-
-/// Subtle grid painter to give the map placeholder a spatial feel.
-class _MapGridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = AppColors.border.withValues(alpha: 0.3)
-      ..strokeWidth = 0.5;
-
-    const spacing = 40.0;
-
-    for (var x = 0.0; x < size.width; x += spacing) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-    for (var y = 0.0; y < size.height; y += spacing) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

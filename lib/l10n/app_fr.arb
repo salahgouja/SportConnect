@@ -3562,5 +3562,10 @@
   "driverInterestsRequired": "Veuillez sélectionner au moins un intérêt.",
   "driverTermsLabel": "J'accepte les Conditions d'utilisation et la Politique de confidentialité.",
   "driverTermsRequired": "Vous devez accepter les conditions pour continuer.",
-  "driverSaveAndContinue": "Enregistrer et continuer"
+  "driverSaveAndContinue": "Enregistrer et continuer",
+  "ratingExcellent": "Excellent !",
+  "ratingGood": "Bien",
+  "ratingAverage": "Moyen",
+  "ratingBelowAverage": "En dessous de la moyenne",
+  "ratingPoor": "Médiocre"
 }

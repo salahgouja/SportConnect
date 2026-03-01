@@ -162,7 +162,6 @@ class RoutingService {
           'steps': steps.toString(),
           'geometries': geometries,
           'overview': overview,
-          'annotations': 'true',
         },
       );
 
@@ -448,7 +447,7 @@ class RoutingService {
       // Decode polyline
       final polyline = route['geometry'] as String?;
       if (polyline != null) {
-        coordinates = _decodePolyline(
+        coordinates = decodePolyline(
           polyline,
           geometries == 'polyline6' ? 6 : 5,
         );
@@ -570,7 +569,7 @@ class RoutingService {
   }
 
   /// Decode polyline to list of coordinates
-  static List<LatLng> _decodePolyline(String encoded, int precision) {
+  static List<LatLng> decodePolyline(String encoded, int precision) {
     final List<LatLng> points = [];
     int index = 0;
     int lat = 0;

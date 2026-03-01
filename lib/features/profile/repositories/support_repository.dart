@@ -2,13 +2,9 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_support_repository.dart';
-import 'package:sport_connect/core/providers/firebase_providers.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
-
-part 'support_repository.g.dart';
 
 /// Handles submission of user reports and support tickets to Firestore,
 /// including optional file-attachment uploads to Firebase Storage.
@@ -126,13 +122,4 @@ class SupportRepository implements ISupportRepository {
     }
     return urls;
   }
-}
-
-/// Support Repository Provider
-@riverpod
-ISupportRepository supportRepository(Ref ref) {
-  return SupportRepository(
-    ref.watch(firestoreInstanceProvider),
-    ref.watch(storageInstanceProvider),
-  );
 }

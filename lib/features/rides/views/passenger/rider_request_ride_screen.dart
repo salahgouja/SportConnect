@@ -14,7 +14,7 @@ import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
-import 'package:sport_connect/features/events/views/inline_event_selector.dart';
+import 'package:sport_connect/features/events/views/widgets/inline_event_selector.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/ride_search_filters.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
@@ -597,6 +597,15 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
             ),
           ),
           const Spacer(),
+          TextButton.icon(
+            onPressed: () => context.push(AppRoutes.searchRides.path),
+            icon: Icon(Icons.filter_list_rounded, size: 16.sp),
+            label: Text('Filters', style: TextStyle(fontSize: 13.sp)),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.primary,
+              padding: EdgeInsets.symmetric(horizontal: 8.w),
+            ),
+          ),
           TextButton.icon(
             onPressed: _showSortSheet,
             icon: Icon(Icons.tune_rounded, size: 16.sp),

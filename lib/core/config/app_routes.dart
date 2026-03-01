@@ -9,10 +9,6 @@ class AppRoutes {
   static const splash = AppRoute('/', 'splash');
   static const onboarding = AppRoute('/onboarding', 'onboarding');
   static const login = AppRoute('/login', 'login');
-  @Deprecated(
-    'Use signupWizard instead. RegisterScreen is superseded by SignupWizardScreen.',
-  )
-  static const register = AppRoute('/register', 'register');
   static const signupWizard = AppRoute('/signup', 'signup-wizard');
   static const roleSelection = AppRoute('/role-selection', 'role-selection');
   static const riderOnboarding = AppRoute(
@@ -42,6 +38,7 @@ class AppRoutes {
   // Driver chat shell branch
   static const driverChat = AppRoute('/driver/chat', 'driver-chat');
   static const driverVehicles = AppRoute('/driver/vehicles', 'driver-vehicles');
+  static const driverStats = AppRoute('/driver/stats', 'driver-stats');
   static const driverSettings = AppRoute('/driver/settings', 'driver-settings');
   static const driverStripeOnboarding = AppRoute(
     '/driver/stripe-onboarding',
@@ -69,10 +66,10 @@ class AppRoutes {
   static const home = AppRoute('/home', 'home');
   static const paymentHistory = AppRoute('/payment-history', 'payment-history');
   static const profile = AppRoute('/profile', 'profile');
+  static const userProfile = AppRoute('/user/profile/:id', 'user-profile');
   static const editProfile = AppRoute('/edit-profile', 'edit-profile');
   static const settings = AppRoute('/settings', 'settings');
   static const achievements = AppRoute('/achievements', 'achievements');
-  static const vehicles = AppRoute('/vehicles', 'vehicles');
   static const notifications = AppRoute('/notifications', 'notifications');
 
   // Chat
@@ -93,7 +90,6 @@ class AppRoutes {
     '/driver/ride/:id/edit',
     'driver-edit-ride',
   );
-  static const driverMyRides = AppRoute('/driver/my-rides', 'driver-my-rides');
 
   // Auth Recovery
   static const forgotPassword = AppRoute('/forgot-password', 'forgot-password');
@@ -143,7 +139,6 @@ class AppRoutes {
   static const helpCenter = AppRoute('/help', 'help-center');
   static const contactSupport = AppRoute('/support', 'contact-support');
   static const reportIssue = AppRoute('/report', 'report-issue');
-  static const termsPrivacy = AppRoute('/legal/:type', 'terms-privacy');
   static const terms = AppRoute('/legal/terms', 'terms');
   static const privacy = AppRoute('/legal/privacy', 'privacy');
   static const about = AppRoute('/about', 'about');

@@ -153,9 +153,20 @@ class _SubmitReviewScreenState extends ConsumerState<SubmitReviewScreen> {
                     ),
 
                   // Submit button
+                  if (!state.isValid && state.rating == 0)
+                    Padding(
+                      padding: EdgeInsets.only(bottom: 8.h),
+                      child: Text(
+                        'Please select a rating to submit',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                    ),
                   PremiumButton(
                     text: 'Submit Review',
-                    onPressed: state.isValid
+                    onPressed: state.isValid && !state.isSubmitting
                         ? () => _submitReview(viewModel)
                         : null,
                     isLoading: state.isSubmitting,
@@ -288,7 +299,27 @@ class _SubmitReviewScreenState extends ConsumerState<SubmitReviewScreen> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(tag.emoji, style: TextStyle(fontSize: 14.sp)),
+                Icon(
+                  switch (tag) {
+                    ReviewTag.punctual => Icons.timer_rounded,
+                    ReviewTag.greatConversation =>
+                      Icons.chat_bubble_outline_rounded,
+                    ReviewTag.cleanCar => Icons.cleaning_services_rounded,
+                    ReviewTag.safeDriver => Icons.shield_outlined,
+                    ReviewTag.comfortableRide => Icons.weekend_rounded,
+                    ReviewTag.goodMusic => Icons.music_note_rounded,
+                    ReviewTag.friendly => Icons.sentiment_satisfied_outlined,
+                    ReviewTag.professional => Icons.work_outline_rounded,
+                    ReviewTag.flexible => Icons.handshake_outlined,
+                    ReviewTag.respectfulRider =>
+                      Icons.volunteer_activism_rounded,
+                    ReviewTag.onTimeRider => Icons.access_time_rounded,
+                    ReviewTag.polite => Icons.sentiment_very_satisfied_outlined,
+                    ReviewTag.easyCommunication => Icons.message_outlined,
+                  },
+                  size: 14.sp,
+                  color: isSelected ? Colors.white : AppColors.textSecondary,
+                ),
                 SizedBox(width: 6.w),
                 Text(
                   tag.label,

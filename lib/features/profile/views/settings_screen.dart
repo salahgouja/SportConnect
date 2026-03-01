@@ -305,7 +305,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       title: AppLocalizations.of(context).vehicles,
                       subtitle: 'Manage your vehicles',
                       icon: Icons.directions_car_outlined,
-                      onTap: () => context.push(AppRoutes.vehicles.path),
+                      onTap: () => context.push(AppRoutes.driverVehicles.path),
                     ),
                     _buildDivider(),
                   ],
@@ -442,8 +442,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('notification_dialog_shown', false);
 
-    final status = (await FirebaseMessaging.instance
-            .getNotificationSettings())
+    final status = (await FirebaseMessaging.instance.getNotificationSettings())
         .authorizationStatus;
 
     // Already granted — just tell the user.
@@ -496,8 +495,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     // `notDetermined` — show our rationale dialog then request.
     if (!mounted) return;
-    final accepted =
-        await PermissionDialogHelper.showNotificationRationale(context);
+    final accepted = await PermissionDialogHelper.showNotificationRationale(
+      context,
+    );
     await prefs.setBool('notification_dialog_shown', true);
     if (!accepted) return;
 

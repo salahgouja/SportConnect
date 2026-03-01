@@ -5,23 +5,21 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/features/rides/models/driver_stats.dart';
-import 'package:sport_connect/features/rides/repositories/driver_stats_repository.dart';
+import 'package:sport_connect/features/rides/view_models/driver_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
-/// Driver Profile Screen - Shows driver stats, ratings, and achievements
-class DriverProfileScreen extends ConsumerStatefulWidget {
-  const DriverProfileScreen({super.key});
+/// Driver Stats Screen - Shows current driver's performance stats, ratings, and ride history
+class DriverStatsScreen extends ConsumerStatefulWidget {
+  const DriverStatsScreen({super.key});
 
   @override
-  ConsumerState<DriverProfileScreen> createState() =>
-      _DriverProfileScreenState();
+  ConsumerState<DriverStatsScreen> createState() => _DriverStatsScreenState();
 }
 
-class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen>
+class _DriverStatsScreenState extends ConsumerState<DriverStatsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
@@ -45,8 +43,9 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen>
 
   @override
   Widget build(BuildContext context) {
-    final user = ref.watch(currentUserProvider);
-    final driverStats = ref.watch(driverStatsProvider);
+    final driverState = ref.watch(driverViewModelProvider);
+    final user = driverState.user;
+    final driverStats = driverState.stats;
 
     return Scaffold(
       body: CustomScrollView(

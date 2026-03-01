@@ -515,11 +515,27 @@ class _ReviewCard extends StatelessWidget {
               spacing: 8.w,
               runSpacing: 8.h,
               children: review.tags.map((tagName) {
-                // Try to get ReviewTag enum from string name for emoji/label
+                // Try to get ReviewTag enum from string name for icon/label
                 final reviewTag = ReviewTag.values
                     .where((t) => t.name == tagName)
                     .firstOrNull;
-                final emoji = reviewTag?.emoji ?? '🏷️';
+                final tagIcon = switch (reviewTag) {
+                  ReviewTag.punctual => Icons.timer_rounded,
+                  ReviewTag.greatConversation =>
+                    Icons.chat_bubble_outline_rounded,
+                  ReviewTag.cleanCar => Icons.cleaning_services_rounded,
+                  ReviewTag.safeDriver => Icons.shield_outlined,
+                  ReviewTag.comfortableRide => Icons.weekend_rounded,
+                  ReviewTag.goodMusic => Icons.music_note_rounded,
+                  ReviewTag.friendly => Icons.sentiment_satisfied_outlined,
+                  ReviewTag.professional => Icons.work_outline_rounded,
+                  ReviewTag.flexible => Icons.handshake_outlined,
+                  ReviewTag.respectfulRider => Icons.volunteer_activism_rounded,
+                  ReviewTag.onTimeRider => Icons.access_time_rounded,
+                  ReviewTag.polite => Icons.sentiment_very_satisfied_outlined,
+                  ReviewTag.easyCommunication => Icons.message_outlined,
+                  null => Icons.label_rounded,
+                };
                 final label = reviewTag?.label ?? tagName.replaceAll('_', ' ');
 
                 return Container(
@@ -534,7 +550,7 @@ class _ReviewCard extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(emoji, style: TextStyle(fontSize: 12.sp)),
+                      Icon(tagIcon, size: 12.sp, color: AppColors.primary),
                       SizedBox(width: 4.w),
                       Text(
                         label,

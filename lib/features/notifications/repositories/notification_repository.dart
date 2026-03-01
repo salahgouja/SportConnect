@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_notification_repository.dart';
-import 'package:sport_connect/core/providers/firebase_providers.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/features/notifications/models/notification_model.dart';
 
 part 'notification_repository.g.dart';
@@ -297,11 +297,6 @@ class NotificationRepository implements INotificationRepository {
       ),
     );
   }
-}
-
-@riverpod
-INotificationRepository notificationRepository(Ref ref) {
-  return NotificationRepository(ref.watch(firestoreInstanceProvider));
 }
 
 /// Provider for streaming user notifications

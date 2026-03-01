@@ -557,6 +557,15 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
                       payment.currency,
                     ),
                   ),
+                  if (payment.stripeFee > 0)
+                    _buildDetailRow(
+                      'Processing Fee',
+                      '${payment.stripeFee.toStringAsFixed(2)} ${payment.currency}',
+                    ),
+                  _buildDetailRow(
+                    'Driver Earnings',
+                    '${payment.driverEarnings.toStringAsFixed(2)} ${payment.currency}',
+                  ),
                   if (payment.paymentMethodLast4 != null)
                     _buildDetailRow(
                       AppLocalizations.of(context).card,
@@ -576,6 +585,12 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
                       AppLocalizations.of(context).transactionId,
                       '${payment.stripePaymentIntentId!.substring(0, 20)}...',
                     ),
+                  if (payment.failureReason != null &&
+                      payment.failureReason!.isNotEmpty)
+                    _buildDetailRow('Failure Reason', payment.failureReason!),
+                  if (payment.refundReason != null &&
+                      payment.refundReason!.isNotEmpty)
+                    _buildDetailRow('Refund Reason', payment.refundReason!),
 
                   SizedBox(height: 24.h),
 

@@ -478,3 +478,50 @@ abstract class _$DistanceUnitProvider extends $AsyncNotifier<String> {
     element.handleCreate(ref, build);
   }
 }
+
+@ProviderFor(SavedCredentialsNotifier)
+final savedCredentialsProvider = SavedCredentialsNotifierProvider._();
+
+final class SavedCredentialsNotifierProvider
+    extends $AsyncNotifierProvider<SavedCredentialsNotifier, SavedCredentials> {
+  SavedCredentialsNotifierProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'savedCredentialsProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$savedCredentialsNotifierHash();
+
+  @$internal
+  @override
+  SavedCredentialsNotifier create() => SavedCredentialsNotifier();
+}
+
+String _$savedCredentialsNotifierHash() =>
+    r'58099867c8ec174117079b3d05c5039687aadfa6';
+
+abstract class _$SavedCredentialsNotifier
+    extends $AsyncNotifier<SavedCredentials> {
+  FutureOr<SavedCredentials> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref =
+        this.ref as $Ref<AsyncValue<SavedCredentials>, SavedCredentials>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<SavedCredentials>, SavedCredentials>,
+              AsyncValue<SavedCredentials>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}

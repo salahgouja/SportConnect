@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/features/onboarding/models/onboarding_model.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/features/onboarding/repositories/onboarding_repository.dart';
 
 part 'onboarding_view_model.g.dart';
@@ -75,10 +76,18 @@ class OnboardingViewModel extends _$OnboardingViewModel {
 
     try {
       final repository = await ref.read(onboardingRepositoryProvider.future);
+      if (!ref.mounted) return false;
       await repository.completeOnboarding();
+      if (!ref.mounted) return false;
+      // Invalidating isOnboardingCompleteProvider triggers router navigation,
+      // which disposes this provider. Guard subsequent state writes with
+      // ref.mounted so we don't crash after disposal.
+      ref.invalidate(isOnboardingCompleteProvider);
+      if (!ref.mounted) return true;
       state = state.copyWith(isCompleting: false);
       return true;
     } catch (e) {
+      if (!ref.mounted) return false;
       state = state.copyWith(
         isCompleting: false,
         errorMessage: 'Failed to save progress: $e',

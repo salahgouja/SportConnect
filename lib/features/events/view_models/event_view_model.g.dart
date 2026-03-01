@@ -161,6 +161,77 @@ abstract class _$EventDetailViewModel extends $Notifier<EventDetailState> {
   }
 }
 
+/// ViewModel for the event list screen.
+///
+/// Watches the upcoming events stream and applies client-side filtering
+/// by type and search query.  Views should watch only this provider.
+
+@ProviderFor(EventListViewModel)
+final eventListViewModelProvider = EventListViewModelProvider._();
+
+/// ViewModel for the event list screen.
+///
+/// Watches the upcoming events stream and applies client-side filtering
+/// by type and search query.  Views should watch only this provider.
+final class EventListViewModelProvider
+    extends $NotifierProvider<EventListViewModel, EventListState> {
+  /// ViewModel for the event list screen.
+  ///
+  /// Watches the upcoming events stream and applies client-side filtering
+  /// by type and search query.  Views should watch only this provider.
+  EventListViewModelProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'eventListViewModelProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$eventListViewModelHash();
+
+  @$internal
+  @override
+  EventListViewModel create() => EventListViewModel();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(EventListState value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<EventListState>(value),
+    );
+  }
+}
+
+String _$eventListViewModelHash() =>
+    r'4b4c66b90344856c6cdbff4a716d97da1eff0344';
+
+/// ViewModel for the event list screen.
+///
+/// Watches the upcoming events stream and applies client-side filtering
+/// by type and search query.  Views should watch only this provider.
+
+abstract class _$EventListViewModel extends $Notifier<EventListState> {
+  EventListState build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<EventListState, EventListState>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<EventListState, EventListState>,
+              EventListState,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
+
 @ProviderFor(upcomingEventsStream)
 final upcomingEventsStreamProvider = UpcomingEventsStreamProvider._();
 

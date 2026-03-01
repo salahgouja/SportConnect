@@ -2,13 +2,8 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_dispute_repository.dart';
-import 'package:sport_connect/core/providers/firebase_providers.dart';
-
-part 'dispute_repository.g.dart';
 
 /// Repository for filing and managing ride disputes.
 class DisputeRepository implements IDisputeRepository {
@@ -74,12 +69,4 @@ class DisputeRepository implements IDisputeRepository {
 
     return urls;
   }
-}
-
-@riverpod
-IDisputeRepository disputeRepository(Ref ref) {
-  return DisputeRepository(
-    ref.watch(firestoreInstanceProvider),
-    ref.watch(storageInstanceProvider),
-  );
 }

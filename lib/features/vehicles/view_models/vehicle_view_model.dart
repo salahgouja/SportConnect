@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/features/vehicles/repositories/vehicle_repository.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 
@@ -13,11 +15,19 @@ class VehicleState {
   final String? errorMessage;
   final VehicleModel? selectedVehicle;
 
+  /// The UID of the currently authenticated user; null when signed out.
+  final String? userId;
+
+  /// Live list of the user's vehicles, driven via [ref.listen].
+  final AsyncValue<List<VehicleModel>> vehicles;
+
   const VehicleState({
     this.isLoading = false,
     this.isSuccess = false,
     this.errorMessage,
     this.selectedVehicle,
+    this.userId,
+    this.vehicles = const AsyncLoading(),
   });
 
   VehicleState copyWith({
@@ -25,12 +35,16 @@ class VehicleState {
     bool? isSuccess,
     String? errorMessage,
     VehicleModel? selectedVehicle,
+    String? userId,
+    AsyncValue<List<VehicleModel>>? vehicles,
   }) {
     return VehicleState(
       isLoading: isLoading ?? this.isLoading,
       isSuccess: isSuccess ?? this.isSuccess,
       errorMessage: errorMessage,
       selectedVehicle: selectedVehicle ?? this.selectedVehicle,
+      userId: userId ?? this.userId,
+      vehicles: vehicles ?? this.vehicles,
     );
   }
 }
@@ -41,7 +55,24 @@ class VehicleState {
 class VehicleViewModel extends _$VehicleViewModel {
   @override
   VehicleState build() {
-    return const VehicleState();
+    // Watch auth state — infrequent (login/logout only), safe to use ref.watch.
+    final userAsync = ref.watch(currentUserProvider);
+    final userId = userAsync.value?.uid;
+
+    // Subscribe to the user's vehicles stream via ref.listen so that incoming
+    // Firestore emissions do NOT re-run build() (which would reset isLoading).
+    if (userId != null) {
+      ref.listen(userVehiclesStreamProvider(userId), (_, next) {
+        state = state.copyWith(vehicles: next);
+      });
+    }
+
+    return VehicleState(
+      userId: userId,
+      vehicles: userId != null
+          ? ref.read(userVehiclesStreamProvider(userId))
+          : const AsyncData([]),
+    );
   }
 
   String? _getCurrentUserId() {

@@ -43,11 +43,13 @@ class TalkerService {
   static TalkerDioLogger get dioLogger => TalkerDioLogger(
     talker: instance,
     settings: TalkerDioLoggerSettings(
-      printRequestHeaders: kDebugMode,
-      printResponseHeaders: kDebugMode,
-      printRequestData: kDebugMode,
-      printResponseData: kDebugMode,
+      printRequestHeaders: false,
+      printResponseHeaders: false,
+      printRequestData: false,
+      printResponseData: false,
       printResponseMessage: true,
+      printErrorData: false,
+      printErrorHeaders: false,
       // Custom colors for better visibility
       requestPen: AnsiPen()..cyan(),
       responsePen: AnsiPen()..green(),
@@ -68,9 +70,9 @@ class TalkerService {
     talker: instance,
     settings: const TalkerRiverpodLoggerSettings(
       enabled: true,
-      printProviderAdded: true,
-      printProviderUpdated: true,
-      printProviderDisposed: true,
+      printProviderAdded: false,
+      printProviderUpdated: false,
+      printProviderDisposed: false,
       printProviderFailed: true,
     ),
   );

@@ -6,13 +6,18 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/models/user/user_model.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/core/services/stripe_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
+import 'package:sport_connect/features/payments/view_models/payment_view_model.dart';
+import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
-import 'package:sport_connect/features/rides/repositories/booking_repository.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 
 /// Shown immediately after a passenger submits a booking request.
@@ -37,6 +42,9 @@ class _RideBookingPendingScreenState
   Duration _timeRemaining = Duration.zero;
   bool _isCancelling = false;
   bool _hasNavigated = false;
+  bool _isProcessingPayment = false;
+  bool _paymentFailed = false;
+  DateTime? _trackedCreatedAt;
 
   @override
   void dispose() {
@@ -63,77 +71,84 @@ class _RideBookingPendingScreenState
       return const SizedBox.shrink();
     }
 
-    final bookingsStream = ref
-        .watch(bookingRepositoryProvider)
-        .streamBookingsByPassengerId(currentUser.uid);
+    final bookingsAsync = ref.watch(
+      bookingsByPassengerProvider(currentUser.uid),
+    );
+    final booking = bookingsAsync.value
+        ?.where((b) => b.rideId == widget.rideId)
+        .firstOrNull;
 
-    return StreamBuilder<List<RideBooking>>(
-      stream: bookingsStream,
-      builder: (context, bookingSnap) {
-        final booking = bookingSnap.data
-            ?.where((b) => b.rideId == widget.rideId)
-            .firstOrNull;
+    // Start expiry countdown once we have the booking creation time
+    if (booking?.createdAt != null && booking!.createdAt != _trackedCreatedAt) {
+      _trackedCreatedAt = booking.createdAt;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _startExpiryCountdown(booking.createdAt!);
+      });
+    }
 
-        // Start expiry countdown once we have the booking creation time
-        if (booking?.createdAt != null && _timeRemaining == Duration.zero) {
-          WidgetsBinding.instance.addPostFrameCallback(
-            (_) => _startExpiryCountdown(booking!.createdAt!),
-          );
+    // Auto-navigate when driver responds
+    final vmState = ref.watch(rideDetailViewModelProvider(widget.rideId));
+    final ride = vmState.ride.value;
+
+    if (booking != null && !_hasNavigated && !_isProcessingPayment) {
+      if (booking.status == BookingStatus.accepted) {
+        _hasNavigated = true;
+        if (ride != null && ride.acceptsOnlinePayment) {
+          // Driver accepted — collect payment before proceeding
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _processPayment(ride, booking);
+          });
+        } else {
+          // Cash ride — go straight to countdown
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              context.pushReplacement(
+                AppRoutes.rideCountdown.path.replaceFirst(
+                  ':bookingId',
+                  booking.id,
+                ),
+              );
+            }
+          });
         }
-
-        // Auto-navigate when driver responds
-        if (booking != null && !_hasNavigated) {
-          if (booking.status == BookingStatus.accepted) {
-            _hasNavigated = true;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                context.pushReplacement(
-                  AppRoutes.rideCountdown.path.replaceFirst(
-                    ':bookingId',
-                    booking.id,
-                  ),
-                );
-              }
-            });
-          } else if (booking.status == BookingStatus.rejected ||
-              booking.status == BookingStatus.cancelled) {
-            _hasNavigated = true;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                context.go(AppRoutes.riderMyRides.path);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      booking.status == BookingStatus.rejected
-                          ? 'Your booking was declined by the driver.'
-                          : 'Booking has been cancelled.',
-                    ),
-                    backgroundColor: AppColors.error,
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              }
-            });
+      } else if (booking.status == BookingStatus.rejected ||
+          booking.status == BookingStatus.cancelled) {
+        _hasNavigated = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            context.go(AppRoutes.riderMyRides.path);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  booking.status == BookingStatus.rejected
+                      ? 'Your booking was declined by the driver.'
+                      : 'Booking has been cancelled.',
+                ),
+                backgroundColor: AppColors.error,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
           }
-        }
+        });
+      }
+    }
 
-        final rideAsync = ref.watch(rideDetailViewModelProvider(widget.rideId));
-
-        return rideAsync.when(
-          data: (ride) => ride == null
-              ? _buildError('Ride not found')
-              : _buildContent(ride, booking),
-          loading: _buildLoading,
-          error: (e, _) => _buildError(e.toString()),
-        );
-      },
+    return vmState.ride.when(
+      data: (ride) => ride == null
+          ? _buildError('Ride not found')
+          : _buildContent(ride, booking),
+      loading: _buildLoading,
+      error: (e, _) => _buildError(e.toString()),
     );
   }
 
   Widget _buildLoading() {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(backgroundColor: AppColors.primary),
+      appBar: AppBar(
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.textOnPrimary,
+      ),
       body: const Center(child: CircularProgressIndicator()),
     );
   }
@@ -143,6 +158,7 @@ class _RideBookingPendingScreenState
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.textOnPrimary,
         title: const Text('Request Status'),
       ),
       body: Center(
@@ -159,6 +175,8 @@ class _RideBookingPendingScreenState
   }
 
   Widget _buildContent(RideModel ride, RideBooking? booking) {
+    final isAcceptedNeedsPayment =
+        booking?.status == BookingStatus.accepted && ride.acceptsOnlinePayment;
     final hours = _timeRemaining.inHours;
     final minutes = _timeRemaining.inMinutes.remainder(60);
     final seconds = _timeRemaining.inSeconds.remainder(60);
@@ -171,33 +189,39 @@ class _RideBookingPendingScreenState
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.textOnPrimary,
         title: const Text('Booking Request'),
         centerTitle: true,
-        automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Animated success icon
+            // Animated icon
             Container(
               width: 88.w,
               height: 88.w,
               decoration: BoxDecoration(
-                color: AppColors.success.withAlpha(30),
+                color: isAcceptedNeedsPayment
+                    ? AppColors.primary.withAlpha(30)
+                    : AppColors.success.withAlpha(30),
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                Icons.mark_email_read_rounded,
-                color: AppColors.success,
+                isAcceptedNeedsPayment
+                    ? Icons.payment_rounded
+                    : Icons.mark_email_read_rounded,
+                color: isAcceptedNeedsPayment
+                    ? AppColors.primary
+                    : AppColors.success,
                 size: 48.sp,
               ),
             ).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
             SizedBox(height: 20.h),
 
             Text(
-              'Request Sent!',
+              isAcceptedNeedsPayment ? 'Booking Accepted!' : 'Request Sent!',
               style: TextStyle(
                 fontSize: 26.sp,
                 fontWeight: FontWeight.bold,
@@ -207,8 +231,10 @@ class _RideBookingPendingScreenState
             SizedBox(height: 8.h),
 
             Text(
-              "Waiting for the driver to confirm your booking.\n"
-              "You'll be notified as soon as they respond.",
+              isAcceptedNeedsPayment
+                  ? 'Complete your payment to confirm the ride.'
+                  : "Waiting for the driver to confirm your booking.\n"
+                      "You'll be notified as soon as they respond.",
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14.sp,
@@ -222,15 +248,48 @@ class _RideBookingPendingScreenState
             // Ride info card
             _buildRideCard(ride).animate().slideY(delay: 400.ms),
 
+            SizedBox(height: 16.h),
+
+            // Driver info — shows who confirmed/offered the ride
+            _buildDriverInfoCard(ride).animate().fadeIn(delay: 500.ms),
+
             SizedBox(height: 24.h),
 
-            // Expiry countdown
-            if (booking?.createdAt != null && _timeRemaining > Duration.zero)
+            // Payment section when driver accepted and online payment is needed
+            if (isAcceptedNeedsPayment && booking != null) ...[
+              if (_isProcessingPayment)
+                Column(
+                  children: [
+                    SizedBox(height: 8.h),
+                    const CircularProgressIndicator(),
+                    SizedBox(height: 12.h),
+                    Text(
+                      'Processing payment...',
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                )
+              else if (_paymentFailed)
+                PremiumButton(
+                  text: 'Complete Payment',
+                  onPressed: () => _processPayment(ride, booking),
+                  style: PremiumButtonStyle.primary,
+                ),
+              SizedBox(height: 32.h),
+            ],
+
+            // Expiry countdown (only when pending)
+            if (!isAcceptedNeedsPayment &&
+                booking?.createdAt != null &&
+                _timeRemaining > Duration.zero)
               _buildExpiryChip(expiryText).animate().fadeIn(delay: 500.ms),
 
-            SizedBox(height: 32.h),
+            if (!isAcceptedNeedsPayment) SizedBox(height: 32.h),
 
-            // Cancel request button
+            // Cancel request button (only when pending)
             if (booking != null && booking.status == BookingStatus.pending) ...[
               PremiumButton(
                 text: 'Cancel Request',
@@ -254,11 +313,79 @@ class _RideBookingPendingScreenState
     );
   }
 
+  Widget _buildDriverInfoCard(RideModel ride) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: DriverInfoWidget(
+        driverId: ride.driverId,
+        builder: (context, displayName, photoUrl, rating) {
+          return Row(
+            children: [
+              DriverAvatarWidget(driverId: ride.driverId, radius: 22),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      displayName,
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.star_rounded,
+                          size: 12.sp,
+                          color: AppColors.warning,
+                        ),
+                        SizedBox(width: 2.w),
+                        Text(
+                          rating.average.toStringAsFixed(1),
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                decoration: BoxDecoration(
+                  color: AppColors.primarySurface,
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: Text(
+                  'Your Driver',
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildRideCard(RideModel ride) {
     final dep = ride.schedule.departureTime;
-    final depText =
-        '${dep.day}/${dep.month}/${dep.year}  '
-        '${dep.hour.toString().padLeft(2, '0')}:${dep.minute.toString().padLeft(2, '0')}';
+    final depText = DateFormat.yMd().add_Hm().format(dep);
 
     return Container(
       width: double.infinity,
@@ -397,6 +524,158 @@ class _RideBookingPendingScreenState
         ],
       ),
     );
+  }
+
+  Future<void> _processPayment(RideModel ride, RideBooking booking) async {
+    if (_isProcessingPayment) return;
+    setState(() {
+      _isProcessingPayment = true;
+      _paymentFailed = false;
+    });
+
+    try {
+      final user = ref.read(currentUserProvider).value;
+      if (user == null) throw Exception('User not found');
+
+      final paymentViewModel = ref.read(paymentViewModelProvider.notifier);
+
+      // Fetch driver profile for Stripe account
+      final driverProfile = await ref.read(
+        userProfileProvider(ride.driverId).future,
+      );
+      if (driverProfile == null) throw Exception('Driver profile not found');
+
+      final driverModel = driverProfile.asDriver;
+      if (driverModel == null) {
+        throw Exception('Driver profile is not a driver account');
+      }
+
+      final driverStripeAccountId = driverModel.stripeAccountId;
+      if (driverStripeAccountId == null || driverStripeAccountId.isEmpty) {
+        throw StripePaymentException(
+          'Driver has not set up payment processing yet.',
+        );
+      }
+
+      final customerId = await paymentViewModel.getOrCreateCustomer(
+        userId: user.uid,
+        email: user.email,
+        name: user.displayName,
+        phone: user.phoneNumber,
+      );
+
+      final totalAmount = ride.pricePerSeat * booking.seatsBooked;
+      final currencyIso = _getCurrencyIsoCode(ride.currency ?? 'eur');
+
+      final stripeService = ref.read(stripeServiceProvider);
+      final paymentData = await stripeService.createPaymentIntent(
+        rideId: ride.id,
+        riderId: user.uid,
+        riderName: user.displayName,
+        driverId: ride.driverId,
+        driverName: driverProfile.displayName,
+        amount: totalAmount,
+        currency: currencyIso,
+        customerId: customerId,
+        driverStripeAccountId: driverStripeAccountId,
+        description: '${ride.origin.address} → ${ride.destination.address}',
+      );
+
+      final paymentSuccess = await stripeService.processPaymentWithSheet(
+        paymentIntentClientSecret: paymentData['clientSecret'],
+        customerId: customerId,
+        ephemeralKeySecret: paymentData['ephemeralKey'],
+      );
+
+      if (!mounted) return;
+
+      if (paymentSuccess) {
+        context.pushReplacement(
+          AppRoutes.rideCountdown.path.replaceFirst(
+            ':bookingId',
+            booking.id,
+          ),
+        );
+      } else {
+        // Payment cancelled — let the user retry
+        setState(() {
+          _isProcessingPayment = false;
+          _paymentFailed = true;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Payment cancelled. Tap "Complete Payment" to retry.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } on StripePaymentException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isProcessingPayment = false;
+        _paymentFailed = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Payment failed: ${e.message}'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isProcessingPayment = false;
+        _paymentFailed = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Payment error: $e'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  /// Converts currency symbols to ISO codes for Stripe.
+  String _getCurrencyIsoCode(String currency) {
+    const currencyMap = {
+      '€': 'eur',
+      '\$': 'usd',
+      '£': 'gbp',
+      '¥': 'jpy',
+      '₹': 'inr',
+      'CHF': 'chf',
+      'A\$': 'aud',
+      'C\$': 'cad',
+      'kr': 'sek',
+      '₽': 'rub',
+      '₩': 'krw',
+      '฿': 'thb',
+      '₪': 'ils',
+      'R': 'zar',
+      '₱': 'php',
+      'RM': 'myr',
+      'Rp': 'idr',
+      '₫': 'vnd',
+      '₺': 'try',
+      'zł': 'pln',
+      'Kč': 'czk',
+      'Ft': 'huf',
+      'lei': 'ron',
+      'лв': 'bgn',
+      'din': 'rsd',
+      'DKK': 'dkk',
+      'NOK': 'nok',
+      'NZ\$': 'nzd',
+      'S\$': 'sgd',
+      'HK\$': 'hkd',
+    };
+
+    final lower = currency.toLowerCase();
+    if (lower.length == 3 && RegExp(r'^[a-z]{3}$').hasMatch(lower)) {
+      return lower;
+    }
+    return currencyMap[currency] ?? 'eur';
   }
 
   Future<void> _cancelBooking(RideBooking booking) async {

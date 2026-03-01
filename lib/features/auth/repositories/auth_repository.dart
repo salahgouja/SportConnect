@@ -171,12 +171,12 @@ class AuthRepository implements IAuthRepository {
 
   Future<String?> _uploadProfileImage(File image, String uid) async {
     try {
-      // Create a reference: users/{uid}/profile_pic.jpg
+      // Create a reference: users/{uid}/profile/profile.jpg
       final ref = _storage
           .ref()
-          .child('users') // Hardcode 'users' to match rules exactly
+          .child('users')
           .child(uid)
-          // .child('profile') // <--- Added this folder to match rules
+          .child('profile')
           .child('profile.jpg');
 
       // Upload the file

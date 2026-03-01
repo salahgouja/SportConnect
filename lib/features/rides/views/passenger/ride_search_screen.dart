@@ -22,7 +22,11 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Ride Search Screen with filters - Enhanced UI
 class RideSearchScreen extends ConsumerStatefulWidget {
-  const RideSearchScreen({super.key});
+  const RideSearchScreen({super.key, this.initialDestination});
+
+  /// Optional pre-filled destination (e.g. from event detail).
+  /// Keys: `destinationAddress`, `destinationLat`, `destinationLng`.
+  final Map<String, dynamic>? initialDestination;
 
   @override
   ConsumerState<RideSearchScreen> createState() => _RideSearchScreenState();
@@ -35,7 +39,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
   final _scrollController = ScrollController();
   DateTime _selectedDate = DateTime.now();
   int _seats = 1;
-  final bool _showFilters = false;
+  bool _showFilters = false;
   bool _isSearching = false;
   bool _hasSearched = false;
   int _selectedDateChip = 0; // 0=Today, 1=Tomorrow, 2=Custom
@@ -49,10 +53,24 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
   bool _musicAllowed = false;
   double _minRating = 0;
   String _sortBy = 'recommended';
+  String _selectedVehicleType = 'any';
 
   // Location data
   LatLng? _fromLocation;
   LatLng? _toLocation;
+
+  @override
+  void initState() {
+    super.initState();
+    final dest = widget.initialDestination;
+    if (dest != null) {
+      final address = dest['destinationAddress'] as String?;
+      final lat = dest['destinationLat'] as double?;
+      final lng = dest['destinationLng'] as double?;
+      if (address != null) _toController.text = address;
+      if (lat != null && lng != null) _toLocation = LatLng(lat, lng);
+    }
+  }
 
   @override
   void dispose() {
@@ -627,10 +645,12 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
 
   DateTime _getNextWeekend() {
     final now = DateTime.now();
-    final daysUntilSaturday = (DateTime.saturday - now.weekday) % 7;
-    return now.add(
-      Duration(days: daysUntilSaturday == 0 ? 7 : daysUntilSaturday),
-    );
+    // If already Saturday or Sunday, return today
+    if (now.weekday == DateTime.saturday || now.weekday == DateTime.sunday) {
+      return now;
+    }
+    final daysUntilSaturday = DateTime.saturday - now.weekday;
+    return now.add(Duration(days: daysUntilSaturday));
   }
 
   Widget _buildActiveFilters() {
@@ -771,12 +791,18 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
   }
 
   Widget _buildResultsHeader() {
-    final ridesAsync = ref.watch(activeRidesProvider);
-    final ridesCount = ridesAsync.when(
-      data: (rides) => _filterRides(rides).length,
-      loading: () => 0,
-      error: (_, _) => 0,
-    );
+    final int ridesCount;
+    if (_hasSearched) {
+      final searchState = ref.watch(rideSearchViewModelProvider);
+      ridesCount = _filterRides(searchState.rides).length;
+    } else {
+      final ridesAsync = ref.watch(activeRidesProvider);
+      ridesCount = ridesAsync.when(
+        data: (rides) => _filterRides(rides).length,
+        loading: () => 0,
+        error: (_, _) => 0,
+      );
+    }
     return Container(
       padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 8.h),
       child: Row(
@@ -854,9 +880,18 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
       // Filter by max price
       if (ride.pricePerSeat > _maxPrice) return false;
 
-      // Note: Rating-based filtering removed due to database normalization
-      // Driver ratings are no longer stored in RideModel for data integrity
-      // Rating filters can be re-implemented with cached driver stats if needed
+      // Filter by women-only preference
+      if (_femaleOnly && !ride.isWomenOnly) return false;
+
+      // Filter by pet-friendly
+      if (_petFriendly && !ride.allowPets) return false;
+
+      // Filter by music allowed (no-smoking as proxy for comfort)
+      if (_musicAllowed && ride.allowSmoking) return false;
+
+      // Filter by vehicle type
+      if (_selectedVehicleType == 'electric' && !ride.isEco) return false;
+      if (_selectedVehicleType == 'comfort' && !ride.isPremium) return false;
 
       return true;
     }).toList();
@@ -1208,21 +1243,24 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
                             _buildVehicleOption(
                               Icons.directions_car,
                               AppLocalizations.of(context).any,
-                              true,
+                              'any',
+                              _selectedVehicleType == 'any',
                               setModalState,
                             ),
                             SizedBox(width: 10.w),
                             _buildVehicleOption(
                               Icons.electric_car,
                               AppLocalizations.of(context).electric,
-                              false,
+                              'electric',
+                              _selectedVehicleType == 'electric',
                               setModalState,
                             ),
                             SizedBox(width: 10.w),
                             _buildVehicleOption(
                               Icons.local_taxi,
                               AppLocalizations.of(context).comfort,
-                              false,
+                              'comfort',
+                              _selectedVehicleType == 'comfort',
                               setModalState,
                             ),
                           ],
@@ -1319,6 +1357,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
   Widget _buildVehicleOption(
     IconData icon,
     String label,
+    String type,
     bool isSelected,
     StateSetter setModalState,
   ) {
@@ -1326,6 +1365,8 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
       child: GestureDetector(
         onTap: () {
           HapticFeedback.selectionClick();
+          setModalState(() => _selectedVehicleType = type);
+          setState(() => _selectedVehicleType = type);
         },
         child: Container(
           padding: EdgeInsets.symmetric(vertical: 12.h),
@@ -1817,12 +1858,29 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen>
                         AppColors.primary,
                       ),
                     SizedBox(width: 8.w),
-                    // Eco badge - show if ride has no smoking preference or allows luggage
-                    if (!ride.allowSmoking)
+                    if (ride.isEco)
                       _buildInfoChip(
                         Icons.eco_rounded,
                         AppLocalizations.of(context).eco,
                         AppColors.success,
+                      ),
+                    if (ride.isPremium)
+                      Padding(
+                        padding: EdgeInsets.only(left: 8.w),
+                        child: _buildInfoChip(
+                          Icons.star_rounded,
+                          'Premium',
+                          AppColors.warning,
+                        ),
+                      ),
+                    if (ride.xpReward > 0)
+                      Padding(
+                        padding: EdgeInsets.only(left: 8.w),
+                        child: _buildInfoChip(
+                          Icons.bolt_rounded,
+                          '+${ride.xpReward} XP',
+                          AppColors.primary,
+                        ),
                       ),
                     const Spacer(),
                     // Book button — dimmed when ride is full

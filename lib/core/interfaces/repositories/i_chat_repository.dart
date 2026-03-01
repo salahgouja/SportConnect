@@ -21,7 +21,10 @@ abstract class IChatRepository {
 
   // Message Operations
   Future<String> sendMessage(MessageModel message);
-  Future<void> deleteMessage(String messageId);
+  Future<void> deleteMessage({
+    required String chatId,
+    required String messageId,
+  });
   Future<void> markAsRead(String chatId, String userId);
   Stream<List<MessageModel>> getChatMessages(String chatId, {int limit = 50});
   Stream<List<MessageModel>> streamMessages(String chatId, {int limit = 50});

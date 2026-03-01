@@ -3742,4 +3742,19 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get driverSaveAndContinue => 'Speichern und fortfahren';
+
+  @override
+  String get ratingExcellent => 'Ausgezeichnet!';
+
+  @override
+  String get ratingGood => 'Gut';
+
+  @override
+  String get ratingAverage => 'Durchschnittlich';
+
+  @override
+  String get ratingBelowAverage => 'Unterdurchschnittlich';
+
+  @override
+  String get ratingPoor => 'Schlecht';
 }

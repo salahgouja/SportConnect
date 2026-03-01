@@ -3,8 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:sport_connect/features/auth/models/models.dart';
-import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
-import 'package:sport_connect/features/profile/repositories/support_repository.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 
 part 'profile_view_model.g.dart';
@@ -236,7 +235,7 @@ class ProfileEditViewModel extends _$ProfileEditViewModel {
   }
 
   Future<bool> saveProfile() async {
-    if (state.displayName.isEmpty) {
+    if (state.displayName.trim().isEmpty) {
       state = state.copyWith(error: 'Display name is required');
       return false;
     }
@@ -249,6 +248,7 @@ class ProfileEditViewModel extends _$ProfileEditViewModel {
       // Upload photo if changed
       if (state.newPhotoFile != null) {
         await repository.updateProfilePhoto(uid, state.newPhotoFile!);
+        if (!ref.mounted) return false;
       }
 
       // Update profile
@@ -261,9 +261,11 @@ class ProfileEditViewModel extends _$ProfileEditViewModel {
         'interests': state.interests,
       });
 
+      if (!ref.mounted) return true;
       state = state.copyWith(isLoading: false, isSaved: true);
       return true;
     } catch (e) {
+      if (!ref.mounted) return false;
       state = state.copyWith(isLoading: false, error: e.toString());
       return false;
     }
@@ -284,8 +286,8 @@ class SocialActionsViewModel extends _$SocialActionsViewModel {
       final repository = ref.read(profileRepositoryProvider);
       final currentUser = await repository.getUserById(currentUserId);
 
+      if (!ref.mounted) return;
       if (currentUser != null) {
-        // Following feature has been removed - just check blocked status
         state = state.copyWith(
           isFollowing: false,
           isBlocked: currentUser.blockedUsers.contains(targetUserId),
@@ -308,12 +310,15 @@ class SocialActionsViewModel extends _$SocialActionsViewModel {
         await repository.blockUser(currentUserId, targetUserId);
       }
 
+      if (!ref.mounted) return;
       state = state.copyWith(
         isBlocked: !state.isBlocked,
+        // When blocking, clear follow status; when unblocking, preserve it.
         isFollowing: state.isBlocked ? state.isFollowing : false,
         isLoading: false,
       );
     } catch (e) {
+      if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
@@ -361,8 +366,10 @@ class VehicleViewModel extends _$VehicleViewModel {
     try {
       final repository = ref.read(profileRepositoryProvider);
       await repository.addVehicle(uid, vehicle);
+      if (!ref.mounted) return;
       state = state.copyWith(isLoading: false);
     } catch (e) {
+      if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
@@ -373,8 +380,10 @@ class VehicleViewModel extends _$VehicleViewModel {
     try {
       final repository = ref.read(profileRepositoryProvider);
       await repository.updateVehicle(uid, vehicle);
+      if (!ref.mounted) return;
       state = state.copyWith(isLoading: false);
     } catch (e) {
+      if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
@@ -385,18 +394,25 @@ class VehicleViewModel extends _$VehicleViewModel {
     try {
       final repository = ref.read(profileRepositoryProvider);
       await repository.removeVehicle(uid, vehicleId);
+      if (!ref.mounted) return;
       state = state.copyWith(isLoading: false);
     } catch (e) {
+      if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
   Future<void> setDefault(String vehicleId) async {
+    state = state.copyWith(isLoading: true, error: null);
+
     try {
       final repository = ref.read(profileRepositoryProvider);
       await repository.setDefaultVehicle(uid, vehicleId);
+      if (!ref.mounted) return;
+      state = state.copyWith(isLoading: false);
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      if (!ref.mounted) return;
+      state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 }

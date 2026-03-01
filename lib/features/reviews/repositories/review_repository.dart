@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_review_repository.dart';
 import 'package:sport_connect/core/models/models.dart';
-import 'package:sport_connect/core/providers/firebase_providers.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/features/reviews/models/review_model.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:uuid/uuid.dart';
@@ -41,12 +41,6 @@ import 'package:uuid/uuid.dart';
 /// 3. Ride association: Link reviews to specific rides
 /// 4. Response feature: Reviewees can respond to reviews
 /// 5. Tag aggregation: Can compute tag statistics
-
-/// Provider for [ReviewRepository], typed as [IReviewRepository] for
-/// dependency inversion. Uses injected Firebase instances for testability.
-final reviewRepositoryProvider = Provider<IReviewRepository>((ref) {
-  return ReviewRepository(ref.watch(firestoreInstanceProvider));
-});
 
 /// Provider to get reviews for a specific user
 final userReviewsProvider = FutureProvider.family<List<ReviewModel>, String>((
@@ -177,12 +171,18 @@ class ReviewRepository implements IReviewRepository {
     String userId, {
     ReviewType? type,
     int limit = 50,
+    DateTime? startAfter,
   }) async {
     Query<ReviewModel> query = _reviewsCollection
         .where('revieweeId', isEqualTo: userId)
         .where('isVisible', isEqualTo: true)
-        .orderBy('createdAt', descending: true)
-        .limit(limit);
+        .orderBy('createdAt', descending: true);
+
+    if (startAfter != null) {
+      query = query.startAfter([Timestamp.fromDate(startAfter)]);
+    }
+
+    query = query.limit(limit);
 
     if (type != null) {
       query = query.where('type', isEqualTo: type.name);

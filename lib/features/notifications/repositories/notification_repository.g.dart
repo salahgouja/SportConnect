@@ -8,55 +8,6 @@ part of 'notification_repository.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-
-@ProviderFor(notificationRepository)
-final notificationRepositoryProvider = NotificationRepositoryProvider._();
-
-final class NotificationRepositoryProvider
-    extends
-        $FunctionalProvider<
-          INotificationRepository,
-          INotificationRepository,
-          INotificationRepository
-        >
-    with $Provider<INotificationRepository> {
-  NotificationRepositoryProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'notificationRepositoryProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$notificationRepositoryHash();
-
-  @$internal
-  @override
-  $ProviderElement<INotificationRepository> $createElement(
-    $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
-
-  @override
-  INotificationRepository create(Ref ref) {
-    return notificationRepository(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(INotificationRepository value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<INotificationRepository>(value),
-    );
-  }
-}
-
-String _$notificationRepositoryHash() =>
-    r'b21d3bfe6a00ed91caef51966bd67a200411881f';
-
 /// Provider for streaming user notifications
 
 @ProviderFor(userNotificationsStream)

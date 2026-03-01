@@ -13,7 +13,6 @@ import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 
-import 'package:sport_connect/features/rides/repositories/driver_stats_repository.dart';
 import 'package:sport_connect/features/rides/view_models/driver_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
@@ -46,11 +45,11 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Watch the pending requests to drive the live badge count
+    // Keep DriverViewModel alive while this screen is mounted.
+    final driverState = ref.watch(driverViewModelProvider);
+    // Drive the live badge count from the aggregated VM state.
     final pendingCount =
-        ref
-            .watch(pendingRideRequestsProvider)
-            .whenOrNull(data: (list) => list.length) ??
+        driverState.pendingRequests.whenOrNull(data: (list) => list.length) ??
         0;
 
     return Scaffold(
@@ -137,7 +136,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
   }
 
   Widget _buildPendingRequests() {
-    final pendingRequests = ref.watch(pendingRideRequestsProvider);
+    final pendingRequests = ref.watch(driverViewModelProvider).pendingRequests;
 
     return pendingRequests.when(
       data: (requests) {
@@ -283,7 +282,8 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
             ),
             SizedBox(height: 16.h),
             TextButton.icon(
-              onPressed: () => ref.invalidate(pendingRideRequestsProvider),
+              onPressed: () =>
+                  ref.read(driverViewModelProvider.notifier).refresh(),
               icon: Icon(Icons.refresh),
               label: Text(AppLocalizations.of(context).retry),
             ),
@@ -294,7 +294,9 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
   }
 
   Widget _buildAcceptedRequests() {
-    final acceptedRequests = ref.watch(acceptedRideRequestsProvider);
+    final acceptedRequests = ref
+        .watch(driverViewModelProvider)
+        .acceptedRequests;
 
     return acceptedRequests.when(
       data: (requests) {
@@ -369,7 +371,9 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
   }
 
   Widget _buildDeclinedRequests() {
-    final rejectedRequests = ref.watch(rejectedRideRequestsProvider);
+    final rejectedRequests = ref
+        .watch(driverViewModelProvider)
+        .rejectedRequests;
 
     return rejectedRequests.when(
       data: (requests) {

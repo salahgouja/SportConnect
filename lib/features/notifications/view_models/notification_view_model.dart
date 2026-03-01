@@ -1,7 +1,8 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/features/notifications/models/notification_model.dart';
-import 'package:sport_connect/features/notifications/repositories/notification_repository.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
 
 part 'notification_view_model.g.dart';
 
@@ -12,11 +13,19 @@ class NotificationState {
   final List<String> selectedNotificationIds;
   final NotificationFilter filter;
 
+  /// The UID of the currently authenticated user; null when signed out.
+  final String? userId;
+
+  /// Live notifications for the current user, driven via [ref.listen].
+  final AsyncValue<List<NotificationModel>> notifications;
+
   const NotificationState({
     this.isLoading = false,
     this.errorMessage,
     this.selectedNotificationIds = const [],
     this.filter = NotificationFilter.all,
+    this.userId,
+    this.notifications = const AsyncLoading(),
   });
 
   NotificationState copyWith({
@@ -24,6 +33,8 @@ class NotificationState {
     String? errorMessage,
     List<String>? selectedNotificationIds,
     NotificationFilter? filter,
+    String? userId,
+    AsyncValue<List<NotificationModel>>? notifications,
   }) {
     return NotificationState(
       isLoading: isLoading ?? this.isLoading,
@@ -31,6 +42,8 @@ class NotificationState {
       selectedNotificationIds:
           selectedNotificationIds ?? this.selectedNotificationIds,
       filter: filter ?? this.filter,
+      userId: userId ?? this.userId,
+      notifications: notifications ?? this.notifications,
     );
   }
 }
@@ -43,7 +56,27 @@ enum NotificationFilter { all, unread, rides, payments, messages }
 class NotificationViewModel extends _$NotificationViewModel {
   @override
   NotificationState build() {
-    return const NotificationState();
+    // Watch auth state — infrequent (login/logout only), safe to use ref.watch.
+    // When auth changes, build() re-runs and all transient state (selection,
+    // filter) is intentionally reset, which is the correct behaviour.
+    final userAsync = ref.watch(currentUserProvider);
+    final userId = userAsync.value?.uid;
+
+    // Subscribe to the notifications stream via ref.listen so that incoming
+    // Firestore emissions do NOT re-run build() (which would reset isLoading).
+    ref.listen(userNotificationsProvider, (_, next) {
+      state = state.copyWith(notifications: next);
+    });
+
+    return NotificationState(
+      userId: userId,
+      notifications: ref.read(userNotificationsProvider),
+    );
+  }
+
+  /// Force-refresh the notifications stream.
+  void refresh() {
+    ref.invalidate(userNotificationsProvider);
   }
 
   String? _getCurrentUserId() {

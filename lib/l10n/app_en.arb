@@ -3702,5 +3702,10 @@
   "driverInterestsRequired": "Please select at least one interest.",
   "driverTermsLabel": "I agree to the Terms of Service and Privacy Policy.",
   "driverTermsRequired": "You must accept Terms and Privacy to continue.",
-  "driverSaveAndContinue": "Save & Continue"
+  "driverSaveAndContinue": "Save & Continue",
+  "ratingExcellent": "Excellent!",
+  "ratingGood": "Good",
+  "ratingAverage": "Average",
+  "ratingBelowAverage": "Below Average",
+  "ratingPoor": "Poor"
 }

@@ -9,7 +9,6 @@ import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
-import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
@@ -25,8 +24,8 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userAsync = userId != null
-        ? ref.watch(userStreamProvider(userId!))
-        : ref.watch(currentUserStreamProvider);
+        ? ref.watch(currentUserProfileProvider(userId!))
+        : ref.watch(currentUserProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -78,9 +77,9 @@ class ProfileScreen extends ConsumerWidget {
             ElevatedButton.icon(
               onPressed: () {
                 if (userId != null) {
-                  ref.invalidate(userStreamProvider(userId!));
+                  ref.invalidate(currentUserProfileProvider(userId!));
                 } else {
-                  ref.invalidate(currentUserStreamProvider);
+                  ref.invalidate(currentUserProvider);
                 }
               },
               icon: const Icon(Icons.refresh_rounded),
@@ -239,6 +238,70 @@ class ProfileScreen extends ConsumerWidget {
           ),
 
         if (user.bio != null && user.bio!.isNotEmpty)
+          SliverToBoxAdapter(child: SizedBox(height: 24.h)),
+
+        // Bio prompt for own profile when bio is empty
+        if (_isOwnProfile && (user.bio == null || user.bio!.isEmpty))
+          SliverToBoxAdapter(
+            child:
+                Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20.w),
+                      child: GestureDetector(
+                        onTap: () => context.push(AppRoutes.editProfile.path),
+                        child: Container(
+                          padding: EdgeInsets.all(16.w),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.05),
+                            borderRadius: BorderRadius.circular(16.r),
+                            border: Border.all(
+                              color: AppColors.primary.withValues(alpha: 0.2),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.edit_note_rounded,
+                                color: AppColors.primary,
+                                size: 24.sp,
+                              ),
+                              SizedBox(width: 12.w),
+                              Expanded(
+                                child: Text(
+                                  'Add a bio to let others know more about you',
+                                  style: TextStyle(
+                                    fontSize: 14.sp,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                Icons.chevron_right_rounded,
+                                color: AppColors.primary,
+                                size: 20.sp,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    )
+                    .animate()
+                    .fadeIn(duration: 400.ms, delay: 300.ms)
+                    .slideY(begin: 0.1, curve: Curves.easeOutCubic),
+          ),
+
+        if (_isOwnProfile && (user.bio == null || user.bio!.isEmpty))
+          SliverToBoxAdapter(child: SizedBox(height: 24.h)),
+
+        // Interests section
+        if (user.interests.isNotEmpty)
+          SliverToBoxAdapter(
+            child: _buildInterestsSection(context, user)
+                .animate()
+                .fadeIn(duration: 400.ms, delay: 350.ms)
+                .slideY(begin: 0.1, curve: Curves.easeOutCubic),
+          ),
+
+        if (user.interests.isNotEmpty)
           SliverToBoxAdapter(child: SizedBox(height: 24.h)),
 
         // Quick actions menu
@@ -545,17 +608,28 @@ class ProfileScreen extends ConsumerWidget {
     final int totalRides = user.totalRides;
     final double co2Saved;
     final int currentStreak;
-    final double? moneySaved; // Only available for riders
 
     switch (user) {
       case RiderModel(:final gamification):
         co2Saved = gamification.co2Saved;
         currentStreak = gamification.currentStreak;
-        moneySaved = null;
       case DriverModel(:final gamification):
         co2Saved = gamification.co2Saved;
         currentStreak = gamification.currentStreak;
-        moneySaved = null; // Drivers have totalEarnings instead
+    }
+
+    final String moneyStatValue;
+    final String moneyStatLabel;
+    final IconData moneyStatIcon;
+
+    if (user.isRider) {
+      moneyStatValue = '€${user.asRider!.moneySaved.toStringAsFixed(0)}';
+      moneyStatLabel = AppLocalizations.of(context).saved;
+      moneyStatIcon = Icons.savings_rounded;
+    } else {
+      moneyStatValue = '€${user.asDriver!.totalEarnings.toStringAsFixed(0)}';
+      moneyStatLabel = AppLocalizations.of(context).earned2;
+      moneyStatIcon = Icons.attach_money_rounded;
     }
 
     return Padding(
@@ -624,17 +698,9 @@ class ProfileScreen extends ConsumerWidget {
                 SizedBox(width: 12.w),
                 Expanded(
                   child: _buildStatCard(
-                    icon: moneySaved != null
-                        ? Icons.savings_rounded
-                        : Icons.attach_money_rounded,
-                    value: moneySaved != null
-                        ? '€${moneySaved.toStringAsFixed(0)}'
-                        : user.asDriver != null
-                        ? '€${user.asDriver!.totalEarnings.toStringAsFixed(0)}'
-                        : '€0',
-                    label: moneySaved != null
-                        ? AppLocalizations.of(context).saved
-                        : AppLocalizations.of(context).earned2,
+                    icon: moneyStatIcon,
+                    value: moneyStatValue,
+                    label: moneyStatLabel,
                     color: AppColors.info,
                   ),
                 ),
@@ -746,6 +812,72 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
+  /// Interests section
+  Widget _buildInterestsSection(BuildContext context, UserModel user) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20.w),
+      child: Container(
+        padding: EdgeInsets.all(16.w),
+        decoration: BoxDecoration(
+          color: AppColors.cardBg,
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.interests_rounded,
+                  color: AppColors.primary,
+                  size: 20.sp,
+                ),
+                SizedBox(width: 8.w),
+                Text(
+                  'Interests',
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 12.h),
+            Wrap(
+              spacing: 8.w,
+              runSpacing: 8.h,
+              children: user.interests.map((interest) {
+                return Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 12.w,
+                    vertical: 6.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(20.r),
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Text(
+                    interest,
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   /// Quick actions menu section
   Widget _buildQuickActions(BuildContext context, UserModel user) {
     final isDriver = user.role == UserRole.driver;
@@ -757,7 +889,7 @@ class ProfileScreen extends ConsumerWidget {
           title: 'My Vehicles',
           subtitle: 'Manage your vehicles',
           color: AppColors.primary,
-          onTap: () => context.push(AppRoutes.vehicles.path),
+          onTap: () => context.push(AppRoutes.driverVehicles.path),
         ),
       _MenuItem(
         icon: Icons.history_rounded,
@@ -1014,7 +1146,7 @@ class ProfileScreen extends ConsumerWidget {
                       ),
                     );
                   }
-                  ref.invalidate(currentUserStreamProvider);
+                  ref.invalidate(currentUserProvider);
                 }
               },
               style: PremiumButtonStyle.gradient,

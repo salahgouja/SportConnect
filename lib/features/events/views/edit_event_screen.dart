@@ -549,10 +549,13 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
   // ════════════════════════════════════════════════════════════
   Future<void> _pickDate({required bool isStart}) async {
     final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final raw = isStart ? _startsAt : (_endsAt ?? _startsAt);
+    final initial = raw.isBefore(today) ? today : raw;
     final picked = await showDatePicker(
       context: context,
-      initialDate: isStart ? _startsAt : (_endsAt ?? _startsAt),
-      firstDate: now,
+      initialDate: initial,
+      firstDate: today,
       lastDate: now.add(const Duration(days: 365)),
     );
     if (picked == null) return;

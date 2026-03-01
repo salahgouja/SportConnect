@@ -1,15 +1,11 @@
 import 'dart:math' as math;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_ride_repository.dart';
-import 'package:sport_connect/core/providers/firebase_providers.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride_request_model.dart';
-
-part 'ride_repository.g.dart';
 
 /// Ride Repository for Firestore operations
 class RideRepository implements IRideRepository {
@@ -101,6 +97,7 @@ class RideRepository implements IRideRepository {
         .where('driverId', isEqualTo: userId)
         .where('schedule.departureTime', isGreaterThan: Timestamp.now())
         .orderBy('schedule.departureTime')
+        .limit(50)
         .snapshots()
         .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
@@ -167,6 +164,7 @@ class RideRepository implements IRideRepository {
         .where('rideId', isEqualTo: rideId)
         .where('status', isEqualTo: RideRequestStatus.pending.name)
         .orderBy('createdAt', descending: true)
+        .limit(100)
         .snapshots()
         .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
@@ -187,7 +185,8 @@ class RideRepository implements IRideRepository {
     Query<RideModel> query = _ridesCollection
         .where('status', isEqualTo: 'active')
         .where('route.origin.latitude', isGreaterThan: originLat - latRange)
-        .where('route.origin.latitude', isLessThan: originLat + latRange);
+        .where('route.origin.latitude', isLessThan: originLat + latRange)
+        .limit(100);
 
     final results = await query.get();
 
@@ -235,6 +234,7 @@ class RideRepository implements IRideRepository {
     final query = await _ridesCollection
         .where('driverId', isEqualTo: driverId)
         .orderBy('schedule.departureTime', descending: true)
+        .limit(50)
         .get();
 
     return query.docs.map((doc) => doc.data()).toList();
@@ -245,6 +245,7 @@ class RideRepository implements IRideRepository {
     return _ridesCollection
         .where('driverId', isEqualTo: driverId)
         .orderBy('schedule.departureTime', descending: true)
+        .limit(50)
         .snapshots()
         .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
@@ -296,6 +297,7 @@ class RideRepository implements IRideRepository {
     final bookingSnapshot = await _rideBookingsCollection
         .where('passengerId', isEqualTo: userId)
         .where('status', whereIn: ['pending', 'accepted'])
+        .limit(100)
         .get();
 
     final rideIds = bookingSnapshot.docs
@@ -567,9 +569,4 @@ class RideRepository implements IRideRepository {
     final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
     return earthRadius * c;
   }
-}
-
-@riverpod
-IRideRepository rideRepository(Ref ref) {
-  return RideRepository(ref.watch(firestoreInstanceProvider));
 }

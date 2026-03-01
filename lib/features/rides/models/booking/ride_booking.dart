@@ -14,8 +14,9 @@ enum BookingStatus { pending, accepted, rejected, cancelled, completed }
 abstract class RideBooking with _$RideBooking {
   const factory RideBooking({
     required String id,
-    required String rideId, // Added: reference to the ride
+    required String rideId,
     required String passengerId,
+    String? driverId,
     @Default(1) int seatsBooked,
     @Default(BookingStatus.pending) BookingStatus status,
     LocationPoint? pickupLocation,

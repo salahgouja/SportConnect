@@ -9,6 +9,7 @@ abstract class IReviewRepository {
     String userId, {
     ReviewType? type,
     int limit = 50,
+    DateTime? startAfter,
   });
 
   /// Get all reviews left by a user

@@ -1,14 +1,10 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_chat_repository.dart';
 import 'package:sport_connect/core/models/models.dart';
-import 'package:sport_connect/core/providers/firebase_providers.dart';
 import 'package:sport_connect/features/messaging/models/message_model.dart';
-
-part 'chat_repository.g.dart';
 
 /// Chat Repository for Firestore operations
 class ChatRepository implements IChatRepository {
@@ -239,18 +235,21 @@ class ChatRepository implements IChatRepository {
     final batch = _firestore.batch();
 
     // Add message
-    batch.set(docRef, messageWithId.toJson());
+    batch.set(docRef, messageWithId);
 
-    // Update or create chat's last message info
-    // Using set with merge to handle cases where chat might not exist yet
-    batch.set(_chatsCollection.doc(message.chatId), {
-      'lastMessageContent': message.content,
-      'lastMessageSenderId': message.senderId,
-      'lastMessageSenderName': message.senderName,
-      'lastMessageType': message.type.name,
-      'lastMessageAt': DateTime.now(),
-      'updatedAt': DateTime.now(),
-    }, SetOptions(merge: true));
+    // Update or create chat's last message info.
+    batch.set(
+      _firestore.collection(AppConstants.chatsCollection).doc(message.chatId),
+      {
+        'lastMessageContent': message.content,
+        'lastMessageSenderId': message.senderId,
+        'lastMessageSenderName': message.senderName,
+        'lastMessageType': message.type.name,
+        'lastMessageAt': DateTime.now(),
+        'updatedAt': DateTime.now(),
+      },
+      SetOptions(merge: true),
+    );
 
     await batch.commit();
     return docRef.id;
@@ -307,17 +306,7 @@ class ChatRepository implements IChatRepository {
 
   /// Delete message (soft delete)
   @override
-  Future<void> deleteMessage(String messageId) async {
-    // Find the message across all chats (this is inefficient, better to pass chatId)
-    // For now, we'll need to query or change interface to include chatId
-    // Implementing a version that requires knowing the chatId
-    throw UnimplementedError(
-      'deleteMessage requires chatId parameter. Use deleteChatMessage instead.',
-    );
-  }
-
-  /// Delete message with chatId (helper method)
-  Future<void> deleteChatMessage({
+  Future<void> deleteMessage({
     required String chatId,
     required String messageId,
   }) async {
@@ -555,10 +544,11 @@ class ChatRepository implements IChatRepository {
     });
 
     // 3. Mute the chat for the blocker
-    batch.set(_chatsCollection.doc(chatId), {
-      'mutedBy.$userId': true,
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    batch.set(
+      _firestore.collection(AppConstants.chatsCollection).doc(chatId),
+      {'mutedBy.$userId': true, 'updatedAt': FieldValue.serverTimestamp()},
+      SetOptions(merge: true),
+    );
 
     await batch.commit();
   }
@@ -583,10 +573,14 @@ class ChatRepository implements IChatRepository {
 
     // 3. Unmute the chat if provided
     if (chatId != null) {
-      batch.set(_chatsCollection.doc(chatId), {
-        'mutedBy.$userId': FieldValue.delete(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      batch.set(
+        _firestore.collection(AppConstants.chatsCollection).doc(chatId),
+        {
+          'mutedBy.$userId': FieldValue.delete(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
     }
 
     await batch.commit();
@@ -619,8 +613,9 @@ class ChatRepository implements IChatRepository {
   }) async {
     final storageRef = _storage
         .ref()
-        .child('chat_images')
+        .child('chats')
         .child(chatId)
+        .child('attachments')
         .child(fileName);
     await storageRef.putFile(imageFile);
     return storageRef.getDownloadURL();
@@ -637,12 +632,4 @@ class ChatRepository implements IChatRepository {
     await storageRef.putFile(audioFile);
     return storageRef.getDownloadURL();
   }
-}
-
-@riverpod
-IChatRepository chatRepository(Ref ref) {
-  return ChatRepository(
-    ref.watch(firestoreInstanceProvider),
-    ref.watch(storageInstanceProvider),
-  );
 }

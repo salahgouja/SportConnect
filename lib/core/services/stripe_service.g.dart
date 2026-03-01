@@ -25,7 +25,7 @@ final class StripeServiceProvider
         argument: null,
         retry: null,
         name: r'stripeServiceProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -52,4 +52,4 @@ final class StripeServiceProvider
   }
 }
 
-String _$stripeServiceHash() => r'dd9f308310e599033eee7e5301f3194c1afbf378';
+String _$stripeServiceHash() => r'f835721b584e65d721db7c7810c87f082802005f';

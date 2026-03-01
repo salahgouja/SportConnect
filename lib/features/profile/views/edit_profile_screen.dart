@@ -11,6 +11,7 @@ import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/core/widgets/premium_text_field.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -30,7 +31,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _emailController = TextEditingController(); // Often read-only
   final _phoneController = TextEditingController();
   final _bioController = TextEditingController();
-  final _locationController = TextEditingController(); // Maps to city/country
+  final _locationController = TextEditingController(); // Maps to city
+  final _countryController = TextEditingController();
 
   // State
   String _selectedGender = 'Male';
@@ -72,6 +74,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _phoneController.addListener(_onFieldChanged);
     _bioController.addListener(_onFieldChanged);
     _locationController.addListener(_onFieldChanged);
+    _countryController.addListener(_onFieldChanged);
   }
 
   void _onFieldChanged() {
@@ -294,7 +297,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                             _buildActionTile(
                               label: AppLocalizations.of(context).myVehicles,
                               value:
-                                  '${_currentUser?.asDriver!.vehicles.length ?? 0} Active',
+                                  '${_currentUser?.asDriver?.vehicles.length ?? 0} Active',
                               icon: Icons.directions_car_rounded,
                               onTap: () {
                                 context.push(AppRoutes.driverVehicles.path);
@@ -321,6 +324,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                             label: 'City',
                             prefixIcon: Icons.location_city_rounded,
                           ),
+                          SizedBox(height: 16.h),
+                          PremiumTextField(
+                            controller: _countryController,
+                            label: 'Country',
+                            prefixIcon: Icons.public_rounded,
+                          ),
                         ],
                       ),
 
@@ -339,7 +348,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       _buildActionTile(
                         label: AppLocalizations.of(context).birthday,
                         value:
-                            '${_dateOfBirth.day}/${_dateOfBirth.month}/${_dateOfBirth.year}',
+                            '${_dateOfBirth.day.toString().padLeft(2, '0')}/${_dateOfBirth.month.toString().padLeft(2, '0')}/${_dateOfBirth.year}',
                         icon: Icons.cake_rounded,
                         onTap: _selectDateOfBirth,
                       ),
@@ -569,6 +578,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       _phoneController.text = user.phoneNumber ?? '';
       _bioController.text = user.bio ?? '';
       _locationController.text = user.city ?? '';
+      _countryController.text = user.country ?? '';
 
       _selectedGender = user.gender ?? 'Male';
       _dateOfBirth = user.dateOfBirth ?? DateTime(1990);
@@ -582,27 +592,48 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     setState(() => _isLoading = true);
 
     try {
+      String? photoUrl;
+
+      // Upload new profile image if selected
+      if (_selectedImage != null) {
+        photoUrl = await ref
+            .read(authRepositoryProvider)
+            .uploadProfileImage(_selectedImage!, _currentUser!.uid);
+      }
+
+      // Determine final photoUrl
+      final String? finalPhotoUrl;
+      if (_imageRemoved) {
+        finalPhotoUrl = null;
+      } else if (photoUrl != null) {
+        finalPhotoUrl = photoUrl;
+      } else {
+        finalPhotoUrl = _currentUser!.photoUrl;
+      }
+
       // 1. Create updated model using 'map' to preserve subclass type
       final updatedUser = _currentUser!.map(
         rider: (rider) => rider.copyWith(
           displayName: _nameController.text,
           phoneNumber: _phoneController.text,
           bio: _bioController.text,
-          city: _locationController.text, // Simplified location
+          city: _locationController.text,
+          country: _countryController.text,
           gender: _selectedGender,
           dateOfBirth: _dateOfBirth,
           interests: _interests,
-          // If you upload an image, you'd get the URL first and pass it here
-          // photoUrl: uploadedPhotoUrl ?? rider.photoUrl,
+          photoUrl: finalPhotoUrl,
         ),
         driver: (driver) => driver.copyWith(
           displayName: _nameController.text,
           phoneNumber: _phoneController.text,
           bio: _bioController.text,
           city: _locationController.text,
+          country: _countryController.text,
           gender: _selectedGender,
           dateOfBirth: _dateOfBirth,
           interests: _interests,
+          photoUrl: finalPhotoUrl,
         ),
       );
 

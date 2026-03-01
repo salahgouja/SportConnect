@@ -9,13 +9,19 @@ part of 'firebase_providers.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 /// Provides the single source of truth for the Firestore instance.
-/// Enables easy mocking in tests by overriding this provider.
+///
+/// Kept alive for the entire app lifetime — Firestore is a singleton and
+/// every repository provider depends on it; auto-disposing would force all
+/// dependent keepAlive providers to also dispose unnecessarily.
 
 @ProviderFor(firestoreInstance)
 final firestoreInstanceProvider = FirestoreInstanceProvider._();
 
 /// Provides the single source of truth for the Firestore instance.
-/// Enables easy mocking in tests by overriding this provider.
+///
+/// Kept alive for the entire app lifetime — Firestore is a singleton and
+/// every repository provider depends on it; auto-disposing would force all
+/// dependent keepAlive providers to also dispose unnecessarily.
 
 final class FirestoreInstanceProvider
     extends
@@ -26,14 +32,17 @@ final class FirestoreInstanceProvider
         >
     with $Provider<FirebaseFirestore> {
   /// Provides the single source of truth for the Firestore instance.
-  /// Enables easy mocking in tests by overriding this provider.
+  ///
+  /// Kept alive for the entire app lifetime — Firestore is a singleton and
+  /// every repository provider depends on it; auto-disposing would force all
+  /// dependent keepAlive providers to also dispose unnecessarily.
   FirestoreInstanceProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'firestoreInstanceProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -61,30 +70,33 @@ final class FirestoreInstanceProvider
   }
 }
 
-String _$firestoreInstanceHash() => r'8f725e5183ee91c5ee36ce18ed53be1d7252c608';
+String _$firestoreInstanceHash() => r'db8a0da0c46218cf47e3245f277e13416149f9d7';
 
 /// Provides the single source of truth for the Firebase Storage instance.
-/// Enables easy mocking in tests by overriding this provider.
+///
+/// Kept alive for the entire app lifetime alongside [firestoreInstance].
 
 @ProviderFor(storageInstance)
 final storageInstanceProvider = StorageInstanceProvider._();
 
 /// Provides the single source of truth for the Firebase Storage instance.
-/// Enables easy mocking in tests by overriding this provider.
+///
+/// Kept alive for the entire app lifetime alongside [firestoreInstance].
 
 final class StorageInstanceProvider
     extends
         $FunctionalProvider<FirebaseStorage, FirebaseStorage, FirebaseStorage>
     with $Provider<FirebaseStorage> {
   /// Provides the single source of truth for the Firebase Storage instance.
-  /// Enables easy mocking in tests by overriding this provider.
+  ///
+  /// Kept alive for the entire app lifetime alongside [firestoreInstance].
   StorageInstanceProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'storageInstanceProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -111,29 +123,32 @@ final class StorageInstanceProvider
   }
 }
 
-String _$storageInstanceHash() => r'7d251ba752a3143eca777e6e8e5ee88ec7cea868';
+String _$storageInstanceHash() => r'aa3d0924c806a995c233fc6ebb8b9503b77a1416';
 
 /// Provides the single source of truth for the FirebaseAuth instance.
-/// Enables easy mocking in tests by overriding this provider.
+///
+/// Kept alive for the entire app lifetime alongside [firestoreInstance].
 
 @ProviderFor(authInstance)
 final authInstanceProvider = AuthInstanceProvider._();
 
 /// Provides the single source of truth for the FirebaseAuth instance.
-/// Enables easy mocking in tests by overriding this provider.
+///
+/// Kept alive for the entire app lifetime alongside [firestoreInstance].
 
 final class AuthInstanceProvider
     extends $FunctionalProvider<FirebaseAuth, FirebaseAuth, FirebaseAuth>
     with $Provider<FirebaseAuth> {
   /// Provides the single source of truth for the FirebaseAuth instance.
-  /// Enables easy mocking in tests by overriding this provider.
+  ///
+  /// Kept alive for the entire app lifetime alongside [firestoreInstance].
   AuthInstanceProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'authInstanceProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -160,4 +175,4 @@ final class AuthInstanceProvider
   }
 }
 
-String _$authInstanceHash() => r'af1038d1e284332b5c6c20ddd8ccaed7305c7dcf';
+String _$authInstanceHash() => r'5fdf186f4bee506aa38512ea941b7e54392a9e0e';

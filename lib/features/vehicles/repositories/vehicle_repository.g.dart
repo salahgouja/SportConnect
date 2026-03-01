@@ -8,54 +8,6 @@ part of 'vehicle_repository.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-
-@ProviderFor(vehicleRepository)
-final vehicleRepositoryProvider = VehicleRepositoryProvider._();
-
-final class VehicleRepositoryProvider
-    extends
-        $FunctionalProvider<
-          IVehicleRepository,
-          IVehicleRepository,
-          IVehicleRepository
-        >
-    with $Provider<IVehicleRepository> {
-  VehicleRepositoryProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'vehicleRepositoryProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$vehicleRepositoryHash();
-
-  @$internal
-  @override
-  $ProviderElement<IVehicleRepository> $createElement(
-    $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
-
-  @override
-  IVehicleRepository create(Ref ref) {
-    return vehicleRepository(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(IVehicleRepository value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<IVehicleRepository>(value),
-    );
-  }
-}
-
-String _$vehicleRepositoryHash() => r'ac07025ef3b54af9c0c4cfd1511c638f183fffd3';
-
 /// Provider for streaming user vehicles
 
 @ProviderFor(userVehiclesStream)

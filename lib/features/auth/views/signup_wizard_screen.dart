@@ -1,6 +1,4 @@
 import 'dart:io';
-import 'dart:math' as math;
-
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,7 +9,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
-import 'package:video_player/video_player.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/utils/validators.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
@@ -26,7 +23,6 @@ class _StepTheme {
   final Color card;
   final Color text;
   final String label;
-  final String emoji;
 
   const _StepTheme({
     required this.bg,
@@ -34,42 +30,42 @@ class _StepTheme {
     required this.card,
     required this.text,
     required this.label,
-    required this.emoji,
   });
 }
 
+const _kBg = Color(0xFFF8FAF9);
+const _kAccent = Color(0xFF40916C);
+const _kCard = Color(0xFFFFFFFF);
+const _kText = Color(0xFF1A1A1A);
+
 const _stepThemes = [
   _StepTheme(
-    bg: Color(0xFFE8F5E1), // mint
-    accent: Color(0xFF2E7D32),
-    card: Color(0xFFFFFFFF),
-    text: Color(0xFF1B5E20),
-    label: 'Buckle Up',
-    emoji: '🌱',
+    bg: _kBg,
+    accent: _kAccent,
+    card: _kCard,
+    text: _kText,
+    label: 'Your Details',
   ),
   _StepTheme(
-    bg: Color(0xFF1B5E20), // forest dark
-    accent: Color(0xFF69F0AE),
-    card: Color(0xFF2E7D32),
-    text: Color(0xFFE8F5E1),
-    label: 'Set the Route',
-    emoji: '🛡️',
+    bg: _kBg,
+    accent: _kAccent,
+    card: _kCard,
+    text: _kText,
+    label: 'Security',
   ),
   _StepTheme(
-    bg: Color(0xFFF9FBE7), // lime light
-    accent: Color(0xFF558B2F),
-    card: Color(0xFFFFFFFF),
-    text: Color(0xFF33691E),
-    label: 'Choose Your Ride',
-    emoji: '🚗',
+    bg: _kBg,
+    accent: _kAccent,
+    card: _kCard,
+    text: _kText,
+    label: 'Your Role',
   ),
   _StepTheme(
-    bg: Color(0xFF0A3D1F), // emerald deep
-    accent: Color(0xFF00E676),
-    card: Color(0xFF145A32),
-    text: Color(0xFFB9F6CA),
+    bg: _kBg,
+    accent: _kAccent,
+    card: _kCard,
+    text: _kText,
     label: 'Your Profile',
-    emoji: '🏁',
   ),
 ];
 
@@ -82,8 +78,7 @@ class SignupWizardScreen extends ConsumerStatefulWidget {
   ConsumerState<SignupWizardScreen> createState() => _SignupWizardScreenState();
 }
 
-class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen>
-    with TickerProviderStateMixin {
+class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
   // ── Controllers & State ──
   int _currentStep = 0;
   final List<GlobalKey<FormState>> _formKeys = List.generate(
@@ -105,47 +100,14 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen>
   File? _profileImage;
   DateTime? _dateOfBirth;
   final List<String> _selectedInterests = [];
-  bool _showTree = false; // final completion animation
-
-  // ── Animation Controllers ──
-  late final AnimationController _bgAnimCtrl;
-  late final AnimationController _speedoCtrl;
-  late final AnimationController _cardSwipeCtrl;
-
-  // Video Controller
-  VideoPlayerController? _treeVideoCtrl;
-
-  // Card drag
-  double _dragDx = 0;
-  bool _isDragging = false;
 
   @override
   void initState() {
     super.initState();
-    _bgAnimCtrl = AnimationController(vsync: this, duration: 600.ms);
-    _speedoCtrl = AnimationController(vsync: this, duration: 800.ms);
-    _cardSwipeCtrl = AnimationController(vsync: this, duration: 350.ms);
-
-    _speedoCtrl.animateTo(
-      _speedoValue(_currentStep),
-      curve: Curves.easeOutCubic,
-    );
-
-    // Preload the video silently in the background
-    _treeVideoCtrl = VideoPlayerController.asset('assets/animations/tree.mp4')
-      ..initialize().then((_) {
-        _treeVideoCtrl?.setVolume(0.0);
-        _treeVideoCtrl?.setLooping(false);
-        if (mounted) setState(() {});
-      });
   }
 
   @override
   void dispose() {
-    _bgAnimCtrl.dispose();
-    _speedoCtrl.dispose();
-    _cardSwipeCtrl.dispose();
-    _treeVideoCtrl?.dispose(); // Added this
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -154,8 +116,6 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen>
     _phoneController.dispose();
     super.dispose();
   }
-
-  double _speedoValue(int step) => (step + 1) / 4;
 
   // ── Navigation ──
   void _goToStep(int target) async {
@@ -186,25 +146,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen>
 
     FocusScope.of(context).unfocus();
     HapticFeedback.mediumImpact();
-
-    // Swipe-out animation
-    _cardSwipeCtrl.forward(from: 0);
-    await Future.delayed(180.ms);
-
     setState(() => _currentStep = target);
-
-    _bgAnimCtrl.forward(from: 0);
-    _speedoCtrl.animateTo(_speedoValue(target), curve: Curves.easeOutCubic);
-    _cardSwipeCtrl.reverse();
-
-    if (target == 3) {
-      // Trigger pre-loaded video
-      Future.delayed(400.ms, () {
-        setState(() => _showTree = true);
-        _treeVideoCtrl?.seekTo(Duration.zero);
-        _treeVideoCtrl?.play();
-      });
-    }
   }
 
   void _prevStep() {
@@ -214,11 +156,6 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen>
     }
     HapticFeedback.lightImpact();
     setState(() => _currentStep--);
-    _speedoCtrl.animateTo(
-      _speedoValue(_currentStep),
-      curve: Curves.easeOutCubic,
-    );
-    _bgAnimCtrl.forward(from: 0);
   }
 
   void _showError(String msg) {
@@ -314,19 +251,15 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen>
         if (!didPop) _prevStep();
       },
       child: Scaffold(
-        body: AnimatedContainer(
-          duration: 500.ms,
-          curve: Curves.easeOutCubic,
-          color: theme.bg,
-          child: SafeArea(
-            child: Column(
-              children: [
-                _buildTopBar(theme),
-                _buildSpeedometer(theme),
-                Expanded(child: _buildCardStack(theme)),
-                _buildBottomCTA(theme),
-              ],
-            ),
+        backgroundColor: _kBg,
+        body: SafeArea(
+          child: Column(
+            children: [
+              _buildTopBar(theme),
+              _buildStepIndicator(),
+              Expanded(child: _buildCard(theme)),
+              _buildBottomCTA(theme),
+            ],
           ),
         ),
       ),
@@ -366,7 +299,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen>
                 AnimatedSwitcher(
                   duration: 300.ms,
                   child: Text(
-                    theme.emoji + ' ' + theme.label,
+                    theme.label,
                     key: ValueKey(theme.label),
                     style: TextStyle(
                       fontFamily: 'Syne', // bold geometric
@@ -410,126 +343,50 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen>
   }
 
   // ── Speedometer ─────────────────────────────────────────────────────────────
-  Widget _buildSpeedometer(_StepTheme theme) {
+  Widget _buildStepIndicator() {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 4.h),
-      child: SizedBox(
-        height: 90.h,
-        child: AnimatedBuilder(
-          animation: _speedoCtrl,
-          builder: (_, __) => CustomPaint(
-            size: Size(double.infinity, 90.h),
-            painter: _SpeedometerPainter(
-              progress: _speedoCtrl.value,
-              color: theme.accent,
-              bgColor: theme.accent.withOpacity(0.12),
-              step: _currentStep,
-              textColor: theme.text,
+      padding: EdgeInsets.fromLTRB(24.w, 4.h, 24.w, 12.h),
+      child: Row(
+        children: List.generate(4, (i) {
+          return Expanded(
+            child: AnimatedContainer(
+              duration: 300.ms,
+              margin: EdgeInsets.only(right: i < 3 ? 6.w : 0),
+              height: 4.h,
+              decoration: BoxDecoration(
+                color: i <= _currentStep
+                    ? _kAccent
+                    : _kAccent.withOpacity(0.18),
+                borderRadius: BorderRadius.circular(2.r),
+              ),
             ),
-          ),
-        ),
+          );
+        }),
       ),
     );
   }
 
   // ── Tinder Card Stack ───────────────────────────────────────────────────────
-  Widget _buildCardStack(_StepTheme theme) {
-    return Stack(
-      children: [
-        // Ghost card behind (next step peeking)
-        if (_currentStep < 3)
-          Positioned(
-            top: 16.h,
-            left: 24.w,
-            right: 24.w,
-            bottom: 0,
-            child: AnimatedContainer(
-              duration: 300.ms,
-              decoration: BoxDecoration(
-                color: _stepThemes[_currentStep + 1].card.withOpacity(0.6),
-                borderRadius: BorderRadius.circular(28.r),
-              ),
+  Widget _buildCard(_StepTheme theme) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20.w),
+      child: Container(
+        decoration: BoxDecoration(
+          color: _kCard,
+          borderRadius: BorderRadius.circular(24.r),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.07),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
             ),
-          ),
-        // Second ghost
-        if (_currentStep < 2)
-          Positioned(
-            top: 8.h,
-            left: 32.w,
-            right: 32.w,
-            bottom: 0,
-            child: AnimatedContainer(
-              duration: 300.ms,
-              decoration: BoxDecoration(
-                color: _stepThemes[_currentStep + 1].card.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(28.r),
-              ),
-            ),
-          ),
-        // Main card — draggable
-        Positioned(
-          top: 0,
-          left: 16.w,
-          right: 16.w,
-          bottom: 0,
-          child: GestureDetector(
-            onHorizontalDragStart: (_) => setState(() => _isDragging = true),
-            onHorizontalDragUpdate: (d) {
-              setState(
-                () => _dragDx = (_dragDx + d.delta.dx).clamp(-60.0, 20.0),
-              );
-            },
-            onHorizontalDragEnd: (d) {
-              if (_dragDx < -40) {
-                setState(() {
-                  _dragDx = 0;
-                  _isDragging = false;
-                });
-                _goToStep(_currentStep + 1);
-              } else {
-                setState(() {
-                  _dragDx = 0;
-                  _isDragging = false;
-                });
-              }
-            },
-            child: AnimatedContainer(
-              duration: _isDragging ? 0.ms : 300.ms,
-              transform: Matrix4.translationValues(_dragDx, 0, 0)
-                ..rotateZ(_dragDx * 0.004),
-              decoration: BoxDecoration(
-                color: theme.card,
-                borderRadius: BorderRadius.circular(28.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: theme.accent.withOpacity(0.18),
-                    blurRadius: 28,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(28.r),
-                child: _buildStepContent(theme),
-              ),
-            ),
-          ),
+          ],
         ),
-        // Swipe hint arrow
-        if (_dragDx < -20)
-          Positioned(
-            right: 28.w,
-            top: 0,
-            bottom: 0,
-            child: Center(
-              child: Icon(
-                Icons.arrow_forward_ios_rounded,
-                color: theme.accent,
-                size: 28.sp,
-              ),
-            ),
-          ),
-      ],
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24.r),
+          child: _buildStepContent(theme),
+        ),
+      ),
     );
   }
 
@@ -557,31 +414,45 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen>
         key: const ValueKey('step1'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Eco welcome banner
-          _GreenBanner(
-            accent: theme.accent,
-            child: Column(
+          // Welcome banner
+          Container(
+            padding: EdgeInsets.all(16.w),
+            decoration: BoxDecoration(
+              color: theme.accent.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(16.r),
+              border: Border.all(color: theme.accent.withOpacity(0.2)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('🌍', style: TextStyle(fontSize: 36.sp)),
-                SizedBox(height: 8.h),
-                Text(
-                  l10n.join10000EcoRiders,
-                  style: TextStyle(
-                    fontFamily: 'Syne',
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w800,
+                Container(
+                  padding: EdgeInsets.all(10.w),
+                  decoration: BoxDecoration(
+                    color: theme.accent.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  child: Icon(
+                    Icons.eco_outlined,
                     color: theme.accent,
+                    size: 24.sp,
                   ),
-                  textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 4.h),
-                Text(
-                  l10n.get100XpWelcomeBonus,
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    color: theme.accent.withOpacity(0.75),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.joinOurCommunityOfEco,
+                        style: TextStyle(
+                          fontFamily: 'Syne',
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w700,
+                          color: theme.accent,
+                        ),
+                      ),
+                    ],
                   ),
-                  textAlign: TextAlign.center,
                 ),
               ],
             ),
@@ -774,18 +645,18 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen>
           SizedBox(height: 12.h),
           _InterestChips(
             interests: const [
-              '⚽ Football',
-              '🏀 Basketball',
-              '🎾 Tennis',
-              '🏃 Running',
-              '🚴 Cycling',
-              '🏊 Swimming',
-              '⛳ Golf',
-              '🏋️ Gym',
-              '🧘 Yoga',
-              '🥊 Boxing',
-              '🎿 Skiing',
-              '🏄 Surfing',
+              'Football',
+              'Basketball',
+              'Tennis',
+              'Running',
+              'Cycling',
+              'Swimming',
+              'Golf',
+              'Gym',
+              'Yoga',
+              'Boxing',
+              'Skiing',
+              'Surfing',
             ],
             selected: _selectedInterests,
             accent: theme.accent,
@@ -813,31 +684,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen>
         key: const ValueKey('step4'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Growing tree animation
-          if (_showTree &&
-              _treeVideoCtrl != null &&
-              _treeVideoCtrl!.value.isInitialized)
-            Center(
-              child: SizedBox(
-                height: 140.h,
-                child: AspectRatio(
-                  aspectRatio: _treeVideoCtrl!.value.aspectRatio,
-                  child: ShaderMask(
-                    shaderCallback: (rect) {
-                      return RadialGradient(
-                        center: Alignment.center,
-                        radius: 0.65,
-                        colors: const [Colors.black, Colors.transparent],
-                        stops: const [0.6, 1.0],
-                      ).createShader(rect);
-                    },
-                    blendMode: BlendMode.dstIn,
-                    child: VideoPlayer(_treeVideoCtrl!),
-                  ),
-                ),
-              ),
-            ),
-          SizedBox(height: 16.h),
+          SizedBox(height: 8.h),
 
           // Avatar picker
           Center(
@@ -924,7 +771,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen>
             child: Column(
               children: [
                 Text(
-                  '🏁 Ready to Roll!',
+                  'Almost There!',
                   style: TextStyle(
                     fontFamily: 'Syne',
                     fontSize: 18.sp,
@@ -958,7 +805,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen>
     return Container(
       padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 20.h),
       decoration: BoxDecoration(
-        color: theme.bg,
+        color: _kBg,
         boxShadow: [
           BoxShadow(
             color: Colors.black12,
@@ -969,233 +816,65 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen>
       ),
       child: SafeArea(
         top: false,
-        child: Row(
-          children: [
-            // Swipe hint pill
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-              decoration: BoxDecoration(
-                color: theme.accent.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20.r),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.swipe_left_rounded,
-                    size: 16.sp,
-                    color: theme.accent,
-                  ),
-                  SizedBox(width: 4.w),
-                  Text(
-                    'swipe',
-                    style: TextStyle(fontSize: 11.sp, color: theme.accent),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: GestureDetector(
-                onTap: () => _goToStep(_currentStep + 1),
-                child: AnimatedContainer(
-                  duration: 300.ms,
-                  height: 54.h,
-                  decoration: BoxDecoration(
-                    color: theme.accent,
-                    borderRadius: BorderRadius.circular(16.r),
-                    boxShadow: [
-                      BoxShadow(
-                        color: theme.accent.withOpacity(0.4),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: isLoading
-                        ? SizedBox(
-                            width: 24.w,
-                            height: 24.w,
-                            child: const CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2.5,
-                            ),
-                          )
-                        : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                isLast
-                                    ? AppLocalizations.of(context).createAccount
-                                    : AppLocalizations.of(
-                                        context,
-                                      ).wizardContinue,
-                                style: TextStyle(
-                                  fontFamily: 'Syne',
-                                  fontSize: 16.sp,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              SizedBox(width: 8.w),
-                              Icon(
-                                isLast
-                                    ? Icons.check_rounded
-                                    : Icons.arrow_forward_rounded,
-                                color: Colors.white,
-                                size: 20.sp,
-                              ),
-                            ],
-                          ),
-                  ),
+        child: GestureDetector(
+          onTap: () => _goToStep(_currentStep + 1),
+          child: AnimatedContainer(
+            duration: 300.ms,
+            height: 54.h,
+            decoration: BoxDecoration(
+              color: theme.accent,
+              borderRadius: BorderRadius.circular(16.r),
+              boxShadow: [
+                BoxShadow(
+                  color: theme.accent.withOpacity(0.4),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
                 ),
-              ),
+              ],
             ),
-          ],
+            child: Center(
+              child: isLoading
+                  ? SizedBox(
+                      width: 24.w,
+                      height: 24.w,
+                      child: const CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2.5,
+                      ),
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          isLast
+                              ? AppLocalizations.of(context).createAccount
+                              : AppLocalizations.of(context).wizardContinue,
+                          style: TextStyle(
+                            fontFamily: 'Syne',
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(width: 8.w),
+                        Icon(
+                          isLast
+                              ? Icons.check_rounded
+                              : Icons.arrow_forward_rounded,
+                          color: Colors.white,
+                          size: 20.sp,
+                        ),
+                      ],
+                    ),
+            ),
+          ),
         ),
       ),
     );
   }
-}
-
-// ─── Speedometer Painter ──────────────────────────────────────────────────────
-
-class _SpeedometerPainter extends CustomPainter {
-  final double progress;
-  final Color color;
-  final Color bgColor;
-  final int step;
-  final Color textColor;
-
-  const _SpeedometerPainter({
-    required this.progress,
-    required this.color,
-    required this.bgColor,
-    required this.step,
-    required this.textColor,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final cx = size.width / 2;
-    final cy = size.height * 0.88;
-    final radius = size.height * 0.80;
-    const startAngle = math.pi;
-    const sweepAngle = math.pi;
-
-    // BG arc
-    final bgPaint = Paint()
-      ..color = bgColor
-      ..strokeWidth = 14
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-    canvas.drawArc(
-      Rect.fromCircle(center: Offset(cx, cy), radius: radius),
-      startAngle,
-      sweepAngle,
-      false,
-      bgPaint,
-    );
-
-    // Progress arc
-    final fgPaint = Paint()
-      ..shader = SweepGradient(
-        startAngle: startAngle,
-        endAngle: startAngle + sweepAngle * progress,
-        colors: [color.withOpacity(0.6), color],
-      ).createShader(Rect.fromCircle(center: Offset(cx, cy), radius: radius))
-      ..strokeWidth = 14
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-    canvas.drawArc(
-      Rect.fromCircle(center: Offset(cx, cy), radius: radius),
-      startAngle,
-      sweepAngle * progress,
-      false,
-      fgPaint,
-    );
-
-    // Tick marks
-    const ticks = 5;
-    for (int i = 0; i <= ticks; i++) {
-      final angle = startAngle + (sweepAngle * i / ticks);
-      final isFilled = i / ticks <= progress;
-      final outerR = radius + 10;
-      final innerR = radius - 10;
-      final p1 = Offset(
-        cx + outerR * math.cos(angle),
-        cy + outerR * math.sin(angle),
-      );
-      final p2 = Offset(
-        cx + innerR * math.cos(angle),
-        cy + innerR * math.sin(angle),
-      );
-      canvas.drawLine(
-        p1,
-        p2,
-        Paint()
-          ..color = isFilled ? color : bgColor
-          ..strokeWidth = 2.5
-          ..strokeCap = StrokeCap.round,
-      );
-    }
-
-    // Needle
-    final needleAngle = startAngle + sweepAngle * progress;
-    final nEnd = Offset(
-      cx + (radius - 2) * math.cos(needleAngle),
-      cy + (radius - 2) * math.sin(needleAngle),
-    );
-    canvas.drawLine(
-      Offset(cx, cy),
-      nEnd,
-      Paint()
-        ..color = color
-        ..strokeWidth = 3.5
-        ..strokeCap = StrokeCap.round,
-    );
-    canvas.drawCircle(Offset(cx, cy), 7, Paint()..color = color);
-    canvas.drawCircle(Offset(cx, cy), 4, Paint()..color = Colors.white);
-
-    // Step label
-    final sp = (progress * 100).toInt();
-    final tp = TextPainter(
-      text: TextSpan(
-        text: '$sp%',
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w800,
-          color: textColor,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    tp.paint(canvas, Offset(cx - tp.width / 2, cy - tp.height - 2));
-  }
-
-  @override
-  bool shouldRepaint(_SpeedometerPainter old) =>
-      old.progress != progress || old.color != color;
 }
 
 // ─── Helper Widgets ───────────────────────────────────────────────────────────
-
-class _GreenBanner extends StatelessWidget {
-  final Color accent;
-  final Widget child;
-  const _GreenBanner({required this.accent, required this.child});
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: EdgeInsets.all(20.w),
-    decoration: BoxDecoration(
-      color: accent.withOpacity(0.08),
-      borderRadius: BorderRadius.circular(20.r),
-      border: Border.all(color: accent.withOpacity(0.2)),
-    ),
-    child: child,
-  );
-}
 
 class _SecurityBadge extends StatelessWidget {
   final Color accent;

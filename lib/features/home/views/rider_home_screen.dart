@@ -10,27 +10,26 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/services/routing_service.dart';
-import 'package:sport_connect/features/home/repositories/home_repository.dart';
 import 'package:sport_connect/features/home/models/home_models.dart';
+import 'package:sport_connect/features/home/view_models/home_view_model.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
-/// Modern Carpooling Home Screen  - Uses proper MVVM architecture with repository
-class HomeScreen extends ConsumerStatefulWidget {
-  const HomeScreen({super.key});
+/// Rider Home Screen - map-based explore view with nearby drivers
+class RiderHomeScreen extends ConsumerStatefulWidget {
+  const RiderHomeScreen({super.key});
 
   @override
-  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<RiderHomeScreen> createState() => _RiderHomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen>
+class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
     with TickerProviderStateMixin {
   late final AnimationController _pulseAnimationController;
 
@@ -38,6 +37,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   final MapController _mapController = MapController();
   LatLng _currentLocation = const LatLng(48.8566, 2.3522);
   bool _isLoadingLocation = true;
+  bool _locationUnavailable = false;
   double _currentZoom = 14;
   String _selectedMapStyle = 'standard';
   bool _showNearbyDrivers = true;
@@ -186,7 +186,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
       if (permission == LocationPermission.deniedForever) {
         TalkerService.debug('Location permission denied forever');
-        setState(() => _isLoadingLocation = false);
+        setState(() {
+          _isLoadingLocation = false;
+          _locationUnavailable = true;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'Location permission permanently denied. '
+                'Please enable it in your device settings.',
+              ),
+              action: SnackBarAction(
+                label: 'Settings',
+                onPressed: () => Geolocator.openAppSettings(),
+              ),
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
         return;
       }
 
@@ -208,7 +226,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       _mapController.move(_currentLocation, _currentZoom);
     } catch (e) {
       TalkerService.debug('Error getting location: $e');
-      setState(() => _isLoadingLocation = false);
+      setState(() {
+        _isLoadingLocation = false;
+        _locationUnavailable = true;
+      });
     }
   }
 
@@ -230,8 +251,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       nearbyRidesStreamProvider(queryAnchor, _searchRadius),
     );
     final filteredNearbyRides = nearbyRides.whenData(_filterRides);
-    final hotspots = ref.watch(hotspotsStreamProvider);
-    final user = ref.watch(currentUserProvider);
+    final homeVmState = ref.watch(homeViewModelProvider);
+    final hotspots = homeVmState.hotspots;
+    final user = homeVmState.user;
 
     return Stack(
       children: [
@@ -345,6 +367,45 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
         // Route Info Panel
         if (_showRouteInfo && _activeRoute != null) _buildRouteInfoPanel(),
+
+        // Location unavailable banner
+        if (_locationUnavailable && !_isLoadingLocation)
+          Positioned(
+            top: 150.h,
+            left: 20.w,
+            right: 20.w,
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.location_off, color: Colors.white, size: 20.sp),
+                  SizedBox(width: 8.w),
+                  Expanded(
+                    child: Text(
+                      'Location unavailable — showing default area',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => _getCurrentLocation(),
+                    child: Icon(
+                      Icons.refresh,
+                      color: Colors.white,
+                      size: 20.sp,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
 
         // Quick Stats Bar
         _buildQuickStatsBar(filteredNearbyRides),
@@ -1280,6 +1341,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   /// Shows inline search bottom sheet with nearby rides
   void _showInlineSearchSheet() {
     HapticFeedback.selectionClick();
+    final outerContext = context; // capture before builders shadow it
     final TextEditingController fromController = TextEditingController();
     final TextEditingController toController = TextEditingController();
     DateTime selectedDate = DateTime.now();
@@ -1345,7 +1407,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                             const Spacer(),
                             TextButton.icon(
                               onPressed: () {
-                                context.pop();
+                                Navigator.of(context).pop();
+                                outerContext.push(AppRoutes.searchRides.path);
                               },
                               icon: Icon(Icons.tune_rounded, size: 18.sp),
                               label: Text(AppLocalizations.of(context).filters),

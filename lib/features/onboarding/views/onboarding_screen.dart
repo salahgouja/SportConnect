@@ -7,7 +7,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lottie/lottie.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/features/onboarding/repositories/onboarding_repository.dart';
+import 'package:sport_connect/features/onboarding/view_models/onboarding_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Data model for onboarding pages
@@ -127,10 +127,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
   }
 
   Future<void> _completeOnboarding() async {
-    final repository = await ref.read(onboardingRepositoryProvider.future);
-    await repository.completeOnboarding();
-    ref.invalidate(isOnboardingCompleteProvider);
-
+    final success = await ref
+        .read(onboardingViewModelProvider.notifier)
+        .completeOnboarding();
+    if (!success) return;
     if (!mounted) return;
     await _showWelcomeDialog();
   }
@@ -251,6 +251,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
 
   @override
   Widget build(BuildContext context) {
+    final vmState = ref.watch(onboardingViewModelProvider);
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -267,7 +268,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                 },
               ),
             ),
-            _buildBottomControls(),
+            _buildBottomControls(vmState),
           ],
         ),
       ),
@@ -710,8 +711,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
         .scale(begin: const Offset(0.8, 0.8));
   }
 
-  Widget _buildBottomControls() {
+  Widget _buildBottomControls(OnboardingState vmState) {
     final isLastPage = _currentPage == _pages.length - 1;
+    final isCompleting = vmState.isCompleting;
 
     return Container(
       padding: EdgeInsets.fromLTRB(24.w, 16.h, 24.w, 24.h),
@@ -778,16 +780,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    onTap: () {
-                      if (isLastPage) {
-                        _completeOnboarding();
-                      } else {
-                        _pageController.nextPage(
-                          duration: const Duration(milliseconds: 500),
-                          curve: Curves.easeOutCubic,
-                        );
-                      }
-                    },
+                    onTap: isCompleting
+                        ? null
+                        : () {
+                            if (isLastPage) {
+                              _completeOnboarding();
+                            } else {
+                              _pageController.nextPage(
+                                duration: const Duration(milliseconds: 500),
+                                curve: Curves.easeOutCubic,
+                              );
+                            }
+                          },
                     borderRadius: BorderRadius.circular(20.r),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
@@ -810,7 +814,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            isLastPage
+                            isCompleting
+                                ? '...'
+                                : isLastPage
                                 ? AppLocalizations.of(context).getStarted
                                 : AppLocalizations.of(context).kContinue,
                             style: TextStyle(

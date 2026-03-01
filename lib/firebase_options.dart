@@ -17,7 +17,10 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      return web;
+      throw UnsupportedError(
+        'DefaultFirebaseOptions have not been configured for web - '
+        'you can reconfigure this by running the FlutterFire CLI again.',
+      );
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -25,9 +28,15 @@ class DefaultFirebaseOptions {
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
-        return macos;
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for macos - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
       case TargetPlatform.windows:
-        return windows;
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for windows - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -40,21 +49,12 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyA39vZ2S0SyWWGKGR5Yo-FqzXpJvrWKTzY',
-    appId: '1:950804897667:web:35fe380e9a6e27ef80e0b6',
-    messagingSenderId: '950804897667',
-    projectId: 'marathon-connect',
-    authDomain: 'marathon-connect.firebaseapp.com',
-    storageBucket: 'marathon-connect.firebasestorage.app',
-    measurementId: 'G-29WZE5WH4S',
-  );
-
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyCaE4XE8mT3MkH5MM47zc8DqXHTET-KI1w',
     appId: '1:950804897667:android:336cec4dff83493780e0b6',
     messagingSenderId: '950804897667',
     projectId: 'marathon-connect',
+    databaseURL: 'https://marathon-connect-default-rtdb.europe-west1.firebasedatabase.app',
     storageBucket: 'marathon-connect.firebasestorage.app',
   );
 
@@ -63,26 +63,11 @@ class DefaultFirebaseOptions {
     appId: '1:950804897667:ios:f00be9b758b88a6480e0b6',
     messagingSenderId: '950804897667',
     projectId: 'marathon-connect',
+    databaseURL: 'https://marathon-connect-default-rtdb.europe-west1.firebasedatabase.app',
     storageBucket: 'marathon-connect.firebasestorage.app',
+    androidClientId: '950804897667-9b5maiqh6qla3t0qk2j28jtfd2ieoh9g.apps.googleusercontent.com',
+    iosClientId: '950804897667-92ufpn1kmot4pdplnmqat89ir7kbeg9i.apps.googleusercontent.com',
     iosBundleId: 'com.sportconnect.sportConnect',
   );
 
-  static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyBXBm2gyNkEWVoyZ4VSAEI3Twj9BJpWYw0',
-    appId: '1:950804897667:ios:f00be9b758b88a6480e0b6',
-    messagingSenderId: '950804897667',
-    projectId: 'marathon-connect',
-    storageBucket: 'marathon-connect.firebasestorage.app',
-    iosBundleId: 'com.sportconnect.sportConnect',
-  );
-
-  static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyA39vZ2S0SyWWGKGR5Yo-FqzXpJvrWKTzY',
-    appId: '1:950804897667:web:14230de23dab235980e0b6',
-    messagingSenderId: '950804897667',
-    projectId: 'marathon-connect',
-    authDomain: 'marathon-connect.firebaseapp.com',
-    storageBucket: 'marathon-connect.firebasestorage.app',
-    measurementId: 'G-E0ZBLTCHH3',
-  );
 }

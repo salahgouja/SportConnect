@@ -4,7 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
-import 'package:sport_connect/features/events/repositories/event_repository.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
 
 part 'event_view_model.g.dart';
 
@@ -322,6 +322,117 @@ class EventDetailViewModel extends _$EventDetailViewModel {
   /// Clears any error or success message.
   void clearMessages() {
     state = state.copyWith(clearError: true, clearSuccess: true);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Event list view model — browse / discover screen
+// ---------------------------------------------------------------------------
+
+/// UI state for the event list (discover) screen.
+class EventListState {
+  const EventListState({
+    this.allEvents = const [],
+    this.filteredEvents = const [],
+    this.filterType,
+    this.searchQuery = '',
+    this.isLoading = false,
+    this.error,
+  });
+
+  final List<EventModel> allEvents;
+  final List<EventModel> filteredEvents;
+  final EventType? filterType;
+  final String searchQuery;
+  final bool isLoading;
+  final String? error;
+
+  EventListState copyWith({
+    List<EventModel>? allEvents,
+    List<EventModel>? filteredEvents,
+    EventType? filterType,
+    bool clearFilterType = false,
+    String? searchQuery,
+    bool? isLoading,
+    String? error,
+    bool clearError = false,
+  }) {
+    return EventListState(
+      allEvents: allEvents ?? this.allEvents,
+      filteredEvents: filteredEvents ?? this.filteredEvents,
+      filterType: clearFilterType ? null : (filterType ?? this.filterType),
+      searchQuery: searchQuery ?? this.searchQuery,
+      isLoading: isLoading ?? this.isLoading,
+      error: clearError ? null : (error ?? this.error),
+    );
+  }
+}
+
+/// ViewModel for the event list screen.
+///
+/// Watches the upcoming events stream and applies client-side filtering
+/// by type and search query.  Views should watch only this provider.
+@riverpod
+class EventListViewModel extends _$EventListViewModel {
+  // Persisted across stream rebuilds via instance variables (not frozen state).
+  EventType? _filterType;
+  String _searchQuery = '';
+
+  @override
+  EventListState build() {
+    final eventsAsync = ref.watch(upcomingEventsStreamProvider);
+    final all = eventsAsync.value ?? const [];
+    return EventListState(
+      allEvents: all,
+      filteredEvents: _applyFilters(all),
+      filterType: _filterType,
+      searchQuery: _searchQuery,
+      isLoading: eventsAsync.isLoading,
+      error: eventsAsync.error?.toString(),
+    );
+  }
+
+  /// Toggles or clears the sport-type filter.
+  void setFilterType(EventType? type) {
+    _filterType = type;
+    state = _withFiltersApplied();
+  }
+
+  /// Updates the search query for client-side text search.
+  void setSearchQuery(String query) {
+    _searchQuery = query.trim().toLowerCase();
+    state = _withFiltersApplied();
+  }
+
+  // ── Private ──
+
+  EventListState _withFiltersApplied() {
+    return state.copyWith(
+      filteredEvents: _applyFilters(state.allEvents),
+      filterType: _filterType,
+      clearFilterType: _filterType == null,
+      searchQuery: _searchQuery,
+    );
+  }
+
+  List<EventModel> _applyFilters(List<EventModel> events) {
+    var filtered = events.where((e) => e.isActive).toList();
+    if (_filterType != null) {
+      filtered = filtered.where((e) => e.type == _filterType).toList();
+    }
+    if (_searchQuery.isNotEmpty) {
+      filtered = filtered
+          .where(
+            (e) =>
+                e.title.toLowerCase().contains(_searchQuery) ||
+                e.location.address.toLowerCase().contains(_searchQuery) ||
+                (e.venueName?.toLowerCase().contains(_searchQuery) ?? false) ||
+                (e.organizerName?.toLowerCase().contains(_searchQuery) ??
+                    false),
+          )
+          .toList();
+    }
+    return filtered;
   }
 }
 
