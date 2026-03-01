@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -29,10 +31,7 @@ class EditEventScreen extends ConsumerStatefulWidget {
 }
 
 class _EditEventScreenState extends ConsumerState<EditEventScreen> {
-  final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _titleCtrl;
-  late final TextEditingController _descCtrl;
-  late final TextEditingController _venueCtrl;
+  final _formKey = GlobalKey<FormBuilderState>();
 
   late EventType _type;
   late DateTime _startsAt;
@@ -49,9 +48,6 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
   void initState() {
     super.initState();
     final e = widget.event;
-    _titleCtrl = TextEditingController(text: e.title);
-    _descCtrl = TextEditingController(text: e.description ?? '');
-    _venueCtrl = TextEditingController(text: e.venueName ?? '');
     _type = e.type;
     _startsAt = e.startsAt;
     _endsAt = e.endsAt;
@@ -61,9 +57,6 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
 
   @override
   void dispose() {
-    _titleCtrl.dispose();
-    _descCtrl.dispose();
-    _venueCtrl.dispose();
     super.dispose();
   }
 
@@ -95,7 +88,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
         ),
         centerTitle: true,
       ),
-      body: Form(
+      body: FormBuilder(
         key: _formKey,
         child: ListView(
           padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 32.h),
@@ -178,26 +171,30 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
 
   // ── Fields ─────────────────────────────────────────────────
   Widget _buildTitleField() {
-    return TextFormField(
-      controller: _titleCtrl,
+    return FormBuilderTextField(
+      name: 'title',
+      initialValue: widget.event.title,
       textCapitalization: TextCapitalization.words,
       decoration: _deco('Event Title *', Icons.title_rounded),
-      validator: (v) =>
-          v == null || v.trim().isEmpty ? 'Title is required' : null,
+      validator: FormBuilderValidators.required(
+        errorText: 'Title is required',
+      ),
     ).animate().fadeIn(duration: 250.ms, delay: 60.ms);
   }
 
   Widget _buildVenueField() {
-    return TextFormField(
-      controller: _venueCtrl,
+    return FormBuilderTextField(
+      name: 'venue',
+      initialValue: widget.event.venueName ?? '',
       textCapitalization: TextCapitalization.words,
       decoration: _deco('Venue Name (optional)', Icons.stadium_rounded),
     ).animate().fadeIn(duration: 250.ms, delay: 100.ms);
   }
 
   Widget _buildDescriptionField() {
-    return TextFormField(
-      controller: _descCtrl,
+    return FormBuilderTextField(
+      name: 'description',
+      initialValue: widget.event.description ?? '',
       maxLines: 3,
       minLines: 2,
       textCapitalization: TextCapitalization.sentences,
@@ -488,7 +485,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!(_formKey.currentState?.saveAndValidate() ?? false)) return;
     if (_location == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a location.')),
@@ -522,13 +519,17 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
     }
 
     final updated = widget.event.copyWith(
-      title: _titleCtrl.text.trim(),
+      title: (_formKey.currentState!.value['title'] as String).trim(),
       type: _type,
       location: _location!,
       startsAt: _startsAt,
       endsAt: _endsAt,
-      description: _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
-      venueName: _venueCtrl.text.trim().isEmpty ? null : _venueCtrl.text.trim(),
+      description: (_formKey.currentState!.value['description'] as String? ?? '').trim().isEmpty
+          ? null
+          : (_formKey.currentState!.value['description'] as String).trim(),
+      venueName: (_formKey.currentState!.value['venue'] as String? ?? '').trim().isEmpty
+          ? null
+          : (_formKey.currentState!.value['venue'] as String).trim(),
       imageUrl: imageUrl,
       maxParticipants: _maxParticipants,
       updatedAt: DateTime.now(),

@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -38,10 +40,7 @@ class CreateEventScreen extends ConsumerStatefulWidget {
 }
 
 class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _titleCtrl = TextEditingController();
-  final _descCtrl = TextEditingController();
-  final _venueCtrl = TextEditingController();
+  final _formKey = GlobalKey<FormBuilderState>();
 
   EventType _type = EventType.football;
   DateTime _startsAt = DateTime.now().add(const Duration(hours: 2));
@@ -53,9 +52,6 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
 
   @override
   void dispose() {
-    _titleCtrl.dispose();
-    _descCtrl.dispose();
-    _venueCtrl.dispose();
     super.dispose();
   }
 
@@ -87,7 +83,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
         ),
         centerTitle: true,
       ),
-      body: Form(
+      body: FormBuilder(
         key: _formKey,
         child: ListView(
           padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 32.h),
@@ -170,26 +166,27 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
 
   // ── Fields ───────────────────────────────────────────────────
   Widget _buildTitleField() {
-    return TextFormField(
-      controller: _titleCtrl,
+    return FormBuilderTextField(
+      name: 'title',
       textCapitalization: TextCapitalization.words,
       decoration: _deco('Event Title *', Icons.title_rounded),
-      validator: (v) =>
-          v == null || v.trim().isEmpty ? 'Title is required' : null,
+      validator: FormBuilderValidators.required(
+        errorText: 'Title is required',
+      ),
     ).animate().fadeIn(duration: 250.ms, delay: 60.ms);
   }
 
   Widget _buildVenueField() {
-    return TextFormField(
-      controller: _venueCtrl,
+    return FormBuilderTextField(
+      name: 'venue',
       textCapitalization: TextCapitalization.words,
       decoration: _deco('Venue Name (optional)', Icons.stadium_rounded),
     ).animate().fadeIn(duration: 250.ms, delay: 100.ms);
   }
 
   Widget _buildDescriptionField() {
-    return TextFormField(
-      controller: _descCtrl,
+    return FormBuilderTextField(
+      name: 'description',
       maxLines: 3,
       minLines: 2,
       textCapitalization: TextCapitalization.sentences,
@@ -599,7 +596,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!(_formKey.currentState?.saveAndValidate() ?? false)) return;
     if (_location == null) {
       ScaffoldMessenger.of(
         context,
@@ -635,13 +632,13 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
         .read(eventSelectionViewModelProvider.notifier)
         .createEvent(
           creatorId: user.uid,
-          title: _titleCtrl.text.trim(),
+          title: (_formKey.currentState!.value['title'] as String).trim(),
           type: _type,
           location: _location!,
           startsAt: _startsAt,
           endsAt: _endsAt,
-          description: _descCtrl.text.trim(),
-          venueName: _venueCtrl.text.trim(),
+          description: (_formKey.currentState!.value['description'] as String? ?? '').trim(),
+          venueName: (_formKey.currentState!.value['venue'] as String? ?? '').trim(),
           organizerName: user.displayName,
           maxParticipants: _maxParticipants,
         );

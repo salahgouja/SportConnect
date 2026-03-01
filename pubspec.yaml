@@ -117,6 +117,8 @@ dependencies:
   printing: ^5.14.2
   flutter_svg: ^2.2.3
   geoflutterfire_plus: ^0.0.32
+  flutter_form_builder: ^10.3.0+2
+  form_builder_validators: ^11.3.0
 
 dev_dependencies:
   flutter_test:

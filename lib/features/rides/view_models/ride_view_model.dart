@@ -453,6 +453,28 @@ class RideDetailViewModel extends _$RideDetailViewModel {
           .read(rideRepositoryProvider)
           .bookRide(rideId: ride.id, booking: booking);
       state = state.copyWith(actionError: null);
+
+      // Notify the driver that a new booking request has arrived.
+      // Fire-and-forget: a notification failure must never break the booking.
+      try {
+        final passenger = ref.read(currentUserProvider).value;
+        if (passenger != null) {
+          final notificationRepo = ref.read(notificationRepositoryProvider);
+          final origin = ride.origin.city ?? ride.origin.address;
+          final dest = ride.destination.city ?? ride.destination.address;
+          await notificationRepo.sendRideBookingRequest(
+            toUserId: ride.driverId,
+            fromUserId: passengerId,
+            fromUserName: passenger.displayName ?? 'Passenger',
+            fromUserPhoto: passenger.photoUrl,
+            rideId: ride.id,
+            rideName: '$origin → $dest',
+          );
+        }
+      } catch (_) {
+        // Notification failure is non-fatal
+      }
+
       return true;
     } catch (e) {
       state = state.copyWith(actionError: e.toString());

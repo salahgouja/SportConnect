@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/core/utils/validators.dart';
 import 'package:sport_connect/core/widgets/glass_panel.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
-import 'package:sport_connect/core/widgets/premium_text_field.dart';
 import 'package:sport_connect/features/auth/models/auth_exception.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/auth/views/reauth_dialog.dart';
@@ -26,30 +26,23 @@ class ChangePasswordScreen extends ConsumerStatefulWidget {
 }
 
 class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _newPasswordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
+  final _formKey = GlobalKey<FormBuilderState>();
   bool _obscureNew = true;
   bool _obscureConfirm = true;
   bool _isLoading = false;
   bool _isSuccess = false;
 
-  @override
-  void dispose() {
-    _newPasswordController.dispose();
-    _confirmPasswordController.dispose();
-    super.dispose();
-  }
-
   Future<void> _changePassword() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.saveAndValidate()) return;
 
     setState(() => _isLoading = true);
 
     try {
       await ref
           .read(authActionsViewModelProvider)
-          .updatePassword(_newPasswordController.text);
+          .updatePassword(
+            _formKey.currentState!.value['new_password'] as String,
+          );
 
       if (mounted) {
         setState(() {
@@ -122,7 +115,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
   }
 
   Widget _buildFormState(AppLocalizations l10n) {
-    return Form(
+    return FormBuilder(
       key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -170,50 +163,61 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
 
           SizedBox(height: 36.h),
 
-          PremiumTextField(
-            controller: _newPasswordController,
-            label: l10n.changePasswordNew,
-            hint: l10n.changePasswordNewHint,
-            prefixIcon: Icons.lock_outline_rounded,
-            obscureText: _obscureNew,
-            validator: Validators.password,
-            suffix: IconButton(
-              tooltip: _obscureNew
-                  ? l10n.tooltipShowPassword
-                  : l10n.tooltipHidePassword,
-              icon: Icon(
-                _obscureNew
-                    ? Icons.visibility_outlined
-                    : Icons.visibility_off_outlined,
-                color: AppColors.textTertiary,
+          FormBuilderTextField(
+            name: 'new_password',
+            decoration: InputDecoration(
+              labelText: l10n.changePasswordNew,
+              hintText: l10n.changePasswordNewHint,
+              prefixIcon: const Icon(Icons.lock_outline_rounded),
+              suffixIcon: IconButton(
+                tooltip: _obscureNew
+                    ? l10n.tooltipShowPassword
+                    : l10n.tooltipHidePassword,
+                icon: Icon(
+                  _obscureNew
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                  color: AppColors.textTertiary,
+                ),
+                onPressed: () => setState(() => _obscureNew = !_obscureNew),
               ),
-              onPressed: () => setState(() => _obscureNew = !_obscureNew),
             ),
+            obscureText: _obscureNew,
+            validator: FormBuilderValidators.compose([
+              FormBuilderValidators.required(),
+              FormBuilderValidators.minLength(8),
+            ]),
           ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1),
 
           SizedBox(height: 20.h),
 
-          PremiumTextField(
-            controller: _confirmPasswordController,
-            label: l10n.changePasswordConfirm,
-            hint: l10n.changePasswordConfirmHint,
-            prefixIcon: Icons.lock_outline_rounded,
+          FormBuilderTextField(
+            name: 'confirm_password',
+            decoration: InputDecoration(
+              labelText: l10n.changePasswordConfirm,
+              hintText: l10n.changePasswordConfirmHint,
+              prefixIcon: const Icon(Icons.lock_outline_rounded),
+              suffixIcon: IconButton(
+                tooltip: _obscureConfirm
+                    ? l10n.tooltipShowPassword
+                    : l10n.tooltipHidePassword,
+                icon: Icon(
+                  _obscureConfirm
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                  color: AppColors.textTertiary,
+                ),
+                onPressed: () =>
+                    setState(() => _obscureConfirm = !_obscureConfirm),
+              ),
+            ),
             obscureText: _obscureConfirm,
             validator: (value) =>
-                Validators.confirmPassword(value, _newPasswordController.text),
-            suffix: IconButton(
-              tooltip: _obscureConfirm
-                  ? l10n.tooltipShowPassword
-                  : l10n.tooltipHidePassword,
-              icon: Icon(
-                _obscureConfirm
-                    ? Icons.visibility_outlined
-                    : Icons.visibility_off_outlined,
-                color: AppColors.textTertiary,
-              ),
-              onPressed: () =>
-                  setState(() => _obscureConfirm = !_obscureConfirm),
-            ),
+                value !=
+                    (_formKey.currentState?.fields['new_password']?.value
+                        as String?)
+                ? 'Passwords do not match'
+                : null,
           ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1),
 
           SizedBox(height: 32.h),

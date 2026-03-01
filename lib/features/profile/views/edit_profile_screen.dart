@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,7 +10,6 @@ import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
-import 'package:sport_connect/core/widgets/premium_text_field.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
@@ -24,15 +25,7 @@ class EditProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
-  final _formKey = GlobalKey<FormState>();
-
-  // Controllers
-  final _nameController = TextEditingController();
-  final _emailController = TextEditingController(); // Often read-only
-  final _phoneController = TextEditingController();
-  final _bioController = TextEditingController();
-  final _locationController = TextEditingController(); // Maps to city
-  final _countryController = TextEditingController();
+  final _formKey = GlobalKey<FormBuilderState>();
 
   // State
   String _selectedGender = 'Male';
@@ -69,16 +62,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   @override
   void initState() {
     super.initState();
-    // Listeners to track changes (no provider reads here).
-    _nameController.addListener(_onFieldChanged);
-    _phoneController.addListener(_onFieldChanged);
-    _bioController.addListener(_onFieldChanged);
-    _locationController.addListener(_onFieldChanged);
-    _countryController.addListener(_onFieldChanged);
-  }
-
-  void _onFieldChanged() {
-    if (!_hasChanges) setState(() => _hasChanges = true);
   }
 
   Future<void> _pickImageFromGallery() async {
@@ -248,8 +231,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.w),
-                child: Form(
+                child: FormBuilder(
                   key: _formKey,
+                  onChanged: () {
+                    if (!_hasChanges) setState(() => _hasChanges = true);
+                  },
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -258,28 +244,37 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       ),
                       _buildContainer(
                         children: [
-                          PremiumTextField(
-                            controller: _nameController,
-                            label: 'Full Name',
-                            prefixIcon: Icons.person_outline_rounded,
-                            validator: (v) =>
-                                (v?.isEmpty ?? true) ? 'Required' : null,
+                          FormBuilderTextField(
+                            name: 'name',
+                            decoration: InputDecoration(
+                              labelText: 'Full Name',
+                              prefixIcon: const Icon(
+                                Icons.person_outline_rounded,
+                              ),
+                            ),
+                            validator: FormBuilderValidators.required(
+                              errorText: 'Required',
+                            ),
                           ),
                           SizedBox(height: 16.h),
-                          PremiumTextField(
-                            controller: _emailController,
-                            label: 'Email',
-                            prefixIcon: Icons.email_outlined,
-                            readOnly:
-                                true, // Typically email is managed separately
+                          FormBuilderTextField(
+                            name: 'email',
+                            decoration: InputDecoration(
+                              labelText: 'Email',
+                              prefixIcon: const Icon(Icons.email_outlined),
+                              filled: true,
+                              fillColor: AppColors.background,
+                            ),
+                            readOnly: true,
                             enabled: false,
-                            fillColor: AppColors.background,
                           ),
                           SizedBox(height: 16.h),
-                          PremiumTextField(
-                            controller: _phoneController,
-                            label: 'Phone Number',
-                            prefixIcon: Icons.phone_outlined,
+                          FormBuilderTextField(
+                            name: 'phone',
+                            decoration: InputDecoration(
+                              labelText: 'Phone Number',
+                              prefixIcon: const Icon(Icons.phone_outlined),
+                            ),
                             keyboardType: TextInputType.phone,
                           ),
                         ],
@@ -311,24 +306,30 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       _buildSectionLabel(AppLocalizations.of(context).aboutYou),
                       _buildContainer(
                         children: [
-                          PremiumTextField(
-                            controller: _bioController,
-                            label: 'Bio',
-                            prefixIcon: Icons.edit_note_rounded,
+                          FormBuilderTextField(
+                            name: 'bio',
+                            decoration: const InputDecoration(
+                              labelText: 'Bio',
+                              prefixIcon: Icon(Icons.edit_note_rounded),
+                            ),
                             maxLines: 3,
                             maxLength: 150,
                           ),
                           SizedBox(height: 16.h),
-                          PremiumTextField(
-                            controller: _locationController,
-                            label: 'City',
-                            prefixIcon: Icons.location_city_rounded,
+                          FormBuilderTextField(
+                            name: 'city',
+                            decoration: const InputDecoration(
+                              labelText: 'City',
+                              prefixIcon: Icon(Icons.location_city_rounded),
+                            ),
                           ),
                           SizedBox(height: 16.h),
-                          PremiumTextField(
-                            controller: _countryController,
-                            label: 'Country',
-                            prefixIcon: Icons.public_rounded,
+                          FormBuilderTextField(
+                            name: 'country',
+                            decoration: const InputDecoration(
+                              labelText: 'Country',
+                              prefixIcon: Icon(Icons.public_rounded),
+                            ),
                           ),
                         ],
                       ),
@@ -469,7 +470,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       );
     }
     return PremiumAvatar(
-      name: _nameController.text,
+      name:
+          (_formKey.currentState?.value['name'] as String? ??
+          _currentUser?.displayName ??
+          ''),
       size: 110,
       hasBorder: false,
       borderColor: Colors.transparent,
@@ -573,22 +577,27 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   void _populateFromUser(UserModel user) {
     setState(() {
-      _nameController.text = user.displayName;
-      _emailController.text = user.email;
-      _phoneController.text = user.phoneNumber ?? '';
-      _bioController.text = user.bio ?? '';
-      _locationController.text = user.city ?? '';
-      _countryController.text = user.country ?? '';
-
       _selectedGender = user.gender ?? 'Male';
       _dateOfBirth = user.dateOfBirth ?? DateTime(1990);
       _interests.clear();
       _interests.addAll(user.interests);
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _formKey.currentState?.patchValue({
+        'name': user.displayName,
+        'email': user.email,
+        'phone': user.phoneNumber ?? '',
+        'bio': user.bio ?? '',
+        'city': user.city ?? '',
+        'country': user.country ?? '',
+      });
+    });
   }
 
   Future<void> _saveProfile() async {
-    if (!_formKey.currentState!.validate() || _currentUser == null) return;
+    if (!_formKey.currentState!.saveAndValidate() || _currentUser == null)
+      return;
     setState(() => _isLoading = true);
 
     try {
@@ -611,25 +620,27 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         finalPhotoUrl = _currentUser!.photoUrl;
       }
 
+      final formValues = _formKey.currentState!.value;
+
       // 1. Create updated model using 'map' to preserve subclass type
       final updatedUser = _currentUser!.map(
         rider: (rider) => rider.copyWith(
-          displayName: _nameController.text,
-          phoneNumber: _phoneController.text,
-          bio: _bioController.text,
-          city: _locationController.text,
-          country: _countryController.text,
+          displayName: formValues['name'] as String? ?? '',
+          phoneNumber: formValues['phone'] as String? ?? '',
+          bio: formValues['bio'] as String? ?? '',
+          city: formValues['city'] as String? ?? '',
+          country: formValues['country'] as String? ?? '',
           gender: _selectedGender,
           dateOfBirth: _dateOfBirth,
           interests: _interests,
           photoUrl: finalPhotoUrl,
         ),
         driver: (driver) => driver.copyWith(
-          displayName: _nameController.text,
-          phoneNumber: _phoneController.text,
-          bio: _bioController.text,
-          city: _locationController.text,
-          country: _countryController.text,
+          displayName: formValues['name'] as String? ?? '',
+          phoneNumber: formValues['phone'] as String? ?? '',
+          bio: formValues['bio'] as String? ?? '',
+          city: formValues['city'] as String? ?? '',
+          country: formValues['country'] as String? ?? '',
           gender: _selectedGender,
           dateOfBirth: _dateOfBirth,
           interests: _interests,

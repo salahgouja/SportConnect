@@ -227,6 +227,33 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
       // Stop typing indicator
       await setTyping(false, senderName);
 
+      // Write an in-app notification for every other chat participant.
+      // Fire-and-forget: a notification failure must never break messaging.
+      try {
+        final chat = await ref.read(chatRepositoryProvider).getChatById(chatId);
+        if (chat != null) {
+          final notificationRepo = ref.read(notificationRepositoryProvider);
+          final preview = type == MessageType.text
+              ? (content.length > 60
+                  ? '${content.substring(0, 60)}…'
+                  : content)
+              : '[${type.name}]';
+          for (final participantId in chat.participantIds) {
+            if (participantId == currentUserId) continue;
+            await notificationRepo.sendNewMessageNotification(
+              toUserId: participantId,
+              fromUserId: currentUserId,
+              fromUserName: senderName,
+              fromUserPhoto: senderPhotoUrl,
+              chatId: chatId,
+              messagePreview: preview,
+            );
+          }
+        }
+      } catch (_) {
+        // Notification failure is non-fatal
+      }
+
       return true;
     } catch (e) {
       state = state.copyWith(isSending: false, error: e.toString());

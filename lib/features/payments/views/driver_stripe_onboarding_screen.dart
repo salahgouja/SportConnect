@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
@@ -311,9 +312,9 @@ class _DriverStripeOnboardingScreenState
     try {
       final status = await ref.read(driverStripeStatusProvider.future);
       if (status.isConnected) {
-        // Already connected - return to previous screen
+        // Already connected - go directly to driver home
         if (mounted) {
-          context.pop(true);
+          context.go(AppRoutes.driverHome.path);
         }
       }
     } catch (e) {
@@ -456,9 +457,13 @@ class _DriverStripeOnboardingScreenState
               if (urlStr.contains('stripe-refresh')) {
                 // User clicked "Refresh" - reload the page
                 await controller.reload();
-              } else if (urlStr.contains('stripe-return')) {
-                // User completed onboarding - verify and close (guard against double-fire)
+              } else if (urlStr.contains('stripe-return') &&
+                  !_completionHandled) {
+                // Fallback: page loaded before shouldOverrideUrlLoading fired
                 _completionHandled = true;
+                setState(() {
+                  _showWebView = false;
+                });
                 await _handleOnboardingComplete();
               }
             },
@@ -475,25 +480,42 @@ class _DriverStripeOnboardingScreenState
             shouldOverrideUrlLoading: (controller, navigationAction) async {
               final url = navigationAction.request.url?.toString() ?? '';
 
-              // Allow Stripe and related verification/onboarding domains
+              // 1. Stripe return URL — user finished the form and Stripe
+              //    is redirecting back to our hosted page.
+              //    Intercept here so we don't need the page to actually load.
+              if (url.contains('stripe-return') && !_completionHandled) {
+                _completionHandled = true;
+                setState(() {
+                  _showWebView = false;
+                });
+                await _handleOnboardingComplete();
+                return NavigationActionPolicy.CANCEL;
+              }
+
+              // 2. Custom deep-link fired by stripe-return.html's JS redirect
+              //    (fallback path if the page somehow loads before we intercept)
+              if (url.startsWith('sportconnect://') && !_completionHandled) {
+                _completionHandled = true;
+                setState(() {
+                  _showWebView = false;
+                });
+                await _handleOnboardingComplete();
+                return NavigationActionPolicy.CANCEL;
+              }
+
+              // 3. Allow Stripe-owned and our own domains so the onboarding
+              //    flow can navigate freely (identity checks, uploads, refresh)
               if (url.contains('stripe.com') ||
-                  url.contains('stripe-refresh') ||
-                  url.contains('stripe-return') ||
                   url.contains('connect.stripe.com') ||
                   url.contains('verify.stripe.com') ||
                   url.contains('uploads.stripe.com') ||
                   url.contains('hooks.stripe.com') ||
                   url.contains('marathon-connect.web.app') ||
-                  url.startsWith('sportconnect://')) {
-                // Deep link back to app — handle completion then cancel the navigation
-                if (url.startsWith('sportconnect://') && !_completionHandled) {
-                  _completionHandled = true;
-                  await _handleOnboardingComplete();
-                }
-                return NavigationActionPolicy.CANCEL;
+                  url.contains('stripe-refresh')) {
+                return NavigationActionPolicy.ALLOW;
               }
 
-              // Block external navigation
+              // 4. Block everything else (external links inside the WebView)
               return NavigationActionPolicy.CANCEL;
             },
           ),
@@ -541,9 +563,8 @@ class _DriverStripeOnboardingScreenState
       final status = await ref.read(driverStripeStatusProvider.future);
 
       if (status.isConnected) {
-        // Success!
+        // Success! Show snackbar then navigate definitively to driver home.
         if (mounted) {
-          context.pop(true);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
@@ -558,6 +579,7 @@ class _DriverStripeOnboardingScreenState
               ),
             ),
           );
+          context.go(AppRoutes.driverHome.path);
         }
       } else if (!status.isConnected) {
         // Incomplete - show message but don't close

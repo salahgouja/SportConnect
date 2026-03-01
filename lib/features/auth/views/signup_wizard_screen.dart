@@ -10,7 +10,8 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/utils/validators.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -81,18 +82,12 @@ class SignupWizardScreen extends ConsumerStatefulWidget {
 class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
   // ── Controllers & State ──
   int _currentStep = 0;
-  final List<GlobalKey<FormState>> _formKeys = List.generate(
+  final List<GlobalKey<FormBuilderState>> _formKeys = List.generate(
     4,
-    (_) => GlobalKey<FormState>(),
+    (_) => GlobalKey<FormBuilderState>(),
   );
 
-  final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmPwController = TextEditingController();
-  final _bioController = TextEditingController();
-  final _phoneController = TextEditingController();
-
+  String _passwordText = '';
   bool _obscurePw = true;
   bool _obscureConfirmPw = true;
   bool _agreedToTerms = false;
@@ -108,12 +103,6 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPwController.dispose();
-    _bioController.dispose();
-    _phoneController.dispose();
     super.dispose();
   }
 
@@ -121,7 +110,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
   void _goToStep(int target) async {
     // Validate current step
     if (_formKeys[_currentStep].currentState != null) {
-      if (!_formKeys[_currentStep].currentState!.validate()) return;
+      if (!_formKeys[_currentStep].currentState!.saveAndValidate()) return;
     }
     if (_currentStep == 0 && _dateOfBirth == null) {
       _showError(AppLocalizations.of(context).authDobError);
@@ -173,19 +162,22 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
 
   Future<void> _handleSignup() async {
     try {
+      final step0Values = _formKeys[0].currentState!.value;
+      final step1Values = _formKeys[1].currentState!.value;
+      final step3Values = _formKeys[3].currentState?.value ?? {};
       await ref
           .read(registerViewModelProvider.notifier)
           .register(
-            email: _emailController.text.trim(),
-            password: _passwordController.text,
-            displayName: _nameController.text.trim(),
+            email: (step0Values['email'] as String).trim(),
+            password: step1Values['password'] as String,
+            displayName: (step0Values['name'] as String).trim(),
             role: _selectedRole,
-            phone: _phoneController.text.trim().isEmpty
+            phone: (step0Values['phone'] as String? ?? '').trim().isEmpty
                 ? null
-                : _phoneController.text.trim(),
-            bio: _bioController.text.trim().isEmpty
+                : (step0Values['phone'] as String).trim(),
+            bio: (step3Values['bio'] as String? ?? '').trim().isEmpty
                 ? null
-                : _bioController.text.trim(),
+                : (step3Values['bio'] as String).trim(),
             interests: _selectedInterests,
             profileImage: _profileImage,
           );
@@ -408,7 +400,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
   // ── Step 1: Basic Info ──────────────────────────────────────────────────────
   Widget _buildStep1(_StepTheme theme) {
     final l10n = AppLocalizations.of(context);
-    return Form(
+    return FormBuilder(
       key: _formKeys[0],
       child: Column(
         key: const ValueKey('step1'),
@@ -459,27 +451,30 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
           ),
           SizedBox(height: 24.h),
           _StyledField(
-            controller: _nameController,
+            name: 'name',
             label: l10n.authFullName,
             hint: l10n.authFullNameHint,
             icon: Icons.person_outline_rounded,
-            validator: Validators.name,
+            validator: FormBuilderValidators.compose([
+              FormBuilderValidators.required(),
+              FormBuilderValidators.minLength(2),
+            ]),
             theme: theme,
             capitalization: TextCapitalization.words,
           ),
           SizedBox(height: 14.h),
           _StyledField(
-            controller: _emailController,
+            name: 'email',
             label: l10n.authEmailAddress,
             hint: l10n.authEmailHint,
             icon: Icons.alternate_email_rounded,
             keyboardType: TextInputType.emailAddress,
-            validator: Validators.email,
+            validator: FormBuilderValidators.email(),
             theme: theme,
           ),
           SizedBox(height: 14.h),
           _StyledField(
-            controller: _phoneController,
+            name: 'phone',
             label: l10n.authPhoneOptional,
             hint: l10n.authPhoneHint,
             icon: Icons.phone_outlined,
@@ -516,7 +511,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
   // ── Step 2: Password ────────────────────────────────────────────────────────
   Widget _buildStep2(_StepTheme theme) {
     final l10n = AppLocalizations.of(context);
-    return Form(
+    return FormBuilder(
       key: _formKeys[1],
       child: Column(
         key: const ValueKey('step2'),
@@ -528,12 +523,16 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
           ),
           SizedBox(height: 28.h),
           _StyledField(
-            controller: _passwordController,
+            name: 'password',
             label: l10n.authCreatePassword,
             hint: l10n.authPasswordHint,
             icon: Icons.lock_outline_rounded,
             obscure: _obscurePw,
-            validator: Validators.password,
+            onChanged: (v) => setState(() => _passwordText = v ?? ''),
+            validator: FormBuilderValidators.compose([
+              FormBuilderValidators.required(),
+              FormBuilderValidators.minLength(8),
+            ]),
             theme: theme,
             suffix: IconButton(
               icon: Icon(
@@ -547,13 +546,17 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
           ),
           SizedBox(height: 14.h),
           _StyledField(
-            controller: _confirmPwController,
+            name: 'confirm_password',
             label: l10n.authConfirmPassword,
             hint: l10n.authConfirmPasswordHint,
             icon: Icons.lock_outline_rounded,
             obscure: _obscureConfirmPw,
             validator: (v) =>
-                Validators.confirmPassword(v, _passwordController.text),
+                v !=
+                    (_formKeys[1].currentState?.fields['password']?.value
+                        as String?)
+                ? 'Passwords do not match'
+                : null,
             theme: theme,
             suffix: IconButton(
               icon: Icon(
@@ -567,10 +570,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             ),
           ),
           SizedBox(height: 20.h),
-          _PasswordStrengthBar(
-            controller: _passwordController,
-            accent: theme.accent,
-          ),
+          _PasswordStrengthBar(password: _passwordText, accent: theme.accent),
           SizedBox(height: 28.h),
           _TermsCard(
             agreed: _agreedToTerms,
@@ -591,7 +591,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
   // ── Step 3: Role & Interests ────────────────────────────────────────────────
   Widget _buildStep3(_StepTheme theme) {
     final l10n = AppLocalizations.of(context);
-    return Form(
+    return FormBuilder(
       key: _formKeys[2],
       child: Column(
         key: const ValueKey('step3'),
@@ -678,7 +678,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
   // ── Step 4: Profile & Tree ──────────────────────────────────────────────────
   Widget _buildStep4(_StepTheme theme) {
     final l10n = AppLocalizations.of(context);
-    return Form(
+    return FormBuilder(
       key: _formKeys[3],
       child: Column(
         key: const ValueKey('step4'),
@@ -752,7 +752,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
           ),
           SizedBox(height: 24.h),
           _StyledField(
-            controller: _bioController,
+            name: 'bio',
             label: l10n.authAboutYou,
             hint: l10n.authAboutYouHint,
             icon: Icons.edit_note_rounded,
@@ -781,7 +781,10 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                 ),
                 SizedBox(height: 8.h),
                 Text(
-                  l10n.emailValue(_emailController.text),
+                  l10n.emailValue(
+                    (_formKeys[0].currentState?.value['email'] as String? ??
+                        ''),
+                  ),
                   style: TextStyle(fontSize: 13.sp, color: theme.text),
                 ),
                 Text(
@@ -905,7 +908,8 @@ class _SecurityBadge extends StatelessWidget {
 }
 
 class _StyledField extends StatelessWidget {
-  final TextEditingController controller;
+  final String name;
+  final String? initialValue;
   final String label, hint;
   final IconData icon;
   final bool obscure;
@@ -915,29 +919,34 @@ class _StyledField extends StatelessWidget {
   final Widget? suffix;
   final _StepTheme theme;
   final TextCapitalization capitalization;
+  final ValueChanged<String?>? onChanged;
 
   const _StyledField({
-    required this.controller,
+    required this.name,
     required this.label,
     required this.hint,
     required this.icon,
     required this.theme,
+    this.initialValue,
     this.obscure = false,
     this.maxLines = 1,
     this.keyboardType,
     this.validator,
     this.suffix,
     this.capitalization = TextCapitalization.none,
+    this.onChanged,
   });
 
   @override
-  Widget build(BuildContext context) => TextFormField(
-    controller: controller,
+  Widget build(BuildContext context) => FormBuilderTextField(
+    name: name,
+    initialValue: initialValue,
     obscureText: obscure,
     maxLines: maxLines,
     keyboardType: keyboardType,
     validator: validator,
     textCapitalization: capitalization,
+    onChanged: onChanged,
     style: TextStyle(fontSize: 15.sp, color: theme.text),
     decoration: InputDecoration(
       labelText: label,
@@ -1427,69 +1436,57 @@ class _GoogleButton extends StatelessWidget {
 }
 
 class _PasswordStrengthBar extends StatelessWidget {
-  final TextEditingController controller;
+  final String password;
   final Color accent;
-  const _PasswordStrengthBar({required this.controller, required this.accent});
+  const _PasswordStrengthBar({required this.password, required this.accent});
 
   @override
-  Widget build(BuildContext context) =>
-      ValueListenableBuilder<TextEditingValue>(
-        valueListenable: controller,
-        builder: (_, val, __) {
-          final pw = val.text;
-          int s = 0;
-          if (pw.length >= 8) s++;
-          if (pw.contains(RegExp(r'[A-Z]'))) s++;
-          if (pw.contains(RegExp(r'[0-9]'))) s++;
-          if (pw.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) s++;
-          final colors = [
-            Colors.red,
-            Colors.orange,
-            Colors.lightBlue,
-            Colors.green,
-          ];
-          final labels = ['Weak', 'Fair', 'Good', 'Strong'];
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                AppLocalizations.of(context).passwordStrength,
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  color: accent.withOpacity(0.7),
+  Widget build(BuildContext context) {
+    final pw = password;
+    int s = 0;
+    if (pw.length >= 8) s++;
+    if (pw.contains(RegExp(r'[A-Z]'))) s++;
+    if (pw.contains(RegExp(r'[0-9]'))) s++;
+    if (pw.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) s++;
+    final colors = [Colors.red, Colors.orange, Colors.lightBlue, Colors.green];
+    final labels = ['Weak', 'Fair', 'Good', 'Strong'];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          AppLocalizations.of(context).passwordStrength,
+          style: TextStyle(fontSize: 12.sp, color: accent.withOpacity(0.7)),
+        ),
+        SizedBox(height: 6.h),
+        Row(
+          children: List.generate(
+            4,
+            (i) => Expanded(
+              child: Container(
+                height: 5.h,
+                margin: EdgeInsets.only(right: i < 3 ? 4.w : 0),
+                decoration: BoxDecoration(
+                  color: i < s ? colors[s - 1] : accent.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(3.r),
                 ),
               ),
-              SizedBox(height: 6.h),
-              Row(
-                children: List.generate(
-                  4,
-                  (i) => Expanded(
-                    child: Container(
-                      height: 5.h,
-                      margin: EdgeInsets.only(right: i < 3 ? 4.w : 0),
-                      decoration: BoxDecoration(
-                        color: i < s ? colors[s - 1] : accent.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(3.r),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              if (pw.isNotEmpty) ...[
-                SizedBox(height: 4.h),
-                Text(
-                  labels[s > 0 ? s - 1 : 0],
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w600,
-                    color: s > 0 ? colors[s - 1] : Colors.red,
-                  ),
-                ),
-              ],
-            ],
-          );
-        },
-      );
+            ),
+          ),
+        ),
+        if (pw.isNotEmpty) ...[
+          SizedBox(height: 4.h),
+          Text(
+            labels[s > 0 ? s - 1 : 0],
+            style: TextStyle(
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w600,
+              color: s > 0 ? colors[s - 1] : Colors.red,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
 }
 
 class _TermsCard extends StatelessWidget {

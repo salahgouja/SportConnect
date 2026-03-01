@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
@@ -23,8 +25,7 @@ class DisputeScreen extends ConsumerStatefulWidget {
 }
 
 class _DisputeScreenState extends ConsumerState<DisputeScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _descriptionController = TextEditingController();
+  final _formKey = GlobalKey<FormBuilderState>();
   final _imagePicker = ImagePicker();
   final List<File> _attachedFiles = [];
   String? _selectedDisputeType;
@@ -77,7 +78,6 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
 
   @override
   void dispose() {
-    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -163,7 +163,7 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
   }
 
   Future<void> _submitDispute() async {
-    if (!_formKey.currentState!.validate() || _selectedDisputeType == null) {
+    if (!_formKey.currentState!.saveAndValidate() || _selectedDisputeType == null) {
       if (_selectedDisputeType == null) {
         setState(() => _showTypeError = true);
       }
@@ -186,7 +186,7 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
             userId: user.uid,
             userEmail: user.email,
             disputeType: _selectedDisputeType!,
-            description: _descriptionController.text.trim(),
+            description: (_formKey.currentState!.value['description'] as String).trim(),
             rideSummary: widget.rideSummary,
             attachments: _attachedFiles,
           );
@@ -308,7 +308,7 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
   }
 
   Widget _buildFormView() {
-    return Form(
+    return FormBuilder(
       key: _formKey,
       child: ListView(
         padding: EdgeInsets.symmetric(horizontal: 24.w),
@@ -489,8 +489,8 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
             ),
           ),
           SizedBox(height: 8.h),
-          TextFormField(
-            controller: _descriptionController,
+          FormBuilderTextField(
+            name: 'description',
             maxLines: 5,
             maxLength: 1000,
             decoration: InputDecoration(
@@ -516,15 +516,15 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
               ),
               contentPadding: EdgeInsets.all(14.w),
             ),
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return 'Please describe your issue';
-              }
-              if (value.trim().length < 20) {
-                return 'Please provide more detail (at least 20 characters)';
-              }
-              return null;
-            },
+            validator: FormBuilderValidators.compose([
+              FormBuilderValidators.required(
+                errorText: 'Please describe your issue',
+              ),
+              FormBuilderValidators.minLength(
+                20,
+                errorText: 'Please provide more detail (at least 20 characters)',
+              ),
+            ]),
           ),
 
           SizedBox(height: 12.h),

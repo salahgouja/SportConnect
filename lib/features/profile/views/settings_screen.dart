@@ -1248,7 +1248,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   void _showDeleteAccountDialog() {
-    final TextEditingController confirmController = TextEditingController();
+    String confirmText = '';
 
     showDialog(
       context: context,
@@ -1306,7 +1306,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               SizedBox(height: 8.h),
               TextField(
-                controller: confirmController,
                 decoration: InputDecoration(
                   hintText: 'DELETE',
                   border: OutlineInputBorder(
@@ -1317,7 +1316,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     vertical: 12.h,
                   ),
                 ),
-                onChanged: (_) => setDialogState(() {}),
+                onChanged: (v) => setDialogState(() => confirmText = v),
               ),
             ],
           ),
@@ -1327,7 +1326,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               child: Text(AppLocalizations.of(context).actionCancel),
             ),
             ElevatedButton(
-              onPressed: confirmController.text == 'DELETE'
+              onPressed: confirmText == 'DELETE'
                   ? () async {
                       dialogContext.pop();
 

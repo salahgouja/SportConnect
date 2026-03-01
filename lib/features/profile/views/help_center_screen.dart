@@ -21,7 +21,7 @@ class HelpCenterScreen extends ConsumerStatefulWidget {
 }
 
 class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
-  final _searchController = TextEditingController();
+  int _searchFieldKey = 0;
   String _searchQuery = '';
 
   static const _faqCategories = [
@@ -149,7 +149,6 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
 
   @override
   void dispose() {
-    _searchController.dispose();
     super.dispose();
   }
 
@@ -254,7 +253,7 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
 
   Widget _buildSearchBar() {
     return TextField(
-      controller: _searchController,
+      key: ValueKey(_searchFieldKey),
       onChanged: (value) => setState(() => _searchQuery = value),
       decoration: InputDecoration(
         hintText: 'Search help articles...',
@@ -265,8 +264,10 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
                 tooltip: 'Clear search',
                 icon: const Icon(Icons.clear_rounded),
                 onPressed: () {
-                  _searchController.clear();
-                  setState(() => _searchQuery = '');
+                  setState(() {
+                    _searchFieldKey++;
+                    _searchQuery = '';
+                  });
                 },
               )
             : null,

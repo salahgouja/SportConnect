@@ -126,7 +126,9 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
           AnimatedOpacity(
             opacity: _showResults ? 0 : 1,
             duration: 200.ms,
-            child: _showResults ? const SizedBox.shrink() : _buildSearchForm(),
+            child: _showResults
+                ? const SizedBox.shrink()
+                : _buildSearchFormBuilder(),
           ),
 
           // ── Phase 2: Results panel slides up ────────────────
@@ -149,7 +151,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
   // PHASE 1 — SEARCH FORM
   // All fits on one screen without scrolling on any normal phone
   // ════════════════════════════════════════════════════════════
-  Widget _buildSearchForm() {
+  Widget _buildSearchFormBuilder() {
     return SingleChildScrollView(
       // 👈 Replaced Padding with SingleChildScrollView
       padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 100.h),

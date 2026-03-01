@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
-import 'package:sport_connect/core/widgets/premium_text_field.dart';
 import 'package:sport_connect/features/auth/models/auth_exception.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -33,20 +34,13 @@ class _ReauthBottomSheet extends StatefulWidget {
 }
 
 class _ReauthBottomSheetState extends State<_ReauthBottomSheet> {
-  final _passwordController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormBuilderState>();
   bool _isLoading = false;
   bool _obscure = true;
   String? _errorText;
 
-  @override
-  void dispose() {
-    _passwordController.dispose();
-    super.dispose();
-  }
-
   Future<void> _reauthWithPassword() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!(_formKey.currentState?.saveAndValidate() ?? false)) return;
 
     setState(() {
       _isLoading = true;
@@ -56,7 +50,9 @@ class _ReauthBottomSheetState extends State<_ReauthBottomSheet> {
     try {
       await widget.ref
           .read(authActionsViewModelProvider)
-          .reauthenticateWithPassword(_passwordController.text);
+          .reauthenticateWithPassword(
+            (_formKey.currentState!.value['password'] as String),
+          );
 
       if (mounted) {
         Navigator.of(context).pop(true);
@@ -116,7 +112,7 @@ class _ReauthBottomSheetState extends State<_ReauthBottomSheet> {
           ),
         ),
         padding: EdgeInsets.all(24.w),
-        child: Form(
+        child: FormBuilder(
           key: _formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -175,27 +171,26 @@ class _ReauthBottomSheetState extends State<_ReauthBottomSheet> {
               SizedBox(height: 24.h),
 
               // Password field
-              PremiumTextField(
-                controller: _passwordController,
-                label: l10n.reauthPassword,
-                hint: l10n.reauthPasswordHint,
-                prefixIcon: Icons.lock_outline_rounded,
-                obscureText: _obscure,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return l10n.reauthPasswordRequired;
-                  }
-                  return null;
-                },
-                suffix: IconButton(
-                  tooltip: _obscure ? 'Show password' : 'Hide password',
-                  icon: Icon(
-                    _obscure
-                        ? Icons.visibility_outlined
-                        : Icons.visibility_off_outlined,
-                    color: AppColors.textTertiary,
+              FormBuilderTextField(
+                name: 'password',
+                decoration: InputDecoration(
+                  labelText: l10n.reauthPassword,
+                  hintText: l10n.reauthPasswordHint,
+                  prefixIcon: const Icon(Icons.lock_outline_rounded),
+                  suffixIcon: IconButton(
+                    tooltip: _obscure ? 'Show password' : 'Hide password',
+                    icon: Icon(
+                      _obscure
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                      color: AppColors.textTertiary,
+                    ),
+                    onPressed: () => setState(() => _obscure = !_obscure),
                   ),
-                  onPressed: () => setState(() => _obscure = !_obscure),
+                ),
+                obscureText: _obscure,
+                validator: FormBuilderValidators.required(
+                  errorText: l10n.reauthPasswordRequired,
                 ),
               ),
 

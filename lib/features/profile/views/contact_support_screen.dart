@@ -10,7 +10,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
-import 'package:sport_connect/core/widgets/premium_text_field.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -30,9 +31,7 @@ class ContactSupportScreen extends ConsumerStatefulWidget {
 }
 
 class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
-  final _subjectController = TextEditingController();
-  final _messageController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormBuilderState>();
   final _imagePicker = ImagePicker();
   final List<File> _attachedFiles = [];
   String _selectedCategory = 'General';
@@ -52,13 +51,6 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
     'Feature Request',
     'Other',
   ];
-
-  @override
-  void dispose() {
-    _subjectController.dispose();
-    _messageController.dispose();
-    super.dispose();
-  }
 
   Future<void> _pickFiles() async {
     if (_attachedFiles.length >= _maxAttachments) {
@@ -133,7 +125,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
   }
 
   Future<void> _submitTicket() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!(_formKey.currentState?.saveAndValidate() ?? false)) return;
 
     setState(() => _isSubmitting = true);
 
@@ -146,8 +138,8 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
             userEmail: user?.email ?? '',
             userName: user?.displayName ?? '',
             category: _selectedCategory,
-            subject: _subjectController.text.trim(),
-            message: _messageController.text.trim(),
+            subject: (_formKey.currentState!.value['subject'] as String).trim(),
+            message: (_formKey.currentState!.value['message'] as String).trim(),
             attachments: _attachedFiles,
           );
 
@@ -207,7 +199,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
   }
 
   Widget _buildFormState(AppLocalizations l10n) {
-    return Form(
+    return FormBuilder(
       key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -290,13 +282,16 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
           SizedBox(height: 20.h),
 
           // Subject
-          PremiumTextField(
-            controller: _subjectController,
-            label: 'Subject',
-            hint: 'Brief description of your issue',
-            prefixIcon: Icons.subject_rounded,
-            validator: (v) =>
-                (v == null || v.isEmpty) ? 'Please enter a subject' : null,
+          FormBuilderTextField(
+            name: 'subject',
+            decoration: InputDecoration(
+              labelText: 'Subject',
+              hintText: 'Brief description of your issue',
+              prefixIcon: const Icon(Icons.subject_rounded),
+            ),
+            validator: FormBuilderValidators.required(
+              errorText: 'Please enter a subject',
+            ),
           ).animate().fadeIn(delay: 200.ms),
 
           SizedBox(height: 20.h),
@@ -311,11 +306,12 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
             ),
           ),
           SizedBox(height: 8.h),
-          TextFormField(
-            controller: _messageController,
+          FormBuilderTextField(
+            name: 'message',
             maxLines: 6,
-            validator: (v) =>
-                (v == null || v.isEmpty) ? 'Please describe your issue' : null,
+            validator: FormBuilderValidators.required(
+              errorText: 'Please describe your issue',
+            ),
             decoration: InputDecoration(
               hintText: 'Describe your issue in detail...',
               hintStyle: TextStyle(

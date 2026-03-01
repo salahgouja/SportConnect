@@ -6,14 +6,14 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/core/utils/validators.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
-import 'package:sport_connect/core/widgets/premium_text_field.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
 
 /// Driver Onboarding Screen - Multi-step wizard for new drivers
 /// Step 1: Complete driver profile (name, phone, city, bio, gender, DOB, interests)
@@ -35,43 +35,22 @@ class _DriverOnboardingScreenState
   bool _isProfilePopulated = false;
 
   // ── Profile form (Step 0) ──────────────────────────────────────────
-  final _profileFormKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _cityController = TextEditingController();
-  final _bioController = TextEditingController();
+  final _profileFormKey = GlobalKey<FormBuilderState>();
 
   final List<String> _availableInterests = [
     'Football',
     'Basketball',
+    'Gym',
     'Tennis',
     'Running',
     'Cycling',
     'Swimming',
-    'Gym',
     'Yoga',
     'Hiking',
   ];
 
-  final Set<String> _selectedInterests = <String>{};
-  DateTime? _dateOfBirth;
-  String? _gender;
-  bool _agreedToTerms = false;
-
-  String? _genderError;
-  String? _dateOfBirthError;
-  String? _interestsError;
-  String? _termsError;
-
   // ── Vehicle form (Step 1) ──────────────────────────────────────────
-  final _vehicleFormKey = GlobalKey<FormState>();
-  final _makeController = TextEditingController();
-  final _modelController = TextEditingController();
-  final _yearController = TextEditingController();
-  final _colorController = TextEditingController();
-  final _licensePlateController = TextEditingController();
-  final _seatsController = TextEditingController(text: '4');
-  FuelType _selectedFuelType = FuelType.gasoline;
+  final _vehicleFormKey = GlobalKey<FormBuilderState>();
 
   final List<FuelType> _fuelTypes = [
     FuelType.gasoline,
@@ -84,18 +63,6 @@ class _DriverOnboardingScreenState
   @override
   void dispose() {
     _pageController.dispose();
-    // Profile
-    _nameController.dispose();
-    _phoneController.dispose();
-    _cityController.dispose();
-    _bioController.dispose();
-    // Vehicle
-    _makeController.dispose();
-    _modelController.dispose();
-    _yearController.dispose();
-    _colorController.dispose();
-    _licensePlateController.dispose();
-    _seatsController.dispose();
     super.dispose();
   }
 
@@ -105,7 +72,6 @@ class _DriverOnboardingScreenState
     // Validate the current step before advancing.
     if (_currentStep == 0) {
       if (!_profileFormKey.currentState!.validate()) return;
-      if (!_validateProfileNonTextFields()) return;
     } else if (_currentStep == 1) {
       if (!_vehicleFormKey.currentState!.validate()) return;
     }
@@ -132,73 +98,20 @@ class _DriverOnboardingScreenState
   // ── Profile helpers (Step 0) ───────────────────────────────────────
 
   void _populateProfileFields(UserModel user) {
-    _nameController.text = user.displayName;
-    _phoneController.text = user.phoneNumber ?? '';
-    _cityController.text = user.city ?? '';
-    _bioController.text = user.bio ?? '';
-    _gender = user.gender;
-    _dateOfBirth = user.dateOfBirth;
-    _selectedInterests
-      ..clear()
-      ..addAll(user.interests);
-  }
-
-  Future<void> _pickDateOfBirth() async {
-    final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _dateOfBirth ?? DateTime(now.year - 20),
-      firstDate: DateTime(1950),
-      lastDate: DateTime(now.year - 18, now.month, now.day),
-      helpText: AppLocalizations.of(context).authDobPicker,
-    );
-
-    if (picked != null) {
-      final age = now.difference(picked).inDays ~/ 365;
-      if (age < 18) {
-        setState(() {
-          _dateOfBirthError = AppLocalizations.of(context).authDobMinAge;
-        });
-        return;
-      }
-      setState(() {
-        _dateOfBirth = picked;
-        _dateOfBirthError = null;
-      });
-    }
-  }
-
-  bool _validateProfileNonTextFields() {
-    var isValid = true;
-    setState(() {
-      _genderError = null;
-      _dateOfBirthError = null;
-      _interestsError = null;
-      _termsError = null;
-
-      if (_gender == null) {
-        _genderError = AppLocalizations.of(context).driverGenderRequired;
-        isValid = false;
-      }
-      if (_dateOfBirth == null) {
-        _dateOfBirthError = AppLocalizations.of(context).authDobError;
-        isValid = false;
-      }
-      if (_selectedInterests.isEmpty) {
-        _interestsError = AppLocalizations.of(context).driverInterestsRequired;
-        isValid = false;
-      }
-      if (!_agreedToTerms) {
-        _termsError = AppLocalizations.of(context).driverTermsRequired;
-        isValid = false;
-      }
+    _profileFormKey.currentState?.patchValue({
+      'name': user.displayName,
+      'phone': user.phoneNumber ?? '',
+      'city': user.city ?? '',
+      'bio': user.bio ?? '',
+      'gender': user.gender,
+      'dob': user.dateOfBirth,
+      'interests': user.interests,
     });
-    return isValid;
   }
 
   Future<void> _saveProfileAndContinue() async {
-    if (!_profileFormKey.currentState!.validate()) return;
-    if (!_validateProfileNonTextFields()) return;
+    if (!_profileFormKey.currentState!.saveAndValidate()) return;
+    final values = _profileFormKey.currentState!.value;
 
     setState(() => _isLoading = true);
 
@@ -209,17 +122,18 @@ class _DriverOnboardingScreenState
       final updatedUser = currentUser.map(
         rider: (rider) => rider, // Should not reach this in driver flow
         driver: (driver) => driver.copyWith(
-          displayName: _nameController.text.trim(),
-          phoneNumber: _phoneController.text.trim().isEmpty
+          displayName: values['name'],
+          phoneNumber: (values['phone'] as String?)?.isEmpty ?? true
               ? null
-              : _phoneController.text.trim(),
-          city: _cityController.text.trim(),
-          bio: _bioController.text.trim().isEmpty
+              : values['phone'],
+          city: values['city'],
+          bio: (values['bio'] as String?)?.isEmpty ?? true
               ? null
-              : _bioController.text.trim(),
-          gender: _gender,
-          dateOfBirth: _dateOfBirth,
-          interests: _selectedInterests.toList(),
+              : values['bio'],
+          gender: values['gender'],
+          dateOfBirth: values['dob'],
+          interests: (values['interests'] as List<dynamic>? ?? [])
+              .cast<String>(),
         ),
       );
 
@@ -250,8 +164,8 @@ class _DriverOnboardingScreenState
   // ── Vehicle + Stripe helpers ───────────────────────────────────────
 
   Future<void> _saveVehicleAndContinue() async {
-    if (!_vehicleFormKey.currentState!.validate()) return;
-
+    if (!_vehicleFormKey.currentState!.saveAndValidate()) return;
+    final values = _vehicleFormKey.currentState!.value;
     setState(() => _isLoading = true);
 
     try {
@@ -266,13 +180,13 @@ class _DriverOnboardingScreenState
           ownerId: driver.uid,
           ownerName: driver.displayName,
           ownerPhotoUrl: driver.photoUrl,
-          make: _makeController.text.trim(),
-          model: _modelController.text.trim(),
-          year: int.parse(_yearController.text.trim()),
-          color: _colorController.text.trim(),
-          licensePlate: _licensePlateController.text.trim().toUpperCase(),
-          capacity: int.parse(_seatsController.text.trim()),
-          fuelType: _selectedFuelType,
+          make: values['make'] as String,
+          model: values['model'] as String,
+          year: int.parse(values['year'] as String),
+          color: values['color'] as String,
+          licensePlate: values['license_plate'] as String,
+          capacity: int.parse(values['seats'] as String),
+          fuelType: values['fuel_type'] as FuelType,
           isActive: true,
           verificationStatus: VehicleVerificationStatus.pending,
         );
@@ -335,8 +249,10 @@ class _DriverOnboardingScreenState
     final userAsync = ref.watch(currentUserProvider);
     final user = userAsync.value;
     if (!_isProfilePopulated && user != null) {
-      _populateProfileFields(user);
       _isProfilePopulated = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _populateProfileFields(user);
+      });
     }
 
     return Scaffold(
@@ -482,9 +398,9 @@ class _DriverOnboardingScreenState
 
     return SingleChildScrollView(
       padding: EdgeInsets.all(24.w),
-      child: Form(
+      child: FormBuilder(
         key: _profileFormKey,
-        autovalidateMode: AutovalidateMode.onUserInteraction,
+        autovalidateMode: AutovalidateMode.disabled,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -498,52 +414,67 @@ class _DriverOnboardingScreenState
             SizedBox(height: 24.h),
 
             // Full name
-            PremiumTextField(
-              controller: _nameController,
-              label: l10n.authFullName,
-              hint: l10n.authFullNameHint,
-              prefixIcon: Icons.person_rounded,
+            FormBuilderTextField(
+              name: 'name',
+              decoration: InputDecoration(
+                labelText: l10n.authFullName,
+                hintText: l10n.authFullNameHint,
+                prefixIcon: Icon(Icons.person_rounded),
+              ),
               textInputAction: TextInputAction.next,
-              validator: Validators.name,
+              validator: FormBuilderValidators.compose([
+                FormBuilderValidators.required(errorText: "Name is required"),
+                FormBuilderValidators.minLength(
+                  2,
+                  errorText: "Name Must be at least 2 characters",
+                ),
+              ]),
             ).animate().fadeIn(duration: 400.ms, delay: 50.ms),
 
             SizedBox(height: 16.h),
 
             // Phone (optional)
-            PremiumTextField(
-              controller: _phoneController,
-              label: l10n.authPhoneOptional,
-              hint: l10n.authPhoneHint,
-              prefixIcon: Icons.phone_rounded,
+            FormBuilderTextField(
+              name: 'phone',
+              decoration: InputDecoration(
+                labelText: l10n.authPhoneOptional,
+                hintText: l10n.authPhoneHint,
+                prefixIcon: Icon(Icons.phone_rounded),
+              ),
               keyboardType: TextInputType.phone,
               textInputAction: TextInputAction.next,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) return null;
-                return Validators.phone(value);
-              },
+              validator: FormBuilderValidators.conditional(
+                (value) => value != null && value.trim().isNotEmpty,
+                FormBuilderValidators.phoneNumber(),
+              ),
             ).animate().fadeIn(duration: 400.ms, delay: 100.ms),
 
             SizedBox(height: 16.h),
 
             // City
-            PremiumTextField(
-              controller: _cityController,
-              label: l10n.driverCityLabel,
-              hint: l10n.driverCityHint,
-              prefixIcon: Icons.location_city_rounded,
+            FormBuilderTextField(
+              name: 'city',
+              decoration: InputDecoration(
+                labelText: l10n.driverCityLabel,
+                hintText: l10n.driverCityHint,
+                prefixIcon: Icon(Icons.location_city_rounded),
+              ),
               textInputAction: TextInputAction.next,
-              validator: (value) =>
-                  Validators.required(value, fieldName: l10n.driverCityLabel),
+              validator: FormBuilderValidators.required(
+                errorText: l10n.driverCityLabel,
+              ),
             ).animate().fadeIn(duration: 400.ms, delay: 150.ms),
 
             SizedBox(height: 16.h),
 
             // About you (optional)
-            PremiumTextField(
-              controller: _bioController,
-              label: l10n.authAboutYou,
-              hint: l10n.authAboutYouHint,
-              prefixIcon: Icons.info_outline_rounded,
+            FormBuilderTextField(
+              name: 'bio',
+              decoration: InputDecoration(
+                labelText: l10n.authAboutYou,
+                hintText: l10n.authAboutYouHint,
+                prefixIcon: Icon(Icons.info_outline_rounded),
+              ),
               maxLines: 3,
               maxLength: 160,
               textInputAction: TextInputAction.newline,
@@ -553,198 +484,80 @@ class _DriverOnboardingScreenState
             SizedBox(height: 16.h),
 
             // Gender dropdown
-            Text(
-              l10n.gender,
-              style: TextStyle(
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+            FormBuilderDropdown<String>(
+              name: 'gender',
+              decoration: InputDecoration(labelText: l10n.gender),
+              items: const [
+                DropdownMenuItem(value: 'Male', child: Text('Male')),
+                DropdownMenuItem(value: 'Female', child: Text('Female')),
+              ],
+              validator: FormBuilderValidators.required(
+                errorText: l10n.driverGenderRequired,
               ),
-            ).animate().fadeIn(duration: 400.ms, delay: 250.ms),
-            SizedBox(height: 8.h),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w),
-              decoration: BoxDecoration(
-                color: AppColors.inputFill,
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(
-                  color: _genderError != null
-                      ? AppColors.error
-                      : AppColors.inputBorder,
-                ),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: _gender,
-                  isExpanded: true,
-                  hint: Text(
-                    l10n.selectGender,
-                    style: TextStyle(
-                      fontSize: 15.sp,
-                      color: AppColors.textTertiary,
-                    ),
-                  ),
-                  icon: Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    color: AppColors.textSecondary,
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'Male', child: Text('Male')),
-                    DropdownMenuItem(value: 'Female', child: Text('Female')),
-                    DropdownMenuItem(value: 'Other', child: Text('Other')),
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      _gender = value;
-                      _genderError = null;
-                    });
-                  },
-                ),
-              ),
-            ).animate().fadeIn(duration: 400.ms, delay: 250.ms),
-            if (_genderError != null) ...[
-              SizedBox(height: 6.h),
-              Text(
-                _genderError!,
-                style: TextStyle(color: AppColors.error, fontSize: 12.sp),
-              ),
-            ],
-
+            ),
             SizedBox(height: 16.h),
 
             // Date of birth
-            Text(
-              l10n.authDateOfBirth,
-              style: TextStyle(
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+            FormBuilderDateTimePicker(
+              name: 'dob',
+              inputType: InputType.date,
+              decoration: InputDecoration(labelText: l10n.authDateOfBirth),
+              lastDate: DateTime(
+                DateTime.now().year - 18,
+                DateTime.now().month,
+                DateTime.now().day,
               ),
-            ).animate().fadeIn(duration: 400.ms, delay: 300.ms),
-            SizedBox(height: 8.h),
-            InkWell(
-              onTap: _pickDateOfBirth,
-              borderRadius: BorderRadius.circular(12.r),
-              child: Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-                decoration: BoxDecoration(
-                  color: AppColors.inputFill,
-                  borderRadius: BorderRadius.circular(12.r),
-                  border: Border.all(
-                    color: _dateOfBirthError != null
-                        ? AppColors.error
-                        : AppColors.inputBorder,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.calendar_today_outlined,
-                      color: AppColors.textSecondary,
-                      size: 20.sp,
-                    ),
-                    SizedBox(width: 12.w),
-                    Text(
-                      _dateOfBirth == null
-                          ? l10n.authDobPrompt
-                          : '${_dateOfBirth!.day}/${_dateOfBirth!.month}/${_dateOfBirth!.year}',
-                      style: TextStyle(
-                        fontSize: 15.sp,
-                        color: _dateOfBirth == null
-                            ? AppColors.textTertiary
-                            : AppColors.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ).animate().fadeIn(duration: 400.ms, delay: 300.ms),
-            if (_dateOfBirthError != null) ...[
-              SizedBox(height: 6.h),
-              Text(
-                _dateOfBirthError!,
-                style: TextStyle(color: AppColors.error, fontSize: 12.sp),
-              ),
-            ],
-
+              firstDate: DateTime(1950),
+              validator: FormBuilderValidators.compose([
+                FormBuilderValidators.required(errorText: l10n.authDobError),
+                (value) {
+                  if (value == null) return null;
+                  final age = DateTime.now().difference(value).inDays ~/ 365;
+                  if (age < 18) return l10n.authDobMinAge;
+                  return null;
+                },
+              ]),
+            ),
             SizedBox(height: 20.h),
 
             // Sports interests
-            Text(
-              l10n.sportsInterests,
-              style: TextStyle(
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w600,
+            FormBuilderFilterChips<String>(
+              name: 'interests',
+              decoration: InputDecoration(labelText: l10n.sportsInterests),
+              options: _availableInterests
+                  .map((i) => FormBuilderChipOption(value: i))
+                  .toList(),
+              validator: FormBuilderValidators.minLength(
+                1,
+                errorText: l10n.driverInterestsRequired,
+              ),
+              // Add these:
+              backgroundColor: AppColors.surfaceVariant,
+              selectedColor: AppColors.primary.withAlpha(40),
+              checkmarkColor: AppColors.primary,
+              labelStyle: TextStyle(
                 color: AppColors.textPrimary,
+                fontSize: 13.sp,
               ),
-            ).animate().fadeIn(duration: 400.ms, delay: 350.ms),
-            SizedBox(height: 10.h),
-            Wrap(
-              spacing: 8.w,
-              runSpacing: 8.h,
-              children: _availableInterests.map((interest) {
-                final isSelected = _selectedInterests.contains(interest);
-                return FilterChip(
-                  label: Text(interest),
-                  labelStyle: TextStyle(
-                    color: isSelected
-                        ? AppColors.textPrimary
-                        : AppColors.textSecondary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  backgroundColor: AppColors.surface,
-                  selectedColor: AppColors.primary.withAlpha(50),
-                  checkmarkColor: AppColors.primary,
-                  selected: isSelected,
-                  onSelected: (selected) {
-                    setState(() {
-                      if (selected) {
-                        _selectedInterests.add(interest);
-                      } else {
-                        _selectedInterests.remove(interest);
-                      }
-                      _interestsError = null;
-                    });
-                  },
-                );
-              }).toList(),
-            ).animate().fadeIn(duration: 400.ms, delay: 350.ms),
-            if (_interestsError != null) ...[
-              SizedBox(height: 6.h),
-              Text(
-                _interestsError!,
-                style: TextStyle(color: AppColors.error, fontSize: 12.sp),
+              selectedShadowColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20.r),
+                side: BorderSide(color: AppColors.border),
               ),
-            ],
-
+              spacing: 4.w,
+            ),
             SizedBox(height: 18.h),
 
             // Terms checkbox
-            CheckboxListTile(
-              contentPadding: EdgeInsets.zero,
-              value: _agreedToTerms,
-              controlAffinity: ListTileControlAffinity.leading,
-              onChanged: (value) {
-                setState(() {
-                  _agreedToTerms = value ?? false;
-                  _termsError = null;
-                });
-              },
-              title: Text(
-                l10n.driverTermsLabel,
-                style: TextStyle(
-                  fontSize: 13.sp,
-                  color: AppColors.textSecondary,
-                ),
+            FormBuilderCheckbox(
+              name: 'terms',
+              title: Text(l10n.driverTermsLabel),
+              validator: FormBuilderValidators.equal(
+                true,
+                errorText: l10n.driverTermsRequired,
               ),
-            ).animate().fadeIn(duration: 400.ms, delay: 400.ms),
-            if (_termsError != null)
-              Text(
-                _termsError!,
-                style: TextStyle(color: AppColors.error, fontSize: 12.sp),
-              ),
-
+            ),
             SizedBox(height: 28.h),
 
             // Save & Continue
@@ -772,7 +585,7 @@ class _DriverOnboardingScreenState
   Widget _buildVehicleStep() {
     return SingleChildScrollView(
       padding: EdgeInsets.all(24.w),
-      child: Form(
+      child: FormBuilder(
         key: _vehicleFormKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -787,33 +600,31 @@ class _DriverOnboardingScreenState
             SizedBox(height: 24.h),
 
             // Vehicle Make
-            PremiumTextField(
-              controller: _makeController,
-              label: 'Make',
-              hint: 'e.g., Toyota, Honda, BMW',
-              prefixIcon: Icons.business_rounded,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter vehicle make';
-                }
-                return null;
-              },
+            FormBuilderTextField(
+              name: "make",
+              decoration: InputDecoration(
+                labelText: 'Make',
+                hintText: 'e.g., Toyota, Honda, BMW',
+                prefixIcon: Icon(Icons.business_rounded),
+              ),
+              validator: FormBuilderValidators.required(
+                errorText: 'Please enter vehicle make',
+              ),
             ).animate().fadeIn(duration: 400.ms, delay: 100.ms),
 
             SizedBox(height: 16.h),
 
             // Vehicle Model
-            PremiumTextField(
-              controller: _modelController,
-              label: 'Model',
-              hint: 'e.g., Corolla, Civic, 3 Series',
-              prefixIcon: Icons.directions_car_outlined,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter vehicle model';
-                }
-                return null;
-              },
+            FormBuilderTextField(
+              name: "model",
+              decoration: InputDecoration(
+                labelText: 'Model',
+                hintText: 'e.g., Corolla, Civic, 3 Series',
+                prefixIcon: Icon(Icons.directions_car_outlined),
+              ),
+              validator: FormBuilderValidators.required(
+                errorText: 'Please enter vehicle model',
+              ),
             ).animate().fadeIn(duration: 400.ms, delay: 150.ms),
 
             SizedBox(height: 16.h),
@@ -822,46 +633,38 @@ class _DriverOnboardingScreenState
             Row(
               children: [
                 Expanded(
-                  child: PremiumTextField(
-                    controller: _yearController,
-                    label: 'Year',
-                    hint: 'e.g., 2020',
-                    prefixIcon: Icons.calendar_today_outlined,
+                  child: FormBuilderTextField(
+                    name: "year",
+                    decoration: InputDecoration(
+                      labelText: 'Year',
+                      hintText: 'e.g., 2020',
+                      prefixIcon: Icon(Icons.calendar_today_outlined),
+                    ),
                     keyboardType: TextInputType.number,
                     textInputAction: TextInputAction.next,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Required';
-                      }
-
-                      // Use regex to ensure it's strictly numbers before parsing
-                      if (!RegExp(r'^\d+$').hasMatch(value.trim())) {
-                        return 'Numbers only';
-                      }
-
-                      final year = int.tryParse(value.trim());
-                      if (year == null ||
-                          year < 1990 ||
-                          year > DateTime.now().year) {
-                        return 'Invalid year';
-                      }
-                      return null;
-                    },
+                    validator: FormBuilderValidators.compose([
+                      FormBuilderValidators.required(errorText: 'Required'),
+                      FormBuilderValidators.integer(errorText: 'Numbers only'),
+                      FormBuilderValidators.between(
+                        1990,
+                        DateTime.now().year.toDouble(),
+                        errorText: 'Invalid year',
+                      ),
+                    ]),
                   ),
                 ),
                 SizedBox(width: 12.w),
                 Expanded(
-                  child: PremiumTextField(
-                    controller: _colorController,
-                    label: 'Color',
-                    hint: 'e.g., White',
-                    prefixIcon: Icons.palette_outlined,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Required';
-                      }
-                      return null;
-                    },
+                  child: FormBuilderTextField(
+                    name: "color",
+                    decoration: InputDecoration(
+                      labelText: 'Color',
+                      hintText: 'e.g., White',
+                      prefixIcon: Icon(Icons.palette_outlined),
+                    ),
+                    validator: FormBuilderValidators.required(
+                      errorText: 'Required',
+                    ),
                   ),
                 ),
               ],
@@ -870,87 +673,64 @@ class _DriverOnboardingScreenState
             SizedBox(height: 16.h),
 
             // License Plate
-            PremiumTextField(
-              controller: _licensePlateController,
-              label: 'License Plate',
-              hint: 'e.g., ABC 123',
-              prefixIcon: Icons.credit_card_rounded,
+            FormBuilderTextField(
+              name: "license_plate",
+              decoration: InputDecoration(
+                labelText: 'License Plate',
+                hintText: 'e.g., ABC 123',
+                prefixIcon: Icon(Icons.credit_card_rounded),
+              ),
               textCapitalization: TextCapitalization.characters,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter license plate';
-                }
-                return null;
-              },
+              validator: FormBuilderValidators.compose([
+                FormBuilderValidators.required(
+                  errorText: 'Please enter license plate',
+                ),
+                FormBuilderValidators.licensePlate(),
+              ]),
             ).animate().fadeIn(duration: 400.ms, delay: 250.ms),
 
             SizedBox(height: 16.h),
 
             // Seats
-            PremiumTextField(
-              controller: _seatsController,
-              label: 'Available Seats',
-              hint: '4',
-              prefixIcon: Icons.event_seat_rounded,
+            FormBuilderTextField(
+              name: "seats",
+              decoration: InputDecoration(
+                labelText: 'Available Seats',
+                hintText: '4',
+                prefixIcon: Icon(Icons.event_seat_rounded),
+              ),
               keyboardType: TextInputType.number,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter number of seats';
-                }
-                final seats = int.tryParse(value);
-                if (seats == null || seats < 1 || seats > 8) {
-                  return 'Enter 1-8 seats';
-                }
-                return null;
-              },
+              validator: FormBuilderValidators.compose([
+                FormBuilderValidators.required(
+                  errorText: 'Please enter number of seats',
+                ),
+                FormBuilderValidators.integer(
+                  errorText: 'Must be a whole number',
+                ),
+                FormBuilderValidators.between(
+                  1,
+                  8,
+                  errorText: 'Enter 1–8 seats',
+                ),
+              ]),
             ).animate().fadeIn(duration: 400.ms, delay: 300.ms),
 
             SizedBox(height: 16.h),
 
             // Fuel Type dropdown
-            Text(
-              AppLocalizations.of(context).fuelType,
-              style: TextStyle(
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+            FormBuilderDropdown<FuelType>(
+              name: 'fuel_type',
+              initialValue: FuelType.gasoline,
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).fuelType,
               ),
-            ).animate().fadeIn(duration: 400.ms, delay: 350.ms),
-            SizedBox(height: 8.h),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w),
-              decoration: BoxDecoration(
-                color: AppColors.inputFill,
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(color: AppColors.inputBorder),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<FuelType>(
-                  value: _selectedFuelType,
-                  isExpanded: true,
-                  icon: Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    color: AppColors.textSecondary,
-                  ),
-                  items: _fuelTypes.map((fuel) {
-                    return DropdownMenuItem(
-                      value: fuel,
-                      child: Text(
-                        fuel.displayName,
-                        style: TextStyle(
-                          fontSize: 15.sp,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() => _selectedFuelType = value!);
-                  },
-                ),
-              ),
-            ).animate().fadeIn(duration: 400.ms, delay: 350.ms),
-
+              items: _fuelTypes
+                  .map(
+                    (fuel) =>
+                        DropdownMenuItem(value: fuel, child: Text(fuel.name)),
+                  )
+                  .toList(),
+            ),
             SizedBox(height: 32.h),
 
             // Continue button

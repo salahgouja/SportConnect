@@ -14,7 +14,7 @@ enum FuelType {
   hydrogen,
   other;
 
-  String get displayName {
+  String get name {
     switch (this) {
       case FuelType.gasoline:
         return 'Gasoline';
@@ -43,7 +43,7 @@ enum VehicleType {
   bicycle,
   other;
 
-  String get displayName {
+  String get name {
     switch (this) {
       case VehicleType.car:
         return 'Car';

@@ -113,10 +113,11 @@ void _runApp() {
   runApp(
     ProviderScope(
       observers: [
-        TalkerService.riverpodObserver,
-        RiverpodDevToolsObserver(
-          config: TrackerConfig.forPackage('com.sportconnect.app'),
-        ),
+        if (kDebugMode) TalkerService.riverpodObserver,
+        if (kDebugMode)
+          RiverpodDevToolsObserver(
+            config: TrackerConfig.forPackage('com.sportconnect.app'),
+          ),
       ],
       child: DevicePreview(
         enabled: kDebugMode, // Enable only in debug mode

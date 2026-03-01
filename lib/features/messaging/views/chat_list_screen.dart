@@ -27,7 +27,6 @@ class ChatListScreen extends ConsumerStatefulWidget {
 class _ChatListScreenState extends ConsumerState<ChatListScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final _searchController = TextEditingController();
   String _searchQuery = '';
   StreamSubscription? _incomingCallSubscription;
 
@@ -40,7 +39,6 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
   @override
   void dispose() {
     _tabController.dispose();
-    _searchController.dispose();
     _incomingCallSubscription?.cancel();
     super.dispose();
   }
@@ -59,7 +57,6 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
               child: PremiumSearchField(
-                controller: _searchController,
                 hint: AppLocalizations.of(context).searchConversations,
                 onChanged: (value) {
                   setState(() {
@@ -748,7 +745,7 @@ class _NewChatBottomSheet extends ConsumerStatefulWidget {
 }
 
 class _NewChatBottomSheetState extends ConsumerState<_NewChatBottomSheet> {
-  final TextEditingController _searchController = TextEditingController();
+  int _searchFieldKey = 0;
   String _searchQuery = '';
   Timer? _debounceTimer;
   List<UserModel> _searchResults = [];
@@ -757,7 +754,6 @@ class _NewChatBottomSheetState extends ConsumerState<_NewChatBottomSheet> {
 
   @override
   void dispose() {
-    _searchController.dispose();
     _debounceTimer?.cancel();
     super.dispose();
   }
@@ -904,17 +900,20 @@ class _NewChatBottomSheetState extends ConsumerState<_NewChatBottomSheet> {
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 20.w),
             child: TextField(
-              controller: _searchController,
+              key: ValueKey(_searchFieldKey),
               onChanged: _onSearchChanged,
               decoration: InputDecoration(
                 hintText: AppLocalizations.of(context).searchUsersByName,
                 prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isNotEmpty
+                suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
                         tooltip: 'Clear search',
                         icon: const Icon(Icons.clear),
                         onPressed: () {
-                          _searchController.clear();
+                          setState(() {
+                            _searchFieldKey++;
+                            _searchQuery = '';
+                          });
                           _onSearchChanged('');
                         },
                       )

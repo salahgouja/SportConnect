@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/core/utils/validators.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/core/widgets/glass_panel.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 class RiderOnboardingScreen extends ConsumerStatefulWidget {
   const RiderOnboardingScreen({super.key});
@@ -21,34 +24,19 @@ class RiderOnboardingScreen extends ConsumerStatefulWidget {
 }
 
 class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _cityController = TextEditingController();
-  final _bioController = TextEditingController();
+  final _formKey = GlobalKey<FormBuilderState>();
 
   final List<String> _availableInterests = [
     'Football',
     'Basketball',
+    'Gym',
     'Tennis',
     'Running',
     'Cycling',
     'Swimming',
-    'Gym',
     'Yoga',
     'Hiking',
   ];
-
-  final Set<String> _selectedInterests = <String>{};
-
-  DateTime? _dateOfBirth;
-  String? _gender;
-  bool _agreedToTerms = false;
-
-  String? _genderError;
-  String? _dateOfBirthError;
-  String? _interestsError;
-  String? _termsError;
 
   bool _isLoading = false;
   bool _isPopulated = false;
@@ -56,104 +44,48 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _phoneController.dispose();
-    _cityController.dispose();
-    _bioController.dispose();
     super.dispose();
   }
 
-  void _populateFields(UserModel user) {
-    _nameController.text = user.displayName;
-    _phoneController.text = user.phoneNumber ?? '';
-    _cityController.text = user.city ?? '';
-    _bioController.text = user.bio ?? '';
-    _gender = user.gender;
-    _dateOfBirth = user.dateOfBirth;
-    _selectedInterests
-      ..clear()
-      ..addAll(user.interests);
-  }
-
-  Future<void> _pickDateOfBirth() async {
-    final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _dateOfBirth ?? DateTime(now.year - 20),
-      firstDate: DateTime(1950),
-      lastDate: DateTime(now.year - 18, now.month, now.day),
-      helpText: 'You must be at least 18 years old',
-    );
-
-    if (picked != null) {
-      final age = now.difference(picked).inDays ~/ 365;
-      if (age < 18) {
-        setState(() {
-          _dateOfBirthError =
-              'You must be at least 18 years old to use SportConnect.';
-        });
-        return;
-      }
-      setState(() {
-        _dateOfBirth = picked;
-        _dateOfBirthError = null;
-      });
-    }
-  }
-
-  bool _validateNonTextFields() {
-    var isValid = true;
-
-    setState(() {
-      _genderError = null;
-      _dateOfBirthError = null;
-      _interestsError = null;
-      _termsError = null;
-
-      if (_gender == null) {
-        _genderError = 'Please select your gender.';
-        isValid = false;
-      }
-
-      if (_dateOfBirth == null) {
-        _dateOfBirthError = 'Please select your date of birth.';
-        isValid = false;
-      }
-
-      if (_selectedInterests.isEmpty) {
-        _interestsError = 'Please select at least one interest.';
-        isValid = false;
-      }
-
-      if (!_agreedToTerms) {
-        _termsError = 'You must accept Terms and Privacy to continue.';
-        isValid = false;
-      }
+  void _populateProfileFields(UserModel user) {
+    _formKey.currentState?.patchValue({
+      'name': user.displayName,
+      'phone': user.phoneNumber ?? '',
+      'city': user.city ?? '',
+      'bio': user.bio ?? '',
+      'gender': user.gender,
+      'dob': user.dateOfBirth,
+      'interests': user.interests,
     });
-
-    return isValid;
   }
 
   Future<void> _completeOnboarding() async {
-    if (!_formKey.currentState!.validate() || _currentUser == null) return;
-    if (!_validateNonTextFields()) return;
+    if (_currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please wait, loading your profile...')),
+      );
+      return;
+    }
+    if (!_formKey.currentState!.saveAndValidate()) return;
 
     setState(() => _isLoading = true);
 
     try {
+      final values = _formKey.currentState!.value;
       final updatedUser = _currentUser!.map(
         rider: (rider) => rider.copyWith(
-          displayName: _nameController.text.trim(),
-          phoneNumber: _phoneController.text.trim().isEmpty
+          displayName: values['name'],
+          phoneNumber: (values['phone'] as String?)?.isEmpty ?? true
               ? null
-              : _phoneController.text.trim(),
-          city: _cityController.text.trim(),
-          bio: _bioController.text.trim().isEmpty
+              : values['phone'],
+          city: values['city'],
+          bio: (values['bio'] as String?)?.isEmpty ?? true
               ? null
-              : _bioController.text.trim(),
-          gender: _gender,
-          dateOfBirth: _dateOfBirth,
-          interests: _selectedInterests.toList(),
+              : values['bio'],
+          gender: values['gender'],
+          dateOfBirth: values['dob'],
+          interests: (values['interests'] as List<dynamic>? ?? [])
+              .cast<String>(),
         ),
         driver: (driver) => driver,
       );
@@ -189,11 +121,14 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
   Widget build(BuildContext context) {
     final userAsync = ref.watch(currentUserProvider);
     final user = userAsync.value;
+    final l10n = AppLocalizations.of(context);
 
     if (!_isPopulated && user != null) {
       _currentUser = user;
-      _populateFields(user);
       _isPopulated = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _populateProfileFields(user);
+      });
     }
 
     return Scaffold(
@@ -212,9 +147,9 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
         child: Semantics(
           container: true,
           label: 'Rider onboarding form',
-          child: Form(
+          child: FormBuilder(
             key: _formKey,
-            autovalidateMode: AutovalidateMode.onUserInteraction,
+            autovalidateMode: AutovalidateMode.disabled,
             child: SingleChildScrollView(
               padding: EdgeInsets.all(20.w),
               child: Column(
@@ -255,192 +190,161 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
                     ),
                   ),
                   SizedBox(height: 20.h),
-                  AutofillGroup(
-                    child: Column(
-                      children: [
-                        TextFormField(
-                          controller: _nameController,
-                          textInputAction: TextInputAction.next,
-                          autofillHints: const [AutofillHints.name],
-                          decoration: const InputDecoration(
-                            labelText: 'Full name',
-                          ),
-                          validator: Validators.name,
-                        ),
-                        SizedBox(height: 14.h),
-                        TextFormField(
-                          controller: _phoneController,
-                          keyboardType: TextInputType.phone,
-                          textInputAction: TextInputAction.next,
-                          autofillHints: const [AutofillHints.telephoneNumber],
-                          decoration: const InputDecoration(
-                            labelText: 'Phone number',
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return null;
-                            }
-                            return Validators.phone(value);
-                          },
-                        ),
-                        SizedBox(height: 14.h),
-                        TextFormField(
-                          controller: _cityController,
-                          textInputAction: TextInputAction.next,
-                          autofillHints: const [AutofillHints.addressCity],
-                          decoration: const InputDecoration(labelText: 'City'),
-                          validator: (value) =>
-                              Validators.required(value, fieldName: 'City'),
-                        ),
-                        SizedBox(height: 14.h),
-                        TextFormField(
-                          controller: _bioController,
-                          keyboardType: TextInputType.multiline,
-                          textInputAction: TextInputAction.newline,
-                          maxLines: 3,
-                          maxLength: 160,
-                          decoration: const InputDecoration(
-                            labelText: 'About you (optional)',
-                            hintText: 'Tell other riders a bit about you',
-                          ),
-                        ),
-                      ],
+                  // Full name
+                  FormBuilderTextField(
+                    name: 'name',
+                    decoration: InputDecoration(
+                      labelText: l10n.authFullName,
+                      hintText: l10n.authFullNameHint,
+                      prefixIcon: Icon(Icons.person_rounded),
                     ),
-                  ),
-                  SizedBox(height: 14.h),
-                  DropdownButtonFormField<String>(
-                    initialValue: _gender,
-                    decoration: const InputDecoration(labelText: 'Gender'),
+                    textInputAction: TextInputAction.next,
+                    validator: FormBuilderValidators.compose([
+                      FormBuilderValidators.required(
+                        errorText: "Name is required",
+                      ),
+                      FormBuilderValidators.minLength(
+                        2,
+                        errorText: "Name Must be at least 2 characters",
+                      ),
+                    ]),
+                  ).animate().fadeIn(duration: 400.ms, delay: 50.ms),
+
+                  SizedBox(height: 16.h),
+
+                  // Phone (optional)
+                  FormBuilderTextField(
+                    name: 'phone',
+                    decoration: InputDecoration(
+                      labelText: l10n.authPhoneOptional,
+                      hintText: l10n.authPhoneHint,
+                      prefixIcon: Icon(Icons.phone_rounded),
+                    ),
+                    keyboardType: TextInputType.phone,
+                    textInputAction: TextInputAction.next,
+                    validator: FormBuilderValidators.conditional(
+                      (value) => value != null && value.trim().isNotEmpty,
+                      FormBuilderValidators.phoneNumber(),
+                    ),
+                  ).animate().fadeIn(duration: 400.ms, delay: 100.ms),
+
+                  SizedBox(height: 16.h),
+
+                  // City
+                  FormBuilderTextField(
+                    name: 'city',
+                    decoration: InputDecoration(
+                      labelText: l10n.driverCityLabel,
+                      hintText: l10n.driverCityHint,
+                      prefixIcon: Icon(Icons.location_city_rounded),
+                    ),
+                    textInputAction: TextInputAction.next,
+                    validator: FormBuilderValidators.required(
+                      errorText: l10n.driverCityLabel,
+                    ),
+                  ).animate().fadeIn(duration: 400.ms, delay: 150.ms),
+
+                  SizedBox(height: 16.h),
+
+                  // About you (optional)
+                  FormBuilderTextField(
+                    name: 'bio',
+                    decoration: InputDecoration(
+                      labelText: l10n.authAboutYou,
+                      hintText: l10n.authAboutYouHint,
+                      prefixIcon: Icon(Icons.info_outline_rounded),
+                    ),
+                    maxLines: 3,
+                    maxLength: 160,
+                    textInputAction: TextInputAction.newline,
+                    keyboardType: TextInputType.multiline,
+                  ).animate().fadeIn(duration: 400.ms, delay: 200.ms),
+
+                  SizedBox(height: 16.h),
+
+                  // Gender dropdown
+                  FormBuilderDropdown<String>(
+                    name: 'gender',
+                    decoration: InputDecoration(labelText: l10n.gender),
                     items: const [
                       DropdownMenuItem(value: 'Male', child: Text('Male')),
                       DropdownMenuItem(value: 'Female', child: Text('Female')),
-                      DropdownMenuItem(value: 'Other', child: Text('Other')),
                     ],
-                    onChanged: (value) {
-                      setState(() {
-                        _gender = value;
-                        _genderError = null;
-                      });
-                    },
-                  ),
-                  if (_genderError != null) ...[
-                    SizedBox(height: 6.h),
-                    Text(
-                      _genderError!,
-                      style: TextStyle(color: AppColors.error, fontSize: 12.sp),
+                    validator: FormBuilderValidators.required(
+                      errorText: l10n.driverGenderRequired,
                     ),
-                  ],
-                  SizedBox(height: 14.h),
-                  Semantics(
-                    button: true,
-                    label: 'Select date of birth',
-                    child: InkWell(
-                      onTap: _pickDateOfBirth,
-                      borderRadius: BorderRadius.circular(12.r),
-                      child: InputDecorator(
-                        decoration: const InputDecoration(
-                          labelText: 'Date of birth',
-                        ),
-                        child: Text(
-                          _dateOfBirth == null
-                              ? 'Select your date of birth'
-                              : '${_dateOfBirth!.day}/${_dateOfBirth!.month}/${_dateOfBirth!.year}',
-                          style: TextStyle(
-                            color: _dateOfBirth == null
-                                ? AppColors.textTertiary
-                                : AppColors.textPrimary,
-                          ),
-                        ),
+                  ),
+                  SizedBox(height: 16.h),
+
+                  // Date of birth
+                  FormBuilderDateTimePicker(
+                    name: 'dob',
+                    inputType: InputType.date,
+                    decoration: InputDecoration(
+                      labelText: l10n.authDateOfBirth,
+                    ),
+                    lastDate: DateTime(
+                      DateTime.now().year - 18,
+                      DateTime.now().month,
+                      DateTime.now().day,
+                    ),
+                    firstDate: DateTime(1950),
+                    validator: FormBuilderValidators.compose([
+                      FormBuilderValidators.required(
+                        errorText: l10n.authDobError,
                       ),
-                    ),
+                      (value) {
+                        if (value == null) return null;
+                        final age =
+                            DateTime.now().difference(value).inDays ~/ 365;
+                        if (age < 18) return l10n.authDobMinAge;
+                        return null;
+                      },
+                    ]),
                   ),
-                  if (_dateOfBirthError != null) ...[
-                    SizedBox(height: 6.h),
-                    Text(
-                      _dateOfBirthError!,
-                      style: TextStyle(color: AppColors.error, fontSize: 12.sp),
-                    ),
-                  ],
                   SizedBox(height: 20.h),
-                  Text(
-                    'Sports interests',
-                    style: TextStyle(
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w700,
+
+                  // Sports interests
+                  FormBuilderFilterChips<String>(
+                    name: 'interests',
+                    decoration: InputDecoration(
+                      labelText: l10n.sportsInterests,
+                    ),
+                    options: _availableInterests
+                        .map((i) => FormBuilderChipOption(value: i))
+                        .toList(),
+                    validator: FormBuilderValidators.minLength(
+                      1,
+                      errorText: l10n.driverInterestsRequired,
+                    ),
+                    // Add these:
+                    backgroundColor: AppColors.surfaceVariant,
+                    selectedColor: AppColors.primary.withAlpha(40),
+                    checkmarkColor: AppColors.primary,
+                    labelStyle: TextStyle(
                       color: AppColors.textPrimary,
+                      fontSize: 13.sp,
                     ),
+                    selectedShadowColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20.r),
+                      side: BorderSide(color: AppColors.border),
+                    ),
+                    spacing: 4.w,
                   ),
-                  SizedBox(height: 10.h),
-                  Semantics(
-                    container: true,
-                    label: 'Sports interests selection',
-                    child: Wrap(
-                      spacing: 8.w,
-                      runSpacing: 8.h,
-                      children: _availableInterests.map((interest) {
-                        final isSelected = _selectedInterests.contains(
-                          interest,
-                        );
-                        return FilterChip(
-                          label: Text(interest),
-                          labelStyle: TextStyle(
-                            color: isSelected
-                                ? AppColors.textPrimary
-                                : AppColors.textSecondary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          backgroundColor: AppColors.surface,
-                          selectedColor: AppColors.primary.withValues(
-                            alpha: 0.2,
-                          ),
-                          checkmarkColor: AppColors.primary,
-                          selected: isSelected,
-                          onSelected: (selected) {
-                            setState(() {
-                              if (selected) {
-                                _selectedInterests.add(interest);
-                              } else {
-                                _selectedInterests.remove(interest);
-                              }
-                              _interestsError = null;
-                            });
-                          },
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  if (_interestsError != null) ...[
-                    SizedBox(height: 6.h),
-                    Text(
-                      _interestsError!,
-                      style: TextStyle(color: AppColors.error, fontSize: 12.sp),
-                    ),
-                  ],
                   SizedBox(height: 18.h),
-                  CheckboxListTile(
-                    contentPadding: EdgeInsets.zero,
-                    value: _agreedToTerms,
-                    onChanged: (value) {
-                      setState(() {
-                        _agreedToTerms = value ?? false;
-                        _termsError = null;
-                      });
-                    },
-                    title: Text(
-                      'I agree to the Terms of Service and Privacy Policy.',
-                      style: TextStyle(
-                        fontSize: 13.sp,
-                        color: AppColors.textSecondary,
-                      ),
+
+                  // Terms checkbox
+                  FormBuilderCheckbox(
+                    name: 'terms',
+                    title: Text(l10n.driverTermsLabel),
+                    validator: FormBuilderValidators.equal(
+                      true,
+                      errorText: l10n.driverTermsRequired,
                     ),
-                    controlAffinity: ListTileControlAffinity.leading,
                   ),
-                  if (_termsError != null) ...[
-                    Text(
-                      _termsError!,
-                      style: TextStyle(color: AppColors.error, fontSize: 12.sp),
-                    ),
-                  ],
+
                   SizedBox(height: 28.h),
                   Semantics(
                     button: true,

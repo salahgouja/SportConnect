@@ -37,7 +37,7 @@ class DriverRatePassengerScreen extends ConsumerStatefulWidget {
 class _DriverRatePassengerScreenState
     extends ConsumerState<DriverRatePassengerScreen> {
   double _rating = 0;
-  final TextEditingController _commentController = TextEditingController();
+  String _commentText = '';
   bool _isSubmitting = false;
 
   // Track which booking / passenger is selected
@@ -46,7 +46,6 @@ class _DriverRatePassengerScreenState
 
   @override
   void dispose() {
-    _commentController.dispose();
     super.dispose();
   }
 
@@ -245,7 +244,7 @@ class _DriverRatePassengerScreenState
               ),
               SizedBox(height: 8.h),
               TextField(
-                controller: _commentController,
+                onChanged: (v) => setState(() => _commentText = v),
                 maxLines: 4,
                 maxLength: 300,
                 style: TextStyle(fontSize: 14.sp, color: AppColors.textPrimary),
@@ -451,7 +450,7 @@ class _DriverRatePassengerScreenState
 
       final notifier = ref.read(reviewFormViewModelProvider.notifier);
       notifier.setRating(_rating.round());
-      notifier.setComment(_commentController.text.trim());
+      notifier.setComment(_commentText.trim());
 
       final success = await notifier.submitReview(
         rideId: widget.rideId,

@@ -9,5 +9,4 @@ library;
 
 export 'result.dart';
 export 'command.dart';
-export 'validators.dart';
 export 'extensions.dart';

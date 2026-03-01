@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -10,7 +11,6 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/glass_panel.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
-import 'package:sport_connect/core/widgets/premium_text_field.dart';
 import 'package:sport_connect/features/auth/view_models/phone_auth_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -30,17 +30,16 @@ class PhoneOtpScreen extends ConsumerStatefulWidget {
 }
 
 class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
-  final _phoneController = TextEditingController();
-  final _codeController = TextEditingController();
-  final _phoneFormKey = GlobalKey<FormState>();
+  final _phoneFormKey = GlobalKey<FormBuilderState>();
+  final _codeFormKey = GlobalKey<FormBuilderState>();
+
+  String _sentPhone = '';
 
   int _resendCooldown = 0;
   Timer? _cooldownTimer;
 
   @override
   void dispose() {
-    _phoneController.dispose();
-    _codeController.dispose();
     _cooldownTimer?.cancel();
     super.dispose();
   }
@@ -50,26 +49,25 @@ class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
   // ---------------------------------------------------------------------------
 
   Future<void> _sendCode() async {
-    if (!_phoneFormKey.currentState!.validate()) return;
-    await ref
-        .read(phoneAuthViewModelProvider.notifier)
-        .sendCode(_phoneController.text.trim());
+    if (!(_phoneFormKey.currentState?.saveAndValidate() ?? false)) return;
+    final phone = (_phoneFormKey.currentState!.value['phone'] as String).trim();
+    setState(() => _sentPhone = phone);
+    await ref.read(phoneAuthViewModelProvider.notifier).sendCode(phone);
     _startResendCooldown();
   }
 
   Future<void> _verifyCode() async {
-    final code = _codeController.text.trim();
+    if (!(_codeFormKey.currentState?.saveAndValidate() ?? false)) return;
+    final code = (_codeFormKey.currentState!.value['code'] as String).trim();
     if (code.length != 6) return;
     await ref
         .read(phoneAuthViewModelProvider.notifier)
-        .verifyCode(code, phoneNumber: _phoneController.text.trim());
+        .verifyCode(code, phoneNumber: _sentPhone);
   }
 
   Future<void> _resendCode() async {
     if (_resendCooldown > 0) return;
-    await ref
-        .read(phoneAuthViewModelProvider.notifier)
-        .resendCode(_phoneController.text.trim());
+    await ref.read(phoneAuthViewModelProvider.notifier).resendCode(_sentPhone);
     _startResendCooldown();
   }
 
@@ -130,7 +128,7 @@ class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
   // ---------------------------------------------------------------------------
 
   Widget _buildPhoneInput(AppLocalizations l10n, {bool isLoading = false}) {
-    return Form(
+    return FormBuilder(
       key: _phoneFormKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -180,12 +178,14 @@ class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
           SizedBox(height: 36.h),
 
           // Phone field
-          PremiumTextField(
-            controller: _phoneController,
-            label: l10n.otpPhoneHint,
-            hint: '+1 234 567 8900',
+          FormBuilderTextField(
+            name: 'phone',
+            decoration: InputDecoration(
+              labelText: l10n.otpPhoneHint,
+              hintText: '+1 234 567 8900',
+              prefixIcon: const Icon(Icons.phone_outlined),
+            ),
             keyboardType: TextInputType.phone,
-            prefixIcon: Icons.phone_outlined,
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'[\d\s\+\-\(\)]')),
               LengthLimitingTextInputFormatter(20),
@@ -243,131 +243,133 @@ class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
   // ---------------------------------------------------------------------------
 
   Widget _buildCodeInput(AppLocalizations l10n, {bool isLoading = false}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(height: 24.h),
+    return FormBuilder(
+      key: _codeFormKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(height: 24.h),
 
-        // Icon
-        GlassPanel(
-              padding: EdgeInsets.all(20.w),
-              radius: 20,
-              color: AppColors.primarySurface.withValues(alpha: 0.8),
-              borderColor: AppColors.primary.withValues(alpha: 0.2),
-              child: Icon(
-                Icons.sms_outlined,
-                size: 48.sp,
-                color: AppColors.primary,
-              ),
-            )
-            .animate()
-            .fadeIn(duration: 400.ms)
-            .scale(begin: const Offset(0.8, 0.8)),
+          // Icon
+          GlassPanel(
+                padding: EdgeInsets.all(20.w),
+                radius: 20,
+                color: AppColors.primarySurface.withValues(alpha: 0.8),
+                borderColor: AppColors.primary.withValues(alpha: 0.2),
+                child: Icon(
+                  Icons.sms_outlined,
+                  size: 48.sp,
+                  color: AppColors.primary,
+                ),
+              )
+              .animate()
+              .fadeIn(duration: 400.ms)
+              .scale(begin: const Offset(0.8, 0.8)),
 
-        SizedBox(height: 28.h),
+          SizedBox(height: 28.h),
 
-        Text(
-          l10n.otpVerifyTitle,
-          style: TextStyle(
-            fontSize: 28.sp,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
-            letterSpacing: -0.5,
-          ),
-        ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.1),
+          Text(
+            l10n.otpVerifyTitle,
+            style: TextStyle(
+              fontSize: 28.sp,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+              letterSpacing: -0.5,
+            ),
+          ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.1),
 
-        SizedBox(height: 12.h),
+          SizedBox(height: 12.h),
 
-        Text(
-          '${l10n.otpEnterCode} ${_phoneController.text.trim()}',
-          style: TextStyle(
-            fontSize: 15.sp,
-            color: AppColors.textSecondary,
-            height: 1.5,
-          ),
-        ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.1),
+          Text(
+            '${l10n.otpEnterCode} $_sentPhone',
+            style: TextStyle(
+              fontSize: 15.sp,
+              color: AppColors.textSecondary,
+              height: 1.5,
+            ),
+          ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.1),
 
-        SizedBox(height: 36.h),
+          SizedBox(height: 36.h),
 
-        // 6-digit code field
-        PremiumTextField(
-          controller: _codeController,
-          label: l10n.otpCodeLabel,
-          hint: '000000',
-          keyboardType: TextInputType.number,
-          prefixIcon: Icons.pin_outlined,
-          textInputAction: TextInputAction.done,
-          inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
-            LengthLimitingTextInputFormatter(6),
-          ],
-          onSubmitted: (_) => _verifyCode(),
-        ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1),
+          // 6-digit code field
+          FormBuilderTextField(
+            name: 'code',
+            decoration: InputDecoration(
+              labelText: l10n.otpCodeLabel,
+              hintText: '000000',
+              prefixIcon: const Icon(Icons.pin_outlined),
+            ),
+            keyboardType: TextInputType.number,
+            textInputAction: TextInputAction.done,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(6),
+            ],
+            onSubmitted: (_) => _verifyCode(),
+          ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1),
 
-        SizedBox(height: 32.h),
+          SizedBox(height: 32.h),
 
-        // Verify button
-        SizedBox(
-          width: double.infinity,
-          child: PremiumButton(
-            text: l10n.otpVerify,
-            onPressed: isLoading ? null : _verifyCode,
-            isLoading: isLoading,
-            icon: Icons.verified_user_outlined,
-          ),
-        ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1),
+          // Verify button
+          SizedBox(
+            width: double.infinity,
+            child: PremiumButton(
+              text: l10n.otpVerify,
+              onPressed: isLoading ? null : _verifyCode,
+              isLoading: isLoading,
+              icon: Icons.verified_user_outlined,
+            ),
+          ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1),
 
-        SizedBox(height: 20.h),
+          SizedBox(height: 20.h),
 
-        // Resend code
-        Center(
-          child: _resendCooldown > 0
-              ? Text(
-                  l10n.otpResendIn(_resendCooldown),
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    color: AppColors.textSecondary,
-                  ),
-                )
-              : TextButton.icon(
-                  onPressed: _resendCode,
-                  icon: Icon(Icons.refresh_rounded, size: 18.sp),
-                  label: Text(
-                    l10n.otpResendCode,
+          // Resend code
+          Center(
+            child: _resendCooldown > 0
+                ? Text(
+                    l10n.otpResendIn(_resendCooldown),
                     style: TextStyle(
                       fontSize: 14.sp,
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                    ),
+                  )
+                : TextButton.icon(
+                    onPressed: _resendCode,
+                    icon: Icon(Icons.refresh_rounded, size: 18.sp),
+                    label: Text(
+                      l10n.otpResendCode,
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
+          ).animate().fadeIn(delay: 500.ms),
+
+          SizedBox(height: 16.h),
+
+          // Change phone number
+          Center(
+            child: TextButton(
+              onPressed: () {
+                _codeFormKey.currentState?.reset();
+                ref.read(phoneAuthViewModelProvider.notifier).reset();
+              },
+              child: Text(
+                l10n.otpChangePhone,
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  color: AppColors.textSecondary,
+                  decoration: TextDecoration.underline,
                 ),
-        ).animate().fadeIn(delay: 500.ms),
-
-        SizedBox(height: 16.h),
-
-        // Change phone number
-        Center(
-          child: TextButton(
-            onPressed: () {
-              _codeController.clear();
-              ref.read(phoneAuthViewModelProvider.notifier).reset();
-            },
-            child: Text(
-              l10n.otpChangePhone,
-              style: TextStyle(
-                fontSize: 13.sp,
-                color: AppColors.textSecondary,
-                decoration: TextDecoration.underline,
               ),
             ),
-          ),
-        ).animate().fadeIn(delay: 600.ms),
-      ],
+          ).animate().fadeIn(delay: 600.ms),
+        ],
+      ),
     );
   }
-
-  // ---------------------------------------------------------------------------
-  // Success state
   // ---------------------------------------------------------------------------
 
   Widget _buildSuccessState(AppLocalizations l10n) {
@@ -472,7 +474,7 @@ class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
                 text: l10n.otpTryAgain,
                 style: PremiumButtonStyle.secondary,
                 onPressed: () {
-                  _codeController.clear();
+                  _codeFormKey.currentState?.fields['code']?.didChange('');
                   ref.read(phoneAuthViewModelProvider.notifier).reset();
                 },
                 icon: Icons.refresh_rounded,

@@ -1,10 +1,7 @@
-import 'dart:io' show Platform;
-
 import 'package:flutter/gestures.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -12,7 +9,7 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/settings_provider.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/core/utils/validators.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:sport_connect/core/widgets/utility_widgets.dart';
 import 'package:sport_connect/features/auth/models/auth_exception.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
@@ -34,9 +31,9 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen>
     with SingleTickerProviderStateMixin {
-  final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final _formKey = GlobalKey<FormBuilderState>();
+  // Stores saved email for FormBuilder initialValue
+  String _savedEmail = '';
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -46,8 +43,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   bool _obscurePassword = true;
   final FocusNode _emailFocus = FocusNode();
   final FocusNode _passwordFocus = FocusNode();
-
-  bool get _isCupertino => !kIsWeb && Platform.isIOS;
 
   @override
   void initState() {
@@ -147,7 +142,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     final credentials = await ref.read(savedCredentialsProvider.future);
     if (credentials.rememberMe && credentials.email != null) {
       setState(() {
-        _emailController.text = credentials.email!;
+        _savedEmail = credentials.email!;
         _rememberMe = true;
       });
     }
@@ -156,7 +151,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   Future<void> _saveCredentials() async {
     final notifier = ref.read(savedCredentialsProvider.notifier);
     if (_rememberMe) {
-      await notifier.save(_emailController.text.trim());
+      final email = (_formKey.currentState?.value['email'] as String? ?? '').trim();
+      await notifier.save(email);
     } else {
       await notifier.clear();
     }
@@ -164,8 +160,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   @override
   void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
     _animationController.dispose();
     _emailFocus.dispose();
     _passwordFocus.dispose();
@@ -173,25 +167,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Future<void> _handleLogin() async {
-    if (_isCupertino) {
-      final emailError = Validators.email(_emailController.text.trim());
-      final passwordError = Validators.password(_passwordController.text);
-      if (emailError != null || passwordError != null) {
-        await _showAdaptiveMessage(emailError ?? passwordError!, isError: true);
-        return;
-      }
-    } else if (!_formKey.currentState!.validate()) {
+    if (!_formKey.currentState!.saveAndValidate()) {
       return;
     }
 
     try {
+      final email = (_formKey.currentState!.value['email'] as String).trim();
+      final password = _formKey.currentState!.value['password'] as String;
       await ref
           .read(loginViewModelProvider.notifier)
-          .login(
-            _emailController.text.trim(),
-            _passwordController.text,
-            _rememberMe,
-          );
+          .login(email, password, _rememberMe);
       await _saveCredentials();
     } catch (e) {
       if (!mounted) return;
@@ -240,7 +225,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         child: SingleChildScrollView(
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 24.w),
-            child: Form(
+            child: FormBuilder(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -275,13 +260,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         ),
       ),
     );
-
-    if (_isCupertino) {
-      return CupertinoPageScaffold(
-        backgroundColor: Colors.white,
-        child: loginBody,
-      );
-    }
 
     return Scaffold(backgroundColor: Colors.white, body: loginBody);
   }
@@ -383,67 +361,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     final emailLabel = AppLocalizations.of(context).email;
     final emailHint = AppLocalizations.of(context).enterYourEmail;
 
-    if (_isCupertino) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Visual label only — VoiceOver uses the placeholder as the field's
-          // accessible name, so this Text is purely decorative from an a11y
-          // perspective. ExcludeSemantics prevents a redundant focus stop.
-          ExcludeSemantics(
-            child: Text(
-              emailLabel,
-              style: TextStyle(
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ),
-          SizedBox(height: 8.h),
-          CupertinoTextField(
-            controller: _emailController,
-            focusNode: _emailFocus,
-            placeholder: emailHint,
-            keyboardType: TextInputType.emailAddress,
-            textInputAction: TextInputAction.next,
-            autofillHints: const [AutofillHints.email],
-            keyboardAppearance: Brightness.light,
-            autocorrect: false,
-            enableSuggestions: false,
-            onEditingComplete: () => _passwordFocus.requestFocus(),
-            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
-            prefix: Padding(
-              padding: EdgeInsets.only(left: 12.w),
-              child: ExcludeSemantics(
-                // Decorative prefix icon — excluded so SR does not read it.
-                child: Icon(
-                  CupertinoIcons.mail,
-                  size: 18.sp,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceVariant,
-              borderRadius: BorderRadius.circular(_isCupertino ? 20.r : 16.r),
-              border: Border.all(
-                color: AppColors.border.withValues(alpha: 0.5),
-              ),
-            ),
-          ),
-        ],
-      ).animate().fadeIn(duration: 400.ms, delay: 350.ms);
-    }
-
-    // Material: TextFormField's labelText is the accessible name already.
-    // Only the decorative prefix icon needs excluding.
-    return TextFormField(
-      controller: _emailController,
+    // The prefixIcon is purely decorative — excluded so SR does not read it.
+    return FormBuilderTextField(
+      name: 'email',
+      initialValue: _savedEmail,
       focusNode: _emailFocus,
       keyboardType: TextInputType.emailAddress,
       textInputAction: TextInputAction.next,
-      validator: Validators.email,
+      validator: FormBuilderValidators.email(),
       autofillHints: const [AutofillHints.email],
       autocorrect: false,
       enableSuggestions: false,
@@ -463,88 +388,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     // button will do before they activate it.
     final toggleLabel = _obscurePassword ? 'Show password' : 'Hide password';
 
-    if (_isCupertino) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ExcludeSemantics(
-            child: Text(
-              passwordLabel,
-              style: TextStyle(
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ),
-          SizedBox(height: 8.h),
-          CupertinoTextField(
-            controller: _passwordController,
-            focusNode: _passwordFocus,
-            placeholder: passwordHint,
-            obscureText: _obscurePassword,
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) => _handleLogin(),
-            autofillHints: const [AutofillHints.password],
-            keyboardAppearance: Brightness.light,
-            autocorrect: false,
-            enableSuggestions: false,
-            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
-            prefix: Padding(
-              padding: EdgeInsets.only(left: 12.w),
-              child: ExcludeSemantics(
-                child: Icon(
-                  CupertinoIcons.lock,
-                  size: 18.sp,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ),
-            suffix: Semantics(
-              // The toggle IS interactive — it needs its own focusable node
-              // with a meaningful label. We do NOT use excludeSemantics here.
-              // The inner icon is excluded so only this label is announced.
-              label: toggleLabel,
-              button: true,
-              child: CupertinoButton(
-                onPressed: () =>
-                    setState(() => _obscurePassword = !_obscurePassword),
-                padding: EdgeInsets.only(right: 10.w),
-                minimumSize: const Size(44, 44),
-                alignment: Alignment.centerRight,
-                child: ExcludeSemantics(
-                  child: Icon(
-                    _obscurePassword
-                        ? CupertinoIcons.eye
-                        : CupertinoIcons.eye_slash,
-                    size: 18.sp,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ),
-            ),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceVariant,
-              borderRadius: BorderRadius.circular(_isCupertino ? 20.r : 16.r),
-              border: Border.all(
-                color: AppColors.border.withValues(alpha: 0.5),
-              ),
-            ),
-          ),
-        ],
-      ).animate().fadeIn(duration: 400.ms, delay: 400.ms);
-    }
-
-    return TextFormField(
-      controller: _passwordController,
+    return FormBuilderTextField(
+      name: 'password',
       focusNode: _passwordFocus,
       obscureText: _obscurePassword,
       textInputAction: TextInputAction.done,
-      validator: Validators.password,
+      validator: FormBuilderValidators.compose([
+        FormBuilderValidators.required(),
+        FormBuilderValidators.minLength(8),
+      ]),
       autofillHints: const [AutofillHints.password],
       autocorrect: false,
       enableSuggestions: false,
-      onFieldSubmitted: (_) => _handleLogin(),
+      onEditingComplete: () => _handleLogin(),
       decoration: InputDecoration(
         labelText: passwordLabel,
         hintText: passwordHint,
@@ -581,16 +437,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             padding: EdgeInsets.symmetric(vertical: 12.h),
             child: Row(
               children: [
-                if (_isCupertino)
-                  CupertinoSwitch(
-                    value: _rememberMe,
-                    onChanged: (value) {
-                      HapticFeedback.selectionClick();
-                      setState(() => _rememberMe = value);
-                    },
-                    activeTrackColor: AppColors.primary,
-                  )
-                else
                   Checkbox(
                     value: _rememberMe,
                     onChanged: (value) {
@@ -614,34 +460,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         ),
 
         // Forgot password button — interactive, label is already descriptive.
-        _isCupertino
-            ? CupertinoButton(
-                onPressed: () => context.push(AppRoutes.forgotPassword.path),
-                padding: EdgeInsets.zero,
-                minimumSize: const Size(44, 44),
-                child: Text(
-                  AppLocalizations.of(context).authForgotPassword,
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
-                  ),
-                ),
-              )
-            : TextButton(
-                onPressed: () => context.push(AppRoutes.forgotPassword.path),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                  padding: EdgeInsets.zero,
-                ),
-                child: Text(
-                  AppLocalizations.of(context).authForgotPassword,
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+        TextButton(
+          onPressed: () => context.push(AppRoutes.forgotPassword.path),
+          style: TextButton.styleFrom(
+            foregroundColor: AppColors.primary,
+            padding: EdgeInsets.zero,
+          ),
+          child: Text(
+            AppLocalizations.of(context).authForgotPassword,
+            style: TextStyle(
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
       ],
     ).animate().fadeIn(duration: 400.ms, delay: 450.ms);
   }
@@ -649,29 +481,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   Widget _buildSignInButton(AsyncValue<void> loginState) {
     final isLoading = loginState.isLoading || _isSocialLoading;
     final signInLabel = AppLocalizations.of(context).authSignIn;
-
-    if (_isCupertino) {
-      return SizedBox(
-        height: 50.h,
-        child: CupertinoButton.filled(
-          onPressed: isLoading ? null : _handleLogin,
-          borderRadius: BorderRadius.circular(_isCupertino ? 20.r : 14.r),
-          child: isLoading
-              ? Semantics(
-                  label: 'Signing in, please wait',
-                  liveRegion: true,
-                  child: const CupertinoActivityIndicator(),
-                )
-              : Text(
-                  signInLabel,
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-        ),
-      ).animate().fadeIn(duration: 400.ms, delay: 500.ms);
-    }
 
     return SizedBox(
       height: 50.h,
@@ -738,11 +547,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   borderRadius: BorderRadius.circular(14.r),
                 ),
                 child: Center(
-                  child: _isCupertino
-                      ? const CupertinoActivityIndicator(radius: 14)
-                      : const CircularProgressIndicator(
-                          color: AppColors.primary,
-                        ),
+                  child: const CircularProgressIndicator(
+                    color: AppColors.primary,
+                  ),
                 ),
               ),
             ),
@@ -752,8 +559,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Widget _buildGoogleButton() {
-    final double buttonHeight = _isCupertino ? 44.h : 40.h;
-    final double iconGap = _isCupertino ? 12.w : 10.w;
+    final double buttonHeight = 40.h;
+    final double iconGap = 10.w;
     final label = AppLocalizations.of(context).continueWithGoogle;
 
     // OutlinedButton is already announced as a button by the framework.
@@ -968,23 +775,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     bool isError = false,
   }) async {
     if (!mounted) return;
-
-    if (_isCupertino) {
-      await showCupertinoDialog<void>(
-        context: context,
-        builder: (dialogContext) => CupertinoAlertDialog(
-          title: Text(isError ? 'Sign in error' : 'Success'),
-          content: Text(message),
-          actions: [
-            CupertinoDialogAction(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(MaterialLocalizations.of(context).okButtonLabel),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

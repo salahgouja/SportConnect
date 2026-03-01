@@ -32,7 +32,7 @@ class ReportIssueScreen extends ConsumerStatefulWidget {
 }
 
 class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
-  final _descriptionController = TextEditingController();
+  String _descriptionText = '';
   final _imagePicker = ImagePicker();
   final List<File> _attachedFiles = [];
   _ReportType? _selectedType;
@@ -45,7 +45,6 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
 
   @override
   void dispose() {
-    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -145,7 +144,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
       return;
     }
 
-    if (_descriptionController.text.trim().isEmpty) {
+    if (_descriptionText.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Please describe the issue'),
@@ -170,7 +169,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
             reporterEmail: user?.email ?? '',
             type: _selectedType!.label,
             severity: _severity.name,
-            description: _descriptionController.text.trim(),
+            description: _descriptionText.trim(),
             reportedUserId: widget.reportedUserId,
             rideId: widget.rideId,
             attachments: _attachedFiles,
@@ -359,8 +358,8 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
 
         SizedBox(height: 8.h),
 
-        TextFormField(
-          controller: _descriptionController,
+        TextField(
+          onChanged: (v) => setState(() => _descriptionText = v),
           maxLines: 5,
           maxLength: 500,
           decoration: InputDecoration(

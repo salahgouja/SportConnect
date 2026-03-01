@@ -33,11 +33,8 @@ class SubmitReviewScreen extends ConsumerStatefulWidget {
 }
 
 class _SubmitReviewScreenState extends ConsumerState<SubmitReviewScreen> {
-  final _commentController = TextEditingController();
-
   @override
   void dispose() {
-    _commentController.dispose();
     super.dispose();
   }
 
@@ -341,7 +338,6 @@ class _SubmitReviewScreenState extends ConsumerState<SubmitReviewScreen> {
 
   Widget _buildCommentField(ReviewFormViewModel viewModel) {
     return TextField(
-      controller: _commentController,
       onChanged: viewModel.setComment,
       maxLines: 4,
       maxLength: 500,

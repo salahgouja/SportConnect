@@ -35,7 +35,7 @@ class CancellationReasonScreen extends ConsumerStatefulWidget {
 class _CancellationReasonScreenState
     extends ConsumerState<CancellationReasonScreen> {
   String? _selectedReason;
-  final _commentController = TextEditingController();
+  String _commentText = '';
   bool _isSubmitting = false;
 
   List<_CancelReason> get _reasons =>
@@ -129,7 +129,6 @@ class _CancellationReasonScreenState
 
   @override
   void dispose() {
-    _commentController.dispose();
     super.dispose();
   }
 
@@ -154,7 +153,7 @@ class _CancellationReasonScreenState
     setState(() => _isSubmitting = true);
 
     try {
-      final comment = _commentController.text.trim();
+      final comment = _commentText.trim();
       final reason = comment.isNotEmpty
           ? '$_selectedReason | $comment'
           : _selectedReason!;
@@ -372,7 +371,7 @@ class _CancellationReasonScreenState
             SizedBox(height: 8.h),
 
             TextField(
-              controller: _commentController,
+              onChanged: (v) => setState(() => _commentText = v),
               maxLines: 3,
               decoration: InputDecoration(
                 hintText: 'Tell us more about why you\'re cancelling...',

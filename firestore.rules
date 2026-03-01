@@ -65,7 +65,9 @@ service cloud.firestore {
     // ==================== NOTIFICATIONS COLLECTION ====================
     match /notifications/{notificationId} {
       allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow create: if false; // Only Cloud Functions write notifications
+      // App clients create in-app notification documents on behalf of other users
+      // (e.g. rider notifying driver of a new booking request).
+      allow create: if isAuthenticated();
       allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
       allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
@@ -134,10 +136,14 @@ service cloud.firestore {
     }
 
     // ==================== DRIVER CONNECTED ACCOUNTS COLLECTION ====================
-    // Used for Stripe connected accounts for drivers
+    // Used for Stripe connected accounts for drivers.
+    // The Flutter client writes the initial record after the Cloud Function
+    // creates the Stripe account and returns the accountId; the driver may only
+    // write their own document.
     match /driver_connected_accounts/{userId} {
-      allow read: if isAuthenticated() && userId == request.auth.uid;
-      allow create, update: if false; // Only Cloud Functions should create/update
+      allow read:   if isAuthenticated() && userId == request.auth.uid;
+      allow create: if isAuthenticated() && userId == request.auth.uid;
+      allow update: if isAuthenticated() && userId == request.auth.uid;
       allow delete: if isAuthenticated() && userId == request.auth.uid;
     }
 

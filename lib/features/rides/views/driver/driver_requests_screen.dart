@@ -1262,7 +1262,7 @@ class _DeclineReasonSheet extends StatefulWidget {
 
 class _DeclineReasonSheetState extends State<_DeclineReasonSheet> {
   String? _selectedReason;
-  final _otherController = TextEditingController();
+  String _otherText = '';
 
   final _reasons = [
     'Schedule conflict',
@@ -1363,7 +1363,6 @@ class _DeclineReasonSheetState extends State<_DeclineReasonSheet> {
           if (_selectedReason == 'Other') ...[
             SizedBox(height: 12.h),
             TextField(
-              controller: _otherController,
               decoration: InputDecoration(
                 hintText: AppLocalizations.of(context).pleaseSpecify,
                 border: OutlineInputBorder(
@@ -1371,7 +1370,7 @@ class _DeclineReasonSheetState extends State<_DeclineReasonSheet> {
                 ),
               ),
               maxLines: 2,
-              onChanged: (_) => setState(() {}),
+              onChanged: (v) => setState(() => _otherText = v),
             ),
           ],
           SizedBox(height: 24.h),
@@ -1392,10 +1391,10 @@ class _DeclineReasonSheetState extends State<_DeclineReasonSheet> {
                   onPressed:
                       _selectedReason != null &&
                           (_selectedReason != 'Other' ||
-                              _otherController.text.trim().isNotEmpty)
+                          _otherText.trim().isNotEmpty)
                       ? () => widget.onDecline(
                           _selectedReason == 'Other'
-                              ? _otherController.text.trim()
+                              ? _otherText.trim()
                               : _selectedReason!,
                         )
                       : null,

@@ -88,6 +88,7 @@ class RouteGuardService {
       final allowedDuringSetup = [
         AppRoutes.roleSelection.path,
         AppRoutes.driverOnboarding.path,
+        AppRoutes.driverStripeOnboarding.path,
         AppRoutes.riderOnboarding.path,
         AppRoutes.emailVerification.path,
         AppRoutes.phoneOtp.path,

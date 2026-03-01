@@ -1,9 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
@@ -445,7 +447,7 @@ class _VehicleCard extends StatelessWidget {
                               SizedBox(width: 8.w),
                               _InfoChip(
                                 icon: Icons.local_gas_station,
-                                label: vehicle.fuelType.displayName,
+                                label: vehicle.fuelType.name,
                               ),
                             ],
                           ),
@@ -604,12 +606,7 @@ class _AddVehicleSheet extends StatefulWidget {
 }
 
 class _AddVehicleSheetState extends State<_AddVehicleSheet> {
-  final _formKey = GlobalKey<FormState>();
-  late TextEditingController _makeController;
-  late TextEditingController _modelController;
-  late TextEditingController _yearController;
-  late TextEditingController _colorController;
-  late TextEditingController _licensePlateController;
+  final _formKey = GlobalKey<FormBuilderState>();
   late int _capacity;
   late FuelType _fuelType;
   File? _imageFile;
@@ -618,27 +615,8 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
   @override
   void initState() {
     super.initState();
-    _makeController = TextEditingController(text: widget.vehicle?.make ?? '');
-    _modelController = TextEditingController(text: widget.vehicle?.model ?? '');
-    _yearController = TextEditingController(
-      text: widget.vehicle?.year.toString() ?? '',
-    );
-    _colorController = TextEditingController(text: widget.vehicle?.color ?? '');
-    _licensePlateController = TextEditingController(
-      text: widget.vehicle?.licensePlate ?? '',
-    );
     _capacity = widget.vehicle?.capacity ?? 4;
     _fuelType = widget.vehicle?.fuelType ?? FuelType.gasoline;
-  }
-
-  @override
-  void dispose() {
-    _makeController.dispose();
-    _modelController.dispose();
-    _yearController.dispose();
-    _colorController.dispose();
-    _licensePlateController.dispose();
-    super.dispose();
   }
 
   Future<void> _pickImage() async {
@@ -659,18 +637,19 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
   }
 
   void _save() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.saveAndValidate()) return;
 
     setState(() => _isLoading = true);
 
+    final values = _formKey.currentState!.value;
     final vehicle = VehicleModel(
       id: widget.vehicle?.id ?? '',
       ownerId: widget.vehicle!.ownerId,
-      make: _makeController.text.trim(),
-      model: _modelController.text.trim(),
-      year: int.parse(_yearController.text.trim()),
-      color: _colorController.text.trim(),
-      licensePlate: _licensePlateController.text.trim().toUpperCase(),
+      make: (values['make'] as String).trim(),
+      model: (values['model'] as String).trim(),
+      year: int.parse((values['year'] as String).trim()),
+      color: (values['color'] as String).trim(),
+      licensePlate: (values['license_plate'] as String).trim().toUpperCase(),
       capacity: _capacity,
       fuelType: _fuelType,
       imageUrl: widget.vehicle?.imageUrl,
@@ -741,7 +720,7 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
           Expanded(
             child: SingleChildScrollView(
               padding: EdgeInsets.symmetric(horizontal: 20.w),
-              child: Form(
+              child: FormBuilder(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -791,7 +770,8 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
 
                     // Make
                     _buildTextField(
-                      controller: _makeController,
+                      name: 'make',
+                      initialValue: widget.vehicle?.make ?? '',
                       label: AppLocalizations.of(context).make,
                       hint: 'e.g., Toyota',
                       icon: Icons.business,
@@ -800,7 +780,8 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
 
                     // Model
                     _buildTextField(
-                      controller: _modelController,
+                      name: 'model',
+                      initialValue: widget.vehicle?.model ?? '',
                       label: AppLocalizations.of(context).model,
                       hint: 'e.g., Camry',
                       icon: Icons.directions_car,
@@ -812,7 +793,8 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
                       children: [
                         Expanded(
                           child: _buildTextField(
-                            controller: _yearController,
+                            name: 'year',
+                            initialValue: widget.vehicle?.year.toString() ?? '',
                             label: AppLocalizations.of(context).year,
                             hint: 'e.g., 2022',
                             icon: Icons.calendar_today,
@@ -822,7 +804,8 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
                         SizedBox(width: 16.w),
                         Expanded(
                           child: _buildTextField(
-                            controller: _colorController,
+                            name: 'color',
+                            initialValue: widget.vehicle?.color ?? '',
                             label: AppLocalizations.of(context).color,
                             hint: 'e.g., Silver',
                             icon: Icons.color_lens,
@@ -834,7 +817,8 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
 
                     // License plate
                     _buildTextField(
-                      controller: _licensePlateController,
+                      name: 'license_plate',
+                      initialValue: widget.vehicle?.licensePlate ?? '',
                       label: AppLocalizations.of(context).licensePlate,
                       hint: 'e.g., ABC 1234',
                       icon: Icons.credit_card,
@@ -999,53 +983,39 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
   }
 
   Widget _buildTextField({
-    required TextEditingController controller,
+    required String name,
     required String label,
     required String hint,
     required IconData icon,
+    String? initialValue,
     TextInputType? keyboardType,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w500,
-            color: AppColors.textPrimary,
-          ),
+    return FormBuilderTextField(
+      name: name,
+      initialValue: initialValue,
+      keyboardType: keyboardType,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(icon, color: AppColors.textSecondary),
+        filled: true,
+        fillColor: AppColors.background,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.r),
+          borderSide: BorderSide(color: AppColors.border),
         ),
-        SizedBox(height: 8.h),
-        TextFormField(
-          controller: controller,
-          keyboardType: keyboardType,
-          decoration: InputDecoration(
-            hintText: hint,
-            prefixIcon: Icon(icon, color: AppColors.textSecondary),
-            filled: true,
-            fillColor: AppColors.background,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.border),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.border),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.primary, width: 2),
-            ),
-          ),
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Please enter $label';
-            }
-            return null;
-          },
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.r),
+          borderSide: BorderSide(color: AppColors.border),
         ),
-      ],
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.r),
+          borderSide: BorderSide(color: AppColors.primary, width: 2),
+        ),
+      ),
+      validator: FormBuilderValidators.required(
+        errorText: 'Please enter $label',
+      ),
     );
   }
 
@@ -1163,7 +1133,7 @@ class _VehicleDetailsSheet extends StatelessWidget {
                   ),
                   _buildDetailRow(
                     AppLocalizations.of(context).fuelType,
-                    vehicle.fuelType.displayName,
+                    vehicle.fuelType.name,
                   ),
                   _buildDetailRow(
                     AppLocalizations.of(context).totalRides,

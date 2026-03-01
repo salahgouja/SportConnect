@@ -23,11 +23,10 @@ class EventListScreen extends ConsumerStatefulWidget {
 }
 
 class _EventListScreenState extends ConsumerState<EventListScreen> {
-  final _searchController = TextEditingController();
+  int _searchFieldKey = 0;
 
   @override
   void dispose() {
-    _searchController.dispose();
     super.dispose();
   }
 
@@ -147,7 +146,7 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
         8.h,
       ),
       child: TextField(
-        controller: _searchController,
+        key: ValueKey(_searchFieldKey),
         onChanged: (v) =>
             ref.read(eventListViewModelProvider.notifier).setSearchQuery(v),
         decoration: InputDecoration(
@@ -162,7 +161,7 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
               ? IconButton(
                   icon: Icon(Icons.close_rounded, size: 18.sp),
                   onPressed: () {
-                    _searchController.clear();
+                    setState(() => _searchFieldKey++);
                     ref
                         .read(eventListViewModelProvider.notifier)
                         .setSearchQuery('');

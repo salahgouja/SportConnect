@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/glass_panel.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
-import 'package:sport_connect/core/widgets/premium_text_field.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -24,31 +25,27 @@ class ForgotPasswordScreen extends ConsumerStatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
-  final _emailController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormBuilderState>();
   bool _isLoading = false;
   bool _emailSent = false;
   int _resendCooldown = 0;
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    super.dispose();
-  }
+  String _sentEmail = '';
 
   Future<void> _sendResetEmail() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!(_formKey.currentState?.saveAndValidate() ?? false)) return;
     setState(() => _isLoading = true);
 
     try {
       final authActions = ref.read(authActionsViewModelProvider);
-      await authActions.sendPasswordResetEmail(_emailController.text.trim());
+      final email = (_formKey.currentState!.value['email'] as String).trim();
+      await authActions.sendPasswordResetEmail(email);
 
       if (mounted) {
         setState(() {
           _emailSent = true;
           _isLoading = false;
           _resendCooldown = 60;
+          _sentEmail = email;
         });
         _startResendTimer();
       }
@@ -103,7 +100,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   }
 
   Widget _buildFormState(AppLocalizations l10n) {
-    return Form(
+    return FormBuilder(
       key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -151,23 +148,22 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
           SizedBox(height: 36.h),
 
-          PremiumTextField(
-            controller: _emailController,
-            label: l10n.authEmail,
-            hint: 'you@example.com',
+          FormBuilderTextField(
+            name: 'email',
+            decoration: InputDecoration(
+              labelText: l10n.authEmail,
+              hintText: 'you@example.com',
+              prefixIcon: const Icon(Icons.email_outlined),
+            ),
             keyboardType: TextInputType.emailAddress,
-            prefixIcon: Icons.email_outlined,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return l10n.forgotPasswordEmailRequired;
-              }
-              if (!RegExp(
-                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-              ).hasMatch(value)) {
-                return l10n.forgotPasswordInvalidEmail;
-              }
-              return null;
-            },
+            validator: FormBuilderValidators.compose([
+              FormBuilderValidators.required(
+                errorText: l10n.forgotPasswordEmailRequired,
+              ),
+              FormBuilderValidators.email(
+                errorText: l10n.forgotPasswordInvalidEmail,
+              ),
+            ]),
           ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1),
 
           SizedBox(height: 32.h),
@@ -262,7 +258,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               Icon(Icons.email_outlined, size: 18.sp, color: AppColors.primary),
               SizedBox(width: 8.w),
               Text(
-                _emailController.text.trim(),
+                _sentEmail,
                 style: TextStyle(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w600,
