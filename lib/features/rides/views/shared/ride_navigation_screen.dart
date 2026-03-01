@@ -60,6 +60,11 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
   LatLng? _destinationLatLng;
   String? _lastRideId;
 
+  // OSRM road-following route polyline
+  List<LatLng>? _osrmRoutePoints;
+  String? _osrmRouteRideId;
+  bool _isLoadingOsrmRoute = false;
+
   @override
   void initState() {
     super.initState();
@@ -242,6 +247,31 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
 
   double _degToRad(double deg) => deg * math.pi / 180;
 
+  /// Fetches OSRM road-following route and caches the coordinates.
+  Future<void> _loadOsrmRoute(RideModel ride) async {
+    if (_isLoadingOsrmRoute || _osrmRouteRideId == ride.id) return;
+    setState(() {
+      _isLoadingOsrmRoute = true;
+      _osrmRouteRideId = ride.id;
+    });
+    try {
+      final origin = LatLng(ride.origin.latitude, ride.origin.longitude);
+      final dest = LatLng(
+        ride.destination.latitude,
+        ride.destination.longitude,
+      );
+      final routeInfo = await RoutingService.getRoute(origin: origin, destination: dest);
+      if (mounted) {
+        setState(() {
+          _osrmRoutePoints = routeInfo?.coordinates;
+          _isLoadingOsrmRoute = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingOsrmRoute = false);
+    }
+  }
+
   /// Builds the polyline points for the route.
   /// Uses the encoded polyline from the ride model if available,
   /// otherwise falls back to waypoints between current and destination.
@@ -328,6 +358,10 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
     RideModel ride,
     AppLocalizations l10n,
   ) {
+    // Trigger OSRM route fetch once per ride
+    if (_osrmRouteRideId != ride.id && !_isLoadingOsrmRoute) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _loadOsrmRoute(ride));
+    }
     return Stack(
       children: [
         // Map placeholder (replace with actual map widget e.g. google_maps_flutter)
@@ -410,11 +444,20 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
           userAgentPackageName: 'com.sportconnect.app',
         ),
 
-        // Route polyline — decode actual route if available, else straight line
+        // Route polyline — use OSRM real road route when available, else fallback
         PolylineLayer(
           polylines: [
             Polyline(
-              points: _buildRoutePoints(ride, currentLatLng, destLatLng),
+              points:
+                  _osrmRoutePoints ??
+                  _buildRoutePoints(ride, currentLatLng, destLatLng),
+              color: Colors.white,
+              strokeWidth: 6,
+            ),
+            Polyline(
+              points:
+                  _osrmRoutePoints ??
+                  _buildRoutePoints(ride, currentLatLng, destLatLng),
               color: AppColors.primary,
               strokeWidth: 4,
             ),

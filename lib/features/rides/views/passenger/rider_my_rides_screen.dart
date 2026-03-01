@@ -370,11 +370,7 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
           error: (error, _) => _buildErrorState(error.toString()),
           data: (rides) {
             final activeRides = rides
-                .where(
-                  (r) =>
-                      r.status == RideStatus.active ||
-                      r.status == RideStatus.inProgress,
-                )
+                .where((r) => r.status == RideStatus.inProgress)
                 .toList();
 
             if (activeRides.isEmpty) {
@@ -408,10 +404,18 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
     final isInProgress = ride.status == RideStatus.inProgress;
 
     return GestureDetector(
-      onTap: () => context.pushNamed(
-        AppRoutes.riderViewRide.name,
-        pathParameters: {'id': ride.id},
-      ),
+      onTap: () {
+        if (ride.status == RideStatus.inProgress) {
+          context.push(
+            AppRoutes.rideNavigation.path.replaceFirst(':id', ride.id),
+          );
+        } else {
+          context.pushNamed(
+            AppRoutes.riderViewRide.name,
+            pathParameters: {'id': ride.id},
+          );
+        }
+      },
       child: Container(
         margin: EdgeInsets.only(bottom: 16.h),
         decoration: BoxDecoration(
@@ -720,6 +724,11 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
           loading: () => _buildLoadingState(),
           error: (error, _) => _buildErrorState(error.toString()),
           data: (rides) {
+            // Also watch passenger bookings to enable countdown routing
+            final myBookings =
+                ref.watch(bookingsByPassengerProvider(userData.uid)).value ??
+                [];
+
             final upcomingRides =
                 rides.where((r) {
                     return (r.status == RideStatus.active ||
@@ -809,10 +818,17 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
                       ],
                     ),
                   ),
-                  child: _buildUpcomingTripCard(ride, index)
-                      .animate()
-                      .fadeIn(delay: Duration(milliseconds: index * 80))
-                      .slideY(begin: 0.05),
+                  child:
+                      _buildUpcomingTripCard(
+                            ride,
+                            index,
+                            booking: myBookings
+                                .where((b) => b.rideId == ride.id)
+                                .firstOrNull,
+                          )
+                          .animate()
+                          .fadeIn(delay: Duration(milliseconds: index * 80))
+                          .slideY(begin: 0.05),
                 );
               },
             );
@@ -822,7 +838,11 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
     );
   }
 
-  Widget _buildUpcomingTripCard(RideModel ride, int index) {
+  Widget _buildUpcomingTripCard(
+    RideModel ride,
+    int index, {
+    RideBooking? booking,
+  }) {
     final daysUntil = ride.departureTime.difference(DateTime.now()).inDays;
     String timeLabel;
     if (daysUntil == 0) {
@@ -834,10 +854,19 @@ class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
     }
 
     return GestureDetector(
-      onTap: () => context.pushNamed(
-        AppRoutes.riderViewRide.name,
-        pathParameters: {'id': ride.id},
-      ),
+      onTap: () {
+        if (booking?.status == BookingStatus.accepted) {
+          context.pushNamed(
+            AppRoutes.rideCountdown.name,
+            pathParameters: {'bookingId': booking!.id},
+          );
+        } else {
+          context.pushNamed(
+            AppRoutes.riderViewRide.name,
+            pathParameters: {'id': ride.id},
+          );
+        }
+      },
       child: Container(
         margin: EdgeInsets.only(bottom: 12.h),
         padding: EdgeInsets.all(16.w),

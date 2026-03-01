@@ -215,6 +215,54 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                       .fadeIn(duration: 400.ms)
                       .slideY(begin: 0.2, curve: Curves.easeOutCubic),
 
+                  // Event badge — shown when this ride is linked to an event
+                  if (ride.eventId != null)
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 20.w,
+                        vertical: 4.h,
+                      ),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 12.w,
+                            vertical: 7.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primarySurface,
+                            borderRadius: BorderRadius.circular(12.r),
+                            border: Border.all(
+                              color: AppColors.primary.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.emoji_events_rounded,
+                                size: 14.sp,
+                                color: AppColors.primary,
+                              ),
+                              SizedBox(width: 6.w),
+                              Flexible(
+                                child: Text(
+                                  ride.eventName ?? 'Event',
+                                  style: TextStyle(
+                                    fontSize: 13.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.primary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ).animate().fadeIn(duration: 400.ms, delay: 70.ms),
+
                   // Driver info - only show for passengers
                   if (!isDriver)
                     _buildDriverCard(ride)

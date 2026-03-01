@@ -73,6 +73,10 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
   }
 
   bool _hasNavigated = false;
+  // Track the last known ride status to detect transitions (not just current state).
+  // This prevents auto-navigation from firing immediately when re-entering the
+  // screen while the ride is already inProgress.
+  RideStatus? _lastKnownRideStatus;
 
   @override
   Widget build(BuildContext context) {
@@ -153,17 +157,25 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
   Widget _buildContent(RideModel ride, RideBooking booking) {
     _startTimer(ride.schedule.departureTime);
 
-    // Auto-navigate to active ride when driver has started the ride
-    if (ride.status == RideStatus.inProgress && !_hasNavigated) {
-      _hasNavigated = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          context.pushReplacement(
-            '${AppRoutes.riderActiveRide.path}?rideId=${booking.rideId}',
-          );
-        }
-      });
+    // Auto-navigate ONLY when we observe the ride status TRANSITION into inProgress.
+    // If the ride is already inProgress when the screen first opens (re-entry case),
+    // skip auto-navigation so we don't immediately bounce the user away again.
+    if (ride.status == RideStatus.inProgress) {
+      final wasAlreadyInProgress =
+          _lastKnownRideStatus == RideStatus.inProgress;
+      if (!wasAlreadyInProgress && !_hasNavigated) {
+        _hasNavigated = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            context.pushReplacement(
+              '${AppRoutes.riderActiveRide.path}?rideId=${booking.rideId}',
+            );
+          }
+        });
+      }
     }
+    // Always keep last status updated for next rebuild.
+    _lastKnownRideStatus = ride.status;
 
     final isInPast = _timeUntilDeparture == Duration.zero;
     final isImminent = !isInPast && _timeUntilDeparture.inMinutes <= 15;
@@ -249,7 +261,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
             SizedBox(height: 32.h),
 
             // Action buttons
-            if (isInPast)
+            if (ride.status == RideStatus.inProgress || isInPast)
               PremiumButton(
                 text: 'Join Active Ride',
                 style: PremiumButtonStyle.success,
@@ -535,6 +547,43 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
               ),
             ],
           ),
+          // Event badge
+          if (ride.eventId != null) ...[
+            SizedBox(height: 10.h),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+              decoration: BoxDecoration(
+                color: AppColors.primarySurface,
+                borderRadius: BorderRadius.circular(8.r),
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.emoji_events_rounded,
+                    size: 12.sp,
+                    color: AppColors.primary,
+                  ),
+                  SizedBox(width: 4.w),
+                  Flexible(
+                    child: Text(
+                      ride.eventName ?? 'Event',
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );

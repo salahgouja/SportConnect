@@ -28,6 +28,8 @@ _RideBooking _$RideBookingFromJson(Map json) => _RideBooking(
   note: json['note'] as String?,
   createdAt: const TimestampConverter().fromJson(json['createdAt']),
   respondedAt: const TimestampConverter().fromJson(json['respondedAt']),
+  paymentIntentId: json['paymentIntentId'] as String?,
+  paidAt: const TimestampConverter().fromJson(json['paidAt']),
 );
 
 Map<String, dynamic> _$RideBookingToJson(_RideBooking instance) =>
@@ -43,6 +45,8 @@ Map<String, dynamic> _$RideBookingToJson(_RideBooking instance) =>
       'note': instance.note,
       'createdAt': const TimestampConverter().toJson(instance.createdAt),
       'respondedAt': const TimestampConverter().toJson(instance.respondedAt),
+      'paymentIntentId': instance.paymentIntentId,
+      'paidAt': const TimestampConverter().toJson(instance.paidAt),
     };
 
 const _$BookingStatusEnumMap = {

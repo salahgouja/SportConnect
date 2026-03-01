@@ -19,6 +19,9 @@ import 'package:sport_connect/features/home/models/home_models.dart';
 import 'package:sport_connect/features/home/view_models/home_view_model.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
+import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
+import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Rider Home Screen - map-based explore view with nearby drivers
@@ -406,6 +409,15 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
               ),
             ),
           ),
+
+        // Active trip banner — shown when the user has an accepted or in-progress
+        // booking so they can immediately resume countdown or navigation.
+        Positioned(
+          left: 16.w,
+          right: 16.w,
+          bottom: 90.h,
+          child: const _ActiveTripBanner(),
+        ),
 
         // Quick Stats Bar
         _buildQuickStatsBar(filteredNearbyRides),
@@ -2337,5 +2349,246 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
         ],
       ),
     );
+  }
+}
+
+/// Persistent banner that floats above the home map when the user has an
+/// active booking (accepted or in-progress ride). Tapping it re-enters the
+/// correct screen without needing to navigate through My Rides first.
+///
+/// States handled:
+///  • accepted booking + unpaid  → booking pending (complete payment)
+///  • accepted booking + paid    → countdown screen
+///  • accepted booking + ride inProgress → navigation screen
+///  • pending booking            → subtle "awaiting driver" chip
+class _ActiveTripBanner extends ConsumerWidget {
+  const _ActiveTripBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(currentUserProvider).value;
+    if (user == null) return const SizedBox.shrink();
+
+    final bookings =
+        ref.watch(bookingsByPassengerProvider(user.uid)).value ?? [];
+
+    // ── 1. Find the most relevant in-flight booking ─────────────────────
+    // Priority: accepted (sorted by departure) > pending
+    final acceptedBookings =
+        bookings.where((b) => b.status == BookingStatus.accepted).toList()
+          ..sort((a, b) {
+            final aTime = a.createdAt ?? DateTime(0);
+            final bTime = b.createdAt ?? DateTime(0);
+            return aTime.compareTo(bTime);
+          });
+
+    final pendingBookings = bookings
+        .where((b) => b.status == BookingStatus.pending)
+        .toList();
+
+    if (acceptedBookings.isEmpty && pendingBookings.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // ── 2. If there's an accepted booking, show full banner ──────────────
+    if (acceptedBookings.isNotEmpty) {
+      final booking = acceptedBookings.first;
+      final ride = ref.watch(rideStreamProvider(booking.rideId)).value;
+
+      // Don't show for finished rides
+      if (ride != null &&
+          (ride.status == RideStatus.completed ||
+              ride.status == RideStatus.cancelled)) {
+        return _buildPendingChip(context, pendingBookings);
+      }
+
+      return _buildAcceptedBanner(context, booking, ride);
+    }
+
+    // ── 3. Only pending bookings → subtle chip ───────────────────────────
+    return _buildPendingChip(context, pendingBookings);
+  }
+
+  /// Full-width banner for an accepted (or in-progress) booking.
+  Widget _buildAcceptedBanner(
+    BuildContext context,
+    RideBooking booking,
+    RideModel? ride,
+  ) {
+    final isInProgress = ride?.status == RideStatus.inProgress;
+    final needsPayment =
+        !isInProgress &&
+        booking.paymentIntentId == null &&
+        (ride?.acceptsOnlinePayment ?? false);
+
+    final IconData icon;
+    final String title;
+    final String subtitle;
+    final VoidCallback onTap;
+    final Color bannerColor;
+
+    if (isInProgress) {
+      icon = Icons.navigation_rounded;
+      title = 'Ride In Progress';
+      subtitle = ride != null
+          ? '${ride.origin.city ?? ride.origin.address} → '
+                '${ride.destination.city ?? ride.destination.address}'
+          : 'Tap to open navigation';
+      onTap = () => context.push(
+        AppRoutes.rideNavigation.path.replaceFirst(':id', booking.rideId),
+      );
+      bannerColor = AppColors.success;
+    } else if (needsPayment) {
+      icon = Icons.payment_rounded;
+      title = 'Complete Payment';
+      subtitle = 'Your booking is accepted — payment required';
+      onTap = () => context.pushNamed(
+        AppRoutes.rideBookingPending.name,
+        pathParameters: {'rideId': booking.rideId},
+      );
+      bannerColor = AppColors.warning;
+    } else {
+      icon = Icons.access_time_rounded;
+      title = 'Booking Confirmed';
+      subtitle = ride != null
+          ? 'Departing ${_formatDeparture(ride.departureTime)}'
+          : 'Tap to view countdown';
+      onTap = () => context.pushNamed(
+        AppRoutes.rideCountdown.name,
+        pathParameters: {'bookingId': booking.id},
+      );
+      bannerColor = AppColors.primary;
+    }
+
+    return GestureDetector(
+      onTap: onTap,
+      child:
+          Container(
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+                decoration: BoxDecoration(
+                  color: bannerColor,
+                  borderRadius: BorderRadius.circular(16.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: bannerColor.withValues(alpha: 0.45),
+                      blurRadius: 18,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(9.w),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.22),
+                        borderRadius: BorderRadius.circular(11.r),
+                      ),
+                      child: Icon(icon, color: Colors.white, size: 22.sp),
+                    ),
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            title,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          SizedBox(height: 2.h),
+                          Text(
+                            subtitle,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.87),
+                              fontSize: 12.sp,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: Colors.white,
+                      size: 26.sp,
+                    ),
+                  ],
+                ),
+              )
+              .animate()
+              .fadeIn(delay: 300.ms, duration: 400.ms)
+              .slideY(begin: 0.25, curve: Curves.easeOutCubic),
+    );
+  }
+
+  /// Small pill shown when bookings are only in the pending state.
+  Widget _buildPendingChip(BuildContext context, List<RideBooking> pending) {
+    if (pending.isEmpty) return const SizedBox.shrink();
+    return Align(
+          alignment: Alignment.centerRight,
+          child: GestureDetector(
+            onTap: () => context.pushNamed(AppRoutes.riderMyRides.name),
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 9.h),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(24.r),
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.4),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.10),
+                    blurRadius: 10,
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 10.w,
+                    height: 10.w,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  SizedBox(width: 8.w),
+                  Text(
+                    'Awaiting driver (${pending.length})',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        )
+        .animate()
+        .fadeIn(delay: 300.ms, duration: 400.ms)
+        .slideY(begin: 0.2, curve: Curves.easeOutCubic);
+  }
+
+  String _formatDeparture(DateTime dt) {
+    final now = DateTime.now();
+    final diff = dt.difference(now);
+    if (diff.inDays == 0) {
+      final h = dt.hour.toString().padLeft(2, '0');
+      final m = dt.minute.toString().padLeft(2, '0');
+      return 'today at $h:$m';
+    } else if (diff.inDays == 1) {
+      return 'tomorrow';
+    }
+    return 'in ${diff.inDays} days';
   }
 }

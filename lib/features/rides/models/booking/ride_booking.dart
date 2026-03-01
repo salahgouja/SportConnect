@@ -25,6 +25,9 @@ abstract class RideBooking with _$RideBooking {
     // No denormalized user data - fetch via passengerId for single source of truth
     @TimestampConverter() DateTime? createdAt,
     @TimestampConverter() DateTime? respondedAt,
+    // Payment tracking — stamped when Stripe payment succeeds
+    String? paymentIntentId,
+    @TimestampConverter() DateTime? paidAt,
   }) = _RideBooking;
 
   factory RideBooking.fromJson(Map<String, dynamic> json) =>

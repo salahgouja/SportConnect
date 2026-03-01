@@ -23,6 +23,10 @@ abstract class IBookingRepository {
   });
 
   Future<void> updateBooking(RideBooking booking);
+  Future<void> updateBookingPaymentIntent({
+    required String bookingId,
+    required String paymentIntentId,
+  });
   Future<void> deleteBooking(String bookingId);
   Stream<List<RideBooking>> streamActiveBookingsByPassengerId(
     String passengerId,

@@ -125,6 +125,21 @@ class RideActionsViewModel {
         .cancelBooking(rideId: rideId, bookingId: bookingId);
   }
 
+  /// Stamps the booking with the Stripe payment intent ID once payment
+  /// succeeds. Prevents the "Complete Payment" button from reappearing
+  /// and guards against double-charges on back-navigation.
+  Future<void> markBookingPaid({
+    required String bookingId,
+    required String paymentIntentId,
+  }) {
+    return _ref
+        .read(bookingRepositoryProvider)
+        .updateBookingPaymentIntent(
+          bookingId: bookingId,
+          paymentIntentId: paymentIntentId,
+        );
+  }
+
   Stream<RideModel?> streamRideById(String rideId) {
     return _ref.read(rideRepositoryProvider).streamRideById(rideId);
   }

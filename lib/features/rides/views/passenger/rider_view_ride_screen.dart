@@ -24,6 +24,7 @@ import 'package:sport_connect/features/reviews/view_models/review_view_model.dar
 import 'package:sport_connect/features/reviews/models/review_model.dart';
 import 'package:sport_connect/core/utils/distance_formatter.dart';
 import 'package:sport_connect/core/services/deep_link_service.dart';
+import 'package:sport_connect/core/services/routing_service.dart';
 import 'package:uuid/uuid.dart';
 
 /// Rider's personal ride view with booking and review sections.
@@ -46,9 +47,39 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
   String _note = '';
   bool _isBooking = false;
 
+  // Header map route preview
+  RouteInfo? _routeInfo;
+  String? _routeRideId;
+  bool _isLoadingRoute = false;
+
   @override
   void dispose() {
     super.dispose();
+  }
+
+  /// Fetches the OSRM road-following route for the header map preview.
+  Future<void> _loadHeaderRoute(RideModel ride) async {
+    if (_isLoadingRoute || _routeRideId == ride.id) return;
+    setState(() {
+      _isLoadingRoute = true;
+      _routeRideId = ride.id;
+    });
+    try {
+      final origin = LatLng(ride.origin.latitude, ride.origin.longitude);
+      final dest = LatLng(
+        ride.destination.latitude,
+        ride.destination.longitude,
+      );
+      final info = await RoutingService.getRoute(origin: origin, destination: dest);
+      if (mounted) {
+        setState(() {
+          _routeInfo = info;
+          _isLoadingRoute = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingRoute = false);
+    }
   }
 
   @override
@@ -128,6 +159,13 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
       return _buildErrorState(AppLocalizations.of(context).rideNotFound);
     }
 
+    // Trigger OSRM route fetch for header map preview
+    if (_routeRideId != ride.id && !_isLoadingRoute) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _loadHeaderRoute(ride),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: CustomScrollView(
@@ -204,6 +242,21 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.sportconnect.app',
                 ),
+                if (_routeInfo != null)
+                  PolylineLayer(
+                    polylines: [
+                      Polyline(
+                        points: _routeInfo!.coordinates,
+                        color: Colors.white,
+                        strokeWidth: 5,
+                      ),
+                      Polyline(
+                        points: _routeInfo!.coordinates,
+                        color: AppColors.primary,
+                        strokeWidth: 3,
+                      ),
+                    ],
+                  ),
                 MarkerLayer(
                   markers: [
                     Marker(
@@ -1195,17 +1248,25 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
               .firstOrNull
         : null;
 
-    // Rider has an accepted booking on a ride that requires online payment
-    // → show "Complete Payment" so they can finish the flow.
+    // Rider has an accepted booking on a ride that requires online payment.
+    // Show "Complete Payment" only if they haven't paid yet;
+    // once paymentIntentId is stamped on the booking, show Confirmed instead.
     if (existingBooking != null &&
         existingBooking.status == BookingStatus.accepted &&
         ride.acceptsOnlinePayment) {
+      if (existingBooking.paymentIntentId != null) {
+        return _buildExistingBookingBar(
+          label: 'Booking Confirmed',
+          icon: Icons.check_circle_rounded,
+          onPressed: null,
+          style: PremiumButtonStyle.secondary,
+        );
+      }
       return _buildExistingBookingBar(
         label: 'Complete Payment',
         icon: Icons.payment_rounded,
         onPressed: () => context.push(
-          AppRoutes.rideBookingPending.path
-              .replaceFirst(':rideId', ride.id),
+          AppRoutes.rideBookingPending.path.replaceFirst(':rideId', ride.id),
         ),
       );
     }
@@ -1217,8 +1278,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
         label: 'Waiting for driver approval',
         icon: Icons.hourglass_top_rounded,
         onPressed: () => context.push(
-          AppRoutes.rideBookingPending.path
-              .replaceFirst(':rideId', ride.id),
+          AppRoutes.rideBookingPending.path.replaceFirst(':rideId', ride.id),
         ),
       );
     }
@@ -1559,8 +1619,7 @@ class _BookingConfirmationSheet extends StatefulWidget {
       _BookingConfirmationSheetState();
 }
 
-class _BookingConfirmationSheetState
-    extends State<_BookingConfirmationSheet> {
+class _BookingConfirmationSheetState extends State<_BookingConfirmationSheet> {
   late String _noteText;
 
   @override

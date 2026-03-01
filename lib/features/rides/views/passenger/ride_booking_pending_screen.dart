@@ -94,10 +94,27 @@ class _RideBookingPendingScreenState
       if (booking.status == BookingStatus.accepted) {
         _hasNavigated = true;
         if (ride != null && ride.acceptsOnlinePayment) {
-          // Driver accepted — collect payment before proceeding
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) _processPayment(ride, booking);
-          });
+          // Only launch payment if this booking hasn't already been paid.
+          // This guards against double-charges when the user back-navigates
+          // from the countdown screen (which resets _hasNavigated).
+          if (booking.paymentIntentId == null) {
+            // Driver accepted — collect payment before proceeding
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) _processPayment(ride, booking);
+            });
+          } else {
+            // Payment already completed — go straight to countdown
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                context.pushReplacement(
+                  AppRoutes.rideCountdown.path.replaceFirst(
+                    ':bookingId',
+                    booking.id,
+                  ),
+                );
+              }
+            });
+          }
         } else {
           // Cash ride — go straight to countdown
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -176,7 +193,9 @@ class _RideBookingPendingScreenState
 
   Widget _buildContent(RideModel ride, RideBooking? booking) {
     final isAcceptedNeedsPayment =
-        booking?.status == BookingStatus.accepted && ride.acceptsOnlinePayment;
+        booking?.status == BookingStatus.accepted &&
+        ride.acceptsOnlinePayment &&
+        booking?.paymentIntentId == null;
     final hours = _timeRemaining.inHours;
     final minutes = _timeRemaining.inMinutes.remainder(60);
     final seconds = _timeRemaining.inSeconds.remainder(60);
@@ -234,7 +253,7 @@ class _RideBookingPendingScreenState
               isAcceptedNeedsPayment
                   ? 'Complete your payment to confirm the ride.'
                   : "Waiting for the driver to confirm your booking.\n"
-                      "You'll be notified as soon as they respond.",
+                        "You'll be notified as soon as they respond.",
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14.sp,
@@ -590,11 +609,23 @@ class _RideBookingPendingScreenState
       if (!mounted) return;
 
       if (paymentSuccess) {
+        // Stamp the booking with the payment intent ID before navigating.
+        // This prevents "Complete Payment" from re-appearing and guards
+        // against double-charges if the user back-navigates later.
+        try {
+          await ref
+              .read(rideActionsViewModelProvider)
+              .markBookingPaid(
+                bookingId: booking.id,
+                paymentIntentId: paymentData['paymentIntentId'] as String,
+              );
+        } catch (_) {
+          // Non-fatal: payment already succeeded; the stamp is best-effort.
+        }
+
+        if (!mounted) return;
         context.pushReplacement(
-          AppRoutes.rideCountdown.path.replaceFirst(
-            ':bookingId',
-            booking.id,
-          ),
+          AppRoutes.rideCountdown.path.replaceFirst(':bookingId', booking.id),
         );
       } else {
         // Payment cancelled — let the user retry
@@ -604,7 +635,9 @@ class _RideBookingPendingScreenState
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Payment cancelled. Tap "Complete Payment" to retry.'),
+            content: Text(
+              'Payment cancelled. Tap "Complete Payment" to retry.',
+            ),
             behavior: SnackBarBehavior.floating,
           ),
         );

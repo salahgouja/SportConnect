@@ -125,6 +125,19 @@ class BookingRepository implements IBookingRepository {
         .set(booking, SetOptions(merge: true));
   }
 
+  /// Stamp a booking with the Stripe payment intent ID once payment succeeds.
+  /// Uses a targeted partial update to avoid overwriting other fields.
+  @override
+  Future<void> updateBookingPaymentIntent({
+    required String bookingId,
+    required String paymentIntentId,
+  }) async {
+    await _bookingsCollection.doc(bookingId).update({
+      'paymentIntentId': paymentIntentId,
+      'paidAt': DateTime.now(),
+    });
+  }
+
   /// Delete booking
   Future<void> deleteBooking(String bookingId) async {
     await _bookingsCollection.doc(bookingId).delete();
