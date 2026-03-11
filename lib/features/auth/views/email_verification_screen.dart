@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
+import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/email_verification_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -19,6 +21,12 @@ class EmailVerificationScreen extends ConsumerWidget {
 
     ref.listen(emailVerificationViewModelProvider, (previous, next) {
       if (next.isEmailVerified && !(previous?.isEmailVerified ?? false)) {
+        final currentUser = ref.read(currentUserProvider).value;
+        if (currentUser is DriverModel && currentUser.vehicleIds.isEmpty) {
+          context.go('${AppRoutes.driverOnboarding.path}?skipProfile=true');
+          return;
+        }
+
         context.go(AppRoutes.login.path);
       }
 
@@ -65,8 +73,7 @@ class EmailVerificationScreen extends ConsumerWidget {
                     text: vmState.resendCooldown > 0
                         ? l10n.emailVerifyResendIn(vmState.resendCooldown)
                         : l10n.emailVerifyResend,
-                    onPressed:
-                        vmState.resendCooldown > 0 || vmState.isSending
+                    onPressed: vmState.resendCooldown > 0 || vmState.isSending
                         ? null
                         : () => ref
                               .read(emailVerificationViewModelProvider.notifier)

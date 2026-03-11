@@ -60,6 +60,31 @@ class _DriverOnboardingScreenState
   ];
 
   bool _didScheduleProfilePrefill = false;
+  bool _didScheduleSkipProfileEntry = false;
+
+  bool _skipProfileStep(BuildContext context) {
+    final state = GoRouterState.of(context);
+    return state.uri.queryParameters['skipProfile'] == 'true';
+  }
+
+  bool _hasPersistedDriverProfileData(UserModel? user) {
+    final driver = user?.asDriver;
+    if (driver == null) return false;
+
+    return (driver.phoneNumber?.isNotEmpty ?? false) ||
+        (driver.city?.isNotEmpty ?? false) ||
+        (driver.bio?.isNotEmpty ?? false) ||
+        driver.dateOfBirth != null ||
+        (driver.gender?.isNotEmpty ?? false) ||
+        driver.interests.isNotEmpty;
+  }
+
+  int _effectiveStep(OnboardingState vmState, bool skipProfileStep) {
+    if (skipProfileStep && vmState.driverCurrentStep == 0) {
+      return 1;
+    }
+    return vmState.driverCurrentStep;
+  }
 
   // ── Navigation helpers ──────────────────────────────────────────────
 
@@ -81,8 +106,14 @@ class _DriverOnboardingScreenState
     }
   }
 
-  void _previousStep(OnboardingState vmState) {
-    if (vmState.driverCurrentStep > 0) {
+  void _previousStep(OnboardingState vmState, {required bool skipProfileStep}) {
+    final currentStep = _effectiveStep(vmState, skipProfileStep);
+    if (skipProfileStep && currentStep <= 1) {
+      context.go(AppRoutes.roleSelection.path);
+      return;
+    }
+
+    if (currentStep > 0) {
       ref.read(onboardingViewModelProvider.notifier).retreatDriverStep();
     }
   }
@@ -184,7 +215,24 @@ class _DriverOnboardingScreenState
     final userAsync = ref.watch(currentUserProvider);
     final user = userAsync.value;
     final vmState = ref.watch(onboardingViewModelProvider);
-    if (!_didScheduleProfilePrefill &&
+    final skipProfileStep =
+        _skipProfileStep(context) || _hasPersistedDriverProfileData(user);
+    final effectiveStep = _effectiveStep(vmState, skipProfileStep);
+
+    if (skipProfileStep &&
+        vmState.driverCurrentStep == 0 &&
+        !_didScheduleSkipProfileEntry) {
+      _didScheduleSkipProfileEntry = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final notifier = ref.read(onboardingViewModelProvider.notifier);
+        notifier.markDriverProfilePopulated();
+        notifier.setDriverCurrentStep(1);
+      });
+    }
+
+    if (!skipProfileStep &&
+        !_didScheduleProfilePrefill &&
         !vmState.driverProfilePopulated &&
         user != null) {
       _didScheduleProfilePrefill = true;
@@ -231,10 +279,11 @@ class _DriverOnboardingScreenState
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
-        leading: vmState.driverCurrentStep > 0
+        leading: effectiveStep > 0
             ? IconButton(
                 tooltip: AppLocalizations.of(context).previousStepTooltip,
-                onPressed: () => _previousStep(vmState),
+                onPressed: () =>
+                    _previousStep(vmState, skipProfileStep: skipProfileStep),
                 icon: Icon(
                   Icons.arrow_back_ios_new_rounded,
                   color: AppColors.textPrimary,
@@ -263,15 +312,19 @@ class _DriverOnboardingScreenState
       body: Column(
         children: [
           // Progress indicator
-          _buildProgressIndicator(vmState),
+          _buildProgressIndicator(
+            vmState,
+            skipProfileStep: skipProfileStep,
+            effectiveStep: effectiveStep,
+          ),
 
           // Page content
           Expanded(
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 250),
               child: KeyedSubtree(
-                key: ValueKey(vmState.driverCurrentStep),
-                child: switch (vmState.driverCurrentStep) {
+                key: ValueKey(effectiveStep),
+                child: switch (effectiveStep) {
                   0 => _buildProfileStep(vmState),
                   1 => _buildVehicleStep(vmState),
                   _ => _buildStripeStep(),
@@ -284,7 +337,45 @@ class _DriverOnboardingScreenState
     );
   }
 
-  Widget _buildProgressIndicator(OnboardingState vmState) {
+  Widget _buildProgressIndicator(
+    OnboardingState vmState, {
+    required bool skipProfileStep,
+    required int effectiveStep,
+  }) {
+    if (skipProfileStep) {
+      return Padding(
+        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+        child: Row(
+          children: [
+            _buildStepIndicator(
+              1,
+              AppLocalizations.of(context).vehicle,
+              Icons.directions_car_outlined,
+              effectiveStep,
+            ),
+            Expanded(
+              child: Container(
+                height: 2,
+                margin: EdgeInsets.symmetric(horizontal: 8.w),
+                decoration: BoxDecoration(
+                  color: effectiveStep >= 2
+                      ? AppColors.primary
+                      : AppColors.border,
+                  borderRadius: BorderRadius.circular(1),
+                ),
+              ),
+            ),
+            _buildStepIndicator(
+              2,
+              AppLocalizations.of(context).payouts,
+              Icons.account_balance_outlined,
+              effectiveStep,
+            ),
+          ],
+        ),
+      );
+    }
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
       child: Row(
@@ -293,14 +384,14 @@ class _DriverOnboardingScreenState
             0,
             AppLocalizations.of(context).navProfile,
             Icons.person_outline_rounded,
-            vmState.driverCurrentStep,
+            effectiveStep,
           ),
           Expanded(
             child: Container(
               height: 2,
               margin: EdgeInsets.symmetric(horizontal: 8.w),
               decoration: BoxDecoration(
-                color: vmState.driverCurrentStep >= 1
+                color: effectiveStep >= 1
                     ? AppColors.primary
                     : AppColors.border,
                 borderRadius: BorderRadius.circular(1),
@@ -311,14 +402,14 @@ class _DriverOnboardingScreenState
             1,
             AppLocalizations.of(context).vehicle,
             Icons.directions_car_outlined,
-            vmState.driverCurrentStep,
+            effectiveStep,
           ),
           Expanded(
             child: Container(
               height: 2,
               margin: EdgeInsets.symmetric(horizontal: 8.w),
               decoration: BoxDecoration(
-                color: vmState.driverCurrentStep >= 2
+                color: effectiveStep >= 2
                     ? AppColors.primary
                     : AppColors.border,
                 borderRadius: BorderRadius.circular(1),
@@ -329,7 +420,7 @@ class _DriverOnboardingScreenState
             2,
             AppLocalizations.of(context).payouts,
             Icons.account_balance_outlined,
-            vmState.driverCurrentStep,
+            effectiveStep,
           ),
         ],
       ),
