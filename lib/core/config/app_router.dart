@@ -546,17 +546,6 @@ List<GoRoute> _buildReviewRoutes() {
 // =============================================================================
 List<GoRoute> _buildEventRoutes() {
   return [
-    // Browse / Discover
-    GoRoute(
-      path: AppRoutes.events.path,
-      name: AppRoutes.events.name,
-      parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (context, state) => SlideRightTransitionPage(
-        key: state.pageKey,
-        child: const EventListScreen(),
-      ),
-    ),
-
     // Create
     GoRoute(
       path: AppRoutes.createEvent.path,
