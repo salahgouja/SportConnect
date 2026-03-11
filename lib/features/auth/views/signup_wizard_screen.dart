@@ -181,6 +181,8 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
           interests: uiState.selectedInterests,
           profileImage: uiState.profileImage,
         );
+    if (!mounted) return;
+
     if (success) {
       context.go(AppRoutes.emailVerification.path);
     }
@@ -398,14 +400,14 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
     final currentStep = ref.watch(signupWizardUiViewModelProvider).currentStep;
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(24.w, 20.h, 24.w, 24.h),
-      child: AnimatedSwitcher(
-        duration: 300.ms,
-        child: [
+      child: IndexedStack(
+        index: currentStep,
+        children: [
           _buildStep1(theme),
           _buildStep2(theme),
           _buildStep3(theme),
           _buildStep4(theme),
-        ][currentStep],
+        ],
       ),
     );
   }

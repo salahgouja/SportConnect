@@ -206,12 +206,16 @@ class LoginViewModel extends _$LoginViewModel {
       await ref
           .read(authRepositoryProvider)
           .signInWithEmail(email, password, rememberMe);
+      if (!ref.mounted) return false;
+
       final uid = ref.read(authRepositoryProvider).currentUserId;
       if (uid != null) AnalyticsService.instance.setUserId(uid);
       AnalyticsService.instance.logLogin('email');
       state = const AsyncValue.data(null);
       return true;
     } catch (e, stackTrace) {
+      if (!ref.mounted) return false;
+
       state = AsyncValue.error(e, stackTrace);
       return false;
     }
@@ -260,12 +264,16 @@ class RegisterViewModel extends _$RegisterViewModel {
             interests: interests,
             profileImage: profileImage,
           );
+      if (!ref.mounted) return false;
+
       final uid = ref.read(authRepositoryProvider).currentUserId;
       if (uid != null) AnalyticsService.instance.setUserId(uid);
       AnalyticsService.instance.logSignUp('email');
       state = const AsyncValue.data(null);
       return true;
     } catch (e, stackTrace) {
+      if (!ref.mounted) return false;
+
       state = AsyncValue.error(e, stackTrace);
       return false;
     }

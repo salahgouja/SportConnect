@@ -30,6 +30,8 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
   final _phoneKey = GlobalKey<IntlPhoneInputState>();
   final _cityKey = GlobalKey<AddressAutocompleteFieldState>();
 
+  bool _didScheduleProfilePrefill = false;
+
   final List<String> _availableInterests = [
     'Football',
     'Basketball',
@@ -120,10 +122,14 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
     });
 
     if (!vmState.riderProfilePopulated && user != null) {
-      ref.read(onboardingViewModelProvider.notifier).markRiderProfilePopulated();
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _populateProfileFields(user);
-      });
+      if (!_didScheduleProfilePrefill) {
+        _didScheduleProfilePrefill = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          ref.read(onboardingViewModelProvider.notifier).markRiderProfilePopulated();
+          _populateProfileFields(user);
+        });
+      }
     }
 
     return Scaffold(

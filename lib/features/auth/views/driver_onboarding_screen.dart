@@ -59,6 +59,8 @@ class _DriverOnboardingScreenState
     FuelType.hydrogen,
   ];
 
+  bool _didScheduleProfilePrefill = false;
+
   // ── Navigation helpers ──────────────────────────────────────────────
 
   void _nextStep(OnboardingState vmState) {
@@ -179,9 +181,13 @@ class _DriverOnboardingScreenState
     final userAsync = ref.watch(currentUserProvider);
     final user = userAsync.value;
     final vmState = ref.watch(onboardingViewModelProvider);
-    if (!vmState.driverProfilePopulated && user != null) {
-      ref.read(onboardingViewModelProvider.notifier).markDriverProfilePopulated();
+    if (!_didScheduleProfilePrefill &&
+        !vmState.driverProfilePopulated &&
+        user != null) {
+      _didScheduleProfilePrefill = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref.read(onboardingViewModelProvider.notifier).markDriverProfilePopulated();
         _populateProfileFields(user);
       });
     }
