@@ -106,7 +106,8 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
     final uiState = ref.read(signupWizardUiViewModelProvider);
     // Validate current step
     if (_formKeys[uiState.currentStep].currentState != null) {
-      if (!_formKeys[uiState.currentStep].currentState!.saveAndValidate()) return;
+      if (!_formKeys[uiState.currentStep].currentState!.saveAndValidate())
+        return;
     }
     // Validate phone in step 0 (optional but format-checked if entered)
     if (uiState.currentStep == 0) {
@@ -227,22 +228,23 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
         final msg = error is AuthException
             ? error.message
             : error.toString().replaceFirst('Exception: ', '');
-        final safeMessage = msg.isNotEmpty
-            ? msg
-            : l10n.signUpFailedPleaseTry;
+        final safeMessage = msg.isNotEmpty ? msg : l10n.signUpFailedPleaseTry;
         TalkerService.error('Signup failed: $safeMessage');
         _showError(safeMessage);
       }
     });
 
     ref.listen(socialAuthViewModelProvider, (previous, next) {
-      if (next.errorMessage != null && next.errorMessage != previous?.errorMessage) {
+      if (next.errorMessage != null &&
+          next.errorMessage != previous?.errorMessage) {
         final error = next.errorMessage!;
         final isAccountExists = error.contains(
           'account-exists-with-different-credential',
         );
         _showError(
-          isAccountExists ? l10n.accountExistsError : l10n.signUpFailedPleaseTry,
+          isAccountExists
+              ? l10n.accountExistsError
+              : l10n.signUpFailedPleaseTry,
         );
       }
     });
@@ -272,7 +274,12 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
   Widget _buildTopBar(_StepTheme theme) {
     final wizardUiState = ref.watch(signupWizardUiViewModelProvider);
     final l10n = AppLocalizations.of(context);
-    final stepLabels = [l10n.yourDetailsStep, l10n.securityStep, l10n.yourRoleStep, l10n.yourProfileStep];
+    final stepLabels = [
+      l10n.yourDetailsStep,
+      l10n.securityStep,
+      l10n.yourRoleStep,
+      l10n.yourProfileStep,
+    ];
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
       child: Row(
@@ -334,7 +341,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                 width: i == wizardUiState.currentStep ? 20.w : 8.w,
                 height: 8.w,
                 decoration: BoxDecoration(
-                    color: i <= wizardUiState.currentStep
+                  color: i <= wizardUiState.currentStep
                       ? theme.accent
                       : theme.accent.withOpacity(0.25),
                   borderRadius: BorderRadius.circular(4.r),
@@ -824,7 +831,9 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                 SizedBox(height: 8.h),
                 Text(
                   l10n.emailValue(
-  (_formKeys[0].currentState?.fields['email']?.value as String? ?? ''),
+                    (_formKeys[0].currentState?.fields['email']?.value
+                            as String? ??
+                        ''),
                   ),
                   style: TextStyle(fontSize: 13.sp, color: theme.text),
                 ),

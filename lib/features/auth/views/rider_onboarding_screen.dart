@@ -72,21 +72,18 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
     if (phoneValid != true || cityValid != true) return;
 
     final values = _formKey.currentState!.value;
-  final phoneStr = vmState.riderPhoneNumber;
-  final cityStr = vmState.riderCity ?? _cityKey.currentState?.text;
-  final updatedUser = currentUser.map(
+    final phoneStr = vmState.riderPhoneNumber;
+    final cityStr = vmState.riderCity ?? _cityKey.currentState?.text;
+    final updatedUser = currentUser.map(
       rider: (rider) => rider.copyWith(
         displayName: values['name'],
         phoneNumber: phoneStr,
         city: cityStr,
-    country: vmState.riderCountry,
-        bio: (values['bio'] as String?)?.isEmpty ?? true
-            ? null
-            : values['bio'],
+        country: vmState.riderCountry,
+        bio: (values['bio'] as String?)?.isEmpty ?? true ? null : values['bio'],
         gender: values['gender'],
         dateOfBirth: values['dob'],
-        interests: (values['interests'] as List<dynamic>? ?? [])
-            .cast<String>(),
+        interests: (values['interests'] as List<dynamic>? ?? []).cast<String>(),
       ),
       driver: (driver) => driver,
     );
@@ -126,7 +123,9 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
         _didScheduleProfilePrefill = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
-          ref.read(onboardingViewModelProvider.notifier).markRiderProfilePopulated();
+          ref
+              .read(onboardingViewModelProvider.notifier)
+              .markRiderProfilePopulated();
           _populateProfileFields(user);
         });
       }

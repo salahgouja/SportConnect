@@ -112,21 +112,22 @@ class _DriverOnboardingScreenState
       rider: (rider) => rider, // Should not reach this in driver flow
       driver: (driver) => driver.copyWith(
         displayName: values['name'],
-        phoneNumber: (ref.read(onboardingViewModelProvider).driverPhoneNumber
-              ?.isNotEmpty ??
-            false)
-          ? ref.read(onboardingViewModelProvider).driverPhoneNumber
+        phoneNumber:
+            (ref
+                    .read(onboardingViewModelProvider)
+                    .driverPhoneNumber
+                    ?.isNotEmpty ??
+                false)
+            ? ref.read(onboardingViewModelProvider).driverPhoneNumber
             : null,
-        city: ref.read(onboardingViewModelProvider).driverCity ??
-          _cityKey.currentState?.text ??
-          '',
-        bio: (values['bio'] as String?)?.isEmpty ?? true
-            ? null
-            : values['bio'],
+        city:
+            ref.read(onboardingViewModelProvider).driverCity ??
+            _cityKey.currentState?.text ??
+            '',
+        bio: (values['bio'] as String?)?.isEmpty ?? true ? null : values['bio'],
         gender: values['gender'],
         dateOfBirth: values['dob'],
-        interests: (values['interests'] as List<dynamic>? ?? [])
-            .cast<String>(),
+        interests: (values['interests'] as List<dynamic>? ?? []).cast<String>(),
       ),
     );
 
@@ -168,7 +169,9 @@ class _DriverOnboardingScreenState
   }
 
   void _setupStripe() {
-    ref.read(onboardingViewModelProvider.notifier).finalizeDriverSetupForStripe();
+    ref
+        .read(onboardingViewModelProvider.notifier)
+        .finalizeDriverSetupForStripe();
   }
 
   void _skipStripeForNow() {
@@ -187,7 +190,9 @@ class _DriverOnboardingScreenState
       _didScheduleProfilePrefill = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        ref.read(onboardingViewModelProvider.notifier).markDriverProfilePopulated();
+        ref
+            .read(onboardingViewModelProvider.notifier)
+            .markDriverProfilePopulated();
         _populateProfileFields(user);
       });
     }
@@ -473,8 +478,14 @@ class _DriverOnboardingScreenState
               name: 'gender',
               decoration: InputDecoration(labelText: l10n.gender),
               items: [
-                DropdownMenuItem(value: 'Male', child: Text(AppLocalizations.of(context).genderMale)),
-                DropdownMenuItem(value: 'Female', child: Text(AppLocalizations.of(context).genderFemale)),
+                DropdownMenuItem(
+                  value: 'Male',
+                  child: Text(AppLocalizations.of(context).genderMale),
+                ),
+                DropdownMenuItem(
+                  value: 'Female',
+                  child: Text(AppLocalizations.of(context).genderFemale),
+                ),
               ],
               validator: FormBuilderValidators.required(
                 errorText: l10n.driverGenderRequired,

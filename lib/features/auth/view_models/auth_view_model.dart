@@ -41,7 +41,9 @@ class LoginUiViewModel extends Notifier<LoginUiState> {
     final credentials = savedCredentials.asData?.value;
 
     return LoginUiState(
-      savedEmail: credentials?.rememberMe == true ? (credentials?.email ?? '') : '',
+      savedEmail: credentials?.rememberMe == true
+          ? (credentials?.email ?? '')
+          : '',
       rememberMe: credentials?.rememberMe ?? false,
       obscurePassword: stateOrNull?.obscurePassword ?? true,
     );
@@ -73,9 +75,8 @@ class LoginUiViewModel extends Notifier<LoginUiState> {
   }
 }
 
-final loginUiViewModelProvider = NotifierProvider<LoginUiViewModel, LoginUiState>(
-  LoginUiViewModel.new,
-);
+final loginUiViewModelProvider =
+    NotifierProvider<LoginUiViewModel, LoginUiState>(LoginUiViewModel.new);
 
 class SignupWizardUiState {
   const SignupWizardUiState({
@@ -124,7 +125,9 @@ class SignupWizardUiState {
           obscureConfirmPassword ?? this.obscureConfirmPassword,
       agreedToTerms: agreedToTerms ?? this.agreedToTerms,
       selectedRole: selectedRole ?? this.selectedRole,
-      profileImage: clearProfileImage ? null : (profileImage ?? this.profileImage),
+      profileImage: clearProfileImage
+          ? null
+          : (profileImage ?? this.profileImage),
       dateOfBirth: clearDateOfBirth ? null : (dateOfBirth ?? this.dateOfBirth),
       selectedInterests: selectedInterests ?? this.selectedInterests,
       phoneNumber: phoneNumber ?? this.phoneNumber,
@@ -177,7 +180,10 @@ class SignupWizardUiViewModel extends Notifier<SignupWizardUiState> {
   }
 
   void setProfileImage(File? image) {
-    state = state.copyWith(profileImage: image, clearProfileImage: image == null);
+    state = state.copyWith(
+      profileImage: image,
+      clearProfileImage: image == null,
+    );
   }
 
   void setDateOfBirth(DateTime value) {
