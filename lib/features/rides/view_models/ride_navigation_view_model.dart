@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:sport_connect/core/services/routing_service.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 
@@ -125,22 +126,23 @@ class RideNavigationViewModel extends Notifier<RideNavigationState> {
     if (state.isTracking) return;
     state = state.copyWith(isTracking: true);
     _positionSubscription?.cancel();
-    _positionSubscription = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 10,
-      ),
-    ).listen((position) {
-      if (_disposed) return;
-      state = state.copyWith(currentPosition: position);
-      unawaited(_updateLocationInFirebase(position));
-      final trackedRideId = state.rideId;
-      if (trackedRideId == null) return;
-      final ride = ref.read(rideStreamProvider(trackedRideId)).value;
-      if (ride != null) {
-        _calculateProgress(position, ride);
-      }
-    });
+    _positionSubscription =
+        Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 10,
+          ),
+        ).listen((position) {
+          if (_disposed) return;
+          state = state.copyWith(currentPosition: position);
+          unawaited(_updateLocationInFirebase(position));
+          final trackedRideId = state.rideId;
+          if (trackedRideId == null) return;
+          final ride = ref.read(rideStreamProvider(trackedRideId)).value;
+          if (ride != null) {
+            _calculateProgress(position, ride);
+          }
+        });
   }
 
   void stopTracking() {
@@ -154,6 +156,17 @@ class RideNavigationViewModel extends Notifier<RideNavigationState> {
     try {
       final trackedRideId = state.rideId;
       if (trackedRideId == null) return;
+
+      // Only drivers should publish their GPS to Firebase.
+      // If a passenger opens this screen, we must NOT overwrite the driver's live location.
+      final currentUserId = ref.read(currentUserProvider).value?.uid;
+      final ride = ref.read(rideStreamProvider(trackedRideId)).value;
+      if (currentUserId == null ||
+          ride == null ||
+          ride.driverId != currentUserId) {
+        return;
+      }
+
       await ref
           .read(rideActionsViewModelProvider)
           .updateLiveLocation(
@@ -190,9 +203,17 @@ class RideNavigationViewModel extends Notifier<RideNavigationState> {
     if (state.isLoadingOsrmRoute || state.osrmRouteRideId == ride.id) return;
     state = state.copyWith(isLoadingOsrmRoute: true, osrmRouteRideId: ride.id);
     try {
+      final waypoints = ride.route.waypoints
+          .map((wp) => LatLng(wp.location.latitude, wp.location.longitude))
+          .toList(growable: false);
+
       final routeInfo = await RoutingService.getRoute(
         origin: LatLng(ride.origin.latitude, ride.origin.longitude),
-        destination: LatLng(ride.destination.latitude, ride.destination.longitude),
+        destination: LatLng(
+          ride.destination.latitude,
+          ride.destination.longitude,
+        ),
+        waypoints: waypoints.isEmpty ? null : waypoints,
       );
       if (_disposed) return;
       state = state.copyWith(
@@ -207,13 +228,15 @@ class RideNavigationViewModel extends Notifier<RideNavigationState> {
 
   void _calculateProgress(Position position, RideModel ride) {
     final speedKmh = (position.speed * 3.6).clamp(0.0, 200.0);
-    final originLatLng = state.originLatLng ??
+    final originLatLng =
+        state.originLatLng ??
         LatLng(ride.origin.latitude, ride.origin.longitude);
-    final destinationLatLng = state.destinationLatLng ??
+    final destinationLatLng =
+        state.destinationLatLng ??
         LatLng(ride.destination.latitude, ride.destination.longitude);
     final totalDistKm = state.totalDistanceKm ?? ride.distanceKm ?? 0;
     final totalDurationMinutes =
-      state.totalDurationMinutes ?? ride.durationMinutes;
+        state.totalDurationMinutes ?? ride.durationMinutes;
 
     final currentLatLng = LatLng(position.latitude, position.longitude);
     final distToDest = _haversineKm(currentLatLng, destinationLatLng);
@@ -229,8 +252,7 @@ class RideNavigationViewModel extends Notifier<RideNavigationState> {
     } else if (totalDurationMinutes != null) {
       remainingMinutes = ((1 - progress) * totalDurationMinutes).round();
     } else {
-      final avgSpeedKmh =
-          (totalDistKm > 0 && ((ride.durationMinutes ?? 0) > 0))
+      final avgSpeedKmh = (totalDistKm > 0 && ((ride.durationMinutes ?? 0) > 0))
           ? totalDistKm / ((ride.durationMinutes ?? 1) / 60)
           : 30.0;
       remainingMinutes = (distToDest / avgSpeedKmh * 60).round();
@@ -274,7 +296,6 @@ class RideNavigationViewModel extends Notifier<RideNavigationState> {
   }
 
   double _degToRad(double deg) => deg * math.pi / 180;
-
 }
 
 final rideNavigationViewModelProvider =

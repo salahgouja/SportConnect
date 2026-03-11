@@ -2530,6 +2530,17 @@ class AppLocalizationsEs extends AppLocalizations {
       '¿Marcar este viaje como iniciado? Los pasajeros serán notificados.';
 
   @override
+  String get confirmPickup => 'Confirmar recogida';
+
+  @override
+  String get passengersPickedUpStartTrip =>
+      'Pasajeros recogidos — Iniciar viaje';
+
+  @override
+  String get confirmAllPassengersPickedUp =>
+      'Confirma que todos los pasajeros han sido recogidos y que estás listo para iniciar el viaje.';
+
+  @override
   String get start => 'Iniciar';
 
   @override

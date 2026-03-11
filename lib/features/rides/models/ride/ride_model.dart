@@ -39,6 +39,9 @@ abstract class RideModel with _$RideModel {
     // Status
     @Default(RideStatus.draft) RideStatus status,
 
+    // Phase (persisted so passengers see granular driver progress)
+    String? ridePhase,
+
     // Vehicle reference (resolved through VehicleRepository)
     String? vehicleId,
     String? vehicleInfo,

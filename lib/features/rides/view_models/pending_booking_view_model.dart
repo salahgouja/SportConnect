@@ -18,7 +18,12 @@ import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 
 part 'pending_booking_view_model.g.dart';
 
-enum PendingBookingEffectType { navigateCountdown, navigateMyRides, snackbar }
+enum PendingBookingEffectType {
+  navigateCountdown,
+  navigateMyRides,
+  navigateActiveRide,
+  snackbar,
+}
 
 @immutable
 class PendingBookingEffect {
@@ -36,6 +41,12 @@ class PendingBookingEffect {
 
   const PendingBookingEffect.navigateMyRides({String? message})
     : this._(type: PendingBookingEffectType.navigateMyRides, message: message);
+
+  const PendingBookingEffect.navigateActiveRide(String rideId)
+    : this._(
+        type: PendingBookingEffectType.navigateActiveRide,
+        bookingId: rideId,
+      );
 
   const PendingBookingEffect.snackbar(String message)
     : this._(type: PendingBookingEffectType.snackbar, message: message);
@@ -461,6 +472,22 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
   }
 
   void _emitLifecycleEffects() {
+    // Check if the ride went inProgress — redirect to active ride screen
+    final ride = state.ride;
+    if (ride != null && ride.status == RideStatus.inProgress) {
+      final booking = state.booking;
+      final hasAcceptedBooking =
+          booking != null && booking.status == BookingStatus.accepted;
+      if (hasAcceptedBooking) {
+        final effectKey = 'ride-started|${ride.id}';
+        if (_lastLifecycleEffectKey != effectKey) {
+          _lastLifecycleEffectKey = effectKey;
+          _enqueueEffect(PendingBookingEffect.navigateActiveRide(ride.id));
+          return;
+        }
+      }
+    }
+
     final booking = state.booking;
     if (booking == null || state.isProcessingPayment) {
       return;

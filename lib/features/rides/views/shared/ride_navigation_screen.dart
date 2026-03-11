@@ -9,6 +9,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/routing_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
@@ -42,8 +43,11 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
     with TickerProviderStateMixin {
   final MapController _mapController = MapController();
   late AnimationController _pulseController;
+  bool _hasRedirectedRider = false;
+  bool _hasNavigatedOnTerminal = false;
 
-  RideNavigationState get _navState => ref.watch(rideNavigationViewModelProvider);
+  RideNavigationState get _navState =>
+      ref.watch(rideNavigationViewModelProvider);
 
   @override
   void initState() {
@@ -78,8 +82,8 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
     }
 
     await ref
-      .read(rideNavigationViewModelProvider.notifier)
-      .startTracking(widget.rideId);
+        .read(rideNavigationViewModelProvider.notifier)
+        .startTracking(widget.rideId);
   }
 
   /// Builds the polyline points for the route.
@@ -116,6 +120,49 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
       final notifier = ref.read(rideNavigationViewModelProvider.notifier);
       notifier.syncRide(ride);
       notifier.ensureOsrmRoute(ride);
+
+      // Redirect riders to PassengerActiveRideScreen — this screen is driver-only.
+      if (!_hasRedirectedRider) {
+        final currentUserId = ref.read(currentUserProvider).value?.uid;
+        if (currentUserId != null && ride.driverId != currentUserId) {
+          _hasRedirectedRider = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              ref.read(rideNavigationViewModelProvider.notifier).stopTracking();
+              context.pushReplacement(
+                '${AppRoutes.riderActiveRide.path}?rideId=${ride.id}',
+              );
+            }
+          });
+          return;
+        }
+      }
+
+      // Handle terminal ride statuses — redirect on completion or cancellation.
+      if (!_hasNavigatedOnTerminal) {
+        if (ride.status == RideStatus.completed) {
+          _hasNavigatedOnTerminal = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              ref.read(rideNavigationViewModelProvider.notifier).stopTracking();
+              context.pushReplacement(
+                AppRoutes.rideCompletion.path.replaceFirst(':id', ride.id),
+              );
+            }
+          });
+        } else if (ride.status == RideStatus.cancelled) {
+          _hasNavigatedOnTerminal = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              ref.read(rideNavigationViewModelProvider.notifier).stopTracking();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('This ride has been cancelled.')),
+              );
+              context.pop();
+            }
+          });
+        }
+      }
     });
 
     return Scaffold(
@@ -165,6 +212,60 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
           if (ride == null) {
             return Center(child: Text(l10n.rideNotFound));
           }
+
+          // Initial check: redirect rider on first data load.
+          if (!_hasRedirectedRider) {
+            final currentUserId = ref.read(currentUserProvider).value?.uid;
+            if (currentUserId != null && ride.driverId != currentUserId) {
+              _hasRedirectedRider = true;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  ref
+                      .read(rideNavigationViewModelProvider.notifier)
+                      .stopTracking();
+                  context.pushReplacement(
+                    '${AppRoutes.riderActiveRide.path}?rideId=${ride.id}',
+                  );
+                }
+              });
+              return const Center(child: CircularProgressIndicator());
+            }
+          }
+
+          // Initial check: handle terminal statuses on first data load.
+          if (!_hasNavigatedOnTerminal) {
+            if (ride.status == RideStatus.completed) {
+              _hasNavigatedOnTerminal = true;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  ref
+                      .read(rideNavigationViewModelProvider.notifier)
+                      .stopTracking();
+                  context.pushReplacement(
+                    AppRoutes.rideCompletion.path.replaceFirst(':id', ride.id),
+                  );
+                }
+              });
+              return const Center(child: CircularProgressIndicator());
+            } else if (ride.status == RideStatus.cancelled) {
+              _hasNavigatedOnTerminal = true;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  ref
+                      .read(rideNavigationViewModelProvider.notifier)
+                      .stopTracking();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('This ride has been cancelled.'),
+                    ),
+                  );
+                  context.pop();
+                }
+              });
+              return const Center(child: CircularProgressIndicator());
+            }
+          }
+
           return _buildNavigationView(context, ride, l10n);
         },
       ),

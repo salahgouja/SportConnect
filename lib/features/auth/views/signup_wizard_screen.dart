@@ -822,8 +822,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                 SizedBox(height: 8.h),
                 Text(
                   l10n.emailValue(
-                    (_formKeys[0].currentState?.value['email'] as String? ??
-                        ''),
+  (_formKeys[0].currentState?.fields['email']?.value as String? ?? ''),
                   ),
                   style: TextStyle(fontSize: 13.sp, color: theme.text),
                 ),

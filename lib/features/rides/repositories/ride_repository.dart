@@ -410,6 +410,7 @@ class RideRepository implements IRideRepository {
     // Read booking data first (before any writes) to avoid TOCTOU race
     int seatsBooked = 1;
     BookingStatus? previousStatus;
+    Map<String, dynamic>? pickupLocationMap;
     if (newStatus == BookingStatus.cancelled ||
         newStatus == BookingStatus.rejected ||
         newStatus == BookingStatus.accepted) {
@@ -417,6 +418,12 @@ class RideRepository implements IRideRepository {
       if (bookingDoc.exists) {
         seatsBooked = bookingDoc.data()?.seatsBooked ?? 1;
         previousStatus = bookingDoc.data()?.status;
+        // Capture pickup location for waypoint creation on accept
+        if (newStatus == BookingStatus.accepted &&
+            bookingDoc.data()?.pickupLocation != null) {
+          final pickup = bookingDoc.data()!.pickupLocation!;
+          pickupLocationMap = pickup.toJson();
+        }
       }
     }
 
@@ -426,12 +433,26 @@ class RideRepository implements IRideRepository {
       'respondedAt': DateTime.now(),
     });
 
-    // If accepted, reserve the seats on the ride
+    // If accepted, reserve the seats on the ride and add pickup waypoint
     if (newStatus == BookingStatus.accepted) {
-      await _ridesCollection.doc(rideId).update({
+      final updates = <String, dynamic>{
         'capacity.booked': FieldValue.increment(seatsBooked),
         'updatedAt': DateTime.now(),
-      });
+      };
+
+      // Add passenger's pickup as a waypoint on the ride route
+      if (pickupLocationMap != null) {
+        // Read current waypoints count for ordering
+        final rideDoc = await _ridesCollection.doc(rideId).get();
+        final currentWaypointsCount =
+            (rideDoc.data()?.route.waypoints.length ?? 0);
+
+        updates['route.waypoints'] = FieldValue.arrayUnion([
+          {'location': pickupLocationMap, 'order': currentWaypointsCount},
+        ]);
+      }
+
+      await _ridesCollection.doc(rideId).update(updates);
     }
 
     // Free up seats ONLY if the booking was previously accepted (i.e. seats
@@ -507,11 +528,33 @@ class RideRepository implements IRideRepository {
   }
 
   /// Start ride
+  ///
+  /// Uses a transaction to atomically validate that at least one accepted
+  /// booking exists, set the ride status to inProgress, record the actual
+  /// departure time, and set the initial ride phase.
   @override
   Future<void> startRide(String rideId) async {
-    await _ridesCollection.doc(rideId).update({
-      'status': RideStatus.inProgress.name,
-      'updatedAt': DateTime.now(),
+    await _firestore.runTransaction((transaction) async {
+      final rideRef = _ridesCollection.doc(rideId);
+      final rideSnap = await transaction.get(rideRef);
+      if (!rideSnap.exists) throw ArgumentError('Ride not found');
+
+      // Validate: at least one accepted booking
+      final bookingsSnap = await _rideBookingsCollection
+          .where('rideId', isEqualTo: rideId)
+          .where('status', isEqualTo: BookingStatus.accepted.name)
+          .limit(1)
+          .get();
+      if (bookingsSnap.docs.isEmpty) {
+        throw StateError('Cannot start ride without accepted bookings');
+      }
+
+      transaction.update(rideRef, {
+        'status': RideStatus.inProgress.name,
+        'ridePhase': 'pickingUp',
+        'schedule.actualDepartureTime': DateTime.now(),
+        'updatedAt': DateTime.now(),
+      });
     });
   }
 
@@ -523,8 +566,29 @@ class RideRepository implements IRideRepository {
   Future<void> completeRide(String rideId) async {
     await _ridesCollection.doc(rideId).update({
       'status': RideStatus.completed.name,
+      'ridePhase': 'completed',
       'schedule.arrivalTime': DateTime.now(),
       'updatedAt': DateTime.now(),
+    });
+  }
+
+  /// Updates the driver's ride phase (pickingUp, enRoute, arriving, completed).
+  /// This is persisted so passengers can see granular progress.
+  @override
+  Future<void> updateRidePhase(String rideId, String phase) async {
+    await _ridesCollection.doc(rideId).update({
+      'ridePhase': phase,
+      'updatedAt': DateTime.now(),
+    });
+  }
+
+  /// Streams the driver's current ride phase from the ride document.
+  @override
+  Stream<String?> streamRidePhase(String rideId) {
+    return _firestore.collection('rides').doc(rideId).snapshots().map((
+      snapshot,
+    ) {
+      return snapshot.data()?['ridePhase'] as String?;
     });
   }
 
@@ -594,5 +658,133 @@ class RideRepository implements IRideRepository {
         .limit(50)
         .snapshots()
         .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+  }
+
+  // ==================== 7A: PICKUP ORDER ====================
+
+  @override
+  Future<void> updatePickupOrder(
+    String rideId,
+    List<String> passengerIds,
+  ) async {
+    await _ridesCollection.doc(rideId).update({
+      'pickupOrder': passengerIds,
+      'updatedAt': DateTime.now(),
+    });
+  }
+
+  @override
+  Future<void> markPassengerPickedUp(String rideId, String passengerId) async {
+    await _ridesCollection.doc(rideId).update({
+      'pickedUpPassengers': FieldValue.arrayUnion([passengerId]),
+      'updatedAt': DateTime.now(),
+    });
+  }
+
+  // ==================== 7B: NO-SHOW ====================
+
+  @override
+  Future<void> markPassengerNoShow({
+    required String rideId,
+    required String bookingId,
+    required String passengerId,
+  }) async {
+    await _firestore.runTransaction((transaction) async {
+      final bookingRef = _rideBookingsCollection.doc(bookingId);
+      final bookingSnap = await transaction.get(bookingRef);
+      if (!bookingSnap.exists) return;
+
+      final seatsBooked = bookingSnap.data()?.seatsBooked ?? 1;
+
+      // Cancel the booking
+      transaction.update(bookingRef, {
+        'status': BookingStatus.cancelled.name,
+        'note': 'No-show',
+        'respondedAt': DateTime.now(),
+      });
+
+      // Record no-show on the ride and free up seats
+      final rideRef = _ridesCollection.doc(rideId);
+      transaction.update(rideRef, {
+        'noShowPassengers': FieldValue.arrayUnion([passengerId]),
+        'capacity.booked': FieldValue.increment(-seatsBooked),
+        'updatedAt': DateTime.now(),
+      });
+    });
+  }
+
+  // ==================== 7E: MID-RIDE STOPS ====================
+
+  @override
+  Future<void> addMidRideStop(
+    String rideId,
+    Map<String, dynamic> waypoint,
+  ) async {
+    await _ridesCollection.doc(rideId).update({
+      'route.waypoints': FieldValue.arrayUnion([waypoint]),
+      'updatedAt': DateTime.now(),
+    });
+  }
+
+  @override
+  Future<void> removeMidRideStop(String rideId, int waypointIndex) async {
+    final ride = await getRideById(rideId);
+    if (ride == null) return;
+    final waypoints = List<Map<String, dynamic>>.from(
+      ride.route.waypoints.map((w) => w.toJson()),
+    );
+    if (waypointIndex < 0 || waypointIndex >= waypoints.length) return;
+    waypoints.removeAt(waypointIndex);
+    await _ridesCollection.doc(rideId).update({
+      'route.waypoints': waypoints,
+      'updatedAt': DateTime.now(),
+    });
+  }
+
+  // ==================== 7F: FARE ADJUSTMENT ====================
+
+  @override
+  Future<void> recordActualDistance(String rideId, double distanceKm) async {
+    await _ridesCollection.doc(rideId).update({
+      'actualDistanceKm': distanceKm,
+      'updatedAt': DateTime.now(),
+    });
+  }
+
+  // ==================== 7H: RETURN RIDE ====================
+
+  @override
+  Future<String> createReturnRide(String originalRideId) async {
+    final original = await getRideById(originalRideId);
+    if (original == null) throw ArgumentError('Original ride not found');
+
+    // Swap origin and destination
+    final returnRoute = original.route.copyWith(
+      origin: original.route.destination,
+      destination: original.route.origin,
+      waypoints: const [], // Fresh route, no leftover waypoints
+    );
+
+    final returnSchedule = original.schedule.copyWith(
+      departureTime: DateTime.now().add(const Duration(hours: 1)),
+      arrivalTime: null,
+      actualDepartureTime: null,
+    );
+
+    final returnRide = original.copyWith(
+      id: '', // Will be auto-generated
+      route: returnRoute,
+      schedule: returnSchedule,
+      status: RideStatus.active,
+      bookingIds: const [],
+      bookings: const [],
+      reviewCount: 0,
+      averageRating: 0.0,
+      notes: 'Return trip from "${original.destination.address}"',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+
+    return createRide(returnRide);
   }
 }

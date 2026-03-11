@@ -4175,5 +4175,17 @@
   "wizardStepSecurity": "Sicherheit",
   "wizardStepSecuritySubtitle": "Sicheres Passwort erstellen",
   "wizardStepWelcome": "Willkommen",
-  "wizardStepWelcomeSubtitle": "Los geht's"
+  "wizardStepWelcomeSubtitle": "Los geht's",
+  "confirmPickup": "Abholung bestätigen",
+"@confirmPickup": {
+  "description": "Title for the pickup confirmation dialog on the active ride screen"
+},
+"passengersPickedUpStartTrip": "Fahrgäste abgeholt — Fahrt starten",
+"@passengersPickedUpStartTrip": {
+  "description": "Button text in pickup confirmation dialog"
+},
+"confirmAllPassengersPickedUp": "Bestätige, dass alle Fahrgäste abgeholt wurden und du bereit bist, die Fahrt zu starten.",
+"@confirmAllPassengersPickedUp": {
+  "description": "Content text in pickup confirmation dialog"
+}
 }

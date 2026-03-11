@@ -53,9 +53,13 @@ class RiderViewRideUiViewModel extends _$RiderViewRideUiViewModel {
         ride.destination.latitude,
         ride.destination.longitude,
       );
+      final waypoints = ride.route.waypoints
+          .map((wp) => LatLng(wp.location.latitude, wp.location.longitude))
+          .toList(growable: false);
       final info = await RoutingService.getRoute(
         origin: origin,
         destination: dest,
+        waypoints: waypoints.isEmpty ? null : waypoints,
       );
       state = state.copyWith(routeInfo: info, isLoadingRoute: false);
     } catch (_) {

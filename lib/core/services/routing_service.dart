@@ -123,6 +123,43 @@ class RoutingService {
   /// OSRM public demo server base URL
   static const String _baseUrl = 'https://router.project-osrm.org';
 
+  /// In-memory LRU route cache keyed by normalized coordinate string.
+  /// Prevents duplicate OSRM requests when multiple VMs load the same route.
+  static const int _maxCacheSize = 20;
+  static final Map<String, RouteInfo> _routeCache = <String, RouteInfo>{};
+
+  static String _routeCacheKey({
+    required LatLng origin,
+    required LatLng destination,
+    List<LatLng>? waypoints,
+    required String profile,
+  }) {
+    final buf = StringBuffer()
+      ..write(origin.latitude.toStringAsFixed(5))
+      ..write(',')
+      ..write(origin.longitude.toStringAsFixed(5));
+    if (waypoints != null) {
+      for (final wp in waypoints) {
+        buf
+          ..write(';')
+          ..write(wp.latitude.toStringAsFixed(5))
+          ..write(',')
+          ..write(wp.longitude.toStringAsFixed(5));
+      }
+    }
+    buf
+      ..write(';')
+      ..write(destination.latitude.toStringAsFixed(5))
+      ..write(',')
+      ..write(destination.longitude.toStringAsFixed(5))
+      ..write('|')
+      ..write(profile);
+    return buf.toString();
+  }
+
+  /// Clear the route cache (e.g. when a ride's waypoints change).
+  static void clearRouteCache() => _routeCache.clear();
+
   /// Get a route between two points
   /// Returns null if no route can be found
   static Future<RouteInfo?> getRoute({
@@ -135,6 +172,19 @@ class RoutingService {
     String geometries = 'geojson', // polyline, polyline6, geojson
     String overview = 'full', // full, simplified, false
   }) async {
+    // Check in-memory cache first
+    final cacheKey = _routeCacheKey(
+      origin: origin,
+      destination: destination,
+      waypoints: waypoints,
+      profile: profile,
+    );
+    final cached = _routeCache[cacheKey];
+    if (cached != null) {
+      TalkerService.info('OSRM Route cache hit: $cacheKey');
+      return cached;
+    }
+
     try {
       // Build coordinates string: origin;waypoint1;waypoint2;...;destination
       final coords = <String>[];
@@ -186,6 +236,12 @@ class RoutingService {
         TalkerService.info(
           'Route found: ${routeInfo.formattedDistance}, ${routeInfo.formattedDuration}',
         );
+
+        // Store in cache (evict oldest if at capacity)
+        if (_routeCache.length >= _maxCacheSize) {
+          _routeCache.remove(_routeCache.keys.first);
+        }
+        _routeCache[cacheKey] = routeInfo;
 
         return routeInfo;
       } else {

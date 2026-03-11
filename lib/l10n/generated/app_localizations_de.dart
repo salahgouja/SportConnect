@@ -2545,6 +2545,17 @@ class AppLocalizationsDe extends AppLocalizations {
       'Diese Fahrt als gestartet markieren? Passagiere werden benachrichtigt.';
 
   @override
+  String get confirmPickup => 'Abholung bestätigen';
+
+  @override
+  String get passengersPickedUpStartTrip =>
+      'Fahrgäste abgeholt — Fahrt starten';
+
+  @override
+  String get confirmAllPassengersPickedUp =>
+      'Bestätige, dass alle Fahrgäste abgeholt wurden und du bereit bist, die Fahrt zu starten.';
+
+  @override
   String get start => 'Starten';
 
   @override

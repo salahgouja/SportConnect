@@ -2502,6 +2502,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'Mark this ride as started? Passengers will be notified.';
 
   @override
+  String get confirmPickup => 'Confirm Pickup';
+
+  @override
+  String get passengersPickedUpStartTrip => 'Passengers Picked Up — Start Trip';
+
+  @override
+  String get confirmAllPassengersPickedUp =>
+      'Confirm all passengers have been picked up and you are ready to start the trip.';
+
+  @override
   String get start => 'Start';
 
   @override

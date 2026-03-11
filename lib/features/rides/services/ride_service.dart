@@ -1,6 +1,8 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
+import 'package:sport_connect/features/notifications/models/notification_model.dart';
+import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 
 part 'ride_service.g.dart';
@@ -205,5 +207,132 @@ class RideService extends _$RideService {
       // Notification failure should not break the main cancellation flow
       TalkerService.error('Failed to notify passengers of cancellation: $e');
     }
+  }
+
+  // ==================== 7B: NO-SHOW HANDLING ====================
+
+  /// Mark a passenger as no-show, cancel their booking, and notify them.
+  Future<void> markPassengerNoShow({
+    required String rideId,
+    required String bookingId,
+    required String passengerId,
+  }) async {
+    final repo = ref.read(rideRepositoryProvider);
+    await repo.markPassengerNoShow(
+      rideId: rideId,
+      bookingId: bookingId,
+      passengerId: passengerId,
+    );
+
+    // Notify the passenger
+    try {
+      final ride = await repo.getRideById(rideId);
+      if (ride == null) return;
+      final profileRepo = ref.read(profileRepositoryProvider);
+      final driver = await profileRepo.getUserById(ride.driverId);
+      final driverName = driver?.displayName ?? 'Driver';
+      final origin = ride.origin.city ?? ride.origin.address;
+      final dest = ride.destination.city ?? ride.destination.address;
+
+      final notificationRepo = ref.read(notificationRepositoryProvider);
+      await notificationRepo.createNotification(
+        NotificationModel(
+          id: '',
+          userId: passengerId,
+          type: NotificationType.rideCancelled,
+          title: 'Marked as No-Show',
+          body:
+              '$driverName marked you as no-show for "$origin → $dest". '
+              'Your booking has been cancelled.',
+          senderName: driverName,
+          referenceId: rideId,
+          referenceType: 'ride',
+          priority: NotificationPriority.high,
+        ),
+      );
+    } catch (e) {
+      TalkerService.error('Failed to send no-show notification: $e');
+    }
+  }
+
+  // ==================== 7G: RIDE TIMEOUT ====================
+
+  /// Check if a ride has exceeded its estimated duration.
+  /// Returns null if no timeout, or the minutes exceeded.
+  int? checkRideTimeout(RideModel ride) {
+    if (ride.status != RideStatus.inProgress) return null;
+    final actualDeparture = ride.schedule.actualDepartureTime;
+    if (actualDeparture == null) return null;
+
+    final estimatedDuration = ride.durationMinutes ?? 120;
+    final elapsed = DateTime.now().difference(actualDeparture).inMinutes;
+    final threshold = (estimatedDuration * 2).round();
+
+    if (elapsed > threshold) {
+      return elapsed - estimatedDuration;
+    }
+    return null;
+  }
+
+  /// Force-complete a ride that has timed out.
+  Future<void> forceCompleteTimedOutRide(String rideId) async {
+    final repo = ref.read(rideRepositoryProvider);
+    final ride = await repo.getRideById(rideId);
+    if (ride == null || ride.status != RideStatus.inProgress) return;
+
+    TalkerService.warning('Force-completing timed-out ride $rideId');
+    await completeRide(rideId);
+  }
+
+  // ==================== 7J: DELAY DETECTION ====================
+
+  /// Notify all passengers of a ride delay.
+  Future<void> notifyRideDelay({
+    required RideModel ride,
+    required int delayMinutes,
+  }) async {
+    try {
+      final profileRepo = ref.read(profileRepositoryProvider);
+      final driver = await profileRepo.getUserById(ride.driverId);
+      final driverName = driver?.displayName ?? 'Driver';
+      final origin = ride.origin.city ?? ride.origin.address;
+      final dest = ride.destination.city ?? ride.destination.address;
+      final rideName = '$origin → $dest';
+
+      final notificationRepo = ref.read(notificationRepositoryProvider);
+      final bookingRepo = ref.read(bookingRepositoryProvider);
+      final bookings = await bookingRepo.getBookingsByRideId(
+        ride.id,
+        ride.driverId,
+      );
+
+      for (final booking in bookings) {
+        if (booking.status != BookingStatus.accepted) continue;
+        await notificationRepo.createNotification(
+          NotificationModel(
+            id: '',
+            userId: booking.passengerId,
+            type: NotificationType.rideUpdated,
+            title: 'Ride Delayed',
+            body:
+                '$driverName\'s ride "$rideName" is running ~$delayMinutes min late.',
+            senderName: driverName,
+            referenceId: ride.id,
+            referenceType: 'ride',
+            priority: NotificationPriority.high,
+          ),
+        );
+      }
+    } catch (e) {
+      TalkerService.error('Failed to send delay notifications: $e');
+    }
+  }
+
+  // ==================== 7H: RETURN RIDE ====================
+
+  /// Create a return ride from a completed ride.
+  Future<String> createReturnRide(String originalRideId) async {
+    final repo = ref.read(rideRepositoryProvider);
+    return repo.createReturnRide(originalRideId);
   }
 }

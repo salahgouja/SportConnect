@@ -4175,5 +4175,17 @@
   "wizardStepSecurity": "Sécurité",
   "wizardStepSecuritySubtitle": "Créez un mot de passe sécurisé",
   "wizardStepWelcome": "Bienvenue",
-  "wizardStepWelcomeSubtitle": "Commençons !"
+  "wizardStepWelcomeSubtitle": "Commençons !",
+  "confirmPickup": "Confirmer la prise en charge",
+"@confirmPickup": {
+  "description": "Title for the pickup confirmation dialog on the active ride screen"
+},
+"passengersPickedUpStartTrip": "Passagers pris en charge — Démarrer le trajet",
+"@passengersPickedUpStartTrip": {
+  "description": "Button text in pickup confirmation dialog"
+},
+"confirmAllPassengersPickedUp": "Confirmez que tous les passagers ont été pris en charge et que vous êtes prêt à démarrer le trajet.",
+"@confirmAllPassengersPickedUp": {
+  "description": "Content text in pickup confirmation dialog"
+}
 }

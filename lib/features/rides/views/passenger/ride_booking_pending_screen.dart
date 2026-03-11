@@ -86,6 +86,14 @@ class _RideBookingPendingScreenState
               );
             }
             break;
+          case PendingBookingEffectType.navigateActiveRide:
+            final rideId = effect.bookingId;
+            if (rideId != null) {
+              context.pushReplacement(
+                '${AppRoutes.riderActiveRide.path}?rideId=$rideId',
+              );
+            }
+            break;
           case PendingBookingEffectType.snackbar:
             if (effect.message != null) {
               _showStatusSnackBar(effect.message!);
@@ -190,7 +198,9 @@ class _RideBookingPendingScreenState
             SizedBox(height: 20.h),
 
             Text(
-              isAcceptedNeedsPayment ? AppLocalizations.of(context).bookingAcceptedTitle : AppLocalizations.of(context).requestSentTitle,
+              isAcceptedNeedsPayment
+                  ? AppLocalizations.of(context).bookingAcceptedTitle
+                  : AppLocalizations.of(context).requestSentTitle,
               style: TextStyle(
                 fontSize: 26.sp,
                 fontWeight: FontWeight.bold,

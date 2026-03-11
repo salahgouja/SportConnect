@@ -27,6 +27,7 @@ _RideModel _$RideModelFromJson(Map json) => _RideModel(
   status:
       $enumDecodeNullable(_$RideStatusEnumMap, json['status']) ??
       RideStatus.draft,
+  ridePhase: json['ridePhase'] as String?,
   vehicleId: json['vehicleId'] as String?,
   vehicleInfo: json['vehicleInfo'] as String?,
   bookingIds:
@@ -64,6 +65,7 @@ Map<String, dynamic> _$RideModelToJson(_RideModel instance) =>
       'pricing': instance.pricing.toJson(),
       'preferences': instance.preferences.toJson(),
       'status': _$RideStatusEnumMap[instance.status]!,
+      'ridePhase': instance.ridePhase,
       'vehicleId': instance.vehicleId,
       'vehicleInfo': instance.vehicleInfo,
       'bookingIds': instance.bookingIds,

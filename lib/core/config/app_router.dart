@@ -333,10 +333,10 @@ List<StatefulShellBranch> _buildRiderBranches() {
     StatefulShellBranch(
       routes: [
         GoRoute(
-          path: AppRoutes.riderRequestRide.path,
-          name: AppRoutes.riderRequestRide.name,
+          path: AppRoutes.events.path,
+          name: AppRoutes.events.name,
           pageBuilder: (context, state) =>
-              const NoTransitionPage(child: RiderRequestRideScreen()),
+              const NoTransitionPage(child: EventListScreen()),
         ),
       ],
     ),

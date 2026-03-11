@@ -31,6 +31,8 @@ class DriverHomeScreen extends ConsumerStatefulWidget {
 }
 
 class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
+  bool _hasAutoNavigatedToActiveRide = false;
+
   @override
   void initState() {
     super.initState();
@@ -110,7 +112,9 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
         context,
       );
       if (!accepted) return;
-      await ref.read(driverLocationViewModelProvider.notifier).requestPermission();
+      await ref
+          .read(driverLocationViewModelProvider.notifier)
+          .requestPermission();
       final locationState = ref.read(driverLocationViewModelProvider);
       if (!locationState.locationGranted) {
         await Geolocator.openLocationSettings();
@@ -123,6 +127,24 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final locationState = ref.watch(driverLocationViewModelProvider);
+    final driverState = ref.watch(driverViewModelProvider);
+
+    // ── Global Active Ride Guard ─────────────────────────────
+    // On app launch / foreground, auto-navigate to the active ride screen
+    // if the driver has an in-progress ride.
+    if (!_hasAutoNavigatedToActiveRide) {
+      final ride = driverState.activeRide;
+      if (ride != null && ride.status == RideStatus.inProgress) {
+        _hasAutoNavigatedToActiveRide = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            context.push(
+              '${AppRoutes.driverActiveRide.path}?rideId=${ride.id}',
+            );
+          }
+        });
+      }
+    }
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -797,8 +819,9 @@ class _DriverDashboard extends ConsumerWidget {
                   padding: EdgeInsets.only(bottom: 12.h),
                   child: _RequestCard(
                     request: request,
-                    isProcessing:
-                        driverState.isRequestActionInProgress(request.id),
+                    isProcessing: driverState.isRequestActionInProgress(
+                      request.id,
+                    ),
                     onAccept: () async {
                       HapticFeedback.heavyImpact();
                       await ref
@@ -1360,8 +1383,8 @@ class _RequestCard extends StatelessWidget {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                  ),
                 ),
+              ),
             ],
           ),
         ],
@@ -1546,71 +1569,72 @@ class _ActiveDriverRideBanner extends StatelessWidget {
         HapticFeedback.mediumImpact();
         context.push('${AppRoutes.driverActiveRide.path}?rideId=${ride.id}');
       },
-      child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-            decoration: BoxDecoration(
-              color: AppColors.success,
-              borderRadius: BorderRadius.circular(16.r),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.success.withValues(alpha: 0.40),
-                  blurRadius: 18,
-                  offset: const Offset(0, 5),
+      child:
+          Container(
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+                decoration: BoxDecoration(
+                  color: AppColors.success,
+                  borderRadius: BorderRadius.circular(16.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.success.withValues(alpha: 0.40),
+                      blurRadius: 18,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(9.w),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.22),
-                    borderRadius: BorderRadius.circular(11.r),
-                  ),
-                  child: Icon(
-                    Icons.navigation_rounded,
-                    color: Colors.white,
-                    size: 22.sp,
-                  ),
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Ride In Progress',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w700,
-                        ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(9.w),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.22),
+                        borderRadius: BorderRadius.circular(11.r),
                       ),
-                      SizedBox(height: 2.h),
-                      Text(
-                        '$origin → $dest',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.87),
-                          fontSize: 12.sp,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      child: Icon(
+                        Icons.navigation_rounded,
+                        color: Colors.white,
+                        size: 22.sp,
                       ),
-                    ],
-                  ),
+                    ),
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Ride In Progress',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          SizedBox(height: 2.h),
+                          Text(
+                            '$origin → $dest',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.87),
+                              fontSize: 12.sp,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: Colors.white,
+                      size: 26.sp,
+                    ),
+                  ],
                 ),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: Colors.white,
-                  size: 26.sp,
-                ),
-              ],
-            ),
-          )
-          .animate()
-          .fadeIn(delay: 200.ms, duration: 400.ms)
-          .slideY(begin: -0.2, curve: Curves.easeOutCubic),
+              )
+              .animate()
+              .fadeIn(delay: 200.ms, duration: 400.ms)
+              .slideY(begin: -0.2, curve: Curves.easeOutCubic),
     );
   }
 }

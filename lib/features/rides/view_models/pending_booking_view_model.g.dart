@@ -60,7 +60,7 @@ final class PendingBookingViewModelProvider
 }
 
 String _$pendingBookingViewModelHash() =>
-    r'a1c6882ea9dbf8223cf81fb9a84f679752ed98fc';
+    r'55162e5fd6ee366c021b18899a7e012f85e2c3ce';
 
 final class PendingBookingViewModelFamily extends $Family
     with

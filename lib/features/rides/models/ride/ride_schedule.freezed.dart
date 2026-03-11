@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$RideSchedule {
 
-@RequiredTimestampConverter() DateTime get departureTime;@TimestampConverter() DateTime? get arrivalTime; int get flexibilityMinutes; bool get isRecurring; List<int> get recurringDays;@TimestampConverter() DateTime? get recurringEndDate;
+@RequiredTimestampConverter() DateTime get departureTime;@TimestampConverter() DateTime? get arrivalTime;@TimestampConverter() DateTime? get actualDepartureTime; int get flexibilityMinutes; bool get isRecurring; List<int> get recurringDays;@TimestampConverter() DateTime? get recurringEndDate;
 /// Create a copy of RideSchedule
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $RideScheduleCopyWith<RideSchedule> get copyWith => _$RideScheduleCopyWithImpl<R
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RideSchedule&&(identical(other.departureTime, departureTime) || other.departureTime == departureTime)&&(identical(other.arrivalTime, arrivalTime) || other.arrivalTime == arrivalTime)&&(identical(other.flexibilityMinutes, flexibilityMinutes) || other.flexibilityMinutes == flexibilityMinutes)&&(identical(other.isRecurring, isRecurring) || other.isRecurring == isRecurring)&&const DeepCollectionEquality().equals(other.recurringDays, recurringDays)&&(identical(other.recurringEndDate, recurringEndDate) || other.recurringEndDate == recurringEndDate));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RideSchedule&&(identical(other.departureTime, departureTime) || other.departureTime == departureTime)&&(identical(other.arrivalTime, arrivalTime) || other.arrivalTime == arrivalTime)&&(identical(other.actualDepartureTime, actualDepartureTime) || other.actualDepartureTime == actualDepartureTime)&&(identical(other.flexibilityMinutes, flexibilityMinutes) || other.flexibilityMinutes == flexibilityMinutes)&&(identical(other.isRecurring, isRecurring) || other.isRecurring == isRecurring)&&const DeepCollectionEquality().equals(other.recurringDays, recurringDays)&&(identical(other.recurringEndDate, recurringEndDate) || other.recurringEndDate == recurringEndDate));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,departureTime,arrivalTime,flexibilityMinutes,isRecurring,const DeepCollectionEquality().hash(recurringDays),recurringEndDate);
+int get hashCode => Object.hash(runtimeType,departureTime,arrivalTime,actualDepartureTime,flexibilityMinutes,isRecurring,const DeepCollectionEquality().hash(recurringDays),recurringEndDate);
 
 @override
 String toString() {
-  return 'RideSchedule(departureTime: $departureTime, arrivalTime: $arrivalTime, flexibilityMinutes: $flexibilityMinutes, isRecurring: $isRecurring, recurringDays: $recurringDays, recurringEndDate: $recurringEndDate)';
+  return 'RideSchedule(departureTime: $departureTime, arrivalTime: $arrivalTime, actualDepartureTime: $actualDepartureTime, flexibilityMinutes: $flexibilityMinutes, isRecurring: $isRecurring, recurringDays: $recurringDays, recurringEndDate: $recurringEndDate)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $RideScheduleCopyWith<$Res>  {
   factory $RideScheduleCopyWith(RideSchedule value, $Res Function(RideSchedule) _then) = _$RideScheduleCopyWithImpl;
 @useResult
 $Res call({
-@RequiredTimestampConverter() DateTime departureTime,@TimestampConverter() DateTime? arrivalTime, int flexibilityMinutes, bool isRecurring, List<int> recurringDays,@TimestampConverter() DateTime? recurringEndDate
+@RequiredTimestampConverter() DateTime departureTime,@TimestampConverter() DateTime? arrivalTime,@TimestampConverter() DateTime? actualDepartureTime, int flexibilityMinutes, bool isRecurring, List<int> recurringDays,@TimestampConverter() DateTime? recurringEndDate
 });
 
 
@@ -65,10 +65,11 @@ class _$RideScheduleCopyWithImpl<$Res>
 
 /// Create a copy of RideSchedule
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? departureTime = null,Object? arrivalTime = freezed,Object? flexibilityMinutes = null,Object? isRecurring = null,Object? recurringDays = null,Object? recurringEndDate = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? departureTime = null,Object? arrivalTime = freezed,Object? actualDepartureTime = freezed,Object? flexibilityMinutes = null,Object? isRecurring = null,Object? recurringDays = null,Object? recurringEndDate = freezed,}) {
   return _then(_self.copyWith(
 departureTime: null == departureTime ? _self.departureTime : departureTime // ignore: cast_nullable_to_non_nullable
 as DateTime,arrivalTime: freezed == arrivalTime ? _self.arrivalTime : arrivalTime // ignore: cast_nullable_to_non_nullable
+as DateTime?,actualDepartureTime: freezed == actualDepartureTime ? _self.actualDepartureTime : actualDepartureTime // ignore: cast_nullable_to_non_nullable
 as DateTime?,flexibilityMinutes: null == flexibilityMinutes ? _self.flexibilityMinutes : flexibilityMinutes // ignore: cast_nullable_to_non_nullable
 as int,isRecurring: null == isRecurring ? _self.isRecurring : isRecurring // ignore: cast_nullable_to_non_nullable
 as bool,recurringDays: null == recurringDays ? _self.recurringDays : recurringDays // ignore: cast_nullable_to_non_nullable
@@ -158,10 +159,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@RequiredTimestampConverter()  DateTime departureTime, @TimestampConverter()  DateTime? arrivalTime,  int flexibilityMinutes,  bool isRecurring,  List<int> recurringDays, @TimestampConverter()  DateTime? recurringEndDate)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@RequiredTimestampConverter()  DateTime departureTime, @TimestampConverter()  DateTime? arrivalTime, @TimestampConverter()  DateTime? actualDepartureTime,  int flexibilityMinutes,  bool isRecurring,  List<int> recurringDays, @TimestampConverter()  DateTime? recurringEndDate)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _RideSchedule() when $default != null:
-return $default(_that.departureTime,_that.arrivalTime,_that.flexibilityMinutes,_that.isRecurring,_that.recurringDays,_that.recurringEndDate);case _:
+return $default(_that.departureTime,_that.arrivalTime,_that.actualDepartureTime,_that.flexibilityMinutes,_that.isRecurring,_that.recurringDays,_that.recurringEndDate);case _:
   return orElse();
 
 }
@@ -179,10 +180,10 @@ return $default(_that.departureTime,_that.arrivalTime,_that.flexibilityMinutes,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@RequiredTimestampConverter()  DateTime departureTime, @TimestampConverter()  DateTime? arrivalTime,  int flexibilityMinutes,  bool isRecurring,  List<int> recurringDays, @TimestampConverter()  DateTime? recurringEndDate)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@RequiredTimestampConverter()  DateTime departureTime, @TimestampConverter()  DateTime? arrivalTime, @TimestampConverter()  DateTime? actualDepartureTime,  int flexibilityMinutes,  bool isRecurring,  List<int> recurringDays, @TimestampConverter()  DateTime? recurringEndDate)  $default,) {final _that = this;
 switch (_that) {
 case _RideSchedule():
-return $default(_that.departureTime,_that.arrivalTime,_that.flexibilityMinutes,_that.isRecurring,_that.recurringDays,_that.recurringEndDate);case _:
+return $default(_that.departureTime,_that.arrivalTime,_that.actualDepartureTime,_that.flexibilityMinutes,_that.isRecurring,_that.recurringDays,_that.recurringEndDate);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -199,10 +200,10 @@ return $default(_that.departureTime,_that.arrivalTime,_that.flexibilityMinutes,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@RequiredTimestampConverter()  DateTime departureTime, @TimestampConverter()  DateTime? arrivalTime,  int flexibilityMinutes,  bool isRecurring,  List<int> recurringDays, @TimestampConverter()  DateTime? recurringEndDate)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@RequiredTimestampConverter()  DateTime departureTime, @TimestampConverter()  DateTime? arrivalTime, @TimestampConverter()  DateTime? actualDepartureTime,  int flexibilityMinutes,  bool isRecurring,  List<int> recurringDays, @TimestampConverter()  DateTime? recurringEndDate)?  $default,) {final _that = this;
 switch (_that) {
 case _RideSchedule() when $default != null:
-return $default(_that.departureTime,_that.arrivalTime,_that.flexibilityMinutes,_that.isRecurring,_that.recurringDays,_that.recurringEndDate);case _:
+return $default(_that.departureTime,_that.arrivalTime,_that.actualDepartureTime,_that.flexibilityMinutes,_that.isRecurring,_that.recurringDays,_that.recurringEndDate);case _:
   return null;
 
 }
@@ -214,11 +215,12 @@ return $default(_that.departureTime,_that.arrivalTime,_that.flexibilityMinutes,_
 @JsonSerializable()
 
 class _RideSchedule extends RideSchedule {
-  const _RideSchedule({@RequiredTimestampConverter() required this.departureTime, @TimestampConverter() this.arrivalTime, this.flexibilityMinutes = 15, this.isRecurring = false, final  List<int> recurringDays = const [], @TimestampConverter() this.recurringEndDate}): _recurringDays = recurringDays,super._();
+  const _RideSchedule({@RequiredTimestampConverter() required this.departureTime, @TimestampConverter() this.arrivalTime, @TimestampConverter() this.actualDepartureTime, this.flexibilityMinutes = 15, this.isRecurring = false, final  List<int> recurringDays = const [], @TimestampConverter() this.recurringEndDate}): _recurringDays = recurringDays,super._();
   factory _RideSchedule.fromJson(Map<String, dynamic> json) => _$RideScheduleFromJson(json);
 
 @override@RequiredTimestampConverter() final  DateTime departureTime;
 @override@TimestampConverter() final  DateTime? arrivalTime;
+@override@TimestampConverter() final  DateTime? actualDepartureTime;
 @override@JsonKey() final  int flexibilityMinutes;
 @override@JsonKey() final  bool isRecurring;
  final  List<int> _recurringDays;
@@ -243,16 +245,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RideSchedule&&(identical(other.departureTime, departureTime) || other.departureTime == departureTime)&&(identical(other.arrivalTime, arrivalTime) || other.arrivalTime == arrivalTime)&&(identical(other.flexibilityMinutes, flexibilityMinutes) || other.flexibilityMinutes == flexibilityMinutes)&&(identical(other.isRecurring, isRecurring) || other.isRecurring == isRecurring)&&const DeepCollectionEquality().equals(other._recurringDays, _recurringDays)&&(identical(other.recurringEndDate, recurringEndDate) || other.recurringEndDate == recurringEndDate));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RideSchedule&&(identical(other.departureTime, departureTime) || other.departureTime == departureTime)&&(identical(other.arrivalTime, arrivalTime) || other.arrivalTime == arrivalTime)&&(identical(other.actualDepartureTime, actualDepartureTime) || other.actualDepartureTime == actualDepartureTime)&&(identical(other.flexibilityMinutes, flexibilityMinutes) || other.flexibilityMinutes == flexibilityMinutes)&&(identical(other.isRecurring, isRecurring) || other.isRecurring == isRecurring)&&const DeepCollectionEquality().equals(other._recurringDays, _recurringDays)&&(identical(other.recurringEndDate, recurringEndDate) || other.recurringEndDate == recurringEndDate));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,departureTime,arrivalTime,flexibilityMinutes,isRecurring,const DeepCollectionEquality().hash(_recurringDays),recurringEndDate);
+int get hashCode => Object.hash(runtimeType,departureTime,arrivalTime,actualDepartureTime,flexibilityMinutes,isRecurring,const DeepCollectionEquality().hash(_recurringDays),recurringEndDate);
 
 @override
 String toString() {
-  return 'RideSchedule(departureTime: $departureTime, arrivalTime: $arrivalTime, flexibilityMinutes: $flexibilityMinutes, isRecurring: $isRecurring, recurringDays: $recurringDays, recurringEndDate: $recurringEndDate)';
+  return 'RideSchedule(departureTime: $departureTime, arrivalTime: $arrivalTime, actualDepartureTime: $actualDepartureTime, flexibilityMinutes: $flexibilityMinutes, isRecurring: $isRecurring, recurringDays: $recurringDays, recurringEndDate: $recurringEndDate)';
 }
 
 
@@ -263,7 +265,7 @@ abstract mixin class _$RideScheduleCopyWith<$Res> implements $RideScheduleCopyWi
   factory _$RideScheduleCopyWith(_RideSchedule value, $Res Function(_RideSchedule) _then) = __$RideScheduleCopyWithImpl;
 @override @useResult
 $Res call({
-@RequiredTimestampConverter() DateTime departureTime,@TimestampConverter() DateTime? arrivalTime, int flexibilityMinutes, bool isRecurring, List<int> recurringDays,@TimestampConverter() DateTime? recurringEndDate
+@RequiredTimestampConverter() DateTime departureTime,@TimestampConverter() DateTime? arrivalTime,@TimestampConverter() DateTime? actualDepartureTime, int flexibilityMinutes, bool isRecurring, List<int> recurringDays,@TimestampConverter() DateTime? recurringEndDate
 });
 
 
@@ -280,10 +282,11 @@ class __$RideScheduleCopyWithImpl<$Res>
 
 /// Create a copy of RideSchedule
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? departureTime = null,Object? arrivalTime = freezed,Object? flexibilityMinutes = null,Object? isRecurring = null,Object? recurringDays = null,Object? recurringEndDate = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? departureTime = null,Object? arrivalTime = freezed,Object? actualDepartureTime = freezed,Object? flexibilityMinutes = null,Object? isRecurring = null,Object? recurringDays = null,Object? recurringEndDate = freezed,}) {
   return _then(_RideSchedule(
 departureTime: null == departureTime ? _self.departureTime : departureTime // ignore: cast_nullable_to_non_nullable
 as DateTime,arrivalTime: freezed == arrivalTime ? _self.arrivalTime : arrivalTime // ignore: cast_nullable_to_non_nullable
+as DateTime?,actualDepartureTime: freezed == actualDepartureTime ? _self.actualDepartureTime : actualDepartureTime // ignore: cast_nullable_to_non_nullable
 as DateTime?,flexibilityMinutes: null == flexibilityMinutes ? _self.flexibilityMinutes : flexibilityMinutes // ignore: cast_nullable_to_non_nullable
 as int,isRecurring: null == isRecurring ? _self.isRecurring : isRecurring // ignore: cast_nullable_to_non_nullable
 as bool,recurringDays: null == recurringDays ? _self._recurringDays : recurringDays // ignore: cast_nullable_to_non_nullable

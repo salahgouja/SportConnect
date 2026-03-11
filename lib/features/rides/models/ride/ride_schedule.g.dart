@@ -11,6 +11,9 @@ _RideSchedule _$RideScheduleFromJson(Map json) => _RideSchedule(
     json['departureTime'],
   ),
   arrivalTime: const TimestampConverter().fromJson(json['arrivalTime']),
+  actualDepartureTime: const TimestampConverter().fromJson(
+    json['actualDepartureTime'],
+  ),
   flexibilityMinutes: (json['flexibilityMinutes'] as num?)?.toInt() ?? 15,
   isRecurring: json['isRecurring'] as bool? ?? false,
   recurringDays:
@@ -29,6 +32,9 @@ Map<String, dynamic> _$RideScheduleToJson(_RideSchedule instance) =>
         instance.departureTime,
       ),
       'arrivalTime': const TimestampConverter().toJson(instance.arrivalTime),
+      'actualDepartureTime': const TimestampConverter().toJson(
+        instance.actualDepartureTime,
+      ),
       'flexibilityMinutes': instance.flexibilityMinutes,
       'isRecurring': instance.isRecurring,
       'recurringDays': instance.recurringDays,

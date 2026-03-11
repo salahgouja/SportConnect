@@ -94,4 +94,13 @@ abstract class INotificationRepository {
     required String achievementName,
     required String achievementDescription,
   });
+
+  /// H2: Send notification when driver arrives at passenger's pickup
+  Future<void> sendDriverArrivedAtPickup({
+    required String toUserId,
+    required String driverName,
+    String? driverPhoto,
+    required String rideId,
+    required String rideName,
+  });
 }

@@ -12,6 +12,7 @@ abstract class RideSchedule with _$RideSchedule {
   const factory RideSchedule({
     @RequiredTimestampConverter() required DateTime departureTime,
     @TimestampConverter() DateTime? arrivalTime,
+    @TimestampConverter() DateTime? actualDepartureTime,
     @Default(15) int flexibilityMinutes,
     @Default(false) bool isRecurring,
     @Default([]) List<int> recurringDays,

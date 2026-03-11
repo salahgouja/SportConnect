@@ -4620,6 +4620,24 @@ abstract class AppLocalizations {
   /// **'Mark this ride as started? Passengers will be notified.'**
   String get markThisRideAsStarted;
 
+  /// Title for the pickup confirmation dialog on the active ride screen
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Pickup'**
+  String get confirmPickup;
+
+  /// Button text in pickup confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Passengers Picked Up — Start Trip'**
+  String get passengersPickedUpStartTrip;
+
+  /// Content text in pickup confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm all passengers have been picked up and you are ready to start the trip.'**
+  String get confirmAllPassengersPickedUp;
+
   /// Text from Text in driver_view_ride_screen.dart
   ///
   /// In en, this message translates to:

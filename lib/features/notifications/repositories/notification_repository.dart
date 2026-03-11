@@ -297,6 +297,28 @@ class NotificationRepository implements INotificationRepository {
       ),
     );
   }
+
+  @override
+  Future<void> sendDriverArrivedAtPickup({
+    required String toUserId,
+    required String driverName,
+    String? driverPhoto,
+    required String rideId,
+    required String rideName,
+  }) async {
+    await createNotification(
+      NotificationModel(
+        id: '',
+        userId: toUserId,
+        type: NotificationType.rideUpdated,
+        title: 'Driver has arrived! 🚗',
+        body:
+            '$driverName has arrived at your pickup for $rideName. Head out now!',
+        priority: NotificationPriority.high,
+        data: {'rideId': rideId, 'driverPhoto': driverPhoto},
+      ),
+    );
+  }
 }
 
 /// Provider for streaming user notifications

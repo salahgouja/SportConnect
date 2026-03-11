@@ -37,7 +37,9 @@ class RiderMyRidesScreen extends ConsumerWidget {
             return _buildSignInState(context);
           }
 
-          final ridesAsync = ref.watch(myRidesAsPassengerStreamProvider(user.uid));
+          final ridesAsync = ref.watch(
+            myRidesAsPassengerStreamProvider(user.uid),
+          );
 
           return ridesAsync.when(
             loading: () => _buildFullLoading(),
@@ -51,21 +53,33 @@ class RiderMyRidesScreen extends ConsumerWidget {
               final activeRides = rides
                   .where((r) => r.status == RideStatus.inProgress)
                   .toList();
-                  
-              final upcomingRides = rides
-                  .where((r) => 
-                      (r.status == RideStatus.active || r.status == RideStatus.full) &&
-                      r.departureTime.isAfter(DateTime.now()))
-                  .toList()
-                ..sort((a, b) => a.departureTime.compareTo(b.departureTime));
 
-              final pastRides = rides
-                  .where((r) => 
-                      r.status == RideStatus.completed || 
-                      r.status == RideStatus.cancelled ||
-                      (r.status == RideStatus.full && r.departureTime.isBefore(DateTime.now())))
-                  .toList()
-                ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
+              final upcomingRides =
+                  rides
+                      .where(
+                        (r) =>
+                            (r.status == RideStatus.active ||
+                                r.status == RideStatus.full) &&
+                            r.departureTime.isAfter(DateTime.now()),
+                      )
+                      .toList()
+                    ..sort(
+                      (a, b) => a.departureTime.compareTo(b.departureTime),
+                    );
+
+              final pastRides =
+                  rides
+                      .where(
+                        (r) =>
+                            r.status == RideStatus.completed ||
+                            r.status == RideStatus.cancelled ||
+                            (r.status == RideStatus.full &&
+                                r.departureTime.isBefore(DateTime.now())),
+                      )
+                      .toList()
+                    ..sort(
+                      (a, b) => b.departureTime.compareTo(a.departureTime),
+                    );
 
               // 2. Build the Unified Feed
               return CustomScrollView(
@@ -77,7 +91,7 @@ class RiderMyRidesScreen extends ConsumerWidget {
                     _buildUpcomingSection(context, upcomingRides),
                   if (pastRides.isNotEmpty)
                     ..._buildHistorySection(context, pastRides),
-                  
+
                   // Bottom padding to ensure the FAB doesn't block the last item
                   SliverToBoxAdapter(child: SizedBox(height: 100.h)),
                 ],
@@ -96,10 +110,15 @@ class RiderMyRidesScreen extends ConsumerWidget {
       collapsedHeight: 60.h,
       pinned: true,
       backgroundColor: AppColors.surface,
-      surfaceTintColor: Colors.transparent, // Prevents material 3 color shifting
+      surfaceTintColor:
+          Colors.transparent, // Prevents material 3 color shifting
       elevation: 0,
       leading: IconButton(
-        icon: Icon(Icons.arrow_back_ios_new_rounded, size: 20.sp, color: AppColors.textPrimary),
+        icon: Icon(
+          Icons.arrow_back_ios_new_rounded,
+          size: 20.sp,
+          color: AppColors.textPrimary,
+        ),
         onPressed: () => context.pop(),
       ),
       flexibleSpace: FlexibleSpaceBar(
@@ -127,7 +146,11 @@ class RiderMyRidesScreen extends ConsumerWidget {
           children: [
             Text(
               'Happening Now',
-              style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w700, color: AppColors.primary),
+              style: TextStyle(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
+              ),
             ),
             SizedBox(height: 12.h),
             ...rides.map((ride) => _buildActiveCard(context, ride)),
@@ -146,7 +169,11 @@ class RiderMyRidesScreen extends ConsumerWidget {
             padding: EdgeInsets.symmetric(horizontal: 20.w),
             child: Text(
               'Upcoming',
-              style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+              style: TextStyle(
+                fontSize: 18.sp,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
             ),
           ),
           SizedBox(height: 12.h),
@@ -157,7 +184,8 @@ class RiderMyRidesScreen extends ConsumerWidget {
               scrollDirection: Axis.horizontal,
               itemCount: rides.length,
               separatorBuilder: (_, __) => SizedBox(width: 16.w),
-              itemBuilder: (context, index) => _buildUpcomingCard(context, rides[index]),
+              itemBuilder: (context, index) =>
+                  _buildUpcomingCard(context, rides[index]),
             ),
           ).animate().fadeIn(duration: 400.ms, delay: 100.ms),
         ],
@@ -165,7 +193,10 @@ class RiderMyRidesScreen extends ConsumerWidget {
     );
   }
 
-  List<Widget> _buildHistorySection(BuildContext context, List<RideModel> rides) {
+  List<Widget> _buildHistorySection(
+    BuildContext context,
+    List<RideModel> rides,
+  ) {
     // Group by month
     final groupedRides = <String, List<RideModel>>{};
     for (final ride in rides) {
@@ -179,7 +210,11 @@ class RiderMyRidesScreen extends ConsumerWidget {
           padding: EdgeInsets.fromLTRB(20.w, 32.h, 20.w, 8.h),
           child: Text(
             'Past Activity',
-            style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+            style: TextStyle(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
           ),
         ),
       ),
@@ -192,7 +227,12 @@ class RiderMyRidesScreen extends ConsumerWidget {
             padding: EdgeInsets.fromLTRB(20.w, 24.h, 20.w, 12.h),
             child: Text(
               month.toUpperCase(),
-              style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w700, color: AppColors.textTertiary, letterSpacing: 1.2),
+              style: TextStyle(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textTertiary,
+                letterSpacing: 1.2,
+              ),
             ),
           ),
         ),
@@ -214,13 +254,17 @@ class RiderMyRidesScreen extends ConsumerWidget {
   // MARK: - Cards
   Widget _buildActiveCard(BuildContext context, RideModel ride) {
     return GestureDetector(
-      onTap: () => context.push(AppRoutes.rideNavigation.path.replaceFirst(':id', ride.id)),
+      onTap: () =>
+          context.push('${AppRoutes.riderActiveRide.path}?rideId=${ride.id}'),
       child: Container(
         padding: EdgeInsets.all(20.w),
         decoration: BoxDecoration(
           color: AppColors.primary.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(24.r),
-          border: Border.all(color: AppColors.primary.withValues(alpha: 0.2), width: 1.5),
+          border: Border.all(
+            color: AppColors.primary.withValues(alpha: 0.2),
+            width: 1.5,
+          ),
         ),
         child: Column(
           children: [
@@ -230,14 +274,34 @@ class RiderMyRidesScreen extends ConsumerWidget {
                 Row(
                   children: [
                     Container(
-                      width: 10.w, height: 10.w,
-                      decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
-                    ).animate(onPlay: (c) => c.repeat(reverse: true)).scale(begin: const Offset(0.8, 0.8), end: const Offset(1.2, 1.2)),
+                          width: 10.w,
+                          height: 10.w,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            shape: BoxShape.circle,
+                          ),
+                        )
+                        .animate(onPlay: (c) => c.repeat(reverse: true))
+                        .scale(
+                          begin: const Offset(0.8, 0.8),
+                          end: const Offset(1.2, 1.2),
+                        ),
                     SizedBox(width: 8.w),
-                    Text('In Progress', style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                    Text(
+                      'In Progress',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                      ),
+                    ),
                   ],
                 ),
-                Icon(Icons.directions_car_rounded, color: AppColors.primary, size: 24.sp),
+                Icon(
+                  Icons.directions_car_rounded,
+                  color: AppColors.primary,
+                  size: 24.sp,
+                ),
               ],
             ),
             SizedBox(height: 20.h),
@@ -253,8 +317,21 @@ class RiderMyRidesScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      DriverNameWidget(driverId: ride.driverId, style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                      Text(ride.vehicleInfo ?? 'Vehicle', style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary)),
+                      DriverNameWidget(
+                        driverId: ride.driverId,
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      Text(
+                        ride.vehicleInfo ?? 'Vehicle',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -274,7 +351,10 @@ class RiderMyRidesScreen extends ConsumerWidget {
 
   Widget _buildUpcomingCard(BuildContext context, RideModel ride) {
     return GestureDetector(
-      onTap: () => context.pushNamed(AppRoutes.riderViewRide.name, pathParameters: {'id': ride.id}),
+      onTap: () => context.pushNamed(
+        AppRoutes.riderViewRide.name,
+        pathParameters: {'id': ride.id},
+      ),
       child: Container(
         width: 280.w,
         padding: EdgeInsets.all(20.w),
@@ -282,7 +362,11 @@ class RiderMyRidesScreen extends ConsumerWidget {
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(20.r),
           boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4)),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
           ],
         ),
         child: Column(
@@ -293,16 +377,29 @@ class RiderMyRidesScreen extends ConsumerWidget {
               children: [
                 Text(
                   DateFormat('EEE, MMM d • h:mm a').format(ride.departureTime),
-                  style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600, color: AppColors.primary),
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                  ),
                 ),
                 Text(
                   '\$${ride.pricePerSeat.toStringAsFixed(0)}',
-                  style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ],
             ),
             SizedBox(height: 16.h),
-            Expanded(child: _buildRouteTimeline(ride.origin.address, ride.destination.address)),
+            Expanded(
+              child: _buildRouteTimeline(
+                ride.origin.address,
+                ride.destination.address,
+              ),
+            ),
           ],
         ),
       ),
@@ -313,11 +410,19 @@ class RiderMyRidesScreen extends ConsumerWidget {
     final isCancelled = ride.status == RideStatus.cancelled;
 
     return InkWell(
-      onTap: () => context.pushNamed(AppRoutes.riderViewRide.name, pathParameters: {'id': ride.id}),
+      onTap: () => context.pushNamed(
+        AppRoutes.riderViewRide.name,
+        pathParameters: {'id': ride.id},
+      ),
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
         decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: AppColors.textTertiary.withValues(alpha: 0.1), width: 1)),
+          border: Border(
+            bottom: BorderSide(
+              color: AppColors.textTertiary.withValues(alpha: 0.1),
+              width: 1,
+            ),
+          ),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -325,9 +430,13 @@ class RiderMyRidesScreen extends ConsumerWidget {
             Container(
               padding: EdgeInsets.all(10.w),
               decoration: BoxDecoration(
-                color: isCancelled ? AppColors.error.withValues(alpha: 0.1) : AppColors.surface,
+                color: isCancelled
+                    ? AppColors.error.withValues(alpha: 0.1)
+                    : AppColors.surface,
                 borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(color: AppColors.textTertiary.withValues(alpha: 0.2)),
+                border: Border.all(
+                  color: AppColors.textTertiary.withValues(alpha: 0.2),
+                ),
               ),
               child: Icon(
                 isCancelled ? Icons.close_rounded : Icons.check_rounded,
@@ -341,15 +450,27 @@ class RiderMyRidesScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    ride.destination.address.split(',').first, // Just show destination for quick parsing
-                    style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600, color: AppColors.textPrimary, decoration: isCancelled ? TextDecoration.lineThrough : null),
+                    ride.destination.address
+                        .split(',')
+                        .first, // Just show destination for quick parsing
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                      decoration: isCancelled
+                          ? TextDecoration.lineThrough
+                          : null,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   SizedBox(height: 4.h),
                   Text(
                     DateFormat('MMM d, h:mm a').format(ride.departureTime),
-                    style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -357,7 +478,13 @@ class RiderMyRidesScreen extends ConsumerWidget {
             SizedBox(width: 12.w),
             Text(
               '\$${ride.pricePerSeat.toStringAsFixed(0)}',
-              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600, color: isCancelled ? AppColors.textTertiary : AppColors.textPrimary),
+              style: TextStyle(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w600,
+                color: isCancelled
+                    ? AppColors.textTertiary
+                    : AppColors.textPrimary,
+              ),
             ),
           ],
         ),
@@ -373,7 +500,11 @@ class RiderMyRidesScreen extends ConsumerWidget {
         Column(
           children: [
             Icon(Icons.circle, size: 10.sp, color: AppColors.textPrimary),
-            Container(width: 1.5.w, height: 24.h, color: AppColors.textTertiary.withValues(alpha: 0.3)),
+            Container(
+              width: 1.5.w,
+              height: 24.h,
+              color: AppColors.textTertiary.withValues(alpha: 0.3),
+            ),
             Icon(Icons.square, size: 10.sp, color: AppColors.primary),
           ],
         ),
@@ -382,9 +513,27 @@ class RiderMyRidesScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(origin.split(',').first, style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500, color: AppColors.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
+              Text(
+                origin.split(',').first,
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textSecondary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
               SizedBox(height: 18.h),
-              Text(destination.split(',').first, style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w700, color: AppColors.textPrimary), maxLines: 1, overflow: TextOverflow.ellipsis),
+              Text(
+                destination.split(',').first,
+                style: TextStyle(
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ],
           ),
         ),
@@ -401,27 +550,42 @@ class RiderMyRidesScreen extends ConsumerWidget {
         onPressed: () => context.go(AppRoutes.riderRequestRide.path),
         backgroundColor: AppColors.primary,
         elevation: 6,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.r),
+        ),
         icon: Icon(Icons.add_rounded, size: 24.sp, color: Colors.white),
         label: Text(
           'Book a Ride',
-          style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w700, color: Colors.white),
+          style: TextStyle(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
         ),
       ),
     );
   }
 
   // MARK: - States
-  Widget _buildFullLoading() => const Center(child: SkeletonLoader(type: SkeletonType.rideCard, itemCount: 4));
+  Widget _buildFullLoading() => const Center(
+    child: SkeletonLoader(type: SkeletonType.rideCard, itemCount: 4),
+  );
 
   Widget _buildErrorState(BuildContext context, String error) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline_rounded, size: 48.sp, color: AppColors.error),
+          Icon(
+            Icons.error_outline_rounded,
+            size: 48.sp,
+            color: AppColors.error,
+          ),
           SizedBox(height: 16.h),
-          Text('Something went wrong', style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w600)),
+          Text(
+            'Something went wrong',
+            style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w600),
+          ),
         ],
       ),
     );
@@ -434,11 +598,22 @@ class RiderMyRidesScreen extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.account_circle_rounded, size: 64.sp, color: AppColors.textTertiary),
+            Icon(
+              Icons.account_circle_rounded,
+              size: 64.sp,
+              color: AppColors.textTertiary,
+            ),
             SizedBox(height: 24.h),
-            Text('Sign in to see your rides', style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.w700)),
+            Text(
+              'Sign in to see your rides',
+              style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.w700),
+            ),
             SizedBox(height: 24.h),
-            PremiumButton(text: 'Log In', onPressed: () => context.go(AppRoutes.login.path), style: PremiumButtonStyle.primary),
+            PremiumButton(
+              text: 'Log In',
+              onPressed: () => context.go(AppRoutes.login.path),
+              style: PremiumButtonStyle.primary,
+            ),
           ],
         ),
       ),
@@ -450,11 +625,25 @@ class RiderMyRidesScreen extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.directions_car_rounded, size: 64.sp, color: AppColors.textTertiary.withValues(alpha: 0.5)),
+          Icon(
+            Icons.directions_car_rounded,
+            size: 64.sp,
+            color: AppColors.textTertiary.withValues(alpha: 0.5),
+          ),
           SizedBox(height: 16.h),
-          Text('No rides yet', style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+          Text(
+            'No rides yet',
+            style: TextStyle(
+              fontSize: 20.sp,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
           SizedBox(height: 8.h),
-          Text('When you take a trip, it will appear here.', style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary)),
+          Text(
+            'When you take a trip, it will appear here.',
+            style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
+          ),
         ],
       ),
     );

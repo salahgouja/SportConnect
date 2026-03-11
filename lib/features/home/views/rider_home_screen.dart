@@ -43,6 +43,9 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
   // ── Search (ephemeral UI state) ────────────────────────────
   final TextEditingController _searchController = TextEditingController();
 
+  /// Whether the active-ride guard has already navigated (prevent re-entry).
+  bool _hasAutoNavigatedToActiveRide = false;
+
   // ── Map tile sources ───────────────────────────────────────
   final Map<String, String> _mapStyles = {
     'standard': 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -163,21 +166,46 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
     final vmState = ref.watch(riderHomeViewModelProvider);
     final locationState = vmState.locationState;
 
-    // Auto-follow map when location changes
-    ref.listen<RiderHomeState>(
-      riderHomeViewModelProvider,
-      (previous, next) {
-        if (next.locationState == LocationPermissionState.ready &&
-            next.isFollowingUser &&
-            next.currentLocation != null) {
-          final vm = ref.read(riderHomeViewModelProvider.notifier);
-          if (vm.canMoveMap()) {
-            _mapController.move(next.currentLocation!, next.currentZoom);
-            vm.updateLastMapMoveTime(DateTime.now());
+    // ── Global Active Ride Guard ─────────────────────────────
+    // On app launch / foreground, check if the user has an in-progress ride
+    // and auto-navigate to the active ride screen.
+    if (!_hasAutoNavigatedToActiveRide) {
+      final user = ref.watch(currentUserProvider).value;
+      if (user != null) {
+        final bookings =
+            ref.watch(bookingsByPassengerProvider(user.uid)).value ?? [];
+        final acceptedBooking = bookings
+            .where((b) => b.status == BookingStatus.accepted)
+            .toList();
+        for (final booking in acceptedBooking) {
+          final ride = ref.watch(rideStreamProvider(booking.rideId)).value;
+          if (ride != null && ride.status == RideStatus.inProgress) {
+            _hasAutoNavigatedToActiveRide = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                context.push(
+                  '${AppRoutes.riderActiveRide.path}?rideId=${ride.id}',
+                );
+              }
+            });
+            break;
           }
         }
-      },
-    );
+      }
+    }
+
+    // Auto-follow map when location changes
+    ref.listen<RiderHomeState>(riderHomeViewModelProvider, (previous, next) {
+      if (next.locationState == LocationPermissionState.ready &&
+          next.isFollowingUser &&
+          next.currentLocation != null) {
+        final vm = ref.read(riderHomeViewModelProvider.notifier);
+        if (vm.canMoveMap()) {
+          _mapController.move(next.currentLocation!, next.currentZoom);
+          vm.updateLastMapMoveTime(DateTime.now());
+        }
+      }
+    });
 
     return Scaffold(
       body: switch (locationState) {
@@ -681,7 +709,8 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
       nearbyRidesStreamProvider(queryAnchor, searchRadius),
     );
     final filteredNearbyRides = nearbyRides.whenData(
-      (rides) => ref.read(riderHomeViewModelProvider.notifier).applyFilter(rides),
+      (rides) =>
+          ref.read(riderHomeViewModelProvider.notifier).applyFilter(rides),
     );
     final homeVmState = ref.watch(homeViewModelProvider);
     final hotspots = homeVmState.hotspots;
@@ -1018,14 +1047,15 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
     RiderHomeState vmState,
   ) {
     final l10n = AppLocalizations.of(context);
-    final queryAnchor = vmState.nearbyQueryAnchor ??
+    final queryAnchor =
+        vmState.nearbyQueryAnchor ??
         vmState.currentLocation ??
         const LatLng(0, 0);
     final searchRadius = vmState.searchRadius;
     final selectedFilter = vmState.selectedFilter;
     final allRides =
         ref.watch(nearbyRidesStreamProvider(queryAnchor, searchRadius)).value ??
-            [];
+        [];
 
     final filters = [
       {
@@ -1175,7 +1205,9 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
             tooltip: l10n.searchRadius,
             onTap: () {
               HapticFeedback.selectionClick();
-              ref.read(riderHomeViewModelProvider.notifier).toggleDistanceRadius();
+              ref
+                  .read(riderHomeViewModelProvider.notifier)
+                  .toggleDistanceRadius();
             },
           ),
           SizedBox(height: 8.h),
@@ -1195,7 +1227,9 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
             tooltip: l10n.nearbyRides,
             onTap: () {
               HapticFeedback.selectionClick();
-              ref.read(riderHomeViewModelProvider.notifier).toggleNearbyDrivers();
+              ref
+                  .read(riderHomeViewModelProvider.notifier)
+                  .toggleNearbyDrivers();
             },
           ),
           SizedBox(height: 8.h),
@@ -1504,7 +1538,9 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                 divisions: 24,
                 onChanged: (v) {
                   HapticFeedback.selectionClick();
-                  ref.read(riderHomeViewModelProvider.notifier).updateSearchRadius(v);
+                  ref
+                      .read(riderHomeViewModelProvider.notifier)
+                      .updateSearchRadius(v);
                 },
               ),
             ),
@@ -1770,7 +1806,8 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
       builder: (sheetCtx) => StatefulBuilder(
         builder: (ctx, setModal) {
           final vmState = ref.read(riderHomeViewModelProvider);
-          final anchor = vmState.nearbyQueryAnchor ??
+          final anchor =
+              vmState.nearbyQueryAnchor ??
               vmState.currentLocation ??
               const LatLng(0, 0);
           final searchRadius = vmState.searchRadius;
@@ -2092,7 +2129,9 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                           );
 
                           if (filtered.isEmpty) {
-                            final vm = ref.read(riderHomeViewModelProvider.notifier);
+                            final vm = ref.read(
+                              riderHomeViewModelProvider.notifier,
+                            );
                             final hasOtherDays = vm.applyFilter(rides).any((r) {
                               final rd = DateTime(
                                 r.departureTime.year,
@@ -2842,7 +2881,7 @@ class _ActiveTripBanner extends ConsumerWidget {
           ? '${ride.origin.city ?? ride.origin.address} → ${ride.destination.city ?? ride.destination.address}'
           : l10n.tapToOpenNavigation;
       onTap = () => context.push(
-        AppRoutes.rideNavigation.path.replaceFirst(':id', booking.rideId),
+        '${AppRoutes.riderActiveRide.path}?rideId=${booking.rideId}',
       );
       color = AppColors.success;
     } else if (needsPayment) {

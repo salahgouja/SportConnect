@@ -59,16 +59,45 @@ abstract class IRideRepository {
   Future<void> startRide(String rideId);
   Future<void> completeRide(String rideId);
   Future<void> cancelRide(String rideId, String reason);
+  Future<void> updateRidePhase(String rideId, String phase);
   Future<void> updateLiveLocation(
     String rideId,
     double latitude,
     double longitude,
   );
 
+  /// Persists the ordered list of passenger pickup IDs to Firestore.
+  Future<void> updatePickupOrder(String rideId, List<String> passengerIds);
+
+  /// Mark a passenger as picked up in Firestore.
+  Future<void> markPassengerPickedUp(String rideId, String passengerId);
+
+  /// Mark a passenger as no-show and cancel their booking.
+  Future<void> markPassengerNoShow({
+    required String rideId,
+    required String bookingId,
+    required String passengerId,
+  });
+
+  /// Add a mid-ride stop to the ride's waypoints.
+  Future<void> addMidRideStop(String rideId, Map<String, dynamic> waypoint);
+
+  /// Remove a mid-ride stop from the ride's waypoints by index.
+  Future<void> removeMidRideStop(String rideId, int waypointIndex);
+
+  /// Record the actual distance driven (for fare adjustment).
+  Future<void> recordActualDistance(String rideId, double distanceKm);
+
+  /// Create a return ride offer from a completed ride.
+  Future<String> createReturnRide(String originalRideId);
+
   /// Streams the driver's live GPS location for a ride.
   Stream<({double latitude, double longitude})?> streamLiveLocation(
     String rideId,
   );
+
+  /// Streams the driver's current ride phase (pickingUp, enRoute, arriving, completed).
+  Stream<String?> streamRidePhase(String rideId);
 
   /// Streams rides linked to a specific event by eventId.
   Stream<List<RideModel>> streamRidesByEventId(String eventId);

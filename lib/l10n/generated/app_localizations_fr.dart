@@ -2553,6 +2553,17 @@ class AppLocalizationsFr extends AppLocalizations {
       'Marquer ce trajet comme démarré ? Les passagers seront notifiés.';
 
   @override
+  String get confirmPickup => 'Confirmer la prise en charge';
+
+  @override
+  String get passengersPickedUpStartTrip =>
+      'Passagers pris en charge — Démarrer le trajet';
+
+  @override
+  String get confirmAllPassengersPickedUp =>
+      'Confirmez que tous les passagers ont été pris en charge et que vous êtes prêt à démarrer le trajet.';
+
+  @override
   String get start => 'Démarrer';
 
   @override

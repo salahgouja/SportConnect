@@ -2778,6 +2778,18 @@
   "@markThisRideAsStarted": {
     "description": "Text from Text in driver_view_ride_screen.dart"
   },
+  "confirmPickup": "Confirm Pickup",
+  "@confirmPickup": {
+    "description": "Title for the pickup confirmation dialog on the active ride screen"
+  },
+  "passengersPickedUpStartTrip": "Passengers Picked Up — Start Trip",
+  "@passengersPickedUpStartTrip": {
+    "description": "Button text in pickup confirmation dialog"
+  },
+  "confirmAllPassengersPickedUp": "Confirm all passengers have been picked up and you are ready to start the trip.",
+  "@confirmAllPassengersPickedUp": {
+    "description": "Content text in pickup confirmation dialog"
+  },
   "start": "Start",
   "@start": {
     "description": "Text from Text in driver_view_ride_screen.dart"

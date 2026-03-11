@@ -42,6 +42,8 @@ class RiderViewRideScreen extends ConsumerStatefulWidget {
 }
 
 class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
+  bool _hasNavigatedToActiveRide = false;
+
   RideDetailState get _rideDetailState =>
       ref.watch(rideDetailViewModelProvider(widget.rideId));
 
@@ -55,6 +57,56 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
     // Watch only the ViewModel — it already aggregates ride + bookings.
     final vmState = _rideDetailState;
     final uiState = ref.watch(riderViewRideUiViewModelProvider(widget.rideId));
+
+    // Auto-redirect to active ride screen when ride transitions to inProgress
+    ref.listen(rideDetailViewModelProvider(widget.rideId), (previous, next) {
+      final ride = next.ride.value;
+      if (ride == null || _hasNavigatedToActiveRide) return;
+
+      if (ride.status == RideStatus.inProgress) {
+        final currentUserId = ref.read(currentUserProvider).value?.uid;
+        if (currentUserId == null) return;
+
+        // Only redirect if this passenger has an accepted booking
+        final hasAcceptedBooking = next.bookings.any(
+          (b) =>
+              b.passengerId == currentUserId &&
+              b.status == BookingStatus.accepted,
+        );
+        if (hasAcceptedBooking) {
+          _hasNavigatedToActiveRide = true;
+          context.pushReplacement(
+            '${AppRoutes.riderActiveRide.path}?rideId=${ride.id}',
+          );
+        }
+      }
+    });
+
+    // Initial check: if the ride is already inProgress on first build,
+    // ref.listen won't fire (no state change), so handle it here.
+    if (!_hasNavigatedToActiveRide) {
+      final ride = vmState.ride.value;
+      if (ride != null && ride.status == RideStatus.inProgress) {
+        final currentUserId = ref.read(currentUserProvider).value?.uid;
+        if (currentUserId != null) {
+          final hasAcceptedBooking = vmState.bookings.any(
+            (b) =>
+                b.passengerId == currentUserId &&
+                b.status == BookingStatus.accepted,
+          );
+          if (hasAcceptedBooking) {
+            _hasNavigatedToActiveRide = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                context.pushReplacement(
+                  '${AppRoutes.riderActiveRide.path}?rideId=${ride.id}',
+                );
+              }
+            });
+          }
+        }
+      }
+    }
 
     return vmState.ride.when(
       data: (ride) => _buildContent(ride, vmState.bookings, uiState),
