@@ -5,14 +5,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
-import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
@@ -32,34 +30,35 @@ import 'package:sport_connect/features/events/view_models/event_view_model.dart'
 ///   ),
 /// ),
 /// ```
-class CreateEventScreen extends ConsumerStatefulWidget {
+class CreateEventScreen extends ConsumerWidget {
   const CreateEventScreen({super.key});
-
-  @override
-  ConsumerState<CreateEventScreen> createState() => _CreateEventScreenState();
-}
-
-class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
-  final _formKey = GlobalKey<FormBuilderState>();
-
-  EventType _type = EventType.football;
-  DateTime _startsAt = DateTime.now().add(const Duration(hours: 2));
-  DateTime? _endsAt;
-  LocationPoint? _location;
-  int _maxParticipants = 0;
-  File? _imageFile;
-  bool _submitting = false;
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
 
   // ════════════════════════════════════════════════════════════
   // BUILD
   // ════════════════════════════════════════════════════════════
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final createState = ref.watch(createEventFormViewModelProvider);
+    final l10n = AppLocalizations.of(context);
+
+    ref.listen(createEventFormViewModelProvider, (previous, next) {
+      if (next.error != null &&
+          next.error != previous?.error &&
+          context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(next.error!)));
+      }
+
+      if (next.warningMessage != null &&
+          next.warningMessage != previous?.warningMessage &&
+          context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(next.warningMessage!)));
+      }
+    });
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -74,7 +73,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'Create Event',
+          l10n.createEventTitle,
           style: TextStyle(
             fontSize: 18.sp,
             fontWeight: FontWeight.w700,
@@ -83,50 +82,59 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
         ),
         centerTitle: true,
       ),
-      body: FormBuilder(
-        key: _formKey,
-        child: ListView(
-          padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 32.h),
-          children: [
-            _buildSportTypeSelector(),
-            SizedBox(height: 20.h),
-            _buildTitleField(),
-            SizedBox(height: 14.h),
-            _buildVenueField(),
-            SizedBox(height: 14.h),
-            _buildDescriptionField(),
-            SizedBox(height: 20.h),
-            _buildImagePicker(),
-            SizedBox(height: 20.h),
-            _buildLocationPicker(),
-            SizedBox(height: 20.h),
-            _buildWhenSection(),
-            SizedBox(height: 20.h),
-            _buildParticipantSlider(),
-            SizedBox(height: 32.h),
-            _buildSubmitButton(),
-          ],
-        ),
+      body: ListView(
+        padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 32.h),
+        children: [
+          _buildSportTypeSelector(ref, createState, l10n),
+          SizedBox(height: 20.h),
+          _buildTitleField(ref, createState, l10n),
+          SizedBox(height: 14.h),
+          _buildVenueField(ref, createState, l10n),
+          SizedBox(height: 14.h),
+          _buildDescriptionField(ref, createState, l10n),
+          SizedBox(height: 20.h),
+          _buildImagePicker(ref, createState, l10n),
+          SizedBox(height: 20.h),
+          _buildLocationPicker(context, ref, createState, l10n),
+          SizedBox(height: 20.h),
+          _buildWhenSection(context, ref, createState, l10n),
+          SizedBox(height: 20.h),
+          _buildParticipantSlider(ref, createState, l10n),
+          SizedBox(height: 20.h),
+          _buildParkingInfoField(ref, createState, l10n),
+          SizedBox(height: 20.h),
+          _buildRecurringToggle(context, ref, createState, l10n),
+          SizedBox(height: 20.h),
+          _buildCostSplitToggle(ref, createState, l10n),
+          SizedBox(height: 32.h),
+          _buildSubmitButton(context, ref, createState, l10n),
+        ],
       ),
     );
   }
 
   // ── Sport type ───────────────────────────────────────────────
-  Widget _buildSportTypeSelector() {
+  Widget _buildSportTypeSelector(
+    WidgetRef ref,
+    CreateEventFormState createState,
+    AppLocalizations l10n,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _label('Sport Type'),
+        _label(l10n.eventSportType),
         SizedBox(height: 8.h),
         Wrap(
           spacing: 8.w,
           runSpacing: 8.h,
           children: EventType.values.map((type) {
-            final active = _type == type;
+            final active = createState.type == type;
             return GestureDetector(
               onTap: () {
                 HapticFeedback.selectionClick();
-                setState(() => _type = type);
+                ref
+                    .read(createEventFormViewModelProvider.notifier)
+                    .setType(type);
               },
               child: AnimatedContainer(
                 duration: 150.ms,
@@ -165,44 +173,70 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
   }
 
   // ── Fields ───────────────────────────────────────────────────
-  Widget _buildTitleField() {
-    return FormBuilderTextField(
-      name: 'title',
+  Widget _buildTitleField(
+    WidgetRef ref,
+    CreateEventFormState createState,
+    AppLocalizations l10n,
+  ) {
+    return TextFormField(
+      initialValue: createState.title,
       textCapitalization: TextCapitalization.words,
-      decoration: _deco('Event Title *', Icons.title_rounded),
-      validator: FormBuilderValidators.required(
-        errorText: 'Title is required',
+      maxLength: 100,
+      onChanged: ref.read(createEventFormViewModelProvider.notifier).setTitle,
+      decoration: _deco(l10n.eventTitleField, Icons.title_rounded).copyWith(
+        errorText: createState.hasAttemptedSubmit
+            ? createState.titleError
+            : null,
       ),
     ).animate().fadeIn(duration: 250.ms, delay: 60.ms);
   }
 
-  Widget _buildVenueField() {
-    return FormBuilderTextField(
-      name: 'venue',
+  Widget _buildVenueField(
+    WidgetRef ref,
+    CreateEventFormState createState,
+    AppLocalizations l10n,
+  ) {
+    return TextFormField(
+      initialValue: createState.venueName,
       textCapitalization: TextCapitalization.words,
-      decoration: _deco('Venue Name (optional)', Icons.stadium_rounded),
+      onChanged: ref
+          .read(createEventFormViewModelProvider.notifier)
+          .setVenueName,
+      decoration: _deco(l10n.eventVenueName, Icons.stadium_rounded),
     ).animate().fadeIn(duration: 250.ms, delay: 100.ms);
   }
 
-  Widget _buildDescriptionField() {
-    return FormBuilderTextField(
-      name: 'description',
+  Widget _buildDescriptionField(
+    WidgetRef ref,
+    CreateEventFormState createState,
+    AppLocalizations l10n,
+  ) {
+    return TextFormField(
+      initialValue: createState.description,
       maxLines: 3,
       minLines: 2,
+      maxLength: 500,
       textCapitalization: TextCapitalization.sentences,
-      decoration: _deco('Description (optional)', Icons.notes_rounded),
+      onChanged: ref
+          .read(createEventFormViewModelProvider.notifier)
+          .setDescription,
+      decoration: _deco(l10n.eventDescriptionField, Icons.notes_rounded),
     ).animate().fadeIn(duration: 250.ms, delay: 140.ms);
   }
 
   // ── Cover Image ──────────────────────────────────────────────
-  Widget _buildImagePicker() {
+  Widget _buildImagePicker(
+    WidgetRef ref,
+    CreateEventFormState createState,
+    AppLocalizations l10n,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _label('Cover Image (optional)'),
+        _label(l10n.eventCoverImage),
         SizedBox(height: 8.h),
         GestureDetector(
-          onTap: _pickImage,
+          onTap: () => _pickImage(ref),
           child: Container(
             height: 160.h,
             width: double.infinity,
@@ -212,14 +246,14 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
               border: Border.all(
                 color: AppColors.primary.withValues(alpha: 0.15),
               ),
-              image: _imageFile != null
+              image: createState.imageFile != null
                   ? DecorationImage(
-                      image: FileImage(_imageFile!),
+                      image: FileImage(createState.imageFile!),
                       fit: BoxFit.cover,
                     )
                   : null,
             ),
-            child: _imageFile == null
+            child: createState.imageFile == null
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -230,7 +264,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
                       ),
                       SizedBox(height: 8.h),
                       Text(
-                        'Tap to add a cover photo',
+                        l10n.eventTapToAddPhoto,
                         style: TextStyle(
                           fontSize: 13.sp,
                           color: AppColors.textSecondary,
@@ -252,7 +286,9 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
                             color: Colors.white,
                           ),
                           padding: EdgeInsets.zero,
-                          onPressed: () => setState(() => _imageFile = null),
+                          onPressed: () => ref
+                              .read(createEventFormViewModelProvider.notifier)
+                              .setImageFile(null),
                         ),
                       ),
                     ),
@@ -263,7 +299,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
     ).animate().fadeIn(duration: 250.ms, delay: 160.ms);
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _pickImage(WidgetRef ref) async {
     final picker = ImagePicker();
     final image = await picker.pickImage(
       source: ImageSource.gallery,
@@ -272,46 +308,56 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
       imageQuality: 85,
     );
     if (image != null) {
-      setState(() => _imageFile = File(image.path));
+      ref
+          .read(createEventFormViewModelProvider.notifier)
+          .setImageFile(File(image.path));
     }
   }
 
   // ── Location ─────────────────────────────────────────────────
-  Widget _buildLocationPicker() {
+  Widget _buildLocationPicker(
+    BuildContext context,
+    WidgetRef ref,
+    CreateEventFormState createState,
+    AppLocalizations l10n,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _label('Location *'),
+        _label(l10n.eventLocationField),
         SizedBox(height: 8.h),
         GestureDetector(
-          onTap: _pickLocation,
+          onTap: () => _pickLocation(context, ref, l10n),
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 15.h),
             decoration: BoxDecoration(
               color: AppColors.surface,
               borderRadius: BorderRadius.circular(14.r),
               border: Border.all(
-                color: _location != null ? AppColors.success : AppColors.border,
+                color: createState.location != null
+                    ? AppColors.success
+                    : AppColors.border,
               ),
             ),
             child: Row(
               children: [
                 Icon(
-                  _location != null
+                  createState.location != null
                       ? Icons.check_circle_rounded
                       : Icons.location_on_outlined,
                   size: 20.sp,
-                  color: _location != null
+                  color: createState.location != null
                       ? AppColors.success
                       : AppColors.textTertiary,
                 ),
                 SizedBox(width: 12.w),
                 Expanded(
                   child: Text(
-                    _location?.address ?? 'Tap to pick a location on the map',
+                    createState.location?.address ??
+                        l10n.eventTapToPickLocation,
                     style: TextStyle(
                       fontSize: 14.sp,
-                      color: _location != null
+                      color: createState.location != null
                           ? AppColors.textPrimary
                           : AppColors.textTertiary,
                     ),
@@ -328,18 +374,29 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
             ),
           ),
         ),
+        if (createState.hasAttemptedSubmit && createState.locationError != null)
+          Padding(
+            padding: EdgeInsets.only(top: 8.h),
+            child: _sectionError(createState.locationError!),
+          ),
       ],
     ).animate().fadeIn(duration: 250.ms, delay: 180.ms);
   }
 
   // ── When ─────────────────────────────────────────────────────
-  Widget _buildWhenSection() {
+  Widget _buildWhenSection(
+    BuildContext context,
+    WidgetRef ref,
+    CreateEventFormState createState,
+    AppLocalizations l10n,
+  ) {
     final df = DateFormat('EEE, MMM d');
     final tf = DateFormat('h:mm a');
+    final whenError = createState.startsAtError ?? createState.endsAtError;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _label('When *'),
+        _label(l10n.eventWhenField),
         SizedBox(height: 8.h),
         // Start row
         Row(
@@ -347,18 +404,20 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
             Expanded(
               child: _dateTile(
                 icon: Icons.calendar_today_rounded,
-                label: 'Start date',
-                value: df.format(_startsAt),
-                onTap: () => _pickDate(isStart: true),
+                label: l10n.eventStartDate,
+                value: df.format(createState.startsAt),
+                onTap: () =>
+                    _pickDate(context, ref, createState, isStart: true),
               ),
             ),
             SizedBox(width: 10.w),
             Expanded(
               child: _dateTile(
                 icon: Icons.access_time_rounded,
-                label: 'Start time',
-                value: tf.format(_startsAt),
-                onTap: () => _pickTime(isStart: true),
+                label: l10n.eventStartTime,
+                value: tf.format(createState.startsAt),
+                onTap: () =>
+                    _pickTime(context, ref, createState, isStart: true),
               ),
             ),
           ],
@@ -370,24 +429,35 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
             Expanded(
               child: _dateTile(
                 icon: Icons.event_rounded,
-                label: 'End date',
-                value: _endsAt != null ? df.format(_endsAt!) : 'Optional',
-                onTap: () => _pickDate(isStart: false),
-                muted: _endsAt == null,
+                label: l10n.eventEndDate,
+                value: createState.endsAt != null
+                    ? df.format(createState.endsAt!)
+                    : l10n.eventOptional,
+                onTap: () =>
+                    _pickDate(context, ref, createState, isStart: false),
+                muted: createState.endsAt == null,
               ),
             ),
             SizedBox(width: 10.w),
             Expanded(
               child: _dateTile(
                 icon: Icons.access_time_rounded,
-                label: 'End time',
-                value: _endsAt != null ? tf.format(_endsAt!) : 'Optional',
-                onTap: () => _pickTime(isStart: false),
-                muted: _endsAt == null,
+                label: l10n.eventEndTime,
+                value: createState.endsAt != null
+                    ? tf.format(createState.endsAt!)
+                    : l10n.eventOptional,
+                onTap: () =>
+                    _pickTime(context, ref, createState, isStart: false),
+                muted: createState.endsAt == null,
               ),
             ),
           ],
         ),
+        if (createState.hasAttemptedSubmit && whenError != null)
+          Padding(
+            padding: EdgeInsets.only(top: 8.h),
+            child: _sectionError(whenError),
+          ),
       ],
     ).animate().fadeIn(duration: 250.ms, delay: 220.ms);
   }
@@ -444,42 +514,271 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
   }
 
   // ── Participants ──────────────────────────────────────────────
-  Widget _buildParticipantSlider() {
+  Widget _buildParticipantSlider(
+    WidgetRef ref,
+    CreateEventFormState createState,
+    AppLocalizations l10n,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            _label('Max Participants'),
+            _label(l10n.eventMaxParticipants),
             const Spacer(),
             Text(
-              _maxParticipants == 0 ? 'Unlimited' : '$_maxParticipants spots',
+              createState.participantLabel,
               style: TextStyle(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w600,
-                color: _type.color,
+                color: createState.type.color,
               ),
             ),
           ],
         ),
         Slider(
-          value: _maxParticipants.toDouble(),
+          value: createState.maxParticipants.toDouble(),
           min: 0,
           max: 100,
           divisions: 20,
-          activeColor: _type.color,
-          onChanged: (v) => setState(() => _maxParticipants = v.round()),
+          activeColor: createState.type.color,
+          onChanged: (value) => ref
+              .read(createEventFormViewModelProvider.notifier)
+              .setMaxParticipants(value.round()),
         ),
       ],
     ).animate().fadeIn(duration: 250.ms, delay: 260.ms);
   }
 
+  // ── Parking Info ───────────────────────────────────────────
+  Widget _buildParkingInfoField(
+    WidgetRef ref,
+    CreateEventFormState createState,
+    AppLocalizations l10n,
+  ) {
+    return TextFormField(
+      initialValue: createState.parkingInfo,
+      maxLines: 2,
+      minLines: 1,
+      maxLength: 300,
+      textCapitalization: TextCapitalization.sentences,
+      onChanged: ref
+          .read(createEventFormViewModelProvider.notifier)
+          .setParkingInfo,
+      decoration: _deco(
+        l10n.eventParkingInstructions,
+        Icons.local_parking_rounded,
+      ),
+    ).animate().fadeIn(duration: 250.ms, delay: 270.ms);
+  }
+
+  // ── Recurring Toggle + Day Selector ──────────────────────────
+  Widget _buildRecurringToggle(
+    BuildContext context,
+    WidgetRef ref,
+    CreateEventFormState createState,
+    AppLocalizations l10n,
+  ) {
+    const dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SwitchListTile.adaptive(
+          value: createState.isRecurring,
+          onChanged: (v) {
+            HapticFeedback.selectionClick();
+            ref
+                .read(createEventFormViewModelProvider.notifier)
+                .setIsRecurring(v);
+          },
+          title: Text(
+            l10n.eventRecurring,
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          subtitle: Text(
+            l10n.eventRecurringSubtitle,
+            style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
+          ),
+          secondary: Icon(
+            Icons.repeat_rounded,
+            size: 22.sp,
+            color: AppColors.primary,
+          ),
+          activeColor: AppColors.primary,
+          contentPadding: EdgeInsets.zero,
+        ),
+        if (createState.isRecurring) ...[
+          SizedBox(height: 8.h),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: List.generate(7, (i) {
+              final day = i + 1; // 1=Mon .. 7=Sun
+              final selected = createState.recurringDays.contains(day);
+              return GestureDetector(
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  ref
+                      .read(createEventFormViewModelProvider.notifier)
+                      .toggleRecurringDay(day);
+                },
+                child: AnimatedContainer(
+                  duration: 150.ms,
+                  width: 38.w,
+                  height: 38.w,
+                  decoration: BoxDecoration(
+                    color: selected ? AppColors.primary : AppColors.surface,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: selected ? AppColors.primary : AppColors.border,
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      dayLabels[i],
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w600,
+                        color: selected
+                            ? Colors.white
+                            : AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+          SizedBox(height: 12.h),
+          GestureDetector(
+            onTap: () => _pickRecurringEndDate(context, ref, createState),
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.event_repeat_rounded,
+                    size: 18.sp,
+                    color: AppColors.textTertiary,
+                  ),
+                  SizedBox(width: 10.w),
+                  Text(
+                    createState.recurringEndDate != null
+                        ? l10n.eventRepeatsUntil(
+                            DateFormat(
+                              'MMM d, y',
+                            ).format(createState.recurringEndDate!),
+                          )
+                        : l10n.eventRepeatEndDate,
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      color: createState.recurringEndDate != null
+                          ? AppColors.textPrimary
+                          : AppColors.textTertiary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+        if (createState.hasAttemptedSubmit &&
+            createState.recurringError != null)
+          Padding(
+            padding: EdgeInsets.only(top: 8.h),
+            child: _sectionError(createState.recurringError!),
+          ),
+      ],
+    ).animate().fadeIn(duration: 250.ms, delay: 280.ms);
+  }
+
+  Future<void> _pickRecurringEndDate(
+    BuildContext context,
+    WidgetRef ref,
+    CreateEventFormState createState,
+  ) async {
+    final now = DateTime.now();
+    final initialDate =
+        createState.recurringEndDate ??
+        DateTime(
+          createState.startsAt.year,
+          createState.startsAt.month,
+          createState.startsAt.day,
+        ).add(const Duration(days: 30));
+    final date = await showDatePicker(
+      context: context,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365)),
+      initialDate: initialDate.isBefore(now) ? now : initialDate,
+    );
+    if (date != null && context.mounted) {
+      ref
+          .read(createEventFormViewModelProvider.notifier)
+          .setRecurringEndDate(date);
+    }
+  }
+
+  // ── Cost Split Toggle ────────────────────────────────────────
+  Widget _buildCostSplitToggle(
+    WidgetRef ref,
+    CreateEventFormState createState,
+    AppLocalizations l10n,
+  ) {
+    return SwitchListTile.adaptive(
+      value: createState.costSplitEnabled,
+      onChanged: (v) {
+        HapticFeedback.selectionClick();
+        ref
+            .read(createEventFormViewModelProvider.notifier)
+            .setCostSplitEnabled(v);
+      },
+      title: Text(
+        l10n.eventCostSplit,
+        style: TextStyle(
+          fontSize: 14.sp,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textPrimary,
+        ),
+      ),
+      subtitle: Text(
+        l10n.eventCostSplitSubtitle,
+        style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
+      ),
+      secondary: Icon(
+        Icons.payments_outlined,
+        size: 22.sp,
+        color: AppColors.primary,
+      ),
+      activeColor: AppColors.primary,
+      contentPadding: EdgeInsets.zero,
+    ).animate().fadeIn(duration: 250.ms, delay: 290.ms);
+  }
+
   // ── Submit ────────────────────────────────────────────────────
-  Widget _buildSubmitButton() {
+  Widget _buildSubmitButton(
+    BuildContext context,
+    WidgetRef ref,
+    CreateEventFormState createState,
+    AppLocalizations l10n,
+  ) {
+    final buttonText = createState.isUploadingImage
+        ? l10n.eventUploadingCover
+        : createState.isSubmitting
+        ? l10n.eventCreating
+        : l10n.createEventTitle;
+
     return PremiumButton(
-      text: _submitting ? 'Creating…' : 'Create Event',
-      onPressed: _submitting ? null : _submit,
-      isLoading: _submitting,
+      text: buttonText,
+      onPressed: createState.isBusy ? null : () => _submit(context, ref),
+      isLoading: createState.isBusy,
       icon: Icons.check_rounded,
       style: PremiumButtonStyle.primary,
     ).animate().fadeIn(duration: 250.ms, delay: 300.ms);
@@ -492,6 +791,15 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
       fontSize: 13.sp,
       fontWeight: FontWeight.w700,
       color: AppColors.textSecondary,
+    ),
+  );
+
+  Widget _sectionError(String message) => Text(
+    message,
+    style: TextStyle(
+      fontSize: 12.sp,
+      fontWeight: FontWeight.w500,
+      color: ThemeData.light().colorScheme.error,
     ),
   );
 
@@ -512,161 +820,121 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14.r),
-      borderSide: BorderSide(color: _type.color, width: 1.5),
+      borderSide: BorderSide(color: AppColors.primary, width: 1.5),
     ),
   );
 
   // ── Pickers ──────────────────────────────────────────────────
-  Future<void> _pickLocation() async {
+  Future<void> _pickLocation(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+  ) async {
     final result = await MapLocationPicker.show(
       context,
-      title: 'Event Location',
+      title: l10n.eventLocationTitle,
     );
-    if (result != null && mounted) {
-      setState(
-        () => _location = LocationPoint(
-          latitude: result.location.latitude,
-          longitude: result.location.longitude,
-          address: result.address,
-        ),
-      );
+    if (result != null && context.mounted) {
+      ref
+          .read(createEventFormViewModelProvider.notifier)
+          .setLocation(
+            LocationPoint(
+              latitude: result.location.latitude,
+              longitude: result.location.longitude,
+              address: result.address,
+            ),
+          );
     }
   }
 
-  Future<void> _pickDate({required bool isStart}) async {
+  Future<void> _pickDate(
+    BuildContext context,
+    WidgetRef ref,
+    CreateEventFormState createState, {
+    required bool isStart,
+  }) async {
     final now = DateTime.now();
-    final initial = isStart ? _startsAt : (_endsAt ?? _startsAt);
+    final initial = isStart
+        ? createState.startsAt
+        : (createState.endsAt ??
+              createState.startsAt.add(const Duration(hours: 2)));
     final date = await showDatePicker(
       context: context,
       firstDate: now,
       lastDate: now.add(const Duration(days: 365)),
       initialDate: initial.isBefore(now) ? now : initial,
     );
-    if (date == null || !mounted) return;
-    setState(() {
-      if (isStart) {
-        _startsAt = DateTime(
-          date.year,
-          date.month,
-          date.day,
-          _startsAt.hour,
-          _startsAt.minute,
+    if (date == null || !context.mounted) return;
+    if (isStart) {
+      ref
+          .read(createEventFormViewModelProvider.notifier)
+          .setStartsAt(
+            DateTime(
+              date.year,
+              date.month,
+              date.day,
+              createState.startsAt.hour,
+              createState.startsAt.minute,
+            ),
+          );
+      return;
+    }
+
+    final base =
+        createState.endsAt ??
+        createState.startsAt.add(const Duration(hours: 2));
+    ref
+        .read(createEventFormViewModelProvider.notifier)
+        .setEndsAt(
+          DateTime(date.year, date.month, date.day, base.hour, base.minute),
         );
-      } else {
-        final base = _endsAt ?? _startsAt.add(const Duration(hours: 2));
-        _endsAt = DateTime(
-          date.year,
-          date.month,
-          date.day,
-          base.hour,
-          base.minute,
-        );
-      }
-    });
   }
 
-  Future<void> _pickTime({required bool isStart}) async {
+  Future<void> _pickTime(
+    BuildContext context,
+    WidgetRef ref,
+    CreateEventFormState createState, {
+    required bool isStart,
+  }) async {
     final initial = isStart
-        ? TimeOfDay.fromDateTime(_startsAt)
+        ? TimeOfDay.fromDateTime(createState.startsAt)
         : TimeOfDay.fromDateTime(
-            _endsAt ?? _startsAt.add(const Duration(hours: 2)),
+            createState.endsAt ??
+                createState.startsAt.add(const Duration(hours: 2)),
           );
     final time = await showTimePicker(context: context, initialTime: initial);
-    if (time == null || !mounted) return;
-    setState(() {
-      if (isStart) {
-        _startsAt = DateTime(
-          _startsAt.year,
-          _startsAt.month,
-          _startsAt.day,
-          time.hour,
-          time.minute,
+    if (time == null || !context.mounted) return;
+    if (isStart) {
+      ref
+          .read(createEventFormViewModelProvider.notifier)
+          .setStartsAt(
+            DateTime(
+              createState.startsAt.year,
+              createState.startsAt.month,
+              createState.startsAt.day,
+              time.hour,
+              time.minute,
+            ),
+          );
+      return;
+    }
+
+    final base =
+        createState.endsAt ??
+        createState.startsAt.add(const Duration(hours: 2));
+    ref
+        .read(createEventFormViewModelProvider.notifier)
+        .setEndsAt(
+          DateTime(base.year, base.month, base.day, time.hour, time.minute),
         );
-      } else {
-        final base = _endsAt ?? _startsAt.add(const Duration(hours: 2));
-        _endsAt = DateTime(
-          base.year,
-          base.month,
-          base.day,
-          time.hour,
-          time.minute,
-        );
-      }
-    });
   }
 
-  Future<void> _submit() async {
-    if (!(_formKey.currentState?.saveAndValidate() ?? false)) return;
-    if (_location == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please pick a location.')));
-      return;
-    }
-    if (_startsAt.isBefore(DateTime.now())) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Start time must be in the future.')),
-      );
-      return;
-    }
-    if (_endsAt != null && _endsAt!.isBefore(_startsAt)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('End time must be after start time.')),
-      );
-      return;
-    }
+  Future<void> _submit(BuildContext context, WidgetRef ref) async {
+    final result = await ref
+        .read(createEventFormViewModelProvider.notifier)
+        .submit();
 
-    setState(() => _submitting = true);
-
-    final user = ref.read(authStateProvider).value;
-    if (user == null) {
-      setState(() => _submitting = false);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please sign in to create an event.')),
-      );
-      return;
-    }
-
-    final created = await ref
-        .read(eventSelectionViewModelProvider.notifier)
-        .createEvent(
-          creatorId: user.uid,
-          title: (_formKey.currentState!.value['title'] as String).trim(),
-          type: _type,
-          location: _location!,
-          startsAt: _startsAt,
-          endsAt: _endsAt,
-          description: (_formKey.currentState!.value['description'] as String? ?? '').trim(),
-          venueName: (_formKey.currentState!.value['venue'] as String? ?? '').trim(),
-          organizerName: user.displayName,
-          maxParticipants: _maxParticipants,
-        );
-
-    if (!mounted) return;
-
-    if (created != null) {
-      // Upload cover image in background if one was selected.
-      if (_imageFile != null) {
-        final url = await ref
-            .read(eventDetailViewModelProvider(created.id).notifier)
-            .uploadImage(_imageFile!);
-        if (url != null) {
-          await ref
-              .read(eventDetailViewModelProvider(created.id).notifier)
-              .updateEvent(created.copyWith(imageUrl: url));
-        }
-      }
-      if (!mounted) return;
-      context.pop(created);
-    } else {
-      setState(() => _submitting = false);
-      final vmError =
-          ref.read(eventSelectionViewModelProvider).error ??
-          'Unable to create event.';
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(vmError)));
-    }
+    if (!context.mounted || result == null) return;
+    context.pop(result.event);
   }
 }

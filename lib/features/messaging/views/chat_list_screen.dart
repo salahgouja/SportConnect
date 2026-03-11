@@ -15,6 +15,8 @@ import 'package:sport_connect/features/messaging/view_models/chat_view_model.dar
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
+import 'package:sport_connect/features/messaging/view_models/chat_list_view_model.dart';
 
 /// Chat List Screen with real-time Firestore data
 class ChatListScreen extends ConsumerStatefulWidget {
@@ -27,7 +29,6 @@ class ChatListScreen extends ConsumerStatefulWidget {
 class _ChatListScreenState extends ConsumerState<ChatListScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  String _searchQuery = '';
   StreamSubscription? _incomingCallSubscription;
 
   @override
@@ -45,6 +46,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
 
   @override
   Widget build(BuildContext context) {
+    final uiState = ref.watch(chatListUiViewModelProvider);
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -58,11 +60,9 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
               padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
               child: PremiumSearchField(
                 hint: AppLocalizations.of(context).searchConversations,
-                onChanged: (value) {
-                  setState(() {
-                    _searchQuery = value.toLowerCase();
-                  });
-                },
+                onChanged: (value) => ref
+                    .read(chatListUiViewModelProvider.notifier)
+                    .setSearchQuery(value),
               ),
             ),
 
@@ -75,8 +75,8 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
                 controller: _tabController,
                 children: [
                   _buildDirectChats(),
-                  _buildGroupChats(),
-                  _buildRideChats(),
+                  _buildGroupChats(uiState.searchQuery),
+                  _buildRideChats(uiState.searchQuery),
                 ],
               ),
             ),
@@ -166,10 +166,11 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
   }
 
   Widget _buildDirectChats() {
+    final searchQuery = ref.watch(chatListUiViewModelProvider).searchQuery;
     final currentUserAsync = ref.watch(currentUserProvider);
 
     return currentUserAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => SkeletonLoader(type: SkeletonType.chatTile, itemCount: 6),
       error: (error, stack) => Center(
         child: Text(AppLocalizations.of(context).pleaseLoginToViewChats),
       ),
@@ -183,7 +184,8 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
         final chatsAsync = ref.watch(userChatsProvider(currentUser.uid));
 
         return chatsAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () =>
+              SkeletonLoader(type: SkeletonType.chatTile, itemCount: 6),
           error: (error, stack) => Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -207,9 +209,9 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
             final directChats = chats
                 .where((c) => c.type == ChatType.private)
                 .where((c) {
-                  if (_searchQuery.isEmpty) return true;
+                  if (searchQuery.isEmpty) return true;
                   final title = c.getChatTitle(currentUser.uid).toLowerCase();
-                  return title.contains(_searchQuery);
+                  return title.contains(searchQuery);
                 })
                 .toList();
 
@@ -246,11 +248,11 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
     );
   }
 
-  Widget _buildGroupChats() {
+  Widget _buildGroupChats(String searchQuery) {
     final currentUserAsync = ref.watch(currentUserProvider);
 
     return currentUserAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => SkeletonLoader(type: SkeletonType.chatTile, itemCount: 4),
       error: (error, stack) => Center(
         child: Text(AppLocalizations.of(context).pleaseLoginToViewChats),
       ),
@@ -264,7 +266,8 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
         final chatsAsync = ref.watch(userChatsProvider(currentUser.uid));
 
         return chatsAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () =>
+              SkeletonLoader(type: SkeletonType.chatTile, itemCount: 4),
           error: (error, stack) => _buildChatErrorState(
             onRetry: () => ref.invalidate(userChatsProvider(currentUser.uid)),
           ),
@@ -272,6 +275,11 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
             final groupChats = chats
                 .where((c) => c.type == ChatType.support || c.groupName != null)
                 .where((c) => c.type != ChatType.rideGroup)
+                .where((c) {
+                  if (searchQuery.isEmpty) return true;
+                  final title = c.getChatTitle(currentUser.uid).toLowerCase();
+                  return title.contains(searchQuery);
+                })
                 .toList();
 
             if (groupChats.isEmpty) {
@@ -301,11 +309,11 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
     );
   }
 
-  Widget _buildRideChats() {
+  Widget _buildRideChats(String searchQuery) {
     final currentUserAsync = ref.watch(currentUserProvider);
 
     return currentUserAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => SkeletonLoader(type: SkeletonType.chatTile, itemCount: 4),
       error: (error, stack) => Center(
         child: Text(AppLocalizations.of(context).pleaseLoginToViewChats),
       ),
@@ -319,13 +327,19 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
         final chatsAsync = ref.watch(userChatsProvider(currentUser.uid));
 
         return chatsAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () =>
+              SkeletonLoader(type: SkeletonType.chatTile, itemCount: 4),
           error: (error, stack) => _buildChatErrorState(
             onRetry: () => ref.invalidate(userChatsProvider(currentUser.uid)),
           ),
           data: (chats) {
             final rideChats = chats
                 .where((c) => c.type == ChatType.rideGroup)
+                .where((c) {
+                  if (searchQuery.isEmpty) return true;
+                  final title = c.getChatTitle(currentUser.uid).toLowerCase();
+                  return title.contains(searchQuery);
+                })
                 .toList();
 
             if (rideChats.isEmpty) {
@@ -511,6 +525,9 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
                     ? AppColors.warning
                     : AppColors.success,
                 behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
                 duration: 2.seconds,
               ),
             );
@@ -520,6 +537,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
           // Confirm before deleting
           final confirmed = await showDialog<bool>(
             context: context,
+            barrierLabel: 'Delete conversation dialog',
             builder: (ctx) => AlertDialog(
               title: const Text('Delete conversation?'),
               content: const Text(
@@ -547,6 +565,9 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
                 content: const Text('Conversation removed'),
                 behavior: SnackBarBehavior.floating,
                 backgroundColor: AppColors.error,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
                 duration: 2.seconds,
               ),
             );
@@ -736,95 +757,39 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
 }
 
 /// Separate stateful widget for new chat bottom sheet with user search
-class _NewChatBottomSheet extends ConsumerStatefulWidget {
+class _NewChatBottomSheet extends ConsumerWidget {
   const _NewChatBottomSheet();
 
   @override
-  ConsumerState<_NewChatBottomSheet> createState() =>
-      _NewChatBottomSheetState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final searchState = ref.watch(newChatSearchViewModelProvider);
 
-class _NewChatBottomSheetState extends ConsumerState<_NewChatBottomSheet> {
-  int _searchFieldKey = 0;
-  String _searchQuery = '';
-  Timer? _debounceTimer;
-  List<UserModel> _searchResults = [];
-  bool _isLoading = false;
-  String? _error;
+    Future<void> navigateToChat(UserModel user) async {
+      final currentUser = ref.read(currentUserProvider).value;
+      if (currentUser == null) return;
 
-  @override
-  void dispose() {
-    _debounceTimer?.cancel();
-    super.dispose();
-  }
-
-  void _onSearchChanged(String query) {
-    _debounceTimer?.cancel();
-    _debounceTimer = Timer(const Duration(milliseconds: 400), () {
-      _performSearch(query);
-    });
-  }
-
-  Future<void> _performSearch(String query) async {
-    if (query.isEmpty || query.length < 2) {
-      setState(() {
-        _searchResults = [];
-        _searchQuery = query;
-        _isLoading = false;
-      });
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-      _searchQuery = query;
-      _error = null;
-    });
-
-    try {
-      final profileActions = ref.read(profileActionsViewModelProvider);
-      final results = await profileActions.searchUsers(query: query);
-      if (mounted) {
-        setState(() {
-          _searchResults = results;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = 'Failed to search users';
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  void _navigateToChat(UserModel user) async {
-    final currentUser = ref.read(currentUserProvider).value;
-    if (currentUser == null) return;
-
-    // Show loading indicator
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
-    );
-
-    try {
-      // Get or create the chat using the repository
-      final chatModel = await ref.read(
-        getOrCreateChatProvider(
-          userId1: currentUser.uid,
-          userId2: user.uid,
-          userName1: currentUser.displayName,
-          userName2: user.displayName,
-          userPhoto1: currentUser.photoUrl,
-          userPhoto2: user.photoUrl,
-        ).future,
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        barrierLabel: 'Creating chat',
+        builder: (context) => const Center(child: CircularProgressIndicator()),
       );
 
-      if (mounted) {
+      try {
+        // Get or create the chat using the repository
+        final chatModel = await ref.read(
+          getOrCreateChatProvider(
+            userId1: currentUser.uid,
+            userId2: user.uid,
+            userName1: currentUser.displayName,
+            userName2: user.displayName,
+            userPhoto1: currentUser.photoUrl,
+            userPhoto2: user.photoUrl,
+          ).future,
+        );
+
+        if (!context.mounted) return;
         // Close loading dialog
         context.pop();
         // Close bottom sheet
@@ -836,9 +801,8 @@ class _NewChatBottomSheetState extends ConsumerState<_NewChatBottomSheet> {
           pathParameters: {'id': chatModel.id},
           extra: user,
         );
-      }
-    } catch (e) {
-      if (mounted) {
+      } catch (e) {
+        if (!context.mounted) return;
         // Close loading dialog
         context.pop();
 
@@ -846,14 +810,15 @@ class _NewChatBottomSheetState extends ConsumerState<_NewChatBottomSheet> {
           SnackBar(
             content: const Text('Failed to create chat. Please try again.'),
             backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.r),
+            ),
           ),
         );
       }
     }
-  }
 
-  @override
-  Widget build(BuildContext context) {
     return Container(
       height: MediaQuery.of(context).size.height * 0.7,
       decoration: BoxDecoration(
@@ -900,22 +865,20 @@ class _NewChatBottomSheetState extends ConsumerState<_NewChatBottomSheet> {
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 20.w),
             child: TextField(
-              key: ValueKey(_searchFieldKey),
-              onChanged: _onSearchChanged,
+              key: ValueKey(searchState.searchFieldKey),
+              onChanged: (value) => ref
+                  .read(newChatSearchViewModelProvider.notifier)
+                  .scheduleSearch(value),
               decoration: InputDecoration(
                 hintText: AppLocalizations.of(context).searchUsersByName,
                 prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchQuery.isNotEmpty
+                suffixIcon: searchState.searchQuery.isNotEmpty
                     ? IconButton(
                         tooltip: 'Clear search',
                         icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          setState(() {
-                            _searchFieldKey++;
-                            _searchQuery = '';
-                          });
-                          _onSearchChanged('');
-                        },
+                        onPressed: () => ref
+                            .read(newChatSearchViewModelProvider.notifier)
+                            .clearSearch(),
                       )
                     : null,
                 border: OutlineInputBorder(
@@ -928,18 +891,30 @@ class _NewChatBottomSheetState extends ConsumerState<_NewChatBottomSheet> {
           SizedBox(height: 16.h),
 
           // Search results
-          Expanded(child: _buildSearchContent()),
+          Expanded(
+            child: _buildSearchContent(
+              context,
+              ref,
+              searchState,
+              navigateToChat,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSearchContent() {
-    if (_isLoading) {
+  Widget _buildSearchContent(
+    BuildContext context,
+    WidgetRef ref,
+    NewChatSearchState searchState,
+    Future<void> Function(UserModel user) navigateToChat,
+  ) {
+    if (searchState.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_error != null) {
+    if (searchState.error != null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -947,7 +922,7 @@ class _NewChatBottomSheetState extends ConsumerState<_NewChatBottomSheet> {
             Icon(Icons.error_outline, size: 48.sp, color: AppColors.error),
             SizedBox(height: 16.h),
             Text(
-              _error!,
+              searchState.error!,
               style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
             ),
           ],
@@ -955,7 +930,7 @@ class _NewChatBottomSheetState extends ConsumerState<_NewChatBottomSheet> {
       );
     }
 
-    if (_searchQuery.isEmpty) {
+    if (searchState.searchQuery.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -980,7 +955,7 @@ class _NewChatBottomSheetState extends ConsumerState<_NewChatBottomSheet> {
       );
     }
 
-    if (_searchResults.isEmpty) {
+    if (searchState.searchResults.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -992,7 +967,9 @@ class _NewChatBottomSheetState extends ConsumerState<_NewChatBottomSheet> {
             ),
             SizedBox(height: 16.h),
             Text(
-              AppLocalizations.of(context).noUsersFoundForValue(_searchQuery),
+              AppLocalizations.of(
+                context,
+              ).noUsersFoundForValue(searchState.searchQuery),
               style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
             ),
           ],
@@ -1002,17 +979,20 @@ class _NewChatBottomSheetState extends ConsumerState<_NewChatBottomSheet> {
 
     return ListView.separated(
       padding: EdgeInsets.symmetric(horizontal: 20.w),
-      itemCount: _searchResults.length,
+      itemCount: searchState.searchResults.length,
       separatorBuilder: (context, index) =>
           Divider(height: 1, color: AppColors.border.withValues(alpha: 0.5)),
       itemBuilder: (context, index) {
-        final user = _searchResults[index];
-        return _buildUserTile(user);
+        final user = searchState.searchResults[index];
+        return _buildUserTile(user, navigateToChat);
       },
     );
   }
 
-  Widget _buildUserTile(UserModel user) {
+  Widget _buildUserTile(
+    UserModel user,
+    Future<void> Function(UserModel user) navigateToChat,
+  ) {
     return ListTile(
       contentPadding: EdgeInsets.symmetric(vertical: 8.h),
       leading: user.photoUrl != null
@@ -1041,7 +1021,7 @@ class _NewChatBottomSheetState extends ConsumerState<_NewChatBottomSheet> {
         Icons.chevron_right_rounded,
         color: AppColors.textSecondary,
       ),
-      onTap: () => _navigateToChat(user),
+      onTap: () => navigateToChat(user),
     );
   }
 }

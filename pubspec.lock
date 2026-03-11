@@ -2259,7 +2259,7 @@ packages:
     source: hosted
     version: "5.1.13"
   talker_dio_logger:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: talker_dio_logger
       sha256: c5769f4b1ee6fcc1a0670cdfc7f3253016a1090b583aeb70e3ccd73f479970a8
@@ -2267,7 +2267,7 @@ packages:
     source: hosted
     version: "5.1.13"
   talker_flutter:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: talker_flutter
       sha256: "6a807972565dc7d5bacfb6a980efa0f766bfdbacac5660adf150aa386c440052"
@@ -2283,7 +2283,7 @@ packages:
     source: hosted
     version: "5.1.13"
   talker_riverpod_logger:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: talker_riverpod_logger
       sha256: "1594134fc35a74aedad03b49408d8fc0cd1e9d64bf0868ddcc58895eb3278726"

@@ -10,8 +10,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
-import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -31,15 +29,7 @@ class ContactSupportScreen extends ConsumerStatefulWidget {
 }
 
 class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
-  final _formKey = GlobalKey<FormBuilderState>();
   final _imagePicker = ImagePicker();
-  final List<File> _attachedFiles = [];
-  String _selectedCategory = 'General';
-  bool _isSubmitting = false;
-  bool _isSubmitted = false;
-
-  static const _maxAttachments = 5;
-  static const _maxFileSizeBytes = 10 * 1024 * 1024; // 10 MB
 
   static const _categories = [
     'General',
@@ -53,21 +43,6 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
   ];
 
   Future<void> _pickFiles() async {
-    if (_attachedFiles.length >= _maxAttachments) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Maximum $_maxAttachments files allowed'),
-          backgroundColor: AppColors.warning,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-        ),
-      );
-      return;
-    }
-
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       shape: RoundedRectangleBorder(
@@ -103,72 +78,43 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
 
     if (picked == null) return;
 
-    final file = File(picked.path);
-    final size = await file.length();
-
-    if (size > _maxFileSizeBytes) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('File exceeds 10 MB limit'),
-          backgroundColor: AppColors.warning,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-        ),
-      );
-      return;
-    }
-
-    setState(() => _attachedFiles.add(file));
+    await ref
+        .read(contactSupportViewModelProvider.notifier)
+        .addAttachment(File(picked.path));
   }
 
   Future<void> _submitTicket() async {
-    if (!(_formKey.currentState?.saveAndValidate() ?? false)) return;
-
-    setState(() => _isSubmitting = true);
-
-    try {
-      final user = ref.read(currentUserProvider).value;
-      await ref
-          .read(profileActionsViewModelProvider)
-          .submitSupportTicket(
-            userId: user?.uid ?? 'anonymous',
-            userEmail: user?.email ?? '',
-            userName: user?.displayName ?? '',
-            category: _selectedCategory,
-            subject: (_formKey.currentState!.value['subject'] as String).trim(),
-            message: (_formKey.currentState!.value['message'] as String).trim(),
-            attachments: _attachedFiles,
-          );
-
-      if (mounted) {
-        HapticFeedback.mediumImpact();
-        setState(() {
-          _isSubmitting = false;
-          _isSubmitted = true;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() => _isSubmitting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              'Failed to submit your request. Please try again.',
-            ),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
+    final user = ref.read(currentUserProvider).value;
+    await ref
+        .read(contactSupportViewModelProvider.notifier)
+        .submitTicket(
+          userId: user?.uid ?? 'anonymous',
+          userEmail: user?.email ?? '',
+          userName: user?.displayName ?? '',
         );
-      }
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final supportState = ref.watch(contactSupportViewModelProvider);
+
+    ref.listen(contactSupportViewModelProvider, (previous, next) {
+      if (next.isSubmitted && previous?.isSubmitted != true) {
+        HapticFeedback.mediumImpact();
+      }
+
+      if (next.errorMessage != null &&
+          next.errorMessage != previous?.errorMessage) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.errorMessage!),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    });
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -192,307 +138,316 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(horizontal: 24.w),
-          child: _isSubmitted ? _buildSuccessState() : _buildFormState(l10n),
+          child: supportState.isSubmitted
+              ? _buildSuccessState()
+              : _buildFormState(l10n, supportState),
         ),
       ),
     );
   }
 
-  Widget _buildFormState(AppLocalizations l10n) {
-    return FormBuilder(
-      key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(height: 8.h),
+  Widget _buildFormState(
+    AppLocalizations l10n,
+    ContactSupportState supportState,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(height: 8.h),
 
-          // Info card
-          Container(
-            padding: EdgeInsets.all(16.w),
-            decoration: BoxDecoration(
-              color: AppColors.primarySurface,
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.support_agent_rounded,
-                  color: AppColors.primary,
-                  size: 28.sp,
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'How can we help?',
-                        style: TextStyle(
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
+        // Info card
+        Container(
+          padding: EdgeInsets.all(16.w),
+          decoration: BoxDecoration(
+            color: AppColors.primarySurface,
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.support_agent_rounded,
+                color: AppColors.primary,
+                size: 28.sp,
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'How can we help?',
+                      style: TextStyle(
+                        fontSize: 15.sp,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
                       ),
-                      SizedBox(height: 4.h),
-                      Text(
-                        'We typically respond within 24 hours.',
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: AppColors.textSecondary,
-                        ),
+                    ),
+                    SizedBox(height: 4.h),
+                    Text(
+                      'We typically respond within 24 hours.',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: AppColors.textSecondary,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ).animate().fadeIn(duration: 300.ms),
+              ),
+            ],
+          ),
+        ).animate().fadeIn(duration: 300.ms),
 
-          SizedBox(height: 24.h),
+        SizedBox(height: 24.h),
 
-          // Category selector
-          Text(
-            'Category',
-            style: TextStyle(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+        // Category selector
+        Text(
+          'Category',
+          style: TextStyle(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        SizedBox(height: 8.h),
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 16.w),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12.r),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: supportState.selectedCategory,
+              isExpanded: true,
+              items: _categories.map((cat) {
+                return DropdownMenuItem(value: cat, child: Text(cat));
+              }).toList(),
+              onChanged: (value) {
+                if (value == null) return;
+                ref
+                    .read(contactSupportViewModelProvider.notifier)
+                    .setCategory(value);
+              },
             ),
           ),
-          SizedBox(height: 8.h),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 16.w),
+        ).animate().fadeIn(delay: 100.ms),
+
+        SizedBox(height: 20.h),
+
+        // Subject
+        TextField(
+          maxLength: 100,
+          onChanged: ref
+              .read(contactSupportViewModelProvider.notifier)
+              .setSubject,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: InputDecoration(
+            labelText: 'Subject',
+            hintText: 'Brief description of your issue',
+            prefixIcon: const Icon(Icons.subject_rounded),
+            errorText: supportState.subjectError,
+          ),
+        ).animate().fadeIn(delay: 200.ms),
+
+        SizedBox(height: 20.h),
+
+        // Message
+        Text(
+          'Message',
+          style: TextStyle(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        SizedBox(height: 8.h),
+        TextField(
+          maxLines: 6,
+          maxLength: 2000,
+          onChanged: ref
+              .read(contactSupportViewModelProvider.notifier)
+              .setMessage,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: InputDecoration(
+            hintText: 'Describe your issue in detail...',
+            errorText: supportState.messageError,
+            hintStyle: TextStyle(
+              fontSize: 14.sp,
+              color: AppColors.textTertiary,
+            ),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+              borderSide: BorderSide(color: AppColors.border),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+              borderSide: BorderSide(color: AppColors.border),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+              borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+              borderSide: BorderSide(color: AppColors.error),
+            ),
+          ),
+        ).animate().fadeIn(delay: 300.ms),
+
+        SizedBox(height: 20.h),
+
+        // Attachment
+        GestureDetector(
+          onTap: _pickFiles,
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12.r),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: _selectedCategory,
-                isExpanded: true,
-                items: _categories.map((cat) {
-                  return DropdownMenuItem(value: cat, child: Text(cat));
-                }).toList(),
-                onChanged: (v) => setState(() => _selectedCategory = v!),
+              border: Border.all(
+                color: AppColors.border,
+                style: BorderStyle.solid,
               ),
-            ),
-          ).animate().fadeIn(delay: 100.ms),
-
-          SizedBox(height: 20.h),
-
-          // Subject
-          FormBuilderTextField(
-            name: 'subject',
-            decoration: InputDecoration(
-              labelText: 'Subject',
-              hintText: 'Brief description of your issue',
-              prefixIcon: const Icon(Icons.subject_rounded),
-            ),
-            validator: FormBuilderValidators.required(
-              errorText: 'Please enter a subject',
-            ),
-          ).animate().fadeIn(delay: 200.ms),
-
-          SizedBox(height: 20.h),
-
-          // Message
-          Text(
-            'Message',
-            style: TextStyle(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          SizedBox(height: 8.h),
-          FormBuilderTextField(
-            name: 'message',
-            maxLines: 6,
-            validator: FormBuilderValidators.required(
-              errorText: 'Please describe your issue',
-            ),
-            decoration: InputDecoration(
-              hintText: 'Describe your issue in detail...',
-              hintStyle: TextStyle(
-                fontSize: 14.sp,
-                color: AppColors.textTertiary,
-              ),
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12.r),
-                borderSide: BorderSide(color: AppColors.border),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12.r),
-                borderSide: BorderSide(color: AppColors.border),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12.r),
-                borderSide: BorderSide(color: AppColors.primary, width: 1.5),
-              ),
-              errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12.r),
-                borderSide: BorderSide(color: AppColors.error),
-              ),
-            ),
-          ).animate().fadeIn(delay: 300.ms),
-
-          SizedBox(height: 20.h),
-
-          // Attachment
-          GestureDetector(
-            onTap: _pickFiles,
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(
-                  color: AppColors.border,
-                  style: BorderStyle.solid,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.attach_file_rounded,
-                    size: 20.sp,
-                    color: AppColors.textSecondary,
-                  ),
-                  SizedBox(width: 10.w),
-                  Expanded(
-                    child: Text(
-                      _attachedFiles.isEmpty
-                          ? 'Attach screenshots or files (optional)'
-                          : '${_attachedFiles.length}/$_maxAttachments files attached',
-                      style: TextStyle(
-                        fontSize: 13.sp,
-                        color: _attachedFiles.isEmpty
-                            ? AppColors.textTertiary
-                            : AppColors.textPrimary,
-                      ),
-                    ),
-                  ),
-                  Icon(
-                    Icons.add_circle_outline_rounded,
-                    size: 20.sp,
-                    color: AppColors.primary,
-                  ),
-                ],
-              ),
-            ),
-          ).animate().fadeIn(delay: 350.ms),
-
-          if (_attachedFiles.isNotEmpty) ...[
-            SizedBox(height: 10.h),
-            SizedBox(
-              height: 80.h,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: _attachedFiles.length,
-                separatorBuilder: (_, _) => SizedBox(width: 8.w),
-                itemBuilder: (context, index) {
-                  return Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8.r),
-                        child: Image.file(
-                          _attachedFiles[index],
-                          width: 80.w,
-                          height: 80.h,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      Positioned(
-                        top: 4.h,
-                        right: 4.w,
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _attachedFiles.removeAt(index);
-                            });
-                          },
-                          child: Container(
-                            padding: EdgeInsets.all(2.w),
-                            decoration: const BoxDecoration(
-                              color: Colors.black54,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.close_rounded,
-                              size: 14.sp,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
-          ],
-
-          SizedBox(height: 32.h),
-
-          SizedBox(
-            width: double.infinity,
-            child: PremiumButton(
-              text: 'Submit Ticket',
-              onPressed: _isSubmitting ? null : _submitTicket,
-              isLoading: _isSubmitting,
-              icon: Icons.send_rounded,
-            ),
-          ).animate().fadeIn(delay: 400.ms),
-
-          SizedBox(height: 24.h),
-
-          // Response time expectations
-          Container(
-            padding: EdgeInsets.all(14.w),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceVariant,
-              borderRadius: BorderRadius.circular(10.r),
             ),
             child: Row(
               children: [
                 Icon(
-                  Icons.schedule_rounded,
-                  size: 18.sp,
-                  color: AppColors.textTertiary,
+                  Icons.attach_file_rounded,
+                  size: 20.sp,
+                  color: AppColors.textSecondary,
                 ),
                 SizedBox(width: 10.w),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Average response time',
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      Text(
-                        'Most inquiries are answered within 12-24 hours',
-                        style: TextStyle(
-                          fontSize: 11.sp,
-                          color: AppColors.textTertiary,
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    supportState.attachedFiles.isEmpty
+                        ? 'Attach screenshots or files (optional)'
+                        : '${supportState.attachedFiles.length}/${ContactSupportViewModel.maxAttachments} files attached',
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      color: supportState.attachedFiles.isEmpty
+                          ? AppColors.textTertiary
+                          : AppColors.textPrimary,
+                    ),
                   ),
+                ),
+                Icon(
+                  Icons.add_circle_outline_rounded,
+                  size: 20.sp,
+                  color: AppColors.primary,
                 ),
               ],
             ),
-          ).animate().fadeIn(delay: 450.ms),
+          ),
+        ).animate().fadeIn(delay: 350.ms),
 
-          SizedBox(height: 32.h),
+        if (supportState.attachedFiles.isNotEmpty) ...[
+          SizedBox(height: 10.h),
+          SizedBox(
+            height: 80.h,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: supportState.attachedFiles.length,
+              separatorBuilder: (_, _) => SizedBox(width: 8.w),
+              itemBuilder: (context, index) {
+                return Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8.r),
+                      child: Image.file(
+                        supportState.attachedFiles[index],
+                        width: 80.w,
+                        height: 80.h,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    Positioned(
+                      top: 4.h,
+                      right: 4.w,
+                      child: GestureDetector(
+                        onTap: () => ref
+                            .read(contactSupportViewModelProvider.notifier)
+                            .removeAttachmentAt(index),
+                        child: Container(
+                          padding: EdgeInsets.all(2.w),
+                          decoration: const BoxDecoration(
+                            color: Colors.black54,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: 14.sp,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
         ],
-      ),
+
+        SizedBox(height: 32.h),
+
+        SizedBox(
+          width: double.infinity,
+          child: PremiumButton(
+            text: 'Submit Ticket',
+            onPressed: supportState.isSubmitting ? null : _submitTicket,
+            isLoading: supportState.isSubmitting,
+            icon: Icons.send_rounded,
+          ),
+        ).animate().fadeIn(delay: 400.ms),
+
+        SizedBox(height: 24.h),
+
+        // Response time expectations
+        Container(
+          padding: EdgeInsets.all(14.w),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceVariant,
+            borderRadius: BorderRadius.circular(10.r),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.schedule_rounded,
+                size: 18.sp,
+                color: AppColors.textTertiary,
+              ),
+              SizedBox(width: 10.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Average response time',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    Text(
+                      'Most inquiries are answered within 12-24 hours',
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ).animate().fadeIn(delay: 450.ms),
+
+        SizedBox(height: 32.h),
+      ],
     );
   }
 

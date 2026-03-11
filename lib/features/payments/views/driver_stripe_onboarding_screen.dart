@@ -29,24 +29,44 @@ class DriverStripeOnboardingScreen extends ConsumerStatefulWidget {
 
 class _DriverStripeOnboardingScreenState
     extends ConsumerState<DriverStripeOnboardingScreen> {
-  bool _isLoading = false;
-  String? _errorMessage;
-  String? _onboardingUrl;
-  bool _showWebView = false;
-  bool _isVerifying = false;
-  bool _completionHandled = false;
-  double _progress = 0.0;
-
   @override
   void initState() {
     super.initState();
-    _checkExistingAccount();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref
+          .read(driverStripeOnboardingFlowViewModelProvider.notifier)
+          .checkExistingAccount(ref.read(currentUserProvider).value);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_showWebView && _onboardingUrl != null) {
-      return _buildWebView();
+    final onboardingState = ref.watch(
+      driverStripeOnboardingFlowViewModelProvider,
+    );
+
+    ref.listen(driverStripeOnboardingFlowViewModelProvider, (previous, next) {
+      if (next.successMessage != null &&
+          next.successMessage != previous?.successMessage &&
+          context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.successMessage!),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+
+      if (next.isConnected &&
+          previous?.isConnected != true &&
+          context.mounted) {
+        context.go(AppRoutes.driverHome.path);
+      }
+    });
+
+    if (onboardingState.showWebView && onboardingState.onboardingUrl != null) {
+      return _buildWebView(onboardingState);
     }
 
     return Scaffold(
@@ -157,7 +177,7 @@ class _DriverStripeOnboardingScreenState
                         delay: 700,
                       ),
 
-                      if (_errorMessage != null) ...[
+                      if (onboardingState.errorMessage != null) ...[
                         SizedBox(height: 20.h),
                         Container(
                           padding: EdgeInsets.all(16.w),
@@ -174,7 +194,7 @@ class _DriverStripeOnboardingScreenState
                               SizedBox(width: 12.w),
                               Expanded(
                                 child: Text(
-                                  _errorMessage!,
+                                  onboardingState.errorMessage!,
                                   style: TextStyle(
                                     color: AppColors.error,
                                     fontSize: 14.sp,
@@ -186,7 +206,7 @@ class _DriverStripeOnboardingScreenState
                         ),
                       ],
 
-                      if (_isVerifying) ...[
+                      if (onboardingState.isVerifying) ...[
                         SizedBox(height: 20.h),
                         Container(
                           padding: EdgeInsets.all(16.w),
@@ -229,8 +249,12 @@ class _DriverStripeOnboardingScreenState
               SizedBox(height: 20.h),
               PremiumButton(
                 text: AppLocalizations.of(context).connectStripeAccount,
-                isLoading: _isLoading || _isVerifying,
-                onPressed: _isLoading || _isVerifying ? null : _startOnboarding,
+                isLoading:
+                    onboardingState.isLoading || onboardingState.isVerifying,
+                onPressed:
+                    onboardingState.isLoading || onboardingState.isVerifying
+                    ? null
+                    : _startOnboarding,
                 style: PremiumButtonStyle.primary,
               ).animate().fadeIn(delay: 800.ms).slideY(begin: 0.2),
 
@@ -304,91 +328,15 @@ class _DriverStripeOnboardingScreenState
     ).animate().fadeIn(delay: Duration(milliseconds: delay)).slideX(begin: 0.1);
   }
 
-  /// Check if user already has a Stripe account connected
-  Future<void> _checkExistingAccount() async {
-    final user = ref.read(currentUserProvider).value;
-    if (user == null) return;
-
-    try {
-      final status = await ref.read(driverStripeStatusProvider.future);
-      if (status.isConnected) {
-        // Already connected - go directly to driver home
-        if (mounted) {
-          context.go(AppRoutes.driverHome.path);
-        }
-      }
-    } catch (e) {
-      // Silent fail - user can proceed with onboarding
-      TalkerService.error('Error checking existing account: $e');
-    }
-  }
-
   /// Start Stripe Connect onboarding process
   Future<void> _startOnboarding() async {
-    final user = ref.read(currentUserProvider).value;
-    if (user == null) {
-      setState(() {
-        _errorMessage = AppLocalizations.of(context).pleaseSignInToContinue;
-      });
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      // Detect user's country
-      final country = await _detectUserCountry();
-
-      // Split display name into first and last name for Stripe prefilling
-      final nameParts = user.displayName.trim().split(RegExp(r'\s+'));
-      final firstName = nameParts.first;
-      final lastName = nameParts.length > 1
-          ? nameParts.sublist(1).join(' ')
-          : null;
-
-      final result = await ref
-          .read(driverOnboardingViewModelProvider.notifier)
-          .createConnectedAccount(
-            userId: user.uid,
-            email: user.email,
-            country: country,
-            firstName: firstName,
-            lastName: lastName,
-            phone: user.phoneNumber,
-            dateOfBirth: user.dateOfBirth,
-            addressLine1: user.address,
-            city: user.city,
-          );
-
-      if (result != null &&
-          result.onboardingUrl != null &&
-          result.stripeAccountId.isNotEmpty) {
-        setState(() {
-          _onboardingUrl = result.onboardingUrl;
-          _showWebView = true;
-          _isLoading = false;
-        });
-      } else {
-        setState(() {
-          _errorMessage = AppLocalizations.of(
-            context,
-          ).stripeAccountCreationFailed;
-          _isLoading = false;
-        });
-      }
-    } catch (_) {
-      setState(() {
-        _errorMessage = AppLocalizations.of(context).stripeSetupFailed;
-        _isLoading = false;
-      });
-    }
+    await ref
+        .read(driverStripeOnboardingFlowViewModelProvider.notifier)
+        .startOnboarding(ref.read(currentUserProvider).value);
   }
 
   /// Build the WebView screen for Stripe onboarding
-  Widget _buildWebView() {
+  Widget _buildWebView(DriverStripeOnboardingFlowState onboardingState) {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -410,11 +358,11 @@ class _DriverStripeOnboardingScreenState
             _showCancelConfirmation();
           },
         ),
-        bottom: _progress < 1.0
+        bottom: onboardingState.webViewProgress < 1.0
             ? PreferredSize(
                 preferredSize: Size.fromHeight(3.h),
                 child: LinearProgressIndicator(
-                  value: _progress,
+                  value: onboardingState.webViewProgress,
                   backgroundColor: AppColors.border.withValues(alpha: 0.2),
                   valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                 ),
@@ -424,7 +372,9 @@ class _DriverStripeOnboardingScreenState
       body: Stack(
         children: [
           InAppWebView(
-            initialUrlRequest: URLRequest(url: WebUri(_onboardingUrl!)),
+            initialUrlRequest: URLRequest(
+              url: WebUri(onboardingState.onboardingUrl!),
+            ),
             initialSettings: InAppWebViewSettings(
               javaScriptEnabled: true,
               domStorageEnabled: true,
@@ -441,9 +391,9 @@ class _DriverStripeOnboardingScreenState
               // Controller available for future use if needed
             },
             onProgressChanged: (controller, progress) {
-              setState(() {
-                _progress = progress / 100;
-              });
+              ref
+                  .read(driverStripeOnboardingFlowViewModelProvider.notifier)
+                  .setWebViewProgress(progress / 100);
             },
             onLoadStart: (controller, url) {
               TalkerService.debug('Loading: $url');
@@ -458,24 +408,21 @@ class _DriverStripeOnboardingScreenState
                 // User clicked "Refresh" - reload the page
                 await controller.reload();
               } else if (urlStr.contains('stripe-return') &&
-                  !_completionHandled) {
+                  !onboardingState.completionHandled) {
                 // Fallback: page loaded before shouldOverrideUrlLoading fired
-                _completionHandled = true;
-                setState(() {
-                  _showWebView = false;
-                });
+                ref
+                    .read(driverStripeOnboardingFlowViewModelProvider.notifier)
+                    .markCompletionHandled();
                 await _handleOnboardingComplete();
               }
             },
             onReceivedError: (controller, request, error) {
               TalkerService.error('Error loading: ${error.description}');
-              setState(() {
-                _errorMessage = AppLocalizations.of(
-                  context,
-                ).stripePageLoadFailed;
-                _showWebView = false;
-                _onboardingUrl = null;
-              });
+              ref
+                  .read(driverStripeOnboardingFlowViewModelProvider.notifier)
+                  .failWebViewLoad(
+                    AppLocalizations.of(context).stripePageLoadFailed,
+                  );
             },
             shouldOverrideUrlLoading: (controller, navigationAction) async {
               final url = navigationAction.request.url?.toString() ?? '';
@@ -483,22 +430,22 @@ class _DriverStripeOnboardingScreenState
               // 1. Stripe return URL — user finished the form and Stripe
               //    is redirecting back to our hosted page.
               //    Intercept here so we don't need the page to actually load.
-              if (url.contains('stripe-return') && !_completionHandled) {
-                _completionHandled = true;
-                setState(() {
-                  _showWebView = false;
-                });
+              if (url.contains('stripe-return') &&
+                  !onboardingState.completionHandled) {
+                ref
+                    .read(driverStripeOnboardingFlowViewModelProvider.notifier)
+                    .markCompletionHandled();
                 await _handleOnboardingComplete();
                 return NavigationActionPolicy.CANCEL;
               }
 
               // 2. Custom deep-link fired by stripe-return.html's JS redirect
               //    (fallback path if the page somehow loads before we intercept)
-              if (url.startsWith('sportconnect://') && !_completionHandled) {
-                _completionHandled = true;
-                setState(() {
-                  _showWebView = false;
-                });
+              if (url.startsWith('sportconnect://') &&
+                  !onboardingState.completionHandled) {
+                ref
+                    .read(driverStripeOnboardingFlowViewModelProvider.notifier)
+                    .markCompletionHandled();
                 await _handleOnboardingComplete();
                 return NavigationActionPolicy.CANCEL;
               }
@@ -521,7 +468,8 @@ class _DriverStripeOnboardingScreenState
           ),
 
           // Loading overlay (only shown initially)
-          if (_progress < 1.0 && _progress == 0.0)
+          if (onboardingState.webViewProgress < 1.0 &&
+              onboardingState.webViewProgress == 0.0)
             Container(
               color: AppColors.background,
               child: Center(
@@ -548,76 +496,18 @@ class _DriverStripeOnboardingScreenState
 
   /// Handle successful onboarding completion
   Future<void> _handleOnboardingComplete() async {
-    setState(() {
-      _isVerifying = true;
-    });
-
-    try {
-      // Wait for Stripe webhook to process
-      await Future.delayed(const Duration(seconds: 2));
-
-      final user = ref.read(currentUserProvider).value;
-      if (user == null) return;
-
-      ref.invalidate(driverStripeStatusProvider);
-      final status = await ref.read(driverStripeStatusProvider.future);
-
-      if (status.isConnected) {
-        // Success! Show snackbar then navigate definitively to driver home.
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                AppLocalizations.of(context).stripeAccountConnectedSuccessfully,
-              ),
-              backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-              action: SnackBarAction(
-                label: 'OK',
-                textColor: Colors.white,
-                onPressed: () {},
-              ),
-            ),
-          );
-          context.go(AppRoutes.driverHome.path);
-        }
-      } else if (!status.isConnected) {
-        // Incomplete - show message but don't close
-        setState(() {
-          _isVerifying = false;
-        });
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                AppLocalizations.of(context).stripeAdditionalInfoNeeded,
-              ),
-              backgroundColor: Colors.orange,
-            ),
-          );
-        }
-      } else {
-        // Not connected yet - keep trying
-        setState(() {
-          _isVerifying = false;
-        });
-      }
-    } catch (e, stack) {
-      TalkerService.error(
-        'Stripe onboarding verification failed: $e',
-        e,
-        stack,
-      );
-      if (mounted) {
-        setState(() {
-          _isVerifying = false;
-          _completionHandled = false; // Allow retry
-          _errorMessage = AppLocalizations.of(context).stripeVerifyFailed;
-          _showWebView = false;
-        });
-      }
-    }
+    await ref
+        .read(driverStripeOnboardingFlowViewModelProvider.notifier)
+        .handleOnboardingComplete(
+          user: ref.read(currentUserProvider).value,
+          successMessage: AppLocalizations.of(
+            context,
+          ).stripeAccountConnectedSuccessfully,
+          additionalInfoMessage: AppLocalizations.of(
+            context,
+          ).stripeAdditionalInfoNeeded,
+          verifyFailedMessage: AppLocalizations.of(context).stripeVerifyFailed,
+        );
   }
 
   /// Show confirmation dialog before canceling onboarding
@@ -641,53 +531,10 @@ class _DriverStripeOnboardingScreenState
       ),
     );
 
-    if (shouldCancel == true && mounted) {
-      setState(() {
-        _showWebView = false;
-        _onboardingUrl = null;
-      });
+    if (shouldCancel == true && context.mounted) {
+      ref
+          .read(driverStripeOnboardingFlowViewModelProvider.notifier)
+          .cancelOnboarding();
     }
-  }
-
-  /// Detect user's country from profile or phone number
-  Future<String> _detectUserCountry() async {
-    final user = ref.read(currentUserProvider).value;
-    if (user == null) return 'FR';
-
-    // Use explicit country from profile if available
-    if (user.country != null && user.country!.isNotEmpty) {
-      return user.country!.toUpperCase();
-    }
-
-    // Fall back to phone number country code detection
-    if (user.phoneNumber != null) {
-      final phone = user.phoneNumber!;
-      const phoneCountryMap = {
-        '+216': 'TN', // Tunisia
-        '+33': 'FR', // France
-        '+49': 'DE', // Germany
-        '+34': 'ES', // Spain
-        '+39': 'IT', // Italy
-        '+44': 'GB', // United Kingdom
-        '+1': 'US', // United States
-        '+32': 'BE', // Belgium
-        '+41': 'CH', // Switzerland
-        '+352': 'LU', // Luxembourg
-        '+31': 'NL', // Netherlands
-        '+351': 'PT', // Portugal
-        '+43': 'AT', // Austria
-        '+212': 'MA', // Morocco
-        '+213': 'DZ', // Algeria
-      };
-
-      for (final entry in phoneCountryMap.entries) {
-        if (phone.startsWith(entry.key)) {
-          return entry.value;
-        }
-      }
-    }
-
-    // Default to France
-    return 'FR';
   }
 }

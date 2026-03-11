@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:printing/printing.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
-import 'package:sport_connect/core/services/pdf_receipt_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
@@ -19,6 +20,7 @@ import 'package:sport_connect/features/messaging/view_models/chat_view_model.dar
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
+import 'package:sport_connect/features/rides/view_models/ride_completion_view_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -43,15 +45,31 @@ class RideCompletionScreen extends ConsumerStatefulWidget {
 }
 
 class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
-  bool _isGeneratingPdf = false;
-
   @override
   Widget build(BuildContext context) {
     final rideAsync = ref.watch(rideStreamProvider(widget.rideId));
+    final uiState = ref.watch(rideCompletionUiViewModelProvider(widget.rideId));
     final bookings =
         ref.watch(bookingsByRideProvider(widget.rideId)).value ??
         const <RideBooking>[];
     final l10n = AppLocalizations.of(context);
+
+    ref.listen<RideCompletionUiState>(
+      rideCompletionUiViewModelProvider(widget.rideId),
+      (previous, next) {
+        if (next.errorMessage != null &&
+            next.errorMessage != previous?.errorMessage &&
+            context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(next.errorMessage!),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      },
+    );
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -100,7 +118,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
           if (ride == null) {
             return Center(child: Text(l10n.rideNotFound));
           }
-          return _buildContent(context, ref, ride, l10n, bookings);
+          return _buildContent(context, ref, ride, l10n, bookings, uiState);
         },
       ),
     );
@@ -112,6 +130,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
     RideModel ride,
     AppLocalizations l10n,
     List<RideBooking> bookings,
+    RideCompletionUiState uiState,
   ) {
     final dateFormat = DateFormat('MMM d, yyyy');
     final timeFormat = DateFormat('h:mm a');
@@ -129,6 +148,26 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                 .scale(begin: const Offset(0.8, 0.8)),
 
             SizedBox(height: 24.h),
+
+            // Route map summary
+            Builder(
+              builder: (_) {
+                if (uiState.osrmRouteRideId != ride.id) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    ref
+                        .read(
+                          rideCompletionUiViewModelProvider(
+                            widget.rideId,
+                          ).notifier,
+                        )
+                        .ensureRouteLoaded(ride);
+                  });
+                }
+                return _buildCompletedRouteMap(ride, uiState);
+              },
+            ).animate().fadeIn(delay: 100.ms),
+
+            SizedBox(height: 16.h),
 
             // Environmental impact card
             _buildImpactCard(
@@ -156,6 +195,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
               context,
               ride,
               l10n,
+              bookings,
             ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.05),
 
             SizedBox(height: 16.h),
@@ -226,7 +266,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                   Row(
                     children: [
                       Expanded(
-                        child: _isGeneratingPdf
+                        child: uiState.isGeneratingPdf
                             ? const Center(
                                 child: Padding(
                                   padding: EdgeInsets.all(12),
@@ -243,7 +283,13 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                                 text: 'Share Receipt',
                                 onPressed: () async {
                                   HapticFeedback.lightImpact();
-                                  await _shareReceipt(context, ref, ride);
+                                  await ref
+                                      .read(
+                                        rideCompletionUiViewModelProvider(
+                                          widget.rideId,
+                                        ).notifier,
+                                      )
+                                      .shareReceipt(ride);
                                 },
                                 style: PremiumButtonStyle.secondary,
                                 icon: Icons.receipt_long_rounded,
@@ -265,6 +311,29 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                       ),
                     ],
                   ).animate().fadeIn(delay: 650.ms),
+
+                  SizedBox(height: 12.h),
+
+                  // Quick Rebook button
+                  SizedBox(
+                    width: double.infinity,
+                    child: PremiumButton(
+                      text: 'Book This Route Again',
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        context.pushNamed(
+                          AppRoutes.searchRides.name,
+                          extra: <String, dynamic>{
+                            'address': ride.destination.address,
+                            'latitude': ride.destination.latitude,
+                            'longitude': ride.destination.longitude,
+                          },
+                        );
+                      },
+                      style: PremiumButtonStyle.secondary,
+                      icon: Icons.replay_rounded,
+                    ),
+                  ).animate().fadeIn(delay: 700.ms),
 
                   SizedBox(height: 16.h),
 
@@ -288,90 +357,6 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
         ),
       ),
     );
-  }
-
-  Future<void> _shareReceipt(
-    BuildContext context,
-    WidgetRef ref,
-    RideModel ride,
-  ) async {
-    // Show loading indicator
-    setState(() => _isGeneratingPdf = true);
-
-    try {
-      // Fetch driver profile to get name
-      final driverProfile = await ref.read(
-        userProfileProvider(ride.driverId).future,
-      );
-
-      final driverName = driverProfile?.displayName ?? 'Driver';
-      final driverPhone = driverProfile?.phoneNumber;
-
-      // Get current user for passenger name
-      final currentUser = ref.read(currentUserProvider).value;
-      final passengerName = currentUser?.displayName;
-
-      final baseFare = ride.pricePerSeat;
-      final serviceFee = (baseFare * 0.10).roundToDouble();
-
-      // Find the current passenger's booking to get the actual seats booked
-      final currentUid = currentUser?.uid;
-      final allBookings = ref.read(bookingsByRideProvider(ride.id)).value ?? [];
-      final seatsBooked =
-          allBookings
-              .where((b) => b.passengerId == currentUid)
-              .firstOrNull
-              ?.seatsBooked ??
-          1;
-
-      // Generate PDF receipt
-      final pdfBytes = await PdfReceiptService.instance.generateRideReceipt(
-        rideId: ride.id,
-        fromAddress: ride.origin.address,
-        toAddress: ride.destination.address,
-        departureTime: ride.departureTime,
-        completedTime: DateTime.now(),
-        driverName: driverName,
-        driverPhone: driverPhone,
-        pricePerSeat: ride.pricePerSeat,
-        seatsBooked: seatsBooked,
-        serviceFee: serviceFee,
-        passengerName: passengerName,
-      );
-
-      // Share the PDF
-      await Printing.sharePdf(
-        bytes: pdfBytes,
-        filename: 'SportConnect_Receipt_${ride.id.substring(0, 8)}.pdf',
-      );
-    } catch (e) {
-      // Fallback to text receipt
-      final driverProfile = await ref.read(
-        userProfileProvider(ride.driverId).future,
-      );
-      final driverName = driverProfile?.displayName ?? 'Driver';
-      final baseFare = ride.pricePerSeat;
-      final serviceFee = (baseFare * 0.10).roundToDouble();
-      final total = baseFare + serviceFee;
-
-      final receipt =
-          '''SportConnect - Trip Receipt
-${'=' * 30}
-From: ${ride.origin.address}
-To: ${ride.destination.address}
-Date: ${DateFormat('MMM d, yyyy h:mm a').format(ride.departureTime)}
-Driver: $driverName
-
-Base Fare: ${baseFare.toStringAsFixed(2)} ${ride.currency ?? 'EUR'}
-Service Fee: ${serviceFee.toStringAsFixed(2)} ${ride.currency ?? 'EUR'}
-Total: ${total.toStringAsFixed(2)} ${ride.currency ?? 'EUR'}
-${'=' * 30}
-Ride ID: ${ride.id}''';
-
-      await SharePlus.instance.share(ShareParams(text: receipt));
-    } finally {
-      if (mounted) setState(() => _isGeneratingPdf = false);
-    }
   }
 
   Widget _buildSuccessHeader(BuildContext context) {
@@ -483,6 +468,189 @@ Ride ID: ${ride.id}''';
     );
   }
 
+  Widget _buildCompletedRouteMap(
+    RideModel ride,
+    RideCompletionUiState uiState,
+  ) {
+    final origin = LatLng(ride.origin.latitude, ride.origin.longitude);
+    final dest = LatLng(ride.destination.latitude, ride.destination.longitude);
+    final center = LatLng(
+      (origin.latitude + dest.latitude) / 2,
+      (origin.longitude + dest.longitude) / 2,
+    );
+
+    final routePoints = uiState.osrmRoutePoints ?? [origin, dest];
+
+    return Container(
+      height: 160.h,
+      margin: EdgeInsets.symmetric(horizontal: 24.w),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: AppColors.divider),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          FlutterMap(
+            options: MapOptions(
+              initialCenter: center,
+              initialZoom: 10,
+              interactionOptions: const InteractionOptions(
+                flags: InteractiveFlag.none,
+              ),
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.sportconnect.app',
+              ),
+              PolylineLayer(
+                polylines: [
+                  Polyline(
+                    points: routePoints,
+                    strokeWidth: 6.0,
+                    color: Colors.white,
+                    borderStrokeWidth: 2.0,
+                    borderColor: Colors.white,
+                  ),
+                  Polyline(
+                    points: routePoints,
+                    strokeWidth: 4.0,
+                    color: AppColors.success,
+                  ),
+                ],
+              ),
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: origin,
+                    width: 28.w,
+                    height: 28.w,
+                    child: Icon(
+                      Icons.trip_origin_rounded,
+                      color: AppColors.success,
+                      size: 22.sp,
+                    ),
+                  ),
+                  Marker(
+                    point: dest,
+                    width: 28.w,
+                    height: 28.w,
+                    child: Icon(
+                      Icons.location_on_rounded,
+                      color: AppColors.error,
+                      size: 24.sp,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          // "Completed" badge overlay
+          Positioned(
+            top: 8.h,
+            right: 8.w,
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+              decoration: BoxDecoration(
+                color: AppColors.success,
+                borderRadius: BorderRadius.circular(8.r),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withAlpha(40), blurRadius: 4),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.check_circle_rounded,
+                    size: 12.sp,
+                    color: Colors.white,
+                  ),
+                  SizedBox(width: 4.w),
+                  Text(
+                    'Completed',
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Distance / duration overlay
+          if (ride.route.distanceKm != null ||
+              ride.route.durationMinutes != null)
+            Positioned(
+              bottom: 8.h,
+              left: 8.w,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(8.r),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withAlpha(40), blurRadius: 4),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (ride.route.distanceKm != null) ...[
+                      Icon(
+                        Icons.straighten_rounded,
+                        size: 12.sp,
+                        color: AppColors.textPrimary,
+                      ),
+                      SizedBox(width: 4.w),
+                      Text(
+                        ride.route.formattedDistance,
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                    if (ride.route.distanceKm != null &&
+                        ride.route.durationMinutes != null)
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 6.w),
+                        child: Text(
+                          '·',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 12.sp,
+                          ),
+                        ),
+                      ),
+                    if (ride.route.durationMinutes != null) ...[
+                      Icon(
+                        Icons.schedule_rounded,
+                        size: 12.sp,
+                        color: AppColors.textPrimary,
+                      ),
+                      SizedBox(width: 4.w),
+                      Text(
+                        ride.route.formattedDuration,
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTripSummaryCard(
     BuildContext context,
     RideModel ride,
@@ -555,6 +723,42 @@ Ride ID: ${ride.id}''';
               ),
             ],
           ),
+
+          // Distance / Duration / Speed row
+          if (ride.route.distanceKm != null ||
+              ride.route.durationMinutes != null) ...[
+            SizedBox(height: 12.h),
+            Divider(height: 1, color: AppColors.border),
+            SizedBox(height: 12.h),
+            Row(
+              children: [
+                if (ride.route.distanceKm != null)
+                  _buildStatItem(
+                    Icons.straighten_rounded,
+                    ride.route.formattedDistance,
+                    'Distance',
+                  ),
+                if (ride.route.distanceKm != null &&
+                    ride.route.durationMinutes != null)
+                  _buildStatDivider(),
+                if (ride.route.durationMinutes != null)
+                  _buildStatItem(
+                    Icons.timer_outlined,
+                    ride.route.formattedDuration,
+                    'Duration',
+                  ),
+                if (ride.route.durationMinutes != null &&
+                    ride.route.distanceKm != null) ...[
+                  _buildStatDivider(),
+                  _buildStatItem(
+                    Icons.speed_rounded,
+                    '${((ride.route.distanceKm! / (ride.route.durationMinutes! / 60))).round()} km/h',
+                    'Avg Speed',
+                  ),
+                ],
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -618,8 +822,20 @@ Ride ID: ${ride.id}''';
     BuildContext context,
     RideModel ride,
     AppLocalizations l10n,
+    List<RideBooking> bookings,
   ) {
-    final baseFare = ride.pricePerSeat;
+    // Determine actual seats booked by the current user
+    final currentUid = ref.read(currentUserProvider).value?.uid;
+    final isDriver = currentUid == ride.driverId;
+    final myBooking = bookings
+        .where((b) => b.passengerId == currentUid)
+        .firstOrNull;
+    final seatsBooked = myBooking?.seatsBooked ?? 1;
+
+    final pricePerSeat = ride.pricePerSeat;
+    final baseFare = isDriver
+        ? pricePerSeat * (ride.bookedSeats > 0 ? ride.bookedSeats : 1)
+        : pricePerSeat * seatsBooked;
     final serviceFee = (baseFare * 0.10).roundToDouble();
     final total = baseFare + serviceFee;
 
@@ -671,7 +887,11 @@ Ride ID: ${ride.id}''';
           ),
           SizedBox(height: 16.h),
           _buildFareRow(
-            'Base Fare',
+            isDriver
+                ? 'Base Fare (${ride.bookedSeats > 0 ? ride.bookedSeats : 1} seat${(ride.bookedSeats > 1) ? 's' : ''})'
+                : seatsBooked > 1
+                ? 'Base Fare ($seatsBooked seats × ${pricePerSeat.toStringAsFixed(2)})'
+                : 'Base Fare',
             '${baseFare.toStringAsFixed(2)} ${ride.currency ?? 'EUR'}',
           ),
           SizedBox(height: 8.h),

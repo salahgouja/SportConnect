@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_event_repository.dart';
+import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
 
@@ -174,5 +175,60 @@ class EventRepository implements IEventRepository {
     );
     await ref.putFile(file, metadata);
     return ref.getDownloadURL();
+  }
+
+  // ── Event-Ride Integration ──
+
+  @override
+  Future<void> setRideStatus(
+    String eventId,
+    String userId,
+    String status,
+  ) async {
+    await _eventsCollection.doc(eventId).update({
+      'rideStatuses.$userId': status,
+      'updatedAt': DateTime.now(),
+    });
+  }
+
+  @override
+  Future<void> linkRideToEvent(String eventId, String rideId) async {
+    await _eventsCollection.doc(eventId).update({
+      'linkedRideIds': FieldValue.arrayUnion([rideId]),
+      'updatedAt': DateTime.now(),
+    });
+  }
+
+  @override
+  Future<void> unlinkRideFromEvent(String eventId, String rideId) async {
+    await _eventsCollection.doc(eventId).update({
+      'linkedRideIds': FieldValue.arrayRemove([rideId]),
+      'updatedAt': DateTime.now(),
+    });
+  }
+
+  @override
+  Future<void> setMeetupPin(String eventId, LocationPoint location) async {
+    await _eventsCollection.doc(eventId).update({
+      'meetupPinLocation': location.toJson(),
+      'updatedAt': DateTime.now(),
+    });
+  }
+
+  @override
+  Future<void> setChatGroupId(String eventId, String chatGroupId) async {
+    await _eventsCollection.doc(eventId).update({
+      'chatGroupId': chatGroupId,
+      'updatedAt': DateTime.now(),
+    });
+  }
+
+  @override
+  Stream<List<EventModel>> streamEventsWithLinkedRides(String eventId) {
+    // This queries events that have at least one linked ride
+    return _eventsCollection
+        .where('linkedRideIds', arrayContains: eventId)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 }

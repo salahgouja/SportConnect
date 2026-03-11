@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -7,9 +8,12 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
+import 'package:sport_connect/core/widgets/rating_and_profile_widgets.dart';
+import 'package:sport_connect/core/widgets/safety_widgets.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
+import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 
@@ -20,6 +24,17 @@ class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key, this.userId});
 
   bool get _isOwnProfile => userId == null;
+
+  int _calculateCompletionFields(UserModel user) {
+    int count = 0;
+    if (user.displayName.isNotEmpty) count++;
+    if (user.photoUrl != null && user.photoUrl!.isNotEmpty) count++;
+    if (user.bio != null && user.bio!.isNotEmpty) count++;
+    if (user.isPhoneVerified) count++;
+    if (user.isEmailVerified) count++;
+    if (user.interests.isNotEmpty) count++;
+    return count;
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -208,6 +223,24 @@ class ProfileScreen extends ConsumerWidget {
 
         SliverToBoxAdapter(child: SizedBox(height: 24.h)),
 
+        // Profile completion progress bar
+        if (_isOwnProfile)
+          SliverToBoxAdapter(
+            child:
+                Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20.w),
+                      child: ProfileCompletionBar(
+                        completedFields: _calculateCompletionFields(user),
+                        totalFields: 6,
+                      ),
+                    )
+                    .animate()
+                    .fadeIn(duration: 400.ms, delay: 80.ms)
+                    .slideY(begin: 0.1, curve: Curves.easeOutCubic),
+          ),
+
+        if (_isOwnProfile) SliverToBoxAdapter(child: SizedBox(height: 16.h)),
+
         // Verification badges
         SliverToBoxAdapter(
           child: _buildVerificationSection(context, user)
@@ -225,6 +258,35 @@ class ProfileScreen extends ConsumerWidget {
               .fadeIn(duration: 400.ms, delay: 200.ms)
               .slideY(begin: 0.1, curve: Curves.easeOutCubic),
         ),
+
+        SliverToBoxAdapter(child: SizedBox(height: 16.h)),
+
+        // Drive history transparency card
+        if (!_isOwnProfile)
+          SliverToBoxAdapter(
+            child:
+                Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20.w),
+                      child: () {
+                        final reliability = ref.watch(
+                          userRideReliabilityProvider(userId!),
+                        );
+                        return DriveHistoryCard(
+                          totalRides: user.totalRides,
+                          averageRating: user.rating.average,
+                          cancelCount: reliability.value?.cancelCount ?? 0,
+                          noShowCount: reliability.value?.noShowCount ?? 0,
+                          memberSince: user.createdAt ?? DateTime.now(),
+                          isVerified: user.isIdVerified,
+                        );
+                      }(),
+                    )
+                    .animate()
+                    .fadeIn(duration: 400.ms, delay: 250.ms)
+                    .slideY(begin: 0.1, curve: Curves.easeOutCubic),
+          ),
+
+        if (!_isOwnProfile) SliverToBoxAdapter(child: SizedBox(height: 8.h)),
 
         SliverToBoxAdapter(child: SizedBox(height: 24.h)),
 
@@ -247,7 +309,10 @@ class ProfileScreen extends ConsumerWidget {
                 Padding(
                       padding: EdgeInsets.symmetric(horizontal: 20.w),
                       child: GestureDetector(
-                        onTap: () => context.push(AppRoutes.editProfile.path),
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          context.push(AppRoutes.editProfile.path);
+                        },
                         child: Container(
                           padding: EdgeInsets.all(16.w),
                           decoration: BoxDecoration(
@@ -339,7 +404,10 @@ class ProfileScreen extends ConsumerWidget {
               ),
               if (_isOwnProfile)
                 GestureDetector(
-                  onTap: () => context.push(AppRoutes.editProfile.path),
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    context.push(AppRoutes.editProfile.path);
+                  },
                   child: Container(
                     padding: EdgeInsets.all(8.w),
                     decoration: BoxDecoration(
@@ -493,24 +561,6 @@ class ProfileScreen extends ConsumerWidget {
 
   /// Verification badges section
   Widget _buildVerificationSection(BuildContext context, UserModel user) {
-    final verifications = <_VerificationItem>[
-      _VerificationItem(
-        icon: Icons.email_outlined,
-        label: 'Email',
-        isVerified: user.isEmailVerified,
-      ),
-      _VerificationItem(
-        icon: Icons.phone_outlined,
-        label: 'Phone',
-        isVerified: user.isPhoneVerified,
-      ),
-      _VerificationItem(
-        icon: Icons.badge_outlined,
-        label: 'ID',
-        isVerified: user.isIdVerified,
-      ),
-    ];
-
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w),
       child: Container(
@@ -542,62 +592,13 @@ class ProfileScreen extends ConsumerWidget {
               ],
             ),
             SizedBox(height: 16.h),
-            Row(
-              children: verifications.map((item) {
-                return Expanded(child: _buildVerificationBadge(context, item));
-              }).toList(),
+            VerificationBadges(
+              isIdVerified: user.isIdVerified,
+              isPhoneVerified: user.isPhoneVerified,
+              isEmailVerified: user.isEmailVerified,
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildVerificationBadge(BuildContext context, _VerificationItem item) {
-    return Semantics(
-      label: '${item.label}: ${item.isVerified ? 'verified' : 'not verified'}',
-      child: Column(
-        children: [
-          Container(
-            padding: EdgeInsets.all(12.w),
-            decoration: BoxDecoration(
-              color: item.isVerified
-                  ? AppColors.success.withValues(alpha: 0.1)
-                  : AppColors.surfaceVariant,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              item.isVerified ? Icons.check_rounded : item.icon,
-              color: item.isVerified
-                  ? AppColors.success
-                  : AppColors.textTertiary,
-              size: 20.sp,
-            ),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            item.label,
-            style: TextStyle(
-              fontSize: 12.sp,
-              fontWeight: FontWeight.w500,
-              color: item.isVerified
-                  ? AppColors.textPrimary
-                  : AppColors.textTertiary,
-            ),
-          ),
-          SizedBox(height: 2.h),
-          Text(
-            item.isVerified
-                ? AppLocalizations.of(context).verified
-                : AppLocalizations.of(context).notVerified,
-            style: TextStyle(
-              fontSize: 12.sp,
-              color: item.isVerified
-                  ? AppColors.success
-                  : AppColors.textTertiary,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -1026,6 +1027,7 @@ class ProfileScreen extends ConsumerWidget {
   void _showBlockUserDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
+      barrierLabel: 'Block user dialog',
       builder: (ctx) => AlertDialog(
         title: const Text('Block User'),
         content: const Text(
@@ -1169,18 +1171,6 @@ class ProfileScreen extends ConsumerWidget {
       ),
     ).animate().fadeIn();
   }
-}
-
-class _VerificationItem {
-  final IconData icon;
-  final String label;
-  final bool isVerified;
-
-  _VerificationItem({
-    required this.icon,
-    required this.label,
-    required this.isVerified,
-  });
 }
 
 class _MenuItem {

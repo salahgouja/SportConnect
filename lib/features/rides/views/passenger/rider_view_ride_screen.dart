@@ -18,14 +18,13 @@ import 'package:sport_connect/features/messaging/view_models/chat_view_model.dar
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
+import 'package:sport_connect/features/rides/view_models/rider_view_ride_view_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/features/reviews/view_models/review_view_model.dart';
 import 'package:sport_connect/features/reviews/models/review_model.dart';
 import 'package:sport_connect/core/utils/distance_formatter.dart';
 import 'package:sport_connect/core/services/deep_link_service.dart';
-import 'package:sport_connect/core/services/routing_service.dart';
-import 'package:uuid/uuid.dart';
 
 /// Rider's personal ride view with booking and review sections.
 ///
@@ -43,52 +42,22 @@ class RiderViewRideScreen extends ConsumerStatefulWidget {
 }
 
 class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
-  int _seatsToBook = 1;
-  String _note = '';
-  bool _isBooking = false;
-
-  // Header map route preview
-  RouteInfo? _routeInfo;
-  String? _routeRideId;
-  bool _isLoadingRoute = false;
+  RideDetailState get _rideDetailState =>
+      ref.watch(rideDetailViewModelProvider(widget.rideId));
 
   @override
   void dispose() {
     super.dispose();
   }
 
-  /// Fetches the OSRM road-following route for the header map preview.
-  Future<void> _loadHeaderRoute(RideModel ride) async {
-    if (_isLoadingRoute || _routeRideId == ride.id) return;
-    setState(() {
-      _isLoadingRoute = true;
-      _routeRideId = ride.id;
-    });
-    try {
-      final origin = LatLng(ride.origin.latitude, ride.origin.longitude);
-      final dest = LatLng(
-        ride.destination.latitude,
-        ride.destination.longitude,
-      );
-      final info = await RoutingService.getRoute(origin: origin, destination: dest);
-      if (mounted) {
-        setState(() {
-          _routeInfo = info;
-          _isLoadingRoute = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) setState(() => _isLoadingRoute = false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     // Watch only the ViewModel — it already aggregates ride + bookings.
-    final vmState = ref.watch(rideDetailViewModelProvider(widget.rideId));
+    final vmState = _rideDetailState;
+    final uiState = ref.watch(riderViewRideUiViewModelProvider(widget.rideId));
 
     return vmState.ride.when(
-      data: (ride) => _buildContent(ride, vmState.bookings),
+      data: (ride) => _buildContent(ride, vmState.bookings, uiState),
       loading: () => _buildLoadingState(),
       error: (error, _) => _buildErrorState(error.toString()),
     );
@@ -154,15 +123,21 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
     );
   }
 
-  Widget _buildContent(RideModel? ride, List<RideBooking> bookings) {
+  Widget _buildContent(
+    RideModel? ride,
+    List<RideBooking> bookings,
+    RiderViewRideUiState uiState,
+  ) {
     if (ride == null) {
       return _buildErrorState(AppLocalizations.of(context).rideNotFound);
     }
 
     // Trigger OSRM route fetch for header map preview
-    if (_routeRideId != ride.id && !_isLoadingRoute) {
+    if (uiState.routeRideId != ride.id && !uiState.isLoadingRoute) {
       WidgetsBinding.instance.addPostFrameCallback(
-        (_) => _loadHeaderRoute(ride),
+        (_) => ref
+            .read(riderViewRideUiViewModelProvider(widget.rideId).notifier)
+            .ensureRouteLoaded(ride),
       );
     }
 
@@ -170,7 +145,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
       backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
-          _buildSliverAppBar(ride),
+          _buildSliverAppBar(ride, uiState),
           SliverToBoxAdapter(child: _buildDriverCard(ride, bookings)),
           SliverToBoxAdapter(child: _buildRouteCard(ride)),
           SliverToBoxAdapter(child: _buildDetailsCard(ride)),
@@ -180,11 +155,11 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
           SliverToBoxAdapter(child: SizedBox(height: 120.h)),
         ],
       ),
-      bottomSheet: _buildBookingBar(ride),
+      bottomSheet: _buildBookingBar(ride, uiState),
     );
   }
 
-  Widget _buildSliverAppBar(RideModel ride) {
+  Widget _buildSliverAppBar(RideModel ride, RiderViewRideUiState uiState) {
     return SliverAppBar(
       expandedHeight: 220.h,
       floating: false,
@@ -242,16 +217,16 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.sportconnect.app',
                 ),
-                if (_routeInfo != null)
+                if (uiState.routeInfo != null)
                   PolylineLayer(
                     polylines: [
                       Polyline(
-                        points: _routeInfo!.coordinates,
+                        points: uiState.routeInfo!.coordinates,
                         color: Colors.white,
                         strokeWidth: 5,
                       ),
                       Polyline(
-                        points: _routeInfo!.coordinates,
+                        points: uiState.routeInfo!.coordinates,
                         color: AppColors.primary,
                         strokeWidth: 3,
                       ),
@@ -1233,7 +1208,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
     );
   }
 
-  Widget _buildBookingBar(RideModel ride) {
+  Widget _buildBookingBar(RideModel ride, RiderViewRideUiState uiState) {
     final currentUser = ref.watch(currentUserProvider).value;
     final isOwnRide = currentUser?.uid == ride.driverId;
 
@@ -1335,7 +1310,13 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
                           (i) => GestureDetector(
                             onTap: () {
                               HapticFeedback.selectionClick();
-                              setState(() => _seatsToBook = i + 1);
+                              ref
+                                  .read(
+                                    riderViewRideUiViewModelProvider(
+                                      widget.rideId,
+                                    ).notifier,
+                                  )
+                                  .setSeatsToBook(i + 1);
                             },
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 200),
@@ -1343,7 +1324,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
                               width: 40.w,
                               height: 40.w,
                               decoration: BoxDecoration(
-                                color: _seatsToBook == i + 1
+                                color: uiState.seatsToBook == i + 1
                                     ? AppColors.primary
                                     : AppColors.surfaceVariant,
                                 borderRadius: BorderRadius.circular(10.r),
@@ -1354,7 +1335,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
                                   style: TextStyle(
                                     fontSize: 16.sp,
                                     fontWeight: FontWeight.bold,
-                                    color: _seatsToBook == i + 1
+                                    color: uiState.seatsToBook == i + 1
                                         ? Colors.white
                                         : AppColors.textPrimary,
                                   ),
@@ -1367,7 +1348,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
                     ),
                   ),
                   Text(
-                    '\$${(ride.pricePerSeat * _seatsToBook).toStringAsFixed(0)}',
+                    '\$${(ride.pricePerSeat * uiState.seatsToBook).toStringAsFixed(0)}',
                     style: TextStyle(
                       fontSize: 20.sp,
                       fontWeight: FontWeight.bold,
@@ -1384,14 +1365,14 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
               text: isOwnRide
                   ? 'This is your ride'
                   : canBook
-                  ? (_isBooking
+                  ? (_rideDetailState.isActing
                         ? 'Booking...'
-                        : 'Book $_seatsToBook ${_seatsToBook == 1 ? 'Seat' : 'Seats'}')
+                        : 'Book ${uiState.seatsToBook} ${uiState.seatsToBook == 1 ? 'Seat' : 'Seats'}')
                   : ride.isFull
                   ? 'Ride is full'
                   : 'Unavailable',
               onPressed: canBook ? () => _showBookingConfirmation(ride) : null,
-              isLoading: _isBooking,
+              isLoading: _rideDetailState.isActing,
               style: canBook
                   ? PremiumButtonStyle.primary
                   : PremiumButtonStyle.ghost,
@@ -1533,10 +1514,16 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
       ),
       builder: (context) => _BookingConfirmationSheet(
         ride: ride,
-        seatsToBook: _seatsToBook,
-        initialNote: _note,
+        seatsToBook: ref
+            .read(riderViewRideUiViewModelProvider(widget.rideId))
+            .seatsToBook,
+        initialNote: ref
+            .read(riderViewRideUiViewModelProvider(widget.rideId))
+            .note,
         onConfirm: (note) {
-          _note = note;
+          ref
+              .read(riderViewRideUiViewModelProvider(widget.rideId).notifier)
+              .setNote(note);
           _bookRide(ride);
         },
       ),
@@ -1545,7 +1532,6 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
 
   Future<void> _bookRide(RideModel ride) async {
     HapticFeedback.mediumImpact();
-    setState(() => _isBooking = true);
 
     try {
       final currentUser = ref.read(currentUserProvider).value;
@@ -1553,20 +1539,25 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
         throw Exception('Please sign in to book a ride');
       }
 
-      final booking = RideBooking(
-        id: const Uuid().v4(),
-        rideId: widget.rideId,
-        passengerId: currentUser.uid,
-        driverId: ride.driverId,
-        seatsBooked: _seatsToBook,
-        status: BookingStatus.pending,
-        note: _note.isNotEmpty ? _note : null,
-        createdAt: DateTime.now(),
-      );
+      final success = await ref
+          .read(rideDetailViewModelProvider(ride.id).notifier)
+          .bookRide(
+            passengerId: currentUser.uid,
+            seats: ref
+                .read(riderViewRideUiViewModelProvider(widget.rideId))
+                .seatsToBook,
+            note:
+                ref
+                    .read(riderViewRideUiViewModelProvider(widget.rideId))
+                    .note
+                    .isNotEmpty
+                ? ref.read(riderViewRideUiViewModelProvider(widget.rideId)).note
+                : null,
+          );
 
-      await ref
-          .read(rideActionsViewModelProvider)
-          .bookRide(rideId: ride.id, booking: booking);
+      if (!success) {
+        throw Exception('Booking failed. Please try again.');
+      }
 
       if (mounted) {
         // Navigate to the pending screen so the passenger can track the
@@ -1584,10 +1575,6 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
             behavior: SnackBarBehavior.floating,
           ),
         );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isBooking = false);
       }
     }
   }
@@ -1691,6 +1678,8 @@ class _BookingConfirmationSheetState extends State<_BookingConfirmationSheet> {
           TextFormField(
             initialValue: widget.initialNote,
             onChanged: (v) => _noteText = v,
+            maxLength: 255,
+            textCapitalization: TextCapitalization.sentences,
             decoration: InputDecoration(
               hintText: l10n.addANoteToThe,
               hintStyle: TextStyle(
@@ -1702,6 +1691,10 @@ class _BookingConfirmationSheetState extends State<_BookingConfirmationSheet> {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12.r),
                 borderSide: BorderSide.none,
+              ),
+              counterStyle: TextStyle(
+                fontSize: 11.sp,
+                color: AppColors.textTertiary,
               ),
               contentPadding: EdgeInsets.all(12.w),
             ),

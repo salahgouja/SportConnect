@@ -14,6 +14,7 @@ import 'package:sport_connect/features/payments/view_models/payment_view_model.d
 import 'package:intl/intl.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
+import 'package:sport_connect/core/widgets/analytics_payment_widgets.dart';
 
 /// Driver Earnings Screen  - View earnings with real Firestore data
 ///
@@ -22,16 +23,9 @@ import 'package:sport_connect/core/theme/platform_adaptive.dart';
 /// instead of aggregating all payment transactions on-the-fly.
 /// The payments feature's [driverEarningsSummaryProvider] computes the same
 /// data from the `payments` collection and can be used for reconciliation.
-class DriverEarningsScreen extends ConsumerStatefulWidget {
+class DriverEarningsScreen extends ConsumerWidget {
   const DriverEarningsScreen({super.key});
 
-  @override
-  ConsumerState<DriverEarningsScreen> createState() =>
-      _DriverEarningsScreenState();
-}
-
-class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
-  String _selectedPeriod = 'thisWeek';
   static const List<String> _periodKeys = [
     'today',
     'thisWeek',
@@ -39,7 +33,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
     'allTime',
   ];
 
-  String _periodLabel(String key) {
+  String _periodLabel(BuildContext context, String key) {
     final l10n = AppLocalizations.of(context);
     switch (key) {
       case 'today':
@@ -56,12 +50,12 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
   }
 
   /// Resolves the driver's currency code from their Stripe connected account.
-  String get _currencyCode {
+  String _currencyCode(WidgetRef ref) {
     final stripeStatus = ref.watch(driverStripeStatusProvider).value;
     return stripeStatus?.currency ?? 'EUR';
   }
 
-  void _exportEarnings() {
+  void _exportEarnings(BuildContext context, WidgetRef ref) {
     final driverState = ref.read(driverViewModelProvider);
     final driverStats = driverState.stats;
     final transactions = driverState.earningsTransactions;
@@ -90,16 +84,16 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
       ..writeln()
       ..writeln(l10n.exportEarningsSummary)
       ..writeln(
-        '  ${l10n.periodToday}:      ${stats.earningsToday.toStringAsFixed(2)} $_currencyCode',
+        '  ${l10n.periodToday}:      ${stats.earningsToday.toStringAsFixed(2)} ${_currencyCode(ref)}',
       )
       ..writeln(
-        '  ${l10n.periodThisWeek}:  ${stats.earningsThisWeek.toStringAsFixed(2)} $_currencyCode',
+        '  ${l10n.periodThisWeek}:  ${stats.earningsThisWeek.toStringAsFixed(2)} ${_currencyCode(ref)}',
       )
       ..writeln(
-        '  ${l10n.periodThisMonth}: ${stats.earningsThisMonth.toStringAsFixed(2)} $_currencyCode',
+        '  ${l10n.periodThisMonth}: ${stats.earningsThisMonth.toStringAsFixed(2)} ${_currencyCode(ref)}',
       )
       ..writeln(
-        '  ${l10n.periodAllTime}:      ${stats.totalEarnings.toStringAsFixed(2)} $_currencyCode',
+        '  ${l10n.periodAllTime}:      ${stats.totalEarnings.toStringAsFixed(2)} ${_currencyCode(ref)}',
       )
       ..writeln()
       ..writeln(l10n.exportRideStatistics)
@@ -114,7 +108,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
       for (final tx in txList.take(20)) {
         final date = dateFormat.format(tx.createdAt);
         buffer.writeln(
-          '  $date | ${tx.amount.toStringAsFixed(2)} $_currencyCode | ${tx.description}',
+          '  $date | ${tx.amount.toStringAsFixed(2)} ${_currencyCode(ref)} | ${tx.description}',
         );
       }
     }
@@ -123,10 +117,13 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final driverState = ref.watch(driverViewModelProvider);
     final driverStats = driverState.stats;
     final transactions = driverState.earningsTransactions;
+    final selectedPeriod = ref
+        .watch(driverEarningsPeriodViewModelProvider)
+        .selectedPeriod;
     // Watch Stripe status to reactively resolve the driver's currency.
     ref.watch(driverStripeStatusProvider);
 
@@ -144,7 +141,12 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
               pinned: true,
               backgroundColor: AppColors.primary,
               flexibleSpace: FlexibleSpaceBar(
-                background: _buildEarningsHeader(driverStats),
+                background: _buildEarningsHeader(
+                  context,
+                  ref,
+                  driverStats,
+                  selectedPeriod,
+                ),
               ),
               title: Text(
                 AppLocalizations.of(context).earnings,
@@ -156,26 +158,84 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
               ),
               actions: [
                 IconButton(
-                  onPressed: _exportEarnings,
+                  onPressed: () => _exportEarnings(context, ref),
                   icon: const Icon(Icons.download_rounded, color: Colors.white),
                 ),
               ],
             ),
 
             // Period Selector
-            SliverToBoxAdapter(child: _buildPeriodSelector()),
+            SliverToBoxAdapter(
+              child: _buildPeriodSelector(context, ref, selectedPeriod),
+            ),
 
             // Stats Grid
-            SliverToBoxAdapter(child: _buildStatsGrid(driverStats)),
+            SliverToBoxAdapter(
+              child: _buildStatsGrid(context, ref, driverStats, selectedPeriod),
+            ),
+
+            // Monthly Summary Card
+            SliverToBoxAdapter(
+              child: driverStats.when(
+                data: (stats) => Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 20.w,
+                    vertical: 8.h,
+                  ),
+                  child: MonthlyRideSummary(
+                    totalRides: stats.totalRides,
+                    asDriver: stats.totalRides,
+                    asPassenger: 0,
+                    totalSpent: 0,
+                    totalEarned: stats.totalEarnings,
+                    co2Saved: stats.co2Saved,
+                    month: DateFormat('MMMM yyyy').format(DateTime.now()),
+                  ),
+                ),
+                loading: () => const SizedBox.shrink(),
+                error: (_, _) => const SizedBox.shrink(),
+              ),
+            ),
 
             // Earnings Chart
-            SliverToBoxAdapter(child: _buildEarningsChart(driverStats)),
+            SliverToBoxAdapter(
+              child: _buildEarningsChart(context, driverStats),
+            ),
+
+            // Monthly cost history chart – from real earnings transactions
+            SliverToBoxAdapter(
+              child: transactions.when(
+                data: (txList) {
+                  if (txList.isEmpty) return const SizedBox.shrink();
+                  // Group transactions by month and sum amounts
+                  final monthlyMap = <String, double>{};
+                  for (final tx in txList) {
+                    final key = DateFormat('MMM').format(tx.createdAt);
+                    monthlyMap[key] = (monthlyMap[key] ?? 0) + tx.amount;
+                  }
+                  final monthlyCosts = monthlyMap.entries
+                      .map((e) => MonthlyCost(e.key, e.value))
+                      .toList();
+                  return Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 20.w,
+                      vertical: 8.h,
+                    ),
+                    child: RideCostHistoryChart(data: monthlyCosts),
+                  ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.1);
+                },
+                loading: () => const SizedBox.shrink(),
+                error: (_, _) => const SizedBox.shrink(),
+              ),
+            ),
 
             // Payout Section
-            SliverToBoxAdapter(child: _buildPayoutSection()),
+            SliverToBoxAdapter(child: _buildPayoutSection(context, ref)),
 
             // Recent Transactions
-            SliverToBoxAdapter(child: _buildRecentTransactions(transactions)),
+            SliverToBoxAdapter(
+              child: _buildRecentTransactions(context, ref, transactions),
+            ),
 
             // Bottom Padding
             SliverToBoxAdapter(child: SizedBox(height: 100.h)),
@@ -185,7 +245,12 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
     );
   }
 
-  Widget _buildEarningsHeader(AsyncValue<DriverStats> statsAsync) {
+  Widget _buildEarningsHeader(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<DriverStats> statsAsync,
+    String selectedPeriod,
+  ) {
     return statsAsync.when(
       data: (stats) => Container(
         decoration: BoxDecoration(
@@ -206,7 +271,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 Text(
-                  '${AppLocalizations.of(context).totalEarnings} · ${_periodLabel(_selectedPeriod)}',
+                  '${AppLocalizations.of(context).totalEarnings} · ${_periodLabel(context, selectedPeriod)}',
                   style: TextStyle(
                     fontSize: 14.sp,
                     color: Colors.white.withValues(alpha: 0.8),
@@ -271,8 +336,8 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
                     ),
                     _HeaderStat(
                       value: stats.totalRides > 0
-                          ? '${(stats.totalEarnings / stats.totalRides).toStringAsFixed(0)} $_currencyCode'
-                          : '0 $_currencyCode',
+                          ? '${(stats.totalEarnings / stats.totalRides).toStringAsFixed(0)} ${_currencyCode(ref)}'
+                          : '0 ${_currencyCode(ref)}',
                       label: AppLocalizations.of(context).avgPerRide,
                     ),
                     Container(
@@ -344,18 +409,24 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
     );
   }
 
-  Widget _buildPeriodSelector() {
+  Widget _buildPeriodSelector(
+    BuildContext context,
+    WidgetRef ref,
+    String selectedPeriod,
+  ) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
           children: _periodKeys.map((period) {
-            final isSelected = period == _selectedPeriod;
+            final isSelected = period == selectedPeriod;
             return Padding(
               padding: EdgeInsets.only(right: 8.w),
               child: GestureDetector(
-                onTap: () => setState(() => _selectedPeriod = period),
+                onTap: () => ref
+                    .read(driverEarningsPeriodViewModelProvider.notifier)
+                    .setPeriod(period),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   padding: EdgeInsets.symmetric(
@@ -371,7 +442,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
                     boxShadow: isSelected ? AppSpacing.shadowSm : null,
                   ),
                   child: Text(
-                    _periodLabel(period),
+                    _periodLabel(context, period),
                     style: TextStyle(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
@@ -389,13 +460,18 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
     );
   }
 
-  Widget _buildStatsGrid(AsyncValue<DriverStats> statsAsync) {
+  Widget _buildStatsGrid(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<DriverStats> statsAsync,
+    String selectedPeriod,
+  ) {
     return statsAsync.when(
       data: (stats) {
         double displayEarnings;
         int displayRides;
 
-        switch (_selectedPeriod) {
+        switch (selectedPeriod) {
           case 'today':
             displayEarnings = stats.earningsToday;
             displayRides = stats.ridesCompleted;
@@ -434,7 +510,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
                       iconColor: AppColors.success,
                       title: AppLocalizations.of(context).statEarnings,
                       value:
-                          '${displayEarnings.toStringAsFixed(0)} $_currencyCode',
+                          '${displayEarnings.toStringAsFixed(0)} ${_currencyCode(ref)}',
                     ),
                   ),
                 ],
@@ -489,12 +565,12 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
           ],
         ),
       ),
-      error: (_, _) => _buildErrorPlaceholder(),
+      error: (_, _) => _buildErrorPlaceholder(context),
     );
   }
 
   /// Displays a compact error message when earnings data fails to load.
-  Widget _buildErrorPlaceholder() {
+  Widget _buildErrorPlaceholder(BuildContext context) {
     return Container(
       margin: EdgeInsets.all(20.w),
       padding: EdgeInsets.all(16.w),
@@ -529,7 +605,10 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
     );
   }
 
-  Widget _buildEarningsChart(AsyncValue<DriverStats> statsAsync) {
+  Widget _buildEarningsChart(
+    BuildContext context,
+    AsyncValue<DriverStats> statsAsync,
+  ) {
     return statsAsync.when(
       data: (stats) => Container(
         margin: EdgeInsets.all(20.w),
@@ -586,6 +665,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
             SizedBox(height: 20.h),
             // Total earnings breakdown
             _buildEarningsBreakdownItem(
+              context,
               AppLocalizations.of(context).statEarnings,
               stats.totalEarnings,
               AppColors.primary,
@@ -641,11 +721,16 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
         ),
         child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
       ),
-      error: (_, _) => _buildErrorPlaceholder(),
+      error: (_, _) => _buildErrorPlaceholder(context),
     );
   }
 
-  Widget _buildEarningsBreakdownItem(String label, double amount, Color color) {
+  Widget _buildEarningsBreakdownItem(
+    BuildContext context,
+    String label,
+    double amount,
+    Color color,
+  ) {
     return Row(
       children: [
         Container(
@@ -676,7 +761,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
   }
 
   /// Build the payout section with Stripe integration
-  Widget _buildPayoutSection() {
+  Widget _buildPayoutSection(BuildContext context, WidgetRef ref) {
     final user = ref.watch(driverViewModelProvider).user;
     final stripeStatus = ref.watch(driverStripeStatusProvider);
 
@@ -685,17 +770,23 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
         if (userData == null) return const SizedBox.shrink();
 
         return stripeStatus.when(
-          data: (status) => _buildPayoutCard(status, userData.uid),
+          data: (status) =>
+              _buildPayoutCard(context, ref, status, userData.uid),
           loading: () => _buildPayoutCardLoading(),
-          error: (_, _) => _buildPayoutCard(null, userData.uid),
+          error: (_, _) => _buildPayoutCard(context, ref, null, userData.uid),
         );
       },
       loading: () => _buildPayoutCardLoading(),
-      error: (_, _) => _buildErrorPlaceholder(),
+      error: (_, _) => _buildErrorPlaceholder(context),
     );
   }
 
-  Widget _buildPayoutCard(DriverStripeStatus? status, String userId) {
+  Widget _buildPayoutCard(
+    BuildContext context,
+    WidgetRef ref,
+    DriverStripeStatus? status,
+    String userId,
+  ) {
     final bool isConnected = status?.isConnected ?? false;
     final bool payoutsEnabled = status?.payoutsEnabled ?? false;
     final double availableBalance = status?.availableBalance ?? 0.0;
@@ -852,6 +943,8 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
                     text: AppLocalizations.of(context).withdraw,
                     onPressed: availableBalance > 0 && stripeAccountId != null
                         ? () => _requestPayout(
+                            context,
+                            ref,
                             userId,
                             stripeAccountId,
                             availableBalance,
@@ -906,6 +999,8 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
   }
 
   Future<void> _requestPayout(
+    BuildContext context,
+    WidgetRef ref,
     String userId,
     String stripeAccountId,
     double amount, {
@@ -951,11 +1046,11 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
           .requestInstantPayout(
             stripeAccountId: stripeAccountId,
             amount: amount,
-            currency: _currencyCode,
+            currency: _currencyCode(ref),
           );
 
       if (success) {
-        if (!mounted) return;
+        if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -969,7 +1064,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
         ref.invalidate(driverStripeStatusProvider);
         ref.read(driverViewModelProvider.notifier).refresh();
       } else {
-        if (!mounted) return;
+        if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -980,7 +1075,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
         );
       }
     } catch (e) {
-      if (!mounted) return;
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(AppLocalizations.of(context).errorValue(e)),
@@ -991,6 +1086,8 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
   }
 
   Widget _buildRecentTransactions(
+    BuildContext context,
+    WidgetRef ref,
     AsyncValue<List<EarningsTransaction>> transactionsAsync,
   ) {
     return Column(
@@ -1049,7 +1146,7 @@ class _DriverEarningsScreenState extends ConsumerState<DriverEarningsScreen> {
                   description: transaction.description,
                   amount: transaction.amount,
                   type: transaction.type,
-                  currency: _currencyCode,
+                  currency: _currencyCode(ref),
                   date: DateFormat(
                     'MMM d, h:mm a',
                   ).format(transaction.createdAt),

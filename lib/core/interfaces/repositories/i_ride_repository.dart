@@ -64,4 +64,12 @@ abstract class IRideRepository {
     double latitude,
     double longitude,
   );
+
+  /// Streams the driver's live GPS location for a ride.
+  Stream<({double latitude, double longitude})?> streamLiveLocation(
+    String rideId,
+  );
+
+  /// Streams rides linked to a specific event by eventId.
+  Stream<List<RideModel>> streamRidesByEventId(String eventId);
 }

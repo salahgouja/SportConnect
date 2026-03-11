@@ -1,10 +1,11 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
@@ -16,13 +17,10 @@ import 'package:sport_connect/features/messaging/view_models/chat_view_model.dar
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
+import 'package:sport_connect/features/rides/view_models/ride_countdown_view_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
-/// Pre-departure countdown screen for accepted bookings.
-///
-/// Shown when the driver has accepted the passenger's request but the
-/// ride has not yet started.  Displays a live countdown to the
-/// scheduled departure and provides quick-action buttons.
 class RideCountdownScreen extends ConsumerStatefulWidget {
   final String bookingId;
 
@@ -34,28 +32,9 @@ class RideCountdownScreen extends ConsumerStatefulWidget {
 }
 
 class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
-  Timer? _countdownTimer;
-  Duration _timeUntilDeparture = const Duration(hours: 1);
-  // Track last departure time to avoid restarting timer unnecessarily
-  DateTime? _lastDepartureTime;
-
   @override
   void dispose() {
-    _countdownTimer?.cancel();
     super.dispose();
-  }
-
-  void _startTimer(DateTime departure) {
-    if (_lastDepartureTime == departure) return;
-    _lastDepartureTime = departure;
-    _countdownTimer?.cancel();
-    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!mounted) return;
-      final diff = departure.difference(DateTime.now());
-      setState(
-        () => _timeUntilDeparture = diff.isNegative ? Duration.zero : diff,
-      );
-    });
   }
 
   String _formatDuration(Duration d) {
@@ -72,14 +51,11 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
         '${d.inSeconds.remainder(60).toString().padLeft(2, '0')}';
   }
 
-  bool _hasNavigated = false;
-  // Track the last known ride status to detect transitions (not just current state).
-  // This prevents auto-navigation from firing immediately when re-entering the
-  // screen while the ride is already inProgress.
-  RideStatus? _lastKnownRideStatus;
-
   @override
   Widget build(BuildContext context) {
+    final uiState = ref.watch(
+      rideCountdownUiViewModelProvider(widget.bookingId),
+    );
     final bookingAsync = ref.watch(bookingStreamProvider(widget.bookingId));
     final booking = bookingAsync.value;
     final vmState = booking != null
@@ -130,7 +106,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
               title: 'Your Ride',
               body: const Center(child: Text('Ride not found')),
             )
-          : _buildContent(ride, booking),
+          : _buildContent(ride, booking, uiState),
       loading: () => _buildScaffold(
         title: 'Your Ride',
         body: const Center(child: CircularProgressIndicator()),
@@ -154,31 +130,66 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
     );
   }
 
-  Widget _buildContent(RideModel ride, RideBooking booking) {
-    _startTimer(ride.schedule.departureTime);
+  Widget _buildContent(
+    RideModel ride,
+    RideBooking booking,
+    RideCountdownUiState uiState,
+  ) {
+    ref
+        .read(rideCountdownUiViewModelProvider(widget.bookingId).notifier)
+        .syncDeparture(ride.schedule.departureTime);
+
+    // Trigger OSRM route loading
+    if (uiState.osrmRouteRideId != ride.id) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref
+            .read(rideCountdownUiViewModelProvider(widget.bookingId).notifier)
+            .ensureRouteLoaded(ride);
+      });
+    }
 
     // Auto-navigate ONLY when we observe the ride status TRANSITION into inProgress.
     // If the ride is already inProgress when the screen first opens (re-entry case),
     // skip auto-navigation so we don't immediately bounce the user away again.
-    if (ride.status == RideStatus.inProgress) {
-      final wasAlreadyInProgress =
-          _lastKnownRideStatus == RideStatus.inProgress;
-      if (!wasAlreadyInProgress && !_hasNavigated) {
-        _hasNavigated = true;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            context.pushReplacement(
-              '${AppRoutes.riderActiveRide.path}?rideId=${booking.rideId}',
-            );
-          }
-        });
-      }
-    }
-    // Always keep last status updated for next rebuild.
-    _lastKnownRideStatus = ride.status;
+    final shouldNavigate = ref
+        .read(rideCountdownUiViewModelProvider(widget.bookingId).notifier)
+        .registerRideStatus(ride.status);
 
-    final isInPast = _timeUntilDeparture == Duration.zero;
-    final isImminent = !isInPast && _timeUntilDeparture.inMinutes <= 15;
+    if (ride.status == RideStatus.inProgress && shouldNavigate) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          context.pushReplacement(
+            '${AppRoutes.riderActiveRide.path}?rideId=${booking.rideId}',
+          );
+        }
+      });
+    }
+
+    // Handle ride cancellation — navigate back to My Rides and show a message.
+    if (ride.status == RideStatus.cancelled && shouldNavigate) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('This ride has been cancelled.')),
+          );
+          context.goNamed(AppRoutes.riderMyRides.name);
+        }
+      });
+    }
+
+    // Handle ride completion (rare: passenger re-opens countdown after ride done).
+    if (ride.status == RideStatus.completed && shouldNavigate) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          context.pushReplacement(
+            AppRoutes.rideCompletion.path.replaceFirst(':id', booking.rideId),
+          );
+        }
+      });
+    }
+
+    final isInPast = uiState.timeUntilDeparture == Duration.zero;
+    final isImminent = !isInPast && uiState.timeUntilDeparture.inMinutes <= 15;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -199,7 +210,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
             // Countdown display
             if (!isInPast) ...[
               Text(
-                isImminent ? 'Departing soon!' : 'Departure in',
+                isImminent ? AppLocalizations.of(context).departingSoonLabel : AppLocalizations.of(context).departureInLabel,
                 style: TextStyle(
                   fontSize: 14.sp,
                   color: isImminent
@@ -209,7 +220,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
               ),
               SizedBox(height: 8.h),
               Text(
-                    _formatDuration(_timeUntilDeparture),
+                    _formatDuration(uiState.timeUntilDeparture),
                     style: TextStyle(
                       fontSize: 44.sp,
                       fontWeight: FontWeight.bold,
@@ -233,7 +244,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
                   ),
                   SizedBox(width: 10.w),
                   Text(
-                    'Ride has started!',
+                    AppLocalizations.of(context).rideStartedMessage,
                     style: TextStyle(
                       fontSize: 22.sp,
                       fontWeight: FontWeight.bold,
@@ -244,6 +255,13 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
               ).animate().scale(duration: 400.ms, curve: Curves.elasticOut),
 
             SizedBox(height: 32.h),
+
+            // Route map preview
+            _buildRouteMapPreview(
+              ride,
+              uiState,
+            ).animate().fadeIn(delay: 150.ms),
+            SizedBox(height: 16.h),
 
             // Route card
             _buildRouteCard(ride).animate().slideY(delay: 200.ms),
@@ -263,7 +281,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
             // Action buttons
             if (ride.status == RideStatus.inProgress || isInPast)
               PremiumButton(
-                text: 'Join Active Ride',
+                text: AppLocalizations.of(context).joinActiveRideButton,
                 style: PremiumButtonStyle.success,
                 onPressed: () => context.push(
                   '${AppRoutes.riderActiveRide.path}?rideId=${booking.rideId}',
@@ -271,7 +289,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
               )
             else
               PremiumButton(
-                text: 'View Ride Details',
+                text: AppLocalizations.of(context).viewRideDetailsButton,
                 onPressed: () => context.push(
                   AppRoutes.riderViewRide.path.replaceFirst(
                     ':id',
@@ -281,6 +299,151 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildRouteMapPreview(RideModel ride, RideCountdownUiState uiState) {
+    final origin = LatLng(ride.origin.latitude, ride.origin.longitude);
+    final dest = LatLng(ride.destination.latitude, ride.destination.longitude);
+    final center = LatLng(
+      (origin.latitude + dest.latitude) / 2,
+      (origin.longitude + dest.longitude) / 2,
+    );
+
+    final routePoints = uiState.osrmRoutePoints ?? [origin, dest];
+
+    return Container(
+      height: 180.h,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: AppColors.divider),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          FlutterMap(
+            options: MapOptions(
+              initialCenter: center,
+              initialZoom: 10,
+              interactionOptions: const InteractionOptions(
+                flags: InteractiveFlag.none,
+              ),
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.sportconnect.app',
+              ),
+              PolylineLayer(
+                polylines: [
+                  Polyline(
+                    points: routePoints,
+                    strokeWidth: 6.0,
+                    color: Colors.white,
+                    borderStrokeWidth: 2.0,
+                    borderColor: Colors.white,
+                  ),
+                  Polyline(
+                    points: routePoints,
+                    strokeWidth: 4.0,
+                    color: AppColors.primary,
+                  ),
+                ],
+              ),
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: origin,
+                    width: 28.w,
+                    height: 28.w,
+                    child: Icon(
+                      Icons.trip_origin_rounded,
+                      color: AppColors.success,
+                      size: 22.sp,
+                    ),
+                  ),
+                  Marker(
+                    point: dest,
+                    width: 28.w,
+                    height: 28.w,
+                    child: Icon(
+                      Icons.location_on_rounded,
+                      color: AppColors.error,
+                      size: 24.sp,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          // Distance / duration overlay
+          if (ride.route.distanceKm != null ||
+              ride.route.durationMinutes != null)
+            Positioned(
+              bottom: 8.h,
+              left: 8.w,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(8.r),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withAlpha(40), blurRadius: 4),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (ride.route.distanceKm != null) ...[
+                      Icon(
+                        Icons.straighten_rounded,
+                        size: 12.sp,
+                        color: Colors.white,
+                      ),
+                      SizedBox(width: 4.w),
+                      Text(
+                        ride.route.formattedDistance,
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                    if (ride.route.distanceKm != null &&
+                        ride.route.durationMinutes != null)
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 6.w),
+                        child: Text(
+                          '·',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12.sp,
+                          ),
+                        ),
+                      ),
+                    if (ride.route.durationMinutes != null) ...[
+                      Icon(
+                        Icons.schedule_rounded,
+                        size: 12.sp,
+                        color: Colors.white,
+                      ),
+                      SizedBox(width: 4.w),
+                      Text(
+                        ride.route.formattedDuration,
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -366,7 +529,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
                     ),
                   ),
                   Text(
-                    'Your Driver',
+                    AppLocalizations.of(context).yourDriverLabel,
                     style: TextStyle(
                       fontSize: 11.sp,
                       color: AppColors.textSecondary,
@@ -379,7 +542,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
                 children: [
                   Expanded(
                     child: PremiumButton(
-                      text: 'Message',
+                      text: AppLocalizations.of(context).messageButton,
                       icon: Icons.chat_bubble_outline_rounded,
                       style: PremiumButtonStyle.secondary,
                       onPressed: () =>
@@ -389,7 +552,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
                   SizedBox(width: 12.w),
                   Expanded(
                     child: PremiumButton(
-                      text: 'Call',
+                      text: AppLocalizations.of(context).callButton,
                       icon: Icons.phone_outlined,
                       style: PremiumButtonStyle.ghost,
                       onPressed: () => _callDriver(ride.driverId),
@@ -440,7 +603,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Failed to open chat. Please try again.'),
+        content: Text(AppLocalizations.of(context).failedOpenChatError),
           backgroundColor: AppColors.error,
         ),
       );
@@ -454,7 +617,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
       if (phone == null || phone.isEmpty) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Driver phone number not available.')),
+          SnackBar(content: Text(AppLocalizations.of(context).driverPhoneUnavailableError)),
         );
         return;
       }
@@ -465,7 +628,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not launch phone dialer.')),
+        SnackBar(content: Text(AppLocalizations.of(context).couldNotLaunchDialerError)),
       );
     }
   }
@@ -483,7 +646,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Route',
+            AppLocalizations.of(context).routeLabel,
             style: TextStyle(
               fontSize: 12.sp,
               color: AppColors.textSecondary,
@@ -592,6 +755,16 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
   Widget _buildBookingInfoCard(RideModel ride, RideBooking booking) {
     final totalPrice = booking.seatsBooked * ride.pricePerSeat;
     final currency = ride.currency ?? '€';
+    final refCode = booking.id.length >= 6
+        ? booking.id.substring(0, 6).toUpperCase()
+        : booking.id.toUpperCase();
+
+    // Compute estimated arrival time
+    final durationMin = ride.route.durationMinutes;
+    final arrivalTime = durationMin != null
+        ? ride.departureTime.add(Duration(minutes: durationMin.round()))
+        : null;
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(16.w),
@@ -600,28 +773,103 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
         borderRadius: BorderRadius.circular(16.r),
         border: Border.all(color: AppColors.divider),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+      child: Column(
         children: [
-          _buildInfoItem(
-            icon: Icons.airline_seat_recline_normal_rounded,
-            value: '${booking.seatsBooked}',
-            label: 'Seats',
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildInfoItem(
+                icon: Icons.airline_seat_recline_normal_rounded,
+                value: '${booking.seatsBooked}',
+                label: AppLocalizations.of(context).seatsLabel,
+              ),
+              Container(width: 1.w, height: 32.h, color: AppColors.divider),
+              GestureDetector(
+                onTap: () {
+                  Clipboard.setData(ClipboardData(text: booking.id));
+                  HapticFeedback.lightImpact();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Booking ref $refCode copied!'),
+                      duration: const Duration(seconds: 2),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.confirmation_number_rounded,
+                      color: AppColors.primary,
+                      size: 22.sp,
+                    ),
+                    SizedBox(height: 4.h),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          refCode,
+                          style: TextStyle(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        SizedBox(width: 4.w),
+                        Icon(
+                          Icons.copy_rounded,
+                          size: 12.sp,
+                          color: AppColors.textTertiary,
+                        ),
+                      ],
+                    ),
+                    Text(
+                      '${AppLocalizations.of(context).refNumberLabel} ${AppLocalizations.of(context).tapToCopyInstruction}',
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(width: 1.w, height: 32.h, color: AppColors.divider),
+              _buildInfoItem(
+                icon: Icons.payments_outlined,
+                value: '$currency${totalPrice.toStringAsFixed(2)}',
+                label: AppLocalizations.of(context).totalLabel,
+              ),
+            ],
           ),
-          Container(width: 1.w, height: 32.h, color: AppColors.divider),
-          _buildInfoItem(
-            icon: Icons.confirmation_number_rounded,
-            value: booking.id.length >= 6
-                ? booking.id.substring(0, 6).toUpperCase()
-                : booking.id.toUpperCase(),
-            label: 'Ref #',
-          ),
-          Container(width: 1.w, height: 32.h, color: AppColors.divider),
-          _buildInfoItem(
-            icon: Icons.payments_outlined,
-            value: '$currency${totalPrice.toStringAsFixed(2)}',
-            label: 'Total',
-          ),
+          // Estimated arrival row
+          if (arrivalTime != null) ...[
+            SizedBox(height: 12.h),
+            Divider(height: 1, color: AppColors.divider),
+            SizedBox(height: 12.h),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.flag_rounded, size: 16.sp, color: AppColors.success),
+                SizedBox(width: 6.w),
+                Text(
+                  AppLocalizations.of(context).estimatedArrivalLabel,
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                Text(
+                  '${arrivalTime.hour.toString().padLeft(2, '0')}:'
+                  '${arrivalTime.minute.toString().padLeft(2, '0')}',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.success,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

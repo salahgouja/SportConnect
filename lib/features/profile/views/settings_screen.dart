@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -47,6 +48,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final publicProfile =
         ref.watch(publicProfileProviderProvider).value ?? true;
     final distanceUnit = ref.watch(distanceUnitProviderProvider).value ?? 'km';
+    final themeMode =
+        ref.watch(themeModeProviderProvider).value ?? ThemeMode.light;
+    final mapStyle = ref.watch(mapStyleProviderProvider).value ?? 'standard';
     // Only drivers have the auto-accept toggle — hide it for riders
     final isDriver = ref.watch(currentUserProvider).value is DriverModel;
 
@@ -156,6 +160,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
                 SizedBox(height: 12.h),
                 _buildSettingsCard([
+                  _buildThemeModeTile(
+                    currentMode: themeMode,
+                    onChanged: (mode) async {
+                      await ref
+                          .read(themeModeProviderProvider.notifier)
+                          .setThemeMode(mode);
+                    },
+                  ),
+                  _buildDivider(),
+                  _buildMapStyleTile(
+                    currentStyle: mapStyle,
+                    onChanged: (style) async {
+                      await ref
+                          .read(mapStyleProviderProvider.notifier)
+                          .setMapStyle(style);
+                    },
+                  ),
+                  _buildDivider(),
                   _buildLanguageDropdownTile(
                     l10n: l10n,
                     currentLocale: currentLocale,
@@ -448,7 +470,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     // Already granted — just tell the user.
     if (status == AuthorizationStatus.authorized ||
         status == AuthorizationStatus.provisional) {
-      if (!mounted) return;
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Notifications are already enabled.'),
@@ -471,7 +493,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         badge: true,
         sound: true,
       );
-      if (!mounted) return;
+      if (!context.mounted) return;
       final granted =
           result.authorizationStatus == AuthorizationStatus.authorized ||
           result.authorizationStatus == AuthorizationStatus.provisional;
@@ -494,7 +516,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
 
     // `notDetermined` — show our rationale dialog then request.
-    if (!mounted) return;
+    if (!context.mounted) return;
     final accepted = await PermissionDialogHelper.showNotificationRationale(
       context,
     );
@@ -506,7 +528,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       badge: true,
       sound: true,
     );
-    if (!mounted) return;
+    if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text('Notification permission requested.'),
@@ -620,7 +642,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             Switch.adaptive(
               value: value && enabled,
-              onChanged: enabled ? onChanged : null,
+              onChanged: enabled
+                  ? (v) {
+                      HapticFeedback.selectionClick();
+                      onChanged(v);
+                    }
+                  : null,
               activeColor: AppColors.primary,
             ),
           ],
@@ -790,6 +817,174 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 onChanged: onLanguageChanged,
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildThemeModeTile({
+    required ThemeMode currentMode,
+    required ValueChanged<ThemeMode> onChanged,
+  }) {
+    String label;
+    IconData icon;
+    switch (currentMode) {
+      case ThemeMode.light:
+        label = 'Light';
+        icon = Icons.light_mode_rounded;
+      case ThemeMode.dark:
+        label = 'Dark';
+        icon = Icons.dark_mode_rounded;
+      case ThemeMode.system:
+        label = 'System';
+        icon = Icons.brightness_auto_rounded;
+    }
+    return Padding(
+      padding: EdgeInsets.all(16.w),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(10.w),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10.r),
+            ),
+            child: Icon(icon, color: AppColors.primary, size: 20.sp),
+          ),
+          SizedBox(width: 14.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Theme',
+                  style: TextStyle(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  'Choose light, dark, or system theme',
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SegmentedButton<ThemeMode>(
+            segments: const [
+              ButtonSegment(
+                value: ThemeMode.light,
+                icon: Icon(Icons.light_mode_rounded, size: 16),
+              ),
+              ButtonSegment(
+                value: ThemeMode.dark,
+                icon: Icon(Icons.dark_mode_rounded, size: 16),
+              ),
+              ButtonSegment(
+                value: ThemeMode.system,
+                icon: Icon(Icons.brightness_auto_rounded, size: 16),
+              ),
+            ],
+            selected: {currentMode},
+            onSelectionChanged: (selected) {
+              HapticFeedback.selectionClick();
+              onChanged(selected.first);
+            },
+            showSelectedIcon: false,
+            style: ButtonStyle(
+              visualDensity: VisualDensity.compact,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMapStyleTile({
+    required String currentStyle,
+    required ValueChanged<String> onChanged,
+  }) {
+    final styles = ['standard', 'dark', 'satellite'];
+    final icons = {
+      'standard': Icons.map_outlined,
+      'dark': Icons.dark_mode_outlined,
+      'satellite': Icons.satellite_alt_outlined,
+    };
+    return Padding(
+      padding: EdgeInsets.all(16.w),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(10.w),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10.r),
+            ),
+            child: Icon(
+              Icons.map_outlined,
+              color: AppColors.primary,
+              size: 20.sp,
+            ),
+          ),
+          SizedBox(width: 14.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Map Style',
+                  style: TextStyle(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  'Choose map appearance',
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          DropdownButton<String>(
+            value: currentStyle,
+            underline: const SizedBox.shrink(),
+            borderRadius: BorderRadius.circular(12.r),
+            items: styles
+                .map(
+                  (s) => DropdownMenuItem(
+                    value: s,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(icons[s], size: 16.sp),
+                        SizedBox(width: 6.w),
+                        Text(
+                          s[0].toUpperCase() + s.substring(1),
+                          style: TextStyle(fontSize: 13.sp),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+                .toList(),
+            onChanged: (value) {
+              if (value != null) {
+                HapticFeedback.selectionClick();
+                onChanged(value);
+              }
+            },
           ),
         ],
       ),
@@ -1112,6 +1307,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   void _showWithdrawConsentDialog() {
     showDialog(
       context: context,
+      barrierLabel: 'Withdraw consent dialog',
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surface.withValues(
           alpha: PlatformAdaptive.dialogAlpha,
@@ -1217,6 +1413,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   void _showLogoutDialog() {
     showDialog(
       context: context,
+      barrierLabel: 'Logout dialog',
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
@@ -1252,6 +1449,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     showDialog(
       context: context,
+      barrierLabel: 'Delete account dialog',
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           shape: RoundedRectangleBorder(
@@ -1343,11 +1541,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             .read(authActionsViewModelProvider)
                             .deleteAccount();
 
-                        if (mounted) {
+                        if (context.mounted) {
                           context.pop(); // Remove loading
                         }
                       } catch (e) {
-                        if (mounted) {
+                        if (context.mounted) {
                           context.pop(); // Remove loading
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(

@@ -5,8 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
-import 'package:sport_connect/features/auth/models/auth_exception.dart';
-import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
+import 'package:sport_connect/features/auth/view_models/reauth_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Shows a re-authentication dialog for sensitive operations.
@@ -19,85 +18,47 @@ Future<bool> showReauthDialog(BuildContext context, WidgetRef ref) async {
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (ctx) => _ReauthBottomSheet(ref: ref),
+    builder: (ctx) => const _ReauthBottomSheet(),
   );
   return result ?? false;
 }
 
-class _ReauthBottomSheet extends StatefulWidget {
-  final WidgetRef ref;
-
-  const _ReauthBottomSheet({required this.ref});
+class _ReauthBottomSheet extends ConsumerStatefulWidget {
+  const _ReauthBottomSheet();
 
   @override
-  State<_ReauthBottomSheet> createState() => _ReauthBottomSheetState();
+  ConsumerState<_ReauthBottomSheet> createState() =>
+      _ReauthBottomSheetState();
 }
 
-class _ReauthBottomSheetState extends State<_ReauthBottomSheet> {
+class _ReauthBottomSheetState extends ConsumerState<_ReauthBottomSheet> {
   final _formKey = GlobalKey<FormBuilderState>();
-  bool _isLoading = false;
   bool _obscure = true;
-  String? _errorText;
-
-  Future<void> _reauthWithPassword() async {
-    if (!(_formKey.currentState?.saveAndValidate() ?? false)) return;
-
-    setState(() {
-      _isLoading = true;
-      _errorText = null;
-    });
-
-    try {
-      await widget.ref
-          .read(authActionsViewModelProvider)
-          .reauthenticateWithPassword(
-            (_formKey.currentState!.value['password'] as String),
-          );
-
-      if (mounted) {
-        Navigator.of(context).pop(true);
-      }
-    } catch (e) {
-      if (mounted) {
-        final l10n = AppLocalizations.of(context);
-        setState(() {
-          _isLoading = false;
-          _errorText = (e is AuthException && e.code == 'wrong-password')
-              ? l10n.reauthWrongPassword
-              : l10n.reauthFailed;
-        });
-      }
-    }
-  }
-
-  Future<void> _reauthWithGoogle() async {
-    setState(() {
-      _isLoading = true;
-      _errorText = null;
-    });
-
-    try {
-      await widget.ref
-          .read(authActionsViewModelProvider)
-          .reauthenticateWithGoogle();
-
-      if (mounted) {
-        Navigator.of(context).pop(true);
-      }
-    } catch (_) {
-      if (mounted) {
-        final l10n = AppLocalizations.of(context);
-        setState(() {
-          _isLoading = false;
-          _errorText = l10n.reauthGoogleFailed;
-        });
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final vmState = ref.watch(reauthViewModelProvider);
+
+    // Pop the dialog on successful re-auth.
+    ref.listen(reauthViewModelProvider, (prev, next) {
+      if (next.isSuccess && !(prev?.isSuccess ?? false)) {
+        Navigator.of(context).pop(true);
+      }
+    });
+
+    // Map error codes to localised messages.
+    String? errorText;
+    if (vmState.errorCode != null) {
+      switch (vmState.errorCode) {
+        case 'wrong-password':
+          errorText = l10n.reauthWrongPassword;
+        case 'google':
+          errorText = l10n.reauthGoogleFailed;
+        default:
+          errorText = l10n.reauthFailed;
+      }
+    }
 
     return Padding(
       padding: EdgeInsets.only(
@@ -194,10 +155,10 @@ class _ReauthBottomSheetState extends State<_ReauthBottomSheet> {
                 ),
               ),
 
-              if (_errorText != null) ...[
+              if (errorText != null) ...[
                 SizedBox(height: 8.h),
                 Text(
-                  _errorText!,
+                  errorText!,
                   style: TextStyle(fontSize: 13.sp, color: AppColors.error),
                 ),
               ],
@@ -209,8 +170,21 @@ class _ReauthBottomSheetState extends State<_ReauthBottomSheet> {
                 width: double.infinity,
                 child: PremiumButton(
                   text: l10n.reauthConfirm,
-                  onPressed: _isLoading ? null : _reauthWithPassword,
-                  isLoading: _isLoading,
+                  onPressed: vmState.isLoading
+                      ? null
+                      : () {
+                          if (!(_formKey.currentState?.saveAndValidate() ??
+                              false)) {
+                            return;
+                          }
+                          ref
+                              .read(reauthViewModelProvider.notifier)
+                              .reauthWithPassword(
+                                _formKey.currentState!.value['password']
+                                    as String,
+                              );
+                        },
+                  isLoading: vmState.isLoading,
                   icon: Icons.check_rounded,
                 ),
               ),
@@ -222,7 +196,11 @@ class _ReauthBottomSheetState extends State<_ReauthBottomSheet> {
                 width: double.infinity,
                 child: PremiumButton(
                   text: l10n.reauthWithGoogle,
-                  onPressed: _isLoading ? null : _reauthWithGoogle,
+                  onPressed: vmState.isLoading
+                      ? null
+                      : () => ref
+                          .read(reauthViewModelProvider.notifier)
+                          .reauthWithGoogle(),
                   style: PremiumButtonStyle.secondary,
                   icon: Icons.g_mobiledata_rounded,
                 ),

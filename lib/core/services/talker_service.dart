@@ -11,7 +11,7 @@ import 'package:dio/dio.dart';
 /// - Global Talker instance for app-wide logging
 /// - TalkerDioLogger for HTTP request/response logging
 /// - TalkerRiverpodObserver for Riverpod state management logging
-/// - TalkerScreen for viewing logs in-app
+/// - TalkerScreen for viewing logs in-app (non-web only)
 class TalkerService {
   TalkerService._();
 
@@ -27,7 +27,10 @@ class TalkerService {
       ),
       logger: TalkerLogger(
         output: debugPrint,
-        settings: TalkerLoggerSettings(enableColors: true, maxLineWidth: 120),
+        settings: TalkerLoggerSettings(
+          enableColors: !kIsWeb, // ANSI colors crash on web
+          maxLineWidth: 120,
+        ),
       ),
     );
     return _instance!;
@@ -50,10 +53,10 @@ class TalkerService {
       printResponseMessage: true,
       printErrorData: false,
       printErrorHeaders: false,
-      // Custom colors for better visibility
-      requestPen: AnsiPen()..cyan(),
-      responsePen: AnsiPen()..green(),
-      errorPen: AnsiPen()..red(),
+      // AnsiPen is not supported on web
+      requestPen: kIsWeb ? null : (AnsiPen()..cyan()),
+      responsePen: kIsWeb ? null : (AnsiPen()..green()),
+      errorPen: kIsWeb ? null : (AnsiPen()..red()),
     ),
   );
 
@@ -95,39 +98,43 @@ class TalkerService {
     instance.handle(exception, stackTrace, message);
   }
 
-  /// Navigate to the TalkerScreen to view all logs
+  /// Navigate to the TalkerScreen to view all logs (non-web only)
   ///
   /// Usage:
   /// ```dart
   /// TalkerService.showLogScreen(context);
   /// ```
   static void showLogScreen(BuildContext context) {
+    if (kIsWeb) {
+      debugPrint('[TalkerService] TalkerScreen is not supported on web.');
+      return;
+    }
     Navigator.of(context).push(
       MaterialPageRoute(builder: (context) => TalkerScreen(talker: instance)),
     );
   }
 
-  /// Get a TalkerRouteObserver for navigation logging
+  /// Get a TalkerRouteObserver for navigation logging (non-web only)
   ///
-  /// Usage:
+  /// Returns null on web — filter it out with .whereType or .nonNulls:
   /// ```dart
-  /// MaterialApp(
-  ///   localizationsDelegates: AppLocalizations.localizationsDelegates,
-  ///   supportedLocales: AppLocalizations.supportedLocales,
-  ///   navigatorObservers: [TalkerService.routeObserver],
-  /// )
+  /// navigatorObservers: [
+  ///   if (TalkerService.routeObserver != null) TalkerService.routeObserver!,
+  /// ]
   /// ```
-  static TalkerRouteObserver get routeObserver => TalkerRouteObserver(instance);
+  static TalkerRouteObserver? get routeObserver =>
+      kIsWeb ? null : TalkerRouteObserver(instance);
 
-  /// Wrap a widget with TalkerWrapper for error boundary
+  /// Wrap a widget with TalkerWrapper for error boundary (non-web only)
+  ///
+  /// Falls back to returning the child unwrapped on web.
   ///
   /// Usage:
   /// ```dart
-  /// TalkerService.wrapWithMonitor(
-  ///   child: MyWidget(),
-  /// )
+  /// TalkerService.wrapWithMonitor(child: MyWidget())
   /// ```
   static Widget wrapWithMonitor({required Widget child}) {
+    if (kIsWeb) return child;
     return TalkerWrapper(talker: instance, child: child);
   }
 }

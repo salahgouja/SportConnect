@@ -12,6 +12,7 @@ import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/premium_card.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
 import 'package:sport_connect/features/events/view_models/event_view_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Displays the user's own events split into "Created" and "Joined" tabs.
 class MyEventsScreen extends ConsumerStatefulWidget {
@@ -40,6 +41,7 @@ class _MyEventsScreenState extends ConsumerState<MyEventsScreen>
   @override
   Widget build(BuildContext context) {
     final userId = ref.watch(currentUserProvider).value?.uid ?? '';
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -56,7 +58,7 @@ class _MyEventsScreenState extends ConsumerState<MyEventsScreen>
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'My Events',
+          l10n.myEventsTitle,
           style: TextStyle(
             fontSize: 20.sp,
             fontWeight: FontWeight.w800,
@@ -75,9 +77,9 @@ class _MyEventsScreenState extends ConsumerState<MyEventsScreen>
             fontSize: 14.sp,
             fontWeight: FontWeight.w500,
           ),
-          tabs: const [
-            Tab(text: 'Created'),
-            Tab(text: 'Joined'),
+          tabs: [
+            Tab(text: l10n.myEventsCreatedTab),
+            Tab(text: l10n.myEventsJoinedTab),
           ],
         ),
       ),
@@ -111,16 +113,17 @@ class _CreatedTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (userId.isEmpty) return const _EmptyTab(message: 'Sign in first.');
+    final l10n = AppLocalizations.of(context);
+    if (userId.isEmpty) return _EmptyTab(message: l10n.signInFirstMessage);
     final stream = ref.watch(eventsByCreatorStreamProvider(userId));
 
     return stream.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, __) => const _EmptyTab(message: 'Unable to load events.'),
+      error: (_, __) => _EmptyTab(message: l10n.unableToLoadEvents),
       data: (events) {
         if (events.isEmpty) {
-          return const _EmptyTab(
-            message: "You haven't created any events yet.",
+          return _EmptyTab(
+            message: l10n.noCreatedEvents,
           );
         }
         return _EventListView(events: events);
@@ -138,15 +141,16 @@ class _JoinedTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (userId.isEmpty) return const _EmptyTab(message: 'Sign in first.');
+    final l10n = AppLocalizations.of(context);
+    if (userId.isEmpty) return _EmptyTab(message: l10n.signInFirstMessage);
     final stream = ref.watch(joinedEventsStreamProvider(userId));
 
     return stream.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, __) => const _EmptyTab(message: 'Unable to load events.'),
+      error: (_, __) => _EmptyTab(message: l10n.unableToLoadEvents),
       data: (events) {
         if (events.isEmpty) {
-          return const _EmptyTab(message: "You haven't joined any events yet.");
+          return _EmptyTab(message: l10n.noJoinedEvents);
         }
         return _EventListView(events: events);
       },
@@ -243,9 +247,9 @@ class _MyEventCard extends StatelessWidget {
                     _badge(event),
                     const Spacer(),
                     if (!event.isUpcoming)
-                      _statusChip('Past', AppColors.textTertiary),
+                      _statusChip(AppLocalizations.of(context).eventPastStatus, AppColors.textTertiary),
                     if (event.isUpcoming && event.isFull)
-                      _statusChip('Full', AppColors.warning),
+                      _statusChip(AppLocalizations.of(context).eventFullStatus, AppColors.warning),
                   ],
                 ),
               ],
@@ -329,7 +333,7 @@ class _EmptyTab extends StatelessWidget {
             ),
             SizedBox(height: 20.h),
             PremiumButton(
-              text: 'Browse Events',
+              text: AppLocalizations.of(context).browseEventsButton,
               icon: Icons.explore_rounded,
               size: PremiumButtonSize.small,
               style: PremiumButtonStyle.ghost,

@@ -2313,7 +2313,7 @@ abstract class AppLocalizations {
   /// Text from Text in payment_history_screen.dart
   ///
   /// In en, this message translates to:
-  /// **'Unknown date'**
+  /// **'Unknown Date'**
   String get unknownDate;
 
   /// Text from Text in payment_history_screen.dart
@@ -5745,7 +5745,7 @@ abstract class AppLocalizations {
   /// No description provided for @authPhoneHint.
   ///
   /// In en, this message translates to:
-  /// **'+216 XX XXX XXX'**
+  /// **'Enter Your Phone Number'**
   String get authPhoneHint;
 
   /// No description provided for @authDateOfBirth.
@@ -6231,7 +6231,7 @@ abstract class AppLocalizations {
   /// No description provided for @roleSelectionError.
   ///
   /// In en, this message translates to:
-  /// **'We could not continue right now. Please try again.'**
+  /// **'Something went wrong. Please try again.'**
   String get roleSelectionError;
 
   /// No description provided for @accountExistsError.
@@ -6815,6 +6815,2652 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Poor'**
   String get ratingPoor;
+
+  /// No description provided for @findRidesNearYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Find Rides Near You'**
+  String get findRidesNearYou;
+
+  /// No description provided for @locationGateDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable location to discover rides near you, get accurate pickup times, and navigate safely.'**
+  String get locationGateDescription;
+
+  /// No description provided for @locationBenefitFind.
+  ///
+  /// In en, this message translates to:
+  /// **'Find rides near your location'**
+  String get locationBenefitFind;
+
+  /// No description provided for @locationBenefitNavigate.
+  ///
+  /// In en, this message translates to:
+  /// **'Get turn-by-turn navigation'**
+  String get locationBenefitNavigate;
+
+  /// No description provided for @locationBenefitSafety.
+  ///
+  /// In en, this message translates to:
+  /// **'Enhanced safety features'**
+  String get locationBenefitSafety;
+
+  /// No description provided for @allowLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow Location'**
+  String get allowLocation;
+
+  /// No description provided for @browseWithoutLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse without location'**
+  String get browseWithoutLocation;
+
+  /// No description provided for @findingYourLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Finding your location...'**
+  String get findingYourLocation;
+
+  /// No description provided for @thisWillOnlyTakeAMoment.
+  ///
+  /// In en, this message translates to:
+  /// **'This will only take a moment'**
+  String get thisWillOnlyTakeAMoment;
+
+  /// No description provided for @locationNotEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Location Not Enabled'**
+  String get locationNotEnabled;
+
+  /// No description provided for @locationNotEnabledDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'You declined location access. Enable it to find rides near you.'**
+  String get locationNotEnabledDescription;
+
+  /// No description provided for @browseByCity.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse by City'**
+  String get browseByCity;
+
+  /// No description provided for @locationPermissionBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Location Permission Blocked'**
+  String get locationPermissionBlocked;
+
+  /// No description provided for @locationPermissionBlockedDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Location permission is permanently denied. Please enable it in your device settings.'**
+  String get locationPermissionBlockedDescription;
+
+  /// No description provided for @locationServicesOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Location Services Off'**
+  String get locationServicesOff;
+
+  /// No description provided for @locationServicesOffDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Your device\'s location services are turned off. Please enable them in settings.'**
+  String get locationServicesOffDescription;
+
+  /// No description provided for @openLocationSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Location Settings'**
+  String get openLocationSettings;
+
+  /// No description provided for @events.
+  ///
+  /// In en, this message translates to:
+  /// **'Events'**
+  String get events;
+
+  /// No description provided for @satellite.
+  ///
+  /// In en, this message translates to:
+  /// **'Satellite'**
+  String get satellite;
+
+  /// No description provided for @maxSeatsReached.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximum 4 seats per booking'**
+  String get maxSeatsReached;
+
+  /// No description provided for @tryADifferentDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Try a different date'**
+  String get tryADifferentDate;
+
+  /// No description provided for @tapToOpenNavigation.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to open navigation'**
+  String get tapToOpenNavigation;
+
+  /// No description provided for @completePayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete Payment'**
+  String get completePayment;
+
+  /// No description provided for @bookingAcceptedPaymentRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Your booking is accepted. Payment required.'**
+  String get bookingAcceptedPaymentRequired;
+
+  /// No description provided for @tapToViewCountdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to view countdown'**
+  String get tapToViewCountdown;
+
+  /// No description provided for @departingTomorrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Departing tomorrow'**
+  String get departingTomorrow;
+
+  /// No description provided for @departingValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Departing {value}'**
+  String departingValue(String value);
+
+  /// No description provided for @awaitingDriverCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{Awaiting driver} other{Awaiting driver • {count} pending}}'**
+  String awaitingDriverCount(int count);
+
+  /// No description provided for @departingTodayAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Departing today at {h}:{m}'**
+  String departingTodayAt(String h, String m);
+
+  /// No description provided for @departingInDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Departing in {days} days'**
+  String departingInDays(int days);
+
+  /// No description provided for @createEventTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Event'**
+  String get createEventTitle;
+
+  /// No description provided for @editEventTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Event'**
+  String get editEventTitle;
+
+  /// No description provided for @myEventsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My Events'**
+  String get myEventsTitle;
+
+  /// No description provided for @discoverEventsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover Events'**
+  String get discoverEventsTitle;
+
+  /// No description provided for @eventSportType.
+  ///
+  /// In en, this message translates to:
+  /// **'Sport Type'**
+  String get eventSportType;
+
+  /// No description provided for @eventTitleField.
+  ///
+  /// In en, this message translates to:
+  /// **'Event Title *'**
+  String get eventTitleField;
+
+  /// No description provided for @eventTitleRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Title is required'**
+  String get eventTitleRequired;
+
+  /// No description provided for @eventTitleMinLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Title must be at least 3 characters'**
+  String get eventTitleMinLength;
+
+  /// No description provided for @eventVenueName.
+  ///
+  /// In en, this message translates to:
+  /// **'Venue Name (optional)'**
+  String get eventVenueName;
+
+  /// No description provided for @eventDescriptionField.
+  ///
+  /// In en, this message translates to:
+  /// **'Description (optional)'**
+  String get eventDescriptionField;
+
+  /// No description provided for @eventCoverImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Cover Image (optional)'**
+  String get eventCoverImage;
+
+  /// No description provided for @eventTapToAddPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to add a cover photo'**
+  String get eventTapToAddPhoto;
+
+  /// No description provided for @eventLocationField.
+  ///
+  /// In en, this message translates to:
+  /// **'Location *'**
+  String get eventLocationField;
+
+  /// No description provided for @eventTapToPickLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to pick a location on the map'**
+  String get eventTapToPickLocation;
+
+  /// No description provided for @eventWhenField.
+  ///
+  /// In en, this message translates to:
+  /// **'When *'**
+  String get eventWhenField;
+
+  /// No description provided for @eventStartDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Start date'**
+  String get eventStartDate;
+
+  /// No description provided for @eventStartTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Start time'**
+  String get eventStartTime;
+
+  /// No description provided for @eventEndDate.
+  ///
+  /// In en, this message translates to:
+  /// **'End date'**
+  String get eventEndDate;
+
+  /// No description provided for @eventEndTime.
+  ///
+  /// In en, this message translates to:
+  /// **'End time'**
+  String get eventEndTime;
+
+  /// No description provided for @eventOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional'**
+  String get eventOptional;
+
+  /// No description provided for @eventEndLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'End'**
+  String get eventEndLabel;
+
+  /// No description provided for @eventAddEndTime.
+  ///
+  /// In en, this message translates to:
+  /// **'+ Add end time'**
+  String get eventAddEndTime;
+
+  /// No description provided for @eventMaxParticipants.
+  ///
+  /// In en, this message translates to:
+  /// **'Max Participants'**
+  String get eventMaxParticipants;
+
+  /// No description provided for @eventUnlimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited'**
+  String get eventUnlimited;
+
+  /// No description provided for @eventParkingInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Parking instructions (optional)'**
+  String get eventParkingInstructions;
+
+  /// No description provided for @eventRecurring.
+  ///
+  /// In en, this message translates to:
+  /// **'Recurring Event'**
+  String get eventRecurring;
+
+  /// No description provided for @eventRecurringSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeats on selected days each week'**
+  String get eventRecurringSubtitle;
+
+  /// No description provided for @eventRepeatsUntil.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeats until {date}'**
+  String eventRepeatsUntil(String date);
+
+  /// No description provided for @eventRepeatEndDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat end date (optional)'**
+  String get eventRepeatEndDate;
+
+  /// No description provided for @eventCostSplit.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Cost Splitting'**
+  String get eventCostSplit;
+
+  /// No description provided for @eventCostSplitSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow attendees to split ride costs'**
+  String get eventCostSplitSubtitle;
+
+  /// No description provided for @eventUploadingCover.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading cover…'**
+  String get eventUploadingCover;
+
+  /// No description provided for @eventCreating.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating…'**
+  String get eventCreating;
+
+  /// No description provided for @eventCreateButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Event'**
+  String get eventCreateButton;
+
+  /// No description provided for @eventSaveChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Changes'**
+  String get eventSaveChanges;
+
+  /// No description provided for @eventStartTimeFuture.
+  ///
+  /// In en, this message translates to:
+  /// **'Start time must be in the future.'**
+  String get eventStartTimeFuture;
+
+  /// No description provided for @eventEndTimeAfterStart.
+  ///
+  /// In en, this message translates to:
+  /// **'End time must be after start time.'**
+  String get eventEndTimeAfterStart;
+
+  /// No description provided for @eventLocationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Event Location'**
+  String get eventLocationTitle;
+
+  /// No description provided for @eventDeleteConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Event?'**
+  String get eventDeleteConfirmTitle;
+
+  /// No description provided for @eventDeleteWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'This action cannot be undone. All participants will be removed.'**
+  String get eventDeleteWarning;
+
+  /// No description provided for @eventAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get eventAbout;
+
+  /// No description provided for @eventParticipants.
+  ///
+  /// In en, this message translates to:
+  /// **'Participants'**
+  String get eventParticipants;
+
+  /// No description provided for @eventLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave Event'**
+  String get eventLeave;
+
+  /// No description provided for @eventFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Event Full'**
+  String get eventFull;
+
+  /// No description provided for @eventJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Join Event'**
+  String get eventJoin;
+
+  /// No description provided for @eventEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Event'**
+  String get eventEdit;
+
+  /// No description provided for @eventDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Event'**
+  String get eventDelete;
+
+  /// No description provided for @eventNoRidesOffered.
+  ///
+  /// In en, this message translates to:
+  /// **'No rides offered yet'**
+  String get eventNoRidesOffered;
+
+  /// No description provided for @eventCouldNotLoadRides.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load rides'**
+  String get eventCouldNotLoadRides;
+
+  /// No description provided for @eventHowGettingThere.
+  ///
+  /// In en, this message translates to:
+  /// **'How are you getting there?'**
+  String get eventHowGettingThere;
+
+  /// No description provided for @eventImDriving.
+  ///
+  /// In en, this message translates to:
+  /// **'I\'m Driving'**
+  String get eventImDriving;
+
+  /// No description provided for @eventNeedRide.
+  ///
+  /// In en, this message translates to:
+  /// **'Need Ride'**
+  String get eventNeedRide;
+
+  /// No description provided for @eventSelfArranged.
+  ///
+  /// In en, this message translates to:
+  /// **'Self-Arranged'**
+  String get eventSelfArranged;
+
+  /// No description provided for @eventYouAreOrganizer.
+  ///
+  /// In en, this message translates to:
+  /// **'You are the organizer'**
+  String get eventYouAreOrganizer;
+
+  /// No description provided for @eventYouOrganized.
+  ///
+  /// In en, this message translates to:
+  /// **'You organized this event'**
+  String get eventYouOrganized;
+
+  /// No description provided for @eventYoureGoing.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re going'**
+  String get eventYoureGoing;
+
+  /// No description provided for @eventYouAttended.
+  ///
+  /// In en, this message translates to:
+  /// **'You attended'**
+  String get eventYouAttended;
+
+  /// No description provided for @eventNotJoinedYet.
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t joined yet'**
+  String get eventNotJoinedYet;
+
+  /// No description provided for @eventHasEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'This event has ended'**
+  String get eventHasEnded;
+
+  /// No description provided for @eventRidesToEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Rides to This Event'**
+  String get eventRidesToEvent;
+
+  /// No description provided for @eventParkingInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Parking Info'**
+  String get eventParkingInfo;
+
+  /// No description provided for @eventRecurringTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recurring Event'**
+  String get eventRecurringTitle;
+
+  /// No description provided for @eventEvery.
+  ///
+  /// In en, this message translates to:
+  /// **'Every'**
+  String get eventEvery;
+
+  /// No description provided for @eventUntilDate.
+  ///
+  /// In en, this message translates to:
+  /// **'until {date}'**
+  String eventUntilDate(String date);
+
+  /// No description provided for @eventCostSplitEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cost Split Enabled'**
+  String get eventCostSplitEnabled;
+
+  /// No description provided for @eventMeetupPoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Post-Event Meetup Point'**
+  String get eventMeetupPoint;
+
+  /// No description provided for @eventNoMeetupPoint.
+  ///
+  /// In en, this message translates to:
+  /// **'No meetup point set yet'**
+  String get eventNoMeetupPoint;
+
+  /// No description provided for @eventSetMeetupPoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Set Meetup Point'**
+  String get eventSetMeetupPoint;
+
+  /// No description provided for @eventGroupChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Event Group Chat'**
+  String get eventGroupChat;
+
+  /// No description provided for @eventNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Event not found.'**
+  String get eventNotFound;
+
+  /// No description provided for @eventOrganizedThis.
+  ///
+  /// In en, this message translates to:
+  /// **'You organized this event'**
+  String get eventOrganizedThis;
+
+  /// No description provided for @eventParticipantsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Participants ({count})'**
+  String eventParticipantsCount(int count);
+
+  /// No description provided for @eventSeatsLeftCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} left'**
+  String eventSeatsLeftCount(int count);
+
+  /// No description provided for @eventCountdownDaysHours.
+  ///
+  /// In en, this message translates to:
+  /// **'In {days}d {hours}h'**
+  String eventCountdownDaysHours(int days, int hours);
+
+  /// No description provided for @eventCountdownHoursMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'In {hours}h {minutes}m'**
+  String eventCountdownHoursMinutes(int hours, int minutes);
+
+  /// No description provided for @eventCountdownMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'In {minutes}m'**
+  String eventCountdownMinutes(int minutes);
+
+  /// No description provided for @eventNeedRideHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Need Ride Home'**
+  String get eventNeedRideHome;
+
+  /// No description provided for @eventFindRides.
+  ///
+  /// In en, this message translates to:
+  /// **'Find Rides to Event'**
+  String get eventFindRides;
+
+  /// No description provided for @eventOfferRide.
+  ///
+  /// In en, this message translates to:
+  /// **'Offer Ride to Event'**
+  String get eventOfferRide;
+
+  /// No description provided for @eventOrganizer.
+  ///
+  /// In en, this message translates to:
+  /// **'Organizer'**
+  String get eventOrganizer;
+
+  /// No description provided for @myEventsCreatedTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Created'**
+  String get myEventsCreatedTab;
+
+  /// No description provided for @myEventsJoinedTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Joined'**
+  String get myEventsJoinedTab;
+
+  /// No description provided for @signInFirstMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in first.'**
+  String get signInFirstMessage;
+
+  /// No description provided for @unableToLoadEvents.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load events.'**
+  String get unableToLoadEvents;
+
+  /// No description provided for @noCreatedEvents.
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t created any events yet.'**
+  String get noCreatedEvents;
+
+  /// No description provided for @noJoinedEvents.
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t joined any events yet.'**
+  String get noJoinedEvents;
+
+  /// No description provided for @browseEventsButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse Events'**
+  String get browseEventsButton;
+
+  /// No description provided for @eventPastStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Past'**
+  String get eventPastStatus;
+
+  /// No description provided for @eventFullStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Full'**
+  String get eventFullStatus;
+
+  /// No description provided for @searchEventsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search events…'**
+  String get searchEventsHint;
+
+  /// No description provided for @noEventsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No events found'**
+  String get noEventsFound;
+
+  /// No description provided for @noEventsInCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'No upcoming {category} events.'**
+  String noEventsInCategory(String category);
+
+  /// No description provided for @beFirstToCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Be the first to create one!'**
+  String get beFirstToCreate;
+
+  /// No description provided for @eventJoinArrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Join →'**
+  String get eventJoinArrow;
+
+  /// No description provided for @eventByOrganizer.
+  ///
+  /// In en, this message translates to:
+  /// **'by {name}'**
+  String eventByOrganizer(String name);
+
+  /// No description provided for @createLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get createLabel;
+
+  /// No description provided for @selectLocationError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a location.'**
+  String get selectLocationError;
+
+  /// No description provided for @pastStartTimeError.
+  ///
+  /// In en, this message translates to:
+  /// **'Start time must be in the future.'**
+  String get pastStartTimeError;
+
+  /// No description provided for @endBeforeStartError.
+  ///
+  /// In en, this message translates to:
+  /// **'End time must be after start time.'**
+  String get endBeforeStartError;
+
+  /// No description provided for @termsOfServiceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Service'**
+  String get termsOfServiceTitle;
+
+  /// No description provided for @privacyPolicyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get privacyPolicyTitle;
+
+  /// No description provided for @legalVersionBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Feb 2026'**
+  String get legalVersionBadge;
+
+  /// No description provided for @loadingTermsOfService.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading Terms of Service…'**
+  String get loadingTermsOfService;
+
+  /// No description provided for @loadingPrivacyPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading Privacy Policy…'**
+  String get loadingPrivacyPolicy;
+
+  /// No description provided for @reportIssueTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Report an Issue'**
+  String get reportIssueTitle;
+
+  /// No description provided for @whatHappenedQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'What happened?'**
+  String get whatHappenedQuestion;
+
+  /// No description provided for @howSevereQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'How severe is this issue?'**
+  String get howSevereQuestion;
+
+  /// No description provided for @describeIssueLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe the issue'**
+  String get describeIssueLabel;
+
+  /// No description provided for @describeIssuePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Please provide at least 50 characters...'**
+  String get describeIssuePlaceholder;
+
+  /// No description provided for @evidenceOptionalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Evidence (optional)'**
+  String get evidenceOptionalLabel;
+
+  /// No description provided for @attachScreenshotsPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to attach screenshots or evidence'**
+  String get attachScreenshotsPlaceholder;
+
+  /// No description provided for @filesAttachedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}/{max} files attached'**
+  String filesAttachedCount(int count, int max);
+
+  /// No description provided for @supportsImagesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Supports images (max 10MB each)'**
+  String get supportsImagesHint;
+
+  /// No description provided for @submitReportButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit Report'**
+  String get submitReportButton;
+
+  /// No description provided for @reportSubmittedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Report Submitted'**
+  String get reportSubmittedTitle;
+
+  /// No description provided for @reportSubmittedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank you for reporting this issue. Our safety team will review it and take appropriate action within 24-48 hours.'**
+  String get reportSubmittedMessage;
+
+  /// No description provided for @doneButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get doneButton;
+
+  /// No description provided for @takeAPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a Photo'**
+  String get takeAPhoto;
+
+  /// No description provided for @rideInfoLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Ride: {id}'**
+  String rideInfoLabel(String id);
+
+  /// No description provided for @reportSafety.
+  ///
+  /// In en, this message translates to:
+  /// **'Safety'**
+  String get reportSafety;
+
+  /// No description provided for @reportSafetyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Safety concerns or dangerous behavior'**
+  String get reportSafetyDesc;
+
+  /// No description provided for @reportPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment'**
+  String get reportPayment;
+
+  /// No description provided for @reportPaymentDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Billing or payment issues'**
+  String get reportPaymentDesc;
+
+  /// No description provided for @reportBehavior.
+  ///
+  /// In en, this message translates to:
+  /// **'Behavior'**
+  String get reportBehavior;
+
+  /// No description provided for @reportBehaviorDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Inappropriate or rude behavior'**
+  String get reportBehaviorDesc;
+
+  /// No description provided for @reportTechnical.
+  ///
+  /// In en, this message translates to:
+  /// **'Technical'**
+  String get reportTechnical;
+
+  /// No description provided for @reportTechnicalDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'App bugs or technical issues'**
+  String get reportTechnicalDesc;
+
+  /// No description provided for @reportDiscrimination.
+  ///
+  /// In en, this message translates to:
+  /// **'Discrimination'**
+  String get reportDiscrimination;
+
+  /// No description provided for @reportDiscriminationDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Discriminatory treatment or harassment'**
+  String get reportDiscriminationDesc;
+
+  /// No description provided for @reportOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get reportOther;
+
+  /// No description provided for @reportOtherDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Issues not listed above'**
+  String get reportOtherDesc;
+
+  /// No description provided for @severityLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get severityLow;
+
+  /// No description provided for @severityMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get severityMedium;
+
+  /// No description provided for @severityHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get severityHigh;
+
+  /// No description provided for @severityCritical.
+  ///
+  /// In en, this message translates to:
+  /// **'Critical'**
+  String get severityCritical;
+
+  /// No description provided for @driverMyRidesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My Rides'**
+  String get driverMyRidesTitle;
+
+  /// No description provided for @viewRequestsTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'View requests'**
+  String get viewRequestsTooltip;
+
+  /// No description provided for @pendingRequestsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending Requests'**
+  String get pendingRequestsTitle;
+
+  /// No description provided for @noPendingRequestsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No Pending Requests'**
+  String get noPendingRequestsTitle;
+
+  /// No description provided for @noPendingRequestsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'New booking requests will appear here.'**
+  String get noPendingRequestsMessage;
+
+  /// No description provided for @upcomingRidesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming Rides'**
+  String get upcomingRidesTitle;
+
+  /// No description provided for @noUpcomingRidesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No Upcoming Rides'**
+  String get noUpcomingRidesTitle;
+
+  /// No description provided for @useButtonToOfferRide.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the button below to offer a new ride.'**
+  String get useButtonToOfferRide;
+
+  /// No description provided for @couldNotLoadRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load requests. Pull to refresh.'**
+  String get couldNotLoadRequests;
+
+  /// No description provided for @couldNotLoadRides.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load rides. Pull to refresh.'**
+  String get couldNotLoadRides;
+
+  /// No description provided for @declineRequestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline Request?'**
+  String get declineRequestTitle;
+
+  /// No description provided for @declineRequestMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This will decline the booking request. The passenger will be notified.'**
+  String get declineRequestMessage;
+
+  /// No description provided for @keepButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep'**
+  String get keepButton;
+
+  /// No description provided for @declineButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get declineButton;
+
+  /// No description provided for @acceptRequestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept Request?'**
+  String get acceptRequestTitle;
+
+  /// No description provided for @acceptRequestMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept this booking from {name}?'**
+  String acceptRequestMessage(String name);
+
+  /// No description provided for @acceptButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get acceptButton;
+
+  /// No description provided for @cancelRideTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Ride'**
+  String get cancelRideTitle;
+
+  /// No description provided for @cancelRideConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to cancel this ride? This action cannot be undone.'**
+  String get cancelRideConfirmMessage;
+
+  /// No description provided for @keepRideButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Ride'**
+  String get keepRideButton;
+
+  /// No description provided for @pickupLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Pickup'**
+  String get pickupLabel;
+
+  /// No description provided for @dropoffLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Dropoff'**
+  String get dropoffLabel;
+
+  /// No description provided for @seatsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} seat(s)'**
+  String seatsCount(int count);
+
+  /// No description provided for @offerARideTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Offer a Ride'**
+  String get offerARideTitle;
+
+  /// No description provided for @editRideTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Ride'**
+  String get editRideTitle;
+
+  /// No description provided for @routeStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Route'**
+  String get routeStep;
+
+  /// No description provided for @detailsStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get detailsStep;
+
+  /// No description provided for @preferencesStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Preferences'**
+  String get preferencesStep;
+
+  /// No description provided for @driverProfileRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver Profile Required'**
+  String get driverProfileRequired;
+
+  /// No description provided for @completeDriverProfileMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete your driver profile to offer rides.'**
+  String get completeDriverProfileMessage;
+
+  /// No description provided for @becomeDriverButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Become a Driver'**
+  String get becomeDriverButton;
+
+  /// No description provided for @errorLoadingData.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading data'**
+  String get errorLoadingData;
+
+  /// No description provided for @fromLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'From'**
+  String get fromLabel;
+
+  /// No description provided for @toLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'To'**
+  String get toLabel;
+
+  /// No description provided for @selectPickupLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Select pickup location'**
+  String get selectPickupLocation;
+
+  /// No description provided for @selectDropoffLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Select dropoff location'**
+  String get selectDropoffLocation;
+
+  /// No description provided for @swapLocationsTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Swap locations'**
+  String get swapLocationsTooltip;
+
+  /// No description provided for @departureTimeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Departure Time'**
+  String get departureTimeLabel;
+
+  /// No description provided for @dateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get dateLabel;
+
+  /// No description provided for @timeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get timeLabel;
+
+  /// No description provided for @selectDatePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Date'**
+  String get selectDatePlaceholder;
+
+  /// No description provided for @selectTimePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Time'**
+  String get selectTimePlaceholder;
+
+  /// No description provided for @intermediateStopsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Intermediate Stops'**
+  String get intermediateStopsLabel;
+
+  /// No description provided for @addStopButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Stop'**
+  String get addStopButton;
+
+  /// No description provided for @addStopsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add stops along your route to pick up more passengers'**
+  String get addStopsHint;
+
+  /// No description provided for @rideDetailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ride Details'**
+  String get rideDetailsTitle;
+
+  /// No description provided for @quickSwitchButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Switch'**
+  String get quickSwitchButton;
+
+  /// No description provided for @noVehiclesError.
+  ///
+  /// In en, this message translates to:
+  /// **'No vehicles found. Please add a vehicle to your profile.'**
+  String get noVehiclesError;
+
+  /// No description provided for @addVehicleButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Vehicle'**
+  String get addVehicleButton;
+
+  /// No description provided for @availableSeatsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Available Seats'**
+  String get availableSeatsLabel;
+
+  /// No description provided for @totalCapacityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Capacity:'**
+  String get totalCapacityLabel;
+
+  /// No description provided for @pricePerSeatLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Price per Seat'**
+  String get pricePerSeatLabel;
+
+  /// No description provided for @minimumPriceError.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum \$1'**
+  String get minimumPriceError;
+
+  /// No description provided for @priceNegotiableToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Price Negotiable'**
+  String get priceNegotiableToggle;
+
+  /// No description provided for @acceptOnlinePaymentToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept Online Payment'**
+  String get acceptOnlinePaymentToggle;
+
+  /// No description provided for @preferencesRulesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Preferences & Rules'**
+  String get preferencesRulesTitle;
+
+  /// No description provided for @rideSummaryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Ride Summary'**
+  String get rideSummaryLabel;
+
+  /// No description provided for @allowPetsToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow Pets'**
+  String get allowPetsToggle;
+
+  /// No description provided for @allowSmokingToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow Smoking'**
+  String get allowSmokingToggle;
+
+  /// No description provided for @allowLuggageToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow Luggage'**
+  String get allowLuggageToggle;
+
+  /// No description provided for @womenOnlyToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Women Only'**
+  String get womenOnlyToggle;
+
+  /// No description provided for @maxDetourLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Max Detour for Pickups'**
+  String get maxDetourLabel;
+
+  /// No description provided for @maxDetourHint.
+  ///
+  /// In en, this message translates to:
+  /// **'How far you\'re willing to go off-route to pick up passengers'**
+  String get maxDetourHint;
+
+  /// No description provided for @noneLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get noneLabel;
+
+  /// No description provided for @sixtyMinLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'60 min'**
+  String get sixtyMinLabel;
+
+  /// No description provided for @backButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get backButton;
+
+  /// No description provided for @nextButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get nextButton;
+
+  /// No description provided for @createRideButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Ride'**
+  String get createRideButton;
+
+  /// No description provided for @recurringRideTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recurring Ride'**
+  String get recurringRideTitle;
+
+  /// No description provided for @dayMon.
+  ///
+  /// In en, this message translates to:
+  /// **'Mon'**
+  String get dayMon;
+
+  /// No description provided for @dayTue.
+  ///
+  /// In en, this message translates to:
+  /// **'Tue'**
+  String get dayTue;
+
+  /// No description provided for @dayWed.
+  ///
+  /// In en, this message translates to:
+  /// **'Wed'**
+  String get dayWed;
+
+  /// No description provided for @dayThu.
+  ///
+  /// In en, this message translates to:
+  /// **'Thu'**
+  String get dayThu;
+
+  /// No description provided for @dayFri.
+  ///
+  /// In en, this message translates to:
+  /// **'Fri'**
+  String get dayFri;
+
+  /// No description provided for @daySat.
+  ///
+  /// In en, this message translates to:
+  /// **'Sat'**
+  String get daySat;
+
+  /// No description provided for @daySun.
+  ///
+  /// In en, this message translates to:
+  /// **'Sun'**
+  String get daySun;
+
+  /// No description provided for @stopNumberLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop {number}'**
+  String stopNumberLabel(int number);
+
+  /// No description provided for @tapToSetLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to set location'**
+  String get tapToSetLocation;
+
+  /// No description provided for @editWaypointTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit waypoint'**
+  String get editWaypointTooltip;
+
+  /// No description provided for @removeWaypointTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove waypoint'**
+  String get removeWaypointTooltip;
+
+  /// No description provided for @selectStopTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Stop {number}'**
+  String selectStopTitle(int number);
+
+  /// No description provided for @editStopTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Stop {number}'**
+  String editStopTitle(int number);
+
+  /// No description provided for @vehicleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Vehicle'**
+  String get vehicleLabel;
+
+  /// No description provided for @totalCapacityCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Capacity: {count}'**
+  String totalCapacityCount(int count);
+
+  /// No description provided for @totalPriceForSeats.
+  ///
+  /// In en, this message translates to:
+  /// **'Total: \${price} for {seats} seats'**
+  String totalPriceForSeats(String price, int seats);
+
+  /// No description provided for @decreasePriceTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Decrease price'**
+  String get decreasePriceTooltip;
+
+  /// No description provided for @increasePriceTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Increase price'**
+  String get increasePriceTooltip;
+
+  /// No description provided for @allowPetsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pets are allowed in the car'**
+  String get allowPetsSubtitle;
+
+  /// No description provided for @allowSmokingSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Smoking is allowed during the ride'**
+  String get allowSmokingSubtitle;
+
+  /// No description provided for @allowLuggageSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Passengers can bring luggage'**
+  String get allowLuggageSubtitle;
+
+  /// No description provided for @womenOnlySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ride is for women only'**
+  String get womenOnlySubtitle;
+
+  /// No description provided for @notSetPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get notSetPlaceholder;
+
+  /// No description provided for @notSelectedPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Not selected'**
+  String get notSelectedPlaceholder;
+
+  /// No description provided for @summaryStopsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Stops'**
+  String get summaryStopsLabel;
+
+  /// No description provided for @intermediateStopsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 intermediate stop} other{{count} intermediate stops}}'**
+  String intermediateStopsCount(int count);
+
+  /// No description provided for @departureSummaryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Departure'**
+  String get departureSummaryLabel;
+
+  /// No description provided for @seatsSummaryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Seats'**
+  String get seatsSummaryLabel;
+
+  /// No description provided for @seatsAvailableCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} available'**
+  String seatsAvailableCount(int count);
+
+  /// No description provided for @priceSummaryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Price'**
+  String get priceSummaryLabel;
+
+  /// No description provided for @pricePerSeatSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'\${price} per seat'**
+  String pricePerSeatSummary(String price);
+
+  /// No description provided for @pricePerSeatNegotiableSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'\${price} per seat (negotiable)'**
+  String pricePerSeatNegotiableSummary(String price);
+
+  /// No description provided for @eventSummaryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Event'**
+  String get eventSummaryLabel;
+
+  /// No description provided for @recurringSummaryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Recurring'**
+  String get recurringSummaryLabel;
+
+  /// No description provided for @selectOriginTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Origin'**
+  String get selectOriginTitle;
+
+  /// No description provided for @selectDestinationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Destination'**
+  String get selectDestinationTitle;
+
+  /// No description provided for @maxDetourMinutesValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String maxDetourMinutesValue(int minutes);
+
+  /// No description provided for @timeInPastWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected time is in the past — the Create Ride button will be disabled'**
+  String get timeInPastWarning;
+
+  /// No description provided for @departureMinimumWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Departure should be at least 15 minutes from now for passengers to join'**
+  String get departureMinimumWarning;
+
+  /// No description provided for @departureAfterEventWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Departure time is after the event ends — please choose an earlier time'**
+  String get departureAfterEventWarning;
+
+  /// No description provided for @rideUpdatedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Ride updated successfully!'**
+  String get rideUpdatedSuccess;
+
+  /// No description provided for @rideCreatedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Ride created successfully!'**
+  String get rideCreatedSuccess;
+
+  /// No description provided for @bookingRequestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Booking Request'**
+  String get bookingRequestTitle;
+
+  /// No description provided for @requestSentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Sent!'**
+  String get requestSentTitle;
+
+  /// No description provided for @bookingAcceptedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Booking Accepted!'**
+  String get bookingAcceptedTitle;
+
+  /// No description provided for @waitingForConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the driver to confirm your booking. You\'ll be notified as soon as they respond.'**
+  String get waitingForConfirmation;
+
+  /// No description provided for @completePaymentMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete your payment to confirm the ride.'**
+  String get completePaymentMessage;
+
+  /// No description provided for @processingPaymentLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing payment...'**
+  String get processingPaymentLoading;
+
+  /// No description provided for @completePaymentButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete Payment'**
+  String get completePaymentButton;
+
+  /// No description provided for @expiresInLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires in'**
+  String get expiresInLabel;
+
+  /// No description provided for @cancelRequestButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Request'**
+  String get cancelRequestButton;
+
+  /// No description provided for @viewAllMyRidesButton.
+  ///
+  /// In en, this message translates to:
+  /// **'View All My Rides'**
+  String get viewAllMyRidesButton;
+
+  /// No description provided for @yourDriverLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Driver'**
+  String get yourDriverLabel;
+
+  /// No description provided for @yourRideTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Ride'**
+  String get yourRideTitle;
+
+  /// No description provided for @bookingConfirmedBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Booking Confirmed'**
+  String get bookingConfirmedBadge;
+
+  /// No description provided for @departureInLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Departure in'**
+  String get departureInLabel;
+
+  /// No description provided for @departingSoonLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Departing soon!'**
+  String get departingSoonLabel;
+
+  /// No description provided for @rideStartedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Ride has started!'**
+  String get rideStartedMessage;
+
+  /// No description provided for @routeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Route'**
+  String get routeLabel;
+
+  /// No description provided for @messageButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get messageButton;
+
+  /// No description provided for @callButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Call'**
+  String get callButton;
+
+  /// No description provided for @failedOpenChatError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to open chat. Please try again.'**
+  String get failedOpenChatError;
+
+  /// No description provided for @driverPhoneUnavailableError.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver phone number not available.'**
+  String get driverPhoneUnavailableError;
+
+  /// No description provided for @couldNotLaunchDialerError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not launch phone dialer.'**
+  String get couldNotLaunchDialerError;
+
+  /// No description provided for @seatsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Seats'**
+  String get seatsLabel;
+
+  /// No description provided for @refNumberLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Ref #'**
+  String get refNumberLabel;
+
+  /// No description provided for @tapToCopyInstruction.
+  ///
+  /// In en, this message translates to:
+  /// **'(tap to copy)'**
+  String get tapToCopyInstruction;
+
+  /// No description provided for @totalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get totalLabel;
+
+  /// No description provided for @estimatedArrivalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Est. arrival:'**
+  String get estimatedArrivalLabel;
+
+  /// No description provided for @joinActiveRideButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Join Active Ride'**
+  String get joinActiveRideButton;
+
+  /// No description provided for @viewRideDetailsButton.
+  ///
+  /// In en, this message translates to:
+  /// **'View Ride Details'**
+  String get viewRideDetailsButton;
+
+  /// No description provided for @fileDisputeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'File a Dispute'**
+  String get fileDisputeTitle;
+
+  /// No description provided for @rideIdLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Ride ID'**
+  String get rideIdLabel;
+
+  /// No description provided for @disputeTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Dispute Type'**
+  String get disputeTypeLabel;
+
+  /// No description provided for @selectDisputeReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Select the reason for your dispute'**
+  String get selectDisputeReason;
+
+  /// No description provided for @incorrectFareType.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect Fare'**
+  String get incorrectFareType;
+
+  /// No description provided for @incorrectFareDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'The fare charged was different from the quoted amount'**
+  String get incorrectFareDesc;
+
+  /// No description provided for @incompleteRideType.
+  ///
+  /// In en, this message translates to:
+  /// **'Incomplete Ride'**
+  String get incompleteRideType;
+
+  /// No description provided for @incompleteRideDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'The ride did not reach the intended destination'**
+  String get incompleteRideDesc;
+
+  /// No description provided for @unauthorizedChargeType.
+  ///
+  /// In en, this message translates to:
+  /// **'Unauthorized Charge'**
+  String get unauthorizedChargeType;
+
+  /// No description provided for @unauthorizedChargeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'I was charged without authorization or for a cancelled ride'**
+  String get unauthorizedChargeDesc;
+
+  /// No description provided for @poorServiceType.
+  ///
+  /// In en, this message translates to:
+  /// **'Poor Service'**
+  String get poorServiceType;
+
+  /// No description provided for @poorServiceDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'The ride quality was unacceptable'**
+  String get poorServiceDesc;
+
+  /// No description provided for @safetyConcernType.
+  ///
+  /// In en, this message translates to:
+  /// **'Safety Concern'**
+  String get safetyConcernType;
+
+  /// No description provided for @safetyConcernDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'I felt unsafe during the ride'**
+  String get safetyConcernDesc;
+
+  /// No description provided for @otherDisputeType.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get otherDisputeType;
+
+  /// No description provided for @otherDisputeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'A different issue not listed above'**
+  String get otherDisputeDesc;
+
+  /// No description provided for @detailsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get detailsLabel;
+
+  /// No description provided for @describeIssueDetailPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe your issue in detail...'**
+  String get describeIssueDetailPlaceholder;
+
+  /// No description provided for @disputeWarningNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Disputes are reviewed within 24-48 hours. Submitting false disputes may result in account restrictions.'**
+  String get disputeWarningNote;
+
+  /// No description provided for @attachReceiptsPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach receipts or screenshots'**
+  String get attachReceiptsPlaceholder;
+
+  /// No description provided for @whatToExpectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What to expect'**
+  String get whatToExpectTitle;
+
+  /// No description provided for @reviewWithinHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Review within 24-48 hours'**
+  String get reviewWithinHours;
+
+  /// No description provided for @emailNotificationExpectation.
+  ///
+  /// In en, this message translates to:
+  /// **'Email notification on status updates'**
+  String get emailNotificationExpectation;
+
+  /// No description provided for @fairResolutionExpectation.
+  ///
+  /// In en, this message translates to:
+  /// **'Fair resolution based on evidence'**
+  String get fairResolutionExpectation;
+
+  /// No description provided for @submitDisputeButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit Dispute'**
+  String get submitDisputeButton;
+
+  /// No description provided for @disputeSubmittedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Dispute Submitted'**
+  String get disputeSubmittedTitle;
+
+  /// No description provided for @disputeSubmittedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Our team will review your dispute within 24-48 hours. You\'ll receive a notification once it\'s resolved.'**
+  String get disputeSubmittedMessage;
+
+  /// No description provided for @previousStepTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous step'**
+  String get previousStepTooltip;
+
+  /// No description provided for @goBackTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Go back'**
+  String get goBackTooltip;
+
+  /// No description provided for @nameRequiredError.
+  ///
+  /// In en, this message translates to:
+  /// **'Name is required'**
+  String get nameRequiredError;
+
+  /// No description provided for @nameMinLengthError.
+  ///
+  /// In en, this message translates to:
+  /// **'Name must be at least 2 characters'**
+  String get nameMinLengthError;
+
+  /// No description provided for @genderMale.
+  ///
+  /// In en, this message translates to:
+  /// **'Male'**
+  String get genderMale;
+
+  /// No description provided for @genderFemale.
+  ///
+  /// In en, this message translates to:
+  /// **'Female'**
+  String get genderFemale;
+
+  /// No description provided for @emailVerificationError.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get emailVerificationError;
+
+  /// No description provided for @useDifferentAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a different account'**
+  String get useDifferentAccount;
+
+  /// No description provided for @builtWithFlutter.
+  ///
+  /// In en, this message translates to:
+  /// **'Built with Flutter'**
+  String get builtWithFlutter;
+
+  /// No description provided for @showPasswordTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Show password'**
+  String get showPasswordTooltip;
+
+  /// No description provided for @hidePasswordTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide password'**
+  String get hidePasswordTooltip;
+
+  /// No description provided for @signingInMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Signing in, please wait'**
+  String get signingInMessage;
+
+  /// No description provided for @loadingProfileMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Please wait, loading your profile...'**
+  String get loadingProfileMessage;
+
+  /// No description provided for @riderOnboardingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rider onboarding'**
+  String get riderOnboardingTitle;
+
+  /// No description provided for @completeRiderProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete your rider profile'**
+  String get completeRiderProfile;
+
+  /// No description provided for @riderProfileDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your details so we can personalize rides and matching for you.'**
+  String get riderProfileDescription;
+
+  /// No description provided for @completeSetupButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete setup'**
+  String get completeSetupButton;
+
+  /// No description provided for @riderRoleDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Find and book rides to sporting events. Save money and reduce your carbon footprint.'**
+  String get riderRoleDescription;
+
+  /// No description provided for @riderFeatureSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search available rides'**
+  String get riderFeatureSearch;
+
+  /// No description provided for @riderFeatureBook.
+  ///
+  /// In en, this message translates to:
+  /// **'Book seats instantly'**
+  String get riderFeatureBook;
+
+  /// No description provided for @riderFeatureChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat with drivers'**
+  String get riderFeatureChat;
+
+  /// No description provided for @riderFeatureTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Track your ride'**
+  String get riderFeatureTrack;
+
+  /// No description provided for @driverRoleDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Offer rides and earn money while going to events. Help others get there safely.'**
+  String get driverRoleDescription;
+
+  /// No description provided for @driverFeatureCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create ride offers'**
+  String get driverFeatureCreate;
+
+  /// No description provided for @driverFeaturePrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Set your own price'**
+  String get driverFeaturePrice;
+
+  /// No description provided for @driverFeatureAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept ride requests'**
+  String get driverFeatureAccept;
+
+  /// No description provided for @driverFeatureEarn.
+  ///
+  /// In en, this message translates to:
+  /// **'Earn with each trip'**
+  String get driverFeatureEarn;
+
+  /// No description provided for @continueButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get continueButton;
+
+  /// No description provided for @yourDetailsStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Details'**
+  String get yourDetailsStep;
+
+  /// No description provided for @securityStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Security'**
+  String get securityStep;
+
+  /// No description provided for @yourRoleStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Role'**
+  String get yourRoleStep;
+
+  /// No description provided for @yourProfileStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Profile'**
+  String get yourProfileStep;
+
+  /// No description provided for @stepOfCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {step} of {total}'**
+  String stepOfCount(int step, int total);
+
+  /// No description provided for @sendingVoiceMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending voice message...'**
+  String get sendingVoiceMessage;
+
+  /// No description provided for @recordingFailedError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to start recording. Please try again.'**
+  String get recordingFailedError;
+
+  /// No description provided for @stopRecordingFailedError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to stop recording'**
+  String get stopRecordingFailedError;
+
+  /// No description provided for @searchUsersTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Search users'**
+  String get searchUsersTooltip;
+
+  /// No description provided for @muteChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute'**
+  String get muteChat;
+
+  /// No description provided for @unmuteChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute'**
+  String get unmuteChat;
+
+  /// No description provided for @deleteChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get deleteChat;
+
+  /// No description provided for @paymentDetailsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get paymentDetailsLabel;
+
+  /// No description provided for @ridePaymentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Ride Payment'**
+  String get ridePaymentLabel;
+
+  /// No description provided for @appVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version}'**
+  String appVersion(String version);
+
+  /// No description provided for @aboutAppDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'SportConnect is a social carpooling platform that connects sports enthusiasts. Share rides, reduce your carbon footprint, and build your sports community.'**
+  String get aboutAppDescription;
+
+  /// No description provided for @ecoStatLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Eco'**
+  String get ecoStatLabel;
+
+  /// No description provided for @liveStatLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get liveStatLabel;
+
+  /// No description provided for @sportStatLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sport'**
+  String get sportStatLabel;
+
+  /// No description provided for @rideShareLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Ride-Share'**
+  String get rideShareLabel;
+
+  /// No description provided for @trackingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Tracking'**
+  String get trackingLabel;
+
+  /// No description provided for @communityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Community'**
+  String get communityLabel;
+
+  /// No description provided for @openSourceLicenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Source Licenses'**
+  String get openSourceLicenses;
+
+  /// No description provided for @joinTheCommunity.
+  ///
+  /// In en, this message translates to:
+  /// **'Join the Community'**
+  String get joinTheCommunity;
+
+  /// No description provided for @websiteLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Website'**
+  String get websiteLabel;
+
+  /// No description provided for @emailLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get emailLabel;
+
+  /// No description provided for @copyrightNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'© 2025-2026 SportConnect. All rights reserved.'**
+  String get copyrightNotice;
+
+  /// No description provided for @howCanWeHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'How can we help?'**
+  String get howCanWeHelp;
+
+  /// No description provided for @responseTimeMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'We typically respond within 24 hours.'**
+  String get responseTimeMessage;
+
+  /// No description provided for @categoryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get categoryLabel;
+
+  /// No description provided for @subjectLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Subject'**
+  String get subjectLabel;
+
+  /// No description provided for @subjectHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Brief description of your issue'**
+  String get subjectHint;
+
+  /// No description provided for @messageFieldLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get messageFieldLabel;
+
+  /// No description provided for @messageFieldHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe your issue in detail...'**
+  String get messageFieldHint;
+
+  /// No description provided for @attachFilesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach screenshots or files (optional)'**
+  String get attachFilesHint;
+
+  /// No description provided for @submitTicketButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit Ticket'**
+  String get submitTicketButton;
+
+  /// No description provided for @responseTimeInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Most inquiries are answered within 12-24 hours'**
+  String get responseTimeInfo;
+
+  /// No description provided for @ticketSubmittedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ticket Submitted!'**
+  String get ticketSubmittedTitle;
+
+  /// No description provided for @ticketSubmittedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ve received your message and will get back to you within 24 hours. Check your email for updates.'**
+  String get ticketSubmittedMessage;
+
+  /// No description provided for @findPeopleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Find People'**
+  String get findPeopleTitle;
+
+  /// No description provided for @searchByNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by name'**
+  String get searchByNameHint;
+
+  /// No description provided for @clearSearchTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search'**
+  String get clearSearchTooltip;
+
+  /// No description provided for @notificationsTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notificationsTooltip;
+
+  /// No description provided for @asDriverFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'As Driver'**
+  String get asDriverFilter;
+
+  /// No description provided for @asRiderFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'As Rider'**
+  String get asRiderFilter;
+
+  /// No description provided for @additionalCommentsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Additional comments (optional)'**
+  String get additionalCommentsLabel;
+
+  /// No description provided for @specificFeedbackHelps.
+  ///
+  /// In en, this message translates to:
+  /// **'Specific feedback helps the community'**
+  String get specificFeedbackHelps;
+
+  /// No description provided for @thankYouForReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank you for your review!'**
+  String get thankYouForReview;
+
+  /// No description provided for @submitRatingButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit Rating'**
+  String get submitRatingButton;
+
+  /// No description provided for @skipForNowButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip for now'**
+  String get skipForNowButton;
+
+  /// No description provided for @navigateButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Navigate'**
+  String get navigateButton;
+
+  /// No description provided for @noActiveRideMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'No active ride'**
+  String get noActiveRideMessage;
+
+  /// No description provided for @ratePassengerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate Passenger'**
+  String get ratePassengerTitle;
+
+  /// No description provided for @howWasYourPassenger.
+  ///
+  /// In en, this message translates to:
+  /// **'How was your passenger?'**
+  String get howWasYourPassenger;
+
+  /// No description provided for @cancelledLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get cancelledLabel;
+
+  /// No description provided for @completedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get completedLabel;
+
+  /// No description provided for @scheduledLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled'**
+  String get scheduledLabel;
+
+  /// No description provided for @activeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get activeLabel;
+
+  /// No description provided for @pendingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get pendingLabel;
+
+  /// No description provided for @cancellationReasonTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Why are you cancelling?'**
+  String get cancellationReasonTitle;
+
+  /// No description provided for @cancellationReasonHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us why you\'re cancelling this ride...'**
+  String get cancellationReasonHint;
+
+  /// No description provided for @confirmCancellationButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Cancellation'**
+  String get confirmCancellationButton;
+
+  /// No description provided for @rideCompletedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ride Completed!'**
+  String get rideCompletedTitle;
+
+  /// No description provided for @rideCompletedSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How was your experience?'**
+  String get rideCompletedSubtitle;
+
+  /// No description provided for @rideNavigationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ride Navigation'**
+  String get rideNavigationTitle;
+
+  /// No description provided for @startNavigationButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Navigation'**
+  String get startNavigationButton;
+
+  /// No description provided for @arriveAtPickupButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Arrive at Pickup'**
+  String get arriveAtPickupButton;
+
+  /// No description provided for @startTripButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Trip'**
+  String get startTripButton;
+
+  /// No description provided for @endTripButton.
+  ///
+  /// In en, this message translates to:
+  /// **'End Trip'**
+  String get endTripButton;
+
+  /// No description provided for @passengerPickupLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Passenger pickup'**
+  String get passengerPickupLabel;
+
+  /// No description provided for @destinationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Destination'**
+  String get destinationLabel;
+
+  /// No description provided for @supportCategoryGeneral.
+  ///
+  /// In en, this message translates to:
+  /// **'General'**
+  String get supportCategoryGeneral;
+
+  /// No description provided for @supportCategoryAccountIssue.
+  ///
+  /// In en, this message translates to:
+  /// **'Account Issue'**
+  String get supportCategoryAccountIssue;
+
+  /// No description provided for @supportCategoryPaymentProblem.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Problem'**
+  String get supportCategoryPaymentProblem;
+
+  /// No description provided for @supportCategoryRideIssue.
+  ///
+  /// In en, this message translates to:
+  /// **'Ride Issue'**
+  String get supportCategoryRideIssue;
+
+  /// No description provided for @supportCategoryTechnicalBug.
+  ///
+  /// In en, this message translates to:
+  /// **'Technical Bug'**
+  String get supportCategoryTechnicalBug;
+
+  /// No description provided for @supportCategorySafetyReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Safety Report'**
+  String get supportCategorySafetyReport;
+
+  /// No description provided for @supportCategoryFeatureRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Feature Request'**
+  String get supportCategoryFeatureRequest;
+
+  /// No description provided for @driversLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Drivers'**
+  String get driversLabel;
+
+  /// No description provided for @ridersLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Riders'**
+  String get ridersLabel;
+
+  /// No description provided for @sportsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sports'**
+  String get sportsLabel;
 }
 
 class _AppLocalizationsDelegate

@@ -43,7 +43,9 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     with TickerProviderStateMixin {
   final PageController _pageController = PageController();
-  int _currentPage = 0;
+
+  int get _currentPage =>
+      ref.read(onboardingViewModelProvider).currentPageIndex;
 
   // Replaced with stable raw Github Lottie URLs to avoid 403 Forbidden errors
   final List<OnboardingPage> _pages = [
@@ -123,7 +125,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
   }
 
   void _onPageChanged(int page) {
-    setState(() => _currentPage = page);
+    ref.read(onboardingViewModelProvider.notifier).setPageIndex(page);
   }
 
   Future<void> _completeOnboarding() async {
@@ -321,7 +323,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                 Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        onTap: _completeOnboarding,
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          _completeOnboarding();
+                        },
                         borderRadius: BorderRadius.circular(25.r),
                         child: Container(
                           padding: EdgeInsets.symmetric(
@@ -752,6 +757,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                   color: Colors.transparent,
                   child: InkWell(
                     onTap: () {
+                      HapticFeedback.lightImpact();
                       _pageController.previousPage(
                         duration: const Duration(milliseconds: 500),
                         curve: Curves.easeOutCubic,
@@ -783,6 +789,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                     onTap: isCompleting
                         ? null
                         : () {
+                            HapticFeedback.mediumImpact();
                             if (isLastPage) {
                               _completeOnboarding();
                             } else {

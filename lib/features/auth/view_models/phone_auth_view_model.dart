@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -11,28 +13,48 @@ part 'phone_auth_view_model.g.dart';
 
 /// Represents the current state of the phone-OTP flow.
 @freezed
-class PhoneAuthState with _$PhoneAuthState {
+sealed class PhoneAuthState with _$PhoneAuthState {
+  const PhoneAuthState._();
+
   /// Initial idle state – the user hasn't started verification yet.
-  const factory PhoneAuthState.idle() = _Idle;
+  const factory PhoneAuthState.idle({
+    @Default('') String sentPhone,
+    @Default(0) int resendCooldown,
+  }) = _Idle;
 
   /// A verification code is being sent.
-  const factory PhoneAuthState.sending() = _Sending;
+  const factory PhoneAuthState.sending({
+    @Default('') String sentPhone,
+    @Default(0) int resendCooldown,
+  }) = _Sending;
 
   /// A code has been sent. Contains the Firebase [verificationId] and
   /// optional [resendToken] for re-sending.
   const factory PhoneAuthState.codeSent({
     required String verificationId,
     int? resendToken,
+    required String sentPhone,
+    @Default(0) int resendCooldown,
   }) = _CodeSent;
 
   /// The SMS code is being verified.
-  const factory PhoneAuthState.verifying() = _Verifying;
+  const factory PhoneAuthState.verifying({
+    @Default('') String sentPhone,
+    @Default(0) int resendCooldown,
+  }) = _Verifying;
 
   /// Verification succeeded.
-  const factory PhoneAuthState.verified() = _Verified;
+  const factory PhoneAuthState.verified({
+    @Default('') String sentPhone,
+    @Default(0) int resendCooldown,
+  }) = _Verified;
 
   /// An error occurred at any stage.
-  const factory PhoneAuthState.error(String message) = _Error;
+  const factory PhoneAuthState.error(
+    String message, {
+    @Default('') String sentPhone,
+    @Default(0) int resendCooldown,
+  }) = _Error;
 }
 
 /// ViewModel that manages the phone-OTP verification flow.
@@ -41,8 +63,56 @@ class PhoneAuthState with _$PhoneAuthState {
 ///                                    ↘ error ↙
 @riverpod
 class PhoneAuthViewModel extends _$PhoneAuthViewModel {
+  Timer? _cooldownTimer;
+
   @override
-  PhoneAuthState build() => const PhoneAuthState.idle();
+  PhoneAuthState build() {
+    ref.onDispose(() => _cooldownTimer?.cancel());
+    return const PhoneAuthState.idle();
+  }
+
+  void _startResendCooldown() {
+    _updateResendCooldown(60);
+    _cooldownTimer?.cancel();
+    _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!ref.mounted) {
+        _cooldownTimer?.cancel();
+        return;
+      }
+      final nextCooldown = _currentResendCooldown - 1;
+      _updateResendCooldown(nextCooldown < 0 ? 0 : nextCooldown);
+      if (nextCooldown <= 0) _cooldownTimer?.cancel();
+    });
+  }
+
+  int get _currentResendCooldown => state.map(
+        idle: (value) => value.resendCooldown,
+        sending: (value) => value.resendCooldown,
+        codeSent: (value) => value.resendCooldown,
+        verifying: (value) => value.resendCooldown,
+        verified: (value) => value.resendCooldown,
+        error: (value) => value.resendCooldown,
+      );
+
+  String get _currentSentPhone => state.map(
+        idle: (value) => value.sentPhone,
+        sending: (value) => value.sentPhone,
+        codeSent: (value) => value.sentPhone,
+        verifying: (value) => value.sentPhone,
+        verified: (value) => value.sentPhone,
+        error: (value) => value.sentPhone,
+      );
+
+  void _updateResendCooldown(int value) {
+    state = state.map(
+      idle: (current) => current.copyWith(resendCooldown: value),
+      sending: (current) => current.copyWith(resendCooldown: value),
+      codeSent: (current) => current.copyWith(resendCooldown: value),
+      verifying: (current) => current.copyWith(resendCooldown: value),
+      verified: (current) => current.copyWith(resendCooldown: value),
+      error: (current) => current.copyWith(resendCooldown: value),
+    );
+  }
 
   Future<void> _ensureUserDocument({String? fallbackPhoneNumber}) async {
     final authActions = ref.read(authActionsViewModelProvider);
@@ -76,7 +146,13 @@ class PhoneAuthViewModel extends _$PhoneAuthViewModel {
 
   /// Step 1: Send verification SMS to [phoneNumber].
   Future<void> sendCode(String phoneNumber) async {
-    state = const PhoneAuthState.sending();
+    final normalizedPhone = phoneNumber.trim();
+    if (normalizedPhone.isEmpty) {
+      state = const PhoneAuthState.error('Phone number is required');
+      return;
+    }
+
+    state = PhoneAuthState.sending(sentPhone: normalizedPhone);
 
     try {
       await ref
@@ -87,17 +163,24 @@ class PhoneAuthViewModel extends _$PhoneAuthViewModel {
               state = PhoneAuthState.codeSent(
                 verificationId: verificationId,
                 resendToken: resendToken,
+                sentPhone: normalizedPhone,
               );
+              _startResendCooldown();
             },
             onVerificationFailed: (error) {
               state = PhoneAuthState.error(
                 error.message ?? 'Verification failed',
+                sentPhone: normalizedPhone,
+                resendCooldown: _currentResendCooldown,
               );
             },
             onVerificationCompleted: (credential) async {
               // Auto-verified (Android only) — sign in via DI-aware
               // repository method.
-              state = const PhoneAuthState.verifying();
+              state = PhoneAuthState.verifying(
+                sentPhone: normalizedPhone,
+                resendCooldown: _currentResendCooldown,
+              );
               try {
                 await ref
                     .read(authActionsViewModelProvider)
@@ -109,9 +192,13 @@ class PhoneAuthViewModel extends _$PhoneAuthViewModel {
                     ?.uid;
                 if (uid != null) AnalyticsService.instance.setUserId(uid);
                 AnalyticsService.instance.logLogin('phone');
-                state = const PhoneAuthState.verified();
+                state = PhoneAuthState.verified(sentPhone: normalizedPhone);
               } catch (e) {
-                state = PhoneAuthState.error(e.toString());
+                state = PhoneAuthState.error(
+                  e.toString(),
+                  sentPhone: normalizedPhone,
+                  resendCooldown: _currentResendCooldown,
+                );
               }
             },
             onAutoRetrievalTimeout: (_) {
@@ -119,7 +206,11 @@ class PhoneAuthViewModel extends _$PhoneAuthViewModel {
             },
           );
     } catch (e) {
-      state = PhoneAuthState.error(e.toString());
+      state = PhoneAuthState.error(
+        e.toString(),
+        sentPhone: normalizedPhone,
+        resendCooldown: _currentResendCooldown,
+      );
     }
   }
 
@@ -128,25 +219,46 @@ class PhoneAuthViewModel extends _$PhoneAuthViewModel {
     final currentState = state;
     if (currentState is! _CodeSent) return;
 
-    state = const PhoneAuthState.verifying();
+    final normalizedCode = smsCode.trim();
+    if (normalizedCode.length != 6) {
+      state = PhoneAuthState.error(
+        'Code must be exactly 6 digits',
+        sentPhone: currentState.sentPhone,
+        resendCooldown: currentState.resendCooldown,
+      );
+      return;
+    }
+
+    state = PhoneAuthState.verifying(
+      sentPhone: currentState.sentPhone,
+      resendCooldown: currentState.resendCooldown,
+    );
 
     try {
       await ref
           .read(authActionsViewModelProvider)
           .signInWithPhoneCredential(
             verificationId: currentState.verificationId,
-            smsCode: smsCode,
+            smsCode: normalizedCode,
           );
       await _ensureUserDocument(fallbackPhoneNumber: phoneNumber);
       final uid = ref.read(authActionsViewModelProvider).currentUser?.uid;
       if (uid != null) AnalyticsService.instance.setUserId(uid);
       AnalyticsService.instance.logLogin('phone');
 
-      state = const PhoneAuthState.verified();
+      state = PhoneAuthState.verified(sentPhone: currentState.sentPhone);
     } on FirebaseAuthException catch (e) {
-      state = PhoneAuthState.error(e.message ?? 'Verification failed');
+      state = PhoneAuthState.error(
+        e.message ?? 'Verification failed',
+        sentPhone: currentState.sentPhone,
+        resendCooldown: currentState.resendCooldown,
+      );
     } catch (e) {
-      state = PhoneAuthState.error(e.toString());
+      state = PhoneAuthState.error(
+        e.toString(),
+        sentPhone: currentState.sentPhone,
+        resendCooldown: currentState.resendCooldown,
+      );
     }
   }
 
@@ -157,7 +269,19 @@ class PhoneAuthViewModel extends _$PhoneAuthViewModel {
         ? currentState.resendToken
         : null;
 
-    state = const PhoneAuthState.sending();
+    final normalizedPhone = phoneNumber.trim().isEmpty
+        ? _currentSentPhone
+        : phoneNumber.trim();
+    if (normalizedPhone.isEmpty) {
+      state = const PhoneAuthState.error('Phone number is required');
+      return;
+    }
+
+    if (_currentResendCooldown > 0) {
+      return;
+    }
+
+    state = PhoneAuthState.sending(sentPhone: normalizedPhone);
 
     try {
       await ref
@@ -169,17 +293,24 @@ class PhoneAuthViewModel extends _$PhoneAuthViewModel {
               state = PhoneAuthState.codeSent(
                 verificationId: verificationId,
                 resendToken: newToken,
+                sentPhone: normalizedPhone,
               );
+              _startResendCooldown();
             },
             onVerificationFailed: (error) {
               state = PhoneAuthState.error(
                 error.message ?? 'Verification failed',
+                sentPhone: normalizedPhone,
+                resendCooldown: _currentResendCooldown,
               );
             },
             onVerificationCompleted: (credential) async {
               // Auto-verified (Android only) — sign in via DI-aware
               // repository method, same as sendCode.
-              state = const PhoneAuthState.verifying();
+              state = PhoneAuthState.verifying(
+                sentPhone: normalizedPhone,
+                resendCooldown: _currentResendCooldown,
+              );
               try {
                 await ref
                     .read(authActionsViewModelProvider)
@@ -191,18 +322,29 @@ class PhoneAuthViewModel extends _$PhoneAuthViewModel {
                     ?.uid;
                 if (uid != null) AnalyticsService.instance.setUserId(uid);
                 AnalyticsService.instance.logLogin('phone');
-                state = const PhoneAuthState.verified();
+                state = PhoneAuthState.verified(sentPhone: normalizedPhone);
               } catch (e) {
-                state = PhoneAuthState.error(e.toString());
+                state = PhoneAuthState.error(
+                  e.toString(),
+                  sentPhone: normalizedPhone,
+                  resendCooldown: _currentResendCooldown,
+                );
               }
             },
             onAutoRetrievalTimeout: (_) {},
           );
     } catch (e) {
-      state = PhoneAuthState.error(e.toString());
+      state = PhoneAuthState.error(
+        e.toString(),
+        sentPhone: normalizedPhone,
+        resendCooldown: _currentResendCooldown,
+      );
     }
   }
 
   /// Reset to idle state.
-  void reset() => state = const PhoneAuthState.idle();
+  void reset() {
+    _cooldownTimer?.cancel();
+    state = const PhoneAuthState.idle();
+  }
 }

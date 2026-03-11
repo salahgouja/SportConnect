@@ -17,7 +17,7 @@ import 'package:sport_connect/core/theme/platform_adaptive.dart';
 /// - Optional comment field
 /// - Cancellation policy warning
 /// - Confirmation dialog
-class CancellationReasonScreen extends ConsumerStatefulWidget {
+class CancellationReasonScreen extends ConsumerWidget {
   final String rideId;
   final bool isDriver;
 
@@ -27,19 +27,7 @@ class CancellationReasonScreen extends ConsumerStatefulWidget {
     this.isDriver = false,
   });
 
-  @override
-  ConsumerState<CancellationReasonScreen> createState() =>
-      _CancellationReasonScreenState();
-}
-
-class _CancellationReasonScreenState
-    extends ConsumerState<CancellationReasonScreen> {
-  String? _selectedReason;
-  String _commentText = '';
-  bool _isSubmitting = false;
-
-  List<_CancelReason> get _reasons =>
-      widget.isDriver ? _driverReasons : _riderReasons;
+  List<_CancelReason> get _reasons => isDriver ? _driverReasons : _riderReasons;
 
   static const _riderReasons = [
     _CancelReason(
@@ -127,72 +115,17 @@ class _CancellationReasonScreenState
     ),
   ];
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  Future<void> _submitCancellation() async {
-    if (_selectedReason == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please select a cancellation reason'),
-          backgroundColor: AppColors.warning,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-        ),
-      );
+  Future<void> _submitCancellation(BuildContext context, WidgetRef ref) async {
+    final confirmed = await _showConfirmationDialog(context);
+    if (confirmed != true) {
       return;
     }
-
-    final confirmed = await _showConfirmationDialog();
-    if (confirmed != true) return;
-
-    setState(() => _isSubmitting = true);
-
-    try {
-      final comment = _commentText.trim();
-      final reason = comment.isNotEmpty
-          ? '$_selectedReason | $comment'
-          : _selectedReason!;
-
-      await ref
-          .read(rideActionsViewModelProvider)
-          .cancelRide(widget.rideId, reason);
-
-      if (mounted) {
-        HapticFeedback.mediumImpact();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(context).rideCancelledSuccessfully,
-            ),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-          ),
-        );
-        context.pop(true); // Return true to indicate cancellation
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isSubmitting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Failed to cancel ride. Please try again.'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    }
+    await ref
+        .read(cancellationReasonViewModelProvider(rideId).notifier)
+        .submit();
   }
 
-  Future<bool?> _showConfirmationDialog() {
+  Future<bool?> _showConfirmationDialog(BuildContext context) {
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -271,8 +204,54 @@ class _CancellationReasonScreenState
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final formState = ref.watch(cancellationReasonViewModelProvider(rideId));
+
+    ref.listen<CancellationReasonState>(
+      cancellationReasonViewModelProvider(rideId),
+      (previous, next) {
+        if (next.validationMessage != null &&
+            next.validationMessage != previous?.validationMessage) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(next.validationMessage!),
+              backgroundColor: AppColors.warning,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+            ),
+          );
+        }
+
+        if (next.errorMessage != null &&
+            next.errorMessage != previous?.errorMessage) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(next.errorMessage!),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+
+        if (next.isSubmitted && previous?.isSubmitted != true) {
+          HapticFeedback.mediumImpact();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(l10n.rideCancelledSuccessfully),
+              backgroundColor: AppColors.success,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+            ),
+          );
+          context.pop(true);
+        }
+      },
+    );
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -349,8 +328,16 @@ class _CancellationReasonScreenState
             // Reason cards
             ...List.generate(_reasons.length, (index) {
               final reason = _reasons[index];
-              final isSelected = _selectedReason == reason.title;
-              return _buildReasonCard(reason, isSelected)
+              final isSelected = formState.selectedReason == reason.title;
+              return _buildReasonCard(
+                    reason,
+                    isSelected,
+                    () => ref
+                        .read(
+                          cancellationReasonViewModelProvider(rideId).notifier,
+                        )
+                        .selectReason(reason.title),
+                  )
                   .animate()
                   .fadeIn(delay: Duration(milliseconds: 150 + (index * 50)))
                   .slideX(begin: 0.05);
@@ -371,8 +358,12 @@ class _CancellationReasonScreenState
             SizedBox(height: 8.h),
 
             TextField(
-              onChanged: (v) => setState(() => _commentText = v),
+              onChanged: (value) => ref
+                  .read(cancellationReasonViewModelProvider(rideId).notifier)
+                  .updateComment(value),
               maxLines: 3,
+              maxLength: 500,
+              textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(
                 hintText: 'Tell us more about why you\'re cancelling...',
                 hintStyle: TextStyle(
@@ -381,6 +372,10 @@ class _CancellationReasonScreenState
                 ),
                 filled: true,
                 fillColor: Colors.white,
+                counterStyle: TextStyle(
+                  fontSize: 11.sp,
+                  color: AppColors.textTertiary,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12.r),
                   borderSide: BorderSide(color: AppColors.border),
@@ -403,8 +398,10 @@ class _CancellationReasonScreenState
               width: double.infinity,
               child: PremiumButton(
                 text: 'Cancel Ride',
-                onPressed: _isSubmitting ? null : _submitCancellation,
-                isLoading: _isSubmitting,
+                onPressed: formState.isSubmitting
+                    ? null
+                    : () => _submitCancellation(context, ref),
+                isLoading: formState.isSubmitting,
                 icon: Icons.cancel_rounded,
                 style: PremiumButtonStyle.danger,
               ),
@@ -429,11 +426,15 @@ class _CancellationReasonScreenState
     );
   }
 
-  Widget _buildReasonCard(_CancelReason reason, bool isSelected) {
+  Widget _buildReasonCard(
+    _CancelReason reason,
+    bool isSelected,
+    VoidCallback onTap,
+  ) {
     return GestureDetector(
       onTap: () {
         HapticFeedback.selectionClick();
-        setState(() => _selectedReason = reason.title);
+        onTap();
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),

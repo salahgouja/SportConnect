@@ -543,6 +543,22 @@ class RideRepository implements IRideRepository {
     });
   }
 
+  /// Streams the driver's live GPS location from the ride document.
+  @override
+  Stream<({double latitude, double longitude})?> streamLiveLocation(
+    String rideId,
+  ) {
+    return _firestore.collection('rides').doc(rideId).snapshots().map((
+      snapshot,
+    ) {
+      final data = snapshot.data();
+      if (data == null) return null;
+      final geoPoint = data['liveLocation'] as GeoPoint?;
+      if (geoPoint == null) return null;
+      return (latitude: geoPoint.latitude, longitude: geoPoint.longitude);
+    });
+  }
+
   // Helper methods
   bool _isSameDay(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month && a.day == b.day;
@@ -568,5 +584,15 @@ class RideRepository implements IRideRepository {
             math.sin(dLon / 2);
     final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
     return earthRadius * c;
+  }
+
+  /// Stream rides linked to a specific event by eventId.
+  Stream<List<RideModel>> streamRidesByEventId(String eventId) {
+    return _ridesCollection
+        .where('eventId', isEqualTo: eventId)
+        .orderBy('schedule.departureTime')
+        .limit(50)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 }

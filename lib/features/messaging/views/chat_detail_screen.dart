@@ -49,15 +49,47 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   final ScrollController _scrollController = ScrollController();
   final FocusNode _focusNode = FocusNode();
   final AudioRecorder _audioRecorder = AudioRecorder();
-  bool _showEmojiPicker = false;
-  bool _isRecording = false;
-  String? _recordingPath;
-  Duration _recordingDuration = Duration.zero;
   Timer? _recordingTimer;
-  Timer? _typingTimer;
-  bool _isTyping = false;
 
   UserModel? get currentUser => ref.read(currentUserProvider).value;
+
+  void _showStatusSnackBar(
+    Widget content, {
+    required Color backgroundColor,
+    Duration duration = const Duration(seconds: 4),
+    SnackBarAction? action,
+  }) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: content,
+        backgroundColor: backgroundColor,
+        duration: duration,
+        action: action,
+      ),
+    );
+  }
+
+  void _showSendingSnackBar(String message) {
+    _showStatusSnackBar(
+      Row(
+        children: [
+          SizedBox(
+            width: 20.w,
+            height: 20.w,
+            child: const CircularProgressIndicator(
+              strokeWidth: 2,
+              color: Colors.white,
+            ),
+          ),
+          SizedBox(width: 12.w),
+          Text(message),
+        ],
+      ),
+      backgroundColor: AppColors.primary,
+      duration: const Duration(seconds: 30),
+    );
+  }
 
   @override
   void initState() {
@@ -71,7 +103,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     _messageController.dispose();
     _scrollController.dispose();
     _focusNode.dispose();
-    _typingTimer?.cancel();
     _recordingTimer?.cancel();
     _audioRecorder.dispose();
     super.dispose();
@@ -92,26 +123,16 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   }
 
   void _onTextChanged() {
-    if (_messageController.text.isNotEmpty && !_isTyping) {
-      _isTyping = true;
-      _setTyping(true);
-    }
-
-    _typingTimer?.cancel();
-    _typingTimer = Timer(const Duration(seconds: 2), () {
-      _isTyping = false;
-      _setTyping(false);
-    });
-  }
-
-  void _setTyping(bool isTyping) {
     final viewModel = ref.read(
       chatDetailViewModelProvider(
         widget.chatId,
         currentUser?.uid ?? '',
       ).notifier,
     );
-    viewModel.setTyping(isTyping, currentUser?.displayName ?? 'User');
+    viewModel.handleComposerTextChanged(
+      _messageController.text,
+      currentUser?.displayName ?? 'User',
+    );
   }
 
   void _scrollToBottom() {
@@ -129,7 +150,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     if (text.isEmpty) return;
     HapticFeedback.lightImpact();
     _messageController.clear();
-    setState(() => _showEmojiPicker = false);
+    ref
+      .read(chatDetailViewModelProvider(widget.chatId, currentUser?.uid ?? '').notifier)
+      .setEmojiPickerVisible(false);
 
     final viewModel = ref.read(
       chatDetailViewModelProvider(
@@ -141,7 +164,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     final state = ref.read(
       chatDetailViewModelProvider(widget.chatId, currentUser?.uid ?? ''),
     );
-    TalkerService.info("the message is sent: $text and the replyToMessage is ${state.replyToMessage?.content} with id ${state.replyToMessage?.id} and the sender is ${currentUser?.displayName} and the sender photo url is ${currentUser?.photoUrl} and the chat id is ${widget.chatId} and the user id is ${currentUser?.uid}");
+    TalkerService.info(
+      "the message is sent: $text and the replyToMessage is ${state.replyToMessage?.content} with id ${state.replyToMessage?.id} and the sender is ${currentUser?.displayName} and the sender photo url is ${currentUser?.photoUrl} and the chat id is ${widget.chatId} and the user id is ${currentUser?.uid}",
+    );
 
     await viewModel.sendMessage(
       content: text,
@@ -171,67 +196,45 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     if (pickedFile == null) return;
 
     HapticFeedback.lightImpact();
-
-    // Show loading indicator
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            SizedBox(
-              width: 20.w,
-              height: 20.w,
-              child: const CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white,
-              ),
-            ),
-            SizedBox(width: 12.w),
-            Text(AppLocalizations.of(context).sendingImage),
-          ],
-        ),
-        backgroundColor: AppColors.primary,
-        duration: const Duration(seconds: 30),
-      ),
-    );
+    _showSendingSnackBar(AppLocalizations.of(context).sendingImage);
 
     try {
-      // Upload image via repository (MVVM pattern)
       final file = File(pickedFile.path);
       final fileName =
           '${DateTime.now().millisecondsSinceEpoch}_${pickedFile.name}';
-      final chatController = ref.read(chatActionsViewModelProvider);
-      final imageUrl = await chatController.uploadChatImage(
-        chatId: widget.chatId,
-        imageFile: file,
-        fileName: fileName,
-      );
-
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
-      // Send image message
       final viewModel = ref.read(
         chatDetailViewModelProvider(
           widget.chatId,
           currentUser?.uid ?? '',
         ).notifier,
       );
-
-      await viewModel.sendMessage(
-        content: 'Photo',
-        senderName: currentUser?.displayName ?? 'User',
-        senderPhotoUrl: currentUser?.photoUrl,
-        type: MessageType.image,
-        imageUrl: imageUrl,
+      final viewState = ref.read(
+        chatDetailViewModelProvider(widget.chatId, currentUser?.uid ?? ''),
       );
 
+      final success = await viewModel.sendImageMessage(
+        imageFile: file,
+        fileName: fileName,
+        senderName: currentUser?.displayName ?? 'User',
+        senderPhotoUrl: currentUser?.photoUrl,
+      );
+
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      if (!success) {
+        final errorMessage = viewState.error ?? 'Failed to send image';
+        _showStatusSnackBar(
+          Text(AppLocalizations.of(context).failedToSendImageValue(errorMessage)),
+          backgroundColor: AppColors.error,
+        );
+        return;
+      }
       _scrollToBottom();
     } catch (e) {
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).failedToSendImageValue(e)),
-          backgroundColor: AppColors.error,
-        ),
+      _showStatusSnackBar(
+        Text(AppLocalizations.of(context).failedToSendImageValue(e)),
+        backgroundColor: AppColors.error,
       );
     }
   }
@@ -251,64 +254,45 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     if (pickedFile == null) return;
 
     HapticFeedback.lightImpact();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            SizedBox(
-              width: 20.w,
-              height: 20.w,
-              child: const CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white,
-              ),
-            ),
-            SizedBox(width: 12.w),
-            Text(AppLocalizations.of(context).sendingImage),
-          ],
-        ),
-        backgroundColor: AppColors.primary,
-        duration: const Duration(seconds: 30),
-      ),
-    );
+    _showSendingSnackBar(AppLocalizations.of(context).sendingImage);
 
     try {
       final file = File(pickedFile.path);
       final fileName =
           '${DateTime.now().millisecondsSinceEpoch}_${pickedFile.name}';
-      final chatController = ref.read(chatActionsViewModelProvider);
-      final imageUrl = await chatController.uploadChatImage(
-        chatId: widget.chatId,
-        imageFile: file,
-        fileName: fileName,
-      );
-
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
       final viewModel = ref.read(
         chatDetailViewModelProvider(
           widget.chatId,
           currentUser?.uid ?? '',
         ).notifier,
       );
-
-      await viewModel.sendMessage(
-        content: 'Photo',
-        senderName: currentUser?.displayName ?? 'User',
-        senderPhotoUrl: currentUser?.photoUrl,
-        type: MessageType.image,
-        imageUrl: imageUrl,
+      final viewState = ref.read(
+        chatDetailViewModelProvider(widget.chatId, currentUser?.uid ?? ''),
       );
 
+      final success = await viewModel.sendImageMessage(
+        imageFile: file,
+        fileName: fileName,
+        senderName: currentUser?.displayName ?? 'User',
+        senderPhotoUrl: currentUser?.photoUrl,
+      );
+
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      if (!success) {
+        final errorMessage = viewState.error ?? 'Failed to send image';
+        _showStatusSnackBar(
+          Text(AppLocalizations.of(context).failedToSendImageValue(errorMessage)),
+          backgroundColor: AppColors.error,
+        );
+        return;
+      }
       _scrollToBottom();
     } catch (e) {
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).failedToSendImageValue(e)),
-          backgroundColor: AppColors.error,
-        ),
+      _showStatusSnackBar(
+        Text(AppLocalizations.of(context).failedToSendImageValue(e)),
+        backgroundColor: AppColors.error,
       );
     }
   }
@@ -330,21 +314,18 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
           path: path,
         );
 
-        setState(() {
-          _isRecording = true;
-          _recordingPath = path;
-          _recordingDuration = Duration.zero;
-        });
+        ref
+            .read(chatDetailViewModelProvider(widget.chatId, currentUser?.uid ?? '').notifier)
+            .beginRecording(path);
 
         // Start recording timer (updates every 100ms for smooth UI)
         _recordingTimer = Timer.periodic(const Duration(milliseconds: 100), (
           timer,
         ) {
-          if (mounted) {
-            setState(() {
-              _recordingDuration = Duration(milliseconds: timer.tick * 100);
-            });
-          }
+          if (!mounted) return;
+          ref
+              .read(chatDetailViewModelProvider(widget.chatId, currentUser?.uid ?? '').notifier)
+              .updateRecordingDuration(Duration(milliseconds: timer.tick * 100));
         });
 
         HapticFeedback.mediumImpact();
@@ -365,35 +346,29 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       final path = await _audioRecorder.stop();
       _recordingTimer?.cancel();
 
-      if (path != null && mounted) {
+      if (path != null && context.mounted) {
         await _sendAudioMessage(path);
       }
 
-      setState(() {
-        _isRecording = false;
-        _recordingPath = null;
-        _recordingDuration = Duration.zero;
-      });
+      ref
+          .read(chatDetailViewModelProvider(widget.chatId, currentUser?.uid ?? '').notifier)
+          .clearRecording();
 
       HapticFeedback.mediumImpact();
     } catch (e) {
-      setState(() {
-        _isRecording = false;
-        _recordingPath = null;
-        _recordingDuration = Duration.zero;
-      });
+      ref
+          .read(chatDetailViewModelProvider(widget.chatId, currentUser?.uid ?? '').notifier)
+          .clearRecording();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.error_outline, color: Colors.white),
-              SizedBox(width: 12.w),
-              const Expanded(child: Text('Failed to stop recording')),
-            ],
-          ),
-          backgroundColor: AppColors.error,
+      _showStatusSnackBar(
+        Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white),
+            SizedBox(width: 12.w),
+            const Expanded(child: Text('Failed to stop recording')),
+          ],
         ),
+        backgroundColor: AppColors.error,
       );
     }
   }
@@ -405,18 +380,19 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       _recordingTimer?.cancel();
 
       // Delete the recording file
-      if (_recordingPath != null) {
-        final file = File(_recordingPath!);
+      final recordingPath = ref
+          .read(chatDetailViewModelProvider(widget.chatId, currentUser?.uid ?? ''))
+          .recordingPath;
+      if (recordingPath != null) {
+        final file = File(recordingPath);
         if (await file.exists()) {
           await file.delete();
         }
       }
 
-      setState(() {
-        _isRecording = false;
-        _recordingPath = null;
-        _recordingDuration = Duration.zero;
-      });
+      ref
+          .read(chatDetailViewModelProvider(widget.chatId, currentUser?.uid ?? '').notifier)
+          .clearRecording();
 
       HapticFeedback.lightImpact();
     } catch (e) {
@@ -427,66 +403,42 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   /// Send audio message
   Future<void> _sendAudioMessage(String audioPath) async {
     HapticFeedback.lightImpact();
-
-    // Show uploading indicator
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            SizedBox(
-              width: 20.w,
-              height: 20.w,
-              child: const CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white,
-              ),
-            ),
-            SizedBox(width: 12.w),
-            const Text('Sending voice message...'),
-          ],
-        ),
-        backgroundColor: AppColors.primary,
-        duration: const Duration(seconds: 30),
-      ),
-    );
+    _showSendingSnackBar('Sending voice message...');
 
     try {
-      // Upload audio via ChatActionsViewModel (proper DI layer)
       final file = File(audioPath);
       final fileName = 'audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
-      final chatActions = ref.read(chatActionsViewModelProvider);
-      final audioUrl = await chatActions.uploadAudioMessage(
-        chatId: widget.chatId,
-        audioFile: file,
-        fileName: fileName,
-      );
-
-      // Delete local file
-      if (await file.exists()) {
-        await file.delete();
-      }
-
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
-      // Send audio message
       final viewModel = ref.read(
         chatDetailViewModelProvider(
           widget.chatId,
           currentUser?.uid ?? '',
         ).notifier,
       );
+      final viewState = ref.read(
+        chatDetailViewModelProvider(widget.chatId, currentUser?.uid ?? ''),
+      );
 
-      final duration = _recordingDuration;
+      final duration = viewState.recordingDuration;
       final durationText =
           '${duration.inMinutes}:${(duration.inSeconds % 60).toString().padLeft(2, '0')}';
 
-      await viewModel.sendMessage(
-        content: 'Voice message ($durationText)',
+      final success = await viewModel.sendAudioMessage(
+        audioFile: file,
+        fileName: fileName,
+        durationText: durationText,
         senderName: currentUser?.displayName ?? 'User',
         senderPhotoUrl: currentUser?.photoUrl,
-        type: MessageType.audio,
-        imageUrl: audioUrl, // Reusing imageUrl field for audio URL
       );
+
+      if (await file.exists()) {
+        await file.delete();
+      }
+
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      if (!success) {
+        throw Exception(viewState.error ?? 'Failed to send voice message');
+      }
 
       _scrollToBottom();
     } catch (e) {
@@ -501,22 +453,19 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         errorMessage = 'Network error. Please check your internet connection.';
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.error_outline, color: Colors.white),
-              SizedBox(width: 12.w),
-              Expanded(child: Text(errorMessage)),
-            ],
-          ),
-          backgroundColor: AppColors.error,
-          duration: const Duration(seconds: 4),
-          action: SnackBarAction(
-            label: 'RETRY',
-            textColor: Colors.white,
-            onPressed: () => _sendAudioMessage(audioPath),
-          ),
+      _showStatusSnackBar(
+        Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white),
+            SizedBox(width: 12.w),
+            Expanded(child: Text(errorMessage)),
+          ],
+        ),
+        backgroundColor: AppColors.error,
+        action: SnackBarAction(
+          label: 'RETRY',
+          textColor: Colors.white,
+          onPressed: () => _sendAudioMessage(audioPath),
         ),
       );
 
@@ -526,12 +475,19 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   }
 
   void _toggleEmojiPicker() {
-    if (_showEmojiPicker) {
-      setState(() => _showEmojiPicker = false);
+    final chatState = ref.read(
+      chatDetailViewModelProvider(widget.chatId, currentUser?.uid ?? ''),
+    );
+    if (chatState.showEmojiPicker) {
+      ref
+          .read(chatDetailViewModelProvider(widget.chatId, currentUser?.uid ?? '').notifier)
+          .setEmojiPickerVisible(false);
       _focusNode.requestFocus();
     } else {
       _focusNode.unfocus();
-      setState(() => _showEmojiPicker = true);
+      ref
+          .read(chatDetailViewModelProvider(widget.chatId, currentUser?.uid ?? '').notifier)
+          .setEmojiPickerVisible(true);
     }
   }
 
@@ -617,6 +573,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   void _confirmBlockUser() {
     showDialog(
       context: context,
+      barrierLabel: 'Block user dialog',
       builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
@@ -696,6 +653,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   void _confirmClearChat() {
     showDialog(
       context: context,
+      barrierLabel: 'Clear chat dialog',
       builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
@@ -815,7 +773,14 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                 child: GestureDetector(
                   onTap: () {
                     _focusNode.unfocus();
-                    setState(() => _showEmojiPicker = false);
+                    ref
+                        .read(
+                          chatDetailViewModelProvider(
+                            widget.chatId,
+                            currentUser!.uid,
+                          ).notifier,
+                        )
+                        .setEmojiPickerVisible(false);
                   },
                   child: chatState.isLoading
                       ? const Center(child: CircularProgressIndicator())
@@ -837,7 +802,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
               _buildInputArea(),
 
               // Emoji picker
-              if (_showEmojiPicker)
+              if (chatState.showEmojiPicker)
                 SizedBox(
                   height: 280.h,
                   child: EmojiPicker(
@@ -894,7 +859,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
           ),
 
           // Recording indicator banner at top
-          if (_isRecording)
+          if (chatState.isRecording)
             Positioned(
               top: 0,
               left: 0,
@@ -940,7 +905,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                     ),
                     const Spacer(),
                     Text(
-                      '${_recordingDuration.inMinutes}:${(_recordingDuration.inSeconds % 60).toString().padLeft(2, '0')}',
+                      '${chatState.recordingDuration.inMinutes}:${(chatState.recordingDuration.inSeconds % 60).toString().padLeft(2, '0')}',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 15.sp,
@@ -1899,6 +1864,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
 
     showDialog(
       context: context,
+      barrierLabel: 'Edit message dialog',
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
@@ -1947,6 +1913,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   }
 
   Widget _buildInputArea() {
+    final chatState = ref.watch(
+      chatDetailViewModelProvider(widget.chatId, currentUser!.uid),
+    );
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.cardBg,
@@ -2026,8 +1996,15 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                           controller: _messageController,
                           focusNode: _focusNode,
                           onTap: () {
-                            if (_showEmojiPicker) {
-                              setState(() => _showEmojiPicker = false);
+                            if (chatState.showEmojiPicker) {
+                              ref
+                                  .read(
+                                    chatDetailViewModelProvider(
+                                      widget.chatId,
+                                      currentUser!.uid,
+                                    ).notifier,
+                                  )
+                                  .setEmojiPickerVisible(false);
                             }
                           },
                           decoration: InputDecoration(
@@ -2051,23 +2028,24 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                           ),
                           maxLines: 5,
                           minLines: 1,
+                          textCapitalization: TextCapitalization.sentences,
                           keyboardType: TextInputType.multiline,
                           textInputAction: TextInputAction.newline,
                         ),
                       ),
                       // Emoji / keyboard toggle
                       IconButton(
-                        tooltip: _showEmojiPicker
+                        tooltip: chatState.showEmojiPicker
                             ? 'Show keyboard'
                             : 'Show emoji picker',
                         onPressed: _toggleEmojiPicker,
                         icon: Icon(
-                          _showEmojiPicker
+                          chatState.showEmojiPicker
                               ? Icons.keyboard_rounded
                               : Icons.emoji_emotions_rounded,
                           size: 22.sp,
                         ),
-                        color: _showEmojiPicker
+                        color: chatState.showEmojiPicker
                             ? AppColors.primary
                             : AppColors.textSecondary,
                         visualDensity: VisualDensity.compact,
@@ -2085,7 +2063,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                   final hasText = value.text.trim().isNotEmpty;
                   return Semantics(
                     button: true,
-                    label: _isRecording
+                    label: chatState.isRecording
                         ? 'Stop recording'
                         : hasText
                         ? 'Send message'
@@ -2094,7 +2072,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                       onTap: () {
                         // Recording takes priority over send so tapping while
                         // recording always stops it regardless of typed text.
-                        if (_isRecording) {
+                        if (chatState.isRecording) {
                           _stopRecording();
                         } else if (hasText) {
                           _sendMessage();
@@ -2106,7 +2084,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                         duration: const Duration(milliseconds: 200),
                         padding: EdgeInsets.all(11.w),
                         decoration: BoxDecoration(
-                          gradient: _isRecording
+                          gradient: chatState.isRecording
                               ? const LinearGradient(
                                   colors: [
                                     Color(0xFFE91E63),
@@ -2118,7 +2096,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                           boxShadow: [
                             BoxShadow(
                               color:
-                                  (_isRecording
+                                  (chatState.isRecording
                                           ? const Color(0xFFE91E63)
                                           : AppColors.primary)
                                       .withValues(alpha: 0.3),
@@ -2128,7 +2106,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                           ],
                         ),
                         child: Icon(
-                          _isRecording
+                          chatState.isRecording
                               ? Icons.stop_rounded
                               : hasText
                               ? Icons.send_rounded
@@ -2332,7 +2310,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
             '${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}';
       }
 
-      if (!mounted) return;
+      if (!context.mounted) return;
       Navigator.of(context).pop(); // Close loading dialog
 
       // Send location message
@@ -2343,33 +2321,30 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         ).notifier,
       );
 
-      final success = await viewModel.sendMessage(
+      final success = await viewModel.sendLocationMessage(
         content: locationName,
-        senderName: currentUser?.displayName ?? 'User',
-        senderPhotoUrl: currentUser?.photoUrl,
-        type: MessageType.location,
         latitude: position.latitude,
         longitude: position.longitude,
+        senderName: currentUser?.displayName ?? 'User',
+        senderPhotoUrl: currentUser?.photoUrl,
       );
 
-      if (success && mounted) {
+      if (success && context.mounted) {
         HapticFeedback.lightImpact();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle, color: Colors.white, size: 20),
-                SizedBox(width: 8.w),
-                Text(AppLocalizations.of(context).locationShared),
-              ],
-            ),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
+        _showStatusSnackBar(
+          Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white, size: 20),
+              SizedBox(width: 8.w),
+              Text(AppLocalizations.of(context).locationShared),
+            ],
           ),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 2),
         );
       }
     } catch (e) {
-      if (mounted) {
+      if (context.mounted) {
         Navigator.of(context).pop();
         _showLocationError('Failed to get location: ${e.toString()}');
       }
@@ -2461,32 +2436,26 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         }
       }
 
-      if (!launched && mounted) {
+      if (!launched && context.mounted) {
         // Copy coordinates as fallback
         Clipboard.setData(ClipboardData(text: '$lat, $lng'));
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.content_copy, color: Colors.white, size: 20),
-                SizedBox(width: 8.w),
-                Text(AppLocalizations.of(context).coordinatesCopiedToClipboard),
-              ],
-            ),
-            backgroundColor: AppColors.primary,
-            duration: const Duration(seconds: 2),
+        _showStatusSnackBar(
+          Row(
+            children: [
+              const Icon(Icons.content_copy, color: Colors.white, size: 20),
+              SizedBox(width: 8.w),
+              Text(AppLocalizations.of(context).coordinatesCopiedToClipboard),
+            ],
           ),
+          backgroundColor: AppColors.primary,
+          duration: const Duration(seconds: 2),
         );
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(context).couldNotOpenMapsValue(e),
-            ),
-            backgroundColor: AppColors.error,
-          ),
+      if (context.mounted) {
+        _showStatusSnackBar(
+          Text(AppLocalizations.of(context).couldNotOpenMapsValue(e)),
+          backgroundColor: AppColors.error,
         );
       }
     }

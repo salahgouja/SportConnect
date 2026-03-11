@@ -9,11 +9,13 @@ import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/form_validators.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 import 'package:sport_connect/features/vehicles/view_models/vehicle_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
+import 'package:sport_connect/features/vehicles/view_models/vehicle_management_view_model.dart';
 
 /// Vehicle Management Screen - manage driver vehicles in Firestore
 class VehicleManagementScreen extends ConsumerStatefulWidget {
@@ -40,6 +42,28 @@ class _VehicleManagementScreenState
   @override
   Widget build(BuildContext context) {
     final vmState = ref.watch(vehicleViewModelProvider);
+
+    ref.listen(vehicleViewModelProvider, (previous, next) {
+      if (next.actionType == null || next.actionType == previous?.actionType) {
+        return;
+      }
+
+      final message = next.actionMessage;
+      if (message != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+          ),
+        );
+      }
+
+      ref.read(vehicleViewModelProvider.notifier).clearAction();
+    });
 
     if (vmState.userId == null) {
       return Scaffold(
@@ -223,10 +247,12 @@ class _VehicleManagementScreenState
           if (userId == null) return;
 
           final newVehicle = vehicle.copyWith(ownerId: userId);
-          await ref
+          final success = await ref
               .read(vehicleViewModelProvider.notifier)
               .createVehicle(newVehicle);
-          if (mounted) context.pop();
+          if (success && context.mounted) {
+            context.pop();
+          }
         },
       ),
     );
@@ -240,10 +266,12 @@ class _VehicleManagementScreenState
       builder: (context) => _AddVehicleSheet(
         vehicle: vehicle,
         onSave: (updatedVehicle) async {
-          await ref
+          final success = await ref
               .read(vehicleViewModelProvider.notifier)
               .updateVehicle(updatedVehicle);
-          if (mounted) context.pop();
+          if (success && context.mounted) {
+            context.pop();
+          }
         },
       ),
     );
@@ -262,20 +290,12 @@ class _VehicleManagementScreenState
     await ref
         .read(vehicleViewModelProvider.notifier)
         .setActiveVehicle(vehicleId);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).vehicleSetAsActive),
-          backgroundColor: AppColors.success,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
   }
 
   void _confirmDeleteVehicle(VehicleModel vehicle) {
     showDialog(
       context: context,
+      barrierLabel: 'Delete vehicle dialog',
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
@@ -295,15 +315,6 @@ class _VehicleManagementScreenState
               await ref
                   .read(vehicleViewModelProvider.notifier)
                   .deleteVehicle(vehicle.id);
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(AppLocalizations.of(context).vehicleDeleted),
-                    backgroundColor: AppColors.success,
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             child: Text(
@@ -607,16 +618,19 @@ class _AddVehicleSheet extends StatefulWidget {
 
 class _AddVehicleSheetState extends State<_AddVehicleSheet> {
   final _formKey = GlobalKey<FormBuilderState>();
-  late int _capacity;
-  late FuelType _fuelType;
-  File? _imageFile;
-  bool _isLoading = false;
+
+  String get _providerKey => widget.vehicle?.id ?? '__new_vehicle__';
 
   @override
   void initState() {
     super.initState();
-    _capacity = widget.vehicle?.capacity ?? 4;
-    _fuelType = widget.vehicle?.fuelType ?? FuelType.gasoline;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final container = ProviderScope.containerOf(context, listen: false);
+      container
+          .read(addVehicleSheetUiViewModelProvider(_providerKey).notifier)
+          .init(widget.vehicle);
+    });
   }
 
   Future<void> _pickImage() async {
@@ -630,16 +644,24 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
     final picker = ImagePicker();
     final image = await picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
-      setState(() {
-        _imageFile = File(image.path);
-      });
+      final container = ProviderScope.containerOf(context, listen: false);
+      container
+          .read(addVehicleSheetUiViewModelProvider(_providerKey).notifier)
+          .setImageFile(File(image.path));
     }
   }
 
   void _save() async {
     if (!_formKey.currentState!.saveAndValidate()) return;
 
-    setState(() => _isLoading = true);
+    final container = ProviderScope.containerOf(context, listen: false);
+    final notifier = container.read(
+      addVehicleSheetUiViewModelProvider(_providerKey).notifier,
+    );
+    final uiState = container.read(
+      addVehicleSheetUiViewModelProvider(_providerKey),
+    );
+    notifier.setLoading(true);
 
     final values = _formKey.currentState!.value;
     final vehicle = VehicleModel(
@@ -650,8 +672,8 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
       year: int.parse((values['year'] as String).trim()),
       color: (values['color'] as String).trim(),
       licensePlate: (values['license_plate'] as String).trim().toUpperCase(),
-      capacity: _capacity,
-      fuelType: _fuelType,
+      capacity: uiState.capacity,
+      fuelType: uiState.fuelType,
       imageUrl: widget.vehicle?.imageUrl,
       isActive: widget.vehicle?.isActive ?? false,
       verificationStatus:
@@ -660,12 +682,16 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
     );
 
     await widget.onSave(vehicle);
-    setState(() => _isLoading = false);
+    notifier.setLoading(false);
   }
 
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.vehicle != null;
+    final container = ProviderScope.containerOf(context);
+    final uiState = container.read(
+      addVehicleSheetUiViewModelProvider(_providerKey),
+    );
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
@@ -737,11 +763,11 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
                             borderRadius: BorderRadius.circular(20.r),
                             border: Border.all(color: AppColors.border),
                           ),
-                          child: _imageFile != null
+                          child: uiState.imageFile != null
                               ? ClipRRect(
                                   borderRadius: BorderRadius.circular(20.r),
                                   child: Image.file(
-                                    _imageFile!,
+                                    uiState.imageFile!,
                                     fit: BoxFit.cover,
                                   ),
                                 )
@@ -799,6 +825,8 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
                             hint: 'e.g., 2022',
                             icon: Icons.calendar_today,
                             keyboardType: TextInputType.number,
+                            customValidator: (value) =>
+                                FormValidators.vehicleYear(value),
                           ),
                         ),
                         SizedBox(width: 16.w),
@@ -822,6 +850,8 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
                       label: AppLocalizations.of(context).licensePlate,
                       hint: 'e.g., ABC 1234',
                       icon: Icons.credit_card,
+                      customValidator: (value) =>
+                          FormValidators.licensePlate(value),
                     ),
                     SizedBox(height: 24.h),
 
@@ -838,10 +868,22 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
                     Row(
                       children: List.generate(6, (index) {
                         final seats = index + 1;
-                        final isSelected = seats == _capacity;
+                        final isSelected = seats == uiState.capacity;
                         return Expanded(
                           child: GestureDetector(
-                            onTap: () => setState(() => _capacity = seats),
+                            onTap: () {
+                              final container = ProviderScope.containerOf(
+                                context,
+                                listen: false,
+                              );
+                              container
+                                  .read(
+                                    addVehicleSheetUiViewModelProvider(
+                                      _providerKey,
+                                    ).notifier,
+                                  )
+                                  .setCapacity(seats);
+                            },
                             child: Container(
                               margin: EdgeInsets.only(
                                 right: index < 5 ? 8.w : 0,
@@ -891,9 +933,21 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
                       spacing: 8.w,
                       runSpacing: 8.h,
                       children: FuelType.values.map((type) {
-                        final isSelected = type == _fuelType;
+                        final isSelected = type == uiState.fuelType;
                         return GestureDetector(
-                          onTap: () => setState(() => _fuelType = type),
+                          onTap: () {
+                            final container = ProviderScope.containerOf(
+                              context,
+                              listen: false,
+                            );
+                            container
+                                .read(
+                                  addVehicleSheetUiViewModelProvider(
+                                    _providerKey,
+                                  ).notifier,
+                                )
+                                .setFuelType(type);
+                          },
                           child: Container(
                             padding: EdgeInsets.symmetric(
                               horizontal: 16.w,
@@ -944,7 +998,7 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _save,
+                  onPressed: uiState.isLoading ? null : _save,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
@@ -953,7 +1007,7 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
                       borderRadius: BorderRadius.circular(16.r),
                     ),
                   ),
-                  child: _isLoading
+                  child: uiState.isLoading
                       ? SizedBox(
                           height: 20.h,
                           width: 20.h,
@@ -989,6 +1043,7 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
     required IconData icon,
     String? initialValue,
     TextInputType? keyboardType,
+    String? Function(String?)? customValidator,
   }) {
     return FormBuilderTextField(
       name: name,
@@ -1013,9 +1068,9 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
           borderSide: BorderSide(color: AppColors.primary, width: 2),
         ),
       ),
-      validator: FormBuilderValidators.required(
-        errorText: 'Please enter $label',
-      ),
+      validator:
+          customValidator ??
+          FormBuilderValidators.required(errorText: 'Please enter $label'),
     );
   }
 

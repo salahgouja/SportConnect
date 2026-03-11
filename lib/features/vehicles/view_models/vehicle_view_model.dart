@@ -14,6 +14,8 @@ class VehicleState {
   final bool isSuccess;
   final String? errorMessage;
   final VehicleModel? selectedVehicle;
+  final String? actionType;
+  final String? actionMessage;
 
   /// The UID of the currently authenticated user; null when signed out.
   final String? userId;
@@ -26,6 +28,8 @@ class VehicleState {
     this.isSuccess = false,
     this.errorMessage,
     this.selectedVehicle,
+    this.actionType,
+    this.actionMessage,
     this.userId,
     this.vehicles = const AsyncLoading(),
   });
@@ -35,14 +39,20 @@ class VehicleState {
     bool? isSuccess,
     String? errorMessage,
     VehicleModel? selectedVehicle,
+    String? actionType,
+    String? actionMessage,
     String? userId,
     AsyncValue<List<VehicleModel>>? vehicles,
+    bool clearAction = false,
   }) {
     return VehicleState(
       isLoading: isLoading ?? this.isLoading,
       isSuccess: isSuccess ?? this.isSuccess,
       errorMessage: errorMessage,
       selectedVehicle: selectedVehicle ?? this.selectedVehicle,
+      actionType: clearAction ? null : (actionType ?? this.actionType),
+      actionMessage:
+          clearAction ? null : (actionMessage ?? this.actionMessage),
       userId: userId ?? this.userId,
       vehicles: vehicles ?? this.vehicles,
     );
@@ -86,6 +96,7 @@ class VehicleViewModel extends _$VehicleViewModel {
       isLoading: true,
       errorMessage: null,
       isSuccess: false,
+      clearAction: true,
     );
 
     try {
@@ -105,6 +116,8 @@ class VehicleViewModel extends _$VehicleViewModel {
         isLoading: false,
         isSuccess: true,
         selectedVehicle: vehicleWithOwner.copyWith(id: vehicleId),
+        actionType: 'created',
+        actionMessage: 'Vehicle added successfully',
       );
 
       // Refresh user vehicles list
@@ -127,6 +140,7 @@ class VehicleViewModel extends _$VehicleViewModel {
       isLoading: true,
       errorMessage: null,
       isSuccess: false,
+      clearAction: true,
     );
 
     try {
@@ -143,6 +157,8 @@ class VehicleViewModel extends _$VehicleViewModel {
         isLoading: false,
         isSuccess: true,
         selectedVehicle: vehicle,
+        actionType: 'updated',
+        actionMessage: 'Vehicle updated successfully',
       );
 
       // Refresh user vehicles list
@@ -165,6 +181,7 @@ class VehicleViewModel extends _$VehicleViewModel {
       isLoading: true,
       errorMessage: null,
       isSuccess: false,
+      clearAction: true,
     );
 
     try {
@@ -181,6 +198,8 @@ class VehicleViewModel extends _$VehicleViewModel {
         isLoading: false,
         isSuccess: true,
         selectedVehicle: null,
+        actionType: 'deleted',
+        actionMessage: 'Vehicle deleted successfully',
       );
 
       // Refresh user vehicles list
@@ -203,6 +222,7 @@ class VehicleViewModel extends _$VehicleViewModel {
       isLoading: true,
       errorMessage: null,
       isSuccess: false,
+      clearAction: true,
     );
 
     try {
@@ -215,7 +235,12 @@ class VehicleViewModel extends _$VehicleViewModel {
 
       await repository.setActiveVehicle(userId, vehicleId);
 
-      state = state.copyWith(isLoading: false, isSuccess: true);
+      state = state.copyWith(
+        isLoading: false,
+        isSuccess: true,
+        actionType: 'activated',
+        actionMessage: 'Vehicle set as active',
+      );
 
       // Refresh vehicle streams
       ref.invalidate(userVehiclesStreamProvider(userId));
@@ -230,6 +255,10 @@ class VehicleViewModel extends _$VehicleViewModel {
       );
       return false;
     }
+  }
+
+  void clearAction() {
+    state = state.copyWith(clearAction: true);
   }
 
   /// Upload vehicle image

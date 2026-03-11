@@ -3488,7 +3488,7 @@
   "authEmailAddress": "Email Address",
   "authEmailHint": "you@example.com",
   "authPhoneOptional": "Phone Number (Optional)",
-  "authPhoneHint": "+216 XX XXX XXX",
+  "authPhoneHint": "Enter Your Phone Number",
   "authDateOfBirth": "Date of Birth *",
   "authDobPrompt": "Tap to select (must be 18+)",
   "authDobMinAge": "You must be at least 18 years old to use SportConnect.",
@@ -3707,5 +3707,634 @@
   "ratingGood": "Good",
   "ratingAverage": "Average",
   "ratingBelowAverage": "Below Average",
-  "ratingPoor": "Poor"
+  "ratingPoor": "Poor",
+
+  "findRidesNearYou": "Find Rides Near You",
+  "locationGateDescription": "Enable location to discover rides near you, get accurate pickup times, and navigate safely.",
+  "locationBenefitFind": "Find rides near your location",
+  "locationBenefitNavigate": "Get turn-by-turn navigation",
+  "locationBenefitSafety": "Enhanced safety features",
+  "allowLocation": "Allow Location",
+  "browseWithoutLocation": "Browse without location",
+  "findingYourLocation": "Finding your location...",
+  "thisWillOnlyTakeAMoment": "This will only take a moment",
+  "locationNotEnabled": "Location Not Enabled",
+  "locationNotEnabledDescription": "You declined location access. Enable it to find rides near you.",
+  "browseByCity": "Browse by City",
+  "locationPermissionBlocked": "Location Permission Blocked",
+  "locationPermissionBlockedDescription": "Location permission is permanently denied. Please enable it in your device settings.",
+  "locationServicesOff": "Location Services Off",
+  "locationServicesOffDescription": "Your device's location services are turned off. Please enable them in settings.",
+  "openLocationSettings": "Open Location Settings",
+  "events": "Events",
+  "satellite": "Satellite",
+  "maxSeatsReached": "Maximum 4 seats per booking",
+  "tryADifferentDate": "Try a different date",
+  "tapToOpenNavigation": "Tap to open navigation",
+  "completePayment": "Complete Payment",
+  "bookingAcceptedPaymentRequired": "Your booking is accepted. Payment required.",
+  "tapToViewCountdown": "Tap to view countdown",
+  "departingTomorrow": "Departing tomorrow",
+  "departingValue": "Departing {value}",
+  "@departingValue": {
+    "placeholders": {
+      "value": { "type": "String" }
+    }
+  },
+  "awaitingDriverCount": "{count, plural, one{Awaiting driver} other{Awaiting driver • {count} pending}}",
+  "@awaitingDriverCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "departingTodayAt": "Departing today at {h}:{m}",
+  "@departingTodayAt": {
+    "placeholders": {
+      "h": { "type": "String" },
+      "m": { "type": "String" }
+    }
+  },
+  "departingInDays": "Departing in {days} days",
+  "@departingInDays": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+
+  "@_EVENTS_SCREENS": {},
+  "createEventTitle": "Create Event",
+  "editEventTitle": "Edit Event",
+  "myEventsTitle": "My Events",
+  "discoverEventsTitle": "Discover Events",
+  "eventSportType": "Sport Type",
+  "eventTitleField": "Event Title *",
+  "eventTitleRequired": "Title is required",
+  "eventTitleMinLength": "Title must be at least 3 characters",
+  "eventVenueName": "Venue Name (optional)",
+  "eventDescriptionField": "Description (optional)",
+  "eventCoverImage": "Cover Image (optional)",
+  "eventTapToAddPhoto": "Tap to add a cover photo",
+  "eventLocationField": "Location *",
+  "eventTapToPickLocation": "Tap to pick a location on the map",
+  "eventWhenField": "When *",
+  "eventStartDate": "Start date",
+  "eventStartTime": "Start time",
+  "eventEndDate": "End date",
+  "eventEndTime": "End time",
+  "eventOptional": "Optional",
+  "eventEndLabel": "End",
+  "eventAddEndTime": "+ Add end time",
+  "eventMaxParticipants": "Max Participants",
+  "eventUnlimited": "Unlimited",
+  "eventParkingInstructions": "Parking instructions (optional)",
+  "eventRecurring": "Recurring Event",
+  "eventRecurringSubtitle": "Repeats on selected days each week",
+  "eventRepeatsUntil": "Repeats until {date}",
+  "@eventRepeatsUntil": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "eventRepeatEndDate": "Repeat end date (optional)",
+  "eventCostSplit": "Enable Cost Splitting",
+  "eventCostSplitSubtitle": "Allow attendees to split ride costs",
+  "eventUploadingCover": "Uploading cover…",
+  "eventCreating": "Creating…",
+  "eventCreateButton": "Create Event",
+  "eventSaveChanges": "Save Changes",
+  "eventStartTimeFuture": "Start time must be in the future.",
+  "eventEndTimeAfterStart": "End time must be after start time.",
+  "eventLocationTitle": "Event Location",
+  "eventDeleteConfirmTitle": "Delete Event?",
+  "eventDeleteWarning": "This action cannot be undone. All participants will be removed.",
+  "eventAbout": "About",
+  "eventParticipants": "Participants",
+  "eventLeave": "Leave Event",
+  "eventFull": "Event Full",
+  "eventJoin": "Join Event",
+  "eventEdit": "Edit Event",
+  "eventDelete": "Delete Event",
+  "eventNoRidesOffered": "No rides offered yet",
+  "eventCouldNotLoadRides": "Could not load rides",
+  "eventHowGettingThere": "How are you getting there?",
+  "eventImDriving": "I'm Driving",
+  "eventNeedRide": "Need Ride",
+  "eventSelfArranged": "Self-Arranged",
+  "eventYouAreOrganizer": "You are the organizer",
+  "eventYouOrganized": "You organized this event",
+  "eventYoureGoing": "You're going",
+  "eventYouAttended": "You attended",
+  "eventNotJoinedYet": "You haven't joined yet",
+  "eventHasEnded": "This event has ended",
+  "eventRidesToEvent": "Rides to This Event",
+  "eventParkingInfo": "Parking Info",
+  "eventRecurringTitle": "Recurring Event",
+  "eventEvery": "Every",
+  "eventUntilDate": "until {date}",
+  "@eventUntilDate": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "eventCostSplitEnabled": "Cost Split Enabled",
+  "eventMeetupPoint": "Post-Event Meetup Point",
+  "eventNoMeetupPoint": "No meetup point set yet",
+  "eventSetMeetupPoint": "Set Meetup Point",
+  "eventGroupChat": "Event Group Chat",
+  "eventNotFound": "Event not found.",
+  "eventOrganizedThis": "You organized this event",
+  "eventParticipantsCount": "Participants ({count})",
+  "@eventParticipantsCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "eventSeatsLeftCount": "{count} left",
+  "@eventSeatsLeftCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "eventCountdownDaysHours": "In {days}d {hours}h",
+  "@eventCountdownDaysHours": {
+    "placeholders": {
+      "days": { "type": "int" },
+      "hours": { "type": "int" }
+    }
+  },
+  "eventCountdownHoursMinutes": "In {hours}h {minutes}m",
+  "@eventCountdownHoursMinutes": {
+    "placeholders": {
+      "hours": { "type": "int" },
+      "minutes": { "type": "int" }
+    }
+  },
+  "eventCountdownMinutes": "In {minutes}m",
+  "@eventCountdownMinutes": {
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
+  "eventNeedRideHome": "Need Ride Home",
+  "eventFindRides": "Find Rides to Event",
+  "eventOfferRide": "Offer Ride to Event",
+  "eventOrganizer": "Organizer",
+  "myEventsCreatedTab": "Created",
+  "myEventsJoinedTab": "Joined",
+  "signInFirstMessage": "Sign in first.",
+  "unableToLoadEvents": "Unable to load events.",
+  "noCreatedEvents": "You haven't created any events yet.",
+  "noJoinedEvents": "You haven't joined any events yet.",
+  "browseEventsButton": "Browse Events",
+  "eventPastStatus": "Past",
+  "eventFullStatus": "Full",
+  "searchEventsHint": "Search events…",
+  "filterAll": "All",
+  "noEventsFound": "No events found",
+  "noEventsInCategory": "No upcoming {category} events.",
+  "@noEventsInCategory": {
+    "placeholders": {
+      "category": { "type": "String" }
+    }
+  },
+  "beFirstToCreate": "Be the first to create one!",
+  "eventJoinArrow": "Join →",
+  "eventByOrganizer": "by {name}",
+  "@eventByOrganizer": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "createLabel": "Create",
+  "selectLocationError": "Please select a location.",
+  "pastStartTimeError": "Start time must be in the future.",
+  "endBeforeStartError": "End time must be after start time.",
+
+  "@_LEGAL_SCREEN": {},
+  "termsOfServiceTitle": "Terms of Service",
+  "privacyPolicyTitle": "Privacy Policy",
+  "legalVersionBadge": "Feb 2026",
+  "loadingTermsOfService": "Loading Terms of Service…",
+  "loadingPrivacyPolicy": "Loading Privacy Policy…",
+
+  "@_REPORT_ISSUE_SCREEN": {},
+  "reportIssueTitle": "Report an Issue",
+  "whatHappenedQuestion": "What happened?",
+  "howSevereQuestion": "How severe is this issue?",
+  "describeIssueLabel": "Describe the issue",
+  "describeIssuePlaceholder": "Please provide at least 50 characters...",
+  "evidenceOptionalLabel": "Evidence (optional)",
+  "attachScreenshotsPlaceholder": "Tap to attach screenshots or evidence",
+  "filesAttachedCount": "{count}/{max} files attached",
+  "@filesAttachedCount": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "max": { "type": "int" }
+    }
+  },
+  "supportsImagesHint": "Supports images (max 10MB each)",
+  "submitReportButton": "Submit Report",
+  "reportSubmittedTitle": "Report Submitted",
+  "reportSubmittedMessage": "Thank you for reporting this issue. Our safety team will review it and take appropriate action within 24-48 hours.",
+  "doneButton": "Done",
+  "chooseFromGallery": "Choose from Gallery",
+  "takeAPhoto": "Take a Photo",
+  "rideInfoLabel": "Ride: {id}",
+  "@rideInfoLabel": {
+    "placeholders": {
+      "id": { "type": "String" }
+    }
+  },
+  "reportSafety": "Safety",
+  "reportSafetyDesc": "Safety concerns or dangerous behavior",
+  "reportPayment": "Payment",
+  "reportPaymentDesc": "Billing or payment issues",
+  "reportBehavior": "Behavior",
+  "reportBehaviorDesc": "Inappropriate or rude behavior",
+  "reportTechnical": "Technical",
+  "reportTechnicalDesc": "App bugs or technical issues",
+  "reportDiscrimination": "Discrimination",
+  "reportDiscriminationDesc": "Discriminatory treatment or harassment",
+  "reportOther": "Other",
+  "reportOtherDesc": "Issues not listed above",
+  "severityLow": "Low",
+  "severityMedium": "Medium",
+  "severityHigh": "High",
+  "severityCritical": "Critical",
+
+  "@_DRIVER_MY_RIDES_SCREEN": {},
+  "driverMyRidesTitle": "My Rides",
+  "viewRequestsTooltip": "View requests",
+  "pendingRequestsTitle": "Pending Requests",
+  "noPendingRequestsTitle": "No Pending Requests",
+  "noPendingRequestsMessage": "New booking requests will appear here.",
+  "upcomingRidesTitle": "Upcoming Rides",
+  "noUpcomingRidesTitle": "No Upcoming Rides",
+  "useButtonToOfferRide": "Use the button below to offer a new ride.",
+  "couldNotLoadRequests": "Could not load requests. Pull to refresh.",
+  "couldNotLoadRides": "Could not load rides. Pull to refresh.",
+  "declineRequestTitle": "Decline Request?",
+  "declineRequestMessage": "This will decline the booking request. The passenger will be notified.",
+  "keepButton": "Keep",
+  "declineButton": "Decline",
+  "acceptRequestTitle": "Accept Request?",
+  "acceptRequestMessage": "Accept this booking from {name}?",
+  "@acceptRequestMessage": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "acceptButton": "Accept",
+  "cancelRideTitle": "Cancel Ride",
+  "cancelRideConfirmMessage": "Are you sure you want to cancel this ride? This action cannot be undone.",
+  "keepRideButton": "Keep Ride",
+  "pickupLabel": "Pickup",
+  "dropoffLabel": "Dropoff",
+  "seatsCount": "{count} seat(s)",
+  "@seatsCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "@_DRIVER_OFFER_RIDE_SCREEN": {},
+  "offerARideTitle": "Offer a Ride",
+  "editRideTitle": "Edit Ride",
+  "routeStep": "Route",
+  "detailsStep": "Details",
+  "preferencesStep": "Preferences",
+  "driverProfileRequired": "Driver Profile Required",
+  "completeDriverProfileMessage": "Complete your driver profile to offer rides.",
+  "becomeDriverButton": "Become a Driver",
+  "errorLoadingData": "Error loading data",
+  "whereAreYouGoing": "Where are you going?",
+  "fromLabel": "From",
+  "toLabel": "To",
+  "selectPickupLocation": "Select pickup location",
+  "selectDropoffLocation": "Select dropoff location",
+  "swapLocationsTooltip": "Swap locations",
+  "departureTimeLabel": "Departure Time",
+  "dateLabel": "Date",
+  "timeLabel": "Time",
+  "selectDatePlaceholder": "Select Date",
+  "selectTimePlaceholder": "Select Time",
+  "intermediateStopsLabel": "Intermediate Stops",
+  "addStopButton": "Add Stop",
+  "addStopsHint": "Add stops along your route to pick up more passengers",
+  "rideDetailsTitle": "Ride Details",
+  "quickSwitchButton": "Quick Switch",
+  "noVehiclesError": "No vehicles found. Please add a vehicle to your profile.",
+  "addVehicleButton": "Add Vehicle",
+  "availableSeatsLabel": "Available Seats",
+  "totalCapacityLabel": "Total Capacity:",
+  "pricePerSeatLabel": "Price per Seat",
+  "minimumPriceError": "Minimum $1",
+  "priceNegotiableToggle": "Price Negotiable",
+  "acceptOnlinePaymentToggle": "Accept Online Payment",
+  "preferencesRulesTitle": "Preferences & Rules",
+  "rideSummaryLabel": "Ride Summary",
+  "allowPetsToggle": "Allow Pets",
+  "allowSmokingToggle": "Allow Smoking",
+  "allowLuggageToggle": "Allow Luggage",
+  "womenOnlyToggle": "Women Only",
+  "maxDetourLabel": "Max Detour for Pickups",
+  "maxDetourHint": "How far you're willing to go off-route to pick up passengers",
+  "noneLabel": "None",
+  "sixtyMinLabel": "60 min",
+  "backButton": "Back",
+  "nextButton": "Next",
+  "createRideButton": "Create Ride",
+  "recurringRideTitle": "Recurring Ride",
+  "dayMon": "Mon",
+  "dayTue": "Tue",
+  "dayWed": "Wed",
+  "dayThu": "Thu",
+  "dayFri": "Fri",
+  "daySat": "Sat",
+  "daySun": "Sun",
+  "stopNumberLabel": "Stop {number}",
+  "@stopNumberLabel": {
+    "placeholders": {
+      "number": { "type": "int" }
+    }
+  },
+  "tapToSetLocation": "Tap to set location",
+  "editWaypointTooltip": "Edit waypoint",
+  "removeWaypointTooltip": "Remove waypoint",
+  "selectStopTitle": "Select Stop {number}",
+  "@selectStopTitle": {
+    "placeholders": {
+      "number": { "type": "int" }
+    }
+  },
+  "editStopTitle": "Edit Stop {number}",
+  "@editStopTitle": {
+    "placeholders": {
+      "number": { "type": "int" }
+    }
+  },
+  "vehicleLabel": "Vehicle",
+  "totalCapacityCount": "Total Capacity: {count}",
+  "@totalCapacityCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "totalPriceForSeats": "Total: ${price} for {seats} seats",
+  "@totalPriceForSeats": {
+    "placeholders": {
+      "price": { "type": "String" },
+      "seats": { "type": "int" }
+    }
+  },
+  "decreasePriceTooltip": "Decrease price",
+  "increasePriceTooltip": "Increase price",
+  "allowPetsSubtitle": "Pets are allowed in the car",
+  "allowSmokingSubtitle": "Smoking is allowed during the ride",
+  "allowLuggageSubtitle": "Passengers can bring luggage",
+  "womenOnlySubtitle": "Ride is for women only",
+  "notSetPlaceholder": "Not set",
+  "notSelectedPlaceholder": "Not selected",
+  "summaryStopsLabel": "Stops",
+  "intermediateStopsCount": "{count, plural, =1{1 intermediate stop} other{{count} intermediate stops}}",
+  "@intermediateStopsCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "departureSummaryLabel": "Departure",
+  "seatsSummaryLabel": "Seats",
+  "seatsAvailableCount": "{count} available",
+  "@seatsAvailableCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "priceSummaryLabel": "Price",
+  "pricePerSeatSummary": "${price} per seat",
+  "@pricePerSeatSummary": {
+    "placeholders": {
+      "price": { "type": "String" }
+    }
+  },
+  "pricePerSeatNegotiableSummary": "${price} per seat (negotiable)",
+  "@pricePerSeatNegotiableSummary": {
+    "placeholders": {
+      "price": { "type": "String" }
+    }
+  },
+  "eventSummaryLabel": "Event",
+  "recurringSummaryLabel": "Recurring",
+  "selectOriginTitle": "Select Origin",
+  "selectDestinationTitle": "Select Destination",
+  "maxDetourMinutesValue": "{minutes} min",
+  "@maxDetourMinutesValue": {
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
+  "timeInPastWarning": "Selected time is in the past — the Create Ride button will be disabled",
+  "departureMinimumWarning": "Departure should be at least 15 minutes from now for passengers to join",
+  "departureAfterEventWarning": "Departure time is after the event ends — please choose an earlier time",
+  "rideUpdatedSuccess": "Ride updated successfully!",
+  "rideCreatedSuccess": "Ride created successfully!",
+
+  "@_BOOKING_PENDING_SCREEN": {},
+  "bookingRequestTitle": "Booking Request",
+  "requestSentTitle": "Request Sent!",
+  "bookingAcceptedTitle": "Booking Accepted!",
+  "waitingForConfirmation": "Waiting for the driver to confirm your booking. You'll be notified as soon as they respond.",
+  "completePaymentMessage": "Complete your payment to confirm the ride.",
+  "processingPaymentLoading": "Processing payment...",
+  "completePaymentButton": "Complete Payment",
+  "expiresInLabel": "Expires in",
+  "cancelRequestButton": "Cancel Request",
+  "viewAllMyRidesButton": "View All My Rides",
+  "yourDriverLabel": "Your Driver",
+
+  "@_RIDE_COUNTDOWN_SCREEN": {},
+  "yourRideTitle": "Your Ride",
+  "bookingConfirmedBadge": "Booking Confirmed",
+  "departureInLabel": "Departure in",
+  "departingSoonLabel": "Departing soon!",
+  "rideStartedMessage": "Ride has started!",
+  "routeLabel": "Route",
+  "messageButton": "Message",
+  "callButton": "Call",
+  "failedOpenChatError": "Failed to open chat. Please try again.",
+  "driverPhoneUnavailableError": "Driver phone number not available.",
+  "couldNotLaunchDialerError": "Could not launch phone dialer.",
+  "seatsLabel": "Seats",
+  "refNumberLabel": "Ref #",
+  "tapToCopyInstruction": "(tap to copy)",
+  "totalLabel": "Total",
+  "estimatedArrivalLabel": "Est. arrival:",
+  "joinActiveRideButton": "Join Active Ride",
+  "viewRideDetailsButton": "View Ride Details",
+
+  "@_DISPUTE_SCREEN": {},
+  "fileDisputeTitle": "File a Dispute",
+  "rideIdLabel": "Ride ID",
+  "disputeTypeLabel": "Dispute Type",
+  "selectDisputeReason": "Select the reason for your dispute",
+  "incorrectFareType": "Incorrect Fare",
+  "incorrectFareDesc": "The fare charged was different from the quoted amount",
+  "incompleteRideType": "Incomplete Ride",
+  "incompleteRideDesc": "The ride did not reach the intended destination",
+  "unauthorizedChargeType": "Unauthorized Charge",
+  "unauthorizedChargeDesc": "I was charged without authorization or for a cancelled ride",
+  "poorServiceType": "Poor Service",
+  "poorServiceDesc": "The ride quality was unacceptable",
+  "safetyConcernType": "Safety Concern",
+  "safetyConcernDesc": "I felt unsafe during the ride",
+  "otherDisputeType": "Other",
+  "otherDisputeDesc": "A different issue not listed above",
+  "detailsLabel": "Details",
+  "describeIssueDetailPlaceholder": "Describe your issue in detail...",
+  "disputeWarningNote": "Disputes are reviewed within 24-48 hours. Submitting false disputes may result in account restrictions.",
+  "attachReceiptsPlaceholder": "Attach receipts or screenshots",
+  "whatToExpectTitle": "What to expect",
+  "reviewWithinHours": "Review within 24-48 hours",
+  "emailNotificationExpectation": "Email notification on status updates",
+  "fairResolutionExpectation": "Fair resolution based on evidence",
+  "submitDisputeButton": "Submit Dispute",
+  "disputeSubmittedTitle": "Dispute Submitted",
+  "disputeSubmittedMessage": "Our team will review your dispute within 24-48 hours. You'll receive a notification once it's resolved.",
+
+  "@_AUTH_SCREENS": {},
+  "previousStepTooltip": "Previous step",
+  "goBackTooltip": "Go back",
+  "nameRequiredError": "Name is required",
+  "nameMinLengthError": "Name must be at least 2 characters",
+  "genderMale": "Male",
+  "genderFemale": "Female",
+  "emailVerificationError": "Something went wrong. Please try again.",
+  "useDifferentAccount": "Use a different account",
+  "builtWithFlutter": "Built with Flutter",
+  "showPasswordTooltip": "Show password",
+  "hidePasswordTooltip": "Hide password",
+  "signingInMessage": "Signing in, please wait",
+  "loadingProfileMessage": "Please wait, loading your profile...",
+  "riderOnboardingTitle": "Rider onboarding",
+  "completeRiderProfile": "Complete your rider profile",
+  "riderProfileDescription": "Add your details so we can personalize rides and matching for you.",
+  "completeSetupButton": "Complete setup",
+  "roleSelectionError": "Something went wrong. Please try again.",
+  "riderRoleDescription": "Find and book rides to sporting events. Save money and reduce your carbon footprint.",
+  "riderFeatureSearch": "Search available rides",
+  "riderFeatureBook": "Book seats instantly",
+  "riderFeatureChat": "Chat with drivers",
+  "riderFeatureTrack": "Track your ride",
+  "driverRoleDescription": "Offer rides and earn money while going to events. Help others get there safely.",
+  "driverFeatureCreate": "Create ride offers",
+  "driverFeaturePrice": "Set your own price",
+  "driverFeatureAccept": "Accept ride requests",
+  "driverFeatureEarn": "Earn with each trip",
+  "continueButton": "Continue",
+  "yourDetailsStep": "Your Details",
+  "securityStep": "Security",
+  "yourRoleStep": "Your Role",
+  "yourProfileStep": "Your Profile",
+  "stepOfCount": "Step {step} of {total}",
+  "@stepOfCount": {
+    "placeholders": {
+      "step": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+
+  "@_MESSAGING_SCREENS": {},
+  "sendingVoiceMessage": "Sending voice message...",
+  "recordingFailedError": "Failed to start recording. Please try again.",
+  "stopRecordingFailedError": "Failed to stop recording",
+  "searchUsersTooltip": "Search users",
+  "muteChat": "Mute",
+  "unmuteChat": "Unmute",
+  "deleteChat": "Delete",
+
+  "@_PAYMENT_SCREENS": {},
+  "paymentDetailsLabel": "Details",
+  "ridePaymentLabel": "Ride Payment",
+  "unknownDate": "Unknown Date",
+
+  "@_PROFILE_SCREENS": {},
+  "appVersion": "Version {version}",
+  "@appVersion": {
+    "placeholders": {
+      "version": { "type": "String" }
+    }
+  },
+  "aboutAppDescription": "SportConnect is a social carpooling platform that connects sports enthusiasts. Share rides, reduce your carbon footprint, and build your sports community.",
+  "ecoStatLabel": "Eco",
+  "liveStatLabel": "Live",
+  "sportStatLabel": "Sport",
+  "rideShareLabel": "Ride-Share",
+  "trackingLabel": "Tracking",
+  "communityLabel": "Community",
+  "openSourceLicenses": "Open Source Licenses",
+  "joinTheCommunity": "Join the Community",
+  "websiteLabel": "Website",
+  "emailLabel": "Email",
+  "copyrightNotice": "© 2025-2026 SportConnect. All rights reserved.",
+  "howCanWeHelp": "How can we help?",
+  "responseTimeMessage": "We typically respond within 24 hours.",
+  "categoryLabel": "Category",
+  "subjectLabel": "Subject",
+  "subjectHint": "Brief description of your issue",
+  "messageFieldLabel": "Message",
+  "messageFieldHint": "Describe your issue in detail...",
+  "attachFilesHint": "Attach screenshots or files (optional)",
+  "submitTicketButton": "Submit Ticket",
+  "responseTimeInfo": "Most inquiries are answered within 12-24 hours",
+  "ticketSubmittedTitle": "Ticket Submitted!",
+  "ticketSubmittedMessage": "We've received your message and will get back to you within 24 hours. Check your email for updates.",
+  "findPeopleTitle": "Find People",
+  "searchByNameHint": "Search by name",
+  "clearSearchTooltip": "Clear search",
+  "notificationsTooltip": "Notifications",
+
+  "@_REVIEW_SCREENS": {},
+  "asDriverFilter": "As Driver",
+  "asRiderFilter": "As Rider",
+  "howWasYourExperience": "How was your experience?",
+  "whatStoodOut": "What stood out?",
+  "additionalCommentsLabel": "Additional comments (optional)",
+  "specificFeedbackHelps": "Specific feedback helps the community",
+  "thankYouForReview": "Thank you for your review!",
+  "submitRatingButton": "Submit Rating",
+  "skipForNowButton": "Skip for now",
+
+  "@_RIDES_SCREENS": {},
+  "navigateButton": "Navigate",
+  "gettingYourLocation": "Getting your location...",
+  "noActiveRideMessage": "No active ride",
+  "ratePassengerTitle": "Rate Passenger",
+  "howWasYourPassenger": "How was your passenger?",
+  "cancelledLabel": "Cancelled",
+  "completedLabel": "Completed",
+  "scheduledLabel": "Scheduled",
+  "activeLabel": "Active",
+  "pendingLabel": "Pending",
+  "cancellationReasonTitle": "Why are you cancelling?",
+  "cancellationReasonHint": "Tell us why you're cancelling this ride...",
+  "confirmCancellationButton": "Confirm Cancellation",
+  "rideCompletedTitle": "Ride Completed!",
+  "rideCompletedSubtitle": "How was your experience?",
+  "rideNavigationTitle": "Ride Navigation",
+  "startNavigationButton": "Start Navigation",
+  "arriveAtPickupButton": "Arrive at Pickup",
+  "startTripButton": "Start Trip",
+  "endTripButton": "End Trip",
+  "passengerPickupLabel": "Passenger pickup",
+  "destinationLabel": "Destination",
+  "supportCategoryGeneral": "General",
+  "supportCategoryAccountIssue": "Account Issue",
+  "supportCategoryPaymentProblem": "Payment Problem",
+  "supportCategoryRideIssue": "Ride Issue",
+  "supportCategoryTechnicalBug": "Technical Bug",
+  "supportCategorySafetyReport": "Safety Report",
+  "supportCategoryFeatureRequest": "Feature Request",
+  "driversLabel": "Drivers",
+  "ridersLabel": "Riders",
+  "sportsLabel": "Sports"
 }

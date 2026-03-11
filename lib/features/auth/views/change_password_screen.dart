@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/form_validators.dart';
 import 'package:sport_connect/core/widgets/glass_panel.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
-import 'package:sport_connect/features/auth/models/auth_exception.dart';
-import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
+import 'package:sport_connect/features/auth/view_models/change_password_view_model.dart';
 import 'package:sport_connect/features/auth/views/reauth_dialog.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -27,64 +26,50 @@ class ChangePasswordScreen extends ConsumerStatefulWidget {
 
 class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
   final _formKey = GlobalKey<FormBuilderState>();
-  bool _obscureNew = true;
-  bool _obscureConfirm = true;
-  bool _isLoading = false;
-  bool _isSuccess = false;
 
   Future<void> _changePassword() async {
     if (!_formKey.currentState!.saveAndValidate()) return;
-
-    setState(() => _isLoading = true);
-
-    try {
-      await ref
-          .read(authActionsViewModelProvider)
-          .updatePassword(
-            _formKey.currentState!.value['new_password'] as String,
-          );
-
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _isSuccess = true;
-        });
-      }
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-
-      final l10n = AppLocalizations.of(context);
-
-      if (e is AuthException && e.code == 'requires-recent-login') {
-        // Show re-auth dialog and retry
-        final success = await showReauthDialog(context, ref);
-        if (success && mounted) {
-          return _changePassword();
-        }
-        return;
-      }
-
-      final errorText = (e is AuthException && e.code == 'weak-password')
-          ? l10n.changePasswordWeakError
-          : l10n.changePasswordGenericError;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorText),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-        ),
-      );
-    }
+    await ref
+        .read(changePasswordViewModelProvider.notifier)
+        .submit(_formKey.currentState!.value['new_password'] as String);
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final vmState = ref.watch(changePasswordViewModelProvider);
+
+    ref.listen(changePasswordViewModelProvider, (previous, next) async {
+      if (next.requiresReauth && previous?.requiresReauth != true) {
+        final success = await showReauthDialog(context, ref);
+        if (success) {
+          await ref
+              .read(changePasswordViewModelProvider.notifier)
+              .retryAfterReauth();
+        } else {
+          ref
+              .read(changePasswordViewModelProvider.notifier)
+              .dismissReauthRequest();
+        }
+      }
+
+      if (next.errorMessage != null && next.errorMessage != previous?.errorMessage) {
+        final errorText = next.errorMessage == 'weak-password'
+            ? l10n.changePasswordWeakError
+            : l10n.changePasswordGenericError;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorText),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+          ),
+        );
+      }
+    });
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -108,13 +93,18 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(horizontal: 24.w),
-          child: _isSuccess ? _buildSuccessState() : _buildFormState(l10n),
+          child: vmState.isSuccess
+              ? _buildSuccessState()
+              : _buildFormState(l10n, vmState),
         ),
       ),
     );
   }
 
-  Widget _buildFormState(AppLocalizations l10n) {
+  Widget _buildFormState(
+    AppLocalizations l10n,
+    ChangePasswordState vmState,
+  ) {
     return FormBuilder(
       key: _formKey,
       child: Column(
@@ -170,23 +160,22 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               hintText: l10n.changePasswordNewHint,
               prefixIcon: const Icon(Icons.lock_outline_rounded),
               suffixIcon: IconButton(
-                tooltip: _obscureNew
+                tooltip: vmState.obscureNewPassword
                     ? l10n.tooltipShowPassword
                     : l10n.tooltipHidePassword,
                 icon: Icon(
-                  _obscureNew
+                  vmState.obscureNewPassword
                       ? Icons.visibility_outlined
                       : Icons.visibility_off_outlined,
                   color: AppColors.textTertiary,
                 ),
-                onPressed: () => setState(() => _obscureNew = !_obscureNew),
+                onPressed: () => ref
+                    .read(changePasswordViewModelProvider.notifier)
+                    .toggleNewPasswordVisibility(),
               ),
             ),
-            obscureText: _obscureNew,
-            validator: FormBuilderValidators.compose([
-              FormBuilderValidators.required(),
-              FormBuilderValidators.minLength(8),
-            ]),
+            obscureText: vmState.obscureNewPassword,
+            validator: (value) => FormValidators.password(value),
           ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1),
 
           SizedBox(height: 20.h),
@@ -198,26 +187,27 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               hintText: l10n.changePasswordConfirmHint,
               prefixIcon: const Icon(Icons.lock_outline_rounded),
               suffixIcon: IconButton(
-                tooltip: _obscureConfirm
+                tooltip: vmState.obscureConfirmPassword
                     ? l10n.tooltipShowPassword
                     : l10n.tooltipHidePassword,
                 icon: Icon(
-                  _obscureConfirm
+                  vmState.obscureConfirmPassword
                       ? Icons.visibility_outlined
                       : Icons.visibility_off_outlined,
                   color: AppColors.textTertiary,
                 ),
-                onPressed: () =>
-                    setState(() => _obscureConfirm = !_obscureConfirm),
+                onPressed: () => ref
+                    .read(changePasswordViewModelProvider.notifier)
+                    .toggleConfirmPasswordVisibility(),
               ),
             ),
-            obscureText: _obscureConfirm,
-            validator: (value) =>
-                value !=
-                    (_formKey.currentState?.fields['new_password']?.value
-                        as String?)
-                ? 'Passwords do not match'
-                : null,
+            obscureText: vmState.obscureConfirmPassword,
+            validator: FormValidators.confirmPassword(
+              () =>
+                  _formKey.currentState?.fields['new_password']?.value
+                      as String? ??
+                  '',
+            ),
           ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1),
 
           SizedBox(height: 32.h),
@@ -226,8 +216,8 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
             width: double.infinity,
             child: PremiumButton(
               text: l10n.changePasswordUpdate,
-              onPressed: _isLoading ? null : _changePassword,
-              isLoading: _isLoading,
+              onPressed: vmState.isLoading ? null : _changePassword,
+              isLoading: vmState.isLoading,
               icon: Icons.check_rounded,
             ),
           ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.1),

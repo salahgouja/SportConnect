@@ -10,19 +10,13 @@ import 'package:sport_connect/features/payments/models/payment_model.dart';
 import 'package:sport_connect/features/payments/view_models/payment_view_model.dart';
 import 'package:intl/intl.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sport_connect/core/widgets/analytics_payment_widgets.dart';
 
 /// Payment History Screen - View all payment transactions for a rider
-class PaymentHistoryScreen extends ConsumerStatefulWidget {
+class PaymentHistoryScreen extends ConsumerWidget {
   const PaymentHistoryScreen({super.key});
 
-  @override
-  ConsumerState<PaymentHistoryScreen> createState() =>
-      _PaymentHistoryScreenState();
-}
-
-class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
-  String _selectedFilter = 'all';
-  final List<String> _filterKeys = [
+  static const _filterKeys = [
     'all',
     'completed',
     'pending',
@@ -49,8 +43,11 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final userAsync = ref.watch(currentUserProvider);
+    final selectedFilter = ref
+        .watch(paymentHistoryFilterViewModelProvider)
+        .selectedFilter;
 
     return userAsync.when(
       data: (user) {
@@ -68,57 +65,77 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
 
         return Scaffold(
           backgroundColor: AppColors.background,
-          body: CustomScrollView(
-            slivers: [
-              // App Bar
-              SliverAppBar(
-                expandedHeight: 120.h,
-                pinned: true,
-                backgroundColor: AppColors.primary,
-                flexibleSpace: FlexibleSpaceBar(background: _buildHeader()),
-                title: Text(
-                  AppLocalizations.of(context).paymentHistory,
-                  style: TextStyle(
-                    fontSize: 20.sp,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
+          body: RefreshIndicator(
+            color: AppColors.primary,
+            onRefresh: () async {
+              ref.invalidate(riderPaymentHistoryStreamProvider(user.uid));
+            },
+            child: CustomScrollView(
+              slivers: [
+                // App Bar
+                SliverAppBar(
+                  expandedHeight: 120.h,
+                  pinned: true,
+                  backgroundColor: AppColors.primary,
+                  flexibleSpace: FlexibleSpaceBar(
+                    background: _buildHeader(context),
                   ),
-                ),
-              ),
-
-              // Filter Chips
-              SliverToBoxAdapter(child: _buildFilterChips()),
-
-              // Payment List
-              paymentsAsync.when(
-                data: (payments) {
-                  final filteredPayments = _filterPayments(payments);
-
-                  if (filteredPayments.isEmpty) {
-                    return SliverFillRemaining(child: _buildEmptyState());
-                  }
-
-                  return SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) =>
-                          _buildPaymentCard(filteredPayments[index], index),
-                      childCount: filteredPayments.length,
+                  title: Text(
+                    AppLocalizations.of(context).paymentHistory,
+                    style: TextStyle(
+                      fontSize: 20.sp,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
                     ),
-                  );
-                },
-                loading: () => const SliverFillRemaining(
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-                error: (error, stack) => SliverFillRemaining(
-                  child: Center(
-                    child: Text(AppLocalizations.of(context).errorValue(error)),
                   ),
                 ),
-              ),
 
-              // Bottom Padding
-              SliverToBoxAdapter(child: SizedBox(height: 100.h)),
-            ],
+                // Filter Chips
+                SliverToBoxAdapter(
+                  child: _buildFilterChips(context, ref, selectedFilter),
+                ),
+
+                // Payment List
+                paymentsAsync.when(
+                  data: (payments) {
+                    final filteredPayments = ref.watch(
+                      filteredRiderPaymentsProvider(payments),
+                    );
+
+                    if (filteredPayments.isEmpty) {
+                      return SliverFillRemaining(
+                        child: _buildEmptyState(context),
+                      );
+                    }
+
+                    return SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) => _buildPaymentCard(
+                          context,
+                          ref,
+                          filteredPayments[index],
+                          index,
+                        ),
+                        childCount: filteredPayments.length,
+                      ),
+                    );
+                  },
+                  loading: () => const SliverFillRemaining(
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                  error: (error, stack) => SliverFillRemaining(
+                    child: Center(
+                      child: Text(
+                        AppLocalizations.of(context).errorValue(error),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Bottom Padding
+                SliverToBoxAdapter(child: SizedBox(height: 100.h)),
+              ],
+            ),
           ),
         );
       },
@@ -132,7 +149,7 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -166,7 +183,11 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
     );
   }
 
-  Widget _buildFilterChips() {
+  Widget _buildFilterChips(
+    BuildContext context,
+    WidgetRef ref,
+    String selectedFilter,
+  ) {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 16.h),
       child: SingleChildScrollView(
@@ -174,15 +195,15 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
         padding: EdgeInsets.symmetric(horizontal: 16.w),
         child: Row(
           children: _filterKeys.map((key) {
-            final isSelected = _selectedFilter == key;
+            final isSelected = selectedFilter == key;
             return Padding(
               padding: EdgeInsets.only(right: 8.w),
               child: FilterChip(
                 label: Text(_filterLabel(context, key)),
                 selected: isSelected,
-                onSelected: (selected) {
-                  setState(() => _selectedFilter = key);
-                },
+                onSelected: (_) => ref
+                    .read(paymentHistoryFilterViewModelProvider.notifier)
+                    .setFilter(key),
                 backgroundColor: AppColors.surface,
                 selectedColor: AppColors.primary.withValues(alpha: 0.2),
                 labelStyle: TextStyle(
@@ -203,42 +224,7 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
     );
   }
 
-  List<PaymentTransaction> _filterPayments(List<PaymentTransaction> payments) {
-    switch (_selectedFilter) {
-      case 'completed':
-        return payments
-            .where((p) => p.status == PaymentStatus.succeeded)
-            .toList();
-      case 'pending':
-        return payments
-            .where(
-              (p) =>
-                  p.status == PaymentStatus.pending ||
-                  p.status == PaymentStatus.processing,
-            )
-            .toList();
-      case 'refunded':
-        return payments
-            .where(
-              (p) =>
-                  p.status == PaymentStatus.refunded ||
-                  p.status == PaymentStatus.partiallyRefunded,
-            )
-            .toList();
-      case 'failed':
-        return payments
-            .where(
-              (p) =>
-                  p.status == PaymentStatus.failed ||
-                  p.status == PaymentStatus.cancelled,
-            )
-            .toList();
-      default:
-        return payments;
-    }
-  }
-
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -267,7 +253,12 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
     );
   }
 
-  Widget _buildPaymentCard(PaymentTransaction payment, int index) {
+  Widget _buildPaymentCard(
+    BuildContext context,
+    WidgetRef ref,
+    PaymentTransaction payment,
+    int index,
+  ) {
     final dateFormat = DateFormat('MMM dd, yyyy • HH:mm');
 
     return Dismissible(
@@ -275,7 +266,7 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
       direction: DismissDirection.endToStart,
       confirmDismiss: (_) async {
         HapticFeedback.mediumImpact();
-        _showPaymentDetails(payment);
+        _showPaymentDetails(context, ref, payment);
         return false;
       },
       background: Container(
@@ -319,7 +310,7 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
                   ],
                 ),
                 child: InkWell(
-                  onTap: () => _showPaymentDetails(payment),
+                  onTap: () => _showPaymentDetails(context, ref, payment),
                   borderRadius: BorderRadius.circular(16.r),
                   child: Padding(
                     padding: EdgeInsets.all(16.w),
@@ -484,7 +475,11 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
     }
   }
 
-  void _showPaymentDetails(PaymentTransaction payment) {
+  void _showPaymentDetails(
+    BuildContext context,
+    WidgetRef ref,
+    PaymentTransaction payment,
+  ) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -601,7 +596,14 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
                       child: ElevatedButton(
                         onPressed: () {
                           context.pop();
-                          _requestRefund(payment);
+                          RefundRequestSheet.show(
+                            context,
+                            rideId: payment.rideId,
+                            paidAmount: payment.amount,
+                            onSubmit: (request) {
+                              _requestRefund(context, ref, payment);
+                            },
+                          );
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.error.withValues(
@@ -616,6 +618,40 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
                         child: Text(AppLocalizations.of(context).requestRefund),
                       ),
                     ),
+
+                  // Receipt button (for completed payments)
+                  if (payment.status == PaymentStatus.succeeded) ...[
+                    SizedBox(height: 12.h),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          PaymentReceiptGenerator.showReceipt(
+                            context,
+                            receiptId: payment.id,
+                            riderName: 'Rider',
+                            driverName: payment.driverName,
+                            origin: payment.rideId,
+                            destination: '',
+                            rideDate: payment.createdAt ?? DateTime.now(),
+                            baseFare: payment.amount - payment.platformFee,
+                            serviceFee: payment.platformFee,
+                            total: payment.amount,
+                          );
+                        },
+                        icon: const Icon(Icons.receipt_long_rounded),
+                        label: const Text('Download Receipt'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          side: BorderSide(color: AppColors.primary),
+                          padding: EdgeInsets.symmetric(vertical: 16.h),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -647,61 +683,63 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen> {
       ),
     );
   }
+}
 
-  Future<void> _requestRefund(PaymentTransaction payment) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(AppLocalizations.of(context).requestRefund),
-        content: Text(
-          AppLocalizations.of(context).areYouSureYouWant10(
-            '${payment.amount.toStringAsFixed(2)} ${payment.currency}',
+Future<void> _requestRefund(
+  BuildContext context,
+  WidgetRef ref,
+  PaymentTransaction payment,
+) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(AppLocalizations.of(context).requestRefund),
+      content: Text(
+        AppLocalizations.of(context).areYouSureYouWant10(
+          '${payment.amount.toStringAsFixed(2)} ${payment.currency}',
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: Text(AppLocalizations.of(context).actionCancel),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          child: Text(
+            AppLocalizations.of(context).requestRefund,
+            style: TextStyle(color: AppColors.error),
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(AppLocalizations.of(context).actionCancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(
-              AppLocalizations.of(context).requestRefund,
-              style: TextStyle(color: AppColors.error),
-            ),
-          ),
-        ],
+      ],
+    ),
+  );
+
+  if (confirmed != true) return;
+
+  try {
+    await ref
+        .read(paymentViewModelProvider.notifier)
+        .refundBookingPayment(
+          paymentId: payment.id,
+          reason: 'User requested refund',
+        );
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(AppLocalizations.of(context).refundRequestSubmitted),
+        backgroundColor: AppColors.success,
+        behavior: SnackBarBehavior.floating,
       ),
     );
-
-    if (confirmed != true) return;
-
-    try {
-      await ref
-          .read(paymentViewModelProvider.notifier)
-          .refundBookingPayment(
-            paymentId: payment.id,
-            reason: 'User requested refund',
-          );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).refundRequestSubmitted),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).refundRequestFailed),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    }
+  } catch (_) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(AppLocalizations.of(context).refundRequestFailed),
+        backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 }

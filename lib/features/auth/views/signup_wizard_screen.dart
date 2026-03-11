@@ -12,8 +12,12 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
+import 'package:sport_connect/core/utils/form_validators.dart';
+import 'package:sport_connect/core/widgets/intl_phone_input.dart';
+import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
+import 'package:sport_connect/features/auth/view_models/social_auth_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 // ─── Step Theme ───────────────────────────────────────────────────────────────
@@ -81,20 +85,11 @@ class SignupWizardScreen extends ConsumerStatefulWidget {
 
 class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
   // ── Controllers & State ──
-  int _currentStep = 0;
   final List<GlobalKey<FormBuilderState>> _formKeys = List.generate(
     4,
     (_) => GlobalKey<FormBuilderState>(),
   );
-
-  String _passwordText = '';
-  bool _obscurePw = true;
-  bool _obscureConfirmPw = true;
-  bool _agreedToTerms = false;
-  UserRole _selectedRole = UserRole.rider;
-  File? _profileImage;
-  DateTime? _dateOfBirth;
-  final List<String> _selectedInterests = [];
+  final _phoneKey = GlobalKey<IntlPhoneInputState>();
 
   @override
   void initState() {
@@ -108,22 +103,28 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
 
   // ── Navigation ──
   void _goToStep(int target) async {
+    final uiState = ref.read(signupWizardUiViewModelProvider);
     // Validate current step
-    if (_formKeys[_currentStep].currentState != null) {
-      if (!_formKeys[_currentStep].currentState!.saveAndValidate()) return;
+    if (_formKeys[uiState.currentStep].currentState != null) {
+      if (!_formKeys[uiState.currentStep].currentState!.saveAndValidate()) return;
     }
-    if (_currentStep == 0 && _dateOfBirth == null) {
+    // Validate phone in step 0 (optional but format-checked if entered)
+    if (uiState.currentStep == 0) {
+      final phoneError = _phoneKey.currentState?.validate();
+      if (phoneError != null) return;
+    }
+    if (uiState.currentStep == 0 && uiState.dateOfBirth == null) {
       _showError(AppLocalizations.of(context).authDobError);
       return;
     }
-    if (_currentStep == 0 && _dateOfBirth != null) {
-      final age = DateTime.now().difference(_dateOfBirth!).inDays ~/ 365;
+    if (uiState.currentStep == 0 && uiState.dateOfBirth != null) {
+      final age = DateTime.now().difference(uiState.dateOfBirth!).inDays ~/ 365;
       if (age < 18) {
         _showError(AppLocalizations.of(context).authDobMinAge);
         return;
       }
     }
-    if (_currentStep == 1 && !_agreedToTerms) {
+    if (uiState.currentStep == 1 && !uiState.agreedToTerms) {
       _showError(AppLocalizations.of(context).authAgreeTermsError);
       return;
     }
@@ -135,16 +136,17 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
 
     FocusScope.of(context).unfocus();
     HapticFeedback.mediumImpact();
-    setState(() => _currentStep = target);
+    ref.read(signupWizardUiViewModelProvider.notifier).setCurrentStep(target);
   }
 
   void _prevStep() {
-    if (_currentStep == 0) {
+    final currentStep = ref.read(signupWizardUiViewModelProvider).currentStep;
+    if (currentStep == 0) {
       context.pop();
       return;
     }
     HapticFeedback.lightImpact();
-    setState(() => _currentStep--);
+    ref.read(signupWizardUiViewModelProvider.notifier).previousStep();
   }
 
   void _showError(String msg) {
@@ -161,32 +163,26 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
   }
 
   Future<void> _handleSignup() async {
-    try {
-      final step0Values = _formKeys[0].currentState!.value;
-      final step1Values = _formKeys[1].currentState!.value;
-      final step3Values = _formKeys[3].currentState?.value ?? {};
-      await ref
-          .read(registerViewModelProvider.notifier)
-          .register(
-            email: (step0Values['email'] as String).trim(),
-            password: step1Values['password'] as String,
-            displayName: (step0Values['name'] as String).trim(),
-            role: _selectedRole,
-            phone: (step0Values['phone'] as String? ?? '').trim().isEmpty
-                ? null
-                : (step0Values['phone'] as String).trim(),
-            bio: (step3Values['bio'] as String? ?? '').trim().isEmpty
-                ? null
-                : (step3Values['bio'] as String).trim(),
-            interests: _selectedInterests,
-            profileImage: _profileImage,
-          );
-      if (mounted) {
-        context.go(AppRoutes.emailVerification.path);
-      }
-    } catch (e) {
-      final msg = e.toString().replaceFirst('Exception: ', '');
-      _showError(msg.isNotEmpty ? msg : 'Unable to create account. Try again.');
+    final uiState = ref.read(signupWizardUiViewModelProvider);
+    final step0Values = _formKeys[0].currentState!.value;
+    final step1Values = _formKeys[1].currentState!.value;
+    final step3Values = _formKeys[3].currentState?.value ?? {};
+    final success = await ref
+        .read(registerViewModelProvider.notifier)
+        .register(
+          email: (step0Values['email'] as String).trim(),
+          password: step1Values['password'] as String,
+          displayName: (step0Values['name'] as String).trim(),
+          role: uiState.selectedRole,
+          phone: uiState.phoneNumber,
+          bio: (step3Values['bio'] as String? ?? '').trim().isEmpty
+              ? null
+              : (step3Values['bio'] as String).trim(),
+          interests: uiState.selectedInterests,
+          profileImage: uiState.profileImage,
+        );
+    if (success) {
+      context.go(AppRoutes.emailVerification.path);
     }
   }
 
@@ -199,46 +195,58 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
       imageQuality: 85,
     );
     if (xf != null) {
-      setState(() => _profileImage = File(xf.path));
+      ref
+          .read(signupWizardUiViewModelProvider.notifier)
+          .setProfileImage(File(xf.path));
       HapticFeedback.lightImpact();
     }
   }
 
   Future<void> _handleGoogleSignIn() async {
-    try {
-      await ref.read(authActionsViewModelProvider).signInWithGoogle();
-    } catch (e) {
-      if (mounted)
-        _showError(
-          e is AuthException &&
-                  e.code == 'account-exists-with-different-credential'
-              ? AppLocalizations.of(context).accountExistsError
-              : AppLocalizations.of(context).signUpFailedPleaseTry,
-        );
-    }
+    await ref.read(socialAuthViewModelProvider.notifier).signInWithGoogle();
   }
 
   Future<void> _handleAppleSignIn() async {
-    try {
-      await ref.read(authActionsViewModelProvider).signInWithApple();
-    } catch (e) {
-      if (mounted)
-        _showError(
-          e is AuthException &&
-                  e.code == 'account-exists-with-different-credential'
-              ? AppLocalizations.of(context).accountExistsError
-              : AppLocalizations.of(context).signUpFailedPleaseTry,
-        );
-    }
+    await ref.read(socialAuthViewModelProvider.notifier).signInWithApple();
   }
 
   // ── Build ──────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    final theme = _stepThemes[_currentStep];
+    final wizardUiState = ref.watch(signupWizardUiViewModelProvider);
+    final theme = _stepThemes[wizardUiState.currentStep];
+    final registerState = ref.watch(registerViewModelProvider);
+    final socialState = ref.watch(socialAuthViewModelProvider);
+    final l10n = AppLocalizations.of(context);
+
+    ref.listen(registerViewModelProvider, (previous, next) {
+      if (next.hasError && previous?.error != next.error) {
+        final error = next.error;
+        final msg = error is AuthException
+            ? error.message
+            : error.toString().replaceFirst('Exception: ', '');
+        final safeMessage = msg.isNotEmpty
+            ? msg
+            : l10n.signUpFailedPleaseTry;
+        TalkerService.error('Signup failed: $safeMessage');
+        _showError(safeMessage);
+      }
+    });
+
+    ref.listen(socialAuthViewModelProvider, (previous, next) {
+      if (next.errorMessage != null && next.errorMessage != previous?.errorMessage) {
+        final error = next.errorMessage!;
+        final isAccountExists = error.contains(
+          'account-exists-with-different-credential',
+        );
+        _showError(
+          isAccountExists ? l10n.accountExistsError : l10n.signUpFailedPleaseTry,
+        );
+      }
+    });
 
     return PopScope(
-      canPop: _currentStep == 0,
+      canPop: wizardUiState.currentStep == 0,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _prevStep();
       },
@@ -250,7 +258,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
               _buildTopBar(theme),
               _buildStepIndicator(),
               Expanded(child: _buildCard(theme)),
-              _buildBottomCTA(theme),
+              _buildBottomCTA(theme, registerState, socialState),
             ],
           ),
         ),
@@ -260,6 +268,9 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
 
   // ── Top Bar ────────────────────────────────────────────────────────────────
   Widget _buildTopBar(_StepTheme theme) {
+    final wizardUiState = ref.watch(signupWizardUiViewModelProvider);
+    final l10n = AppLocalizations.of(context);
+    final stepLabels = [l10n.yourDetailsStep, l10n.securityStep, l10n.yourRoleStep, l10n.yourProfileStep];
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
       child: Row(
@@ -275,7 +286,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                _currentStep == 0
+                wizardUiState.currentStep == 0
                     ? Icons.close_rounded
                     : Icons.arrow_back_ios_new_rounded,
                 size: 18.sp,
@@ -291,8 +302,8 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                 AnimatedSwitcher(
                   duration: 300.ms,
                   child: Text(
-                    theme.label,
-                    key: ValueKey(theme.label),
+                    stepLabels[wizardUiState.currentStep],
+                    key: ValueKey(wizardUiState.currentStep),
                     style: TextStyle(
                       fontFamily: 'Syne', // bold geometric
                       fontSize: 20.sp,
@@ -302,7 +313,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                   ),
                 ),
                 Text(
-                  'Step ${_currentStep + 1} of 4',
+                  l10n.stepOfCount(wizardUiState.currentStep + 1, 4),
                   style: TextStyle(
                     fontSize: 12.sp,
                     color: theme.accent.withOpacity(0.8),
@@ -318,10 +329,10 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
               (i) => AnimatedContainer(
                 duration: 300.ms,
                 margin: EdgeInsets.only(left: 5.w),
-                width: i == _currentStep ? 20.w : 8.w,
+                width: i == wizardUiState.currentStep ? 20.w : 8.w,
                 height: 8.w,
                 decoration: BoxDecoration(
-                  color: i <= _currentStep
+                    color: i <= wizardUiState.currentStep
                       ? theme.accent
                       : theme.accent.withOpacity(0.25),
                   borderRadius: BorderRadius.circular(4.r),
@@ -336,6 +347,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
 
   // ── Speedometer ─────────────────────────────────────────────────────────────
   Widget _buildStepIndicator() {
+    final wizardUiState = ref.watch(signupWizardUiViewModelProvider);
     return Padding(
       padding: EdgeInsets.fromLTRB(24.w, 4.h, 24.w, 12.h),
       child: Row(
@@ -346,7 +358,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
               margin: EdgeInsets.only(right: i < 3 ? 6.w : 0),
               height: 4.h,
               decoration: BoxDecoration(
-                color: i <= _currentStep
+                color: i <= wizardUiState.currentStep
                     ? _kAccent
                     : _kAccent.withOpacity(0.18),
                 borderRadius: BorderRadius.circular(2.r),
@@ -383,6 +395,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
   }
 
   Widget _buildStepContent(_StepTheme theme) {
+    final currentStep = ref.watch(signupWizardUiViewModelProvider).currentStep;
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(24.w, 20.h, 24.w, 24.h),
       child: AnimatedSwitcher(
@@ -392,7 +405,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
           _buildStep2(theme),
           _buildStep3(theme),
           _buildStep4(theme),
-        ][_currentStep],
+        ][currentStep],
       ),
     );
   }
@@ -400,6 +413,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
   // ── Step 1: Basic Info ──────────────────────────────────────────────────────
   Widget _buildStep1(_StepTheme theme) {
     final l10n = AppLocalizations.of(context);
+    final wizardUiState = ref.watch(signupWizardUiViewModelProvider);
     return FormBuilder(
       key: _formKeys[0],
       child: Column(
@@ -458,6 +472,8 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             validator: FormBuilderValidators.compose([
               FormBuilderValidators.required(),
               FormBuilderValidators.minLength(2),
+              FormBuilderValidators.maxLength(60),
+              (value) => FormValidators.name(value),
             ]),
             theme: theme,
             capitalization: TextCapitalization.words,
@@ -469,26 +485,34 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             hint: l10n.authEmailHint,
             icon: Icons.alternate_email_rounded,
             keyboardType: TextInputType.emailAddress,
-            validator: FormBuilderValidators.email(),
+            validator: FormBuilderValidators.compose([
+              FormBuilderValidators.required(),
+              (value) => FormValidators.email(value),
+            ]),
             theme: theme,
           ),
           SizedBox(height: 14.h),
-          _StyledField(
-            name: 'phone',
+          // International phone input with country codes
+          IntlPhoneInput(
+            key: _phoneKey,
             label: l10n.authPhoneOptional,
             hint: l10n.authPhoneHint,
-            icon: Icons.phone_outlined,
-            keyboardType: TextInputType.phone,
-            theme: theme,
+            accentColor: theme.accent,
+            fillColor: theme.accent.withOpacity(0.06),
+            onChanged: (phone) => ref
+                .read(signupWizardUiViewModelProvider.notifier)
+                .setPhoneNumber(phone.isValid ? phone.fullNumber : null),
           ),
           SizedBox(height: 14.h),
           // DOB picker
           _DobPicker(
-            selected: _dateOfBirth,
+            selected: wizardUiState.dateOfBirth,
             accent: theme.accent,
             textColor: theme.text,
             cardBg: theme.card,
-            onPicked: (d) => setState(() => _dateOfBirth = d),
+            onPicked: (d) => ref
+                .read(signupWizardUiViewModelProvider.notifier)
+                .setDateOfBirth(d),
           ),
           SizedBox(height: 28.h),
           _Divider(accent: theme.accent, label: l10n.orSignUpWith),
@@ -511,6 +535,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
   // ── Step 2: Password ────────────────────────────────────────────────────────
   Widget _buildStep2(_StepTheme theme) {
     final l10n = AppLocalizations.of(context);
+    final wizardUiState = ref.watch(signupWizardUiViewModelProvider);
     return FormBuilder(
       key: _formKeys[1],
       child: Column(
@@ -527,21 +552,25 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             label: l10n.authCreatePassword,
             hint: l10n.authPasswordHint,
             icon: Icons.lock_outline_rounded,
-            obscure: _obscurePw,
-            onChanged: (v) => setState(() => _passwordText = v ?? ''),
+            obscure: wizardUiState.obscurePassword,
+            onChanged: (v) => ref
+                .read(signupWizardUiViewModelProvider.notifier)
+                .setPasswordText(v ?? ''),
             validator: FormBuilderValidators.compose([
               FormBuilderValidators.required(),
-              FormBuilderValidators.minLength(8),
+              (value) => FormValidators.password(value),
             ]),
             theme: theme,
             suffix: IconButton(
               icon: Icon(
-                _obscurePw
+                wizardUiState.obscurePassword
                     ? Icons.visibility_outlined
                     : Icons.visibility_off_outlined,
                 color: theme.accent,
               ),
-              onPressed: () => setState(() => _obscurePw = !_obscurePw),
+              onPressed: () => ref
+                  .read(signupWizardUiViewModelProvider.notifier)
+                  .togglePasswordVisibility(),
             ),
           ),
           SizedBox(height: 14.h),
@@ -550,7 +579,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             label: l10n.authConfirmPassword,
             hint: l10n.authConfirmPasswordHint,
             icon: Icons.lock_outline_rounded,
-            obscure: _obscureConfirmPw,
+            obscure: wizardUiState.obscureConfirmPassword,
             validator: (v) =>
                 v !=
                     (_formKeys[1].currentState?.fields['password']?.value
@@ -560,23 +589,29 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             theme: theme,
             suffix: IconButton(
               icon: Icon(
-                _obscureConfirmPw
+                wizardUiState.obscureConfirmPassword
                     ? Icons.visibility_outlined
                     : Icons.visibility_off_outlined,
                 color: theme.accent,
               ),
-              onPressed: () =>
-                  setState(() => _obscureConfirmPw = !_obscureConfirmPw),
+              onPressed: () => ref
+                  .read(signupWizardUiViewModelProvider.notifier)
+                  .toggleConfirmPasswordVisibility(),
             ),
           ),
           SizedBox(height: 20.h),
-          _PasswordStrengthBar(password: _passwordText, accent: theme.accent),
+          _PasswordStrengthBar(
+            password: wizardUiState.passwordText,
+            accent: theme.accent,
+          ),
           SizedBox(height: 28.h),
           _TermsCard(
-            agreed: _agreedToTerms,
+            agreed: wizardUiState.agreedToTerms,
             accent: theme.accent,
             onToggle: () {
-              setState(() => _agreedToTerms = !_agreedToTerms);
+              ref
+                  .read(signupWizardUiViewModelProvider.notifier)
+                  .toggleTermsAgreement();
               HapticFeedback.selectionClick();
             },
             onTermsTap: () => context.push(AppRoutes.terms.path),
@@ -591,6 +626,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
   // ── Step 3: Role & Interests ────────────────────────────────────────────────
   Widget _buildStep3(_StepTheme theme) {
     final l10n = AppLocalizations.of(context);
+    final wizardUiState = ref.watch(signupWizardUiViewModelProvider);
     return FormBuilder(
       key: _formKeys[2],
       child: Column(
@@ -609,27 +645,31 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
           SizedBox(height: 20.h),
           _RoleCard(
             role: UserRole.rider,
-            isSelected: _selectedRole == UserRole.rider,
+            isSelected: wizardUiState.selectedRole == UserRole.rider,
             accent: theme.accent,
             icon: Icons.person_pin_circle_rounded,
             title: l10n.wizardFindRides,
             desc: l10n.wizardFindRidesDesc,
             onTap: () {
               HapticFeedback.selectionClick();
-              setState(() => _selectedRole = UserRole.rider);
+              ref
+                  .read(signupWizardUiViewModelProvider.notifier)
+                  .setSelectedRole(UserRole.rider);
             },
           ),
           SizedBox(height: 12.h),
           _RoleCard(
             role: UserRole.driver,
-            isSelected: _selectedRole == UserRole.driver,
+            isSelected: wizardUiState.selectedRole == UserRole.driver,
             accent: theme.accent,
             icon: Icons.drive_eta_rounded,
             title: l10n.wizardOfferRides,
             desc: l10n.wizardOfferRidesDesc,
             onTap: () {
               HapticFeedback.selectionClick();
-              setState(() => _selectedRole = UserRole.driver);
+              ref
+                  .read(signupWizardUiViewModelProvider.notifier)
+                  .setSelectedRole(UserRole.driver);
             },
           ),
           SizedBox(height: 28.h),
@@ -658,15 +698,13 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
               'Skiing',
               'Surfing',
             ],
-            selected: _selectedInterests,
+            selected: wizardUiState.selectedInterests,
             accent: theme.accent,
             onToggle: (i) {
               HapticFeedback.selectionClick();
-              setState(() {
-                _selectedInterests.contains(i)
-                    ? _selectedInterests.remove(i)
-                    : _selectedInterests.add(i);
-              });
+              ref
+                  .read(signupWizardUiViewModelProvider.notifier)
+                  .toggleInterest(i);
             },
           ),
           SizedBox(height: 16.h),
@@ -678,6 +716,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
   // ── Step 4: Profile & Tree ──────────────────────────────────────────────────
   Widget _buildStep4(_StepTheme theme) {
     final l10n = AppLocalizations.of(context);
+    final wizardUiState = ref.watch(signupWizardUiViewModelProvider);
     return FormBuilder(
       key: _formKeys[3],
       child: Column(
@@ -698,15 +737,15 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: theme.accent.withOpacity(0.12),
-                      image: _profileImage != null
+                      image: wizardUiState.profileImage != null
                           ? DecorationImage(
-                              image: FileImage(_profileImage!),
+                              image: FileImage(wizardUiState.profileImage!),
                               fit: BoxFit.cover,
                             )
                           : null,
                       border: Border.all(color: theme.accent, width: 3),
                     ),
-                    child: _profileImage == null
+                    child: wizardUiState.profileImage == null
                         ? Icon(
                             Icons.person_rounded,
                             size: 50.sp,
@@ -758,6 +797,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             icon: Icons.edit_note_rounded,
             maxLines: 3,
             theme: theme,
+            validator: (value) => FormValidators.bio(value),
           ),
           SizedBox(height: 24.h),
           // Summary card
@@ -788,7 +828,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                   style: TextStyle(fontSize: 13.sp, color: theme.text),
                 ),
                 Text(
-                  l10n.roleValue(_selectedRole.displayName),
+                  l10n.roleValue(wizardUiState.selectedRole.displayName),
                   style: TextStyle(fontSize: 13.sp, color: theme.text),
                 ),
               ],
@@ -801,9 +841,14 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
   }
 
   // ── Bottom CTA ──────────────────────────────────────────────────────────────
-  Widget _buildBottomCTA(_StepTheme theme) {
-    final isLast = _currentStep == 3;
-    final isLoading = ref.watch(registerViewModelProvider).isLoading;
+  Widget _buildBottomCTA(
+    _StepTheme theme,
+    AsyncValue<void> registerState,
+    SocialAuthState socialState,
+  ) {
+    final currentStep = ref.watch(signupWizardUiViewModelProvider).currentStep;
+    final isLast = currentStep == 3;
+    final isLoading = registerState.isLoading || socialState.isLoading;
 
     return Container(
       padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 20.h),
@@ -820,7 +865,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
       child: SafeArea(
         top: false,
         child: GestureDetector(
-          onTap: () => _goToStep(_currentStep + 1),
+          onTap: () => _goToStep(currentStep + 1),
           child: AnimatedContainer(
             duration: 300.ms,
             height: 54.h,
@@ -909,7 +954,6 @@ class _SecurityBadge extends StatelessWidget {
 
 class _StyledField extends StatelessWidget {
   final String name;
-  final String? initialValue;
   final String label, hint;
   final IconData icon;
   final bool obscure;
@@ -927,7 +971,6 @@ class _StyledField extends StatelessWidget {
     required this.hint,
     required this.icon,
     required this.theme,
-    this.initialValue,
     this.obscure = false,
     this.maxLines = 1,
     this.keyboardType,
@@ -940,7 +983,6 @@ class _StyledField extends StatelessWidget {
   @override
   Widget build(BuildContext context) => FormBuilderTextField(
     name: name,
-    initialValue: initialValue,
     obscureText: obscure,
     maxLines: maxLines,
     keyboardType: keyboardType,

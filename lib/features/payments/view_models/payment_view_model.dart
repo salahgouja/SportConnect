@@ -1,14 +1,179 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/stripe_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
+import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/payments/models/payment_model.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 
 part 'payment_view_model.freezed.dart';
 part 'payment_view_model.g.dart';
+
+class DriverStripeOnboardingFlowState {
+  final bool isLoading;
+  final bool showWebView;
+  final bool isVerifying;
+  final bool completionHandled;
+  final bool isConnected;
+  final double webViewProgress;
+  final String? onboardingUrl;
+  final String? errorMessage;
+  final String? successMessage;
+
+  const DriverStripeOnboardingFlowState({
+    this.isLoading = false,
+    this.showWebView = false,
+    this.isVerifying = false,
+    this.completionHandled = false,
+    this.isConnected = false,
+    this.webViewProgress = 0,
+    this.onboardingUrl,
+    this.errorMessage,
+    this.successMessage,
+  });
+
+  DriverStripeOnboardingFlowState copyWith({
+    bool? isLoading,
+    bool? showWebView,
+    bool? isVerifying,
+    bool? completionHandled,
+    bool? isConnected,
+    double? webViewProgress,
+    String? onboardingUrl,
+    String? errorMessage,
+    String? successMessage,
+    bool clearOnboardingUrl = false,
+    bool clearError = false,
+    bool clearSuccess = false,
+  }) {
+    return DriverStripeOnboardingFlowState(
+      isLoading: isLoading ?? this.isLoading,
+      showWebView: showWebView ?? this.showWebView,
+      isVerifying: isVerifying ?? this.isVerifying,
+      completionHandled: completionHandled ?? this.completionHandled,
+      isConnected: isConnected ?? this.isConnected,
+      webViewProgress: webViewProgress ?? this.webViewProgress,
+      onboardingUrl: clearOnboardingUrl
+          ? null
+          : (onboardingUrl ?? this.onboardingUrl),
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      successMessage: clearSuccess
+          ? null
+          : (successMessage ?? this.successMessage),
+    );
+  }
+}
+
+class PaymentHistoryFilterState {
+  const PaymentHistoryFilterState({this.selectedFilter = 'all'});
+
+  final String selectedFilter;
+
+  PaymentHistoryFilterState copyWith({String? selectedFilter}) {
+    return PaymentHistoryFilterState(
+      selectedFilter: selectedFilter ?? this.selectedFilter,
+    );
+  }
+}
+
+@Riverpod(keepAlive: true)
+class PaymentHistoryFilterViewModel extends _$PaymentHistoryFilterViewModel {
+  @override
+  PaymentHistoryFilterState build() => const PaymentHistoryFilterState();
+
+  static const validFilters = <String>{
+    'all',
+    'completed',
+    'pending',
+    'refunded',
+    'failed',
+  };
+
+  void setFilter(String filter) {
+    if (!validFilters.contains(filter) || filter == state.selectedFilter) {
+      return;
+    }
+    state = state.copyWith(selectedFilter: filter);
+  }
+}
+
+final filteredRiderPaymentsProvider =
+    Provider.family<List<PaymentTransaction>, List<PaymentTransaction>>((
+      ref,
+      payments,
+    ) {
+      final selectedFilter = ref
+          .watch(paymentHistoryFilterViewModelProvider)
+          .selectedFilter;
+
+      switch (selectedFilter) {
+        case 'completed':
+          return payments
+              .where((payment) => payment.status == PaymentStatus.succeeded)
+              .toList();
+        case 'pending':
+          return payments
+              .where(
+                (payment) =>
+                    payment.status == PaymentStatus.pending ||
+                    payment.status == PaymentStatus.processing,
+              )
+              .toList();
+        case 'refunded':
+          return payments
+              .where(
+                (payment) =>
+                    payment.status == PaymentStatus.refunded ||
+                    payment.status == PaymentStatus.partiallyRefunded,
+              )
+              .toList();
+        case 'failed':
+          return payments
+              .where(
+                (payment) =>
+                    payment.status == PaymentStatus.failed ||
+                    payment.status == PaymentStatus.cancelled,
+              )
+              .toList();
+        default:
+          return payments;
+      }
+    });
+
+class DriverEarningsPeriodState {
+  const DriverEarningsPeriodState({this.selectedPeriod = 'thisWeek'});
+
+  final String selectedPeriod;
+
+  DriverEarningsPeriodState copyWith({String? selectedPeriod}) {
+    return DriverEarningsPeriodState(
+      selectedPeriod: selectedPeriod ?? this.selectedPeriod,
+    );
+  }
+}
+
+@Riverpod(keepAlive: true)
+class DriverEarningsPeriodViewModel extends _$DriverEarningsPeriodViewModel {
+  @override
+  DriverEarningsPeriodState build() => const DriverEarningsPeriodState();
+
+  static const validPeriods = <String>{
+    'today',
+    'thisWeek',
+    'thisMonth',
+    'allTime',
+  };
+
+  void setPeriod(String period) {
+    if (!validPeriods.contains(period) || period == state.selectedPeriod) {
+      return;
+    }
+    state = state.copyWith(selectedPeriod: period);
+  }
+}
 
 /// Payment Processing View Model
 @riverpod
@@ -192,6 +357,221 @@ class DriverOnboardingViewModel extends _$DriverOnboardingViewModel {
       }
       return null;
     }
+  }
+}
+
+@riverpod
+class DriverStripeOnboardingFlowViewModel
+    extends _$DriverStripeOnboardingFlowViewModel {
+  @override
+  DriverStripeOnboardingFlowState build() =>
+      const DriverStripeOnboardingFlowState();
+
+  Future<void> checkExistingAccount(UserModel? user) async {
+    if (user == null) return;
+
+    try {
+      final status = await ref.read(driverStripeStatusProvider.future);
+      if (!ref.mounted) return;
+      if (status.isConnected) {
+        state = state.copyWith(isConnected: true, clearError: true);
+      }
+    } catch (e) {
+      TalkerService.error('Error checking existing Stripe account: $e');
+    }
+  }
+
+  Future<void> startOnboarding(UserModel? user) async {
+    if (user == null) {
+      state = state.copyWith(
+        errorMessage: 'Please sign in to continue.',
+        isLoading: false,
+      );
+      return;
+    }
+
+    state = state.copyWith(
+      isLoading: true,
+      clearError: true,
+      clearSuccess: true,
+    );
+
+    try {
+      final country = _detectUserCountry(user);
+      final nameParts = user.displayName.trim().split(RegExp(r'\s+'));
+      final firstName = nameParts.first;
+      final lastName = nameParts.length > 1
+          ? nameParts.sublist(1).join(' ')
+          : null;
+
+      final result = await ref
+          .read(driverOnboardingViewModelProvider.notifier)
+          .createConnectedAccount(
+            userId: user.uid,
+            email: user.email,
+            country: country,
+            firstName: firstName,
+            lastName: lastName,
+            phone: user.phoneNumber,
+            dateOfBirth: user.dateOfBirth,
+            addressLine1: user.address,
+            city: user.city,
+          );
+
+      if (!ref.mounted) return;
+
+      if (result != null &&
+          result.onboardingUrl != null &&
+          result.stripeAccountId.isNotEmpty) {
+        state = state.copyWith(
+          isLoading: false,
+          onboardingUrl: result.onboardingUrl,
+          showWebView: true,
+          completionHandled: false,
+          webViewProgress: 0,
+        );
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: 'Stripe account creation failed.',
+        );
+      }
+    } catch (e) {
+      if (!ref.mounted) return;
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Stripe setup failed.',
+      );
+    }
+  }
+
+  void failWebViewLoad(String message) {
+    state = state.copyWith(
+      errorMessage: message,
+      showWebView: false,
+      webViewProgress: 0,
+      clearOnboardingUrl: true,
+    );
+  }
+
+  void markCompletionHandled() {
+    state = state.copyWith(
+      completionHandled: true,
+      showWebView: false,
+      webViewProgress: 0,
+      clearError: true,
+    );
+  }
+
+  void setWebViewProgress(double progress) {
+    final normalized = progress.clamp(0, 1).toDouble();
+    if (normalized == state.webViewProgress) return;
+    state = state.copyWith(webViewProgress: normalized);
+  }
+
+  Future<void> handleOnboardingComplete({
+    required UserModel? user,
+    required String successMessage,
+    required String additionalInfoMessage,
+    required String verifyFailedMessage,
+  }) async {
+    state = state.copyWith(
+      isVerifying: true,
+      clearError: true,
+      clearSuccess: true,
+    );
+
+    try {
+      await Future.delayed(const Duration(seconds: 2));
+      if (user == null) {
+        state = state.copyWith(
+          isVerifying: false,
+          errorMessage: verifyFailedMessage,
+          completionHandled: false,
+        );
+        return;
+      }
+
+      ref.invalidate(driverStripeStatusProvider);
+      final status = await ref.read(driverStripeStatusProvider.future);
+      if (!ref.mounted) return;
+
+      if (status.isConnected) {
+        state = state.copyWith(
+          isVerifying: false,
+          isConnected: true,
+          successMessage: successMessage,
+        );
+      } else {
+        state = state.copyWith(
+          isVerifying: false,
+          errorMessage: additionalInfoMessage,
+          completionHandled: false,
+        );
+      }
+    } catch (e, stack) {
+      TalkerService.error(
+        'Stripe onboarding verification failed: $e',
+        e,
+        stack,
+      );
+      if (!ref.mounted) return;
+      state = state.copyWith(
+        isVerifying: false,
+        completionHandled: false,
+        errorMessage: verifyFailedMessage,
+        showWebView: false,
+        webViewProgress: 0,
+      );
+    }
+  }
+
+  void cancelOnboarding() {
+    state = state.copyWith(
+      showWebView: false,
+      completionHandled: false,
+      webViewProgress: 0,
+      clearOnboardingUrl: true,
+    );
+  }
+
+  void clearMessages() {
+    state = state.copyWith(clearError: true, clearSuccess: true);
+  }
+
+  String _detectUserCountry(UserModel user) {
+    if (user.country != null && user.country!.isNotEmpty) {
+      return user.country!.toUpperCase();
+    }
+
+    if (user.phoneNumber != null) {
+      final phone = user.phoneNumber!;
+      const phoneCountryMap = {
+        '+216': 'TN',
+        '+33': 'FR',
+        '+49': 'DE',
+        '+34': 'ES',
+        '+39': 'IT',
+        '+44': 'GB',
+        '+1': 'US',
+        '+32': 'BE',
+        '+41': 'CH',
+        '+352': 'LU',
+        '+31': 'NL',
+        '+351': 'PT',
+        '+43': 'AT',
+        '+212': 'MA',
+        '+213': 'DZ',
+      };
+
+      for (final entry in phoneCountryMap.entries) {
+        if (phone.startsWith(entry.key)) {
+          return entry.value;
+        }
+      }
+    }
+
+    return 'FR';
   }
 }
 

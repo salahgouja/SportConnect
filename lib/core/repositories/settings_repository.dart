@@ -16,6 +16,8 @@ class SettingsRepository {
   static const String _distanceUnitKey = 'distance_unit';
   static const String _savedEmailKey = 'saved_email';
   static const String _rememberMeKey = 'remember_me';
+  static const String _themeModeKey = 'theme_mode';
+  static const String _mapStyleKey = 'map_style';
 
   final SharedPreferences _prefs;
 
@@ -142,6 +144,26 @@ class SettingsRepository {
   /// Save distance unit preference
   Future<void> setDistanceUnit(String unit) async {
     await _prefs.setString(_distanceUnitKey, unit);
+  }
+
+  /// Get theme mode preference ('system', 'light', or 'dark', defaults to 'light')
+  String get themeMode {
+    return _prefs.getString(_themeModeKey) ?? 'light';
+  }
+
+  /// Save theme mode preference
+  Future<void> setThemeMode(String mode) async {
+    await _prefs.setString(_themeModeKey, mode);
+  }
+
+  /// Get map style preference ('standard', 'dark', 'satellite', defaults to 'standard')
+  String get mapStyle {
+    return _prefs.getString(_mapStyleKey) ?? 'standard';
+  }
+
+  /// Save map style preference
+  Future<void> setMapStyle(String style) async {
+    await _prefs.setString(_mapStyleKey, style);
   }
 
   // ============================================================

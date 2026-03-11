@@ -146,7 +146,7 @@ final class ChatDetailViewModelProvider
 }
 
 String _$chatDetailViewModelHash() =>
-    r'39ea5f63e9332639ec10d65eab176bf54710cc8f';
+    r'0f3d82624b4ef4dfbd0e5cafbf7ee3604a8f7723';
 
 /// Chat Detail View Model
 

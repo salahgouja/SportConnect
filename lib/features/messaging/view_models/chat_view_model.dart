@@ -261,6 +261,88 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
     }
   }
 
+  Future<bool> sendImageMessage({
+    required File imageFile,
+    required String fileName,
+    required String senderName,
+    String? senderPhotoUrl,
+  }) async {
+    state = state.copyWith(isSending: true, error: null);
+    try {
+      final imageUrl = await ref
+          .read(chatRepositoryProvider)
+          .uploadChatImage(
+            chatId: chatId,
+            imageFile: imageFile,
+            fileName: fileName,
+          );
+
+      return await sendMessage(
+        content: 'Photo',
+        senderName: senderName,
+        senderPhotoUrl: senderPhotoUrl,
+        type: MessageType.image,
+        imageUrl: imageUrl,
+        replyToMessageId: state.replyToMessage?.id,
+        replyToContent: state.replyToMessage?.content,
+      );
+    } catch (e) {
+      state = state.copyWith(isSending: false, error: e.toString());
+      return false;
+    }
+  }
+
+  Future<bool> sendAudioMessage({
+    required File audioFile,
+    required String fileName,
+    required String durationText,
+    required String senderName,
+    String? senderPhotoUrl,
+  }) async {
+    state = state.copyWith(isSending: true, error: null);
+    try {
+      final audioUrl = await ref
+          .read(chatRepositoryProvider)
+          .uploadAudioMessage(
+            chatId: chatId,
+            audioFile: audioFile,
+            fileName: fileName,
+          );
+
+      return await sendMessage(
+        content: 'Voice message ($durationText)',
+        senderName: senderName,
+        senderPhotoUrl: senderPhotoUrl,
+        type: MessageType.audio,
+        imageUrl: audioUrl,
+        replyToMessageId: state.replyToMessage?.id,
+        replyToContent: state.replyToMessage?.content,
+      );
+    } catch (e) {
+      state = state.copyWith(isSending: false, error: e.toString());
+      return false;
+    }
+  }
+
+  Future<bool> sendLocationMessage({
+    required String content,
+    required double latitude,
+    required double longitude,
+    required String senderName,
+    String? senderPhotoUrl,
+  }) {
+    return sendMessage(
+      content: content,
+      senderName: senderName,
+      senderPhotoUrl: senderPhotoUrl,
+      type: MessageType.location,
+      latitude: latitude,
+      longitude: longitude,
+      replyToMessageId: state.replyToMessage?.id,
+      replyToContent: state.replyToMessage?.content,
+    );
+  }
+
   Future<void> loadMoreMessages() async {
     if (state.isLoadingMore || state.messages.isEmpty) return;
 
@@ -353,16 +435,73 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
   void clearReply() {
     state = state.copyWith(replyToMessage: null);
   }
+
+  void setEmojiPickerVisible(bool visible) {
+    if (state.showEmojiPicker == visible) return;
+    state = state.copyWith(showEmojiPicker: visible);
+  }
+
+  void beginRecording(String path) {
+    state = state.copyWith(
+      isRecording: true,
+      recordingPath: path,
+      recordingDuration: Duration.zero,
+    );
+  }
+
+  void updateRecordingDuration(Duration duration) {
+    if (!state.isRecording) return;
+    state = state.copyWith(recordingDuration: duration);
+  }
+
+  void clearRecording() {
+    state = state.copyWith(
+      isRecording: false,
+      recordingPath: null,
+      recordingDuration: Duration.zero,
+    );
+  }
+
+  void handleComposerTextChanged(String text, String displayName) {
+    final trimmed = text.trim();
+    if (trimmed.isNotEmpty && !state.isLocallyTyping) {
+      state = state.copyWith(isLocallyTyping: true);
+      unawaited(setTyping(true, displayName));
+    }
+
+    _typingTimer?.cancel();
+
+    if (trimmed.isEmpty) {
+      if (state.isLocallyTyping) {
+        state = state.copyWith(isLocallyTyping: false);
+        unawaited(setTyping(false, displayName));
+      }
+      return;
+    }
+
+    _typingTimer = Timer(const Duration(seconds: 2), () {
+      if (!ref.mounted) return;
+      state = state.copyWith(isLocallyTyping: false);
+      unawaited(setTyping(false, displayName));
+    });
+  }
 }
 
 /// State for chat detail
 class ChatDetailState {
+  static const _unset = Object();
+
   final List<MessageModel> messages;
   final List<TypingIndicator> typingUsers;
   final bool isLoading;
   final bool isSending;
   final bool isLoadingMore;
   final bool hasMoreMessages;
+  final bool showEmojiPicker;
+  final bool isLocallyTyping;
+  final bool isRecording;
+  final String? recordingPath;
+  final Duration recordingDuration;
   final String? error;
   final MessageModel? replyToMessage;
 
@@ -373,6 +512,11 @@ class ChatDetailState {
     this.isSending = false,
     this.isLoadingMore = false,
     this.hasMoreMessages = true,
+    this.showEmojiPicker = false,
+    this.isLocallyTyping = false,
+    this.isRecording = false,
+    this.recordingPath,
+    this.recordingDuration = Duration.zero,
     this.error,
     this.replyToMessage,
   });
@@ -384,8 +528,13 @@ class ChatDetailState {
     bool? isSending,
     bool? isLoadingMore,
     bool? hasMoreMessages,
+    bool? showEmojiPicker,
+    bool? isLocallyTyping,
+    bool? isRecording,
+    Object? recordingPath = _unset,
+    Duration? recordingDuration,
     String? error,
-    MessageModel? replyToMessage,
+    Object? replyToMessage = _unset,
   }) {
     return ChatDetailState(
       messages: messages ?? this.messages,
@@ -394,8 +543,17 @@ class ChatDetailState {
       isSending: isSending ?? this.isSending,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       hasMoreMessages: hasMoreMessages ?? this.hasMoreMessages,
+      showEmojiPicker: showEmojiPicker ?? this.showEmojiPicker,
+      isLocallyTyping: isLocallyTyping ?? this.isLocallyTyping,
+      isRecording: isRecording ?? this.isRecording,
+      recordingPath: recordingPath == _unset
+          ? this.recordingPath
+          : recordingPath as String?,
+      recordingDuration: recordingDuration ?? this.recordingDuration,
       error: error,
-      replyToMessage: replyToMessage,
+      replyToMessage: replyToMessage == _unset
+          ? this.replyToMessage
+          : replyToMessage as MessageModel?,
     );
   }
 

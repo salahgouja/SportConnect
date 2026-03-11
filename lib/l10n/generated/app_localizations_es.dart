@@ -1008,10 +1008,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get noCallHistory => 'No hay historial de llamadas';
 
   @override
-  String get videoCall => 'Video call';
+  String get videoCall => 'Videollamada';
 
   @override
-  String get voiceCall => 'Voice call';
+  String get voiceCall => 'Llamada de voz';
 
   @override
   String get text3 => ' • ';
@@ -2054,7 +2054,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get howWasYourExperience => '¿Cómo fue tu experiencia?';
 
   @override
-  String get whatStoodOut => '¿Qué destacó?';
+  String get whatStoodOut => '¿Qué te pareció destacable?';
 
   @override
   String get additionalCommentsOptional => 'Comentarios adicionales (opcional)';
@@ -3118,334 +3118,342 @@ class AppLocalizationsEs extends AppLocalizations {
   String get createARideToStartEarning => 'Crea un viaje para comenzar a ganar';
 
   @override
-  String get wizardStepWelcome => 'Welcome';
+  String get wizardStepWelcome => 'Bienvenido';
 
   @override
-  String get wizardStepWelcomeSubtitle => 'Let\'s get you started';
+  String get wizardStepWelcomeSubtitle => '¡Empecemos!';
 
   @override
-  String get wizardStepSecurity => 'Security';
+  String get wizardStepSecurity => 'Seguridad';
 
   @override
-  String get wizardStepSecuritySubtitle => 'Create a secure password';
+  String get wizardStepSecuritySubtitle => 'Crea una contraseña segura';
 
   @override
-  String get wizardStepRole => 'Your Role';
+  String get wizardStepRole => 'Tu rol';
 
   @override
-  String get wizardStepRoleSubtitle => 'How will you use SportConnect?';
+  String get wizardStepRoleSubtitle => '¿Cómo usarás SportConnect?';
 
   @override
-  String get wizardStepProfile => 'Profile';
+  String get wizardStepProfile => 'Perfil';
 
   @override
-  String get wizardStepProfileSubtitle => 'Make it personal';
+  String get wizardStepProfileSubtitle => 'Hazlo personal';
 
   @override
-  String get authFullName => 'Full Name';
+  String get authFullName => 'Nombre completo';
 
   @override
-  String get authFullNameHint => 'Enter your full name';
+  String get authFullNameHint => 'Introduce tu nombre completo';
 
   @override
-  String get authEmailAddress => 'Email Address';
+  String get authEmailAddress => 'Correo electrónico';
 
   @override
-  String get authEmailHint => 'you@example.com';
+  String get authEmailHint => 'tu@ejemplo.com';
 
   @override
-  String get authPhoneOptional => 'Phone Number (Optional)';
+  String get authPhoneOptional => 'Número de teléfono (Opcional)';
 
   @override
-  String get authPhoneHint => '+216 XX XXX XXX';
+  String get authPhoneHint => 'Introduce tu número de teléfono';
 
   @override
-  String get authDateOfBirth => 'Date of Birth *';
+  String get authDateOfBirth => 'Fecha de nacimiento *';
 
   @override
-  String get authDobPrompt => 'Tap to select (must be 18+)';
+  String get authDobPrompt => 'Toca para seleccionar (debe tener 18+)';
 
   @override
   String get authDobMinAge =>
-      'You must be at least 18 years old to use SportConnect.';
+      'Debes tener al menos 18 años para usar SportConnect.';
 
   @override
-  String get authDobPicker => 'Select your date of birth';
+  String get authDobPicker => 'Selecciona tu fecha de nacimiento';
 
   @override
-  String get authCreatePassword => 'Create Password';
+  String get authCreatePassword => 'Crear contraseña';
 
   @override
-  String get authPasswordHint => 'Min 8 characters';
+  String get authPasswordHint => 'Mín. 8 caracteres';
 
   @override
-  String get authConfirmPasswordHint => 'Re-enter your password';
+  String get authConfirmPasswordHint => 'Vuelve a introducir tu contraseña';
 
   @override
-  String get authAboutYou => 'About You (Optional)';
+  String get authAboutYou => 'Sobre ti (Opcional)';
 
   @override
-  String get authAboutYouHint => 'Tell us a bit about yourself...';
+  String get authAboutYouHint => 'Cuéntanos un poco sobre ti...';
 
   @override
-  String get wizardFindRides => 'Find Rides';
+  String get wizardFindRides => 'Encontrar viajes';
 
   @override
   String get wizardFindRidesDesc =>
-      'Search for rides to sporting events, practices, and games';
+      'Busca viajes a eventos deportivos, entrenamientos y partidos';
 
   @override
-  String get wizardOfferRides => 'Offer Rides';
+  String get wizardOfferRides => 'Ofrecer viajes';
 
   @override
   String get wizardOfferRidesDesc =>
-      'Share your car and earn money while helping others';
+      'Comparte tu coche y gana dinero mientras ayudas a otros';
 
   @override
-  String get wizardContinue => 'Continue';
+  String get wizardContinue => 'Continuar';
 
   @override
-  String get authAgreeTermsError => 'Please agree to the Terms of Service';
+  String get authAgreeTermsError => 'Por favor acepta los Términos de Servicio';
 
   @override
-  String get authDobError => 'Please enter your date of birth.';
+  String get authDobError => 'Por favor ingresa tu fecha de nacimiento.';
 
   @override
-  String get otpTitle => 'Phone Verification';
+  String get otpTitle => 'Verificación de teléfono';
 
   @override
-  String get otpEnterPhone => 'Enter your phone number';
+  String get otpEnterPhone => 'Introduce tu número de teléfono';
 
   @override
-  String get otpPhoneHint => 'Phone number';
+  String get otpPhoneHint => 'Número de teléfono';
 
   @override
-  String get otpSendCode => 'Send Verification Code';
+  String get otpSendCode => 'Enviar código de verificación';
 
   @override
-  String get otpVerifyTitle => 'Verify OTP';
+  String get otpVerifyTitle => 'Verificar OTP';
 
   @override
-  String get otpEnterCode => 'Enter the 6-digit code sent to';
+  String get otpEnterCode => 'Introduce el código de 6 dígitos enviado a';
 
   @override
-  String get otpVerify => 'Verify';
+  String get otpVerify => 'Verificar';
 
   @override
   String otpResendIn(int seconds) {
-    return 'Resend in ${seconds}s';
+    return 'Reenviar en ${seconds}s';
   }
 
   @override
-  String get otpResendCode => 'Resend Code';
+  String get otpResendCode => 'Reenviar código';
 
   @override
-  String get otpInvalidCode => 'Invalid verification code. Please try again.';
+  String get otpInvalidCode =>
+      'Código de verificación inválido. Por favor intenta de nuevo.';
 
   @override
   String get otpExpired =>
-      'Verification code expired. Please request a new one.';
+      'Código de verificación caducado. Por favor solicita uno nuevo.';
 
   @override
-  String get otpPhoneRequired => 'Phone number is required';
+  String get otpPhoneRequired => 'Se requiere número de teléfono';
 
   @override
-  String get otpInvalidPhone => 'Please enter a valid phone number';
+  String get otpInvalidPhone =>
+      'Por favor introduce un número de teléfono válido';
 
   @override
-  String get otpSending => 'Sending verification code...';
+  String get otpSending => 'Enviando código de verificación...';
 
   @override
-  String get otpVerifying => 'Verifying...';
+  String get otpVerifying => 'Verificando...';
 
   @override
-  String get otpCodeLabel => 'OTP Code';
+  String get otpCodeLabel => 'Código OTP';
 
   @override
-  String get otpPhoneVerified => 'Phone Verified!';
+  String get otpPhoneVerified => '¡Teléfono verificado!';
 
   @override
   String get otpPhoneVerifiedDesc =>
-      'Your phone number has been verified successfully.';
+      'Tu número de teléfono ha sido verificado correctamente.';
 
   @override
-  String get otpContinue => 'Continue';
+  String get otpContinue => 'Continuar';
 
   @override
-  String get otpChangePhone => 'Change phone number';
+  String get otpChangePhone => 'Cambiar número de teléfono';
 
   @override
-  String get otpTryAgain => 'Try Again';
+  String get otpTryAgain => 'Intentar de nuevo';
 
   @override
-  String get otpBackToLogin => 'Back to Login';
+  String get otpBackToLogin => 'Volver al inicio de sesión';
 
   @override
-  String get reauthTitle => 'Verify Your Identity';
+  String get reauthTitle => 'Verifica tu identidad';
 
   @override
   String get reauthSubtitle =>
-      'For your security, please confirm your identity before continuing with this action.';
+      'Por tu seguridad, confirma tu identidad antes de continuar con esta acción.';
 
   @override
-  String get reauthPassword => 'Password';
+  String get reauthPassword => 'Contraseña';
 
   @override
-  String get reauthPasswordHint => 'Enter your current password';
+  String get reauthPasswordHint => 'Introduce tu contraseña actual';
 
   @override
-  String get reauthPasswordRequired => 'Please enter your password';
+  String get reauthPasswordRequired => 'Por favor introduce tu contraseña';
 
   @override
-  String get reauthConfirm => 'Confirm';
+  String get reauthConfirm => 'Confirmar';
 
   @override
-  String get reauthWithGoogle => 'Verify with Google';
+  String get reauthWithGoogle => 'Verificar con Google';
 
   @override
-  String get reauthCancel => 'Cancel';
+  String get reauthCancel => 'Cancelar';
 
   @override
-  String get reauthWrongPassword => 'Incorrect password. Please try again.';
+  String get reauthWrongPassword =>
+      'Contraseña incorrecta. Por favor intenta de nuevo.';
 
   @override
-  String get reauthFailed => 'Authentication failed. Please try again.';
+  String get reauthFailed =>
+      'Autenticación fallida. Por favor intenta de nuevo.';
 
   @override
-  String get reauthGoogleFailed => 'Google re-authentication failed.';
+  String get reauthGoogleFailed => 'Re-autenticación de Google fallida.';
 
   @override
-  String get emailVerifyTitle => 'Verify Email';
+  String get emailVerifyTitle => 'Verificar correo';
 
   @override
-  String get emailVerifyHeading => 'Verify Your Email';
+  String get emailVerifyHeading => 'Verifica tu correo';
 
   @override
-  String get emailVerifySentTo => 'We\'ve sent a verification link to:';
+  String get emailVerifySentTo => 'Hemos enviado un enlace de verificación a:';
 
   @override
-  String get emailVerifyWaiting => 'Waiting for verification...';
+  String get emailVerifyWaiting => 'Esperando verificación...';
 
   @override
-  String get emailVerifyResend => 'Resend Verification Email';
+  String get emailVerifyResend => 'Reenviar correo de verificación';
 
   @override
   String emailVerifyResendIn(int seconds) {
-    return 'Resend in ${seconds}s';
+    return 'Reenviar en ${seconds}s';
   }
 
   @override
-  String get emailVerifyCheckButton => 'I\'ve Verified My Email';
+  String get emailVerifyCheckButton => 'He verificado mi correo';
 
   @override
-  String get emailVerifySent => 'Verification email sent!';
+  String get emailVerifySent => '¡Correo de verificación enviado!';
 
   @override
   String get emailVerifySendFailed =>
-      'Failed to send verification email. Please try again.';
+      'No se pudo enviar el correo de verificación. Por favor intenta de nuevo.';
 
   @override
-  String get emailVerified => 'Email Verified!';
+  String get emailVerified => '¡Correo verificado!';
 
   @override
   String get emailVerifiedRedirecting =>
-      'Your email has been verified. Redirecting...';
+      'Tu correo ha sido verificado. Redirigiendo...';
 
   @override
-  String get changePasswordTitle => 'Change Password';
+  String get changePasswordTitle => 'Cambiar contraseña';
 
   @override
-  String get changePasswordHeading => 'Update Your Password';
+  String get changePasswordHeading => 'Actualiza tu contraseña';
 
   @override
   String get changePasswordDesc =>
-      'Choose a strong password with at least 8 characters, including uppercase, lowercase, and numbers.';
+      'Elige una contraseña segura con al menos 8 caracteres, incluyendo mayúsculas, minúsculas y números.';
 
   @override
-  String get changePasswordNew => 'New Password';
+  String get changePasswordNew => 'Nueva contraseña';
 
   @override
-  String get changePasswordNewHint => 'Enter new password';
+  String get changePasswordNewHint => 'Introduce la nueva contraseña';
 
   @override
-  String get changePasswordConfirm => 'Confirm Password';
+  String get changePasswordConfirm => 'Confirmar contraseña';
 
   @override
-  String get changePasswordConfirmHint => 'Re-enter new password';
+  String get changePasswordConfirmHint =>
+      'Vuelve a introducir la nueva contraseña';
 
   @override
-  String get changePasswordUpdate => 'Update Password';
+  String get changePasswordUpdate => 'Actualizar contraseña';
 
   @override
-  String get changePasswordSuccess => 'Password Updated!';
+  String get changePasswordSuccess => '¡Contraseña actualizada!';
 
   @override
   String get changePasswordSuccessDesc =>
-      'Your password has been changed successfully. Use your new password next time you sign in.';
+      'Tu contraseña se ha cambiado correctamente. Usa tu nueva contraseña la próxima vez que inicies sesión.';
 
   @override
-  String get changePasswordDone => 'Done';
+  String get changePasswordDone => 'Listo';
 
   @override
   String get changePasswordWeakError =>
-      'Password is too weak. Please choose a stronger password.';
+      'La contraseña es demasiado débil. Por favor elige una más segura.';
 
   @override
   String get changePasswordGenericError =>
-      'Could not update password. Please try again.';
+      'No se pudo actualizar la contraseña. Por favor intenta de nuevo.';
 
   @override
-  String get forgotPasswordCheckEmail => 'Check Your Email';
+  String get forgotPasswordCheckEmail => 'Revisa tu correo';
 
   @override
-  String get forgotPasswordResendEmail => 'Resend Email';
+  String get forgotPasswordResendEmail => 'Reenviar correo';
 
   @override
   String forgotPasswordResendIn(int seconds) {
-    return 'Resend in ${seconds}s';
+    return 'Reenviar en ${seconds}s';
   }
 
   @override
-  String get forgotPasswordBackToLogin => 'Back to Login';
+  String get forgotPasswordBackToLogin => 'Volver al inicio de sesión';
 
   @override
-  String get forgotPasswordEmailRequired => 'Please enter your email';
+  String get forgotPasswordEmailRequired => 'Por favor introduce tu correo';
 
   @override
-  String get forgotPasswordInvalidEmail => 'Please enter a valid email';
+  String get forgotPasswordInvalidEmail =>
+      'Por favor introduce un correo válido';
 
   @override
   String get forgotPasswordSendError =>
-      'Could not send reset email right now. Please try again.';
+      'No se pudo enviar el correo de restablecimiento ahora. Por favor intenta de nuevo.';
 
   @override
   String get roleSelectionError =>
-      'We could not continue right now. Please try again.';
+      'Algo salió mal. Por favor inténtalo de nuevo.';
 
   @override
   String get accountExistsError =>
-      'An account already exists with a different sign-in method. Try signing in with email/password or the original provider.';
+      'Ya existe una cuenta con un método de inicio de sesión diferente. Intenta iniciar sesión con correo/contraseña o el proveedor original.';
 
   @override
-  String get loginErrorUserNotFound => 'No account found with this email.';
+  String get loginErrorUserNotFound =>
+      'No se encontró ninguna cuenta con este correo.';
 
   @override
   String get loginErrorWrongPassword =>
-      'Incorrect email or password. Please try again.';
+      'Correo o contraseña incorrectos. Por favor intenta de nuevo.';
 
   @override
   String get loginErrorTooManyRequests =>
-      'Too many login attempts. Please try again later.';
+      'Demasiados intentos de inicio de sesión. Por favor intenta más tarde.';
 
   @override
   String get loginErrorNetwork =>
-      'Network error. Please check your connection.';
+      'Error de red. Por favor verifica tu conexión.';
 
   @override
-  String get loginErrorInvalidEmail => 'Invalid email address.';
+  String get loginErrorInvalidEmail => 'Dirección de correo inválida.';
 
   @override
-  String get signUpFailedPleaseTry => 'Sign up failed. Please try again.';
+  String get signUpFailedPleaseTry =>
+      'El registro falló. Por favor intenta de nuevo.';
 
   @override
   String get periodToday => 'Hoy';
@@ -3504,7 +3512,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get continueSetup => 'Continuar configuración';
 
   @override
-  String get filterAll => 'Todo';
+  String get filterAll => 'Todos';
 
   @override
   String get filterCompleted => 'Completado';
@@ -3735,4 +3743,1452 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get ratingPoor => 'Malo';
+
+  @override
+  String get findRidesNearYou => 'Encuentra viajes cerca de ti';
+
+  @override
+  String get locationGateDescription =>
+      'Activa la ubicación para descubrir viajes cerca de ti, obtener tiempos de recogida precisos y navegar de forma segura.';
+
+  @override
+  String get locationBenefitFind => 'Encuentra viajes cerca de tu ubicación';
+
+  @override
+  String get locationBenefitNavigate => 'Obtén navegación giro a giro';
+
+  @override
+  String get locationBenefitSafety => 'Funciones de seguridad mejoradas';
+
+  @override
+  String get allowLocation => 'Permitir ubicación';
+
+  @override
+  String get browseWithoutLocation => 'Explorar sin ubicación';
+
+  @override
+  String get findingYourLocation => 'Buscando tu ubicación...';
+
+  @override
+  String get thisWillOnlyTakeAMoment => 'Esto solo tomará un momento';
+
+  @override
+  String get locationNotEnabled => 'Ubicación no activada';
+
+  @override
+  String get locationNotEnabledDescription =>
+      'Rechazaste el acceso a la ubicación. Actívalo para encontrar viajes cercanos.';
+
+  @override
+  String get browseByCity => 'Explorar por ciudad';
+
+  @override
+  String get locationPermissionBlocked => 'Permiso de ubicación bloqueado';
+
+  @override
+  String get locationPermissionBlockedDescription =>
+      'El permiso de ubicación está denegado permanentemente. Por favor actívalo en la configuración de tu dispositivo.';
+
+  @override
+  String get locationServicesOff => 'Servicios de ubicación desactivados';
+
+  @override
+  String get locationServicesOffDescription =>
+      'Los servicios de ubicación de tu dispositivo están desactivados. Por favor actívalos en la configuración.';
+
+  @override
+  String get openLocationSettings => 'Abrir configuración de ubicación';
+
+  @override
+  String get events => 'Eventos';
+
+  @override
+  String get satellite => 'Satélite';
+
+  @override
+  String get maxSeatsReached => 'Máximo 4 asientos por reserva';
+
+  @override
+  String get tryADifferentDate => 'Prueba una fecha diferente';
+
+  @override
+  String get tapToOpenNavigation => 'Toca para abrir la navegación';
+
+  @override
+  String get completePayment => 'Completar pago';
+
+  @override
+  String get bookingAcceptedPaymentRequired =>
+      'Tu reserva está aceptada. Se requiere pago.';
+
+  @override
+  String get tapToViewCountdown => 'Toca para ver la cuenta regresiva';
+
+  @override
+  String get departingTomorrow => 'Sale mañana';
+
+  @override
+  String departingValue(String value) {
+    return 'Sale $value';
+  }
+
+  @override
+  String awaitingDriverCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Esperando conductor • $count pendientes',
+      one: 'Esperando conductor',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String departingTodayAt(String h, String m) {
+    return 'Sale hoy a las $h:$m';
+  }
+
+  @override
+  String departingInDays(int days) {
+    return 'Sale en $days días';
+  }
+
+  @override
+  String get createEventTitle => 'Crear evento';
+
+  @override
+  String get editEventTitle => 'Editar evento';
+
+  @override
+  String get myEventsTitle => 'Mis eventos';
+
+  @override
+  String get discoverEventsTitle => 'Descubrir eventos';
+
+  @override
+  String get eventSportType => 'Tipo de deporte';
+
+  @override
+  String get eventTitleField => 'Título del evento *';
+
+  @override
+  String get eventTitleRequired => 'El título es obligatorio';
+
+  @override
+  String get eventTitleMinLength =>
+      'El título debe tener al menos 3 caracteres';
+
+  @override
+  String get eventVenueName => 'Nombre del lugar (opcional)';
+
+  @override
+  String get eventDescriptionField => 'Descripción (opcional)';
+
+  @override
+  String get eventCoverImage => 'Imagen de portada (opcional)';
+
+  @override
+  String get eventTapToAddPhoto => 'Toca para añadir una foto de portada';
+
+  @override
+  String get eventLocationField => 'Ubicación *';
+
+  @override
+  String get eventTapToPickLocation =>
+      'Toca para elegir una ubicación en el mapa';
+
+  @override
+  String get eventWhenField => 'Cuándo *';
+
+  @override
+  String get eventStartDate => 'Fecha de inicio';
+
+  @override
+  String get eventStartTime => 'Hora de inicio';
+
+  @override
+  String get eventEndDate => 'Fecha de fin';
+
+  @override
+  String get eventEndTime => 'Hora de fin';
+
+  @override
+  String get eventOptional => 'Opcional';
+
+  @override
+  String get eventEndLabel => 'Fin';
+
+  @override
+  String get eventAddEndTime => '+ Añadir hora de fin';
+
+  @override
+  String get eventMaxParticipants => 'Participantes máximos';
+
+  @override
+  String get eventUnlimited => 'Ilimitado';
+
+  @override
+  String get eventParkingInstructions =>
+      'Instrucciones de estacionamiento (opcional)';
+
+  @override
+  String get eventRecurring => 'Evento recurrente';
+
+  @override
+  String get eventRecurringSubtitle =>
+      'Se repite los días seleccionados cada semana';
+
+  @override
+  String eventRepeatsUntil(String date) {
+    return 'Se repite hasta $date';
+  }
+
+  @override
+  String get eventRepeatEndDate => 'Fecha de fin de repetición (opcional)';
+
+  @override
+  String get eventCostSplit => 'Activar división de costos';
+
+  @override
+  String get eventCostSplitSubtitle =>
+      'Permitir a los asistentes dividir los costos del viaje';
+
+  @override
+  String get eventUploadingCover => 'Subiendo portada…';
+
+  @override
+  String get eventCreating => 'Creando…';
+
+  @override
+  String get eventCreateButton => 'Crear evento';
+
+  @override
+  String get eventSaveChanges => 'Guardar cambios';
+
+  @override
+  String get eventStartTimeFuture => 'La hora de inicio debe ser en el futuro.';
+
+  @override
+  String get eventEndTimeAfterStart =>
+      'La hora de fin debe ser posterior a la hora de inicio.';
+
+  @override
+  String get eventLocationTitle => 'Ubicación del evento';
+
+  @override
+  String get eventDeleteConfirmTitle => '¿Eliminar evento?';
+
+  @override
+  String get eventDeleteWarning =>
+      'Esta acción no se puede deshacer. Todos los participantes serán eliminados.';
+
+  @override
+  String get eventAbout => 'Acerca de';
+
+  @override
+  String get eventParticipants => 'Participantes';
+
+  @override
+  String get eventLeave => 'Abandonar evento';
+
+  @override
+  String get eventFull => 'Evento lleno';
+
+  @override
+  String get eventJoin => 'Unirse al evento';
+
+  @override
+  String get eventEdit => 'Editar evento';
+
+  @override
+  String get eventDelete => 'Eliminar evento';
+
+  @override
+  String get eventNoRidesOffered => 'Aún no hay viajes ofrecidos';
+
+  @override
+  String get eventCouldNotLoadRides => 'No se pudieron cargar los viajes';
+
+  @override
+  String get eventHowGettingThere => '¿Cómo llegarás?';
+
+  @override
+  String get eventImDriving => 'Voy conduciendo';
+
+  @override
+  String get eventNeedRide => 'Necesito viaje';
+
+  @override
+  String get eventSelfArranged => 'Por mi cuenta';
+
+  @override
+  String get eventYouAreOrganizer => 'Eres el organizador';
+
+  @override
+  String get eventYouOrganized => 'Organizaste este evento';
+
+  @override
+  String get eventYoureGoing => 'Vas a asistir';
+
+  @override
+  String get eventYouAttended => 'Asististe';
+
+  @override
+  String get eventNotJoinedYet => 'Aún no te has unido';
+
+  @override
+  String get eventHasEnded => 'Este evento ha terminado';
+
+  @override
+  String get eventRidesToEvent => 'Viajes a este evento';
+
+  @override
+  String get eventParkingInfo => 'Info de estacionamiento';
+
+  @override
+  String get eventRecurringTitle => 'Evento recurrente';
+
+  @override
+  String get eventEvery => 'Cada';
+
+  @override
+  String eventUntilDate(String date) {
+    return 'hasta $date';
+  }
+
+  @override
+  String get eventCostSplitEnabled => 'División de costos activada';
+
+  @override
+  String get eventMeetupPoint => 'Punto de encuentro post-evento';
+
+  @override
+  String get eventNoMeetupPoint =>
+      'Aún no se ha definido un punto de encuentro';
+
+  @override
+  String get eventSetMeetupPoint => 'Establecer punto de encuentro';
+
+  @override
+  String get eventGroupChat => 'Chat grupal del evento';
+
+  @override
+  String get eventNotFound => 'Evento no encontrado.';
+
+  @override
+  String get eventOrganizedThis => 'Organizaste este evento';
+
+  @override
+  String eventParticipantsCount(int count) {
+    return 'Participantes ($count)';
+  }
+
+  @override
+  String eventSeatsLeftCount(int count) {
+    return '$count restante(s)';
+  }
+
+  @override
+  String eventCountdownDaysHours(int days, int hours) {
+    return 'En ${days}d ${hours}h';
+  }
+
+  @override
+  String eventCountdownHoursMinutes(int hours, int minutes) {
+    return 'En ${hours}h ${minutes}min';
+  }
+
+  @override
+  String eventCountdownMinutes(int minutes) {
+    return 'En ${minutes}min';
+  }
+
+  @override
+  String get eventNeedRideHome => 'Necesito regreso';
+
+  @override
+  String get eventFindRides => 'Buscar viajes al evento';
+
+  @override
+  String get eventOfferRide => 'Ofrecer viaje al evento';
+
+  @override
+  String get eventOrganizer => 'Organizador';
+
+  @override
+  String get myEventsCreatedTab => 'Creados';
+
+  @override
+  String get myEventsJoinedTab => 'Unidos';
+
+  @override
+  String get signInFirstMessage => 'Inicia sesión primero.';
+
+  @override
+  String get unableToLoadEvents => 'No se pudieron cargar los eventos.';
+
+  @override
+  String get noCreatedEvents => 'Aún no has creado ningún evento.';
+
+  @override
+  String get noJoinedEvents => 'Aún no te has unido a ningún evento.';
+
+  @override
+  String get browseEventsButton => 'Explorar eventos';
+
+  @override
+  String get eventPastStatus => 'Pasado';
+
+  @override
+  String get eventFullStatus => 'Lleno';
+
+  @override
+  String get searchEventsHint => 'Buscar eventos…';
+
+  @override
+  String get noEventsFound => 'No se encontraron eventos';
+
+  @override
+  String noEventsInCategory(String category) {
+    return 'No hay próximos eventos de $category.';
+  }
+
+  @override
+  String get beFirstToCreate => '¡Sé el primero en crear uno!';
+
+  @override
+  String get eventJoinArrow => 'Unirse →';
+
+  @override
+  String eventByOrganizer(String name) {
+    return 'por $name';
+  }
+
+  @override
+  String get createLabel => 'Crear';
+
+  @override
+  String get selectLocationError => 'Por favor selecciona una ubicación.';
+
+  @override
+  String get pastStartTimeError => 'La hora de inicio debe ser en el futuro.';
+
+  @override
+  String get endBeforeStartError =>
+      'La hora de fin debe ser posterior a la hora de inicio.';
+
+  @override
+  String get termsOfServiceTitle => 'Términos de servicio';
+
+  @override
+  String get privacyPolicyTitle => 'Política de privacidad';
+
+  @override
+  String get legalVersionBadge => 'Feb 2026';
+
+  @override
+  String get loadingTermsOfService => 'Cargando términos de servicio…';
+
+  @override
+  String get loadingPrivacyPolicy => 'Cargando política de privacidad…';
+
+  @override
+  String get reportIssueTitle => 'Reportar un problema';
+
+  @override
+  String get whatHappenedQuestion => '¿Qué sucedió?';
+
+  @override
+  String get howSevereQuestion => '¿Qué tan grave es este problema?';
+
+  @override
+  String get describeIssueLabel => 'Describe el problema';
+
+  @override
+  String get describeIssuePlaceholder =>
+      'Por favor proporciona al menos 50 caracteres...';
+
+  @override
+  String get evidenceOptionalLabel => 'Evidencia (opcional)';
+
+  @override
+  String get attachScreenshotsPlaceholder =>
+      'Toca para adjuntar capturas de pantalla como evidencia';
+
+  @override
+  String filesAttachedCount(int count, int max) {
+    return '$count/$max archivos adjuntos';
+  }
+
+  @override
+  String get supportsImagesHint => 'Se admiten imágenes (máx. 10 MB cada una)';
+
+  @override
+  String get submitReportButton => 'Enviar reporte';
+
+  @override
+  String get reportSubmittedTitle => 'Reporte enviado';
+
+  @override
+  String get reportSubmittedMessage =>
+      'Gracias por reportar este problema. Nuestro equipo de seguridad lo revisará y tomará las medidas apropiadas en 24-48 horas.';
+
+  @override
+  String get doneButton => 'Listo';
+
+  @override
+  String get takeAPhoto => 'Tomar una foto';
+
+  @override
+  String rideInfoLabel(String id) {
+    return 'Viaje: $id';
+  }
+
+  @override
+  String get reportSafety => 'Seguridad';
+
+  @override
+  String get reportSafetyDesc =>
+      'Problemas de seguridad o comportamiento peligroso';
+
+  @override
+  String get reportPayment => 'Pago';
+
+  @override
+  String get reportPaymentDesc => 'Problemas de facturación o pago';
+
+  @override
+  String get reportBehavior => 'Comportamiento';
+
+  @override
+  String get reportBehaviorDesc => 'Comportamiento inapropiado o grosero';
+
+  @override
+  String get reportTechnical => 'Técnico';
+
+  @override
+  String get reportTechnicalDesc => 'Errores de la app o problemas técnicos';
+
+  @override
+  String get reportDiscrimination => 'Discriminación';
+
+  @override
+  String get reportDiscriminationDesc => 'Trato discriminatorio o acoso';
+
+  @override
+  String get reportOther => 'Otro';
+
+  @override
+  String get reportOtherDesc => 'Problemas no listados arriba';
+
+  @override
+  String get severityLow => 'Bajo';
+
+  @override
+  String get severityMedium => 'Medio';
+
+  @override
+  String get severityHigh => 'Alto';
+
+  @override
+  String get severityCritical => 'Crítico';
+
+  @override
+  String get driverMyRidesTitle => 'Mis viajes';
+
+  @override
+  String get viewRequestsTooltip => 'Ver solicitudes';
+
+  @override
+  String get pendingRequestsTitle => 'Solicitudes pendientes';
+
+  @override
+  String get noPendingRequestsTitle => 'Sin solicitudes pendientes';
+
+  @override
+  String get noPendingRequestsMessage =>
+      'Las nuevas solicitudes de reserva aparecerán aquí.';
+
+  @override
+  String get upcomingRidesTitle => 'Próximos viajes';
+
+  @override
+  String get noUpcomingRidesTitle => 'Sin próximos viajes';
+
+  @override
+  String get useButtonToOfferRide =>
+      'Usa el botón de abajo para ofrecer un nuevo viaje.';
+
+  @override
+  String get couldNotLoadRequests =>
+      'No se pudieron cargar las solicitudes. Desliza para actualizar.';
+
+  @override
+  String get couldNotLoadRides =>
+      'No se pudieron cargar los viajes. Desliza para actualizar.';
+
+  @override
+  String get declineRequestTitle => '¿Rechazar solicitud?';
+
+  @override
+  String get declineRequestMessage =>
+      'Esto rechazará la solicitud de reserva. El pasajero será notificado.';
+
+  @override
+  String get keepButton => 'Mantener';
+
+  @override
+  String get declineButton => 'Rechazar';
+
+  @override
+  String get acceptRequestTitle => '¿Aceptar solicitud?';
+
+  @override
+  String acceptRequestMessage(String name) {
+    return '¿Aceptar esta reserva de $name?';
+  }
+
+  @override
+  String get acceptButton => 'Aceptar';
+
+  @override
+  String get cancelRideTitle => 'Cancelar viaje';
+
+  @override
+  String get cancelRideConfirmMessage =>
+      '¿Estás seguro de que quieres cancelar este viaje? Esta acción no se puede deshacer.';
+
+  @override
+  String get keepRideButton => 'Mantener viaje';
+
+  @override
+  String get pickupLabel => 'Recogida';
+
+  @override
+  String get dropoffLabel => 'Destino';
+
+  @override
+  String seatsCount(int count) {
+    return '$count asiento(s)';
+  }
+
+  @override
+  String get offerARideTitle => 'Ofrecer un viaje';
+
+  @override
+  String get editRideTitle => 'Editar viaje';
+
+  @override
+  String get routeStep => 'Ruta';
+
+  @override
+  String get detailsStep => 'Detalles';
+
+  @override
+  String get preferencesStep => 'Preferencias';
+
+  @override
+  String get driverProfileRequired => 'Perfil de conductor requerido';
+
+  @override
+  String get completeDriverProfileMessage =>
+      'Completa tu perfil de conductor para ofrecer viajes.';
+
+  @override
+  String get becomeDriverButton => 'Ser conductor';
+
+  @override
+  String get errorLoadingData => 'Error al cargar los datos';
+
+  @override
+  String get fromLabel => 'Desde';
+
+  @override
+  String get toLabel => 'Hasta';
+
+  @override
+  String get selectPickupLocation => 'Seleccionar lugar de recogida';
+
+  @override
+  String get selectDropoffLocation => 'Seleccionar lugar de destino';
+
+  @override
+  String get swapLocationsTooltip => 'Intercambiar ubicaciones';
+
+  @override
+  String get departureTimeLabel => 'Hora de salida';
+
+  @override
+  String get dateLabel => 'Fecha';
+
+  @override
+  String get timeLabel => 'Hora';
+
+  @override
+  String get selectDatePlaceholder => 'Seleccionar fecha';
+
+  @override
+  String get selectTimePlaceholder => 'Seleccionar hora';
+
+  @override
+  String get intermediateStopsLabel => 'Paradas intermedias';
+
+  @override
+  String get addStopButton => 'Añadir parada';
+
+  @override
+  String get addStopsHint =>
+      'Añade paradas en tu ruta para recoger más pasajeros';
+
+  @override
+  String get rideDetailsTitle => 'Detalles del viaje';
+
+  @override
+  String get quickSwitchButton => 'Cambio rápido';
+
+  @override
+  String get noVehiclesError =>
+      'No se encontraron vehículos. Por favor añade un vehículo a tu perfil.';
+
+  @override
+  String get addVehicleButton => 'Añadir vehículo';
+
+  @override
+  String get availableSeatsLabel => 'Asientos disponibles';
+
+  @override
+  String get totalCapacityLabel => 'Capacidad total:';
+
+  @override
+  String get pricePerSeatLabel => 'Precio por asiento';
+
+  @override
+  String get minimumPriceError => 'Mínimo \$1';
+
+  @override
+  String get priceNegotiableToggle => 'Precio negociable';
+
+  @override
+  String get acceptOnlinePaymentToggle => 'Aceptar pago en línea';
+
+  @override
+  String get preferencesRulesTitle => 'Preferencias y reglas';
+
+  @override
+  String get rideSummaryLabel => 'Resumen del viaje';
+
+  @override
+  String get allowPetsToggle => 'Permitir mascotas';
+
+  @override
+  String get allowSmokingToggle => 'Permitir fumar';
+
+  @override
+  String get allowLuggageToggle => 'Permitir equipaje';
+
+  @override
+  String get womenOnlyToggle => 'Solo mujeres';
+
+  @override
+  String get maxDetourLabel => 'Desvío máximo para recogidas';
+
+  @override
+  String get maxDetourHint =>
+      'Qué tan lejos estás dispuesto a desviarte de la ruta para recoger pasajeros';
+
+  @override
+  String get noneLabel => 'Ninguno';
+
+  @override
+  String get sixtyMinLabel => '60 min';
+
+  @override
+  String get backButton => 'Atrás';
+
+  @override
+  String get nextButton => 'Siguiente';
+
+  @override
+  String get createRideButton => 'Crear viaje';
+
+  @override
+  String get recurringRideTitle => 'Viaje recurrente';
+
+  @override
+  String get dayMon => 'Lun';
+
+  @override
+  String get dayTue => 'Mar';
+
+  @override
+  String get dayWed => 'Mié';
+
+  @override
+  String get dayThu => 'Jue';
+
+  @override
+  String get dayFri => 'Vie';
+
+  @override
+  String get daySat => 'Sáb';
+
+  @override
+  String get daySun => 'Dom';
+
+  @override
+  String stopNumberLabel(int number) {
+    return 'Parada $number';
+  }
+
+  @override
+  String get tapToSetLocation => 'Toca para establecer la ubicación';
+
+  @override
+  String get editWaypointTooltip => 'Editar punto de paso';
+
+  @override
+  String get removeWaypointTooltip => 'Eliminar punto de paso';
+
+  @override
+  String selectStopTitle(int number) {
+    return 'Seleccionar parada $number';
+  }
+
+  @override
+  String editStopTitle(int number) {
+    return 'Editar parada $number';
+  }
+
+  @override
+  String get vehicleLabel => 'Vehículo';
+
+  @override
+  String totalCapacityCount(int count) {
+    return 'Capacidad total: $count';
+  }
+
+  @override
+  String totalPriceForSeats(String price, int seats) {
+    return 'Total: $price \$ por $seats asientos';
+  }
+
+  @override
+  String get decreasePriceTooltip => 'Reducir precio';
+
+  @override
+  String get increasePriceTooltip => 'Aumentar precio';
+
+  @override
+  String get allowPetsSubtitle => 'Se permiten mascotas en el vehículo';
+
+  @override
+  String get allowSmokingSubtitle => 'Se permite fumar durante el viaje';
+
+  @override
+  String get allowLuggageSubtitle => 'Los pasajeros pueden llevar equipaje';
+
+  @override
+  String get womenOnlySubtitle => 'Viaje solo para mujeres';
+
+  @override
+  String get notSetPlaceholder => 'No definido';
+
+  @override
+  String get notSelectedPlaceholder => 'No seleccionado';
+
+  @override
+  String get summaryStopsLabel => 'Paradas';
+
+  @override
+  String intermediateStopsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count paradas intermedias',
+      one: '1 parada intermedia',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get departureSummaryLabel => 'Salida';
+
+  @override
+  String get seatsSummaryLabel => 'Asientos';
+
+  @override
+  String seatsAvailableCount(int count) {
+    return '$count disponible(s)';
+  }
+
+  @override
+  String get priceSummaryLabel => 'Precio';
+
+  @override
+  String pricePerSeatSummary(String price) {
+    return '$price \$ por asiento';
+  }
+
+  @override
+  String pricePerSeatNegotiableSummary(String price) {
+    return '$price \$ por asiento (negociable)';
+  }
+
+  @override
+  String get eventSummaryLabel => 'Evento';
+
+  @override
+  String get recurringSummaryLabel => 'Recurrente';
+
+  @override
+  String get selectOriginTitle => 'Seleccionar origen';
+
+  @override
+  String get selectDestinationTitle => 'Seleccionar destino';
+
+  @override
+  String maxDetourMinutesValue(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get timeInPastWarning =>
+      'La hora seleccionada ya pasó — el botón Crear viaje estará desactivado';
+
+  @override
+  String get departureMinimumWarning =>
+      'La salida debe ser en al menos 15 minutos para que los pasajeros puedan unirse';
+
+  @override
+  String get departureAfterEventWarning =>
+      'La hora de salida es posterior al final del evento — por favor elige una hora más temprana';
+
+  @override
+  String get rideUpdatedSuccess => '¡Viaje actualizado con éxito!';
+
+  @override
+  String get rideCreatedSuccess => '¡Viaje creado con éxito!';
+
+  @override
+  String get bookingRequestTitle => 'Solicitud de reserva';
+
+  @override
+  String get requestSentTitle => '¡Solicitud enviada!';
+
+  @override
+  String get bookingAcceptedTitle => '¡Reserva aceptada!';
+
+  @override
+  String get waitingForConfirmation =>
+      'Esperando la confirmación del conductor. Serás notificado tan pronto como responda.';
+
+  @override
+  String get completePaymentMessage =>
+      'Completa tu pago para confirmar el viaje.';
+
+  @override
+  String get processingPaymentLoading => 'Procesando pago...';
+
+  @override
+  String get completePaymentButton => 'Completar pago';
+
+  @override
+  String get expiresInLabel => 'Expira en';
+
+  @override
+  String get cancelRequestButton => 'Cancelar solicitud';
+
+  @override
+  String get viewAllMyRidesButton => 'Ver todos mis viajes';
+
+  @override
+  String get yourDriverLabel => 'Tu conductor';
+
+  @override
+  String get yourRideTitle => 'Tu viaje';
+
+  @override
+  String get bookingConfirmedBadge => 'Reserva confirmada';
+
+  @override
+  String get departureInLabel => 'Salida en';
+
+  @override
+  String get departingSoonLabel => '¡Salida inminente!';
+
+  @override
+  String get rideStartedMessage => '¡El viaje ha comenzado!';
+
+  @override
+  String get routeLabel => 'Ruta';
+
+  @override
+  String get messageButton => 'Mensaje';
+
+  @override
+  String get callButton => 'Llamar';
+
+  @override
+  String get failedOpenChatError =>
+      'No se pudo abrir el chat. Por favor inténtalo de nuevo.';
+
+  @override
+  String get driverPhoneUnavailableError =>
+      'Número de teléfono del conductor no disponible.';
+
+  @override
+  String get couldNotLaunchDialerError =>
+      'No se pudo abrir el marcador telefónico.';
+
+  @override
+  String get seatsLabel => 'Asientos';
+
+  @override
+  String get refNumberLabel => 'Ref. #';
+
+  @override
+  String get tapToCopyInstruction => '(toca para copiar)';
+
+  @override
+  String get totalLabel => 'Total';
+
+  @override
+  String get estimatedArrivalLabel => 'Llegada estimada:';
+
+  @override
+  String get joinActiveRideButton => 'Unirse al viaje activo';
+
+  @override
+  String get viewRideDetailsButton => 'Ver detalles del viaje';
+
+  @override
+  String get fileDisputeTitle => 'Presentar una disputa';
+
+  @override
+  String get rideIdLabel => 'ID del viaje';
+
+  @override
+  String get disputeTypeLabel => 'Tipo de disputa';
+
+  @override
+  String get selectDisputeReason => 'Selecciona el motivo de tu disputa';
+
+  @override
+  String get incorrectFareType => 'Tarifa incorrecta';
+
+  @override
+  String get incorrectFareDesc =>
+      'La tarifa cobrada fue diferente al monto cotizado';
+
+  @override
+  String get incompleteRideType => 'Viaje incompleto';
+
+  @override
+  String get incompleteRideDesc => 'El viaje no llegó al destino previsto';
+
+  @override
+  String get unauthorizedChargeType => 'Cargo no autorizado';
+
+  @override
+  String get unauthorizedChargeDesc =>
+      'Se me cobró sin autorización o por un viaje cancelado';
+
+  @override
+  String get poorServiceType => 'Servicio deficiente';
+
+  @override
+  String get poorServiceDesc => 'La calidad del viaje fue inaceptable';
+
+  @override
+  String get safetyConcernType => 'Problema de seguridad';
+
+  @override
+  String get safetyConcernDesc => 'Me sentí inseguro durante el viaje';
+
+  @override
+  String get otherDisputeType => 'Otro';
+
+  @override
+  String get otherDisputeDesc => 'Un problema diferente no listado arriba';
+
+  @override
+  String get detailsLabel => 'Detalles';
+
+  @override
+  String get describeIssueDetailPlaceholder =>
+      'Describe tu problema en detalle...';
+
+  @override
+  String get disputeWarningNote =>
+      'Las disputas se revisan en 24-48 horas. Enviar disputas falsas puede resultar en restricciones de cuenta.';
+
+  @override
+  String get attachReceiptsPlaceholder =>
+      'Adjuntar recibos o capturas de pantalla';
+
+  @override
+  String get whatToExpectTitle => 'Qué esperar';
+
+  @override
+  String get reviewWithinHours => 'Revisión en 24-48 horas';
+
+  @override
+  String get emailNotificationExpectation =>
+      'Notificación por correo sobre actualizaciones';
+
+  @override
+  String get fairResolutionExpectation =>
+      'Resolución justa basada en evidencia';
+
+  @override
+  String get submitDisputeButton => 'Enviar disputa';
+
+  @override
+  String get disputeSubmittedTitle => 'Disputa enviada';
+
+  @override
+  String get disputeSubmittedMessage =>
+      'Nuestro equipo revisará tu disputa en 24-48 horas. Recibirás una notificación cuando se resuelva.';
+
+  @override
+  String get previousStepTooltip => 'Paso anterior';
+
+  @override
+  String get goBackTooltip => 'Volver';
+
+  @override
+  String get nameRequiredError => 'El nombre es obligatorio';
+
+  @override
+  String get nameMinLengthError => 'El nombre debe tener al menos 2 caracteres';
+
+  @override
+  String get genderMale => 'Masculino';
+
+  @override
+  String get genderFemale => 'Femenino';
+
+  @override
+  String get emailVerificationError =>
+      'Algo salió mal. Por favor inténtalo de nuevo.';
+
+  @override
+  String get useDifferentAccount => 'Usar otra cuenta';
+
+  @override
+  String get builtWithFlutter => 'Desarrollado con Flutter';
+
+  @override
+  String get showPasswordTooltip => 'Mostrar contraseña';
+
+  @override
+  String get hidePasswordTooltip => 'Ocultar contraseña';
+
+  @override
+  String get signingInMessage => 'Iniciando sesión, por favor espera';
+
+  @override
+  String get loadingProfileMessage => 'Por favor espera, cargando tu perfil...';
+
+  @override
+  String get riderOnboardingTitle => 'Configuración de pasajero';
+
+  @override
+  String get completeRiderProfile => 'Completa tu perfil de pasajero';
+
+  @override
+  String get riderProfileDescription =>
+      'Añade tus datos para que podamos personalizar los viajes y la correspondencia para ti.';
+
+  @override
+  String get completeSetupButton => 'Completar configuración';
+
+  @override
+  String get riderRoleDescription =>
+      'Encuentra y reserva viajes a eventos deportivos. Ahorra dinero y reduce tu huella de carbono.';
+
+  @override
+  String get riderFeatureSearch => 'Buscar viajes disponibles';
+
+  @override
+  String get riderFeatureBook => 'Reservar asientos al instante';
+
+  @override
+  String get riderFeatureChat => 'Chatear con conductores';
+
+  @override
+  String get riderFeatureTrack => 'Seguir tu viaje';
+
+  @override
+  String get driverRoleDescription =>
+      'Ofrece viajes y gana dinero yendo a eventos. Ayuda a otros a llegar de forma segura.';
+
+  @override
+  String get driverFeatureCreate => 'Crear ofertas de viaje';
+
+  @override
+  String get driverFeaturePrice => 'Fijar tu propio precio';
+
+  @override
+  String get driverFeatureAccept => 'Aceptar solicitudes de viaje';
+
+  @override
+  String get driverFeatureEarn => 'Ganar con cada viaje';
+
+  @override
+  String get continueButton => 'Continuar';
+
+  @override
+  String get yourDetailsStep => 'Tus datos';
+
+  @override
+  String get securityStep => 'Seguridad';
+
+  @override
+  String get yourRoleStep => 'Tu rol';
+
+  @override
+  String get yourProfileStep => 'Tu perfil';
+
+  @override
+  String stepOfCount(int step, int total) {
+    return 'Paso $step de $total';
+  }
+
+  @override
+  String get sendingVoiceMessage => 'Enviando mensaje de voz...';
+
+  @override
+  String get recordingFailedError =>
+      'No se pudo iniciar la grabación. Por favor inténtalo de nuevo.';
+
+  @override
+  String get stopRecordingFailedError => 'No se pudo detener la grabación';
+
+  @override
+  String get searchUsersTooltip => 'Buscar usuarios';
+
+  @override
+  String get muteChat => 'Silenciar';
+
+  @override
+  String get unmuteChat => 'Activar sonido';
+
+  @override
+  String get deleteChat => 'Eliminar';
+
+  @override
+  String get paymentDetailsLabel => 'Detalles';
+
+  @override
+  String get ridePaymentLabel => 'Pago del viaje';
+
+  @override
+  String appVersion(String version) {
+    return 'Versión $version';
+  }
+
+  @override
+  String get aboutAppDescription =>
+      'SportConnect es una plataforma social de carpooling que conecta a entusiastas del deporte. Comparte viajes, reduce tu huella de carbono y construye tu comunidad deportiva.';
+
+  @override
+  String get ecoStatLabel => 'Eco';
+
+  @override
+  String get liveStatLabel => 'En vivo';
+
+  @override
+  String get sportStatLabel => 'Deporte';
+
+  @override
+  String get rideShareLabel => 'Carpooling';
+
+  @override
+  String get trackingLabel => 'Seguimiento';
+
+  @override
+  String get communityLabel => 'Comunidad';
+
+  @override
+  String get openSourceLicenses => 'Licencias de código abierto';
+
+  @override
+  String get joinTheCommunity => 'Únete a la comunidad';
+
+  @override
+  String get websiteLabel => 'Sitio web';
+
+  @override
+  String get emailLabel => 'Correo';
+
+  @override
+  String get copyrightNotice =>
+      '© 2025-2026 SportConnect. Todos los derechos reservados.';
+
+  @override
+  String get howCanWeHelp => '¿Cómo podemos ayudarte?';
+
+  @override
+  String get responseTimeMessage => 'Generalmente respondemos en 24 horas.';
+
+  @override
+  String get categoryLabel => 'Categoría';
+
+  @override
+  String get subjectLabel => 'Asunto';
+
+  @override
+  String get subjectHint => 'Breve descripción de tu problema';
+
+  @override
+  String get messageFieldLabel => 'Mensaje';
+
+  @override
+  String get messageFieldHint => 'Describe tu problema en detalle...';
+
+  @override
+  String get attachFilesHint =>
+      'Adjuntar capturas de pantalla o archivos (opcional)';
+
+  @override
+  String get submitTicketButton => 'Enviar ticket';
+
+  @override
+  String get responseTimeInfo =>
+      'La mayoría de las consultas se responden en 12-24 horas';
+
+  @override
+  String get ticketSubmittedTitle => '¡Ticket enviado!';
+
+  @override
+  String get ticketSubmittedMessage =>
+      'Hemos recibido tu mensaje y te responderemos en 24 horas. Revisa tu correo para actualizaciones.';
+
+  @override
+  String get findPeopleTitle => 'Buscar personas';
+
+  @override
+  String get searchByNameHint => 'Buscar por nombre';
+
+  @override
+  String get clearSearchTooltip => 'Limpiar búsqueda';
+
+  @override
+  String get notificationsTooltip => 'Notificaciones';
+
+  @override
+  String get asDriverFilter => 'Como conductor';
+
+  @override
+  String get asRiderFilter => 'Como pasajero';
+
+  @override
+  String get additionalCommentsLabel => 'Comentarios adicionales (opcional)';
+
+  @override
+  String get specificFeedbackHelps =>
+      'Los comentarios específicos ayudan a la comunidad';
+
+  @override
+  String get thankYouForReview => '¡Gracias por tu reseña!';
+
+  @override
+  String get submitRatingButton => 'Enviar calificación';
+
+  @override
+  String get skipForNowButton => 'Omitir por ahora';
+
+  @override
+  String get navigateButton => 'Navegar';
+
+  @override
+  String get noActiveRideMessage => 'Sin viaje activo';
+
+  @override
+  String get ratePassengerTitle => 'Calificar pasajero';
+
+  @override
+  String get howWasYourPassenger => '¿Cómo fue tu pasajero?';
+
+  @override
+  String get cancelledLabel => 'Cancelado';
+
+  @override
+  String get completedLabel => 'Completado';
+
+  @override
+  String get scheduledLabel => 'Programado';
+
+  @override
+  String get activeLabel => 'Activo';
+
+  @override
+  String get pendingLabel => 'Pendiente';
+
+  @override
+  String get cancellationReasonTitle => '¿Por qué cancelas?';
+
+  @override
+  String get cancellationReasonHint => 'Dinos por qué cancelas este viaje...';
+
+  @override
+  String get confirmCancellationButton => 'Confirmar cancelación';
+
+  @override
+  String get rideCompletedTitle => '¡Viaje completado!';
+
+  @override
+  String get rideCompletedSubtitle => '¿Cómo fue tu experiencia?';
+
+  @override
+  String get rideNavigationTitle => 'Navegación del viaje';
+
+  @override
+  String get startNavigationButton => 'Iniciar navegación';
+
+  @override
+  String get arriveAtPickupButton => 'Llegar al punto de recogida';
+
+  @override
+  String get startTripButton => 'Iniciar viaje';
+
+  @override
+  String get endTripButton => 'Finalizar viaje';
+
+  @override
+  String get passengerPickupLabel => 'Recogida de pasajero';
+
+  @override
+  String get destinationLabel => 'Destino';
+
+  @override
+  String get supportCategoryGeneral => 'General';
+
+  @override
+  String get supportCategoryAccountIssue => 'Problema de cuenta';
+
+  @override
+  String get supportCategoryPaymentProblem => 'Problema de pago';
+
+  @override
+  String get supportCategoryRideIssue => 'Problema de viaje';
+
+  @override
+  String get supportCategoryTechnicalBug => 'Error técnico';
+
+  @override
+  String get supportCategorySafetyReport => 'Reporte de seguridad';
+
+  @override
+  String get supportCategoryFeatureRequest => 'Solicitud de función';
+
+  @override
+  String get driversLabel => 'Conductores';
+
+  @override
+  String get ridersLabel => 'Pasajeros';
+
+  @override
+  String get sportsLabel => 'Deportes';
 }

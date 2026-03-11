@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sport_connect/features/profile/view_models/help_center_view_model.dart';
 
 /// Help Center screen with FAQ sections and support access.
 ///
@@ -13,16 +14,8 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 /// - Searchable FAQ categories
 /// - Expandable Q&A sections
 /// - Quick links to contact support and report issues
-class HelpCenterScreen extends ConsumerStatefulWidget {
+class HelpCenterScreen extends ConsumerWidget {
   const HelpCenterScreen({super.key});
-
-  @override
-  ConsumerState<HelpCenterScreen> createState() => _HelpCenterScreenState();
-}
-
-class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
-  int _searchFieldKey = 0;
-  String _searchQuery = '';
 
   static const _faqCategories = [
     _FAQCategory(
@@ -107,13 +100,13 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
         _FAQ(
           'How is my safety ensured?',
           'All drivers undergo verification. Rides include live GPS '
-              'tracking, in-app chat, emergency SOS button, and all trips '
+              'tracking, in-app chat, and all trips '
               'are logged for safety.',
         ),
         _FAQ(
           'How do I report a safety issue?',
-          'Tap the SOS button during a ride, or go to Settings → '
-              'Report a Problem. Safety reports are prioritized and '
+          'Go to Settings → Report a Problem during or after a ride. '
+              'Safety reports are prioritized and '
               'reviewed within 24 hours.',
         ),
         _FAQ(
@@ -147,22 +140,16 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
     ),
   ];
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  List<_FAQCategory> get _filteredCategories {
-    if (_searchQuery.isEmpty) return _faqCategories;
+  List<_FAQCategory> _filteredCategories(String searchQuery) {
+    if (searchQuery.isEmpty) return _faqCategories;
+    final normalizedQuery = searchQuery.toLowerCase();
     return _faqCategories
         .map((cat) {
           final filteredQuestions = cat.questions
               .where(
                 (q) =>
-                    q.question.toLowerCase().contains(
-                      _searchQuery.toLowerCase(),
-                    ) ||
-                    q.answer.toLowerCase().contains(_searchQuery.toLowerCase()),
+                    q.question.toLowerCase().contains(normalizedQuery) ||
+                    q.answer.toLowerCase().contains(normalizedQuery),
               )
               .toList();
           if (filteredQuestions.isEmpty) return null;
@@ -178,8 +165,10 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final uiState = ref.watch(helpCenterUiViewModelProvider);
+    final filteredCategories = _filteredCategories(uiState.searchQuery);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -208,7 +197,7 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
             SizedBox(height: 8.h),
 
             // Search bar
-            _buildSearchBar().animate().fadeIn(duration: 300.ms),
+            _buildSearchBar(ref, uiState).animate().fadeIn(duration: 300.ms),
 
             SizedBox(height: 20.h),
 
@@ -232,8 +221,8 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
 
             SizedBox(height: 16.h),
 
-            ..._filteredCategories.asMap().entries.map((entry) {
-              return _buildFAQSection(entry.value)
+            ...filteredCategories.asMap().entries.map((entry) {
+              return _buildFAQSection(context, entry.value)
                   .animate()
                   .fadeIn(
                     delay: Duration(milliseconds: 250 + (entry.key * 100)),
@@ -241,7 +230,7 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
                   .slideY(begin: 0.03);
             }),
 
-            if (_filteredCategories.isEmpty)
+            if (filteredCategories.isEmpty)
               _buildEmptySearch().animate().fadeIn(duration: 300.ms),
 
             SizedBox(height: 32.h),
@@ -251,24 +240,24 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildSearchBar(WidgetRef ref, HelpCenterUiState uiState) {
     return TextField(
-      key: ValueKey(_searchFieldKey),
-      onChanged: (value) => setState(() => _searchQuery = value),
+      key: ValueKey(uiState.searchFieldKey),
+      onChanged: ref
+          .read(helpCenterUiViewModelProvider.notifier)
+          .setSearchQuery,
+      textInputAction: TextInputAction.search,
       decoration: InputDecoration(
         hintText: 'Search help articles...',
         hintStyle: TextStyle(fontSize: 14.sp, color: AppColors.textTertiary),
         prefixIcon: Icon(Icons.search_rounded, color: AppColors.textSecondary),
-        suffixIcon: _searchQuery.isNotEmpty
+        suffixIcon: uiState.searchQuery.isNotEmpty
             ? IconButton(
                 tooltip: 'Clear search',
                 icon: const Icon(Icons.clear_rounded),
-                onPressed: () {
-                  setState(() {
-                    _searchFieldKey++;
-                    _searchQuery = '';
-                  });
-                },
+                onPressed: ref
+                    .read(helpCenterUiViewModelProvider.notifier)
+                    .clearSearch,
               )
             : null,
         filled: true,
@@ -346,7 +335,7 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
     );
   }
 
-  Widget _buildFAQSection(_FAQCategory category) {
+  Widget _buildFAQSection(BuildContext context, _FAQCategory category) {
     return Container(
       margin: EdgeInsets.only(bottom: 16.h),
       decoration: BoxDecoration(
@@ -384,14 +373,14 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
             style: TextStyle(fontSize: 12.sp, color: AppColors.textTertiary),
           ),
           children: category.questions.map((faq) {
-            return _buildFAQItem(faq);
+            return _buildFAQItem(context, faq);
           }).toList(),
         ),
       ),
     );
   }
 
-  Widget _buildFAQItem(_FAQ faq) {
+  Widget _buildFAQItem(BuildContext context, _FAQ faq) {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
       decoration: BoxDecoration(

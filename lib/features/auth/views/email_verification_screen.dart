@@ -1,143 +1,38 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
-import 'package:sport_connect/core/providers/user_providers.dart';
-import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
+import 'package:sport_connect/features/auth/view_models/email_verification_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
-/// Email Verification screen shown after registration.
-///
-/// Features:
-/// - Real-time verification status polling
-/// - Resend verification email with cooldown
-/// - Auto-redirect on verification
-class EmailVerificationScreen extends ConsumerStatefulWidget {
+class EmailVerificationScreen extends ConsumerWidget {
   const EmailVerificationScreen({super.key});
 
   @override
-  ConsumerState<EmailVerificationScreen> createState() =>
-      _EmailVerificationScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final vmState = ref.watch(emailVerificationViewModelProvider);
 
-class _EmailVerificationScreenState
-    extends ConsumerState<EmailVerificationScreen> {
-  bool _isEmailVerified = false;
-  bool _isSending = false;
-  int _resendCooldown = 0;
-  Timer? _verificationTimer;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkEmailVerified();
-    _startVerificationPolling();
-  }
-
-  @override
-  void dispose() {
-    _verificationTimer?.cancel();
-    super.dispose();
-  }
-
-  void _startVerificationPolling() {
-    _verificationTimer = Timer.periodic(
-      const Duration(seconds: 3),
-      (_) => _checkEmailVerified(),
-    );
-  }
-
-  Future<void> _checkEmailVerified() async {
-    if (!mounted) return; // ← guard before anything
-
-    try {
-      final authActions = ref.read(authActionsViewModelProvider);
-      final user = authActions.currentUser;
-      if (user == null) return;
-
-      await authActions.reloadUser();
-
-      if (!mounted) return; // ← guard after every await
-
-      final verified = await authActions.isEmailVerified();
-
-      if (!mounted) return; // ← guard again
-
-      if (verified) {
-        setState(() => _isEmailVerified = true);
-        _verificationTimer?.cancel();
-
-        await Future.delayed(const Duration(seconds: 2));
-
-        if (!mounted) return;
-        ref.invalidate(authStateProvider);
-
+    ref.listen(emailVerificationViewModelProvider, (previous, next) {
+      if (next.isEmailVerified && !(previous?.isEmailVerified ?? false)) {
         context.go(AppRoutes.login.path);
       }
-    } catch (e) {
-      // Provider was disposed mid-poll — safe to ignore
-      if (!mounted) return;
-    }
-  }
 
-  Future<void> _resendVerification() async {
-    if (_resendCooldown > 0 || _isSending) return;
-
-    setState(() => _isSending = true);
-    try {
-      await ref.read(authActionsViewModelProvider).sendEmailVerification();
-
-      if (mounted) {
-        setState(() {
-          _isSending = false;
-          _resendCooldown = 60;
-        });
-        _startResendTimer();
-
+      if (next.errorMessage != null &&
+          next.errorMessage != previous?.errorMessage) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context).emailVerifySent),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isSending = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).emailVerifySendFailed),
+            content: Text(l10n.emailVerificationError),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),
         );
       }
-    }
-  }
-
-  void _startResendTimer() {
-    Future.doWhile(() async {
-      await Future.delayed(const Duration(seconds: 1));
-      if (!mounted) return false;
-      setState(() => _resendCooldown--);
-      return _resendCooldown > 0;
     });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final user = ref.read(authActionsViewModelProvider).currentUser;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -159,50 +54,46 @@ class _EmailVerificationScreenState
           child: Column(
             children: [
               const Spacer(flex: 2),
-
-              // Animated icon
-              _isEmailVerified
+              vmState.isEmailVerified
                   ? _buildVerifiedState(l10n)
-                  : _buildPendingState(l10n, user?.email ?? ''),
-
+                  : _buildPendingState(l10n, vmState.userEmail),
               const Spacer(flex: 3),
-
-              // Actions
-              if (!_isEmailVerified) ...[
+              if (!vmState.isEmailVerified) ...[
                 SizedBox(
                   width: double.infinity,
                   child: PremiumButton(
-                    text: _resendCooldown > 0
-                        ? l10n.emailVerifyResendIn(_resendCooldown)
+                    text: vmState.resendCooldown > 0
+                        ? l10n.emailVerifyResendIn(vmState.resendCooldown)
                         : l10n.emailVerifyResend,
-                    onPressed: _resendCooldown > 0 || _isSending
+                    onPressed:
+                        vmState.resendCooldown > 0 || vmState.isSending
                         ? null
-                        : _resendVerification,
-                    isLoading: _isSending,
+                        : () => ref
+                              .read(emailVerificationViewModelProvider.notifier)
+                              .resendVerification(),
+                    isLoading: vmState.isSending,
                     icon: Icons.email_outlined,
                     style: PremiumButtonStyle.secondary,
                   ),
                 ).animate().fadeIn(delay: 600.ms),
-
                 SizedBox(height: 16.h),
-
                 SizedBox(
                   width: double.infinity,
                   child: PremiumButton(
                     text: l10n.emailVerifyCheckButton,
-                    onPressed: _checkEmailVerified,
+                    onPressed: () => ref
+                        .read(emailVerificationViewModelProvider.notifier)
+                        .checkEmailVerified(),
                     icon: Icons.check_circle_outline_rounded,
                   ),
                 ).animate().fadeIn(delay: 700.ms),
-
                 SizedBox(height: 12.h),
-
                 TextButton(
-                  onPressed: () async {
-                    await ref.read(authActionsViewModelProvider).signOut();
-                  },
+                  onPressed: () => ref
+                      .read(emailVerificationViewModelProvider.notifier)
+                      .signOut(),
                   child: Text(
-                    'Use a different account',
+                    l10n.useDifferentAccount,
                     style: TextStyle(
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w600,
@@ -211,7 +102,6 @@ class _EmailVerificationScreenState
                   ),
                 ).animate().fadeIn(delay: 750.ms),
               ],
-
               SizedBox(height: 32.h),
             ],
           ),
@@ -240,9 +130,7 @@ class _EmailVerificationScreenState
               duration: 2000.ms,
               color: AppColors.primary.withValues(alpha: 0.3),
             ),
-
         SizedBox(height: 28.h),
-
         Text(
           l10n.emailVerifyHeading,
           style: TextStyle(
@@ -251,9 +139,7 @@ class _EmailVerificationScreenState
             color: AppColors.textPrimary,
           ),
         ).animate().fadeIn(delay: 200.ms),
-
         SizedBox(height: 12.h),
-
         Text(
           l10n.emailVerifySentTo,
           textAlign: TextAlign.center,
@@ -263,9 +149,7 @@ class _EmailVerificationScreenState
             height: 1.5,
           ),
         ).animate().fadeIn(delay: 300.ms),
-
         SizedBox(height: 8.h),
-
         Container(
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
           decoration: BoxDecoration(
@@ -281,10 +165,7 @@ class _EmailVerificationScreenState
             ),
           ),
         ).animate().fadeIn(delay: 400.ms),
-
         SizedBox(height: 20.h),
-
-        // Waiting indicator
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -325,9 +206,7 @@ class _EmailVerificationScreenState
             .animate()
             .fadeIn(duration: 500.ms)
             .scale(begin: const Offset(0.5, 0.5)),
-
         SizedBox(height: 28.h),
-
         Text(
           l10n.emailVerified,
           style: TextStyle(
@@ -336,9 +215,7 @@ class _EmailVerificationScreenState
             color: AppColors.success,
           ),
         ).animate().fadeIn(delay: 200.ms),
-
         SizedBox(height: 12.h),
-
         Text(
           l10n.emailVerifiedRedirecting,
           textAlign: TextAlign.center,

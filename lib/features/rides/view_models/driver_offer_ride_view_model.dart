@@ -1,0 +1,567 @@
+import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:uuid/uuid.dart';
+
+import 'package:sport_connect/core/models/location/location_point.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
+import 'package:sport_connect/core/models/value_objects/money.dart';
+import 'package:sport_connect/core/services/routing_service.dart';
+import 'package:sport_connect/features/events/models/event_model.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_capacity.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_preferences.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_pricing.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_route.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_schedule.dart';
+import 'package:sport_connect/features/rides/services/ride_service.dart';
+
+part 'driver_offer_ride_view_model.g.dart';
+
+/// Form state for creating or editing a ride offer
+class DriverOfferRideFormState {
+  // Step management
+  final int currentStep;
+
+  // Step 1: Route
+  final LocationPoint? fromLocation;
+  final String fromAddress;
+  final LocationPoint? toLocation;
+  final String toAddress;
+  final DateTime? departureDate;
+  final TimeOfDay? departureTime;
+  final List<LocationPoint> waypoints;
+
+  // Step 2: Details
+  final String? selectedVehicleId;
+  final int availableSeats;
+  final double pricePerSeat;
+  final bool isPriceNegotiable;
+  final bool acceptOnlinePayment;
+  final bool isRecurring;
+  final List<int> recurringDays;
+
+  // Step 3: Preferences
+  final bool allowPets;
+  final bool allowSmoking;
+  final bool allowLuggage;
+  final bool isWomenOnly;
+  final int? maxDetourMinutes;
+
+  // Event attachment
+  final String? eventId;
+  final String? eventName;
+  final EventModel? selectedEvent;
+  final bool isLoadingSelectedEvent;
+
+  // Route preview state
+  final List<LatLng>? osrmRoutePoints;
+  final bool isLoadingRoute;
+
+  // Submission state
+  final bool isSubmitting;
+  final String? submissionError;
+
+  // Edit mode
+  final String? existingRideId;
+
+  const DriverOfferRideFormState({
+    this.currentStep = 0,
+    this.fromLocation,
+    this.fromAddress = '',
+    this.toLocation,
+    this.toAddress = '',
+    this.departureDate,
+    this.departureTime,
+    this.waypoints = const [],
+    this.selectedVehicleId,
+    this.availableSeats = 3,
+    this.pricePerSeat = 15.0,
+    this.isPriceNegotiable = false,
+    this.acceptOnlinePayment = true,
+    this.isRecurring = false,
+    this.recurringDays = const [],
+    this.allowPets = false,
+    this.allowSmoking = false,
+    this.allowLuggage = true,
+    this.isWomenOnly = false,
+    this.maxDetourMinutes = 15,
+    this.eventId,
+    this.eventName,
+    this.selectedEvent,
+    this.isLoadingSelectedEvent = false,
+    this.osrmRoutePoints,
+    this.isLoadingRoute = false,
+    this.isSubmitting = false,
+    this.submissionError,
+    this.existingRideId,
+  });
+
+  DriverOfferRideFormState copyWith({
+    int? currentStep,
+    LocationPoint? fromLocation,
+    String? fromAddress,
+    LocationPoint? toLocation,
+    String? toAddress,
+    DateTime? departureDate,
+    TimeOfDay? departureTime,
+    List<LocationPoint>? waypoints,
+    String? selectedVehicleId,
+    int? availableSeats,
+    double? pricePerSeat,
+    bool? isPriceNegotiable,
+    bool? acceptOnlinePayment,
+    bool? isRecurring,
+    List<int>? recurringDays,
+    bool? allowPets,
+    bool? allowSmoking,
+    bool? allowLuggage,
+    bool? isWomenOnly,
+    int? maxDetourMinutes,
+    String? eventId,
+    String? eventName,
+    EventModel? selectedEvent,
+    bool? isLoadingSelectedEvent,
+    List<LatLng>? osrmRoutePoints,
+    bool? isLoadingRoute,
+    bool? isSubmitting,
+    String? submissionError,
+    String? existingRideId,
+  }) {
+    return DriverOfferRideFormState(
+      currentStep: currentStep ?? this.currentStep,
+      fromLocation: fromLocation ?? this.fromLocation,
+      fromAddress: fromAddress ?? this.fromAddress,
+      toLocation: toLocation ?? this.toLocation,
+      toAddress: toAddress ?? this.toAddress,
+      departureDate: departureDate ?? this.departureDate,
+      departureTime: departureTime ?? this.departureTime,
+      waypoints: waypoints ?? this.waypoints,
+      selectedVehicleId: selectedVehicleId ?? this.selectedVehicleId,
+      availableSeats: availableSeats ?? this.availableSeats,
+      pricePerSeat: pricePerSeat ?? this.pricePerSeat,
+      isPriceNegotiable: isPriceNegotiable ?? this.isPriceNegotiable,
+      acceptOnlinePayment: acceptOnlinePayment ?? this.acceptOnlinePayment,
+      isRecurring: isRecurring ?? this.isRecurring,
+      recurringDays: recurringDays ?? this.recurringDays,
+      allowPets: allowPets ?? this.allowPets,
+      allowSmoking: allowSmoking ?? this.allowSmoking,
+      allowLuggage: allowLuggage ?? this.allowLuggage,
+      isWomenOnly: isWomenOnly ?? this.isWomenOnly,
+      maxDetourMinutes: maxDetourMinutes ?? this.maxDetourMinutes,
+      eventId: eventId ?? this.eventId,
+      eventName: eventName ?? this.eventName,
+      selectedEvent: selectedEvent ?? this.selectedEvent,
+      isLoadingSelectedEvent:
+          isLoadingSelectedEvent ?? this.isLoadingSelectedEvent,
+      osrmRoutePoints: osrmRoutePoints ?? this.osrmRoutePoints,
+      isLoadingRoute: isLoadingRoute ?? this.isLoadingRoute,
+      isSubmitting: isSubmitting ?? this.isSubmitting,
+      submissionError: submissionError,
+      existingRideId: existingRideId ?? this.existingRideId,
+    );
+  }
+
+  /// Returns the combined departure DateTime, or null if incomplete
+  DateTime? get fullDepartureDateTime {
+    if (departureDate == null || departureTime == null) return null;
+    return DateTime(
+      departureDate!.year,
+      departureDate!.month,
+      departureDate!.day,
+      departureTime!.hour,
+      departureTime!.minute,
+    );
+  }
+
+  /// Validation: check if locations are identical
+  bool get hasSameOriginAndDestination {
+    if (fromLocation == null || toLocation == null) return false;
+    return fromLocation!.latitude == toLocation!.latitude &&
+        fromLocation!.longitude == toLocation!.longitude;
+  }
+
+  /// Check if basic route data is complete
+  bool get hasCompleteRoute =>
+      fromLocation != null &&
+      toLocation != null &&
+      !hasSameOriginAndDestination;
+
+  /// Check if date/time is complete
+  bool get hasCompleteDateTime => fullDepartureDateTime != null;
+
+  /// Validation: seats must be at least 1
+  bool get hasValidSeats => availableSeats >= 1 && availableSeats <= 8;
+
+  /// Validation: price must be at least 1
+  bool get hasValidPrice => pricePerSeat >= 1.0;
+
+  /// Check if form is complete enough to submit
+  bool get canSubmit =>
+      hasCompleteRoute &&
+      hasCompleteDateTime &&
+      selectedVehicleId != null &&
+      hasValidSeats &&
+      hasValidPrice &&
+      !isSubmitting;
+
+  /// Human-readable reason why submission is blocked
+  String? get submissionBlockReason {
+    if (isSubmitting) return 'Submitting ride, please wait...';
+    if (fromLocation == null || toLocation == null) {
+      return 'Please set origin and destination in Step 1';
+    }
+    if (hasSameOriginAndDestination) {
+      return 'Origin and destination cannot be the same location';
+    }
+    if (departureDate == null || departureTime == null) {
+      return 'Please set a departure date and time in Step 1';
+    }
+    final departure = fullDepartureDateTime!;
+    if (departure.isBefore(DateTime.now())) {
+      return 'Departure time must be in the future — go back to Step 1';
+    }
+    final minutesUntilDeparture = departure
+        .difference(DateTime.now())
+        .inMinutes;
+    if (minutesUntilDeparture < 15) {
+      return 'Departure must be at least 15 minutes from now';
+    }
+    if (selectedVehicleId == null) {
+      return 'Please select a vehicle in Step 2';
+    }
+    if (!hasValidSeats) {
+      return 'Number of seats must be between 1 and 8 — go back to Step 2';
+    }
+    if (!hasValidPrice) {
+      return 'Price per seat must be at least \$1 — go back to Step 2';
+    }
+    return null;
+  }
+}
+
+@Riverpod(keepAlive: true)
+class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
+  @override
+  DriverOfferRideFormState build() => const DriverOfferRideFormState();
+
+  // --- Step Management ---
+  void setStep(int step) {
+    state = state.copyWith(currentStep: step);
+  }
+
+  void nextStep() {
+    if (state.currentStep < 2) {
+      state = state.copyWith(currentStep: state.currentStep + 1);
+    }
+  }
+
+  void previousStep() {
+    if (state.currentStep > 0) {
+      state = state.copyWith(currentStep: state.currentStep - 1);
+    }
+  }
+
+  // --- Route (Step 1) ---
+  void setFromLocation(LocationPoint location, String address) {
+    state = state.copyWith(fromLocation: location, fromAddress: address);
+    _triggerRoutePreview();
+  }
+
+  void setToLocation(LocationPoint location, String address) {
+    state = state.copyWith(toLocation: location, toAddress: address);
+    _triggerRoutePreview();
+  }
+
+  void swapLocations() {
+    state = state.copyWith(
+      fromLocation: state.toLocation,
+      fromAddress: state.toAddress,
+      toLocation: state.fromLocation,
+      toAddress: state.fromAddress,
+    );
+    _triggerRoutePreview();
+  }
+
+  void setDepartureDate(DateTime date) {
+    state = state.copyWith(departureDate: date);
+  }
+
+  void setDepartureTime(TimeOfDay time) {
+    state = state.copyWith(departureTime: time);
+  }
+
+  void setWaypoints(List<LocationPoint> waypoints) {
+    state = state.copyWith(waypoints: waypoints);
+    _triggerRoutePreview();
+  }
+
+  void addWaypoint(LocationPoint waypoint) {
+    final updated = [...state.waypoints, waypoint];
+    state = state.copyWith(waypoints: updated);
+    _triggerRoutePreview();
+  }
+
+  void removeWaypoint(int index) {
+    final updated = List<LocationPoint>.from(state.waypoints)..removeAt(index);
+    state = state.copyWith(waypoints: updated);
+    _triggerRoutePreview();
+  }
+
+  // --- Details (Step 2) ---
+  void setVehicle(String vehicleId) {
+    state = state.copyWith(selectedVehicleId: vehicleId);
+  }
+
+  void setSeats(int seats) {
+    // Clamp to valid range
+    final clamped = seats.clamp(1, 8);
+    state = state.copyWith(availableSeats: clamped);
+  }
+
+  void setPrice(double price) {
+    // Ensure minimum price
+    final clamped = price < 1.0 ? 1.0 : price;
+    state = state.copyWith(pricePerSeat: clamped);
+  }
+
+  void setPriceNegotiable(bool negotiable) {
+    state = state.copyWith(isPriceNegotiable: negotiable);
+  }
+
+  void setAcceptOnlinePayment(bool accept) {
+    state = state.copyWith(acceptOnlinePayment: accept);
+  }
+
+  void setRecurring(bool recurring) {
+    state = state.copyWith(isRecurring: recurring);
+  }
+
+  void setRecurringDays(List<int> days) {
+    state = state.copyWith(recurringDays: days);
+  }
+
+  // --- Preferences (Step 3) ---
+  void setAllowPets(bool allow) {
+    state = state.copyWith(allowPets: allow);
+  }
+
+  void setAllowSmoking(bool allow) {
+    state = state.copyWith(allowSmoking: allow);
+  }
+
+  void setAllowLuggage(bool allow) {
+    state = state.copyWith(allowLuggage: allow);
+  }
+
+  void setWomenOnly(bool womenOnly) {
+    state = state.copyWith(isWomenOnly: womenOnly);
+  }
+
+  void setMaxDetourMinutes(int? minutes) {
+    state = state.copyWith(maxDetourMinutes: minutes);
+  }
+
+  // --- Event ---
+  void setEvent(EventModel? event) {
+    state = state.copyWith(
+      eventId: event?.id,
+      eventName: event?.title,
+      selectedEvent: event,
+      isLoadingSelectedEvent: false,
+      toLocation: event?.location,
+      toAddress: event?.venueName ?? event?.location.address ?? '',
+    );
+    if (event != null) {
+      _triggerRoutePreview();
+    }
+  }
+
+  Future<void> loadSelectedEvent(String eventId) async {
+    if (state.isLoadingSelectedEvent || state.selectedEvent?.id == eventId) {
+      return;
+    }
+
+    state = state.copyWith(isLoadingSelectedEvent: true);
+    try {
+      final event = await ref
+          .read(eventRepositoryProvider)
+          .getEventById(eventId);
+      if (!ref.mounted) return;
+      state = state.copyWith(
+        selectedEvent: event,
+        eventId: event?.id ?? state.eventId,
+        eventName: event?.title ?? state.eventName,
+        isLoadingSelectedEvent: false,
+      );
+    } catch (_) {
+      if (!ref.mounted) return;
+      state = state.copyWith(isLoadingSelectedEvent: false);
+    }
+  }
+
+  // --- Route Preview ---
+  Future<void> _triggerRoutePreview() async {
+    if (state.fromLocation == null || state.toLocation == null) {
+      state = state.copyWith(osrmRoutePoints: null);
+      return;
+    }
+
+    if (state.isLoadingRoute) return;
+
+    state = state.copyWith(isLoadingRoute: true);
+
+    try {
+      final origin = LatLng(
+        state.fromLocation!.latitude,
+        state.fromLocation!.longitude,
+      );
+      final dest = LatLng(
+        state.toLocation!.latitude,
+        state.toLocation!.longitude,
+      );
+
+      final waypoints = state.waypoints.isNotEmpty
+          ? state.waypoints
+                .map((wp) => LatLng(wp.latitude, wp.longitude))
+                .toList()
+          : null;
+
+      final routeInfo = await RoutingService.getRoute(
+        origin: origin,
+        destination: dest,
+        waypoints: waypoints,
+      );
+
+      if (!ref.mounted) return;
+
+      state = state.copyWith(
+        osrmRoutePoints: routeInfo?.coordinates,
+        isLoadingRoute: false,
+      );
+    } catch (_) {
+      // Fallback: no route preview, just reset loading state
+      if (!ref.mounted) return;
+      state = state.copyWith(isLoadingRoute: false);
+    }
+  }
+
+  // --- Initialization (Edit Mode) ---
+  void initializeFromExistingRide(RideModel ride) {
+    state = DriverOfferRideFormState(
+      existingRideId: ride.id,
+      fromLocation: ride.route.origin,
+      fromAddress: ride.route.origin.address,
+      toLocation: ride.route.destination,
+      toAddress: ride.route.destination.address,
+      departureDate: ride.schedule.departureTime,
+      departureTime: TimeOfDay.fromDateTime(ride.schedule.departureTime),
+      waypoints: ride.route.waypoints.map((wp) => wp.location).toList(),
+      selectedVehicleId: ride.vehicleId,
+      availableSeats: ride.capacity.available,
+      pricePerSeat: ride.pricing.pricePerSeat.amount,
+      isPriceNegotiable: ride.pricing.isNegotiable,
+      acceptOnlinePayment: ride.pricing.acceptsOnlinePayment,
+      isRecurring: ride.schedule.isRecurring,
+      recurringDays: ride.schedule.recurringDays,
+      allowPets: ride.preferences.allowPets,
+      allowSmoking: ride.preferences.allowSmoking,
+      allowLuggage: ride.preferences.allowLuggage,
+      isWomenOnly: ride.preferences.isWomenOnly,
+      maxDetourMinutes: ride.preferences.maxDetourMinutes,
+      eventId: ride.eventId,
+      eventName: ride.eventName,
+      selectedEvent: null,
+    );
+    _triggerRoutePreview();
+  }
+
+  // --- Submission ---
+  Future<String?> submitRide(String driverId) async {
+    // Guard against duplicate submissions
+    if (state.isSubmitting) return null;
+
+    // Validate before submission
+    if (!state.canSubmit || state.submissionBlockReason != null) {
+      state = state.copyWith(
+        submissionError: state.submissionBlockReason ?? 'Form is incomplete',
+      );
+      return null;
+    }
+
+    state = state.copyWith(isSubmitting: true, submissionError: null);
+
+    try {
+      final departure = state.fullDepartureDateTime!;
+
+      // Additional event-specific validation
+      if (state.eventId != null) {
+        // We'd need the event end time here, but for now we'll trust
+        // that the caller has already validated this at the UI level
+      }
+
+      final ride = RideModel(
+        id: state.existingRideId ?? const Uuid().v4(),
+        driverId: driverId,
+        route: RideRoute(
+          origin: state.fromLocation!,
+          destination: state.toLocation!,
+          waypoints: state.waypoints
+              .asMap()
+              .entries
+              .map((e) => RouteWaypoint(location: e.value, order: e.key))
+              .toList(),
+        ),
+        schedule: RideSchedule(
+          departureTime: departure,
+          isRecurring: state.isRecurring,
+          recurringDays: state.recurringDays,
+        ),
+        capacity: RideCapacity(available: state.availableSeats, booked: 0),
+        pricing: RidePricing(
+          pricePerSeat: Money(amount: state.pricePerSeat, currency: 'USD'),
+          isNegotiable: state.isPriceNegotiable,
+          acceptsOnlinePayment: state.acceptOnlinePayment,
+        ),
+        preferences: RidePreferences(
+          allowPets: state.allowPets,
+          allowSmoking: state.allowSmoking,
+          allowLuggage: state.allowLuggage,
+          isWomenOnly: state.isWomenOnly,
+          maxDetourMinutes: state.maxDetourMinutes,
+        ),
+        eventId: state.eventId,
+        eventName: state.eventName,
+        status: RideStatus.active,
+        createdAt: DateTime.now(),
+        vehicleId: state.selectedVehicleId,
+      );
+
+      final rideId = await ref
+          .read(rideServiceProvider.notifier)
+          .createRide(ride);
+
+      if (!ref.mounted) return rideId;
+
+      state = state.copyWith(isSubmitting: false);
+      return rideId;
+    } catch (e) {
+      if (!ref.mounted) return null;
+      state = state.copyWith(
+        isSubmitting: false,
+        submissionError: e.toString(),
+      );
+      return null;
+    }
+  }
+
+  /// Reset the form to initial state
+  void reset() {
+    state = const DriverOfferRideFormState();
+  }
+
+  /// Clear submission error
+  void clearSubmissionError() {
+    state = state.copyWith(submissionError: null);
+  }
+}

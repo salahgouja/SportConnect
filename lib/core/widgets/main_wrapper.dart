@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
+import 'package:sport_connect/core/widgets/chat_widgets.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 
 /// Main wrapper widget with bottom navigation
@@ -106,12 +107,14 @@ class _CustomBottomNavBar extends StatelessWidget {
   final bool isDriver;
   final int activeIndex;
   final ValueChanged<int> onTap;
+  final int _unreadChatCount;
 
   const _CustomBottomNavBar({
     required this.isDriver,
     required this.activeIndex,
     required this.onTap,
-  });
+    int unreadChatCount = 0,
+  }) : _unreadChatCount = unreadChatCount;
 
   @override
   Widget build(BuildContext context) {
@@ -136,6 +139,8 @@ class _CustomBottomNavBar extends StatelessWidget {
               onTap: () => onTap(index),
               index: index,
               totalTabs: totalTabs,
+              // Badge on chat tab (index 3 for both rider and driver)
+              badgeCount: index == 3 ? _unreadChatCount : 0,
             ),
           ),
         ),
@@ -250,6 +255,7 @@ class _NavBarTab extends StatelessWidget {
   final VoidCallback onTap;
   final int index;
   final int totalTabs;
+  final int badgeCount;
 
   const _NavBarTab({
     required this.item,
@@ -257,6 +263,7 @@ class _NavBarTab extends StatelessWidget {
     required this.onTap,
     required this.index,
     required this.totalTabs,
+    this.badgeCount = 0,
   });
 
   @override
@@ -307,12 +314,15 @@ class _NavBarTab extends StatelessWidget {
                     scale: isActive ? 1.05 : 1.0,
                     duration: const Duration(milliseconds: 250),
                     curve: Curves.easeOutCubic,
-                    child: Icon(
-                      isActive ? item.activeIcon : item.icon,
-                      size: 24.sp,
-                      color: isActive
-                          ? AppColors.primary
-                          : AppColors.textSecondary,
+                    child: UnreadBadge(
+                      count: badgeCount,
+                      child: Icon(
+                        isActive ? item.activeIcon : item.icon,
+                        size: 24.sp,
+                        color: isActive
+                            ? AppColors.primary
+                            : AppColors.textSecondary,
+                      ),
                     ),
                   ),
                 ),

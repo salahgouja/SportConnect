@@ -15,23 +15,11 @@ import 'package:sport_connect/features/events/view_models/event_view_model.dart'
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Browse / discover upcoming events, filter by sport type.
-class EventListScreen extends ConsumerStatefulWidget {
+class EventListScreen extends ConsumerWidget {
   const EventListScreen({super.key});
 
   @override
-  ConsumerState<EventListScreen> createState() => _EventListScreenState();
-}
-
-class _EventListScreenState extends ConsumerState<EventListScreen> {
-  int _searchFieldKey = 0;
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final vm = ref.watch(eventListViewModelProvider);
 
     return Scaffold(
@@ -40,13 +28,13 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
         physics: const BouncingScrollPhysics(),
         slivers: [
           // ── Header ──
-          _buildAppBar(),
+          _buildAppBar(context),
 
           // ── Search bar ──
-          SliverToBoxAdapter(child: _buildSearchBar(vm)),
+          SliverToBoxAdapter(child: _buildSearchBar(context, ref, vm)),
 
           // ── Filter chips ──
-          SliverToBoxAdapter(child: _buildFilterChips(vm)),
+          SliverToBoxAdapter(child: _buildFilterChips(context, ref, vm)),
 
           // ── Event list ──
           if (vm.isLoading)
@@ -84,7 +72,7 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
               ),
             )
           else if (vm.filteredEvents.isEmpty)
-            SliverFillRemaining(child: _buildEmptyState(vm.filterType))
+            SliverFillRemaining(child: _buildEmptyState(context, vm.filterType))
           else
             _buildEventList(vm.filteredEvents),
         ],
@@ -95,7 +83,7 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
             backgroundColor: AppColors.primary,
             icon: Icon(Icons.add_rounded, size: 22.sp),
             label: Text(
-              'Create',
+              AppLocalizations.of(context).createLabel,
               style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
             ),
           ).animate().scale(
@@ -109,7 +97,7 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
   // -------------------------------------------------------------------
   // App bar
   // -------------------------------------------------------------------
-  SliverAppBar _buildAppBar() {
+  SliverAppBar _buildAppBar(BuildContext context) {
     return SliverAppBar(
       pinned: true,
       backgroundColor: AppColors.background,
@@ -123,7 +111,7 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
         onPressed: () => context.pop(),
       ),
       title: Text(
-        'Discover Events',
+        AppLocalizations.of(context).discoverEventsTitle,
         style: TextStyle(
           fontSize: 20.sp,
           fontWeight: FontWeight.w800,
@@ -137,7 +125,11 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
   // -------------------------------------------------------------------
   // Search bar
   // -------------------------------------------------------------------
-  Widget _buildSearchBar(EventListState vm) {
+  Widget _buildSearchBar(
+    BuildContext context,
+    WidgetRef ref,
+    EventListState vm,
+  ) {
     return Padding(
       padding: EdgeInsets.fromLTRB(
         AppSpacing.screenPadding,
@@ -146,11 +138,12 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
         8.h,
       ),
       child: TextField(
-        key: ValueKey(_searchFieldKey),
+        key: ValueKey(vm.searchFieldKey),
+        textInputAction: TextInputAction.search,
         onChanged: (v) =>
             ref.read(eventListViewModelProvider.notifier).setSearchQuery(v),
         decoration: InputDecoration(
-          hintText: 'Search events…',
+          hintText: AppLocalizations.of(context).searchEventsHint,
           hintStyle: TextStyle(fontSize: 14.sp, color: AppColors.textTertiary),
           prefixIcon: Icon(
             Icons.search_rounded,
@@ -160,12 +153,9 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
           suffixIcon: vm.searchQuery.isNotEmpty
               ? IconButton(
                   icon: Icon(Icons.close_rounded, size: 18.sp),
-                  onPressed: () {
-                    setState(() => _searchFieldKey++);
-                    ref
-                        .read(eventListViewModelProvider.notifier)
-                        .setSearchQuery('');
-                  },
+                  onPressed: () => ref
+                      .read(eventListViewModelProvider.notifier)
+                      .clearSearch(),
                 )
               : null,
           filled: true,
@@ -183,7 +173,11 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
   // -------------------------------------------------------------------
   // Filter chips
   // -------------------------------------------------------------------
-  Widget _buildFilterChips(EventListState vm) {
+  Widget _buildFilterChips(
+    BuildContext context,
+    WidgetRef ref,
+    EventListState vm,
+  ) {
     return SizedBox(
       height: 44.h,
       child: ListView(
@@ -191,7 +185,7 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
         padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
         children: [
           _FilterChip(
-            label: 'All',
+            label: AppLocalizations.of(context).filterAll,
             isSelected: vm.filterType == null,
             onTap: () => ref
                 .read(eventListViewModelProvider.notifier)
@@ -244,7 +238,7 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
   // -------------------------------------------------------------------
   // Empty state
   // -------------------------------------------------------------------
-  Widget _buildEmptyState(EventType? filterType) {
+  Widget _buildEmptyState(BuildContext context, EventType? filterType) {
     return Center(
       child: Padding(
         padding: EdgeInsets.all(AppSpacing.screenPadding),
@@ -258,7 +252,7 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
             ),
             SizedBox(height: 16.h),
             Text(
-              'No events found',
+              AppLocalizations.of(context).noEventsFound,
               style: TextStyle(
                 fontSize: 18.sp,
                 fontWeight: FontWeight.w700,
@@ -268,14 +262,16 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
             SizedBox(height: 6.h),
             Text(
               filterType != null
-                  ? 'No upcoming ${filterType.label.toLowerCase()} events.'
-                  : 'Be the first to create one!',
+                  ? AppLocalizations.of(
+                      context,
+                    ).noEventsInCategory(filterType.label.toLowerCase())
+                  : AppLocalizations.of(context).beFirstToCreate,
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
             ),
             SizedBox(height: 24.h),
             PremiumButton(
-              text: 'Create Event',
+              text: AppLocalizations.of(context).eventCreateButton,
               icon: Icons.add_rounded,
               size: PremiumButtonSize.small,
               onPressed: () => context.push(AppRoutes.createEvent.path),
@@ -433,7 +429,7 @@ class _EventCard extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(8.r),
                       ),
                       child: Text(
-                        'Past',
+                        AppLocalizations.of(context).eventPastStatus,
                         style: TextStyle(
                           fontSize: 10.sp,
                           fontWeight: FontWeight.w700,
@@ -476,7 +472,9 @@ class _EventCard extends ConsumerWidget {
                   SizedBox(height: 4.h),
                   _iconRow(
                     Icons.person_outline_rounded,
-                    'by ${event.organizerName}',
+                    AppLocalizations.of(
+                      context,
+                    ).eventByOrganizer(event.organizerName!),
                   ),
                 ],
                 SizedBox(height: 10.h),
@@ -486,7 +484,7 @@ class _EventCard extends ConsumerWidget {
                     const Spacer(),
                     if (event.isUpcoming && !event.isFull)
                       Text(
-                        'Join →',
+                        AppLocalizations.of(context).eventJoinArrow,
                         style: TextStyle(
                           fontSize: 13.sp,
                           fontWeight: FontWeight.w600,
@@ -495,7 +493,7 @@ class _EventCard extends ConsumerWidget {
                       ),
                     if (event.isFull)
                       Text(
-                        'Full',
+                        AppLocalizations.of(context).eventFullStatus,
                         style: TextStyle(
                           fontSize: 13.sp,
                           fontWeight: FontWeight.w600,

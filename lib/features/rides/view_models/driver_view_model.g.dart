@@ -74,7 +74,7 @@ final class DriverViewModelProvider
   }
 }
 
-String _$driverViewModelHash() => r'684050c239143000b7f3ff9a8f891e2fb1218c0b';
+String _$driverViewModelHash() => r'b856efda9bed5cfb6c9b10523d1bce3be6aec646';
 
 /// ViewModel for all driver dashboard screens.
 ///

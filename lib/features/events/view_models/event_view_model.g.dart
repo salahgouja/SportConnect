@@ -9,6 +9,159 @@ part of 'event_view_model.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
+@ProviderFor(CreateEventFormViewModel)
+final createEventFormViewModelProvider = CreateEventFormViewModelProvider._();
+
+final class CreateEventFormViewModelProvider
+    extends $NotifierProvider<CreateEventFormViewModel, CreateEventFormState> {
+  CreateEventFormViewModelProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'createEventFormViewModelProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$createEventFormViewModelHash();
+
+  @$internal
+  @override
+  CreateEventFormViewModel create() => CreateEventFormViewModel();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(CreateEventFormState value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<CreateEventFormState>(value),
+    );
+  }
+}
+
+String _$createEventFormViewModelHash() =>
+    r'd2262941d54ae2e218eed843e82a72f51d622a0c';
+
+abstract class _$CreateEventFormViewModel
+    extends $Notifier<CreateEventFormState> {
+  CreateEventFormState build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<CreateEventFormState, CreateEventFormState>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<CreateEventFormState, CreateEventFormState>,
+              CreateEventFormState,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
+
+@ProviderFor(EditEventFormViewModel)
+final editEventFormViewModelProvider = EditEventFormViewModelFamily._();
+
+final class EditEventFormViewModelProvider
+    extends $NotifierProvider<EditEventFormViewModel, EditEventFormState> {
+  EditEventFormViewModelProvider._({
+    required EditEventFormViewModelFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'editEventFormViewModelProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$editEventFormViewModelHash();
+
+  @override
+  String toString() {
+    return r'editEventFormViewModelProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  EditEventFormViewModel create() => EditEventFormViewModel();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(EditEventFormState value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<EditEventFormState>(value),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is EditEventFormViewModelProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$editEventFormViewModelHash() =>
+    r'ac6c8a295f365f23e41d98988b4d4bc4abb15072';
+
+final class EditEventFormViewModelFamily extends $Family
+    with
+        $ClassFamilyOverride<
+          EditEventFormViewModel,
+          EditEventFormState,
+          EditEventFormState,
+          EditEventFormState,
+          String
+        > {
+  EditEventFormViewModelFamily._()
+    : super(
+        retry: null,
+        name: r'editEventFormViewModelProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  EditEventFormViewModelProvider call(String eventId) =>
+      EditEventFormViewModelProvider._(argument: eventId, from: this);
+
+  @override
+  String toString() => r'editEventFormViewModelProvider';
+}
+
+abstract class _$EditEventFormViewModel extends $Notifier<EditEventFormState> {
+  late final _$args = ref.$arg as String;
+  String get eventId => _$args;
+
+  EditEventFormState build(String eventId);
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<EditEventFormState, EditEventFormState>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<EditEventFormState, EditEventFormState>,
+              EditEventFormState,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, () => build(_$args));
+  }
+}
+
 @ProviderFor(EventSelectionViewModel)
 final eventSelectionViewModelProvider = EventSelectionViewModelProvider._();
 
@@ -42,7 +195,7 @@ final class EventSelectionViewModelProvider
 }
 
 String _$eventSelectionViewModelHash() =>
-    r'5906a81c9c1e7e44d942f2e93133054256da90c1';
+    r'3bdd33beaa49d4b5ca6fadde167cb7e454dc30eb';
 
 abstract class _$EventSelectionViewModel
     extends $Notifier<EventSelectionState> {
@@ -113,7 +266,7 @@ final class EventDetailViewModelProvider
 }
 
 String _$eventDetailViewModelHash() =>
-    r'be9615252eb6182c812fa3d1d4e06779e8a95c10';
+    r'1e7270affe5638e2a5c8dfd2b6fa05e2e75aefa1';
 
 final class EventDetailViewModelFamily extends $Family
     with
@@ -207,7 +360,7 @@ final class EventListViewModelProvider
 }
 
 String _$eventListViewModelHash() =>
-    r'4b4c66b90344856c6cdbff4a716d97da1eff0344';
+    r'e5b77b90af82332a846a7e6155b6e60a92d79b51';
 
 /// ViewModel for the event list screen.
 ///
@@ -573,4 +726,88 @@ final class EventByIdFamily extends $Family
 
   @override
   String toString() => r'eventByIdProvider';
+}
+
+/// Streams rides linked to a specific event by querying rides with matching eventId.
+
+@ProviderFor(eventLinkedRides)
+final eventLinkedRidesProvider = EventLinkedRidesFamily._();
+
+/// Streams rides linked to a specific event by querying rides with matching eventId.
+
+final class EventLinkedRidesProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<RideModel>>,
+          List<RideModel>,
+          Stream<List<RideModel>>
+        >
+    with $FutureModifier<List<RideModel>>, $StreamProvider<List<RideModel>> {
+  /// Streams rides linked to a specific event by querying rides with matching eventId.
+  EventLinkedRidesProvider._({
+    required EventLinkedRidesFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'eventLinkedRidesProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$eventLinkedRidesHash();
+
+  @override
+  String toString() {
+    return r'eventLinkedRidesProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<RideModel>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<RideModel>> create(Ref ref) {
+    final argument = this.argument as String;
+    return eventLinkedRides(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is EventLinkedRidesProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$eventLinkedRidesHash() => r'fee8b15d6625e823031dea717797370c987f2939';
+
+/// Streams rides linked to a specific event by querying rides with matching eventId.
+
+final class EventLinkedRidesFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<RideModel>>, String> {
+  EventLinkedRidesFamily._()
+    : super(
+        retry: null,
+        name: r'eventLinkedRidesProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Streams rides linked to a specific event by querying rides with matching eventId.
+
+  EventLinkedRidesProvider call(String eventId) =>
+      EventLinkedRidesProvider._(argument: eventId, from: this);
+
+  @override
+  String toString() => r'eventLinkedRidesProvider';
 }

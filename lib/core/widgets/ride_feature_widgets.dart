@@ -1,0 +1,617 @@
+import 'dart:math' as math;
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:sport_connect/core/theme/app_colors.dart';
+
+/// Walking distance and directions to pickup point (#19, #45)
+class WalkingDistanceCard extends StatelessWidget {
+  final double distanceMeters;
+  final int walkingMinutes;
+  final VoidCallback? onGetDirections;
+
+  const WalkingDistanceCard({
+    super.key,
+    required this.distanceMeters,
+    required this.walkingMinutes,
+    this.onGetDirections,
+  });
+
+  /// Estimate walking minutes from distance (avg 80m/min)
+  factory WalkingDistanceCard.fromDistance({
+    Key? key,
+    required double distanceMeters,
+    VoidCallback? onGetDirections,
+  }) {
+    return WalkingDistanceCard(
+      key: key,
+      distanceMeters: distanceMeters,
+      walkingMinutes: (distanceMeters / 80).ceil(),
+      onGetDirections: onGetDirections,
+    );
+  }
+
+  String get _formattedDistance {
+    if (distanceMeters >= 1000) {
+      return '${(distanceMeters / 1000).toStringAsFixed(1)} km';
+    }
+    return '${distanceMeters.round()} m';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        color: AppColors.info.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: AppColors.info.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(8.w),
+            decoration: BoxDecoration(
+              color: AppColors.info.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.directions_walk_rounded,
+              size: 20.sp,
+              color: AppColors.info,
+            ),
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$walkingMinutes min walk to pickup',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  _formattedDistance,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: theme.textTheme.bodySmall?.color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (onGetDirections != null)
+            TextButton.icon(
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                onGetDirections!();
+              },
+              icon: Icon(Icons.navigation_rounded, size: 16.sp),
+              label: Text('Directions', style: TextStyle(fontSize: 12.sp)),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Estimated wait time display (#51)
+class EstimatedWaitTime extends StatelessWidget {
+  final int waitMinutes;
+  final bool isDriverEnRoute;
+
+  const EstimatedWaitTime({
+    super.key,
+    required this.waitMinutes,
+    this.isDriverEnRoute = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = waitMinutes <= 5
+        ? AppColors.success
+        : waitMinutes <= 15
+        ? AppColors.warning
+        : AppColors.error;
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10.r),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isDriverEnRoute
+                ? Icons.directions_car_rounded
+                : Icons.schedule_rounded,
+            size: 16.sp,
+            color: color,
+          ),
+          SizedBox(width: 6.w),
+          Text(
+            isDriverEnRoute
+                ? 'Driver arriving in ~$waitMinutes min'
+                : 'Est. wait: ~$waitMinutes min',
+            style: TextStyle(
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Pickup pin drop widget (#44)
+class PickupPinDropCard extends StatelessWidget {
+  final String? currentAddress;
+  final VoidCallback onDropPin;
+  final VoidCallback? onClearPin;
+
+  const PickupPinDropCard({
+    super.key,
+    this.currentAddress,
+    required this.onDropPin,
+    this.onClearPin,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final hasPin = currentAddress != null;
+    return Container(
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        color: hasPin
+            ? AppColors.success.withValues(alpha: 0.06)
+            : theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(
+          color: hasPin
+              ? AppColors.success.withValues(alpha: 0.2)
+              : AppColors.border,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            hasPin ? Icons.location_on_rounded : Icons.add_location_alt_rounded,
+            size: 24.sp,
+            color: hasPin ? AppColors.success : AppColors.primary,
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  hasPin ? 'Custom pickup point' : 'Drop a pin for pickup',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                if (hasPin)
+                  Text(
+                    currentAddress!,
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: theme.textTheme.bodySmall?.color,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+              ],
+            ),
+          ),
+          if (hasPin && onClearPin != null)
+            IconButton(
+              onPressed: onClearPin,
+              icon: Icon(
+                Icons.close_rounded,
+                size: 18.sp,
+                color: AppColors.textTertiary,
+              ),
+              tooltip: 'Clear pin',
+            ),
+          if (!hasPin)
+            TextButton(
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                onDropPin();
+              },
+              child: const Text('Set Pin'),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// No-show marking dialog (#40)
+class NoShowDialog {
+  static Future<bool?> show(
+    BuildContext context, {
+    required String passengerName,
+  }) {
+    return showDialog<bool>(
+      context: context,
+      barrierLabel: 'Mark no-show',
+      builder: (context) => AlertDialog(
+        title: const Text('Mark No-Show'),
+        content: Text(
+          'Mark $passengerName as a no-show? This will be recorded and '
+          'may affect their rating.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              HapticFeedback.mediumImpact();
+              Navigator.pop(context, true);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.warning),
+            child: const Text('Mark No-Show'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Vehicle quick switch bottom sheet (#41)
+class VehicleQuickSwitchSheet extends StatelessWidget {
+  final List<VehicleOption> vehicles;
+  final String? currentVehicleId;
+  final ValueChanged<String> onSelect;
+
+  const VehicleQuickSwitchSheet({
+    super.key,
+    required this.vehicles,
+    this.currentVehicleId,
+    required this.onSelect,
+  });
+
+  static Future<void> show(
+    BuildContext context, {
+    required List<VehicleOption> vehicles,
+    String? currentVehicleId,
+    required ValueChanged<String> onSelect,
+  }) {
+    return showModalBottomSheet(
+      context: context,
+      barrierLabel: 'Switch vehicle',
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      builder: (_) => VehicleQuickSwitchSheet(
+        vehicles: vehicles,
+        currentVehicleId: currentVehicleId,
+        onSelect: onSelect,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 32.h),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40.w,
+            height: 4.h,
+            decoration: BoxDecoration(
+              color: AppColors.border,
+              borderRadius: BorderRadius.circular(2.r),
+            ),
+          ),
+          SizedBox(height: 16.h),
+          Text(
+            'Switch Vehicle',
+            style: TextStyle(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+          SizedBox(height: 16.h),
+          ...vehicles.map((v) => _buildVehicleTile(context, v)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVehicleTile(BuildContext context, VehicleOption vehicle) {
+    final isSelected = vehicle.id == currentVehicleId;
+    final theme = Theme.of(context);
+    return ListTile(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        Navigator.pop(context);
+        onSelect(vehicle.id);
+      },
+      leading: Container(
+        padding: EdgeInsets.all(8.w),
+        decoration: BoxDecoration(
+          color: (isSelected ? AppColors.primary : AppColors.textSecondary)
+              .withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10.r),
+        ),
+        child: Icon(
+          Icons.directions_car_rounded,
+          color: isSelected ? AppColors.primary : AppColors.textSecondary,
+        ),
+      ),
+      title: Text(
+        vehicle.name,
+        style: TextStyle(
+          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+          color: theme.colorScheme.onSurface,
+        ),
+      ),
+      subtitle: Text(vehicle.plate),
+      trailing: isSelected
+          ? Icon(Icons.check_circle_rounded, color: AppColors.primary)
+          : null,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+    );
+  }
+}
+
+/// Simple vehicle option model
+class VehicleOption {
+  final String id;
+  final String name;
+  final String plate;
+
+  const VehicleOption({
+    required this.id,
+    required this.name,
+    required this.plate,
+  });
+}
+
+/// Ladies-only ride filter UI chip (#64)
+class LadiesOnlyFilter extends StatelessWidget {
+  final bool isEnabled;
+  final ValueChanged<bool> onChanged;
+
+  const LadiesOnlyFilter({
+    super.key,
+    required this.isEnabled,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return FilterChip(
+      selected: isEnabled,
+      onSelected: (value) {
+        HapticFeedback.selectionClick();
+        onChanged(value);
+      },
+      avatar: Icon(
+        Icons.female_rounded,
+        size: 16.sp,
+        color: isEnabled ? Colors.pink : AppColors.textSecondary,
+      ),
+      label: Text(
+        'Ladies Only',
+        style: TextStyle(
+          fontSize: 13.sp,
+          fontWeight: isEnabled ? FontWeight.w600 : FontWeight.w400,
+          color: isEnabled ? Colors.pink : AppColors.textSecondary,
+        ),
+      ),
+      selectedColor: Colors.pink.withValues(alpha: 0.12),
+      checkmarkColor: Colors.pink,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20.r),
+        side: BorderSide(
+          color: isEnabled
+              ? Colors.pink.withValues(alpha: 0.3)
+              : AppColors.border,
+        ),
+      ),
+    );
+  }
+}
+
+/// Ride sharing link widget (#67)
+class RideSharingLink extends StatelessWidget {
+  final String rideId;
+  final VoidCallback onShare;
+  final VoidCallback? onCopyLink;
+
+  const RideSharingLink({
+    super.key,
+    required this.rideId,
+    required this.onShare,
+    this.onCopyLink,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              onShare();
+            },
+            icon: Icon(Icons.share_rounded, size: 18.sp),
+            label: const Text('Share Ride'),
+          ),
+        ),
+        if (onCopyLink != null) ...[
+          SizedBox(width: 8.w),
+          IconButton(
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              onCopyLink!();
+            },
+            icon: Icon(Icons.copy_rounded, size: 20.sp),
+            tooltip: 'Copy link',
+            style: IconButton.styleFrom(
+              backgroundColor: AppColors.primary.withValues(alpha: 0.08),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Vehicle photo match card (#68)
+class VehiclePhotoMatchCard extends StatelessWidget {
+  final String? vehiclePhotoUrl;
+  final String vehicleMake;
+  final String vehicleModel;
+  final String vehicleColor;
+  final String licensePlate;
+
+  const VehiclePhotoMatchCard({
+    super.key,
+    this.vehiclePhotoUrl,
+    required this.vehicleMake,
+    required this.vehicleModel,
+    required this.vehicleColor,
+    required this.licensePlate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10.r),
+            child: vehiclePhotoUrl != null
+                ? Image.network(
+                    vehiclePhotoUrl!,
+                    width: 72.w,
+                    height: 56.h,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _placeholderIcon(),
+                  )
+                : _placeholderIcon(),
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$vehicleMake $vehicleModel',
+                  style: TextStyle(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                SizedBox(height: 2.h),
+                Row(
+                  children: [
+                    Container(
+                      width: 12.w,
+                      height: 12.w,
+                      decoration: BoxDecoration(
+                        color: _parseColor(vehicleColor),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.border),
+                      ),
+                    ),
+                    SizedBox(width: 6.w),
+                    Text(
+                      vehicleColor,
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        color: theme.textTheme.bodySmall?.color,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 2.h),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(4.r),
+                  ),
+                  child: Text(
+                    licensePlate,
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.verified_rounded, color: AppColors.info, size: 24.sp),
+        ],
+      ),
+    );
+  }
+
+  Widget _placeholderIcon() {
+    return Container(
+      width: 72.w,
+      height: 56.h,
+      color: AppColors.surfaceVariant,
+      child: Icon(
+        Icons.directions_car_rounded,
+        size: 28.sp,
+        color: AppColors.textTertiary,
+      ),
+    );
+  }
+
+  Color _parseColor(String colorName) {
+    final map = {
+      'black': Colors.black,
+      'white': Colors.white,
+      'silver': Colors.grey.shade400,
+      'gray': Colors.grey,
+      'grey': Colors.grey,
+      'red': Colors.red,
+      'blue': Colors.blue,
+      'green': Colors.green,
+      'yellow': Colors.yellow,
+      'brown': Colors.brown,
+      'orange': Colors.orange,
+      'navy': Colors.indigo,
+      'beige': const Color(0xFFF5F5DC),
+    };
+    return map[colorName.toLowerCase()] ?? Colors.grey;
+  }
+}

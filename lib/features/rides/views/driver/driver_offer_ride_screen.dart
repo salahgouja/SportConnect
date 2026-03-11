@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -6,25 +8,23 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/features/events/views/widgets/inline_event_selector.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
-import 'package:sport_connect/features/rides/models/ride/ride_pricing.dart';
-import 'package:sport_connect/features/rides/models/ride/ride_capacity.dart';
-import 'package:sport_connect/features/rides/models/ride/ride_schedule.dart';
-import 'package:sport_connect/features/rides/models/ride/ride_preferences.dart';
-import 'package:sport_connect/features/rides/models/ride/ride_route.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
+import 'package:sport_connect/features/rides/view_models/driver_offer_ride_view_model.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/models/user/user_model.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
-import 'package:sport_connect/core/models/value_objects/money.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
-import 'package:uuid/uuid.dart';
 import 'package:sport_connect/features/vehicles/view_models/vehicle_view_model.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
-import 'package:sport_connect/core/providers/repository_providers.dart';
+import 'package:sport_connect/features/events/view_models/event_view_model.dart';
+import 'package:sport_connect/core/widgets/rating_and_profile_widgets.dart';
+import 'package:sport_connect/core/widgets/ride_feature_widgets.dart';
+import 'package:sport_connect/core/animations/feedback_animations.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 class DriverOfferRideScreen extends ConsumerStatefulWidget {
   final RideModel? existingRide;
@@ -47,126 +47,82 @@ class DriverOfferRideScreen extends ConsumerStatefulWidget {
 }
 
 class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
-  // Page controller
+  // Page controller (widget-local only)
   late PageController _pageController;
-  int _currentStep = 0;
-  // final int _totalSteps = 3; // Unused
 
-  // Step 1: Route
-  LocationPoint? _fromLocation;
-  String _fromAddress = '';
-  LocationPoint? _toLocation;
-  String _toAddress = '';
-  DateTime? _departureDate;
-  TimeOfDay? _departureTime;
-  List<LocationPoint> _waypoints = [];
+  // Shorthand accessor for form state
+  DriverOfferRideFormState get _formState =>
+      ref.watch(driverOfferRideViewModelProvider);
 
-  // Step 2: Details
-  VehicleModel? _selectedVehicle;
-  int _availableSeats = 3;
-  double _pricePerSeat = 15.0; // Default price
-  bool _isPriceNegotiable = false;
-  bool _acceptOnlinePayment = true;
-  bool _isRecurring = false;
-  List<int> _recurringDays = [];
+  // Computed accessors for readability
+  int get _currentStep => _formState.currentStep;
+  LocationPoint? get _fromLocation => _formState.fromLocation;
+  String get _fromAddress => _formState.fromAddress;
+  LocationPoint? get _toLocation => _formState.toLocation;
+  String get _toAddress => _formState.toAddress;
+  DateTime? get _departureDate => _formState.departureDate;
+  TimeOfDay? get _departureTime => _formState.departureTime;
+  List<LocationPoint> get _waypoints => _formState.waypoints;
+  int get _availableSeats => _formState.availableSeats;
+  double get _pricePerSeat => _formState.pricePerSeat;
+  bool get _isPriceNegotiable => _formState.isPriceNegotiable;
+  bool get _acceptOnlinePayment => _formState.acceptOnlinePayment;
+  bool get _isRecurring => _formState.isRecurring;
+  List<int> get _recurringDays => _formState.recurringDays;
+  bool get _allowPets => _formState.allowPets;
+  bool get _allowSmoking => _formState.allowSmoking;
+  bool get _allowLuggage => _formState.allowLuggage;
+  bool get _isWomenOnly => _formState.isWomenOnly;
+  int? get _maxDetourMinutes => _formState.maxDetourMinutes;
+  EventModel? get _selectedEvent => _formState.selectedEvent;
+  List<LatLng>? get _osrmRoutePoints => _formState.osrmRoutePoints;
+  bool get _isLoadingOsrmRoute => _formState.isLoadingRoute;
+  LocationPoint? get _lastFromForRoute => null; // Removed from state
+  LocationPoint? get _lastToForRoute => null; // Removed from state
 
-  // Step 3: Preferences
-  bool _allowPets = false;
-  bool _allowSmoking = false;
-  bool _allowLuggage = true;
-  bool _isWomenOnly = false;
-  int? _maxDetourMinutes = 15;
-  // String? _notes; // Unused
-
-  // Event attachment
-  EventModel? _selectedEvent;
-
-  // State
-  bool _isCreating = false;
-
-  /// Tracks the vehicleId from the prefilled ride (set by _initFromPrefill)
-  /// so _initVehicleFrom can select the correct vehicle even when the ride
-  /// was loaded asynchronously via existingRideId.
-  String? _existingVehicleId;
+  VehicleModel? _selectedVehicle(List<VehicleModel> vehicles) {
+    final id = _formState.selectedVehicleId;
+    if (id == null) return null;
+    try {
+      return vehicles.firstWhere((v) => v.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
+
     if (widget.existingRide != null) {
-      _initFromPrefill(widget.existingRide!);
-      if (widget.existingRide!.eventId != null) {
-        Future.microtask(() async {
-          final event = await ref
-              .read(eventRepositoryProvider)
-              .getEventById(widget.existingRide!.eventId!);
-          if (event != null && mounted) setState(() => _selectedEvent = event);
-        });
-      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref
+            .read(driverOfferRideViewModelProvider.notifier)
+            .initializeFromExistingRide(widget.existingRide!);
+        if (widget.existingRide!.eventId != null) {
+          ref
+              .read(driverOfferRideViewModelProvider.notifier)
+              .loadSelectedEvent(widget.existingRide!.eventId!);
+        }
+      });
     } else if (widget.existingRideId != null) {
-      // Route-based edit: fetch ride from Firestore so deep-links work correctly.
+      // Route-based edit: fetch ride from Firestore
       Future.microtask(() async {
         final ride = await ref
             .read(rideActionsViewModelProvider)
             .getRideById(widget.existingRideId!);
         if (ride != null && mounted) {
-          setState(() => _initFromPrefill(ride));
+          ref
+              .read(driverOfferRideViewModelProvider.notifier)
+              .initializeFromExistingRide(ride);
           if (ride.eventId != null) {
-            final event = await ref
-                .read(eventRepositoryProvider)
-                .getEventById(ride.eventId!);
-            if (event != null && mounted)
-              setState(() => _selectedEvent = event);
+            ref
+                .read(driverOfferRideViewModelProvider.notifier)
+                .loadSelectedEvent(ride.eventId!);
           }
         }
       });
-    }
-  }
-
-  void _initFromPrefill(RideModel ride) {
-    _fromLocation = ride.route.origin;
-    _fromAddress = ride.route.origin.address;
-    _toLocation = ride.route.destination;
-    _toAddress = ride.route.destination.address;
-    _departureDate = ride.schedule.departureTime;
-    _departureTime = TimeOfDay.fromDateTime(ride.schedule.departureTime);
-
-    // Vehicle will be initialized when vehicles are loaded
-
-    _availableSeats = ride.capacity.available;
-    _pricePerSeat = ride.pricing.pricePerSeat.amount;
-    _isPriceNegotiable = ride.pricing.isNegotiable;
-    _acceptOnlinePayment = ride.pricing.acceptsOnlinePayment;
-
-    _allowPets = ride.preferences.allowPets;
-    _allowSmoking = ride.preferences.allowSmoking;
-    _allowLuggage = ride.preferences.allowLuggage;
-    _isWomenOnly = ride.preferences.isWomenOnly;
-    _maxDetourMinutes = ride.preferences.maxDetourMinutes;
-    _waypoints = ride.route.waypoints.map((wp) => wp.location).toList();
-    _existingVehicleId = ride.vehicleId;
-  }
-
-  /// Initialize vehicle selection based on available vehicles and prefill data
-  void _initVehicleFrom(List<VehicleModel> vehicles) {
-    if (vehicles.isEmpty) return;
-
-    final vehicleId = _existingVehicleId ?? widget.existingRide?.vehicleId;
-    if (vehicleId != null) {
-      try {
-        _selectedVehicle = vehicles.firstWhere((v) => v.id == vehicleId);
-      } catch (_) {
-        // Vehicle not found, select default
-        _selectedVehicle = vehicles.firstWhere(
-          (v) => v.isDefault,
-          orElse: () => vehicles.first,
-        );
-      }
-    } else {
-      _selectedVehicle ??= vehicles.firstWhere(
-        (v) => v.isDefault,
-        orElse: () => vehicles.first,
-      );
     }
   }
 
@@ -176,39 +132,48 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
     super.dispose();
   }
 
-  bool get _canCreateRide => _createRideBlockReason == null && !_isCreating;
-
-  String? get _createRideBlockReason {
-    if (_fromLocation == null || _toLocation == null) {
-      return 'Please set origin and destination in Step 1';
-    }
-    if (_departureDate == null || _departureTime == null) {
-      return 'Please set a departure date and time in Step 1';
-    }
-    if (_selectedVehicle == null) {
-      return 'Please select a vehicle in Step 2';
-    }
-    final departureDateTime = DateTime(
-      _departureDate!.year,
-      _departureDate!.month,
-      _departureDate!.day,
-      _departureTime!.hour,
-      _departureTime!.minute,
-    );
-    if (departureDateTime.isBefore(DateTime.now())) {
-      return 'Departure time must be in the future — go back to Step 1';
-    }
-    if (_selectedEvent?.endsAt != null &&
-        departureDateTime.isAfter(_selectedEvent!.endsAt!)) {
-      return 'Departure time cannot be after the event ends — go back to Step 1';
-    }
-    return null;
-  }
-
   @override
   Widget build(BuildContext context) {
     final userAsync = ref.watch(currentUserProvider);
     final vehiclesAsync = ref.watch(vehicleViewModelProvider).vehicles;
+
+    // Listen for submission errors to show feedback
+    ref.listen(
+      driverOfferRideViewModelProvider.select((s) => s.submissionError),
+      (previous, next) {
+        if (next != null && next != previous && context.mounted) {
+          FeedbackAnimations.showError(context, message: next);
+          ref
+              .read(driverOfferRideViewModelProvider.notifier)
+              .clearSubmissionError();
+        }
+      },
+    );
+
+    // Auto-select vehicle when vehicles load if none selected
+    if (_formState.selectedVehicleId == null) {
+      vehiclesAsync.whenData((vehicles) {
+        if (vehicles.isNotEmpty && mounted) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final vehicleId =
+                _formState.existingRideId != null &&
+                    widget.existingRide?.vehicleId != null
+                ? widget.existingRide!.vehicleId
+                : vehicles
+                      .firstWhere(
+                        (v) => v.isDefault,
+                        orElse: () => vehicles.first,
+                      )
+                      .id;
+            if (vehicleId != null) {
+              ref
+                  .read(driverOfferRideViewModelProvider.notifier)
+                  .setVehicle(vehicleId!);
+            }
+          });
+        }
+      });
+    }
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
@@ -219,18 +184,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
           }
 
           return vehiclesAsync.when(
-            data: (vehicles) {
-              if (_selectedVehicle == null && vehicles.isNotEmpty) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted) {
-                    setState(() {
-                      _initVehicleFrom(vehicles);
-                    });
-                  }
-                });
-              }
-              return _buildMainContent(context, vehicles);
-            },
+            data: (vehicles) => _buildMainContent(context, vehicles),
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (err, stack) => _buildErrorState(context, err.toString()),
           );
@@ -273,7 +227,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
               ),
               SizedBox(height: 20.h),
               Text(
-                'Driver Profile Required',
+                AppLocalizations.of(context).driverProfileRequired,
                 style: TextStyle(
                   fontSize: 20.sp,
                   fontWeight: FontWeight.w700,
@@ -282,7 +236,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
               ),
               SizedBox(height: 8.h),
               Text(
-                'Complete your driver profile to offer rides.',
+                AppLocalizations.of(context).completeDriverProfileMessage,
                 style: TextStyle(
                   fontSize: 14.sp,
                   color: AppColors.textSecondary,
@@ -302,7 +256,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                 ),
-                child: const Text('Become a Driver'),
+                child: Text(AppLocalizations.of(context).becomeDriverButton),
               ),
             ],
           ),
@@ -336,7 +290,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
               ),
               SizedBox(height: 16.h),
               Text(
-                'Error loading data',
+                AppLocalizations.of(context).errorLoadingData,
                 style: TextStyle(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.w600,
@@ -368,16 +322,18 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
             controller: _pageController,
             physics: const NeverScrollableScrollPhysics(),
             onPageChanged: (index) {
-              setState(() => _currentStep = index);
+              ref
+                  .read(driverOfferRideViewModelProvider.notifier)
+                  .setStep(index);
             },
             children: [
               _buildRouteStep(),
               _buildDetailsStep(vehicles),
-              _buildPreferencesStep(),
+              _buildPreferencesStep(vehicles),
             ],
           ),
         ),
-        _buildBottomBar(),
+        _buildBottomBar(vehicles),
       ],
     );
   }
@@ -395,7 +351,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
           Row(
             children: [
               IconButton(
-                tooltip: 'Back',
+                tooltip: AppLocalizations.of(context).backButton,
                 icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
                 onPressed: () => context.pop(),
                 padding: EdgeInsets.zero,
@@ -403,7 +359,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
               ),
               SizedBox(width: 8.w),
               Text(
-                widget.isEditMode ? 'Edit Ride' : 'Offer a Ride',
+                widget.isEditMode ? AppLocalizations.of(context).editRideTitle : AppLocalizations.of(context).offerARideTitle,
                 style: TextStyle(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.w700,
@@ -420,13 +376,14 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   }
 
   Widget _buildStepIndicator() {
+    final l10n = AppLocalizations.of(context);
     return Row(
       children: [
-        _buildStepItem(0, 'Route'),
+        _buildStepItem(0, l10n.routeStep),
         _buildStepConnector(0),
-        _buildStepItem(1, 'Details'),
+        _buildStepItem(1, l10n.detailsStep),
         _buildStepConnector(1),
-        _buildStepItem(2, 'Preferences'),
+        _buildStepItem(2, l10n.preferencesStep),
       ],
     );
   }
@@ -500,11 +457,13 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
 
   // --- Step 1: Route ---
   Widget _buildRouteStep() {
+    // Route preview is auto-triggered by view model when locations change
+
     return ListView(
       padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 20.h),
       children: [
         Text(
-          'Where are you going?',
+          AppLocalizations.of(context).whereAreYouGoing,
           style: TextStyle(
             fontSize: 20.sp,
             fontWeight: FontWeight.w700,
@@ -513,18 +472,21 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         ).animate().fadeIn().slideX(),
         SizedBox(height: 20.h),
         _buildRouteCard(),
+
+        // Route map preview (appears when both locations set)
+        if (_fromLocation != null && _toLocation != null) ...[
+          SizedBox(height: 14.h),
+          _buildRoutePreview(),
+        ],
+
         SizedBox(height: 14.h),
         _buildWaypointsSection(),
         SizedBox(height: 20.h),
         InlineEventSelector(
           selected: _selectedEvent,
-          onChanged: (e) => setState(() {
-            _selectedEvent = e;
-            if (e != null) {
-              _toLocation = e.location;
-              _toAddress = e.venueName ?? e.location.address;
-            }
-          }),
+          onChanged: (e) {
+            ref.read(driverOfferRideViewModelProvider.notifier).setEvent(e);
+          },
         ),
         SizedBox(height: 20.h),
         _buildDateTimeCard(),
@@ -552,10 +514,10 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
       child: Column(
         children: [
           _buildLocationTile(
-            title: 'From',
+            title: AppLocalizations.of(context).fromLabel,
             value: _fromAddress,
             location: _fromLocation,
-            placeholder: 'Select pickup location',
+            placeholder: AppLocalizations.of(context).selectPickupLocation,
             icon: Icons.my_location_rounded,
             color: AppColors.primary,
             onTap: () => _selectLocation(isFrom: true),
@@ -575,7 +537,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                   width: 36.w,
                   height: 36.w,
                   child: IconButton(
-                    tooltip: 'Swap locations',
+                    tooltip: AppLocalizations.of(context).swapLocationsTooltip,
                     onPressed: _swapLocations,
                     icon: Icon(Icons.swap_vert_rounded, size: 20.sp),
                     color: AppColors.primary,
@@ -589,10 +551,10 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
             ),
           ),
           _buildLocationTile(
-            title: 'To',
+            title: AppLocalizations.of(context).toLabel,
             value: _toAddress,
             location: _toLocation,
-            placeholder: 'Select dropoff location',
+            placeholder: AppLocalizations.of(context).selectDropoffLocation,
             icon: Icons.location_on_rounded,
             color: AppColors.secondary,
             onTap: () => _selectLocation(isFrom: false),
@@ -600,6 +562,130 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         ],
       ),
     ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1, end: 0);
+  }
+
+  Widget _buildRoutePreview() {
+    final origin = LatLng(_fromLocation!.latitude, _fromLocation!.longitude);
+    final dest = LatLng(_toLocation!.latitude, _toLocation!.longitude);
+    final center = LatLng(
+      (origin.latitude + dest.latitude) / 2,
+      (origin.longitude + dest.longitude) / 2,
+    );
+
+    final routePoints = _osrmRoutePoints ?? [origin, dest];
+
+    return Container(
+      height: 160.h,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: AppColors.borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          FlutterMap(
+            options: MapOptions(
+              initialCenter: center,
+              initialZoom: 10,
+              interactionOptions: const InteractionOptions(
+                flags: InteractiveFlag.none,
+              ),
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.sportconnect.app',
+              ),
+              PolylineLayer(
+                polylines: [
+                  Polyline(
+                    points: routePoints,
+                    strokeWidth: 6.0,
+                    color: Colors.white,
+                    borderStrokeWidth: 2.0,
+                    borderColor: Colors.white,
+                  ),
+                  Polyline(
+                    points: routePoints,
+                    strokeWidth: 4.0,
+                    color: AppColors.primary,
+                  ),
+                ],
+              ),
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: origin,
+                    width: 28.w,
+                    height: 28.w,
+                    child: Icon(
+                      Icons.trip_origin_rounded,
+                      color: AppColors.primary,
+                      size: 22.sp,
+                    ),
+                  ),
+                  ..._waypoints.map(
+                    (wp) => Marker(
+                      point: LatLng(wp.latitude, wp.longitude),
+                      width: 24.w,
+                      height: 24.w,
+                      child: Icon(
+                        Icons.circle,
+                        color: AppColors.warning,
+                        size: 14.sp,
+                      ),
+                    ),
+                  ),
+                  Marker(
+                    point: dest,
+                    width: 28.w,
+                    height: 28.w,
+                    child: Icon(
+                      Icons.location_on_rounded,
+                      color: AppColors.error,
+                      size: 24.sp,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          if (_isLoadingOsrmRoute)
+            Positioned(
+              top: 8.h,
+              right: 8.w,
+              child: Container(
+                padding: EdgeInsets.all(6.w),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 4,
+                    ),
+                  ],
+                ),
+                child: SizedBox(
+                  width: 16.w,
+                  height: 16.w,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 300.ms);
   }
 
   Widget _buildLocationTile({
@@ -685,7 +771,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Departure Time',
+            AppLocalizations.of(context).departureTimeLabel,
             style: TextStyle(
               fontSize: 15.sp,
               fontWeight: FontWeight.w700,
@@ -697,10 +783,10 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
             children: [
               Expanded(
                 child: _buildTimeInput(
-                  label: 'Date',
+                  label: AppLocalizations.of(context).dateLabel,
                   value: _departureDate != null
                       ? DateFormat('dd/MM/yyyy').format(_departureDate!)
-                      : 'Select Date',
+                      : AppLocalizations.of(context).selectDatePlaceholder,
                   icon: Icons.calendar_today_rounded,
                   onTap: _selectDate,
                 ),
@@ -708,8 +794,8 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
               const SizedBox(width: 16),
               Expanded(
                 child: _buildTimeInput(
-                  label: 'Time',
-                  value: _departureTime?.format(context) ?? 'Select Time',
+                  label: AppLocalizations.of(context).timeLabel,
+                  value: _departureTime?.format(context) ?? AppLocalizations.of(context).selectTimePlaceholder,
                   icon: Icons.access_time_rounded,
                   onTap: _selectTime,
                 ),
@@ -769,7 +855,8 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   }
 
   Widget _buildRecurringDaysSelector() {
-    const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final l10n = AppLocalizations.of(context);
+    final dayLabels = [l10n.dayMon, l10n.dayTue, l10n.dayWed, l10n.dayThu, l10n.dayFri, l10n.daySat, l10n.daySun];
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -785,7 +872,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
               Icon(Icons.repeat_rounded, color: AppColors.primary, size: 18.sp),
               SizedBox(width: 8.w),
               Text(
-                'Recurring Ride',
+                l10n.recurringRideTitle,
                 style: TextStyle(
                   fontSize: 15.sp,
                   fontWeight: FontWeight.w700,
@@ -796,10 +883,16 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
               Switch.adaptive(
                 value: _isRecurring,
                 activeColor: AppColors.primary,
-                onChanged: (v) => setState(() {
-                  _isRecurring = v;
-                  if (!v) _recurringDays = [];
-                }),
+                onChanged: (v) {
+                  ref
+                      .read(driverOfferRideViewModelProvider.notifier)
+                      .setRecurring(v);
+                  if (!v) {
+                    ref
+                        .read(driverOfferRideViewModelProvider.notifier)
+                        .setRecurringDays([]);
+                  }
+                },
               ),
             ],
           ),
@@ -812,13 +905,19 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                 final dayNum = i + 1; // 1=Mon .. 7=Sun
                 final selected = _recurringDays.contains(dayNum);
                 return GestureDetector(
-                  onTap: () => setState(() {
+                  onTap: () {
+                    final dayNum = i + 1;
+                    final selected = _recurringDays.contains(dayNum);
+                    final updated = List<int>.from(_recurringDays);
                     if (selected) {
-                      _recurringDays.remove(dayNum);
+                      updated.remove(dayNum);
                     } else {
-                      _recurringDays.add(dayNum);
+                      updated.add(dayNum);
                     }
-                  }),
+                    ref
+                        .read(driverOfferRideViewModelProvider.notifier)
+                        .setRecurringDays(updated);
+                  },
                   child: Container(
                     width: 44.w,
                     height: 44.w,
@@ -876,7 +975,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
               Icon(Icons.route_rounded, color: AppColors.primary, size: 18.sp),
               SizedBox(width: 8.w),
               Text(
-                'Intermediate Stops',
+                AppLocalizations.of(context).intermediateStopsLabel,
                 style: TextStyle(
                   fontSize: 15.sp,
                   fontWeight: FontWeight.w700,
@@ -889,7 +988,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                   onPressed: _addWaypoint,
                   icon: Icon(Icons.add_circle_outline, size: 16.sp),
                   label: Text(
-                    'Add Stop',
+                    AppLocalizations.of(context).addStopButton,
                     style: TextStyle(
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w600,
@@ -906,7 +1005,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
             Padding(
               padding: EdgeInsets.only(top: 10.h),
               child: Text(
-                'Add stops along your route to pick up more passengers',
+                AppLocalizations.of(context).addStopsHint,
                 style: TextStyle(
                   color: AppColors.textSecondary,
                   fontSize: 13.sp,
@@ -919,11 +1018,13 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _waypoints.length,
               onReorder: (oldIndex, newIndex) {
-                setState(() {
-                  if (newIndex > oldIndex) newIndex -= 1;
-                  final item = _waypoints.removeAt(oldIndex);
-                  _waypoints.insert(newIndex, item);
-                });
+                if (newIndex > oldIndex) newIndex -= 1;
+                final updated = List<LocationPoint>.from(_waypoints);
+                final item = updated.removeAt(oldIndex);
+                updated.insert(newIndex, item);
+                ref
+                    .read(driverOfferRideViewModelProvider.notifier)
+                    .setWaypoints(updated);
               },
               itemBuilder: (context, index) {
                 final wp = _waypoints[index];
@@ -977,7 +1078,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Stop ${index + 1}',
+                  AppLocalizations.of(context).stopNumberLabel(index + 1),
                   style: TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 11.sp,
@@ -986,7 +1087,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                 ),
                 SizedBox(height: 2.h),
                 Text(
-                  wp.address.isNotEmpty ? wp.address : 'Tap to set location',
+                  wp.address.isNotEmpty ? wp.address : AppLocalizations.of(context).tapToSetLocation,
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 13.sp,
@@ -999,7 +1100,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
             ),
           ),
           IconButton(
-            tooltip: 'Edit waypoint',
+            tooltip: AppLocalizations.of(context).editWaypointTooltip,
             onPressed: () => _editWaypoint(index),
             icon: Icon(Icons.edit_location_alt_rounded, size: 18.sp),
             color: AppColors.primary,
@@ -1007,7 +1108,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
             constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
           ),
           IconButton(
-            tooltip: 'Remove waypoint',
+            tooltip: AppLocalizations.of(context).removeWaypointTooltip,
             onPressed: () => _removeWaypoint(index),
             icon: Icon(Icons.remove_circle_outline, size: 18.sp),
             color: AppColors.error,
@@ -1022,18 +1123,15 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   Future<void> _addWaypoint() async {
     final result = await MapLocationPicker.show(
       context,
-      title: 'Select Stop ${_waypoints.length + 1}',
+      title: AppLocalizations.of(context).selectStopTitle(_waypoints.length + 1),
     );
     if (result != null) {
-      setState(() {
-        _waypoints.add(
-          LocationPoint(
-            latitude: result.location.latitude,
-            longitude: result.location.longitude,
-            address: result.address,
-          ),
-        );
-      });
+      final waypoint = LocationPoint(
+        latitude: result.location.latitude,
+        longitude: result.location.longitude,
+        address: result.address,
+      );
+      ref.read(driverOfferRideViewModelProvider.notifier).addWaypoint(waypoint);
     }
   }
 
@@ -1041,24 +1139,22 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
     final wp = _waypoints[index];
     final result = await MapLocationPicker.show(
       context,
-      title: 'Edit Stop ${index + 1}',
+      title: AppLocalizations.of(context).editStopTitle(index + 1),
       initialLocation: LatLng(wp.latitude, wp.longitude),
     );
     if (result != null) {
-      setState(() {
-        _waypoints[index] = LocationPoint(
-          latitude: result.location.latitude,
-          longitude: result.location.longitude,
-          address: result.address,
-        );
-      });
+      final updated = List<LocationPoint>.from(_waypoints);
+      updated[index] = LocationPoint(
+        latitude: result.location.latitude,
+        longitude: result.location.longitude,
+        address: result.address,
+      );
+      ref.read(driverOfferRideViewModelProvider.notifier).setWaypoints(updated);
     }
   }
 
   void _removeWaypoint(int index) {
-    setState(() {
-      _waypoints.removeAt(index);
-    });
+    ref.read(driverOfferRideViewModelProvider.notifier).removeWaypoint(index);
   }
 
   // --- Step 2: Details ---
@@ -1067,7 +1163,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
       padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 20.h),
       children: [
         Text(
-          'Ride Details',
+          AppLocalizations.of(context).rideDetailsTitle,
           style: TextStyle(
             fontSize: 20.sp,
             fontWeight: FontWeight.w700,
@@ -1077,12 +1173,13 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         SizedBox(height: 20.h),
         _buildVehicleSelector(vehicles),
         SizedBox(height: 20.h),
-        _buildSeatsAndPrice(),
+        _buildSeatsAndPriceWithVehicle(vehicles),
       ],
     );
   }
 
   Widget _buildVehicleSelector(List<VehicleModel> vehicles) {
+    final selectedVehicle = _selectedVehicle(vehicles);
     if (vehicles.isEmpty) {
       return Card(
         color: AppColors.error.withValues(alpha: 0.1),
@@ -1090,10 +1187,13 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              const Text(
-                "No vehicles found. Please add a vehicle to your profile.",
+              Text(
+                AppLocalizations.of(context).noVehiclesError,
               ),
-              TextButton(onPressed: () {}, child: const Text("Add Vehicle")),
+              TextButton(
+                onPressed: () => context.push(AppRoutes.driverVehicles.path),
+                child: Text(AppLocalizations.of(context).addVehicleButton),
+              ),
             ],
           ),
         ),
@@ -1103,13 +1203,68 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Vehicle',
-          style: TextStyle(
-            fontSize: 15.sp,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              AppLocalizations.of(context).vehicleLabel,
+              style: TextStyle(
+                fontSize: 15.sp,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            if (vehicles.length > 1)
+              GestureDetector(
+                onTap: () => VehicleQuickSwitchSheet.show(
+                  context,
+                  vehicles: vehicles
+                      .map(
+                        (v) => VehicleOption(
+                          id: v.id,
+                          name: '${v.make} ${v.model}',
+                          plate: v.licensePlate,
+                        ),
+                      )
+                      .toList(),
+                  currentVehicleId: selectedVehicle?.id,
+                  onSelect: (id) {
+                    ref
+                        .read(driverOfferRideViewModelProvider.notifier)
+                        .setVehicle(id);
+                  },
+                ),
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 10.w,
+                    vertical: 6.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primarySurface,
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.swap_horiz_rounded,
+                        size: 16.sp,
+                        color: AppColors.primary,
+                      ),
+                      SizedBox(width: 4.w),
+                      Text(
+                        AppLocalizations.of(context).quickSwitchButton,
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
         ),
         SizedBox(height: 12.h),
         SizedBox(
@@ -1119,11 +1274,13 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
             itemCount: vehicles.length,
             itemBuilder: (context, index) {
               final vehicle = vehicles[index];
-              final isSelected = _selectedVehicle?.id == vehicle.id;
+              final isSelected = selectedVehicle?.id == vehicle.id;
 
               return GestureDetector(
                 onTap: () {
-                  setState(() => _selectedVehicle = vehicle);
+                  ref
+                      .read(driverOfferRideViewModelProvider.notifier)
+                      .setVehicle(vehicle.id!);
                 },
                 child: Container(
                   width: 150.w,
@@ -1224,6 +1381,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   }
 
   Widget _buildSeatsAndPrice() {
+    final l10n = AppLocalizations.of(context);
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -1240,47 +1398,91 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
       ),
       child: Column(
         children: [
-          _buildSeatCounter(),
+          _buildSeatCounter(null),
           Divider(height: 28.h, color: AppColors.borderLight),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Price per Seat',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15.sp,
-                  color: AppColors.textPrimary,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.pricePerSeatLabel,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15.sp,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    _pricePerSeat < 1
+                        ? l10n.minimumPriceError
+                        : l10n.totalPriceForSeats((_pricePerSeat * _availableSeats).toStringAsFixed(0), _availableSeats),
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      color: _pricePerSeat < 1
+                          ? AppColors.error
+                          : AppColors.textSecondary,
+                      fontWeight: _pricePerSeat < 1
+                          ? FontWeight.w600
+                          : FontWeight.w400,
+                    ),
+                  ),
+                ],
               ),
               Container(
                 decoration: BoxDecoration(
                   color: AppColors.surfaceVariant,
                   borderRadius: BorderRadius.circular(12.r),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(
+                    color: _pricePerSeat < 1
+                        ? AppColors.error
+                        : AppColors.border,
+                  ),
                 ),
                 child: Row(
                   children: [
                     IconButton(
-                      tooltip: 'Decrease price',
-                      onPressed: () {
-                        if (_pricePerSeat > 0) {
-                          setState(() => _pricePerSeat -= 1);
-                        }
-                      },
+                      tooltip: l10n.decreasePriceTooltip,
+                      onPressed: _pricePerSeat > 1
+                          ? () {
+                              HapticFeedback.lightImpact();
+                              ref
+                                  .read(
+                                    driverOfferRideViewModelProvider.notifier,
+                                  )
+                                  .setPrice(_pricePerSeat - 1);
+                            }
+                          : null,
                       icon: Icon(Icons.remove, size: 18.sp),
                     ),
-                    Text(
-                      '\$${_pricePerSeat.toInt()}',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 17.sp,
-                        color: AppColors.textPrimary,
+                    SizedBox(
+                      width: 50.w,
+                      child: Text(
+                        '\$${_pricePerSeat.toInt()}',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 17.sp,
+                          color: _pricePerSeat < 1
+                              ? AppColors.error
+                              : AppColors.textPrimary,
+                        ),
                       ),
                     ),
                     IconButton(
-                      tooltip: 'Increase price',
-                      onPressed: () => setState(() => _pricePerSeat += 1),
+                      tooltip: l10n.increasePriceTooltip,
+                      onPressed: _pricePerSeat < 999
+                          ? () {
+                              HapticFeedback.lightImpact();
+                              ref
+                                  .read(
+                                    driverOfferRideViewModelProvider.notifier,
+                                  )
+                                  .setPrice(_pricePerSeat + 1);
+                            }
+                          : null,
                       icon: Icon(Icons.add, size: 18.sp),
                     ),
                   ],
@@ -1291,22 +1493,193 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
           SizedBox(height: 4.h),
           SwitchListTile(
             title: Text(
-              'Price Negotiable',
+              l10n.priceNegotiableToggle,
               style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500),
             ),
             value: _isPriceNegotiable,
-            onChanged: (val) => setState(() => _isPriceNegotiable = val),
+            onChanged: (val) => ref
+                .read(driverOfferRideViewModelProvider.notifier)
+                .setPriceNegotiable(val),
             activeColor: AppColors.primary,
             dense: true,
             contentPadding: EdgeInsets.zero,
+          ),
+          SwitchListTile(
+            title: Text(
+              l10n.acceptOnlinePaymentToggle,
+              style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500),
+            ),
+            value: _acceptOnlinePayment,
+            onChanged: (val) => ref
+                .read(driverOfferRideViewModelProvider.notifier)
+                .setAcceptOnlinePayment(val),
+            activeColor: AppColors.primary,
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+          ),
+          SizedBox(height: 8.h),
+          RideEarningsPreview(
+            pricePerSeat: _pricePerSeat,
+            totalSeats: _availableSeats,
+            distanceKm: 15,
           ),
         ],
       ),
     ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0);
   }
 
-  Widget _buildSeatCounter() {
-    final maxSeats = _selectedVehicle?.capacity ?? 4;
+  Widget _buildSeatsAndPriceWithVehicle(List<VehicleModel> vehicles) {
+    final l10n = AppLocalizations.of(context);
+    final selectedVehicle = _selectedVehicle(vehicles);
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: AppColors.borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildSeatCounter(selectedVehicle),
+          Divider(height: 28.h, color: AppColors.borderLight),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.pricePerSeatLabel,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15.sp,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    _pricePerSeat < 1
+                        ? l10n.minimumPriceError
+                        : l10n.totalPriceForSeats((_pricePerSeat * _availableSeats).toStringAsFixed(0), _availableSeats),
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      color: _pricePerSeat < 1
+                          ? AppColors.error
+                          : AppColors.textSecondary,
+                      fontWeight: _pricePerSeat < 1
+                          ? FontWeight.w600
+                          : FontWeight.w400,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceVariant,
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(
+                    color: _pricePerSeat < 1
+                        ? AppColors.error
+                        : AppColors.border,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      tooltip: l10n.decreasePriceTooltip,
+                      onPressed: _pricePerSeat > 1
+                          ? () {
+                              HapticFeedback.lightImpact();
+                              ref
+                                  .read(
+                                    driverOfferRideViewModelProvider.notifier,
+                                  )
+                                  .setPrice(_pricePerSeat - 1);
+                            }
+                          : null,
+                      icon: Icon(Icons.remove, size: 18.sp),
+                    ),
+                    SizedBox(
+                      width: 50.w,
+                      child: Text(
+                        '\$${_pricePerSeat.toInt()}',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 17.sp,
+                          color: _pricePerSeat < 1
+                              ? AppColors.error
+                              : AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: l10n.increasePriceTooltip,
+                      onPressed: _pricePerSeat < 999
+                          ? () {
+                              HapticFeedback.lightImpact();
+                              ref
+                                  .read(
+                                    driverOfferRideViewModelProvider.notifier,
+                                  )
+                                  .setPrice(_pricePerSeat + 1);
+                            }
+                          : null,
+                      icon: Icon(Icons.add, size: 18.sp),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 4.h),
+          SwitchListTile(
+            title: Text(
+              l10n.priceNegotiableToggle,
+              style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500),
+            ),
+            value: _isPriceNegotiable,
+            onChanged: (val) => ref
+                .read(driverOfferRideViewModelProvider.notifier)
+                .setPriceNegotiable(val),
+            activeColor: AppColors.primary,
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+          ),
+          SwitchListTile(
+            title: Text(
+              l10n.acceptOnlinePaymentToggle,
+              style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500),
+            ),
+            value: _acceptOnlinePayment,
+            onChanged: (val) => ref
+                .read(driverOfferRideViewModelProvider.notifier)
+                .setAcceptOnlinePayment(val),
+            activeColor: AppColors.primary,
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+          ),
+          SizedBox(height: 8.h),
+          RideEarningsPreview(
+            pricePerSeat: _pricePerSeat,
+            totalSeats: _availableSeats,
+            distanceKm: 15,
+          ),
+        ],
+      ),
+    ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0);
+  }
+
+  Widget _buildSeatCounter(VehicleModel? selectedVehicle) {
+    final l10n = AppLocalizations.of(context);
+    final maxSeats = selectedVehicle?.capacity ?? 4;
 
     return Row(
       children: [
@@ -1314,7 +1687,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Available Seats',
+              l10n.availableSeatsLabel,
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 15.sp,
@@ -1322,7 +1695,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
               ),
             ),
             Text(
-              'Total Capacity: $maxSeats',
+              l10n.totalCapacityCount(maxSeats),
               style: TextStyle(color: AppColors.textSecondary, fontSize: 12.sp),
             ),
           ],
@@ -1332,7 +1705,12 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
           children: [
             for (int i = 1; i <= maxSeats; i++)
               GestureDetector(
-                onTap: () => setState(() => _availableSeats = i),
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  ref
+                      .read(driverOfferRideViewModelProvider.notifier)
+                      .setSeats(i);
+                },
                 child: Container(
                   width: 34.w,
                   height: 34.w,
@@ -1369,12 +1747,12 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   }
 
   // --- Step 3: Preferences ---
-  Widget _buildPreferencesStep() {
+  Widget _buildPreferencesStep(List<VehicleModel> vehicles) {
     return ListView(
       padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 20.h),
       children: [
         Text(
-          'Preferences & Rules',
+          AppLocalizations.of(context).preferencesRulesTitle,
           style: TextStyle(
             fontSize: 20.sp,
             fontWeight: FontWeight.w700,
@@ -1382,9 +1760,275 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
           ),
         ).animate().fadeIn().slideX(),
         SizedBox(height: 20.h),
+        _buildRideSummaryCard(vehicles),
+        SizedBox(height: 16.h),
         _buildPreferencesCard(),
+        SizedBox(height: 16.h),
+        _buildMaxDetourSlider(),
       ],
     );
+  }
+
+  /// Ride summary card showing all key details before creation
+  Widget _buildRideSummaryCard(List<VehicleModel> vehicles) {
+    final l10n = AppLocalizations.of(context);
+    final selectedVehicle = _selectedVehicle(vehicles);
+    final departure = (_departureDate != null && _departureTime != null)
+        ? DateTime(
+            _departureDate!.year,
+            _departureDate!.month,
+            _departureDate!.day,
+            _departureTime!.hour,
+            _departureTime!.minute,
+          )
+        : null;
+
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: AppColors.primarySurface,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.summarize_rounded,
+                size: 18.sp,
+                color: AppColors.primary,
+              ),
+              SizedBox(width: 8.w),
+              Text(
+                l10n.rideSummaryLabel,
+                style: TextStyle(
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primary,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 14.h),
+          _buildSummaryRow(
+            Icons.my_location_rounded,
+            l10n.fromLabel,
+            _fromAddress.isNotEmpty ? _fromAddress : l10n.notSetPlaceholder,
+          ),
+          SizedBox(height: 8.h),
+          _buildSummaryRow(
+            Icons.location_on_rounded,
+            l10n.toLabel,
+            _toAddress.isNotEmpty ? _toAddress : l10n.notSetPlaceholder,
+          ),
+          if (_waypoints.isNotEmpty) ...[
+            SizedBox(height: 8.h),
+            _buildSummaryRow(
+              Icons.route_rounded,
+              l10n.summaryStopsLabel,
+              l10n.intermediateStopsCount(_waypoints.length),
+            ),
+          ],
+          SizedBox(height: 8.h),
+          _buildSummaryRow(
+            Icons.schedule_rounded,
+            l10n.departureSummaryLabel,
+            departure != null
+                ? DateFormat('EEE, MMM d \u2022 HH:mm').format(departure)
+                : l10n.notSetPlaceholder,
+          ),
+          SizedBox(height: 8.h),
+          _buildSummaryRow(
+            Icons.directions_car_rounded,
+            l10n.vehicleLabel,
+            selectedVehicle != null
+                ? '${selectedVehicle.make} ${selectedVehicle.model}'
+                : l10n.notSelectedPlaceholder,
+          ),
+          SizedBox(height: 8.h),
+          _buildSummaryRow(
+            Icons.event_seat_rounded,
+            l10n.seatsSummaryLabel,
+            l10n.seatsAvailableCount(_availableSeats),
+          ),
+          SizedBox(height: 8.h),
+          _buildSummaryRow(
+            Icons.attach_money_rounded,
+            l10n.priceSummaryLabel,
+            _isPriceNegotiable
+                ? l10n.pricePerSeatNegotiableSummary('\$${_pricePerSeat.toInt()}')
+                : l10n.pricePerSeatSummary('\$${_pricePerSeat.toInt()}'),
+          ),
+          if (_selectedEvent != null) ...[
+            SizedBox(height: 8.h),
+            _buildSummaryRow(
+              Icons.event_rounded,
+              l10n.eventSummaryLabel,
+              _selectedEvent!.title,
+            ),
+          ],
+          if (_isRecurring && _recurringDays.isNotEmpty) ...[
+            SizedBox(height: 8.h),
+            _buildSummaryRow(
+              Icons.repeat_rounded,
+              l10n.recurringSummaryLabel,
+              _recurringDays
+                  .map(
+                    (d) => [
+                      l10n.dayMon,
+                      l10n.dayTue,
+                      l10n.dayWed,
+                      l10n.dayThu,
+                      l10n.dayFri,
+                      l10n.daySat,
+                      l10n.daySun,
+                    ][d - 1],
+                  )
+                  .join(', '),
+            ),
+          ],
+        ],
+      ),
+    ).animate().fadeIn(delay: 50.ms).slideY(begin: 0.1, end: 0);
+  }
+
+  Widget _buildSummaryRow(IconData icon, String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          icon,
+          size: 16.sp,
+          color: AppColors.primary.withValues(alpha: 0.7),
+        ),
+        SizedBox(width: 10.w),
+        SizedBox(
+          width: 70.w,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12.sp,
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Max detour slider for how far drivers will deviate for pickups
+  Widget _buildMaxDetourSlider() {
+    final l10n = AppLocalizations.of(context);
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: AppColors.borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.alt_route_rounded,
+                size: 18.sp,
+                color: AppColors.primary,
+              ),
+              SizedBox(width: 8.w),
+              Text(
+                l10n.maxDetourLabel,
+                style: TextStyle(
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                decoration: BoxDecoration(
+                  color: AppColors.primarySurface,
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: Text(
+                  _maxDetourMinutes != null ? l10n.maxDetourMinutesValue(_maxDetourMinutes!) : l10n.noneLabel,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            l10n.maxDetourHint,
+            style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
+          ),
+          SizedBox(height: 8.h),
+          Slider(
+            value: (_maxDetourMinutes ?? 0).toDouble(),
+            min: 0,
+            max: 60,
+            divisions: 12,
+            label: _maxDetourMinutes != null
+                ? l10n.maxDetourMinutesValue(_maxDetourMinutes!)
+                : l10n.noneLabel,
+            activeColor: AppColors.primary,
+            onChanged: (val) {
+              HapticFeedback.selectionClick();
+              ref
+                  .read(driverOfferRideViewModelProvider.notifier)
+                  .setMaxDetourMinutes(val.toInt() == 0 ? null : val.toInt());
+            },
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                l10n.noneLabel,
+                style: TextStyle(
+                  fontSize: 10.sp,
+                  color: AppColors.textTertiary,
+                ),
+              ),
+              Text(
+                l10n.sixtyMinLabel,
+                style: TextStyle(
+                  fontSize: 10.sp,
+                  color: AppColors.textTertiary,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0);
   }
 
   Widget _buildPreferencesCard() {
@@ -1405,35 +2049,43 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
       child: Column(
         children: [
           _buildPreferenceSwitch(
-            title: 'Allow Pets',
-            subtitle: 'Pets are allowed in the car',
+            title: AppLocalizations.of(context).allowPetsToggle,
+            subtitle: AppLocalizations.of(context).allowPetsSubtitle,
             icon: Icons.pets_rounded,
             value: _allowPets,
-            onChanged: (val) => setState(() => _allowPets = val),
+            onChanged: (val) => ref
+                .read(driverOfferRideViewModelProvider.notifier)
+                .setAllowPets(val),
           ),
           const Divider(),
           _buildPreferenceSwitch(
-            title: 'Allow Smoking',
-            subtitle: 'Smoking is allowed during the ride',
+            title: AppLocalizations.of(context).allowSmokingToggle,
+            subtitle: AppLocalizations.of(context).allowSmokingSubtitle,
             icon: Icons.smoke_free_rounded,
             value: _allowSmoking,
-            onChanged: (val) => setState(() => _allowSmoking = val),
+            onChanged: (val) => ref
+                .read(driverOfferRideViewModelProvider.notifier)
+                .setAllowSmoking(val),
           ),
           const Divider(),
           _buildPreferenceSwitch(
-            title: 'Allow Luggage',
-            subtitle: 'Passengers can bring luggage',
+            title: AppLocalizations.of(context).allowLuggageToggle,
+            subtitle: AppLocalizations.of(context).allowLuggageSubtitle,
             icon: Icons.luggage_rounded,
             value: _allowLuggage,
-            onChanged: (val) => setState(() => _allowLuggage = val),
+            onChanged: (val) => ref
+                .read(driverOfferRideViewModelProvider.notifier)
+                .setAllowLuggage(val),
           ),
           const Divider(),
           _buildPreferenceSwitch(
-            title: 'Women Only',
-            subtitle: 'Ride is for women only',
+            title: AppLocalizations.of(context).womenOnlyToggle,
+            subtitle: AppLocalizations.of(context).womenOnlySubtitle,
             icon: Icons.female_rounded,
             value: _isWomenOnly,
-            onChanged: (val) => setState(() => _isWomenOnly = val),
+            onChanged: (val) => ref
+                .read(driverOfferRideViewModelProvider.notifier)
+                .setWomenOnly(val),
           ),
         ],
       ),
@@ -1476,10 +2128,10 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
     );
   }
 
-  Widget _buildBottomBar() {
+  Widget _buildBottomBar(List<VehicleModel> vehicles) {
     final isLastStep = _currentStep == 2;
-    final blockReason = isLastStep && !_canCreateRide
-        ? _createRideBlockReason
+    final blockReason = isLastStep && !_formState.canSubmit
+        ? _formState.submissionBlockReason
         : null;
 
     return Container(
@@ -1535,7 +2187,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                           ),
                         ),
                         child: Text(
-                          'Back',
+                          AppLocalizations.of(context).backButton,
                           style: TextStyle(
                             fontSize: 15.sp,
                             fontWeight: FontWeight.w600,
@@ -1549,8 +2201,10 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                   flex: 2,
                   child: FilledButton(
                     onPressed: isLastStep
-                        ? (_canCreateRide ? _createRide : null)
-                        : (_canGoNext() ? _goToNextStep : null),
+                        ? (_formState.canSubmit && !_formState.isSubmitting
+                              ? () => _createRide(vehicles)
+                              : null)
+                        : (_canGoNext(vehicles) ? _goToNextStep : null),
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       disabledBackgroundColor: AppColors.primary.withValues(
@@ -1561,7 +2215,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                         borderRadius: BorderRadius.circular(12.r),
                       ),
                     ),
-                    child: _isCreating
+                    child: _formState.isSubmitting
                         ? SizedBox(
                             height: 18.w,
                             width: 18.w,
@@ -1571,7 +2225,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                             ),
                           )
                         : Text(
-                            isLastStep ? 'Create Ride' : 'Next',
+                            isLastStep ? AppLocalizations.of(context).createRideButton : AppLocalizations.of(context).nextButton,
                             style: TextStyle(
                               fontSize: 15.sp,
                               fontWeight: FontWeight.w700,
@@ -1589,7 +2243,8 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   }
 
   // --- Actions ---
-  bool _canGoNext() {
+  bool _canGoNext(List<VehicleModel> vehicles) {
+    final selectedVehicle = _selectedVehicle(vehicles);
     if (_currentStep == 0) {
       if (_fromLocation == null ||
           _toLocation == null ||
@@ -1612,7 +2267,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
       return true;
     }
     if (_currentStep == 1) {
-      return _selectedVehicle != null;
+      return selectedVehicle != null;
     }
     return true;
   }
@@ -1632,7 +2287,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   Future<void> _selectLocation({required bool isFrom}) async {
     final result = await MapLocationPicker.show(
       context,
-      title: isFrom ? 'Select Origin' : 'Select Destination',
+      title: isFrom ? AppLocalizations.of(context).selectOriginTitle : AppLocalizations.of(context).selectDestinationTitle,
       initialLocation: isFrom
           ? (_fromLocation != null
                 ? LatLng(_fromLocation!.latitude, _fromLocation!.longitude)
@@ -1643,35 +2298,25 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
     );
 
     if (result != null) {
-      setState(() {
-        if (isFrom) {
-          _fromLocation = LocationPoint(
-            latitude: result.location.latitude,
-            longitude: result.location.longitude,
-            address: result.address,
-          );
-          _fromAddress = result.address;
-        } else {
-          _toLocation = LocationPoint(
-            latitude: result.location.latitude,
-            longitude: result.location.longitude,
-            address: result.address,
-          );
-          _toAddress = result.address;
-        }
-      });
+      final location = LocationPoint(
+        latitude: result.location.latitude,
+        longitude: result.location.longitude,
+        address: result.address,
+      );
+      if (isFrom) {
+        ref
+            .read(driverOfferRideViewModelProvider.notifier)
+            .setFromLocation(location, result.address);
+      } else {
+        ref
+            .read(driverOfferRideViewModelProvider.notifier)
+            .setToLocation(location, result.address);
+      }
     }
   }
 
   void _swapLocations() {
-    setState(() {
-      final tempLoc = _fromLocation;
-      final tempAddr = _fromAddress;
-      _fromLocation = _toLocation;
-      _fromAddress = _toAddress;
-      _toLocation = tempLoc;
-      _toAddress = tempAddr;
-    });
+    ref.read(driverOfferRideViewModelProvider.notifier).swapLocations();
   }
 
   void _selectDate() async {
@@ -1693,7 +2338,9 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
     );
 
     if (result != null) {
-      setState(() => _departureDate = result);
+      ref
+          .read(driverOfferRideViewModelProvider.notifier)
+          .setDepartureDate(result);
     }
   }
 
@@ -1704,7 +2351,9 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
     );
 
     if (result != null) {
-      setState(() => _departureTime = result);
+      ref
+          .read(driverOfferRideViewModelProvider.notifier)
+          .setDepartureTime(result);
       if (_departureDate != null) {
         final selected = DateTime(
           _departureDate!.year,
@@ -1717,8 +2366,18 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         if (selected.isBefore(DateTime.now())) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text(
-                'Selected time is in the past — the Create Ride button will be disabled',
+              content: Text(
+                AppLocalizations.of(context).timeInPastWarning,
+              ),
+              backgroundColor: AppColors.warning,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        } else if (selected.difference(DateTime.now()).inMinutes < 15) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(context).departureMinimumWarning,
               ),
               backgroundColor: AppColors.warning,
               behavior: SnackBarBehavior.floating,
@@ -1728,8 +2387,8 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
             selected.isAfter(_selectedEvent!.endsAt!)) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text(
-                'Departure time is after the event ends — please choose an earlier time',
+              content: Text(
+                AppLocalizations.of(context).departureAfterEventWarning,
               ),
               backgroundColor: AppColors.warning,
               behavior: SnackBarBehavior.floating,
@@ -1740,104 +2399,27 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
     }
   }
 
-  void _showValidationError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.error,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
+  Future<void> _createRide(List<VehicleModel> vehicles) async {
+    if (!_formState.canSubmit) return;
 
-  Future<void> _createRide() async {
-    if (!_canCreateRide) return;
+    final user = ref.read(currentUserProvider).value;
+    if (user == null) return;
 
-    setState(() => _isCreating = true);
-    final messenger = ScaffoldMessenger.of(context);
+    final rideId = await ref
+        .read(driverOfferRideViewModelProvider.notifier)
+        .submitRide(user.uid);
 
-    try {
-      final departureDateTime = DateTime(
-        _departureDate!.year,
-        _departureDate!.month,
-        _departureDate!.day,
-        _departureTime!.hour,
-        _departureTime!.minute,
+    if (rideId == null) return;
+
+    if (mounted) {
+      await FeedbackAnimations.showSuccess(
+        context,
+        message: widget.isEditMode
+            ? AppLocalizations.of(context).rideUpdatedSuccess
+            : AppLocalizations.of(context).rideCreatedSuccess,
       );
-
-      final ride = RideModel(
-        id:
-            widget.existingRide?.id ??
-            widget.existingRideId ??
-            const Uuid().v4(),
-        driverId: ref.read(currentUserProvider).value!.uid,
-        route: RideRoute(
-          origin: LocationPoint(
-            address: _fromAddress,
-            latitude: _fromLocation!.latitude,
-            longitude: _fromLocation!.longitude,
-          ),
-          destination: LocationPoint(
-            address: _toAddress,
-            latitude: _toLocation!.latitude,
-            longitude: _toLocation!.longitude,
-          ),
-          waypoints: _waypoints
-              .asMap()
-              .entries
-              .map((e) => RouteWaypoint(location: e.value, order: e.key))
-              .toList(),
-        ),
-        schedule: RideSchedule(
-          departureTime: departureDateTime,
-          isRecurring: _isRecurring,
-          recurringDays: _recurringDays,
-        ),
-        capacity: RideCapacity(available: _availableSeats, booked: 0),
-        pricing: RidePricing(
-          pricePerSeat: Money(amount: _pricePerSeat, currency: 'USD'),
-          isNegotiable: _isPriceNegotiable,
-          acceptsOnlinePayment: _acceptOnlinePayment,
-        ),
-        preferences: RidePreferences(
-          allowPets: _allowPets,
-          allowSmoking: _allowSmoking,
-          allowLuggage: _allowLuggage,
-          isWomenOnly: _isWomenOnly,
-          maxDetourMinutes: _maxDetourMinutes,
-        ),
-
-        // Event link
-        eventId: _selectedEvent?.id,
-        eventName: _selectedEvent?.title,
-
-        status: RideStatus.active,
-        createdAt: DateTime.now(),
-
-        // Vehicle details
-        vehicleId: _selectedVehicle?.id,
-        vehicleInfo: _selectedVehicle != null
-            ? '${_selectedVehicle!.make} ${_selectedVehicle!.model} (${_selectedVehicle!.color})'
-            : null,
-      );
-
-      await ref.read(rideActionsViewModelProvider).createRide(ride);
-
-      if (mounted) {
-        messenger.showSnackBar(
-          const SnackBar(
-            content: Text('Ride created successfully!'),
-            backgroundColor: AppColors.success,
-          ),
-        );
-        // Navigate
-        context.go(AppRoutes.driverRides.path);
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isCreating = false);
-        _showValidationError('Failed to create ride. Please try again.');
-      }
+      if (!mounted) return;
+      context.go(AppRoutes.driverRides.path);
     }
   }
 }

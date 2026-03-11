@@ -333,23 +333,23 @@ class PayoutDetailScreen extends ConsumerWidget {
         .read(driverPayoutViewModelProvider.notifier)
         .cancelPayout(payout.id);
 
-    if (context.mounted) {
-      if (success) {
-        ref.invalidate(payoutDetailProvider(payoutId));
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.payoutCancelled),
-            backgroundColor: AppColors.success,
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.payoutCancelFailed),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
+    if (!context.mounted) return;
+
+    if (success) {
+      ref.invalidate(payoutDetailProvider(payoutId));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.payoutCancelled),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.payoutCancelFailed),
+          backgroundColor: AppColors.error,
+        ),
+      );
     }
   }
 

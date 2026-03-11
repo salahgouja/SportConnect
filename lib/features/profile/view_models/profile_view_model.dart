@@ -2,8 +2,10 @@ import 'dart:io';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/core/models/user/user_model.dart';
+import 'package:sport_connect/core/widgets/address_autocomplete_field.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
+import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 
 part 'profile_view_model.g.dart';
@@ -16,7 +18,10 @@ class ProfileEditState {
   final DateTime? dateOfBirth;
   final String? gender;
   final List<String> interests;
+  final AddressResult? cityResult;
   final File? newPhotoFile;
+  final bool imageRemoved;
+  final bool hasChanges;
   final bool isLoading;
   final bool isSaved;
   final String? error;
@@ -28,7 +33,10 @@ class ProfileEditState {
     this.dateOfBirth,
     this.gender,
     this.interests = const [],
+    this.cityResult,
     this.newPhotoFile,
+    this.imageRemoved = false,
+    this.hasChanges = false,
     this.isLoading = false,
     this.isSaved = false,
     this.error,
@@ -41,7 +49,12 @@ class ProfileEditState {
     DateTime? dateOfBirth,
     String? gender,
     List<String>? interests,
+    AddressResult? cityResult,
+    bool clearCityResult = false,
     File? newPhotoFile,
+    bool clearNewPhotoFile = false,
+    bool? imageRemoved,
+    bool? hasChanges,
     bool? isLoading,
     bool? isSaved,
     String? error,
@@ -53,7 +66,12 @@ class ProfileEditState {
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       gender: gender ?? this.gender,
       interests: interests ?? this.interests,
-      newPhotoFile: newPhotoFile ?? this.newPhotoFile,
+      cityResult: clearCityResult ? null : (cityResult ?? this.cityResult),
+      newPhotoFile: clearNewPhotoFile
+          ? null
+          : (newPhotoFile ?? this.newPhotoFile),
+      imageRemoved: imageRemoved ?? this.imageRemoved,
+      hasChanges: hasChanges ?? this.hasChanges,
       isLoading: isLoading ?? this.isLoading,
       isSaved: isSaved ?? this.isSaved,
       error: error,
@@ -68,6 +86,138 @@ class ProfileEditState {
       dateOfBirth: user.dateOfBirth,
       gender: user.gender,
       interests: user.interests,
+      hasChanges: false,
+    );
+  }
+}
+
+class ContactSupportState {
+  static const defaultCategory = 'General';
+
+  final String selectedCategory;
+  final String subject;
+  final String message;
+  final List<File> attachedFiles;
+  final bool isSubmitting;
+  final bool isSubmitted;
+  final String? errorMessage;
+  final String? subjectError;
+  final String? messageError;
+
+  const ContactSupportState({
+    this.selectedCategory = defaultCategory,
+    this.subject = '',
+    this.message = '',
+    this.attachedFiles = const [],
+    this.isSubmitting = false,
+    this.isSubmitted = false,
+    this.errorMessage,
+    this.subjectError,
+    this.messageError,
+  });
+
+  ContactSupportState copyWith({
+    String? selectedCategory,
+    String? subject,
+    String? message,
+    List<File>? attachedFiles,
+    bool? isSubmitting,
+    bool? isSubmitted,
+    String? errorMessage,
+    bool clearError = false,
+    String? subjectError,
+    String? messageError,
+    bool clearSubjectError = false,
+    bool clearMessageError = false,
+  }) {
+    return ContactSupportState(
+      selectedCategory: selectedCategory ?? this.selectedCategory,
+      subject: subject ?? this.subject,
+      message: message ?? this.message,
+      attachedFiles: attachedFiles ?? this.attachedFiles,
+      isSubmitting: isSubmitting ?? this.isSubmitting,
+      isSubmitted: isSubmitted ?? this.isSubmitted,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      subjectError: clearSubjectError
+          ? null
+          : (subjectError ?? this.subjectError),
+      messageError: clearMessageError
+          ? null
+          : (messageError ?? this.messageError),
+    );
+  }
+}
+
+class ReportIssueFormArgs {
+  const ReportIssueFormArgs({this.rideId, this.reportedUserId});
+
+  final String? rideId;
+  final String? reportedUserId;
+
+  @override
+  bool operator ==(Object other) {
+    return other is ReportIssueFormArgs &&
+        other.rideId == rideId &&
+        other.reportedUserId == reportedUserId;
+  }
+
+  @override
+  int get hashCode => Object.hash(rideId, reportedUserId);
+}
+
+class ReportIssueFormState {
+  static const _unset = Object();
+
+  const ReportIssueFormState({
+    this.selectedType,
+    this.severity = 'medium',
+    this.description = '',
+    this.attachedFiles = const [],
+    this.isSubmitting = false,
+    this.isSubmitted = false,
+    this.typeError,
+    this.descriptionError,
+    this.errorMessage,
+  });
+
+  final String? selectedType;
+  final String severity;
+  final String description;
+  final List<File> attachedFiles;
+  final bool isSubmitting;
+  final bool isSubmitted;
+  final String? typeError;
+  final String? descriptionError;
+  final String? errorMessage;
+
+  ReportIssueFormState copyWith({
+    Object? selectedType = _unset,
+    String? severity,
+    String? description,
+    List<File>? attachedFiles,
+    bool? isSubmitting,
+    bool? isSubmitted,
+    String? typeError,
+    String? descriptionError,
+    String? errorMessage,
+    bool clearTypeError = false,
+    bool clearDescriptionError = false,
+    bool clearError = false,
+  }) {
+    return ReportIssueFormState(
+      selectedType: selectedType == _unset
+          ? this.selectedType
+          : selectedType as String?,
+      severity: severity ?? this.severity,
+      description: description ?? this.description,
+      attachedFiles: attachedFiles ?? this.attachedFiles,
+      isSubmitting: isSubmitting ?? this.isSubmitting,
+      isSubmitted: isSubmitted ?? this.isSubmitted,
+      typeError: clearTypeError ? null : (typeError ?? this.typeError),
+      descriptionError: clearDescriptionError
+          ? null
+          : (descriptionError ?? this.descriptionError),
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
 }
@@ -168,6 +318,136 @@ class ProfileActionsViewModel {
   }
 }
 
+@riverpod
+class ReportIssueFormViewModel extends _$ReportIssueFormViewModel {
+  static const int maxAttachments = 5;
+  static const int maxFileSizeBytes = 10 * 1024 * 1024;
+  static const int minDescriptionLength = 20;
+
+  late final ReportIssueFormArgs _args;
+
+  @override
+  ReportIssueFormState build(ReportIssueFormArgs args) {
+    _args = args;
+    return const ReportIssueFormState();
+  }
+
+  void selectType(String type) {
+    state = state.copyWith(
+      selectedType: type,
+      clearTypeError: true,
+      clearError: true,
+    );
+  }
+
+  void setSeverity(String severity) {
+    state = state.copyWith(severity: severity, clearError: true);
+  }
+
+  void updateDescription(String description) {
+    state = state.copyWith(
+      description: description,
+      clearDescriptionError: true,
+      clearError: true,
+    );
+  }
+
+  Future<void> addAttachment(File file) async {
+    if (state.attachedFiles.length >= maxAttachments) {
+      state = state.copyWith(
+        errorMessage: 'Maximum $maxAttachments files allowed',
+      );
+      return;
+    }
+
+    if (state.attachedFiles.any((existing) => existing.path == file.path)) {
+      state = state.copyWith(errorMessage: 'That file is already attached.');
+      return;
+    }
+
+    final size = await file.length();
+    if (size > maxFileSizeBytes) {
+      state = state.copyWith(errorMessage: 'File exceeds 10 MB limit');
+      return;
+    }
+
+    state = state.copyWith(
+      attachedFiles: [...state.attachedFiles, file],
+      clearError: true,
+    );
+  }
+
+  void removeAttachmentAt(int index) {
+    if (index < 0 || index >= state.attachedFiles.length) {
+      return;
+    }
+
+    final updatedFiles = [...state.attachedFiles]..removeAt(index);
+    state = state.copyWith(attachedFiles: updatedFiles, clearError: true);
+  }
+
+  bool _validate() {
+    final description = state.description.trim();
+    final typeError = state.selectedType == null
+        ? 'Please select an issue type'
+        : null;
+    String? descriptionError;
+
+    if (description.isEmpty) {
+      descriptionError = 'Please describe the issue';
+    } else if (description.length < minDescriptionLength) {
+      descriptionError =
+          'Please provide at least $minDescriptionLength characters '
+          '(${description.length}/$minDescriptionLength)';
+    }
+
+    state = state.copyWith(
+      typeError: typeError,
+      descriptionError: descriptionError,
+      clearError: true,
+    );
+
+    return typeError == null && descriptionError == null;
+  }
+
+  Future<void> submit({
+    required String reporterId,
+    required String reporterEmail,
+  }) async {
+    if (state.isSubmitting || !_validate()) {
+      return;
+    }
+
+    state = state.copyWith(
+      isSubmitting: true,
+      isSubmitted: false,
+      clearError: true,
+    );
+
+    try {
+      await ref
+          .read(profileActionsViewModelProvider)
+          .submitReport(
+            reporterId: reporterId,
+            reporterEmail: reporterEmail,
+            type: state.selectedType!,
+            severity: state.severity,
+            description: state.description.trim(),
+            reportedUserId: _args.reportedUserId,
+            rideId: _args.rideId,
+            attachments: state.attachedFiles,
+          );
+
+      state = state.copyWith(isSubmitting: false, isSubmitted: true);
+    } catch (_) {
+      state = state.copyWith(
+        isSubmitting: false,
+        errorMessage: 'Failed to submit report. Please try again.',
+      );
+    }
+  }
+}
+
 /// Current User Profile Stream
 @riverpod
 Stream<UserModel?> currentUserProfile(Ref ref, String uid) {
@@ -194,44 +474,91 @@ class ProfileEditViewModel extends _$ProfileEditViewModel {
     state = ProfileEditState.fromUser(user);
   }
 
+  void markChanged() {
+    if (state.hasChanges) return;
+    state = state.copyWith(hasChanges: true, isSaved: false);
+  }
+
+  void clearChanges() {
+    state = state.copyWith(hasChanges: false);
+  }
+
   void setDisplayName(String name) {
-    state = state.copyWith(displayName: name);
+    state = state.copyWith(displayName: name, hasChanges: true, isSaved: false);
   }
 
   void setBio(String bio) {
-    state = state.copyWith(bio: bio);
+    state = state.copyWith(bio: bio, hasChanges: true, isSaved: false);
   }
 
   void setPhoneNumber(String phone) {
-    state = state.copyWith(phoneNumber: phone);
+    state = state.copyWith(
+      phoneNumber: phone,
+      hasChanges: true,
+      isSaved: false,
+    );
   }
 
   void setDateOfBirth(DateTime date) {
-    state = state.copyWith(dateOfBirth: date);
+    state = state.copyWith(dateOfBirth: date, hasChanges: true, isSaved: false);
   }
 
   void setGender(String gender) {
-    state = state.copyWith(gender: gender);
+    state = state.copyWith(gender: gender, hasChanges: true, isSaved: false);
   }
 
   void setInterests(List<String> interests) {
-    state = state.copyWith(interests: interests);
+    state = state.copyWith(
+      interests: interests,
+      hasChanges: true,
+      isSaved: false,
+    );
+  }
+
+  void setCityResult(AddressResult? result) {
+    state = state.copyWith(
+      cityResult: result,
+      clearCityResult: result == null,
+      hasChanges: true,
+      isSaved: false,
+    );
   }
 
   void addInterest(String interest) {
     if (!state.interests.contains(interest)) {
-      state = state.copyWith(interests: [...state.interests, interest]);
+      state = state.copyWith(
+        interests: [...state.interests, interest],
+        hasChanges: true,
+        isSaved: false,
+      );
     }
   }
 
   void removeInterest(String interest) {
     state = state.copyWith(
       interests: state.interests.where((i) => i != interest).toList(),
+      hasChanges: true,
+      isSaved: false,
     );
   }
 
   void setPhotoFile(File? file) {
-    state = state.copyWith(newPhotoFile: file);
+    state = state.copyWith(
+      newPhotoFile: file,
+      clearNewPhotoFile: file == null,
+      imageRemoved: false,
+      hasChanges: true,
+      isSaved: false,
+    );
+  }
+
+  void removePhoto() {
+    state = state.copyWith(
+      clearNewPhotoFile: true,
+      imageRemoved: true,
+      hasChanges: true,
+      isSaved: false,
+    );
   }
 
   Future<bool> saveProfile() async {
@@ -262,13 +589,191 @@ class ProfileEditViewModel extends _$ProfileEditViewModel {
       });
 
       if (!ref.mounted) return true;
-      state = state.copyWith(isLoading: false, isSaved: true);
+      state = state.copyWith(
+        isLoading: false,
+        isSaved: true,
+        hasChanges: false,
+      );
       return true;
     } catch (e) {
       if (!ref.mounted) return false;
       state = state.copyWith(isLoading: false, error: e.toString());
       return false;
     }
+  }
+
+  Future<bool> saveUserProfile({
+    required UserModel updatedUser,
+    File? newPhotoFile,
+    bool removePhoto = false,
+  }) async {
+    state = state.copyWith(isLoading: true, isSaved: false, error: null);
+
+    try {
+      String? photoUrl = updatedUser.photoUrl;
+
+      if (newPhotoFile != null) {
+        photoUrl = await ref
+            .read(authRepositoryProvider)
+            .uploadProfileImage(newPhotoFile, updatedUser.uid);
+        if (!ref.mounted) return false;
+      } else if (removePhoto) {
+        photoUrl = null;
+      }
+
+      final finalUser = updatedUser.map(
+        rider: (rider) => rider.copyWith(photoUrl: photoUrl),
+        driver: (driver) => driver.copyWith(photoUrl: photoUrl),
+      );
+
+      await ref
+          .read(profileRepositoryProvider)
+          .updateProfile(finalUser.uid, finalUser.toJson());
+
+      if (!ref.mounted) return false;
+      state = state.copyWith(
+        isLoading: false,
+        isSaved: true,
+        error: null,
+        hasChanges: false,
+      );
+      return true;
+    } catch (e) {
+      if (!ref.mounted) return false;
+      state = state.copyWith(
+        isLoading: false,
+        isSaved: false,
+        error: e.toString(),
+      );
+      return false;
+    }
+  }
+}
+
+@riverpod
+class ContactSupportViewModel extends _$ContactSupportViewModel {
+  @override
+  ContactSupportState build() => const ContactSupportState();
+
+  static const int maxAttachments = 5;
+  static const int maxFileSizeBytes = 10 * 1024 * 1024;
+
+  void setCategory(String category) {
+    state = state.copyWith(selectedCategory: category, clearError: true);
+  }
+
+  void setSubject(String subject) {
+    state = state.copyWith(
+      subject: subject,
+      clearError: true,
+      clearSubjectError: true,
+    );
+  }
+
+  void setMessage(String message) {
+    state = state.copyWith(
+      message: message,
+      clearError: true,
+      clearMessageError: true,
+    );
+  }
+
+  Future<void> addAttachment(File file) async {
+    if (state.attachedFiles.length >= maxAttachments) {
+      state = state.copyWith(
+        errorMessage: 'Maximum $maxAttachments files allowed',
+      );
+      return;
+    }
+
+    if (state.attachedFiles.any((existing) => existing.path == file.path)) {
+      state = state.copyWith(errorMessage: 'That file is already attached.');
+      return;
+    }
+
+    final size = await file.length();
+    if (size > maxFileSizeBytes) {
+      state = state.copyWith(errorMessage: 'File exceeds 10 MB limit');
+      return;
+    }
+
+    state = state.copyWith(
+      attachedFiles: [...state.attachedFiles, file],
+      clearError: true,
+    );
+  }
+
+  void removeAttachmentAt(int index) {
+    if (index < 0 || index >= state.attachedFiles.length) {
+      return;
+    }
+
+    final updatedFiles = [...state.attachedFiles]..removeAt(index);
+    state = state.copyWith(attachedFiles: updatedFiles, clearError: true);
+  }
+
+  bool _validate() {
+    final subject = state.subject.trim();
+    final message = state.message.trim();
+    final subjectError = subject.isEmpty
+        ? 'Please enter a subject'
+        : (subject.length < 3 ? 'Subject must be at least 3 characters' : null);
+    final messageError = message.isEmpty
+        ? 'Please describe your issue'
+        : (message.length < 10
+              ? 'Please provide at least 10 characters'
+              : null);
+
+    state = state.copyWith(
+      subjectError: subjectError,
+      messageError: messageError,
+      clearError: true,
+    );
+
+    return subjectError == null && messageError == null;
+  }
+
+  Future<void> submitTicket({
+    required String userId,
+    required String userEmail,
+    required String userName,
+  }) async {
+    if (state.isSubmitting || !_validate()) {
+      return;
+    }
+
+    state = state.copyWith(
+      isSubmitting: true,
+      isSubmitted: false,
+      clearError: true,
+    );
+
+    try {
+      await ref
+          .read(supportRepositoryProvider)
+          .submitSupportTicket(
+            userId: userId,
+            userEmail: userEmail,
+            userName: userName,
+            category: state.selectedCategory,
+            subject: state.subject.trim(),
+            message: state.message.trim(),
+            attachments: state.attachedFiles,
+          );
+
+      if (!ref.mounted) return;
+      state = state.copyWith(isSubmitting: false, isSubmitted: true);
+    } catch (e) {
+      if (!ref.mounted) return;
+      state = state.copyWith(
+        isSubmitting: false,
+        errorMessage: 'Failed to submit your request. Please try again.',
+      );
+    }
+  }
+
+  void reset() {
+    state = const ContactSupportState();
   }
 }
 

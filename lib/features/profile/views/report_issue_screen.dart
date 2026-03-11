@@ -12,6 +12,7 @@ import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Report Issue screen for reporting ride problems, safety concerns, or users.
 ///
@@ -32,38 +33,29 @@ class ReportIssueScreen extends ConsumerStatefulWidget {
 }
 
 class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
-  String _descriptionText = '';
   final _imagePicker = ImagePicker();
-  final List<File> _attachedFiles = [];
-  _ReportType? _selectedType;
-  _Severity _severity = _Severity.medium;
-  bool _isSubmitting = false;
-  bool _isSubmitted = false;
-
-  static const _maxAttachments = 5;
-  static const _maxFileSizeBytes = 10 * 1024 * 1024; // 10 MB
 
   @override
   void dispose() {
     super.dispose();
   }
 
-  Future<void> _pickFiles() async {
-    if (_attachedFiles.length >= _maxAttachments) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Maximum $_maxAttachments files allowed'),
-          backgroundColor: AppColors.warning,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.r),
-          ),
+  void _showFloatingMessage(String message, {required Color backgroundColor}) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: backgroundColor,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.r),
         ),
-      );
-      return;
-    }
+      ),
+    );
+  }
 
+  Future<void> _pickFiles() async {
+    final l10n = AppLocalizations.of(context);
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       shape: RoundedRectangleBorder(
@@ -75,12 +67,12 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.photo_library_rounded),
-              title: const Text('Choose from Gallery'),
+              title: Text(l10n.chooseFromGallery),
               onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
             ListTile(
               leading: const Icon(Icons.camera_alt_rounded),
-              title: const Text('Take a Photo'),
+              title: Text(l10n.takeAPhoto),
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
           ],
@@ -108,103 +100,54 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
 
     if (picked == null) return;
 
-    final file = File(picked.path);
-    final size = await file.length();
-
-    if (size > _maxFileSizeBytes) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('File exceeds 10 MB limit'),
-          backgroundColor: AppColors.warning,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-        ),
-      );
-      return;
-    }
-
-    setState(() => _attachedFiles.add(file));
+    await ref
+        .read(_reportFormProvider.notifier)
+        .addAttachment(File(picked.path));
   }
 
   Future<void> _submitReport() async {
-    if (_selectedType == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please select an issue type'),
-          backgroundColor: AppColors.warning,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-        ),
-      );
-      return;
-    }
-
-    if (_descriptionText.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please describe the issue'),
-          backgroundColor: AppColors.warning,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-        ),
-      );
-      return;
-    }
-
-    setState(() => _isSubmitting = true);
-
-    try {
-      final user = ref.read(currentUserProvider).value;
-      await ref
-          .read(profileActionsViewModelProvider)
-          .submitReport(
-            reporterId: user?.uid ?? 'anonymous',
-            reporterEmail: user?.email ?? '',
-            type: _selectedType!.label,
-            severity: _severity.name,
-            description: _descriptionText.trim(),
-            reportedUserId: widget.reportedUserId,
-            rideId: widget.rideId,
-            attachments: _attachedFiles,
-          );
-
-      if (mounted) {
-        HapticFeedback.mediumImpact();
-        setState(() {
-          _isSubmitting = false;
-          _isSubmitted = true;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() => _isSubmitting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Failed to submit report. Please try again.'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
+    final user = ref.read(currentUserProvider).value;
+    await ref
+        .read(_reportFormProvider.notifier)
+        .submit(
+          reporterId: user?.uid ?? 'anonymous',
+          reporterEmail: user?.email ?? '',
         );
-      }
-    }
   }
+
+  ReportIssueFormArgs get _reportFormArgs => ReportIssueFormArgs(
+    rideId: widget.rideId,
+    reportedUserId: widget.reportedUserId,
+  );
+
+  // ignore: strict_raw_type
+  get _reportFormProvider => reportIssueFormViewModelProvider(_reportFormArgs);
 
   @override
   Widget build(BuildContext context) {
+    final formState = ref.watch(_reportFormProvider);
+
+    ref.listen<ReportIssueFormState>(_reportFormProvider, (previous, next) {
+      if (next.errorMessage != null &&
+          next.errorMessage != previous?.errorMessage) {
+        _showFloatingMessage(
+          next.errorMessage!,
+          backgroundColor: AppColors.error,
+        );
+      }
+
+      if (next.isSubmitted && previous?.isSubmitted != true) {
+        HapticFeedback.mediumImpact();
+      }
+    });
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
-          'Report an Issue',
+          AppLocalizations.of(context).reportIssueTitle,
           style: TextStyle(
             fontSize: 18.sp,
             fontWeight: FontWeight.w700,
@@ -220,13 +163,16 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(horizontal: 24.w),
-          child: _isSubmitted ? _buildSuccessState() : _buildFormState(),
+          child: formState.isSubmitted
+              ? _buildSuccessState()
+              : _buildFormState(formState),
         ),
       ),
     );
   }
 
-  Widget _buildFormState() {
+  Widget _buildFormState(ReportIssueFormState formState) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -250,7 +196,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
                 ),
                 SizedBox(width: 8.w),
                 Text(
-                  'Ride: ${widget.rideId}',
+                  l10n.rideInfoLabel(widget.rideId!),
                   style: TextStyle(
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w500,
@@ -263,7 +209,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
 
         // Issue type
         Text(
-          'What happened?',
+          l10n.whatHappenedQuestion,
           style: TextStyle(
             fontSize: 16.sp,
             fontWeight: FontWeight.w700,
@@ -278,16 +224,29 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
           runSpacing: 8.h,
           children: _ReportType.values.asMap().entries.map((entry) {
             final type = entry.value;
-            final isSelected = _selectedType == type;
+            final isSelected = formState.selectedType == type.label;
             return _buildTypeChip(type, isSelected);
           }).toList(),
         ).animate().fadeIn(delay: 200.ms),
+
+        // Inline type error
+        if (formState.typeError != null) ...[
+          SizedBox(height: 6.h),
+          Text(
+            formState.typeError!,
+            style: TextStyle(
+              fontSize: 12.sp,
+              color: AppColors.error,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
 
         SizedBox(height: 24.h),
 
         // Severity
         Text(
-          'How severe is this issue?',
+          l10n.howSevereQuestion,
           style: TextStyle(
             fontSize: 14.sp,
             fontWeight: FontWeight.w600,
@@ -299,12 +258,12 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
 
         Row(
           children: _Severity.values.map((sev) {
-            final isSelected = _severity == sev;
+            final isSelected = formState.severity == sev.name;
             return Expanded(
               child: GestureDetector(
                 onTap: () {
                   HapticFeedback.selectionClick();
-                  setState(() => _severity = sev);
+                  ref.read(_reportFormProvider.notifier).setSeverity(sev.name);
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
@@ -325,7 +284,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
                       Icon(sev.icon, size: 20.sp, color: sev.color),
                       SizedBox(height: 4.h),
                       Text(
-                        sev.label,
+                        sev.localizedLabel(l10n),
                         style: TextStyle(
                           fontSize: 11.sp,
                           fontWeight: isSelected
@@ -348,7 +307,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
 
         // Description
         Text(
-          'Describe the issue',
+          l10n.describeIssueLabel,
           style: TextStyle(
             fontSize: 14.sp,
             fontWeight: FontWeight.w600,
@@ -359,15 +318,17 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
         SizedBox(height: 8.h),
 
         TextField(
-          onChanged: (v) => setState(() => _descriptionText = v),
+          onChanged: ref.read(_reportFormProvider.notifier).updateDescription,
           maxLines: 5,
           maxLength: 500,
+          textCapitalization: TextCapitalization.sentences,
           decoration: InputDecoration(
-            hintText: 'Please provide as much detail as possible...',
+            hintText: l10n.describeIssuePlaceholder,
             hintStyle: TextStyle(
               fontSize: 14.sp,
               color: AppColors.textTertiary,
             ),
+            errorText: formState.descriptionError,
             filled: true,
             fillColor: Colors.white,
             border: OutlineInputBorder(
@@ -382,6 +343,14 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
               borderRadius: BorderRadius.circular(12.r),
               borderSide: BorderSide(color: AppColors.primary, width: 1.5),
             ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+              borderSide: BorderSide(color: AppColors.error),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+              borderSide: BorderSide(color: AppColors.error, width: 1.5),
+            ),
           ),
         ).animate().fadeIn(delay: 450.ms),
 
@@ -389,7 +358,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
 
         // Evidence attachment
         Text(
-          'Evidence (optional)',
+          l10n.evidenceOptionalLabel,
           style: TextStyle(
             fontSize: 14.sp,
             fontWeight: FontWeight.w600,
@@ -413,25 +382,25 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
                 Icon(
                   Icons.cloud_upload_outlined,
                   size: 32.sp,
-                  color: _attachedFiles.isEmpty
+                  color: formState.attachedFiles.isEmpty
                       ? AppColors.textTertiary
                       : AppColors.primary,
                 ),
                 SizedBox(height: 8.h),
                 Text(
-                  _attachedFiles.isEmpty
-                      ? 'Tap to attach screenshots or evidence'
-                      : '${_attachedFiles.length}/$_maxAttachments files attached',
+                  formState.attachedFiles.isEmpty
+                      ? l10n.attachScreenshotsPlaceholder
+                      : l10n.filesAttachedCount(formState.attachedFiles.length, ReportIssueFormViewModel.maxAttachments),
                   style: TextStyle(
                     fontSize: 13.sp,
-                    color: _attachedFiles.isEmpty
+                    color: formState.attachedFiles.isEmpty
                         ? AppColors.textTertiary
                         : AppColors.textPrimary,
                   ),
                 ),
                 SizedBox(height: 4.h),
                 Text(
-                  'Supports images (max 10MB each)',
+                  l10n.supportsImagesHint,
                   style: TextStyle(
                     fontSize: 11.sp,
                     color: AppColors.textTertiary,
@@ -442,13 +411,13 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
           ),
         ).animate().fadeIn(delay: 490.ms),
 
-        if (_attachedFiles.isNotEmpty) ...[
+        if (formState.attachedFiles.isNotEmpty) ...[
           SizedBox(height: 10.h),
           SizedBox(
             height: 80.h,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              itemCount: _attachedFiles.length,
+              itemCount: formState.attachedFiles.length,
               separatorBuilder: (_, _) => SizedBox(width: 8.w),
               itemBuilder: (context, index) {
                 return Stack(
@@ -456,7 +425,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8.r),
                       child: Image.file(
-                        _attachedFiles[index],
+                        formState.attachedFiles[index],
                         width: 80.w,
                         height: 80.h,
                         fit: BoxFit.cover,
@@ -466,11 +435,9 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
                       top: 4.h,
                       right: 4.w,
                       child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _attachedFiles.removeAt(index);
-                          });
-                        },
+                        onTap: () => ref
+                            .read(_reportFormProvider.notifier)
+                            .removeAttachmentAt(index),
                         child: Container(
                           padding: EdgeInsets.all(2.w),
                           decoration: const BoxDecoration(
@@ -497,9 +464,9 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
         SizedBox(
           width: double.infinity,
           child: PremiumButton(
-            text: 'Submit Report',
-            onPressed: _isSubmitting ? null : _submitReport,
-            isLoading: _isSubmitting,
+            text: l10n.submitReportButton,
+            onPressed: formState.isSubmitting ? null : _submitReport,
+            isLoading: formState.isSubmitting,
             icon: Icons.flag_rounded,
             style: PremiumButtonStyle.danger,
           ),
@@ -514,7 +481,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
     return GestureDetector(
       onTap: () {
         HapticFeedback.selectionClick();
-        setState(() => _selectedType = type);
+        ref.read(_reportFormProvider.notifier).selectType(type.label);
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -537,7 +504,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
             ),
             SizedBox(width: 6.w),
             Text(
-              type.label,
+              type.localizedLabel(AppLocalizations.of(context)),
               style: TextStyle(
                 fontSize: 13.sp,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
@@ -551,6 +518,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
   }
 
   Widget _buildSuccessState() {
+    final l10n = AppLocalizations.of(context);
     return Column(
       children: [
         SizedBox(height: 80.h),
@@ -574,7 +542,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
         SizedBox(height: 24.h),
 
         Text(
-          'Report Submitted',
+          l10n.reportSubmittedTitle,
           style: TextStyle(
             fontSize: 24.sp,
             fontWeight: FontWeight.w800,
@@ -585,8 +553,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
         SizedBox(height: 12.h),
 
         Text(
-          'Thank you for reporting this issue. Our safety team will '
-          'review it and take appropriate action within 24-48 hours.',
+          l10n.reportSubmittedMessage,
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 14.sp,
@@ -600,7 +567,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
         SizedBox(
           width: double.infinity,
           child: PremiumButton(
-            text: 'Done',
+            text: l10n.doneButton,
             onPressed: () => context.pop(),
             icon: Icons.check_rounded,
           ),
@@ -627,6 +594,15 @@ enum _ReportType {
   final Color color;
 
   const _ReportType(this.label, this.icon, this.color);
+
+  String localizedLabel(AppLocalizations l10n) => switch (this) {
+    safety => l10n.reportSafety,
+    payment => l10n.reportPayment,
+    behavior => l10n.reportBehavior,
+    technical => l10n.reportTechnical,
+    discrimination => l10n.reportDiscrimination,
+    other => l10n.reportOther,
+  };
 }
 
 enum _Severity {
@@ -640,4 +616,11 @@ enum _Severity {
   final Color color;
 
   const _Severity(this.label, this.icon, this.color);
+
+  String localizedLabel(AppLocalizations l10n) => switch (this) {
+    low => l10n.severityLow,
+    medium => l10n.severityMedium,
+    high => l10n.severityHigh,
+    critical => l10n.severityCritical,
+  };
 }

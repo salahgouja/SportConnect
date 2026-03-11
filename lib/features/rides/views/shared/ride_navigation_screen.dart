@@ -1,6 +1,3 @@
-import 'dart:async';
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -11,13 +8,13 @@ import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/services/routing_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
+import 'package:sport_connect/features/rides/view_models/ride_navigation_view_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -30,7 +27,6 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 /// - ETA, distance remaining, and speed (km/h)
 /// - Driver info panel with avatar and rating
 /// - Share live location link
-/// - Emergency SOS button (long-press)
 /// - Arrival confirmation with ride completion flow
 class RideNavigationScreen extends ConsumerStatefulWidget {
   final String rideId;
@@ -45,25 +41,9 @@ class RideNavigationScreen extends ConsumerStatefulWidget {
 class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
     with TickerProviderStateMixin {
   final MapController _mapController = MapController();
-  StreamSubscription<Position>? _positionSubscription;
-  Position? _currentPosition;
-  double _progress = 0.0;
-  String _eta = 'Calculating...';
-  String _distanceRemaining = '--';
-  double _speedKmh = 0;
   late AnimationController _pulseController;
 
-  // Real ETA calculation state
-  double? _totalDistanceKm;
-  int? _totalDurationMinutes;
-  LatLng? _originLatLng;
-  LatLng? _destinationLatLng;
-  String? _lastRideId;
-
-  // OSRM road-following route polyline
-  List<LatLng>? _osrmRoutePoints;
-  String? _osrmRouteRideId;
-  bool _isLoadingOsrmRoute = false;
+  RideNavigationState get _navState => ref.watch(rideNavigationViewModelProvider);
 
   @override
   void initState() {
@@ -77,7 +57,6 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
 
   @override
   void dispose() {
-    _positionSubscription?.cancel();
     _pulseController.dispose();
     _mapController.dispose();
     super.dispose();
@@ -98,178 +77,9 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
       }
     }
 
-    _positionSubscription =
-        Geolocator.getPositionStream(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.high,
-            distanceFilter: 10,
-          ),
-        ).listen((position) {
-          if (!mounted) return;
-          setState(() {
-            _currentPosition = position;
-          });
-          _updateLocationInFirebase(position);
-          _calculateProgress(position);
-          // Keep map centred on current position
-          try {
-            _mapController.move(
-              LatLng(position.latitude, position.longitude),
-              15,
-            );
-          } catch (_) {
-            // Map may not be built yet on first GPS fix
-          }
-        });
-  }
-
-  Future<void> _updateLocationInFirebase(Position position) async {
-    try {
-      await ref
-          .read(rideActionsViewModelProvider)
-          .updateLiveLocation(
-            widget.rideId,
-            position.latitude,
-            position.longitude,
-          );
-    } catch (_) {
-      // Silent fail for location updates
-    }
-  }
-
-  void _calculateProgress(Position position) {
-    // Speed from GPS (m/s → km/h)
-    final speedKmh = (position.speed * 3.6).clamp(0.0, 200.0);
-
-    // Initialize / re-sync ride data from current ride stream value
-    final rideAsync = ref.read(rideStreamProvider(widget.rideId));
-    final ride = rideAsync.value;
-    if (ride != null) {
-      final rideId = ride.id;
-      if (_lastRideId != rideId) {
-        // Ride changed or first load — reset cached route state
-        _originLatLng = LatLng(ride.origin.latitude, ride.origin.longitude);
-        _destinationLatLng = LatLng(
-          ride.destination.latitude,
-          ride.destination.longitude,
-        );
-        _totalDistanceKm = ride.distanceKm;
-        _totalDurationMinutes = ride.durationMinutes;
-        _lastRideId = rideId;
-      }
-    }
-
-    if (_originLatLng == null || _destinationLatLng == null) {
-      // No ride data yet - show placeholder
-      setState(() {
-        _speedKmh = speedKmh;
-        _eta = 'Calculating...';
-        _distanceRemaining = '--';
-      });
-      return;
-    }
-
-    final currentLatLng = LatLng(position.latitude, position.longitude);
-
-    // Calculate distances using Haversine
-    final totalDistKm =
-        _totalDistanceKm ?? _haversineKm(_originLatLng!, _destinationLatLng!);
-    final distToDest = _haversineKm(currentLatLng, _destinationLatLng!);
-    final distFromOrigin = _haversineKm(_originLatLng!, currentLatLng);
-
-    // Calculate progress (0.0 to 1.0)
-    final progress = totalDistKm > 0
-        ? (distFromOrigin / (distFromOrigin + distToDest)).clamp(0.0, 1.0)
-        : 0.0;
-
-    // Calculate ETA: prefer speed-based if moving, else use duration ratio
-    int remainingMinutes;
-    if (speedKmh > 5) {
-      // Moving - use current speed for ETA
-      remainingMinutes = (distToDest / speedKmh * 60).round();
-    } else if (_totalDurationMinutes != null) {
-      // Stationary - estimate from total duration and progress
-      remainingMinutes = ((1 - progress) * _totalDurationMinutes!).round();
-    } else {
-      // Fallback: derive average speed from total route data, else use 30 km/h
-      final avgSpeedKmh =
-          (_totalDistanceKm != null &&
-              _totalDurationMinutes != null &&
-              _totalDurationMinutes! > 0)
-          ? _totalDistanceKm! / (_totalDurationMinutes! / 60)
-          : 30.0;
-      remainingMinutes = (distToDest / avgSpeedKmh * 60).round();
-    }
-
-    // Format remaining distance
-    String distStr;
-    if (distToDest < 1) {
-      distStr = '${(distToDest * 1000).toInt()} m';
-    } else {
-      distStr = '${distToDest.toStringAsFixed(1)} km';
-    }
-
-    // Format ETA
-    String etaStr;
-    if (remainingMinutes < 1) {
-      etaStr = 'Arriving';
-    } else if (remainingMinutes >= 60) {
-      final h = remainingMinutes ~/ 60;
-      final m = remainingMinutes % 60;
-      etaStr = '${h}h ${m}m';
-    } else {
-      etaStr = '$remainingMinutes min';
-    }
-
-    setState(() {
-      _speedKmh = speedKmh;
-      _progress = progress;
-      _eta = etaStr;
-      _distanceRemaining = distStr;
-    });
-  }
-
-  /// Calculates distance in km between two points using the Haversine formula.
-  double _haversineKm(LatLng a, LatLng b) {
-    const r = 6371.0; // Earth radius in km
-    final dLat = _degToRad(b.latitude - a.latitude);
-    final dLon = _degToRad(b.longitude - a.longitude);
-    final sinLat = math.sin(dLat / 2);
-    final sinLon = math.sin(dLon / 2);
-    final h =
-        sinLat * sinLat +
-        math.cos(_degToRad(a.latitude)) *
-            math.cos(_degToRad(b.latitude)) *
-            sinLon *
-            sinLon;
-    return 2 * r * math.asin(math.sqrt(h));
-  }
-
-  double _degToRad(double deg) => deg * math.pi / 180;
-
-  /// Fetches OSRM road-following route and caches the coordinates.
-  Future<void> _loadOsrmRoute(RideModel ride) async {
-    if (_isLoadingOsrmRoute || _osrmRouteRideId == ride.id) return;
-    setState(() {
-      _isLoadingOsrmRoute = true;
-      _osrmRouteRideId = ride.id;
-    });
-    try {
-      final origin = LatLng(ride.origin.latitude, ride.origin.longitude);
-      final dest = LatLng(
-        ride.destination.latitude,
-        ride.destination.longitude,
-      );
-      final routeInfo = await RoutingService.getRoute(origin: origin, destination: dest);
-      if (mounted) {
-        setState(() {
-          _osrmRoutePoints = routeInfo?.coordinates;
-          _isLoadingOsrmRoute = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) setState(() => _isLoadingOsrmRoute = false);
-    }
+    await ref
+      .read(rideNavigationViewModelProvider.notifier)
+      .startTracking(widget.rideId);
   }
 
   /// Builds the polyline points for the route.
@@ -299,6 +109,14 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
   Widget build(BuildContext context) {
     final rideAsync = ref.watch(rideStreamProvider(widget.rideId));
     final l10n = AppLocalizations.of(context);
+
+    ref.listen(rideStreamProvider(widget.rideId), (previous, next) {
+      final ride = next.value;
+      if (ride == null) return;
+      final notifier = ref.read(rideNavigationViewModelProvider.notifier);
+      notifier.syncRide(ride);
+      notifier.ensureOsrmRoute(ride);
+    });
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -358,10 +176,6 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
     RideModel ride,
     AppLocalizations l10n,
   ) {
-    // Trigger OSRM route fetch once per ride
-    if (_osrmRouteRideId != ride.id && !_isLoadingOsrmRoute) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _loadOsrmRoute(ride));
-    }
     return Stack(
       children: [
         // Map placeholder (replace with actual map widget e.g. google_maps_flutter)
@@ -378,17 +192,10 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
           child: _buildBottomPanel(context, ride, l10n),
         ),
 
-        // SOS button
-        Positioned(
-          top: MediaQuery.of(context).padding.top + 60.h,
-          right: 16.w,
-          child: _buildSOSButton(context),
-        ),
-
         // Share location button
         Positioned(
           top: MediaQuery.of(context).padding.top + 60.h,
-          right: 68.w,
+          right: 16.w,
           child: _buildShareButton(ride),
         ),
       ],
@@ -401,11 +208,12 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
       ride.destination.latitude,
       ride.destination.longitude,
     );
-    final currentLatLng = _currentPosition != null
-        ? LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
+    final currentPosition = _navState.currentPosition;
+    final currentLatLng = currentPosition != null
+        ? LatLng(currentPosition.latitude, currentPosition.longitude)
         : originLatLng;
 
-    if (_currentPosition == null) {
+    if (currentPosition == null) {
       // Show a loading state while waiting for first GPS fix
       return Container(
         color: AppColors.background,
@@ -449,14 +257,14 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
           polylines: [
             Polyline(
               points:
-                  _osrmRoutePoints ??
+                  _navState.osrmRoutePoints ??
                   _buildRoutePoints(ride, currentLatLng, destLatLng),
               color: Colors.white,
               strokeWidth: 6,
             ),
             Polyline(
               points:
-                  _osrmRoutePoints ??
+                  _navState.osrmRoutePoints ??
                   _buildRoutePoints(ride, currentLatLng, destLatLng),
               color: AppColors.primary,
               strokeWidth: 4,
@@ -703,7 +511,7 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
-        final pos = _currentPosition;
+        final pos = _navState.currentPosition;
         final locationText = pos != null
             ? 'https://maps.google.com/?q=${pos.latitude},${pos.longitude}'
             : 'Live location not yet available';
@@ -737,117 +545,6 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
         ),
       ),
     );
-  }
-
-  Widget _buildSOSButton(BuildContext context) {
-    return GestureDetector(
-      onLongPress: () {
-        HapticFeedback.heavyImpact();
-        _showSOSDialog(context);
-      },
-      child: Container(
-        padding: EdgeInsets.all(14.w),
-        decoration: BoxDecoration(
-          color: AppColors.error,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.error.withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Icon(Icons.sos_rounded, color: Colors.white, size: 24.sp),
-      ),
-    );
-  }
-
-  void _showSOSDialog(BuildContext context) {
-    // Determine emergency number based on device locale
-    final locale = Localizations.localeOf(context);
-    final emergencyNumber = _getEmergencyNumber(locale.countryCode);
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Emergency SOS'),
-        content: Text(
-          'Are you in an emergency? This will call emergency services '
-          '($emergencyNumber) and share your live location.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            onPressed: () async {
-              Navigator.pop(context);
-
-              final Uri emergencyUri = Uri(
-                scheme: 'tel',
-                path: emergencyNumber,
-              );
-              try {
-                if (await canLaunchUrl(emergencyUri)) {
-                  await launchUrl(emergencyUri);
-                } else {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Cannot make emergency calls on this device',
-                        ),
-                      ),
-                    );
-                  }
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Failed to launch emergency dialer'),
-                    ),
-                  );
-                }
-              }
-            },
-            child: const Text('Call Emergency'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Returns the local emergency number based on country code
-  String _getEmergencyNumber(String? countryCode) {
-    switch (countryCode?.toUpperCase()) {
-      case 'US':
-      case 'CA':
-        return '911';
-      case 'GB':
-      case 'IE':
-        return '999';
-      case 'AU':
-        return '000';
-      case 'NZ':
-        return '111';
-      case 'JP':
-        return '110';
-      case 'CN':
-        return '110';
-      case 'IN':
-        return '112';
-      case 'BR':
-        return '190';
-      case 'MX':
-        return '911';
-      default:
-        // 112 is the international standard emergency number
-        return '112';
-    }
   }
 
   Widget _buildBottomPanel(
@@ -896,21 +593,21 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
               _buildInfoTile(
                 icon: Icons.access_time_rounded,
                 label: 'ETA',
-                value: _eta,
+                value: _navState.eta,
                 color: AppColors.primary,
               ),
               SizedBox(width: 16.w),
               _buildInfoTile(
                 icon: Icons.straighten_rounded,
                 label: 'Distance',
-                value: _distanceRemaining,
+                value: _navState.distanceRemaining,
                 color: AppColors.warning,
               ),
               SizedBox(width: 16.w),
               _buildInfoTile(
                 icon: Icons.speed_rounded,
                 label: 'Speed',
-                value: '${_speedKmh.toStringAsFixed(0)} km/h',
+                value: '${_navState.speedKmh.toStringAsFixed(0)} km/h',
                 color: AppColors.success,
               ),
             ],
@@ -962,7 +659,9 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
                   text: "I've Arrived",
                   onPressed: () {
                     HapticFeedback.heavyImpact();
-                    _positionSubscription?.cancel();
+                    ref
+                        .read(rideNavigationViewModelProvider.notifier)
+                        .stopTracking();
                     context.pushReplacement(
                       AppRoutes.rideCompletion.path.replaceFirst(
                         ':id',
@@ -1014,7 +713,7 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
               ),
             ),
             Text(
-              '${(_progress * 100).toInt()}%',
+              '${(_navState.progress * 100).toInt()}%',
               style: TextStyle(
                 fontSize: 13.sp,
                 fontWeight: FontWeight.w700,
@@ -1027,7 +726,7 @@ class _RideNavigationScreenState extends ConsumerState<RideNavigationScreen>
         ClipRRect(
           borderRadius: BorderRadius.circular(4.r),
           child: LinearProgressIndicator(
-            value: _progress,
+            value: _navState.progress,
             backgroundColor: AppColors.border,
             valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
             minHeight: 6.h,

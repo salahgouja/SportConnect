@@ -11,6 +11,8 @@ import 'package:sport_connect/features/rides/models/ride_request_model.dart';
 import 'package:sport_connect/features/rides/view_models/driver_view_model.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
+
 /// Driver Rides Screen – pending booking requests + upcoming rides timeline.
 ///
 /// Design: professional dashboard layout.
@@ -22,6 +24,7 @@ class DriverMyRidesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final driverState = ref.watch(driverViewModelProvider);
     final pendingAsync = driverState.pendingRequests;
     final upcomingAsync = driverState.upcomingRides;
@@ -35,7 +38,7 @@ class DriverMyRidesScreen extends ConsumerWidget {
         elevation: 4,
         icon: Icon(Icons.add_rounded, size: 22.sp, color: Colors.white),
         label: Text(
-          'Offer Ride',
+          l10n.offerRide,
           style: TextStyle(
             fontSize: 14.sp,
             fontWeight: FontWeight.w600,
@@ -59,7 +62,7 @@ class DriverMyRidesScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'My Rides',
+                    l10n.driverMyRidesTitle,
                     style: TextStyle(
                       fontSize: 20.sp,
                       fontWeight: FontWeight.w700,
@@ -78,7 +81,7 @@ class DriverMyRidesScreen extends ConsumerWidget {
               ),
               actions: [
                 IconButton(
-                  tooltip: 'View requests',
+                  tooltip: l10n.viewRequestsTooltip,
                   icon: Icon(
                     Icons.notifications_none_rounded,
                     color: AppColors.textPrimary,
@@ -142,7 +145,7 @@ class _PendingRequestsSection extends ConsumerWidget {
           Row(
             children: [
               Text(
-                'Pending Requests',
+                AppLocalizations.of(context).pendingRequestsTitle,
                 style: TextStyle(
                   fontSize: 16.sp,
                   fontWeight: FontWeight.w700,
@@ -210,7 +213,7 @@ class _EmptyRequests extends StatelessWidget {
           ),
           SizedBox(height: 12.h),
           Text(
-            'No Pending Requests',
+            AppLocalizations.of(context).noPendingRequestsTitle,
             style: TextStyle(
               fontSize: 15.sp,
               fontWeight: FontWeight.w600,
@@ -219,7 +222,7 @@ class _EmptyRequests extends StatelessWidget {
           ),
           SizedBox(height: 4.h),
           Text(
-            'New booking requests will appear here.',
+            AppLocalizations.of(context).noPendingRequestsMessage,
             style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
           ),
         ],
@@ -239,7 +242,7 @@ class _RequestsLoading extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Pending Requests',
+            AppLocalizations.of(context).pendingRequestsTitle,
             style: TextStyle(
               fontSize: 16.sp,
               fontWeight: FontWeight.w700,
@@ -279,7 +282,7 @@ class _RequestsError extends StatelessWidget {
             SizedBox(width: 12.w),
             Expanded(
               child: Text(
-                'Could not load requests. Pull to refresh.',
+                AppLocalizations.of(context).couldNotLoadRequests,
                 style: TextStyle(fontSize: 13.sp, color: AppColors.error),
               ),
             ),
@@ -348,7 +351,7 @@ class _PendingRequestCard extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        request.passengerName ?? 'Booking Request',
+                        request.passengerName ?? AppLocalizations.of(context).bookingRequestTitle,
                         style: TextStyle(
                           fontSize: 14.sp,
                           fontWeight: FontWeight.w600,
@@ -422,7 +425,7 @@ class _PendingRequestCard extends ConsumerWidget {
                 children: [
                   _RoutePoint(
                     icon: Icons.radio_button_checked_rounded,
-                    label: 'Pickup',
+                    label: AppLocalizations.of(context).pickupLabel,
                     address: request.pickupLocation.address,
                     color: AppColors.primary,
                   ),
@@ -443,7 +446,7 @@ class _PendingRequestCard extends ConsumerWidget {
                   ),
                   _RoutePoint(
                     icon: Icons.location_on_rounded,
-                    label: 'Dropoff',
+                    label: AppLocalizations.of(context).dropoffLabel,
                     address: request.dropoffLocation.address,
                     color: AppColors.error,
                   ),
@@ -459,9 +462,7 @@ class _PendingRequestCard extends ConsumerWidget {
             padding: EdgeInsets.symmetric(horizontal: 16.w),
             child: _DetailChip(
               icon: Icons.people_outline_rounded,
-              text:
-                  '${request.requestedSeats} '
-                  '${request.requestedSeats == 1 ? 'seat' : 'seats'}',
+              text: AppLocalizations.of(context).seatsCount(request.requestedSeats),
             ),
           ),
 
@@ -476,33 +477,33 @@ class _PendingRequestCard extends ConsumerWidget {
               children: [
                 Expanded(
                   child: _ActionButton(
-                    label: 'Decline',
+                    label: AppLocalizations.of(context).declineButton,
                     icon: Icons.close_rounded,
                     color: AppColors.error,
                     onTap: () async {
                       HapticFeedback.lightImpact();
+                      final l10n = AppLocalizations.of(context);
                       final confirmed = await showDialog<bool>(
                         context: context,
                         builder: (ctx) => AlertDialog(
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16.r),
                           ),
-                          title: const Text('Decline Request?'),
-                          content: const Text(
-                            'This will decline the booking request. '
-                            'The passenger will be notified.',
+                          title: Text(l10n.declineRequestTitle),
+                          content: Text(
+                            l10n.declineRequestMessage,
                           ),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.of(ctx).pop(false),
-                              child: const Text('Keep'),
+                              child: Text(l10n.keepButton),
                             ),
                             TextButton(
                               onPressed: () => Navigator.of(ctx).pop(true),
                               style: TextButton.styleFrom(
                                 foregroundColor: AppColors.error,
                               ),
-                              child: const Text('Decline'),
+                              child: Text(l10n.declineButton),
                             ),
                           ],
                         ),
@@ -518,26 +519,26 @@ class _PendingRequestCard extends ConsumerWidget {
                 SizedBox(width: 10.w),
                 Expanded(
                   child: _ActionButton(
-                    label: 'Accept',
+                    label: AppLocalizations.of(context).acceptButton,
                     icon: Icons.check_rounded,
                     color: AppColors.success,
                     onTap: () async {
                       HapticFeedback.lightImpact();
+                      final l10n = AppLocalizations.of(context);
                       final confirmed = await showDialog<bool>(
                         context: context,
                         builder: (ctx) => AlertDialog(
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16.r),
                           ),
-                          title: const Text('Accept Request?'),
+                          title: Text(l10n.acceptRequestTitle),
                           content: Text(
-                            'Accept this booking from '
-                            '${request.passengerName ?? 'this passenger'}?',
+                            l10n.acceptRequestMessage(request.passengerName ?? 'this passenger'),
                           ),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.of(ctx).pop(false),
-                              child: const Text('Cancel'),
+                              child: Text(l10n.actionCancel),
                             ),
                             ElevatedButton(
                               onPressed: () => Navigator.of(ctx).pop(true),
@@ -545,7 +546,7 @@ class _PendingRequestCard extends ConsumerWidget {
                                 backgroundColor: AppColors.success,
                                 foregroundColor: Colors.white,
                               ),
-                              child: const Text('Accept'),
+                              child: Text(l10n.acceptButton),
                             ),
                           ],
                         ),
@@ -730,7 +731,7 @@ class _TimelineHeader extends StatelessWidget {
           ),
           SizedBox(width: 10.w),
           Text(
-            'Upcoming Rides',
+            AppLocalizations.of(context).upcomingRidesTitle,
             style: TextStyle(
               fontSize: 16.sp,
               fontWeight: FontWeight.w700,
@@ -764,19 +765,20 @@ class _RidesTimeline extends ConsumerWidget {
               if (!context.mounted) return false;
               final confirmed = await showDialog<bool>(
                 context: context,
-                builder: (ctx) => AlertDialog(
+                builder: (ctx) {
+                  final l10n = AppLocalizations.of(context);
+                  return AlertDialog(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16.r),
                   ),
-                  title: const Text('Cancel Ride'),
-                  content: const Text(
-                    'Are you sure you want to cancel this ride? '
-                    'This action cannot be undone.',
+                  title: Text(l10n.cancelRideTitle),
+                  content: Text(
+                    l10n.cancelRideConfirmMessage,
                   ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.of(ctx).pop(false),
-                      child: const Text('Keep Ride'),
+                      child: Text(l10n.keepRideButton),
                     ),
                     ElevatedButton(
                       onPressed: () => Navigator.of(ctx).pop(true),
@@ -784,10 +786,11 @@ class _RidesTimeline extends ConsumerWidget {
                         backgroundColor: AppColors.error,
                         foregroundColor: Colors.white,
                       ),
-                      child: const Text('Cancel'),
+                      child: Text(l10n.actionCancel),
                     ),
                   ],
-                ),
+                );
+                },
               );
               if ((confirmed ?? false) && context.mounted) {
                 context.pushNamed(
@@ -811,7 +814,7 @@ class _RidesTimeline extends ConsumerWidget {
                   Icon(Icons.cancel_outlined, color: Colors.white, size: 24.sp),
                   SizedBox(height: 4.h),
                   Text(
-                    'Cancel',
+                    AppLocalizations.of(context).actionCancel,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 12.sp,
@@ -1033,7 +1036,7 @@ class _EmptyTimeline extends StatelessWidget {
           ),
           SizedBox(height: 12.h),
           Text(
-            'No Upcoming Rides',
+            AppLocalizations.of(context).noUpcomingRidesTitle,
             style: TextStyle(
               fontSize: 15.sp,
               fontWeight: FontWeight.w600,
@@ -1042,7 +1045,7 @@ class _EmptyTimeline extends StatelessWidget {
           ),
           SizedBox(height: 4.h),
           Text(
-            'Use the button below to offer a new ride.',
+            AppLocalizations.of(context).useButtonToOfferRide,
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
           ),
@@ -1088,7 +1091,7 @@ class _ErrorTimeline extends StatelessWidget {
           SizedBox(width: 12.w),
           Expanded(
             child: Text(
-              'Could not load rides. Pull to refresh.',
+              AppLocalizations.of(context).couldNotLoadRides,
               style: TextStyle(fontSize: 13.sp, color: AppColors.error),
             ),
           ),

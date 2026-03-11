@@ -11,19 +11,58 @@ import 'package:sport_connect/features/rides/services/ride_request_service.dart'
 
 part 'driver_view_model.g.dart';
 
+final activeDriverRideProvider = StreamProvider<RideModel?>((ref) {
+  final userId = ref.watch(authStateProvider).value?.uid;
+  if (userId == null) {
+    return Stream.value(null);
+  }
+
+  final repository = ref.watch(rideRepositoryProvider);
+  return repository.streamRidesByDriver(userId).map((rides) {
+    RideModel? activeRide;
+
+    for (final ride in rides) {
+      if (ride.status != RideStatus.inProgress) {
+        continue;
+      }
+
+      if (activeRide == null) {
+        activeRide = ride;
+        continue;
+      }
+
+      final currentUpdatedAt = activeRide.updatedAt ?? activeRide.createdAt;
+      final nextUpdatedAt = ride.updatedAt ?? ride.createdAt;
+      if ((nextUpdatedAt ?? ride.departureTime).isAfter(
+        currentUpdatedAt ?? activeRide.departureTime,
+      )) {
+        activeRide = ride;
+      }
+    }
+
+    return activeRide;
+  });
+});
+
 /// Aggregated dashboard state owned entirely by [DriverViewModel].
 /// Views watch ONLY this class — they do not watch any repository or stream
 /// provider directly.
 class DriverState {
+  static const _unset = Object();
+
   // ── Action state ──────────────────────────────────────────────────────────
   /// True while an async action (toggle online, accept/decline) is running.
   final bool isLoading;
+  final bool isRefreshing;
   final String? errorMessage;
   final DateTime? lastStatusChange;
+  final DateTime? lastRefreshAt;
+  final Set<String> pendingRequestActionIds;
 
   // ── Derived from streams (via ref.listen — never reset by build()) ─────────
   /// Live online/offline status synced from Firestore via ref.listen.
   final bool isOnline;
+  final AsyncValue<RideModel?> activeRideAsync;
 
   // ── Aggregated data (via ref.watch in build()) ────────────────────────────
   /// Current authenticated user model.
@@ -49,9 +88,13 @@ class DriverState {
 
   const DriverState({
     this.isLoading = false,
+    this.isRefreshing = false,
     this.errorMessage,
     this.lastStatusChange,
+    this.lastRefreshAt,
+    this.pendingRequestActionIds = const <String>{},
     this.isOnline = false,
+    this.activeRideAsync = const AsyncLoading(),
     this.user = const AsyncLoading(),
     this.stats = const AsyncLoading(),
     this.pendingRequests = const AsyncLoading(),
@@ -61,11 +104,48 @@ class DriverState {
     this.earningsTransactions = const AsyncLoading(),
   });
 
+    UserModel? get currentUser => user is AsyncData<UserModel?>
+      ? (user as AsyncData<UserModel?>).value
+      : null;
+    DriverStats? get currentStats => stats is AsyncData<DriverStats>
+      ? (stats as AsyncData<DriverStats>).value
+      : null;
+    RideModel? get activeRide => activeRideAsync is AsyncData<RideModel?>
+      ? (activeRideAsync as AsyncData<RideModel?>).value
+      : null;
+  bool get hasActiveRide => activeRide != null;
+  bool get hasProfileData => currentUser != null;
+  List<RideRequestModel> get pendingRequestPreview =>
+      (pendingRequests is AsyncData<List<RideRequestModel>>
+          ? (pendingRequests as AsyncData<List<RideRequestModel>>).value
+          : const <RideRequestModel>[])
+          .take(2)
+          .toList(growable: false);
+  List<RideModel> get upcomingRidePreview =>
+      (upcomingRides is AsyncData<List<RideModel>>
+          ? (upcomingRides as AsyncData<List<RideModel>>).value
+          : const <RideModel>[])
+          .take(3)
+          .toList(growable: false);
+    int get pendingRequestCount => pendingRequests is AsyncData<List<RideRequestModel>>
+      ? (pendingRequests as AsyncData<List<RideRequestModel>>).value.length
+      : 0;
+  bool get hasPendingRequests => pendingRequestCount > 0;
+    bool get hasUpcomingRides => upcomingRides is AsyncData<List<RideModel>>
+      ? (upcomingRides as AsyncData<List<RideModel>>).value.isNotEmpty
+      : false;
+  bool isRequestActionInProgress(String requestId) =>
+      pendingRequestActionIds.contains(requestId);
+
   DriverState copyWith({
     bool? isLoading,
-    String? errorMessage,
+    bool? isRefreshing,
+    Object? errorMessage = _unset,
     DateTime? lastStatusChange,
+    DateTime? lastRefreshAt,
+    Set<String>? pendingRequestActionIds,
     bool? isOnline,
+    AsyncValue<RideModel?>? activeRideAsync,
     AsyncValue<UserModel?>? user,
     AsyncValue<DriverStats>? stats,
     AsyncValue<List<RideRequestModel>>? pendingRequests,
@@ -76,9 +156,15 @@ class DriverState {
   }) {
     return DriverState(
       isLoading: isLoading ?? this.isLoading,
-      errorMessage: errorMessage,
+      isRefreshing: isRefreshing ?? this.isRefreshing,
+      errorMessage:
+        errorMessage == _unset ? this.errorMessage : errorMessage as String?,
       lastStatusChange: lastStatusChange ?? this.lastStatusChange,
+      lastRefreshAt: lastRefreshAt ?? this.lastRefreshAt,
+      pendingRequestActionIds:
+        pendingRequestActionIds ?? this.pendingRequestActionIds,
       isOnline: isOnline ?? this.isOnline,
+      activeRideAsync: activeRideAsync ?? this.activeRideAsync,
       user: user ?? this.user,
       stats: stats ?? this.stats,
       pendingRequests: pendingRequests ?? this.pendingRequests,
@@ -103,6 +189,8 @@ class DriverState {
 ///   action state across Firestore updates.
 @riverpod
 class DriverViewModel extends _$DriverViewModel {
+  Future<void>? _refreshOperation;
+
   @override
   DriverState build() {
     // ── Subscribe to all data streams via ref.listen ──────────────────────
@@ -141,6 +229,10 @@ class DriverViewModel extends _$DriverViewModel {
       state = state.copyWith(earningsTransactions: next);
     });
 
+    ref.listen(activeDriverRideProvider, (_, next) {
+      state = state.copyWith(activeRideAsync: next);
+    });
+
     // Seed initial values from already-cached providers (avoids a loading
     // frame when the underlying providers are already populated).
     final initialStats = ref.read(driverStatsProvider);
@@ -150,6 +242,7 @@ class DriverViewModel extends _$DriverViewModel {
       user: initialUser,
       stats: initialStats,
       isOnline: initialStats.whenOrNull(data: (s) => s.isOnline) ?? false,
+      activeRideAsync: ref.read(activeDriverRideProvider),
       pendingRequests: ref.read(pendingRideRequestsProvider),
       acceptedRequests: ref.read(acceptedRideRequestsProvider),
       rejectedRequests: ref.read(rejectedRideRequestsProvider),
@@ -166,7 +259,7 @@ class DriverViewModel extends _$DriverViewModel {
   /// Toggle driver online status
   Future<void> toggleOnlineStatus() async {
     final userId = _getCurrentUserId();
-    if (userId == null) return;
+    if (userId == null || state.isLoading) return;
 
     state = state.copyWith(isLoading: true, errorMessage: null);
 
@@ -174,6 +267,8 @@ class DriverViewModel extends _$DriverViewModel {
       final repository = ref.read(driverStatsRepositoryProvider);
       final newStatus = !state.isOnline;
       await repository.setOnlineStatus(userId, newStatus);
+
+      if (!ref.mounted) return;
 
       state = state.copyWith(
         isOnline: newStatus,
@@ -184,6 +279,7 @@ class DriverViewModel extends _$DriverViewModel {
       // Refresh stats
       ref.invalidate(driverStatsProvider);
     } catch (e) {
+      if (!ref.mounted) return;
       state = state.copyWith(
         isLoading: false,
         errorMessage: 'Failed to update status: $e',
@@ -212,13 +308,50 @@ class DriverViewModel extends _$DriverViewModel {
   ///
   /// Call this from pull-to-refresh gestures so the view does not need to
   /// import or reference the underlying repository providers directly.
-  void refresh() {
-    ref.invalidate(driverStatsProvider);
-    ref.invalidate(pendingRideRequestsProvider);
-    ref.invalidate(acceptedRideRequestsProvider);
-    ref.invalidate(rejectedRideRequestsProvider);
-    ref.invalidate(upcomingDriverRidesProvider);
-    ref.invalidate(earningsTransactionsProvider);
+  Future<void> refresh() {
+    final existingOperation = _refreshOperation;
+    if (existingOperation != null) {
+      return existingOperation;
+    }
+
+    final refreshOperation = _runRefresh();
+    _refreshOperation = refreshOperation;
+    return refreshOperation.whenComplete(() {
+      if (identical(_refreshOperation, refreshOperation)) {
+        _refreshOperation = null;
+      }
+    });
+  }
+
+  Future<void> _runRefresh() async {
+    if (!ref.mounted) return;
+
+    state = state.copyWith(isRefreshing: true, errorMessage: null);
+
+    try {
+      await Future.wait<void>([
+        ref.refresh(currentUserProvider.future),
+        ref.refresh(driverStatsProvider.future),
+        ref.refresh(activeDriverRideProvider.future),
+        ref.refresh(pendingRideRequestsProvider.future),
+        ref.refresh(acceptedRideRequestsProvider.future),
+        ref.refresh(rejectedRideRequestsProvider.future),
+        ref.refresh(upcomingDriverRidesProvider.future),
+        ref.refresh(earningsTransactionsProvider.future),
+      ]);
+
+      if (!ref.mounted) return;
+      state = state.copyWith(
+        isRefreshing: false,
+        lastRefreshAt: DateTime.now(),
+      );
+    } catch (e) {
+      if (!ref.mounted) return;
+      state = state.copyWith(
+        isRefreshing: false,
+        errorMessage: 'Failed to refresh dashboard: $e',
+      );
+    }
   }
 
   /// Accept a ride request.
@@ -226,23 +359,45 @@ class DriverViewModel extends _$DriverViewModel {
   /// Routes through [RideRequestService] so that capacity updates and
   /// passenger notifications are handled in one consistent place.
   Future<bool> acceptRideRequest(String rideId, String requestId) async {
+    if (rideId.isEmpty || requestId.isEmpty) {
+      state = state.copyWith(errorMessage: 'Missing ride request data.');
+      return false;
+    }
+    if (state.pendingRequestActionIds.contains(requestId)) {
+      return false;
+    }
+
     state = state.copyWith(isLoading: true, errorMessage: null);
+    state = state.copyWith(
+      pendingRequestActionIds: {...state.pendingRequestActionIds, requestId},
+    );
 
     try {
       final result = await ref
           .read(rideRequestServiceProvider.notifier)
           .acceptRequest(requestId);
 
-      state = state.copyWith(isLoading: false);
+      if (!ref.mounted) return false;
+
+      state = state.copyWith(
+        isLoading: false,
+        pendingRequestActionIds: {...state.pendingRequestActionIds}
+          ..remove(requestId),
+      );
       ref.invalidate(pendingRideRequestsProvider);
+      ref.invalidate(acceptedRideRequestsProvider);
+      ref.invalidate(upcomingDriverRidesProvider);
 
       return switch (result) {
         Success() => true,
         Failure(:final message) => throw Exception(message),
       };
     } catch (e) {
+      if (!ref.mounted) return false;
       state = state.copyWith(
         isLoading: false,
+        pendingRequestActionIds: {...state.pendingRequestActionIds}
+          ..remove(requestId),
         errorMessage: 'Failed to accept request: $e',
       );
       return false;
@@ -254,23 +409,44 @@ class DriverViewModel extends _$DriverViewModel {
   /// Routes through [RideRequestService] so rejection notification
   /// is sent to the passenger.
   Future<bool> declineRideRequest(String rideId, String requestId) async {
+    if (rideId.isEmpty || requestId.isEmpty) {
+      state = state.copyWith(errorMessage: 'Missing ride request data.');
+      return false;
+    }
+    if (state.pendingRequestActionIds.contains(requestId)) {
+      return false;
+    }
+
     state = state.copyWith(isLoading: true, errorMessage: null);
+    state = state.copyWith(
+      pendingRequestActionIds: {...state.pendingRequestActionIds, requestId},
+    );
 
     try {
       final result = await ref
           .read(rideRequestServiceProvider.notifier)
           .rejectRequest(requestId, 'Declined by driver');
 
-      state = state.copyWith(isLoading: false);
+      if (!ref.mounted) return false;
+
+      state = state.copyWith(
+        isLoading: false,
+        pendingRequestActionIds: {...state.pendingRequestActionIds}
+          ..remove(requestId),
+      );
       ref.invalidate(pendingRideRequestsProvider);
+      ref.invalidate(rejectedRideRequestsProvider);
 
       return switch (result) {
         Success() => true,
         Failure(:final message) => throw Exception(message),
       };
     } catch (e) {
+      if (!ref.mounted) return false;
       state = state.copyWith(
         isLoading: false,
+        pendingRequestActionIds: {...state.pendingRequestActionIds}
+          ..remove(requestId),
         errorMessage: 'Failed to decline request: $e',
       );
       return false;

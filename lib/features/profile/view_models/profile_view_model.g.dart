@@ -8,6 +8,107 @@ part of 'profile_view_model.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+
+@ProviderFor(ReportIssueFormViewModel)
+final reportIssueFormViewModelProvider = ReportIssueFormViewModelFamily._();
+
+final class ReportIssueFormViewModelProvider
+    extends $NotifierProvider<ReportIssueFormViewModel, ReportIssueFormState> {
+  ReportIssueFormViewModelProvider._({
+    required ReportIssueFormViewModelFamily super.from,
+    required ReportIssueFormArgs super.argument,
+  }) : super(
+         retry: null,
+         name: r'reportIssueFormViewModelProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$reportIssueFormViewModelHash();
+
+  @override
+  String toString() {
+    return r'reportIssueFormViewModelProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  ReportIssueFormViewModel create() => ReportIssueFormViewModel();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ReportIssueFormState value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ReportIssueFormState>(value),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is ReportIssueFormViewModelProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$reportIssueFormViewModelHash() =>
+    r'038e83e71c5ac3032e27627dd0a963a70adc6e90';
+
+final class ReportIssueFormViewModelFamily extends $Family
+    with
+        $ClassFamilyOverride<
+          ReportIssueFormViewModel,
+          ReportIssueFormState,
+          ReportIssueFormState,
+          ReportIssueFormState,
+          ReportIssueFormArgs
+        > {
+  ReportIssueFormViewModelFamily._()
+    : super(
+        retry: null,
+        name: r'reportIssueFormViewModelProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  ReportIssueFormViewModelProvider call(ReportIssueFormArgs args) =>
+      ReportIssueFormViewModelProvider._(argument: args, from: this);
+
+  @override
+  String toString() => r'reportIssueFormViewModelProvider';
+}
+
+abstract class _$ReportIssueFormViewModel
+    extends $Notifier<ReportIssueFormState> {
+  late final _$args = ref.$arg as ReportIssueFormArgs;
+  ReportIssueFormArgs get args => _$args;
+
+  ReportIssueFormState build(ReportIssueFormArgs args);
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<ReportIssueFormState, ReportIssueFormState>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<ReportIssueFormState, ReportIssueFormState>,
+              ReportIssueFormState,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, () => build(_$args));
+  }
+}
+
 /// Current User Profile Stream
 
 @ProviderFor(currentUserProfile)
@@ -229,7 +330,7 @@ final class ProfileEditViewModelProvider
 }
 
 String _$profileEditViewModelHash() =>
-    r'38446c99046e2007d7b81ef1316ecc07c45633f7';
+    r'3880202e104fa7aee0cbcc16b2650cb1e265f533';
 
 /// Profile Edit View Model
 
@@ -280,6 +381,60 @@ abstract class _$ProfileEditViewModel extends $Notifier<ProfileEditState> {
               Object?
             >;
     element.handleCreate(ref, () => build(_$args));
+  }
+}
+
+@ProviderFor(ContactSupportViewModel)
+final contactSupportViewModelProvider = ContactSupportViewModelProvider._();
+
+final class ContactSupportViewModelProvider
+    extends $NotifierProvider<ContactSupportViewModel, ContactSupportState> {
+  ContactSupportViewModelProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'contactSupportViewModelProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$contactSupportViewModelHash();
+
+  @$internal
+  @override
+  ContactSupportViewModel create() => ContactSupportViewModel();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ContactSupportState value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ContactSupportState>(value),
+    );
+  }
+}
+
+String _$contactSupportViewModelHash() =>
+    r'78327d0235d98360528f51846ca5d7d7d9d73292';
+
+abstract class _$ContactSupportViewModel
+    extends $Notifier<ContactSupportState> {
+  ContactSupportState build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<ContactSupportState, ContactSupportState>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<ContactSupportState, ContactSupportState>,
+              ContactSupportState,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
   }
 }
 

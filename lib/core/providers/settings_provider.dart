@@ -4,6 +4,62 @@ import 'package:sport_connect/core/providers/repository_providers.dart';
 
 part 'settings_provider.g.dart';
 
+/// Provider for app theme mode (light, dark, system)
+@riverpod
+class ThemeModeProvider extends _$ThemeModeProvider {
+  @override
+  Future<ThemeMode> build() async {
+    final repository = await ref.watch(settingsRepositoryProvider.future);
+    return _parseThemeMode(repository.themeMode);
+  }
+
+  /// Change theme mode
+  Future<void> setThemeMode(ThemeMode mode) async {
+    final repository = await ref.read(settingsRepositoryProvider.future);
+    await repository.setThemeMode(_themeModeToString(mode));
+    state = AsyncValue.data(mode);
+  }
+
+  static ThemeMode _parseThemeMode(String value) {
+    switch (value) {
+      case 'dark':
+        return ThemeMode.dark;
+      case 'system':
+        return ThemeMode.system;
+      default:
+        return ThemeMode.light;
+    }
+  }
+
+  static String _themeModeToString(ThemeMode mode) {
+    switch (mode) {
+      case ThemeMode.dark:
+        return 'dark';
+      case ThemeMode.system:
+        return 'system';
+      case ThemeMode.light:
+        return 'light';
+    }
+  }
+}
+
+/// Provider for map style preference
+@riverpod
+class MapStyleProvider extends _$MapStyleProvider {
+  @override
+  Future<String> build() async {
+    final repository = await ref.watch(settingsRepositoryProvider.future);
+    return repository.mapStyle;
+  }
+
+  /// Change map style ('standard', 'dark', 'satellite')
+  Future<void> setMapStyle(String style) async {
+    final repository = await ref.read(settingsRepositoryProvider.future);
+    await repository.setMapStyle(style);
+    state = AsyncValue.data(style);
+  }
+}
+
 /// Provider for current app locale
 ///
 /// Reads from SettingsRepository and provides reactive locale state.

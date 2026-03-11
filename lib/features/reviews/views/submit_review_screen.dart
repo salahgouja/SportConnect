@@ -338,12 +338,19 @@ class _SubmitReviewScreenState extends ConsumerState<SubmitReviewScreen> {
 
   Widget _buildCommentField(ReviewFormViewModel viewModel) {
     return TextField(
-      onChanged: viewModel.setComment,
+      onChanged: (value) {
+        // Sanitize: don't accept whitespace-only comments
+        final trimmed = value.trimLeft();
+        viewModel.setComment(trimmed);
+      },
       maxLines: 4,
       maxLength: 500,
+      textCapitalization: TextCapitalization.sentences,
       decoration: InputDecoration(
         hintText: AppLocalizations.of(context).shareYourExperience,
         hintStyle: TextStyle(color: AppColors.textTertiary),
+        helperText: 'Specific feedback helps the community',
+        helperStyle: TextStyle(color: AppColors.textTertiary, fontSize: 11.sp),
         filled: true,
         fillColor: AppColors.surfaceVariant,
         border: OutlineInputBorder(

@@ -3,11 +3,196 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sport_connect/core/providers/settings_provider.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/services/analytics_service.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 
 part 'auth_view_model.g.dart';
+
+class LoginUiState {
+  const LoginUiState({
+    this.savedEmail = '',
+    this.rememberMe = false,
+    this.obscurePassword = true,
+  });
+
+  final String savedEmail;
+  final bool rememberMe;
+  final bool obscurePassword;
+
+  LoginUiState copyWith({
+    String? savedEmail,
+    bool? rememberMe,
+    bool? obscurePassword,
+  }) {
+    return LoginUiState(
+      savedEmail: savedEmail ?? this.savedEmail,
+      rememberMe: rememberMe ?? this.rememberMe,
+      obscurePassword: obscurePassword ?? this.obscurePassword,
+    );
+  }
+}
+
+class LoginUiViewModel extends Notifier<LoginUiState> {
+  @override
+  LoginUiState build() {
+    final savedCredentials = ref.watch(savedCredentialsProvider);
+    final credentials = savedCredentials.asData?.value;
+
+    return LoginUiState(
+      savedEmail: credentials?.rememberMe == true ? (credentials?.email ?? '') : '',
+      rememberMe: credentials?.rememberMe ?? false,
+      obscurePassword: stateOrNull?.obscurePassword ?? true,
+    );
+  }
+
+  LoginUiState? get stateOrNull {
+    try {
+      return state;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void setRememberMe(bool value) {
+    state = state.copyWith(rememberMe: value);
+  }
+
+  void togglePasswordVisibility() {
+    state = state.copyWith(obscurePassword: !state.obscurePassword);
+  }
+
+  Future<void> persistCredentials(String email) async {
+    final notifier = ref.read(savedCredentialsProvider.notifier);
+    if (state.rememberMe) {
+      await notifier.save(email.trim());
+    } else {
+      await notifier.clear();
+    }
+  }
+}
+
+final loginUiViewModelProvider = NotifierProvider<LoginUiViewModel, LoginUiState>(
+  LoginUiViewModel.new,
+);
+
+class SignupWizardUiState {
+  const SignupWizardUiState({
+    this.currentStep = 0,
+    this.passwordText = '',
+    this.obscurePassword = true,
+    this.obscureConfirmPassword = true,
+    this.agreedToTerms = false,
+    this.selectedRole = UserRole.rider,
+    this.profileImage,
+    this.dateOfBirth,
+    this.selectedInterests = const [],
+    this.phoneNumber,
+  });
+
+  final int currentStep;
+  final String passwordText;
+  final bool obscurePassword;
+  final bool obscureConfirmPassword;
+  final bool agreedToTerms;
+  final UserRole selectedRole;
+  final File? profileImage;
+  final DateTime? dateOfBirth;
+  final List<String> selectedInterests;
+  final String? phoneNumber;
+
+  SignupWizardUiState copyWith({
+    int? currentStep,
+    String? passwordText,
+    bool? obscurePassword,
+    bool? obscureConfirmPassword,
+    bool? agreedToTerms,
+    UserRole? selectedRole,
+    File? profileImage,
+    bool clearProfileImage = false,
+    DateTime? dateOfBirth,
+    bool clearDateOfBirth = false,
+    List<String>? selectedInterests,
+    String? phoneNumber,
+  }) {
+    return SignupWizardUiState(
+      currentStep: currentStep ?? this.currentStep,
+      passwordText: passwordText ?? this.passwordText,
+      obscurePassword: obscurePassword ?? this.obscurePassword,
+      obscureConfirmPassword:
+          obscureConfirmPassword ?? this.obscureConfirmPassword,
+      agreedToTerms: agreedToTerms ?? this.agreedToTerms,
+      selectedRole: selectedRole ?? this.selectedRole,
+      profileImage: clearProfileImage ? null : (profileImage ?? this.profileImage),
+      dateOfBirth: clearDateOfBirth ? null : (dateOfBirth ?? this.dateOfBirth),
+      selectedInterests: selectedInterests ?? this.selectedInterests,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+    );
+  }
+}
+
+class SignupWizardUiViewModel extends Notifier<SignupWizardUiState> {
+  @override
+  SignupWizardUiState build() => const SignupWizardUiState();
+
+  void setCurrentStep(int step) {
+    state = state.copyWith(currentStep: step.clamp(0, 3));
+  }
+
+  void previousStep() {
+    setCurrentStep(state.currentStep - 1);
+  }
+
+  void setPasswordText(String value) {
+    state = state.copyWith(passwordText: value);
+  }
+
+  void togglePasswordVisibility() {
+    state = state.copyWith(obscurePassword: !state.obscurePassword);
+  }
+
+  void toggleConfirmPasswordVisibility() {
+    state = state.copyWith(
+      obscureConfirmPassword: !state.obscureConfirmPassword,
+    );
+  }
+
+  void toggleTermsAgreement() {
+    state = state.copyWith(agreedToTerms: !state.agreedToTerms);
+  }
+
+  void setSelectedRole(UserRole role) {
+    state = state.copyWith(selectedRole: role);
+  }
+
+  void toggleInterest(String interest) {
+    final interests = [...state.selectedInterests];
+    if (interests.contains(interest)) {
+      interests.remove(interest);
+    } else {
+      interests.add(interest);
+    }
+    state = state.copyWith(selectedInterests: interests);
+  }
+
+  void setProfileImage(File? image) {
+    state = state.copyWith(profileImage: image, clearProfileImage: image == null);
+  }
+
+  void setDateOfBirth(DateTime value) {
+    state = state.copyWith(dateOfBirth: value);
+  }
+
+  void setPhoneNumber(String? phoneNumber) {
+    state = state.copyWith(phoneNumber: phoneNumber);
+  }
+}
+
+final signupWizardUiViewModelProvider =
+    NotifierProvider<SignupWizardUiViewModel, SignupWizardUiState>(
+      SignupWizardUiViewModel.new,
+    );
 
 /// Login view model
 @riverpod
@@ -15,7 +200,7 @@ class LoginViewModel extends _$LoginViewModel {
   @override
   AsyncValue<void> build() => const AsyncValue.data(null);
 
-  Future<void> login(String email, String password, bool rememberMe) async {
+  Future<bool> login(String email, String password, bool rememberMe) async {
     state = const AsyncValue.loading();
     try {
       await ref
@@ -25,9 +210,10 @@ class LoginViewModel extends _$LoginViewModel {
       if (uid != null) AnalyticsService.instance.setUserId(uid);
       AnalyticsService.instance.logLogin('email');
       state = const AsyncValue.data(null);
+      return true;
     } catch (e, stackTrace) {
       state = AsyncValue.error(e, stackTrace);
-      rethrow;
+      return false;
     }
   }
 
@@ -49,7 +235,7 @@ class RegisterViewModel extends _$RegisterViewModel {
   @override
   AsyncValue<void> build() => const AsyncValue.data(null);
 
-  Future<void> register({
+  Future<bool> register({
     required String email,
     required String password,
     required String displayName,
@@ -78,9 +264,10 @@ class RegisterViewModel extends _$RegisterViewModel {
       if (uid != null) AnalyticsService.instance.setUserId(uid);
       AnalyticsService.instance.logSignUp('email');
       state = const AsyncValue.data(null);
+      return true;
     } catch (e, stackTrace) {
       state = AsyncValue.error(e, stackTrace);
-      rethrow;
+      return false;
     }
   }
 }

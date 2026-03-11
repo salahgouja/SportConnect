@@ -16,7 +16,7 @@ import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
 import 'package:sport_connect/features/events/views/widgets/inline_event_selector.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
-import 'package:sport_connect/features/rides/models/ride_search_filters.dart';
+import 'package:sport_connect/features/rides/view_models/rider_request_ride_view_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -33,22 +33,9 @@ class RiderRequestRideScreen extends ConsumerStatefulWidget {
 
 class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
     with SingleTickerProviderStateMixin {
-  // ── Location ────────────────────────────────────────────────
-  LatLng? _fromLocation;
-  LatLng? _toLocation;
-  String _fromAddress = '';
-  String _toAddress = '';
-
-  // ── Params ──────────────────────────────────────────────────
-  DateTime _date = DateTime.now();
-  TimeOfDay _time = TimeOfDay.now();
-  int _passengers = 1;
-  EventModel? _event;
-
-  // ── UI state ────────────────────────────────────────────────
-  bool _isSearching = false;
-  bool _showResults = false;
-  String _sort = 'recommended';
+  RideSearchState get _searchState => ref.watch(rideSearchViewModelProvider);
+  RiderRequestRideState get _requestState =>
+      ref.watch(riderRequestRideViewModelProvider);
 
   late final AnimationController _resultsAnim;
   late final Animation<Offset> _slideAnim;
@@ -72,13 +59,33 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
     super.dispose();
   }
 
-  bool get _canSearch => _fromLocation != null && _toLocation != null;
-
   // ════════════════════════════════════════════════════════════
   // BUILD
   // ════════════════════════════════════════════════════════════
   @override
   Widget build(BuildContext context) {
+    ref.listen(rideSearchViewModelProvider, (previous, next) {
+      if (next.error != null && next.error != previous?.error && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Search failed. Please try again.')),
+        );
+      }
+    });
+
+    ref.listen(riderRequestRideViewModelProvider, (previous, next) {
+      if (next.errorMessage != null && next.errorMessage != previous?.errorMessage) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(next.errorMessage!)),
+        );
+      }
+
+      if (next.showResults && previous?.showResults != true) {
+        _resultsAnim.forward();
+      } else if (!next.showResults && previous?.showResults == true) {
+        _resultsAnim.reverse();
+      }
+    });
+
     return Scaffold(
       backgroundColor: AppColors.background,
       // ── Thin top app bar ────────────────────────────────────
@@ -105,7 +112,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
         ),
         centerTitle: true,
         actions: [
-          if (_showResults)
+          if (_requestState.showResults)
             TextButton(
               onPressed: _resetSearch,
               child: Text(
@@ -124,15 +131,15 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
         children: [
           // ── Phase 1: Search form ─────────────────────────────
           AnimatedOpacity(
-            opacity: _showResults ? 0 : 1,
+            opacity: _requestState.showResults ? 0 : 1,
             duration: 200.ms,
-            child: _showResults
+            child: _requestState.showResults
                 ? const SizedBox.shrink()
                 : _buildSearchFormBuilder(),
           ),
 
           // ── Phase 2: Results panel slides up ────────────────
-          if (_showResults)
+          if (_requestState.showResults)
             Positioned.fill(
               child: SlideTransition(
                 position: _slideAnim,
@@ -140,7 +147,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
               ),
             ),
           // ── Sticky bottom CTA (only in search phase) ────────
-          if (!_showResults)
+          if (!_requestState.showResults)
             Positioned(left: 0, right: 0, bottom: 0, child: _buildSearchCta()),
         ],
       ),
@@ -163,8 +170,9 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
           _buildParamsRow(),
           SizedBox(height: 12.h),
           InlineEventSelector(
-            selected: _event,
-            onChanged: (e) => setState(() => _event = e),
+            selected: _requestState.event,
+            onChanged: (e) =>
+                ref.read(riderRequestRideViewModelProvider.notifier).setEvent(e),
           ),
         ],
       ),
@@ -184,8 +192,10 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
           _locationTile(
             icon: Icons.radio_button_checked_rounded,
             iconColor: AppColors.primary,
-            label: _fromAddress.isEmpty ? 'From where?' : _fromAddress,
-            isEmpty: _fromAddress.isEmpty,
+            label: _requestState.fromAddress.isEmpty
+                ? 'From where?'
+                : _requestState.fromAddress,
+            isEmpty: _requestState.fromAddress.isEmpty,
             onTap: () => _pickLocation(isFrom: true),
           ),
           Padding(
@@ -233,8 +243,10 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
           _locationTile(
             icon: Icons.location_on_rounded,
             iconColor: AppColors.error,
-            label: _toAddress.isEmpty ? 'To where?' : _toAddress,
-            isEmpty: _toAddress.isEmpty,
+            label: _requestState.toAddress.isEmpty
+                ? 'To where?'
+                : _requestState.toAddress,
+            isEmpty: _requestState.toAddress.isEmpty,
             onTap: () => _pickLocation(isFrom: false),
           ),
         ],
@@ -286,12 +298,12 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
   // ── Date · Time · Passengers ────────────────────────────────
   Widget _buildParamsRow() {
     final l10n = AppLocalizations.of(context);
-    final dateLabel = _isToday(_date)
+    final dateLabel = _isToday(_requestState.date)
         ? l10n.today
-        : _isTomorrow(_date)
+      : _isTomorrow(_requestState.date)
         ? l10n.tomorrow
-        : DateFormat('d MMM').format(_date);
-    final timeLabel = _time.format(context);
+      : DateFormat('d MMM').format(_requestState.date);
+    final timeLabel = _requestState.time.format(context);
 
     return Row(
           children: [
@@ -328,7 +340,10 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
     required VoidCallback onTap,
   }) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
         decoration: BoxDecoration(
@@ -369,16 +384,20 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
         mainAxisSize: MainAxisSize.min,
         children: [
           GestureDetector(
-            onTap: _passengers > 1
+            onTap: _requestState.passengers > 1
                 ? () {
                     HapticFeedback.lightImpact();
-                    setState(() => _passengers--);
+                    ref
+                        .read(riderRequestRideViewModelProvider.notifier)
+                        .decrementPassengers();
                   }
                 : null,
             child: Icon(
               Icons.remove_circle_outline_rounded,
               size: 22.sp,
-              color: _passengers > 1 ? AppColors.primary : AppColors.border,
+              color: _requestState.passengers > 1
+                  ? AppColors.primary
+                  : AppColors.border,
             ),
           ),
           Padding(
@@ -386,7 +405,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
             child: Column(
               children: [
                 Text(
-                  '$_passengers',
+                  '${_requestState.passengers}',
                   style: TextStyle(
                     fontSize: 17.sp,
                     fontWeight: FontWeight.w700,
@@ -394,7 +413,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
                   ),
                 ),
                 Text(
-                  'seat${_passengers > 1 ? 's' : ''}',
+                  'seat${_requestState.passengers > 1 ? 's' : ''}',
                   style: TextStyle(
                     fontSize: 10.sp,
                     color: AppColors.textTertiary,
@@ -404,16 +423,20 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
             ),
           ),
           GestureDetector(
-            onTap: _passengers < 6
+            onTap: _requestState.passengers < 6
                 ? () {
                     HapticFeedback.lightImpact();
-                    setState(() => _passengers++);
+                    ref
+                        .read(riderRequestRideViewModelProvider.notifier)
+                        .incrementPassengers();
                   }
                 : null,
             child: Icon(
               Icons.add_circle_outline_rounded,
               size: 22.sp,
-              color: _passengers < 6 ? AppColors.primary : AppColors.border,
+              color: _requestState.passengers < 6
+                  ? AppColors.primary
+                  : AppColors.border,
             ),
           ),
         ],
@@ -434,9 +457,9 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
       child: SafeArea(
         top: false,
         child: PremiumButton(
-          text: _isSearching ? 'Searching…' : 'Search Rides',
-          onPressed: _canSearch ? _performSearch : null,
-          isLoading: _isSearching,
+          text: _searchState.isLoading ? 'Searching…' : 'Search Rides',
+          onPressed: _requestState.canSearch ? _performSearch : null,
+          isLoading: _searchState.isLoading,
           icon: Icons.search_rounded,
           style: PremiumButtonStyle.primary,
         ),
@@ -481,7 +504,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
                     SizedBox(width: 4.w),
                     Flexible(
                       child: Text(
-                        _fromAddress,
+                        _requestState.fromAddress,
                         style: TextStyle(
                           fontSize: 12.sp,
                           fontWeight: FontWeight.w500,
@@ -503,7 +526,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
                     SizedBox(width: 4.w),
                     Flexible(
                       child: Text(
-                        _toAddress,
+                        _requestState.toAddress,
                         style: TextStyle(
                           fontSize: 12.sp,
                           fontWeight: FontWeight.w500,
@@ -521,12 +544,12 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
           // Param pills
           _pill(
             Icons.calendar_today_rounded,
-            _isToday(_date)
+            _isToday(_requestState.date)
                 ? AppLocalizations.of(context).today
-                : DateFormat('d MMM').format(_date),
+                : DateFormat('d MMM').format(_requestState.date),
           ),
           SizedBox(width: 6.w),
-          _pill(Icons.people_rounded, '$_passengers'),
+          _pill(Icons.people_rounded, '${_requestState.passengers}'),
         ],
       ),
     );
@@ -570,7 +593,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
       return _buildEmptyState();
     }
 
-    final sorted = _sortRides(List.of(searchState.rides));
+    final sorted = ref.watch(riderRequestSortedRidesProvider);
     return Column(
       children: [
         _buildResultsHeader(sorted.length),
@@ -890,7 +913,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
               ('price', Icons.attach_money_rounded, 'Lowest price'),
               ('rating', Icons.star_rounded, 'Highest rated'),
             ].map((e) {
-              final isActive = _sort == e.$1;
+              final isActive = _requestState.sort == e.$1;
               return ListTile(
                 leading: Icon(
                   e.$2,
@@ -912,7 +935,7 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
                     : null,
                 onTap: () {
                   Navigator.pop(context);
-                  setState(() => _sort = e.$1);
+                  ref.read(riderRequestRideViewModelProvider.notifier).setSort(e.$1);
                 },
               );
             }),
@@ -930,115 +953,55 @@ class _RiderRequestRideScreenState extends ConsumerState<RiderRequestRideScreen>
     final result = await MapLocationPicker.show(
       context,
       title: isFrom ? 'Pickup Location' : 'Drop-off Location',
-      initialLocation: isFrom ? _fromLocation : _toLocation,
+      initialLocation: isFrom
+          ? _requestState.fromLocation
+          : _requestState.toLocation,
       showQuickPicks: true,
     );
     if (result != null && mounted) {
-      setState(() {
-        if (isFrom) {
-          _fromLocation = result.location;
-          _fromAddress = result.address;
-        } else {
-          _toLocation = result.location;
-          _toAddress = result.address;
-        }
-      });
+      final notifier = ref.read(riderRequestRideViewModelProvider.notifier);
+      if (isFrom) {
+        notifier.setFromLocation(result.location, result.address);
+      } else {
+        notifier.setToLocation(result.location, result.address);
+      }
     }
   }
 
   void _swapLocations() {
     HapticFeedback.lightImpact();
-    setState(() {
-      final tmpL = _fromLocation;
-      final tmpA = _fromAddress;
-      _fromLocation = _toLocation;
-      _fromAddress = _toAddress;
-      _toLocation = tmpL;
-      _toAddress = tmpA;
-    });
+    ref.read(riderRequestRideViewModelProvider.notifier).swapLocations();
   }
 
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: _date,
+      initialDate: _requestState.date,
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 90)),
     );
-    if (picked != null && mounted) setState(() => _date = picked);
+    if (picked != null && mounted) {
+      ref.read(riderRequestRideViewModelProvider.notifier).setDate(picked);
+    }
   }
 
   Future<void> _pickTime() async {
-    final picked = await showTimePicker(context: context, initialTime: _time);
-    if (picked != null && mounted) setState(() => _time = picked);
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _requestState.time,
+    );
+    if (picked != null && mounted) {
+      ref.read(riderRequestRideViewModelProvider.notifier).setTime(picked);
+    }
   }
 
   Future<void> _performSearch() async {
     HapticFeedback.mediumImpact();
-    setState(() => _isSearching = true);
-
-    final dt = DateTime(
-      _date.year,
-      _date.month,
-      _date.day,
-      _time.hour,
-      _time.minute,
-    );
-
-    final filters = RideSearchFilters(
-      origin: LocationPoint(
-        address: _fromAddress,
-        latitude: _fromLocation!.latitude,
-        longitude: _fromLocation!.longitude,
-      ),
-      destination: LocationPoint(
-        address: _toAddress,
-        latitude: _toLocation!.latitude,
-        longitude: _toLocation!.longitude,
-      ),
-      departureDate: dt,
-      minSeats: _passengers,
-    );
-
-    ref.read(rideSearchViewModelProvider.notifier).updateFilters(filters);
-
-    try {
-      await ref.read(rideSearchViewModelProvider.notifier).searchRides();
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Search failed. Please try again.')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSearching = false;
-          _showResults = true;
-        });
-        _resultsAnim.forward();
-      }
-    }
+    await ref.read(riderRequestRideViewModelProvider.notifier).searchRides();
   }
 
   void _resetSearch() {
-    _resultsAnim.reverse().then((_) {
-      if (mounted) setState(() => _showResults = false);
-    });
-  }
-
-  List<RideModel> _sortRides(List<RideModel> list) {
-    switch (_sort) {
-      case 'earliest':
-        list.sort((a, b) => a.departureTime.compareTo(b.departureTime));
-      case 'price':
-        list.sort((a, b) => a.pricePerSeat.compareTo(b.pricePerSeat));
-      case 'rating':
-        list.sort((a, b) => b.averageRating.compareTo(a.averageRating));
-      default:
-        break;
-    }
-    return list;
+    ref.read(riderRequestRideViewModelProvider.notifier).hideResults();
   }
 
   // ── Date helpers ─────────────────────────────────────────────

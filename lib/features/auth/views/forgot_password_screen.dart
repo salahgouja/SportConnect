@@ -3,19 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/form_validators.dart';
 import 'package:sport_connect/core/widgets/glass_panel.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
-import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
+import 'package:sport_connect/features/auth/view_models/forgot_password_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Dedicated Forgot Password screen with email-based password reset.
-/// Provides a full-screen experience with:
-/// - Email input with validation
-/// - Success confirmation with check-inbox guidance
-/// - Resend timer to prevent spam
+///
+/// Delegates all async and timer logic to [ForgotPasswordViewModel].
+/// The widget remains a thin UI shell.
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
@@ -26,35 +25,23 @@ class ForgotPasswordScreen extends ConsumerStatefulWidget {
 
 class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormBuilderState>();
-  bool _isLoading = false;
-  bool _emailSent = false;
-  int _resendCooldown = 0;
-  String _sentEmail = '';
 
   Future<void> _sendResetEmail() async {
     if (!(_formKey.currentState?.saveAndValidate() ?? false)) return;
-    setState(() => _isLoading = true);
+    final email = (_formKey.currentState!.value['email'] as String).trim();
+    await ref.read(forgotPasswordViewModelProvider.notifier).sendResetEmail(email);
+  }
 
-    try {
-      final authActions = ref.read(authActionsViewModelProvider);
-      final email = (_formKey.currentState!.value['email'] as String).trim();
-      await authActions.sendPasswordResetEmail(email);
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final vmState = ref.watch(forgotPasswordViewModelProvider);
 
-      if (mounted) {
-        setState(() {
-          _emailSent = true;
-          _isLoading = false;
-          _resendCooldown = 60;
-          _sentEmail = email;
-        });
-        _startResendTimer();
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() => _isLoading = false);
+    ref.listen(forgotPasswordViewModelProvider, (previous, next) {
+      if (next.errorMessage != null && next.errorMessage != previous?.errorMessage) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context).forgotPasswordSendError),
+            content: Text(l10n.forgotPasswordSendError),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -63,21 +50,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           ),
         );
       }
-    }
-  }
-
-  void _startResendTimer() {
-    Future.doWhile(() async {
-      await Future.delayed(const Duration(seconds: 1));
-      if (!mounted) return false;
-      setState(() => _resendCooldown--);
-      return _resendCooldown > 0;
     });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -93,13 +66,15 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(horizontal: 24.w),
-          child: _emailSent ? _buildSuccessState(l10n) : _buildFormState(l10n),
+          child: vmState.emailSent
+              ? _buildSuccessState(l10n, vmState)
+              : _buildFormState(l10n, vmState),
         ),
       ),
     );
   }
 
-  Widget _buildFormState(AppLocalizations l10n) {
+  Widget _buildFormState(AppLocalizations l10n, ForgotPasswordState vmState) {
     return FormBuilder(
       key: _formKey,
       child: Column(
@@ -156,14 +131,12 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               prefixIcon: const Icon(Icons.email_outlined),
             ),
             keyboardType: TextInputType.emailAddress,
-            validator: FormBuilderValidators.compose([
-              FormBuilderValidators.required(
-                errorText: l10n.forgotPasswordEmailRequired,
-              ),
-              FormBuilderValidators.email(
-                errorText: l10n.forgotPasswordInvalidEmail,
-              ),
-            ]),
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return l10n.forgotPasswordEmailRequired;
+              }
+              return FormValidators.email(value);
+            },
           ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1),
 
           SizedBox(height: 32.h),
@@ -172,8 +145,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             width: double.infinity,
             child: PremiumButton(
               text: l10n.authResetPassword,
-              onPressed: _isLoading ? null : _sendResetEmail,
-              isLoading: _isLoading,
+              onPressed: vmState.isLoading ? null : _sendResetEmail,
+              isLoading: vmState.isLoading,
               icon: Icons.send_rounded,
             ),
           ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1),
@@ -200,7 +173,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     );
   }
 
-  Widget _buildSuccessState(AppLocalizations l10n) {
+  Widget _buildSuccessState(AppLocalizations l10n, ForgotPasswordState vmState) {
     return Column(
       children: [
         SizedBox(height: 60.h),
@@ -258,7 +231,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               Icon(Icons.email_outlined, size: 18.sp, color: AppColors.primary),
               SizedBox(width: 8.w),
               Text(
-                _sentEmail,
+                vmState.sentEmail,
                 style: TextStyle(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w600,
@@ -275,10 +248,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         SizedBox(
           width: double.infinity,
           child: PremiumButton(
-            text: _resendCooldown > 0
-                ? l10n.forgotPasswordResendIn(_resendCooldown)
+            text: vmState.resendCooldown > 0
+                ? l10n.forgotPasswordResendIn(vmState.resendCooldown)
                 : l10n.forgotPasswordResendEmail,
-            onPressed: _resendCooldown > 0 || _isLoading
+            onPressed: vmState.resendCooldown > 0 || vmState.isLoading
                 ? null
                 : _sendResetEmail,
             style: PremiumButtonStyle.secondary,

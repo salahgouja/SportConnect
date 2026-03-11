@@ -184,6 +184,10 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
     final localeAsync = ref.watch(localeProviderProvider);
     final locale = localeAsync.value; // null = use system locale
 
+    // Watch theme mode provider - app rebuilds when theme changes
+    final themeModeAsync = ref.watch(themeModeProviderProvider);
+    final themeMode = themeModeAsync.value ?? ThemeMode.light;
+
     return ScreenUtilInit(
       designSize: const Size(375, 812), // iPhone X/11/12/13 standard width
       minTextAdapt: true,
@@ -221,13 +225,22 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
           },
 
           // --- Theming ---
-          themeMode: ThemeMode.light,
+          themeMode: themeMode,
           theme: AppTheme.lightTheme.copyWith(
             appBarTheme: AppTheme.lightTheme.appBarTheme.copyWith(
               systemOverlayStyle: const SystemUiOverlayStyle(
                 statusBarColor: Colors.transparent,
                 statusBarIconBrightness:
                     Brightness.dark, // Dark icons on light bg
+              ),
+            ),
+          ),
+          darkTheme: AppTheme.darkTheme.copyWith(
+            appBarTheme: AppTheme.darkTheme.appBarTheme.copyWith(
+              systemOverlayStyle: const SystemUiOverlayStyle(
+                statusBarColor: Colors.transparent,
+                statusBarIconBrightness:
+                    Brightness.light, // Light icons on dark bg
               ),
             ),
           ),

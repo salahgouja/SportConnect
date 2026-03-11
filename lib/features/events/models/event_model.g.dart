@@ -27,6 +27,33 @@ _EventModel _$EventModelFromJson(Map json) => _EventModel(
       const [],
   maxParticipants: (json['maxParticipants'] as num?)?.toInt() ?? 0,
   isActive: json['isActive'] as bool? ?? true,
+  linkedRideIds:
+      (json['linkedRideIds'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const [],
+  rideStatuses:
+      (json['rideStatuses'] as Map?)?.map(
+        (k, e) => MapEntry(k as String, e as String),
+      ) ??
+      const {},
+  parkingInfo: json['parkingInfo'] as String?,
+  meetupPinLocation: json['meetupPinLocation'] == null
+      ? null
+      : LocationPoint.fromJson(
+          Map<String, dynamic>.from(json['meetupPinLocation'] as Map),
+        ),
+  chatGroupId: json['chatGroupId'] as String?,
+  isRecurring: json['isRecurring'] as bool? ?? false,
+  recurringDays:
+      (json['recurringDays'] as List<dynamic>?)
+          ?.map((e) => (e as num).toInt())
+          .toList() ??
+      const [],
+  recurringEndDate: const TimestampConverter().fromJson(
+    json['recurringEndDate'],
+  ),
+  costSplitEnabled: json['costSplitEnabled'] as bool? ?? false,
   createdAt: const TimestampConverter().fromJson(json['createdAt']),
   updatedAt: const TimestampConverter().fromJson(json['updatedAt']),
 );
@@ -47,6 +74,17 @@ Map<String, dynamic> _$EventModelToJson(_EventModel instance) =>
       'participantIds': instance.participantIds,
       'maxParticipants': instance.maxParticipants,
       'isActive': instance.isActive,
+      'linkedRideIds': instance.linkedRideIds,
+      'rideStatuses': instance.rideStatuses,
+      'parkingInfo': instance.parkingInfo,
+      'meetupPinLocation': instance.meetupPinLocation?.toJson(),
+      'chatGroupId': instance.chatGroupId,
+      'isRecurring': instance.isRecurring,
+      'recurringDays': instance.recurringDays,
+      'recurringEndDate': const TimestampConverter().toJson(
+        instance.recurringEndDate,
+      ),
+      'costSplitEnabled': instance.costSplitEnabled,
       'createdAt': const TimestampConverter().toJson(instance.createdAt),
       'updatedAt': const TimestampConverter().toJson(instance.updatedAt),
     };

@@ -54,6 +54,14 @@
       "collectionGroup": "rides",
       "queryScope": "COLLECTION",
       "fields": [
+        { "fieldPath": "eventId", "order": "ASCENDING" },
+        { "fieldPath": "schedule.departureTime", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "rides",
+      "queryScope": "COLLECTION",
+      "fields": [
         { "fieldPath": "driverId", "order": "ASCENDING" },
         { "fieldPath": "schedule.departureTime", "order": "ASCENDING" },
         { "fieldPath": "status", "order": "ASCENDING" }

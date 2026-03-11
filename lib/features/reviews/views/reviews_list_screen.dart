@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
+import 'package:sport_connect/core/widgets/rating_and_profile_widgets.dart';
 import 'package:sport_connect/features/reviews/models/review_model.dart';
 import 'package:sport_connect/features/reviews/view_models/review_view_model.dart';
 import 'package:intl/intl.dart';
@@ -44,12 +45,18 @@ class ReviewsListScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: asyncState.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => _buildErrorState(context, error.toString(), ref),
-        data: (state) => state.error != null
-            ? _buildErrorState(context, state.error!, ref)
-            : _buildContent(context, state, ref),
+      body: RefreshIndicator(
+        color: AppColors.primary,
+        onRefresh: () async {
+          ref.read(reviewsListViewModelProvider(userId).notifier).refresh();
+        },
+        child: asyncState.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, _) => _buildErrorState(context, error.toString(), ref),
+          data: (state) => state.error != null
+              ? _buildErrorState(context, state.error!, ref)
+              : _buildContent(context, state, ref),
+        ),
       ),
     );
   }
@@ -87,6 +94,21 @@ class ReviewsListScreen extends ConsumerWidget {
       slivers: [
         // Stats header
         SliverToBoxAdapter(child: _buildStatsCard(context, state)),
+        // Rating breakdown by tag
+        if (state.stats?.distribution != null)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.r),
+              child: RatingBreakdownWidget(
+                averageRating: state.averageRating,
+                totalReviews: state.totalReviews,
+                distribution: {
+                  for (final entry in (state.stats!.distribution.entries))
+                    entry.key: entry.value.toInt(),
+                },
+              ),
+            ).animate().fadeIn(duration: 400.ms, delay: 100.ms),
+          ),
         // Filter chips
         SliverToBoxAdapter(child: _buildFilterChips(context, state, ref)),
         // Reviews list

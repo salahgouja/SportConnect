@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
+import 'package:sport_connect/features/profile/view_models/driver_settings_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Driver Settings Screen - Configure driver preferences and app settings
@@ -19,19 +20,6 @@ class DriverSettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
-  // Settings state
-  bool _autoAcceptRequests = false;
-  bool _acceptCashPayments = true;
-  bool _acceptCardPayments = true;
-  bool _showOnMap = true;
-  bool _allowInstantBooking = true;
-  bool _soundEffects = true;
-  bool _vibration = true;
-  bool _nightMode = false;
-  double _maxDistance = 25.0;
-  String _selectedLanguage = 'English';
-  String _navigationApp = 'In-App';
-
   @override
   void initState() {
     super.initState();
@@ -45,6 +33,9 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final settingsState = ref.watch(driverSettingsViewModelProvider);
+    final settingsNotifier = ref.read(driverSettingsViewModelProvider.notifier);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -94,24 +85,24 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
                   context,
                 ).automaticallyAcceptRideRequestsThat,
                 Icons.flash_on,
-                _autoAcceptRequests,
-                (value) => setState(() => _autoAcceptRequests = value),
+                settingsState.autoAcceptRequests,
+                settingsNotifier.setAutoAcceptRequests,
               ),
               _buildDivider(),
               _buildSwitchTile(
                 AppLocalizations.of(context).allowInstantBooking,
                 AppLocalizations.of(context).letPassengersBookWithoutWaiting,
                 Icons.bolt,
-                _allowInstantBooking,
-                (value) => setState(() => _allowInstantBooking = value),
+                settingsState.allowInstantBooking,
+                settingsNotifier.setAllowInstantBooking,
               ),
               _buildDivider(),
               _buildSliderTile(
                 AppLocalizations.of(context).maximumPickupDistance,
                 AppLocalizations.of(context).onlyReceiveRequestsWithinThis,
                 Icons.social_distance,
-                _maxDistance,
-                (value) => setState(() => _maxDistance = value),
+                settingsState.maxDistance,
+                settingsNotifier.setMaxDistance,
                 min: 5,
                 max: 50,
                 suffix: 'mi',
@@ -130,16 +121,16 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
                 AppLocalizations.of(context).acceptCashPayments,
                 AppLocalizations.of(context).allowPassengersToPayWith,
                 Icons.money,
-                _acceptCashPayments,
-                (value) => setState(() => _acceptCashPayments = value),
+                settingsState.acceptCashPayments,
+                settingsNotifier.setAcceptCashPayments,
               ),
               _buildDivider(),
               _buildSwitchTile(
                 AppLocalizations.of(context).acceptCardPayments,
                 AppLocalizations.of(context).allowPassengersToPayWith2,
                 Icons.credit_card,
-                _acceptCardPayments,
-                (value) => setState(() => _acceptCardPayments = value),
+                settingsState.acceptCardPayments,
+                settingsNotifier.setAcceptCardPayments,
               ),
               _buildDivider(),
               _buildNavigationTile(
@@ -169,16 +160,16 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
                 AppLocalizations.of(context).showOnDriverMap,
                 AppLocalizations.of(context).allowPassengersToSeeYour,
                 Icons.visibility,
-                _showOnMap,
-                (value) => setState(() => _showOnMap = value),
+                settingsState.showOnMap,
+                settingsNotifier.setShowOnMap,
               ),
               _buildDivider(),
               _buildDropdownTile(
                 AppLocalizations.of(context).preferredNavigationApp,
                 Icons.navigation,
-                _navigationApp,
+                settingsState.navigationApp,
                 ['In-App', 'Google Maps', 'Waze', 'Apple Maps'],
-                (value) => setState(() => _navigationApp = value),
+                settingsNotifier.setNavigationApp,
               ),
             ]).animate().fadeIn(delay: 300.ms).slideX(begin: 0.1),
 
@@ -194,16 +185,16 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
                 AppLocalizations.of(context).soundEffects,
                 AppLocalizations.of(context).playSoundsForNewRequests,
                 Icons.volume_up,
-                _soundEffects,
-                (value) => setState(() => _soundEffects = value),
+                settingsState.soundEffects,
+                settingsNotifier.setSoundEffects,
               ),
               _buildDivider(),
               _buildSwitchTile(
                 AppLocalizations.of(context).vibration,
                 AppLocalizations.of(context).vibrateForImportantAlerts,
                 Icons.vibration,
-                _vibration,
-                (value) => setState(() => _vibration = value),
+                settingsState.vibration,
+                settingsNotifier.setVibration,
               ),
               _buildDivider(),
               _buildNavigationTile(
@@ -228,16 +219,16 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
                 AppLocalizations.of(context).nightMode,
                 AppLocalizations.of(context).reduceEyeStrainInLow,
                 Icons.dark_mode,
-                _nightMode,
-                (value) => setState(() => _nightMode = value),
+                settingsState.nightMode,
+                settingsNotifier.setNightMode,
               ),
               _buildDivider(),
               _buildDropdownTile(
                 AppLocalizations.of(context).settingsLanguage,
                 Icons.language,
-                _selectedLanguage,
+                settingsState.selectedLanguage,
                 ['English', 'Spanish', 'French', 'German', 'Chinese'],
-                (value) => setState(() => _selectedLanguage = value),
+                settingsNotifier.setSelectedLanguage,
               ),
             ]).animate().fadeIn(delay: 500.ms).slideX(begin: 0.1),
 
@@ -337,7 +328,7 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
                 AppLocalizations.of(context).pauseDriverAccount,
                 AppLocalizations.of(context).temporarilyStopReceivingRequests,
                 Icons.pause_circle,
-                () {},
+                () => _showPauseAccountDialog(),
                 isWarning: true,
               ),
               _buildDivider(),
@@ -471,7 +462,10 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
           ),
           Switch(
             value: value,
-            onChanged: onChanged,
+            onChanged: (v) {
+              HapticFeedback.selectionClick();
+              onChanged(v);
+            },
             activeThumbColor: AppColors.primary,
           ),
         ],
@@ -616,7 +610,10 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
             value: value,
             min: min,
             max: max,
-            onChanged: onChanged,
+            onChanged: (v) {
+              HapticFeedback.selectionClick();
+              onChanged(v);
+            },
             activeColor: AppColors.primary,
             inactiveColor: AppColors.border,
           ),
@@ -691,6 +688,7 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
   void _showSignOutDialog() {
     showDialog(
       context: context,
+      barrierLabel: 'Sign out dialog',
       builder: (ctx) => AlertDialog(
         title: Row(
           children: [
@@ -726,6 +724,7 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
   void _showDeleteAccountDialog() {
     showDialog(
       context: context,
+      barrierLabel: 'Delete account dialog',
       builder: (context) => AlertDialog(
         title: Row(
           children: [
@@ -776,5 +775,56 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
         );
       }
     }
+  }
+
+  void _showPauseAccountDialog() {
+    showDialog(
+      context: context,
+      barrierLabel: 'Pause account dialog',
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.pause_circle, color: AppColors.warning),
+            SizedBox(width: 8.w),
+            Expanded(
+              child: Text(
+                'Pause Driver Account?',
+                style: TextStyle(fontSize: 17.sp),
+              ),
+            ),
+          ],
+        ),
+        content: const Text(
+          'You will stop receiving ride requests until you resume. '
+          'Your profile and reviews will remain visible.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => ctx.pop(),
+            child: Text(AppLocalizations.of(context).actionCancel),
+          ),
+          TextButton(
+            onPressed: () {
+              ctx.pop();
+              HapticFeedback.mediumImpact();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Driver account paused'),
+                  backgroundColor: AppColors.warning,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                ),
+              );
+            },
+            child: Text(
+              'Pause Account',
+              style: TextStyle(color: AppColors.warning),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -1,10 +1,11 @@
-import 'dart:async';
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -14,17 +15,16 @@ import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
-import 'package:sport_connect/core/services/routing_service.dart';
 import 'package:sport_connect/features/home/models/home_models.dart';
 import 'package:sport_connect/features/home/view_models/home_view_model.dart';
-import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
+import 'package:sport_connect/features/home/view_models/rider_home_view_model.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sport_connect/core/widgets/misc_feature_widgets.dart';
 
-/// Rider Home Screen - map-based explore view with nearby drivers
 class RiderHomeScreen extends ConsumerStatefulWidget {
   const RiderHomeScreen({super.key});
 
@@ -34,34 +34,16 @@ class RiderHomeScreen extends ConsumerStatefulWidget {
 
 class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
     with TickerProviderStateMixin {
+  // ── Animation ──────────────────────────────────────────────
   late final AnimationController _pulseAnimationController;
 
-  // Map controller and state
+  // ── Map controller (widget-owned) ──────────────────────────
   final MapController _mapController = MapController();
-  LatLng _currentLocation = const LatLng(48.8566, 2.3522);
-  bool _isLoadingLocation = true;
-  bool _locationUnavailable = false;
-  double _currentZoom = 14;
-  String _selectedMapStyle = 'standard';
-  bool _showNearbyDrivers = true;
-  bool _showHotspots = true;
-  String _selectedFilter = 'all';
-  double _userHeading = 0.0;
-  bool _isFollowingUser = true;
-  bool _showDistanceRadius = false;
-  double _searchRadius = 5.0; // km
-  StreamSubscription<Position>? _positionStreamSubscription;
-  LatLng? _nearbyQueryAnchor;
-  DateTime? _lastMapMoveAt;
 
-  // OSRM Routing state
-  RouteInfo? _activeRoute;
-  List<RouteInfo> _alternativeRoutes = [];
-  bool _isLoadingRoute = false;
-  bool _showRouteInfo = false;
-  int _selectedRouteIndex = 0;
+  // ── Search (ephemeral UI state) ────────────────────────────
+  final TextEditingController _searchController = TextEditingController();
 
-  // Map styles available
+  // ── Map tile sources ───────────────────────────────────────
   final Map<String, String> _mapStyles = {
     'standard': 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
     'terrain': 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
@@ -71,281 +53,725 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
         'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
   };
 
+  // ─────────────────────────────────────────────────────────────
+  // Lifecycle
+  // ─────────────────────────────────────────────────────────────
+
   @override
   void initState() {
     super.initState();
-
     _pulseAnimationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await _getCurrentLocation();
-      if (mounted) _startLocationTracking();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(riderHomeViewModelProvider.notifier).checkInitialLocationState();
+      _requestNotificationPermission();
     });
-  }
-
-  void _startLocationTracking() {
-    Geolocator.checkPermission().then((permission) {
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        TalkerService.debug('Skipping location stream: permission not granted');
-        return;
-      }
-      const locationSettings = LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 20, // Reduce update frequency for smoother UI
-      );
-
-      _positionStreamSubscription =
-          Geolocator.getPositionStream(
-            locationSettings: locationSettings,
-          ).listen((Position position) {
-            if (mounted) {
-              final nextLocation = LatLng(
-                position.latitude,
-                position.longitude,
-              );
-              final movedDistance = Geolocator.distanceBetween(
-                _currentLocation.latitude,
-                _currentLocation.longitude,
-                nextLocation.latitude,
-                nextLocation.longitude,
-              );
-
-              final headingDelta = (_userHeading - position.heading).abs();
-              final shouldRefreshUi = movedDistance >= 12 || headingDelta >= 8;
-
-              if (!shouldRefreshUi) {
-                return;
-              }
-
-              setState(() {
-                _currentLocation = nextLocation;
-                _userHeading = position.heading;
-
-                final anchor = _nearbyQueryAnchor;
-                if (anchor == null ||
-                    Geolocator.distanceBetween(
-                          anchor.latitude,
-                          anchor.longitude,
-                          nextLocation.latitude,
-                          nextLocation.longitude,
-                        ) >=
-                        1000) {
-                  _nearbyQueryAnchor = nextLocation;
-                }
-              });
-
-              if (_isFollowingUser) {
-                final now = DateTime.now();
-                final canMoveMap =
-                    _lastMapMoveAt == null ||
-                    now.difference(_lastMapMoveAt!) >=
-                        const Duration(milliseconds: 700);
-
-                if (canMoveMap) {
-                  _mapController.move(_currentLocation, _currentZoom);
-                  setState(() => _lastMapMoveAt = now);
-                }
-              }
-            }
-          });
-    });
-  }
-
-  Future<void> _getCurrentLocation() async {
-    try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        TalkerService.debug('Location services are disabled');
-        setState(() => _isLoadingLocation = false);
-        // if (mounted) {
-        //   final opened = await PermissionDialogHelper.showLocationRationale(
-        //     context,
-        //   );
-        //   TalkerService.debug('Location settings opened: $opened');
-        // }
-        return;
-      }
-
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        if (!mounted) return;
-        final accepted = await PermissionDialogHelper.showLocationRationale(
-          context,
-        );
-        if (!accepted) {
-          setState(() => _isLoadingLocation = false);
-          return;
-        }
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          TalkerService.debug('Location permission denied');
-          setState(() => _isLoadingLocation = false);
-          return;
-        }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        TalkerService.debug('Location permission denied forever');
-        setState(() {
-          _isLoadingLocation = false;
-          _locationUnavailable = true;
-        });
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text(
-                'Location permission permanently denied. '
-                'Please enable it in your device settings.',
-              ),
-              action: SnackBarAction(
-                label: 'Settings',
-                onPressed: () => Geolocator.openAppSettings(),
-              ),
-              duration: const Duration(seconds: 5),
-            ),
-          );
-        }
-        return;
-      }
-
-      TalkerService.debug('Getting current position...');
-      Position position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 10),
-        ),
-      );
-      TalkerService.debug(
-        'Got position: ${position.latitude}, ${position.longitude}',
-      );
-      setState(() {
-        _currentLocation = LatLng(position.latitude, position.longitude);
-        _nearbyQueryAnchor = _currentLocation;
-        _isLoadingLocation = false;
-      });
-      _mapController.move(_currentLocation, _currentZoom);
-    } catch (e) {
-      TalkerService.debug('Error getting location: $e');
-      setState(() {
-        _isLoadingLocation = false;
-        _locationUnavailable = true;
-      });
-    }
   }
 
   @override
   void dispose() {
     _pulseAnimationController.dispose();
-    _positionStreamSubscription?.cancel();
+    _searchController.dispose();
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(body: _buildMapHome());
+  // ─────────────────────────────────────────────────────────────
+  // Location permission handling — delegates to ViewModel
+  // ─────────────────────────────────────────────────────────────
+
+  /// Called when the user taps "Allow Location" on the gate screen.
+  Future<void> _onAllowLocationTapped() async {
+    final vm = ref.read(riderHomeViewModelProvider.notifier);
+    vm.setAcquiringLocation();
+
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      vm.setLocationServiceDisabled();
+      return;
+    }
+
+    final accepted = await PermissionDialogHelper.showLocationRationale(
+      context,
+    );
+    if (!accepted) {
+      vm.setLocationDeniedSoft();
+      return;
+    }
+
+    final permission = await Geolocator.requestPermission();
+
+    if (permission == LocationPermission.denied) {
+      vm.setLocationDeniedSoft();
+      return;
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      vm.setLocationDeniedHard();
+      return;
+    }
+
+    await vm.acquireLocationAndShowMap();
   }
 
-  Widget _buildMapHome() {
-    final queryAnchor = _nearbyQueryAnchor ?? _currentLocation;
-    final nearbyRides = ref.watch(
-      nearbyRidesStreamProvider(queryAnchor, _searchRadius),
+  // ─────────────────────────────────────────────────────────────
+  // Notification permission
+  // ─────────────────────────────────────────────────────────────
+
+  Future<void> _requestNotificationPermission() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final alreadyAsked = prefs.getBool('notification_dialog_shown') ?? false;
+      final settings = await FirebaseMessaging.instance
+          .getNotificationSettings();
+      final status = settings.authorizationStatus;
+
+      if (status == AuthorizationStatus.authorized ||
+          status == AuthorizationStatus.provisional)
+        return;
+
+      if (status == AuthorizationStatus.denied && alreadyAsked) return;
+
+      await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) return;
+
+      final accepted = await PermissionDialogHelper.showNotificationRationale(
+        context,
+      );
+      await prefs.setBool('notification_dialog_shown', true);
+
+      if (!accepted) return;
+
+      await FirebaseMessaging.instance.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+    } catch (e) {
+      TalkerService.error('Failed to request notification permission', e);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Build
+  // ─────────────────────────────────────────────────────────────
+
+  @override
+  Widget build(BuildContext context) {
+    final vmState = ref.watch(riderHomeViewModelProvider);
+    final locationState = vmState.locationState;
+
+    // Auto-follow map when location changes
+    ref.listen<RiderHomeState>(
+      riderHomeViewModelProvider,
+      (previous, next) {
+        if (next.locationState == LocationPermissionState.ready &&
+            next.isFollowingUser &&
+            next.currentLocation != null) {
+          final vm = ref.read(riderHomeViewModelProvider.notifier);
+          if (vm.canMoveMap()) {
+            _mapController.move(next.currentLocation!, next.currentZoom);
+            vm.updateLastMapMoveTime(DateTime.now());
+          }
+        }
+      },
     );
-    final filteredNearbyRides = nearbyRides.whenData(_filterRides);
+
+    return Scaffold(
+      body: switch (locationState) {
+        LocationPermissionState.unknown => _buildLocationGate(),
+        LocationPermissionState.acquiring => _buildAcquiringState(),
+        LocationPermissionState.ready => _buildMapHome(vmState),
+        LocationPermissionState.deniedSoft => _buildDeniedSoftState(),
+        LocationPermissionState.deniedHard => _buildDeniedHardState(),
+        LocationPermissionState.serviceDisabled => _buildServiceDisabledState(),
+      },
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Gate screens
+  // ─────────────────────────────────────────────────────────────
+
+  /// Primary gate: first launch or permission not yet asked.
+  Widget _buildLocationGate() {
+    final l10n = AppLocalizations.of(context);
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 32.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Spacer(flex: 2),
+
+            // Illustration
+            Container(
+              width: 120.w,
+              height: 120.w,
+              decoration: BoxDecoration(
+                color: AppColors.primarySurface,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.location_on_rounded,
+                size: 56.sp,
+                color: AppColors.primary,
+              ),
+            ).animate().scale(
+              begin: const Offset(0.7, 0.7),
+              end: const Offset(1, 1),
+              duration: 600.ms,
+              curve: Curves.elasticOut,
+            ),
+
+            SizedBox(height: 32.h),
+
+            Text(
+              l10n.findRidesNearYou,
+              style: TextStyle(
+                fontSize: 26.sp,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              ),
+              textAlign: TextAlign.center,
+            ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2),
+
+            SizedBox(height: 12.h),
+
+            Text(
+              l10n.locationGateDescription,
+              style: TextStyle(
+                fontSize: 15.sp,
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ).animate().fadeIn(delay: 300.ms),
+
+            const Spacer(flex: 2),
+
+            // Benefits list
+            ...[
+                  (Icons.search_rounded, l10n.locationBenefitFind),
+                  (Icons.navigation_rounded, l10n.locationBenefitNavigate),
+                  (Icons.shield_rounded, l10n.locationBenefitSafety),
+                ]
+                .map(
+                  (item) => Padding(
+                    padding: EdgeInsets.only(bottom: 12.h),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(8.w),
+                          decoration: BoxDecoration(
+                            color: AppColors.primarySurface,
+                            borderRadius: BorderRadius.circular(10.r),
+                          ),
+                          child: Icon(
+                            item.$1,
+                            size: 18.sp,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        SizedBox(width: 14.w),
+                        Expanded(
+                          child: Text(
+                            item.$2,
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+                .toList()
+                .animate(interval: 80.ms)
+                .fadeIn(delay: 400.ms)
+                .slideX(begin: -0.1),
+
+            const Spacer(),
+
+            // Primary CTA
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _onAllowLocationTapped,
+                icon: Icon(Icons.my_location_rounded, size: 20.sp),
+                label: Text(
+                  l10n.allowLocation,
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(vertical: 16.h),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16.r),
+                  ),
+                  elevation: 0,
+                ),
+              ),
+            ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2),
+
+            SizedBox(height: 12.h),
+
+            // Secondary: browse without location
+            TextButton(
+              onPressed: () => context.push(AppRoutes.searchRides.path),
+              child: Text(
+                l10n.browseWithoutLocation,
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: AppColors.textSecondary,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ).animate().fadeIn(delay: 700.ms),
+
+            SizedBox(height: 24.h),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Shown while the OS permission dialog is pending or GPS is resolving.
+  Widget _buildAcquiringState() {
+    final l10n = AppLocalizations.of(context);
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 80.w,
+            height: 80.w,
+            decoration: BoxDecoration(
+              color: AppColors.primarySurface,
+              shape: BoxShape.circle,
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 56.w,
+                  height: 56.w,
+                  child: CircularProgressIndicator(
+                    color: AppColors.primary,
+                    strokeWidth: 3,
+                  ),
+                ),
+                Icon(
+                  Icons.location_searching_rounded,
+                  size: 28.sp,
+                  color: AppColors.primary,
+                ),
+              ],
+            ),
+          ).animate().fadeIn(),
+          SizedBox(height: 24.h),
+          Text(
+            l10n.findingYourLocation,
+            style: TextStyle(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ).animate().fadeIn(delay: 100.ms),
+          SizedBox(height: 8.h),
+          Text(
+            l10n.thisWillOnlyTakeAMoment,
+            style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
+          ).animate().fadeIn(delay: 200.ms),
+        ],
+      ),
+    );
+  }
+
+  /// Soft deny: user tapped "Not now" — offer to try again or browse by city.
+  Widget _buildDeniedSoftState() {
+    final l10n = AppLocalizations.of(context);
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 32.w),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: 100.w,
+              height: 100.w,
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.location_off_rounded,
+                size: 48.sp,
+                color: AppColors.warning,
+              ),
+            ).animate().scale(duration: 400.ms, curve: Curves.easeOut),
+            SizedBox(height: 24.h),
+            Text(
+              l10n.locationNotEnabled,
+              style: TextStyle(
+                fontSize: 22.sp,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 12.h),
+            Text(
+              l10n.locationNotEnabledDescription,
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 36.h),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _onAllowLocationTapped,
+                icon: Icon(Icons.my_location_rounded, size: 20.sp),
+                label: Text(
+                  l10n.tryAgain,
+                  style: TextStyle(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(vertical: 14.h),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14.r),
+                  ),
+                  elevation: 0,
+                ),
+              ),
+            ),
+            SizedBox(height: 12.h),
+            TextButton(
+              onPressed: () => context.push(AppRoutes.searchRides.path),
+              child: Text(
+                l10n.browseByCity,
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: AppColors.textSecondary,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Hard deny: permission permanently denied — must go to device settings.
+  Widget _buildDeniedHardState() {
+    final l10n = AppLocalizations.of(context);
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 32.w),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 100.w,
+              height: 100.w,
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.lock_outline_rounded,
+                size: 48.sp,
+                color: AppColors.error,
+              ),
+            ).animate().scale(duration: 400.ms, curve: Curves.easeOut),
+            SizedBox(height: 24.h),
+            Text(
+              l10n.locationPermissionBlocked,
+              style: TextStyle(
+                fontSize: 22.sp,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 12.h),
+            Text(
+              l10n.locationPermissionBlockedDescription,
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 36.h),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => Geolocator.openAppSettings(),
+                icon: Icon(Icons.settings_rounded, size: 20.sp),
+                label: Text(
+                  l10n.openSettings,
+                  style: TextStyle(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(vertical: 14.h),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14.r),
+                  ),
+                  elevation: 0,
+                ),
+              ),
+            ),
+            SizedBox(height: 12.h),
+            TextButton(
+              onPressed: () => context.push(AppRoutes.searchRides.path),
+              child: Text(
+                l10n.browseByCity,
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: AppColors.textSecondary,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Device-level location services are turned off.
+  Widget _buildServiceDisabledState() {
+    final l10n = AppLocalizations.of(context);
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 32.w),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 100.w,
+              height: 100.w,
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.gps_off_rounded,
+                size: 48.sp,
+                color: AppColors.warning,
+              ),
+            ).animate().scale(duration: 400.ms, curve: Curves.easeOut),
+            SizedBox(height: 24.h),
+            Text(
+              l10n.locationServicesOff,
+              style: TextStyle(
+                fontSize: 22.sp,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 12.h),
+            Text(
+              l10n.locationServicesOffDescription,
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 36.h),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  await Geolocator.openLocationSettings();
+                  // Re-check after returning from settings
+                  if (mounted) {
+                    ref
+                        .read(riderHomeViewModelProvider.notifier)
+                        .checkInitialLocationState();
+                  }
+                },
+                icon: Icon(Icons.settings_rounded, size: 20.sp),
+                label: Text(
+                  l10n.openLocationSettings,
+                  style: TextStyle(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(vertical: 14.h),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14.r),
+                  ),
+                  elevation: 0,
+                ),
+              ),
+            ),
+            SizedBox(height: 12.h),
+            TextButton(
+              onPressed: () => context.push(AppRoutes.searchRides.path),
+              child: Text(
+                l10n.browseByCity,
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: AppColors.textSecondary,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Map home — only rendered when locationState == ready
+  // ─────────────────────────────────────────────────────────────
+
+  Widget _buildMapHome(RiderHomeState vmState) {
+    // Extract state from ViewModel
+    final loc = vmState.currentLocation ?? const LatLng(0, 0);
+    final queryAnchor = vmState.nearbyQueryAnchor ?? loc;
+    final currentZoom = vmState.currentZoom;
+    final selectedMapStyle = vmState.selectedMapStyle;
+    final showNearbyDrivers = vmState.showNearbyDrivers;
+    final showHotspots = vmState.showHotspots;
+    final showDistanceRadius = vmState.showDistanceRadius;
+    final searchRadius = vmState.searchRadius;
+    final isFollowingUser = vmState.isFollowingUser;
+    final activeRoute = vmState.activeRoute;
+    final alternativeRoutes = vmState.alternativeRoutes;
+    final selectedRouteIndex = vmState.selectedRouteIndex;
+    final isLoadingRoute = vmState.isLoadingRoute;
+    final showRouteInfo = vmState.showRouteInfo;
+
+    final nearbyRides = ref.watch(
+      nearbyRidesStreamProvider(queryAnchor, searchRadius),
+    );
+    final filteredNearbyRides = nearbyRides.whenData(
+      (rides) => ref.read(riderHomeViewModelProvider.notifier).applyFilter(rides),
+    );
     final homeVmState = ref.watch(homeViewModelProvider);
     final hotspots = homeVmState.hotspots;
     final user = homeVmState.user;
 
     return Stack(
       children: [
-        // Map Layer
+        // ── Map ───────────────────────────────────────────────
         FlutterMap(
           mapController: _mapController,
           options: MapOptions(
-            initialCenter: _currentLocation,
-            initialZoom: _currentZoom,
+            initialCenter: loc,
+            initialZoom: currentZoom,
             onPositionChanged: (position, hasGesture) {
               if (hasGesture) {
+                final vm = ref.read(riderHomeViewModelProvider.notifier);
                 final nextZoom = position.zoom;
-                if ((nextZoom - _currentZoom).abs() > 0.01) {
-                  setState(() => _currentZoom = nextZoom);
-                }
+                vm.updateZoom(nextZoom);
+                vm.disableFollowingUser();
               }
             },
           ),
           children: [
             TileLayer(
-              urlTemplate: _mapStyles[_selectedMapStyle]!,
+              urlTemplate: _mapStyles[selectedMapStyle]!,
               userAgentPackageName: 'com.sportconnect.app',
             ),
 
-            // Route polyline if active
-            if (_activeRoute != null)
+            if (activeRoute != null)
               PolylineLayer(
                 polylines: [
                   Polyline(
-                    points: _activeRoute!.coordinates,
+                    points: activeRoute.coordinates,
                     color: AppColors.primary,
                     strokeWidth: 5,
                   ),
-                  ..._alternativeRoutes.asMap().entries.map((entry) {
-                    return Polyline(
-                      points: entry.value.coordinates,
-                      color: entry.key == _selectedRouteIndex
+                  ...alternativeRoutes.asMap().entries.map(
+                    (e) => Polyline(
+                      points: e.value.coordinates,
+                      color: e.key == selectedRouteIndex
                           ? AppColors.primary.withValues(alpha: 0.8)
                           : AppColors.textSecondary.withValues(alpha: 0.4),
-                      strokeWidth: entry.key == _selectedRouteIndex ? 5 : 3,
-                    );
-                  }),
+                      strokeWidth: e.key == selectedRouteIndex ? 5 : 3,
+                    ),
+                  ),
                 ],
               ),
 
-            // Nearby rides markers
-            if (_showNearbyDrivers)
+            if (showNearbyDrivers)
               filteredNearbyRides.when(
                 data: (rides) => MarkerLayer(markers: _buildRideMarkers(rides)),
                 loading: () => const MarkerLayer(markers: []),
                 error: (_, _) => const MarkerLayer(markers: []),
               ),
 
-            // Hotspots markers - using proper Hotspot model
-            if (_showHotspots)
+            if (showHotspots)
               hotspots.when(
                 data: (spots) => MarkerLayer(
-                  markers: spots.map((hotspot) {
-                    return Marker(
-                      point: hotspot.location.toLatLng(),
-                      width: 80.w,
-                      height: 40.h,
-                      child: _buildHotspotMarker(hotspot),
-                    );
-                  }).toList(),
+                  markers: spots
+                      .map(
+                        (h) => Marker(
+                          point: h.location.toLatLng(),
+                          width: 80.w,
+                          height: 40.h,
+                          child: _buildHotspotMarker(h),
+                        ),
+                      )
+                      .toList(),
                 ),
                 loading: () => const MarkerLayer(markers: []),
                 error: (_, _) => const MarkerLayer(markers: []),
               ),
 
-            // Current location marker
             MarkerLayer(
               markers: [
                 Marker(
-                  point: _currentLocation,
+                  point: loc,
                   width: 60.w,
                   height: 60.h,
-                  child: _buildCurrentLocationMarker(),
+                  child: _buildCurrentLocationMarker(vmState),
                 ),
               ],
             ),
 
-            // Search radius circle
-            if (_showDistanceRadius)
+            if (showDistanceRadius)
               CircleLayer(
                 circles: [
                   CircleMarker(
-                    point: _currentLocation,
-                    radius: _searchRadius * 1000, // Convert km to meters
+                    point: loc,
+                    radius: searchRadius * 1000,
                     useRadiusInMeter: true,
                     color: AppColors.primary.withValues(alpha: 0.1),
                     borderColor: AppColors.primary.withValues(alpha: 0.5),
@@ -356,76 +782,77 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
           ],
         ),
 
-        // Top Controls
+        // ── Top bar ───────────────────────────────────────────
         _buildTopControls(user),
 
-        // Filter Bar
-        _buildFilterBar(),
+        // ── Filter chips ──────────────────────────────────────
+        _buildFilterBar(filteredNearbyRides, vmState),
 
-        // Map Style Selector
-        _buildMapStyleSelector(),
+        // ── Right-side map controls ───────────────────────────
+        _buildMapControls(vmState),
 
-        // Radius Slider (when active)
-        if (_showDistanceRadius) _buildRadiusSlider(),
+        // ── Radius slider ─────────────────────────────────────
+        if (showDistanceRadius) _buildRadiusSlider(vmState),
 
-        // Route Info Panel
-        if (_showRouteInfo && _activeRoute != null) _buildRouteInfoPanel(),
+        // ── Route info panel ──────────────────────────────────
+        if (showRouteInfo && activeRoute != null) _buildRouteInfoPanel(vmState),
 
-        // Location unavailable banner
-        if (_locationUnavailable && !_isLoadingLocation)
-          Positioned(
-            top: 150.h,
-            left: 20.w,
-            right: 20.w,
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-              decoration: BoxDecoration(
-                color: AppColors.warning.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(12.r),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.location_off, color: Colors.white, size: 20.sp),
-                  SizedBox(width: 8.w),
-                  Expanded(
-                    child: Text(
-                      'Location unavailable — showing default area',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w500,
+        // ── Empty state hint ──────────────────────────────────
+        if (showNearbyDrivers)
+          filteredNearbyRides.when(
+            data: (rides) => rides.isEmpty
+                ? Positioned(
+                    top: 160.h,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 10.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(24.r),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.08),
+                              blurRadius: 10,
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.directions_car_outlined,
+                              size: 16.sp,
+                              color: AppColors.textSecondary,
+                            ),
+                            SizedBox(width: 8.w),
+                            Text(
+                              AppLocalizations.of(
+                                context,
+                              ).noRidesAvailableNearby,
+                              style: TextStyle(
+                                fontSize: 13.sp,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  GestureDetector(
-                    onTap: () => _getCurrentLocation(),
-                    child: Icon(
-                      Icons.refresh,
-                      color: Colors.white,
-                      size: 20.sp,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+                  )
+                : const SizedBox.shrink(),
+            loading: () => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
           ),
 
-        // Active trip banner — shown when the user has an accepted or in-progress
-        // booking so they can immediately resume countdown or navigation.
-        Positioned(
-          left: 16.w,
-          right: 16.w,
-          bottom: 90.h,
-          child: const _ActiveTripBanner(),
-        ),
-
-        // Quick Stats Bar
-        _buildQuickStatsBar(filteredNearbyRides),
-
-        // Loading overlay
-        if (_isLoadingLocation || _isLoadingRoute)
+        // ── Loading route overlay ─────────────────────────────
+        if (isLoadingRoute)
           Positioned(
-            top: 150.h,
+            top: 160.h,
             left: 0,
             right: 0,
             child: Center(
@@ -454,9 +881,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                     ),
                     SizedBox(width: 12.w),
                     Text(
-                      _isLoadingLocation
-                          ? AppLocalizations.of(context).gettingLocation
-                          : AppLocalizations.of(context).loadingRoute,
+                      AppLocalizations.of(context).loadingRoute,
                       style: TextStyle(
                         fontSize: 13.sp,
                         color: AppColors.textSecondary,
@@ -467,77 +892,509 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
               ),
             ),
           ),
+
+        // ── Active trip banner ────────────────────────────────
+        Positioned(
+          left: 16.w,
+          right: 16.w,
+          bottom: 100.h,
+          child: const _ActiveTripBanner(),
+        ),
+
+        // ── Quick stats ───────────────────────────────────────
+        _buildQuickStatsBar(filteredNearbyRides),
       ],
-    );
+    ).animate().fadeIn(duration: 400.ms);
   }
 
-  /// Filter rides based on selected filter - uses proper model classes
-  List<RideModel> _filterRides(List<RideModel> rides) {
-    switch (_selectedFilter) {
-      case 'available':
-        return rides.where((r) => r.availableSeats > 0).toList();
-      case 'premium':
-        return rides.where((r) => r.isPremium).toList();
-      case 'eco':
-        return rides.where((r) => r.isEco).toList();
-      default:
-        return rides;
-    }
-  }
+  // ─────────────────────────────────────────────────────────────
+  // Map widgets
+  // ─────────────────────────────────────────────────────────────
 
-  /// Build ride markers using proper RideModel model
-  List<Marker> _buildRideMarkers(List<RideModel> rides) {
-    return rides.map((ride) {
-      return Marker(
-        point: ride.origin.toLatLng(),
-        width: 70.w,
-        height: 80.h,
-        child: GestureDetector(
-          onTap: () => _showRideDetails(ride),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
-                decoration: BoxDecoration(
-                  color: ride.isPremium
-                      ? AppColors.starFilled
-                      : AppColors.primary,
-                  borderRadius: BorderRadius.circular(10.r),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
+  Widget _buildTopControls(AsyncValue<dynamic> user) {
+    final l10n = AppLocalizations.of(context);
+    // Watch unread notifications count from your provider
+    // final unreadCount = ref.watch(unreadNotificationsCountProvider).value ?? 0;
+
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+        child: Row(
+          children: [
+            // Avatar → Profile
+            Semantics(
+              button: true,
+              label: l10n.navProfile,
+              child: GestureDetector(
+                onTap: () => context.push(AppRoutes.profile.path),
+                child: Container(
+                  padding: EdgeInsets.all(3.w),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 10,
+                      ),
+                    ],
+                  ),
+                  child: user.when(
+                    data: (u) => PremiumAvatar(
+                      imageUrl: u?.photoUrl,
+                      name: u?.displayName ?? 'User',
+                      size: 40.w,
                     ),
-                  ],
-                ),
-                child: Text(
-                  AppLocalizations.of(
-                    context,
-                  ).value5(ride.pricePerSeat.toStringAsFixed(0)),
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 11.sp,
+                    loading: () => CircleAvatar(
+                      radius: 20.w,
+                      backgroundColor: AppColors.shimmer,
+                    ),
+                    error: (_, _) => CircleAvatar(
+                      radius: 20.w,
+                      child: const Icon(Icons.person),
+                    ),
                   ),
                 ),
               ),
-              Icon(
-                Icons.location_on,
-                color: ride.isPremium
-                    ? AppColors.starFilled
-                    : AppColors.primary,
-                size: 26.sp,
+            ),
+
+            SizedBox(width: 12.w),
+
+            // Search bar (fake — opens sheet on tap)
+            Expanded(
+              child: GestureDetector(
+                onTap: _showInlineSearchSheet,
+                child: AbsorbPointer(
+                  child: AppSearchBar(
+                    controller: _searchController,
+                    onChanged: (_) {},
+                    hintText: l10n.whereAreYouGoing,
+                  ),
+                ),
+              ),
+            ),
+
+            SizedBox(width: 8.w),
+
+            // Notifications with badge
+            Semantics(
+              button: true,
+              label: l10n.settingsNotifications,
+              child: GestureDetector(
+                onTap: () => context.push(AppRoutes.notifications.path),
+                child: Container(
+                  padding: EdgeInsets.all(10.w),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 10,
+                      ),
+                    ],
+                  ),
+                  // Replace 0 with your real unreadCount provider value
+                  child: _NotificationBadge(
+                    count: 0,
+                    child: Icon(
+                      Icons.notifications_outlined,
+                      color: AppColors.textPrimary,
+                      size: 22.sp,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.2);
+  }
+
+  /// Filter bar with live counts per chip.
+  Widget _buildFilterBar(
+    AsyncValue<List<RideModel>> filteredNearbyRides,
+    RiderHomeState vmState,
+  ) {
+    final l10n = AppLocalizations.of(context);
+    final queryAnchor = vmState.nearbyQueryAnchor ??
+        vmState.currentLocation ??
+        const LatLng(0, 0);
+    final searchRadius = vmState.searchRadius;
+    final selectedFilter = vmState.selectedFilter;
+    final allRides =
+        ref.watch(nearbyRidesStreamProvider(queryAnchor, searchRadius)).value ??
+            [];
+
+    final filters = [
+      {
+        'id': 'all',
+        'label': l10n.filterAll,
+        'icon': Icons.apps,
+        'count': allRides.length,
+      },
+      {
+        'id': 'available',
+        'label': l10n.availableSeats,
+        'icon': Icons.event_seat,
+        'count': allRides.where((r) => r.availableSeats > 0).length,
+      },
+      {
+        'id': 'premium',
+        'label': l10n.premium,
+        'icon': Icons.star,
+        'count': allRides.where((r) => r.isPremium).length,
+      },
+      {
+        'id': 'eco',
+        'label': l10n.eco,
+        'icon': Icons.eco,
+        'count': allRides.where((r) => r.isEco).length,
+      },
+    ];
+
+    return Positioned(
+      top: 100.h,
+      left: 16.w,
+      right: 16.w,
+      child: SizedBox(
+        height: 40.h,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          itemCount: filters.length,
+          itemBuilder: (context, index) {
+            final f = filters[index];
+            final isSelected = selectedFilter == f['id'];
+            final count = f['count'] as int;
+
+            return Padding(
+              padding: EdgeInsets.only(right: 8.w),
+              child: Semantics(
+                selected: isSelected,
+                button: true,
+                label: '${f['label']} filter, $count rides',
+                child: GestureDetector(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    ref
+                        .read(riderHomeViewModelProvider.notifier)
+                        .setFilter(f['id'] as String);
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: EdgeInsets.symmetric(horizontal: 12.w),
+                    decoration: BoxDecoration(
+                      color: isSelected ? AppColors.primary : AppColors.surface,
+                      borderRadius: BorderRadius.circular(18.r),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.08),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          f['icon'] as IconData,
+                          size: 14.sp,
+                          color: isSelected
+                              ? Colors.white
+                              : AppColors.textSecondary,
+                        ),
+                        SizedBox(width: 5.w),
+                        Text(
+                          f['label'] as String,
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w600,
+                            color: isSelected
+                                ? Colors.white
+                                : AppColors.textSecondary,
+                          ),
+                        ),
+                        SizedBox(width: 5.w),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 5.w,
+                            vertical: 1.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? Colors.white.withValues(alpha: 0.25)
+                                : AppColors.border,
+                            borderRadius: BorderRadius.circular(6.r),
+                          ),
+                          child: Text(
+                            '$count',
+                            style: TextStyle(
+                              fontSize: 10.sp,
+                              fontWeight: FontWeight.w700,
+                              color: isSelected
+                                  ? Colors.white
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    ).animate().fadeIn(duration: 400.ms, delay: 100.ms);
+  }
+
+  /// Right-side map control panel — toggles + a visually distinct events button.
+  Widget _buildMapControls(RiderHomeState vmState) {
+    final l10n = AppLocalizations.of(context);
+    final showDistanceRadius = vmState.showDistanceRadius;
+    final showHotspots = vmState.showHotspots;
+    final showNearbyDrivers = vmState.showNearbyDrivers;
+    final isFollowingUser = vmState.isFollowingUser;
+    final currentLocation = vmState.currentLocation;
+    final currentZoom = vmState.currentZoom;
+
+    return Positioned(
+      right: 16.w,
+      top: 160.h,
+      child: Column(
+        children: [
+          _buildMapControl(
+            icon: Icons.layers_outlined,
+            onTap: _showMapStylePicker,
+          ),
+          SizedBox(height: 8.h),
+          _buildMapControl(
+            icon: Icons.radar_rounded,
+            isActive: showDistanceRadius,
+            tooltip: l10n.searchRadius,
+            onTap: () {
+              HapticFeedback.selectionClick();
+              ref.read(riderHomeViewModelProvider.notifier).toggleDistanceRadius();
+            },
+          ),
+          SizedBox(height: 8.h),
+          _buildMapControl(
+            icon: Icons.place_outlined,
+            isActive: showHotspots,
+            tooltip: l10n.hotspots,
+            onTap: () {
+              HapticFeedback.selectionClick();
+              ref.read(riderHomeViewModelProvider.notifier).toggleHotspots();
+            },
+          ),
+          SizedBox(height: 8.h),
+          _buildMapControl(
+            icon: Icons.directions_car_outlined,
+            isActive: showNearbyDrivers,
+            tooltip: l10n.nearbyRides,
+            onTap: () {
+              HapticFeedback.selectionClick();
+              ref.read(riderHomeViewModelProvider.notifier).toggleNearbyDrivers();
+            },
+          ),
+          SizedBox(height: 8.h),
+          _buildMapControl(
+            icon: isFollowingUser ? Icons.gps_fixed : Icons.gps_not_fixed,
+            isActive: isFollowingUser,
+            tooltip: l10n.followLocation,
+            onTap: () {
+              HapticFeedback.mediumImpact();
+              final vm = ref.read(riderHomeViewModelProvider.notifier);
+              vm.toggleFollowingUser();
+              final newState = ref.read(riderHomeViewModelProvider);
+              if (newState.isFollowingUser && currentLocation != null) {
+                _mapController.move(currentLocation, currentZoom);
+              }
+            },
+          ),
+          // Divider to visually separate navigation action from toggles
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 6.h),
+            child: Container(
+              width: 36.w,
+              height: 1,
+              color: AppColors.border.withValues(alpha: 0.6),
+            ),
+          ),
+          _buildMapControl(
+            icon: Icons.emoji_events_outlined,
+            tooltip: l10n.events,
+            isNavigation: true,
+            onTap: () {
+              HapticFeedback.selectionClick();
+              context.push(AppRoutes.events.path);
+            },
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 400.ms, delay: 200.ms).slideX(begin: 0.3);
+  }
+
+  Widget _buildMapControl({
+    required IconData icon,
+    required VoidCallback onTap,
+    bool isActive = false,
+    bool isNavigation = false,
+    String? tooltip,
+  }) {
+    return Semantics(
+      button: true,
+      label: tooltip ?? 'Map control',
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: EdgeInsets.all(12.w),
+          decoration: BoxDecoration(
+            color: isNavigation
+                ? AppColors.surface
+                : isActive
+                ? AppColors.primary
+                : AppColors.surface,
+            borderRadius: BorderRadius.circular(12.r),
+            border: isNavigation
+                ? Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.4),
+                    width: 1.5,
+                  )
+                : null,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 6,
               ),
             ],
           ),
+          child: Icon(
+            icon,
+            size: 22.sp,
+            color: isNavigation
+                ? AppColors.primary
+                : isActive
+                ? Colors.white
+                : AppColors.textPrimary,
+          ),
         ),
-      );
-    }).toList();
+      ),
+    );
   }
 
-  /// Build hotspot marker using proper Hotspot model
+  Widget _buildCurrentLocationMarker(RiderHomeState vmState) {
+    final isFollowingUser = vmState.isFollowingUser;
+    final userHeading = vmState.userHeading;
+
+    return AnimatedBuilder(
+      animation: _pulseAnimationController,
+      builder: (context, _) => Stack(
+        alignment: Alignment.center,
+        children: [
+          if (isFollowingUser)
+            Container(
+              width: 50.w * (1 + _pulseAnimationController.value * 0.3),
+              height: 50.w * (1 + _pulseAnimationController.value * 0.3),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(
+                  alpha: 0.2 * (1 - _pulseAnimationController.value),
+                ),
+                shape: BoxShape.circle,
+              ),
+            ),
+          Container(
+            width: 45.w,
+            height: 45.w,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+          ),
+          Transform.rotate(
+            angle: userHeading * (3.14159 / 180),
+            child: Container(
+              width: 40.w,
+              height: 40.w,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 3),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.4),
+                    blurRadius: 10,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Icon(Icons.navigation, color: Colors.white, size: 20.sp),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Marker> _buildRideMarkers(List<RideModel> rides) {
+    return rides
+        .map(
+          (ride) => Marker(
+            point: ride.origin.toLatLng(),
+            width: 70.w,
+            height: 80.h,
+            child: GestureDetector(
+              onTap: () => _showRideDetails(ride),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 6.w,
+                      vertical: 3.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: ride.isPremium
+                          ? AppColors.starFilled
+                          : AppColors.primary,
+                      borderRadius: BorderRadius.circular(10.r),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.2),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      AppLocalizations.of(
+                        context,
+                      ).value5(ride.pricePerSeat.toStringAsFixed(0)),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 11.sp,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    Icons.location_on,
+                    color: ride.isPremium
+                        ? AppColors.starFilled
+                        : AppColors.primary,
+                    size: 26.sp,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        )
+        .toList();
+  }
+
   Widget _buildHotspotMarker(Hotspot hotspot) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
@@ -566,76 +1423,12 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
     );
   }
 
-  Widget _buildCurrentLocationMarker() {
-    return AnimatedBuilder(
-      animation: _pulseAnimationController,
-      builder: (context, child) {
-        return Stack(
-          alignment: Alignment.center,
-          children: [
-            // Pulse effect
-            if (_isFollowingUser)
-              Container(
-                width: 50.w * (1 + _pulseAnimationController.value * 0.3),
-                height: 50.w * (1 + _pulseAnimationController.value * 0.3),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(
-                    alpha: 0.2 * (1 - _pulseAnimationController.value),
-                  ),
-                  shape: BoxShape.circle,
-                ),
-              ),
-            // Accuracy ring
-            Container(
-              width: 45.w,
-              height: 45.w,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.15),
-                shape: BoxShape.circle,
-              ),
-            ),
-            // Direction indicator (compass)
-            Transform.rotate(
-              angle: _userHeading * (3.14159 / 180),
-              child: Container(
-                width: 40.w,
-                height: 40.w,
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 3),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.4),
-                      blurRadius: 10,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                ),
-                child: Stack(
-                  children: [
-                    Center(
-                      child: Icon(
-                        Icons.navigation,
-                        color: Colors.white,
-                        size: 20.sp,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  Widget _buildRadiusSlider(RiderHomeState vmState) {
+    final searchRadius = vmState.searchRadius;
 
-  /// Build radius slider when distance radius is enabled
-  Widget _buildRadiusSlider() {
     return Positioned(
       left: 16.w,
-      right: 80.w,
+      right: 16.w,
       bottom: 130.h,
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
@@ -685,7 +1478,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                   child: Text(
                     AppLocalizations.of(
                       context,
-                    ).valueKm(_searchRadius.toStringAsFixed(1)),
+                    ).valueKm(searchRadius.toStringAsFixed(1)),
                     style: TextStyle(
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w700,
@@ -705,13 +1498,13 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                 trackHeight: 4.h,
               ),
               child: Slider(
-                value: _searchRadius,
+                value: searchRadius,
                 min: 1,
                 max: 25,
                 divisions: 24,
-                onChanged: (value) {
+                onChanged: (v) {
                   HapticFeedback.selectionClick();
-                  setState(() => _searchRadius = value);
+                  ref.read(riderHomeViewModelProvider.notifier).updateSearchRadius(v);
                 },
               ),
             ),
@@ -721,18 +1514,13 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
     ).animate().fadeIn().slideY(begin: 0.2);
   }
 
-  /// Build quick stats bar showing nearby rides count - uses proper model
   Widget _buildQuickStatsBar(AsyncValue<List<RideModel>> nearbyRides) {
     return Positioned(
       left: 16.w,
-      bottom: 24.h,
+      bottom: 16.h,
       child: nearbyRides.when(
         data: (rides) {
-          final availableSeats = rides.fold<int>(
-            0,
-            (sum, r) => sum + r.availableSeats,
-          );
-
+          final seats = rides.fold<int>(0, (s, r) => s + r.availableSeats);
           return Container(
             padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
             decoration: BoxDecoration(
@@ -758,7 +1546,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                 SizedBox(width: 16.w),
                 _buildStatItem(
                   Icons.event_seat,
-                  AppLocalizations.of(context).value2(availableSeats),
+                  AppLocalizations.of(context).value2(seats),
                   AppLocalizations.of(context).seats,
                 ),
               ],
@@ -799,375 +1587,9 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
     );
   }
 
-  Widget _buildTopControls(AsyncValue<dynamic> user) {
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-        child: Row(
-          children: [
-            Semantics(
-              button: true,
-              label: 'Profile',
-              child: GestureDetector(
-                onTap: () => context.push(AppRoutes.profile.path),
-                child: Container(
-                  padding: EdgeInsets.all(3.w),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 10,
-                      ),
-                    ],
-                  ),
-                  child: user.when(
-                    data: (userData) => PremiumAvatar(
-                      imageUrl: userData?.photoUrl,
-                      name: userData?.displayName ?? 'User',
-                      size: 40.w,
-                    ),
-                    loading: () => CircleAvatar(
-                      radius: 20.w,
-                      backgroundColor: AppColors.shimmer,
-                    ),
-                    error: (_, _) => CircleAvatar(
-                      radius: 20.w,
-                      child: const Icon(Icons.person),
-                    ),
-                  ),
-                ),
-              ),
-            ),
+  Widget _buildRouteInfoPanel(RiderHomeState vmState) {
+    final activeRoute = vmState.activeRoute!;
 
-            SizedBox(width: 12.w),
-
-            // Clean Search Bar - Opens inline search bottom sheet
-            Expanded(
-              child: Semantics(
-                button: true,
-                label: AppLocalizations.of(context).whereAreYouGoing,
-                child: GestureDetector(
-                  onTap: () => _showInlineSearchSheet(),
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 14.w,
-                      vertical: 12.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(28.r),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.search_rounded,
-                          color: AppColors.primary,
-                          size: 20.sp,
-                        ),
-                        SizedBox(width: 10.w),
-                        Expanded(
-                          child: Text(
-                            AppLocalizations.of(context).whereAreYouGoing,
-                            style: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 14.sp,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-            SizedBox(width: 12.w),
-
-            // Profile Search
-            Semantics(
-              button: true,
-              label: 'Search users',
-              child: GestureDetector(
-                onTap: () => context.push(AppRoutes.profileSearch.path),
-                child: Container(
-                  padding: EdgeInsets.all(10.w),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 10,
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    Icons.person_search_rounded,
-                    color: AppColors.textPrimary,
-                    size: 22.sp,
-                  ),
-                ),
-              ),
-            ),
-
-            SizedBox(width: 8.w),
-
-            // Notifications
-            Semantics(
-              button: true,
-              label: 'Notifications',
-              child: GestureDetector(
-                onTap: () => context.push(AppRoutes.notifications.path),
-                child: Container(
-                  padding: EdgeInsets.all(10.w),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 10,
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    Icons.notifications_outlined,
-                    color: AppColors.textPrimary,
-                    size: 22.sp,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.2);
-  }
-
-  Widget _buildFilterBar() {
-    final l10n = AppLocalizations.of(context);
-    final filters = [
-      {'id': 'all', 'label': l10n.filterAll, 'icon': Icons.apps},
-      {
-        'id': 'available',
-        'label': l10n.availableSeats,
-        'icon': Icons.event_seat,
-      },
-      {'id': 'premium', 'label': l10n.premium, 'icon': Icons.star},
-      {'id': 'eco', 'label': l10n.eco, 'icon': Icons.eco},
-    ];
-
-    return Positioned(
-      top: 100.h,
-      left: 16.w,
-      right: 16.w,
-      child: SizedBox(
-        height: 40.h,
-        child: ListView.builder(
-          scrollDirection: Axis.horizontal,
-          itemCount: filters.length,
-          itemBuilder: (context, index) {
-            final filter = filters[index];
-            final isSelected = _selectedFilter == filter['id'];
-
-            return Padding(
-              padding: EdgeInsets.only(right: 8.w),
-              child: Semantics(
-                selected: isSelected,
-                button: true,
-                label: '${filter['label']} filter',
-                child: GestureDetector(
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    setState(() => _selectedFilter = filter['id'] as String);
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: EdgeInsets.symmetric(horizontal: 14.w),
-                    decoration: BoxDecoration(
-                      color: isSelected ? AppColors.primary : AppColors.surface,
-                      borderRadius: BorderRadius.circular(18.r),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 4,
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          filter['icon'] as IconData,
-                          size: 14.sp,
-                          color: isSelected
-                              ? Colors.white
-                              : AppColors.textSecondary,
-                        ),
-                        SizedBox(width: 5.w),
-                        Text(
-                          filter['label'] as String,
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w600,
-                            color: isSelected
-                                ? Colors.white
-                                : AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    ).animate().fadeIn(duration: 400.ms, delay: 100.ms);
-  }
-
-  Widget _buildMapStyleSelector() {
-    return Positioned(
-      right: 16.w,
-      top: 160.h,
-      child: Column(
-        children: [
-          // Map Style Toggle
-          _buildMapControl(
-            icon: Icons.layers_outlined,
-            onTap: () {
-              HapticFeedback.selectionClick();
-              _showMapStylePicker();
-            },
-          ),
-          SizedBox(height: 8.h),
-          // Toggle Distance Radius
-          _buildMapControl(
-            icon: Icons.radar_rounded,
-            isActive: _showDistanceRadius,
-            onTap: () {
-              HapticFeedback.selectionClick();
-              setState(() => _showDistanceRadius = !_showDistanceRadius);
-            },
-            tooltip: AppLocalizations.of(context).searchRadius,
-          ),
-          SizedBox(height: 8.h),
-          // Toggle Hotspots
-          _buildMapControl(
-            icon: Icons.place_outlined,
-            isActive: _showHotspots,
-            onTap: () {
-              HapticFeedback.selectionClick();
-              setState(() => _showHotspots = !_showHotspots);
-            },
-            tooltip: AppLocalizations.of(context).hotspots,
-          ),
-          SizedBox(height: 8.h),
-          // Toggle Drivers
-          _buildMapControl(
-            icon: Icons.directions_car_outlined,
-            isActive: _showNearbyDrivers,
-            onTap: () {
-              HapticFeedback.selectionClick();
-              setState(() => _showNearbyDrivers = !_showNearbyDrivers);
-            },
-            tooltip: AppLocalizations.of(context).nearbyRides,
-          ),
-          SizedBox(height: 8.h),
-          // Browse Events
-          _buildMapControl(
-            icon: Icons.emoji_events_outlined,
-            onTap: () {
-              HapticFeedback.selectionClick();
-              context.push(AppRoutes.events.path);
-            },
-            tooltip: 'Events',
-          ),
-          SizedBox(height: 8.h),
-          // Toggle Follow User
-          _buildMapControl(
-            icon: _isFollowingUser ? Icons.gps_fixed : Icons.gps_not_fixed,
-            isActive: _isFollowingUser,
-            onTap: () {
-              HapticFeedback.mediumImpact();
-              setState(() => _isFollowingUser = !_isFollowingUser);
-              if (_isFollowingUser) {
-                _mapController.move(_currentLocation, _currentZoom);
-              }
-            },
-            tooltip: AppLocalizations.of(context).followLocation,
-          ),
-          SizedBox(height: 8.h),
-          // Zoom In
-          _buildMapControl(
-            icon: Icons.add,
-            onTap: () {
-              HapticFeedback.selectionClick();
-              final newZoom = math.min(_currentZoom + 1, 18.0);
-              _mapController.move(_mapController.camera.center, newZoom);
-              setState(() => _currentZoom = newZoom);
-            },
-          ),
-          SizedBox(height: 4.h),
-          // Zoom Out
-          _buildMapControl(
-            icon: Icons.remove,
-            onTap: () {
-              HapticFeedback.selectionClick();
-              final newZoom = math.max(_currentZoom - 1, 5.0);
-              _mapController.move(_mapController.camera.center, newZoom);
-              setState(() => _currentZoom = newZoom);
-            },
-          ),
-        ],
-      ),
-    ).animate().fadeIn(duration: 400.ms, delay: 200.ms).slideX(begin: 0.3);
-  }
-
-  Widget _buildMapControl({
-    required IconData icon,
-    required VoidCallback onTap,
-    bool isActive = false,
-    String? tooltip,
-  }) {
-    return Semantics(
-      button: true,
-      label: tooltip ?? 'Map control',
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: EdgeInsets.all(12.w),
-          decoration: BoxDecoration(
-            color: isActive ? AppColors.primary : AppColors.surface,
-            borderRadius: BorderRadius.circular(12.r),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 6,
-              ),
-            ],
-          ),
-          child: Icon(
-            icon,
-            size: 22.sp,
-            color: isActive ? Colors.white : AppColors.textPrimary,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRouteInfoPanel() {
     return Positioned(
       bottom: 24.h,
       left: 16.w,
@@ -1185,62 +1607,49 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
             ),
           ],
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: Row(
           children: [
-            Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(10.w),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12.r),
+            Container(
+              padding: EdgeInsets.all(10.w),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              child: Icon(Icons.route, color: AppColors.primary, size: 24.sp),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    AppLocalizations.of(
+                      context,
+                    ).valueKm(activeRoute.distanceKm.toStringAsFixed(1)),
+                    style: TextStyle(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                  child: Icon(
-                    Icons.route,
-                    color: AppColors.primary,
-                    size: 24.sp,
+                  Text(
+                    AppLocalizations.of(
+                      context,
+                    ).valueMin(activeRoute.durationMinutes),
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        AppLocalizations.of(context).valueKm(
-                          (_activeRoute!.distanceKm).toStringAsFixed(1),
-                        ),
-                        style: TextStyle(
-                          fontSize: 18.sp,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      Text(
-                        AppLocalizations.of(
-                          context,
-                        ).valueMin(_activeRoute!.durationMinutes),
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  tooltip: 'Close route info',
-                  onPressed: () {
-                    setState(() {
-                      _showRouteInfo = false;
-                      _activeRoute = null;
-                      _alternativeRoutes = [];
-                    });
-                  },
-                  icon: Icon(Icons.close, color: AppColors.textSecondary),
-                ),
-              ],
+                ],
+              ),
+            ),
+            IconButton(
+              tooltip: 'Close route info',
+              onPressed: () {
+                ref.read(riderHomeViewModelProvider.notifier).clearRoutes();
+              },
+              icon: Icon(Icons.close, color: AppColors.textSecondary),
             ),
           ],
         ),
@@ -1248,69 +1657,61 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
     ).animate().fadeIn().slideY(begin: 0.3);
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Map style picker
+  // ─────────────────────────────────────────────────────────────
+
   void _showMapStylePicker() {
+    final l10n = AppLocalizations.of(context);
     showModalBottomSheet(
       context: context,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
       ),
-      builder: (context) {
-        return Container(
-          padding: EdgeInsets.all(20.w),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                AppLocalizations.of(context).mapStyle,
-                style: TextStyle(
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+      builder: (ctx) => Container(
+        padding: EdgeInsets.all(20.w),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.mapStyle,
+              style: TextStyle(
+                fontSize: 18.sp,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            SizedBox(height: 16.h),
+            Row(
+              children: [
+                _buildStyleOption(l10n.standard, l10n.standard2, Icons.map),
+                SizedBox(width: 12.w),
+                _buildStyleOption(l10n.terrain, l10n.terrain2, Icons.terrain),
+                SizedBox(width: 12.w),
+                _buildStyleOption(l10n.dark, l10n.dark2, Icons.dark_mode),
+                SizedBox(width: 12.w),
+                _buildStyleOption(
+                  'satellite',
+                  l10n.satellite,
+                  Icons.satellite_alt,
                 ),
-              ),
-              SizedBox(height: 16.h),
-              Row(
-                children: [
-                  _buildStyleOption(
-                    AppLocalizations.of(context).standard,
-                    AppLocalizations.of(context).standard2,
-                    Icons.map,
-                  ),
-                  SizedBox(width: 12.w),
-                  _buildStyleOption(
-                    AppLocalizations.of(context).terrain,
-                    AppLocalizations.of(context).terrain2,
-                    Icons.terrain,
-                  ),
-                  SizedBox(width: 12.w),
-                  _buildStyleOption(
-                    AppLocalizations.of(context).dark,
-                    AppLocalizations.of(context).dark2,
-                    Icons.dark_mode,
-                  ),
-                  SizedBox(width: 12.w),
-                  _buildStyleOption(
-                    'satellite',
-                    'Satellite',
-                    Icons.satellite_alt,
-                  ),
-                ],
-              ),
-              SizedBox(height: 20.h),
-            ],
-          ),
-        );
-      },
+              ],
+            ),
+            SizedBox(height: 20.h),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildStyleOption(String id, String label, IconData icon) {
-    final isSelected = _selectedMapStyle == id;
+    final vmState = ref.watch(riderHomeViewModelProvider);
+    final isSelected = vmState.selectedMapStyle == id;
     return Expanded(
       child: GestureDetector(
         onTap: () {
-          setState(() => _selectedMapStyle = id);
+          ref.read(riderHomeViewModelProvider.notifier).setMapStyle(id);
           context.pop();
         },
         child: Container(
@@ -1350,12 +1751,15 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
     );
   }
 
-  /// Shows inline search bottom sheet with nearby rides
+  // ─────────────────────────────────────────────────────────────
+  // Search sheet
+  // ─────────────────────────────────────────────────────────────
+
   void _showInlineSearchSheet() {
     HapticFeedback.selectionClick();
-    final outerContext = context; // capture before builders shadow it
-    final TextEditingController fromController = TextEditingController();
-    final TextEditingController toController = TextEditingController();
+    final outerContext = context;
+    final fromCtrl = TextEditingController();
+    final toCtrl = TextEditingController();
     DateTime selectedDate = DateTime.now();
     int selectedSeats = 1;
 
@@ -1363,445 +1767,433 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            final queryAnchor = _nearbyQueryAnchor ?? _currentLocation;
-            return Consumer(
-              builder: (context, consumerRef, _) {
-                final nearbyRides = consumerRef.watch(
-                  nearbyRidesStreamProvider(queryAnchor, _searchRadius),
-                );
+      builder: (sheetCtx) => StatefulBuilder(
+        builder: (ctx, setModal) {
+          final vmState = ref.read(riderHomeViewModelProvider);
+          final anchor = vmState.nearbyQueryAnchor ??
+              vmState.currentLocation ??
+              const LatLng(0, 0);
+          final searchRadius = vmState.searchRadius;
+          return Consumer(
+            builder: (ctx, cRef, _) {
+              final nearbyRides = cRef.watch(
+                nearbyRidesStreamProvider(anchor, searchRadius),
+              );
+              final l10n = AppLocalizations.of(ctx);
 
-                return Container(
-                  height: MediaQuery.of(context).size.height * 0.85,
-                  decoration: BoxDecoration(
-                    color: AppColors.background,
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(24.r),
-                    ),
+              return Container(
+                height: MediaQuery.of(ctx).size.height * 0.85,
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(24.r),
                   ),
-                  child: Column(
-                    children: [
-                      // Handle bar
-                      Container(
-                        margin: EdgeInsets.only(top: 12.h),
-                        width: 40.w,
-                        height: 4.h,
-                        decoration: BoxDecoration(
-                          color: AppColors.border,
-                          borderRadius: BorderRadius.circular(2.r),
-                        ),
+                ),
+                child: Column(
+                  children: [
+                    // Handle
+                    Container(
+                      margin: EdgeInsets.only(top: 12.h),
+                      width: 40.w,
+                      height: 4.h,
+                      decoration: BoxDecoration(
+                        color: AppColors.border,
+                        borderRadius: BorderRadius.circular(2.r),
                       ),
+                    ),
 
-                      // Header
-                      Padding(
-                        padding: EdgeInsets.all(16.w),
-                        child: Row(
-                          children: [
-                            GestureDetector(
-                              onTap: () => context.pop(),
-                              child: Icon(
-                                Icons.close_rounded,
-                                color: AppColors.textPrimary,
-                                size: 24.sp,
-                              ),
+                    // Header
+                    Padding(
+                      padding: EdgeInsets.all(16.w),
+                      child: Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () => ctx.pop(),
+                            child: Icon(
+                              Icons.close_rounded,
+                              color: AppColors.textPrimary,
+                              size: 24.sp,
                             ),
-                            SizedBox(width: 16.w),
-                            Text(
-                              AppLocalizations.of(context).findARide,
-                              style: TextStyle(
-                                fontSize: 20.sp,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textPrimary,
-                              ),
+                          ),
+                          SizedBox(width: 16.w),
+                          Text(
+                            l10n.findARide,
+                            style: TextStyle(
+                              fontSize: 20.sp,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
                             ),
-                            const Spacer(),
-                            TextButton.icon(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                                outerContext.push(AppRoutes.searchRides.path);
-                              },
-                              icon: Icon(Icons.tune_rounded, size: 18.sp),
-                              label: Text(AppLocalizations.of(context).filters),
-                            ),
-                          ],
-                        ),
+                          ),
+                          const Spacer(),
+                          TextButton.icon(
+                            onPressed: () {
+                              Navigator.of(ctx).pop();
+                              outerContext.push(AppRoutes.searchRides.path);
+                            },
+                            icon: Icon(Icons.tune_rounded, size: 18.sp),
+                            label: Text(l10n.filters),
+                          ),
+                        ],
                       ),
+                    ),
 
-                      // Search inputs
-                      Container(
-                        margin: EdgeInsets.symmetric(horizontal: 16.w),
-                        padding: EdgeInsets.all(16.w),
-                        decoration: BoxDecoration(
-                          color: AppColors.cardBg,
-                          borderRadius: BorderRadius.circular(16.r),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 10,
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          children: [
-                            // From field
-                            TextField(
-                              controller: fromController,
-                              onChanged: (_) => setModalState(() {}),
-                              decoration: InputDecoration(
-                                hintText: AppLocalizations.of(
-                                  context,
-                                ).fromWhere,
-                                hintStyle: TextStyle(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 14.sp,
-                                ),
-                                prefixIcon: Icon(
-                                  Icons.circle,
-                                  color: AppColors.primary,
-                                  size: 12.sp,
-                                ),
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 12.w,
-                                  vertical: 8.h,
-                                ),
-                              ),
-                            ),
-                            Divider(color: AppColors.border, height: 1),
-                            // To field
-                            TextField(
-                              controller: toController,
-                              onChanged: (_) => setModalState(() {}),
-                              decoration: InputDecoration(
-                                hintText: AppLocalizations.of(context).toWhere,
-                                hintStyle: TextStyle(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 14.sp,
-                                ),
-                                prefixIcon: Icon(
-                                  Icons.location_on,
-                                  color: AppColors.error,
-                                  size: 16.sp,
-                                ),
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 12.w,
-                                  vertical: 8.h,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                    // From / To inputs
+                    Container(
+                      margin: EdgeInsets.symmetric(horizontal: 16.w),
+                      padding: EdgeInsets.all(16.w),
+                      decoration: BoxDecoration(
+                        color: AppColors.cardBg,
+                        borderRadius: BorderRadius.circular(16.r),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 10,
+                          ),
+                        ],
                       ),
-
-                      SizedBox(height: 12.h),
-
-                      // Quick date & seat selection
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16.w),
-                        child: Row(
-                          children: [
-                            // Date picker
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () async {
-                                  final date = await showDatePicker(
-                                    context: context,
-                                    initialDate: selectedDate,
-                                    firstDate: DateTime.now(),
-                                    lastDate: DateTime.now().add(
-                                      const Duration(days: 90),
-                                    ),
-                                  );
-                                  if (date != null) {
-                                    setModalState(() => selectedDate = date);
-                                  }
-                                },
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 12.w,
-                                    vertical: 10.h,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.cardBg,
-                                    borderRadius: BorderRadius.circular(12.r),
-                                    border: Border.all(color: AppColors.border),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.calendar_today_rounded,
-                                        size: 18.sp,
-                                        color: AppColors.primary,
-                                      ),
-                                      SizedBox(width: 8.w),
-                                      Text(
-                                        _formatDateShort(selectedDate),
-                                        style: TextStyle(
-                                          fontSize: 13.sp,
-                                          fontWeight: FontWeight.w500,
-                                          color: AppColors.textPrimary,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                      child: Column(
+                        children: [
+                          TextField(
+                            controller: fromCtrl,
+                            onChanged: (_) => setModal(() {}),
+                            decoration: InputDecoration(
+                              hintText: l10n.fromWhere,
+                              hintStyle: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 14.sp,
                               ),
-                            ),
-                            SizedBox(width: 12.w),
-                            // Seat selector
-                            Container(
-                              padding: EdgeInsets.symmetric(
+                              prefixIcon: Icon(
+                                Icons.circle,
+                                color: AppColors.primary,
+                                size: 12.sp,
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.symmetric(
                                 horizontal: 12.w,
-                                vertical: 6.h,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.cardBg,
-                                borderRadius: BorderRadius.circular(12.r),
-                                border: Border.all(color: AppColors.border),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.person_rounded,
-                                    size: 18.sp,
-                                    color: AppColors.primary,
-                                  ),
-                                  SizedBox(width: 8.w),
-                                  GestureDetector(
-                                    onTap: () {
-                                      if (selectedSeats > 1) {
-                                        setModalState(() => selectedSeats--);
-                                      }
-                                    },
-                                    child: Icon(
-                                      Icons.remove_circle_outline,
-                                      size: 20.sp,
-                                      color: selectedSeats > 1
-                                          ? AppColors.primary
-                                          : AppColors.textSecondary,
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 8.w,
-                                    ),
-                                    child: Text(
-                                      AppLocalizations.of(
-                                        context,
-                                      ).value2(selectedSeats),
-                                      style: TextStyle(
-                                        fontSize: 14.sp,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppColors.textPrimary,
-                                      ),
-                                    ),
-                                  ),
-                                  GestureDetector(
-                                    onTap: () {
-                                      if (selectedSeats < 4) {
-                                        setModalState(() => selectedSeats++);
-                                      }
-                                    },
-                                    child: Icon(
-                                      Icons.add_circle_outline,
-                                      size: 20.sp,
-                                      color: selectedSeats < 4
-                                          ? AppColors.primary
-                                          : AppColors.textSecondary,
-                                    ),
-                                  ),
-                                ],
+                                vertical: 8.h,
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                          Divider(color: AppColors.border, height: 1),
+                          TextField(
+                            controller: toCtrl,
+                            onChanged: (_) => setModal(() {}),
+                            decoration: InputDecoration(
+                              hintText: l10n.toWhere,
+                              hintStyle: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 14.sp,
+                              ),
+                              prefixIcon: Icon(
+                                Icons.location_on,
+                                color: AppColors.error,
+                                size: 16.sp,
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12.w,
+                                vertical: 8.h,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
+                    ),
 
-                      SizedBox(height: 16.h),
+                    SizedBox(height: 12.h),
 
-                      // Results header
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16.w),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              AppLocalizations.of(context).nearbyRides,
-                              style: TextStyle(
-                                fontSize: 16.sp,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                            nearbyRides.when(
-                              data: (rides) => Text(
-                                AppLocalizations.of(
-                                  context,
-                                ).valueAvailable(rides.length),
-                                style: TextStyle(
-                                  fontSize: 13.sp,
-                                  color: AppColors.textSecondary,
+                    // Date + Seats
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () async {
+                                final d = await showDatePicker(
+                                  context: ctx,
+                                  initialDate: selectedDate,
+                                  firstDate: DateTime.now(),
+                                  lastDate: DateTime.now().add(
+                                    const Duration(days: 90),
+                                  ),
+                                );
+                                if (d != null) setModal(() => selectedDate = d);
+                              },
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 12.w,
+                                  vertical: 10.h,
                                 ),
-                              ),
-                              loading: () => SizedBox(
-                                width: 16.w,
-                                height: 16.w,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: AppColors.primary,
+                                decoration: BoxDecoration(
+                                  color: AppColors.cardBg,
+                                  borderRadius: BorderRadius.circular(12.r),
+                                  border: Border.all(color: AppColors.border),
                                 ),
-                              ),
-                              error: (_, _) => const SizedBox.shrink(),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      SizedBox(height: 12.h),
-
-                      // Ride list
-                      Expanded(
-                        child: nearbyRides.when(
-                          data: (rides) {
-                            final filteredRides = _filterSearchSheetRides(
-                              rides,
-                              fromText: fromController.text,
-                              toText: toController.text,
-                              date: selectedDate,
-                              seats: selectedSeats,
-                            );
-                            if (filteredRides.isEmpty) {
-                              return Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
+                                child: Row(
                                   children: [
                                     Icon(
-                                      Icons.directions_car_outlined,
-                                      size: 64.sp,
-                                      color: AppColors.textSecondary,
+                                      Icons.calendar_today_rounded,
+                                      size: 18.sp,
+                                      color: AppColors.primary,
                                     ),
-                                    SizedBox(height: 16.h),
+                                    SizedBox(width: 8.w),
                                     Text(
-                                      AppLocalizations.of(
-                                        context,
-                                      ).noRidesAvailableNearby,
-                                      style: TextStyle(
-                                        fontSize: 16.sp,
-                                        color: AppColors.textSecondary,
-                                      ),
-                                    ),
-                                    SizedBox(height: 8.h),
-                                    Text(
-                                      AppLocalizations.of(
-                                        context,
-                                      ).tryExpandingYourSearchRadius,
+                                      _formatDateShort(selectedDate),
                                       style: TextStyle(
                                         fontSize: 13.sp,
-                                        color: AppColors.textSecondary,
+                                        fontWeight: FontWeight.w500,
+                                        color: AppColors.textPrimary,
                                       ),
                                     ),
                                   ],
                                 ),
-                              );
-                            }
-
-                            return ListView.builder(
-                              padding: EdgeInsets.symmetric(horizontal: 16.w),
-                              itemCount: filteredRides.length,
-                              itemBuilder: (context, index) {
-                                final ride = filteredRides[index];
-                                return _buildSearchRideCard(ride, context);
-                              },
-                            );
-                          },
-                          loading: () => Center(
-                            child: CircularProgressIndicator(
-                              color: AppColors.primary,
+                              ),
                             ),
                           ),
-                          error: (error, _) => Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                          SizedBox(width: 12.w),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 12.w,
+                              vertical: 6.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.cardBg,
+                              borderRadius: BorderRadius.circular(12.r),
+                              border: Border.all(color: AppColors.border),
+                            ),
+                            child: Row(
                               children: [
                                 Icon(
-                                  Icons.error_outline,
-                                  size: 48.sp,
-                                  color: AppColors.error,
+                                  Icons.person_rounded,
+                                  size: 18.sp,
+                                  color: AppColors.primary,
                                 ),
-                                SizedBox(height: 12.h),
-                                Text(
-                                  AppLocalizations.of(
-                                    context,
-                                  ).failedToLoadRides,
-                                  style: TextStyle(
-                                    fontSize: 14.sp,
-                                    color: AppColors.textSecondary,
+                                SizedBox(width: 8.w),
+                                GestureDetector(
+                                  onTap: () {
+                                    if (selectedSeats > 1)
+                                      setModal(() => selectedSeats--);
+                                  },
+                                  child: Icon(
+                                    Icons.remove_circle_outline,
+                                    size: 20.sp,
+                                    color: selectedSeats > 1
+                                        ? AppColors.primary
+                                        : AppColors.textSecondary,
+                                  ),
+                                ),
+                                Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 8.w,
+                                  ),
+                                  child: Text(
+                                    AppLocalizations.of(
+                                      context,
+                                    ).value2(selectedSeats),
+                                    style: TextStyle(
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () {
+                                    if (selectedSeats < 4) {
+                                      setModal(() => selectedSeats++);
+                                    } else {
+                                      ScaffoldMessenger.of(ctx).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            AppLocalizations.of(
+                                              context,
+                                            ).maxSeatsReached,
+                                          ),
+                                          behavior: SnackBarBehavior.floating,
+                                          duration: const Duration(seconds: 2),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  child: Icon(
+                                    Icons.add_circle_outline,
+                                    size: 20.sp,
+                                    color: selectedSeats < 4
+                                        ? AppColors.primary
+                                        : AppColors.textSecondary,
                                   ),
                                 ),
                               ],
                             ),
                           ),
+                        ],
+                      ),
+                    ),
+
+                    SizedBox(height: 16.h),
+
+                    // Results header — count reflects filtered list, not raw
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            l10n.nearbyRides,
+                            style: TextStyle(
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          nearbyRides.when(
+                            data: (rides) {
+                              final filtered = _filterSearchSheetRides(
+                                rides,
+                                fromText: fromCtrl.text,
+                                toText: toCtrl.text,
+                                date: selectedDate,
+                                seats: selectedSeats,
+                              );
+                              return Text(
+                                l10n.valueAvailable(filtered.length),
+                                style: TextStyle(
+                                  fontSize: 13.sp,
+                                  color: AppColors.textSecondary,
+                                ),
+                              );
+                            },
+                            loading: () => SizedBox(
+                              width: 16.w,
+                              height: 16.w,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                            error: (_, _) => const SizedBox.shrink(),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    SizedBox(height: 12.h),
+
+                    Expanded(
+                      child: nearbyRides.when(
+                        data: (rides) {
+                          final filtered = _filterSearchSheetRides(
+                            rides,
+                            fromText: fromCtrl.text,
+                            toText: toCtrl.text,
+                            date: selectedDate,
+                            seats: selectedSeats,
+                          );
+
+                          if (filtered.isEmpty) {
+                            final vm = ref.read(riderHomeViewModelProvider.notifier);
+                            final hasOtherDays = vm.applyFilter(rides).any((r) {
+                              final rd = DateTime(
+                                r.departureTime.year,
+                                r.departureTime.month,
+                                r.departureTime.day,
+                              );
+                              final sd = DateTime(
+                                selectedDate.year,
+                                selectedDate.month,
+                                selectedDate.day,
+                              );
+                              return rd != sd;
+                            });
+                            return Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.directions_car_outlined,
+                                    size: 64.sp,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  SizedBox(height: 16.h),
+                                  Text(
+                                    l10n.noRidesAvailableNearby,
+                                    style: TextStyle(
+                                      fontSize: 16.sp,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                  SizedBox(height: 8.h),
+                                  Text(
+                                    hasOtherDays
+                                        ? l10n.tryADifferentDate
+                                        : l10n.tryExpandingYourSearchRadius,
+                                    style: TextStyle(
+                                      fontSize: 13.sp,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+
+                          return ListView.builder(
+                            padding: EdgeInsets.symmetric(horizontal: 16.w),
+                            itemCount: filtered.length,
+                            itemBuilder: (_, i) =>
+                                _buildSearchRideCard(filtered[i], ctx),
+                          );
+                        },
+                        loading: () => Center(
+                          child: CircularProgressIndicator(
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        error: (_, _) => Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                size: 48.sp,
+                                color: AppColors.error,
+                              ),
+                              SizedBox(height: 12.h),
+                              Text(
+                                AppLocalizations.of(context).failedToLoadRides,
+                                style: TextStyle(
+                                  fontSize: 14.sp,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ],
-                  ),
-                );
-              }, // closes Consumer builder
-            ); // closes Consumer
-          },
-        );
-      },
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      ),
     ).whenComplete(() {
-      fromController.dispose();
-      toController.dispose();
+      fromCtrl.dispose();
+      toCtrl.dispose();
     });
   }
 
-  List<RideModel> _filterSearchSheetRides(
-    List<RideModel> rides, {
-    required String fromText,
-    required String toText,
-    required DateTime date,
-    required int seats,
-  }) {
-    final normalizedFrom = fromText.trim().toLowerCase();
-    final normalizedTo = toText.trim().toLowerCase();
-    final dateOnly = DateTime(date.year, date.month, date.day);
+  // ─────────────────────────────────────────────────────────────
+  // Ride cards & chips
+  // ─────────────────────────────────────────────────────────────
 
-    return _filterRides(rides).where((ride) {
-      final rideDate = DateTime(
-        ride.departureTime.year,
-        ride.departureTime.month,
-        ride.departureTime.day,
-      );
-
-      final originText = '${ride.origin.address} ${ride.origin.city ?? ''}'
-          .toLowerCase();
-      final destinationText =
-          '${ride.destination.address} ${ride.destination.city ?? ''}'
-              .toLowerCase();
-
-      final matchesFrom =
-          normalizedFrom.isEmpty || originText.contains(normalizedFrom);
-      final matchesTo =
-          normalizedTo.isEmpty || destinationText.contains(normalizedTo);
-      final matchesDate = rideDate == dateOnly;
-      final matchesSeats = ride.availableSeats >= seats;
-
-      return matchesFrom && matchesTo && matchesDate && matchesSeats;
-    }).toList();
-  }
-
-  /// Builds a ride card for the search sheet - uses proper RideModel model
-  Widget _buildSearchRideCard(RideModel ride, BuildContext sheetContext) {
-    final formattedTime = _formatTime(ride.departureTime);
-
+  Widget _buildSearchRideCard(RideModel ride, BuildContext sheetCtx) {
+    final time = _formatTime(ride.departureTime);
     return GestureDetector(
       onTap: () {
-        sheetContext.pop();
+        sheetCtx.pop();
         context.pushNamed(
           AppRoutes.rideDetail.name,
           pathParameters: {'id': ride.id},
@@ -1829,16 +2221,11 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
         ),
         child: Column(
           children: [
-            // Driver row
             DriverInfoWidget(
               driverId: ride.driverId,
-              builder: (context, displayName, photoUrl, rating) => Row(
+              builder: (ctx, name, photo, rating) => Row(
                 children: [
-                  PremiumAvatar(
-                    imageUrl: photoUrl,
-                    name: displayName,
-                    size: 44.w,
-                  ),
+                  PremiumAvatar(imageUrl: photo, name: name, size: 44.w),
                   SizedBox(width: 12.w),
                   Expanded(
                     child: Column(
@@ -1847,7 +2234,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                         Row(
                           children: [
                             Text(
-                              displayName,
+                              name,
                               style: TextStyle(
                                 fontSize: 15.sp,
                                 fontWeight: FontWeight.w600,
@@ -1888,7 +2275,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                             ),
                             SizedBox(width: 4.w),
                             Text(
-                              formattedTime,
+                              time,
                               style: TextStyle(
                                 fontSize: 13.sp,
                                 color: AppColors.textSecondary,
@@ -1899,7 +2286,6 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                       ],
                     ),
                   ),
-                  // Price
                   Container(
                     padding: EdgeInsets.symmetric(
                       horizontal: 12.w,
@@ -1923,10 +2309,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                 ],
               ),
             ),
-
             SizedBox(height: 12.h),
-
-            // Route info
             Row(
               children: [
                 Column(
@@ -1985,10 +2368,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                 ),
               ],
             ),
-
             SizedBox(height: 12.h),
-
-            // Bottom row
             Row(
               children: [
                 _buildSearchChip(
@@ -1996,19 +2376,22 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                   AppLocalizations.of(context).valueSeats(ride.availableSeats),
                   AppColors.primary,
                 ),
-                SizedBox(width: 8.w),
-                if (ride.isEco)
+                if (ride.isEco) ...[
+                  SizedBox(width: 8.w),
                   _buildSearchChip(
                     Icons.eco_rounded,
                     AppLocalizations.of(context).eco,
                     AppColors.success,
                   ),
-                if (ride.isPremium)
+                ],
+                if (ride.isPremium) ...[
+                  SizedBox(width: 8.w),
                   _buildSearchChip(
                     Icons.star_rounded,
                     AppLocalizations.of(context).premium,
                     AppColors.starFilled,
                   ),
+                ],
               ],
             ),
           ],
@@ -2042,24 +2425,10 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
     );
   }
 
-  String _formatDateShort(DateTime date) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final tomorrow = today.add(const Duration(days: 1));
-    final dateOnly = DateTime(date.year, date.month, date.day);
+  // ─────────────────────────────────────────────────────────────
+  // Ride details sheet
+  // ─────────────────────────────────────────────────────────────
 
-    if (dateOnly == today) return AppLocalizations.of(context).today;
-    if (dateOnly == tomorrow) return AppLocalizations.of(context).tomorrow;
-    return '${date.day}/${date.month}';
-  }
-
-  String _formatTime(DateTime dateTime) {
-    final hour = dateTime.hour.toString().padLeft(2, '0');
-    final minute = dateTime.minute.toString().padLeft(2, '0');
-    return '$hour:$minute';
-  }
-
-  /// Show ride details using proper RideModel model
   void _showRideDetails(RideModel ride) {
     HapticFeedback.mediumImpact();
     showModalBottomSheet(
@@ -2068,59 +2437,76 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
       ),
-      builder: (context) {
-        return Container(
+      builder: (ctx) => SingleChildScrollView(
+        child: Container(
           padding: EdgeInsets.all(20.w),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Mini map preview
+              // Route preview — lightweight, no second map instance
               Container(
-                height: 120.h,
+                height: 90.h,
                 decoration: BoxDecoration(
+                  color: AppColors.primarySurface,
                   borderRadius: BorderRadius.circular(16.r),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 8,
-                    ),
-                  ],
                 ),
-                clipBehavior: Clip.antiAlias,
-                child: FlutterMap(
-                  options: MapOptions(
-                    initialCenter: ride.origin.toLatLng(),
-                    initialZoom: 13,
-                    interactionOptions: const InteractionOptions(
-                      flags: InteractiveFlag.none,
-                    ),
-                  ),
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                child: Row(
                   children: [
-                    TileLayer(
-                      urlTemplate:
-                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'com.sportconnect.app',
-                    ),
-                    MarkerLayer(
-                      markers: [
-                        Marker(
-                          point: ride.origin.toLatLng(),
-                          width: 40,
-                          height: 40,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: AppColors.primary,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 3),
-                            ),
-                            child: Icon(
-                              Icons.directions_car,
-                              color: Colors.white,
-                              size: 20.sp,
-                            ),
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 10.w,
+                          height: 10.w,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            shape: BoxShape.circle,
                           ),
                         ),
+                        Container(
+                          width: 2.w,
+                          height: 24.h,
+                          color: AppColors.border,
+                        ),
+                        Icon(
+                          Icons.location_on,
+                          color: AppColors.error,
+                          size: 16.sp,
+                        ),
                       ],
+                    ),
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            ride.origin.address.isNotEmpty
+                                ? ride.origin.address
+                                : AppLocalizations.of(context).pickupLocation,
+                            style: TextStyle(
+                              fontSize: 13.sp,
+                              color: AppColors.textPrimary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(height: 16.h),
+                          Text(
+                            ride.destination.address.isNotEmpty
+                                ? ride.destination.address
+                                : AppLocalizations.of(context).destination,
+                            style: TextStyle(
+                              fontSize: 13.sp,
+                              color: AppColors.textPrimary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -2128,23 +2514,18 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
 
               SizedBox(height: 16.h),
 
-              // Driver info
               DriverInfoWidget(
                 driverId: ride.driverId,
-                builder: (context, displayName, photoUrl, rating) => Row(
+                builder: (ctx, name, photo, rating) => Row(
                   children: [
-                    PremiumAvatar(
-                      imageUrl: photoUrl,
-                      name: displayName,
-                      size: 50.w,
-                    ),
+                    PremiumAvatar(imageUrl: photo, name: name, size: 50.w),
                     SizedBox(width: 12.w),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            displayName,
+                            name,
                             style: TextStyle(
                               fontSize: 16.sp,
                               fontWeight: FontWeight.w700,
@@ -2171,87 +2552,36 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                         ],
                       ),
                     ),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 16.w,
-                        vertical: 8.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(20.r),
-                      ),
-                      child: Text(
-                        AppLocalizations.of(
-                          context,
-                        ).value5(ride.pricePerSeat.toStringAsFixed(0)),
-                        style: TextStyle(
-                          fontSize: 18.sp,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              SizedBox(height: 16.h),
-
-              // Route info
-              Container(
-                padding: EdgeInsets.all(16.w),
-                decoration: BoxDecoration(
-                  color: AppColors.cardBg,
-                  borderRadius: BorderRadius.circular(16.r),
-                ),
-                child: Column(
-                  children: [
-                    Row(
+                    // Price + seat total
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Icon(
-                          Icons.circle,
-                          color: AppColors.success,
-                          size: 12.sp,
-                        ),
-                        SizedBox(width: 12.w),
-                        Expanded(
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 14.w,
+                            vertical: 6.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(20.r),
+                          ),
                           child: Text(
-                            ride.origin.address.isNotEmpty
-                                ? ride.origin.address
-                                : AppLocalizations.of(context).pickupLocation,
+                            AppLocalizations.of(
+                              context,
+                            ).value5(ride.pricePerSeat.toStringAsFixed(0)),
                             style: TextStyle(
-                              fontSize: 14.sp,
-                              color: AppColors.textPrimary,
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
                             ),
                           ),
                         ),
-                      ],
-                    ),
-                    Padding(
-                      padding: EdgeInsets.only(left: 5.w),
-                      child: Container(
-                        width: 2,
-                        height: 20.h,
-                        color: AppColors.border,
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.location_on,
-                          color: AppColors.error,
-                          size: 12.sp,
-                        ),
-                        SizedBox(width: 12.w),
-                        Expanded(
-                          child: Text(
-                            ride.destination.address.isNotEmpty
-                                ? ride.destination.address
-                                : AppLocalizations.of(context).destination,
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              color: AppColors.textPrimary,
-                            ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          AppLocalizations.of(context).perSeat,
+                          style: TextStyle(
+                            fontSize: 11.sp,
+                            color: AppColors.textSecondary,
                           ),
                         ),
                       ],
@@ -2262,7 +2592,6 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
 
               SizedBox(height: 16.h),
 
-              // Ride info
               Row(
                 children: [
                   _buildRideInfoChip(
@@ -2289,12 +2618,11 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
 
               SizedBox(height: 20.h),
 
-              // Book button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    context.pop();
+                    ctx.pop();
                     context.pushNamed(
                       AppRoutes.rideDetail.name,
                       pathParameters: {'id': ride.id},
@@ -2321,8 +2649,8 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
               SizedBox(height: 20.h),
             ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -2350,17 +2678,106 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
       ),
     );
   }
+
+  // ─────────────────────────────────────────────────────────────
+  // Filtering helpers
+  // ─────────────────────────────────────────────────────────────
+
+  List<RideModel> _filterSearchSheetRides(
+    List<RideModel> rides, {
+    required String fromText,
+    required String toText,
+    required DateTime date,
+    required int seats,
+  }) {
+    final from = fromText.trim().toLowerCase();
+    final to = toText.trim().toLowerCase();
+    final dateOnly = DateTime(date.year, date.month, date.day);
+
+    final vm = ref.read(riderHomeViewModelProvider.notifier);
+    return vm.applyFilter(rides).where((ride) {
+      final rideDate = DateTime(
+        ride.departureTime.year,
+        ride.departureTime.month,
+        ride.departureTime.day,
+      );
+      final originTxt = '${ride.origin.address} ${ride.origin.city ?? ''}'
+          .toLowerCase();
+      final destTxt =
+          '${ride.destination.address} ${ride.destination.city ?? ''}'
+              .toLowerCase();
+
+      return (from.isEmpty || originTxt.contains(from)) &&
+          (to.isEmpty || destTxt.contains(to)) &&
+          rideDate == dateOnly &&
+          ride.availableSeats >= seats;
+    }).toList();
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Formatters
+  // ─────────────────────────────────────────────────────────────
+
+  String _formatDateShort(DateTime date) {
+    final today = DateTime.now();
+    final d = DateTime(date.year, date.month, date.day);
+    final t = DateTime(today.year, today.month, today.day);
+    if (d == t) return AppLocalizations.of(context).today;
+    if (d == t.add(const Duration(days: 1)))
+      return AppLocalizations.of(context).tomorrow;
+    return '${date.day}/${date.month}';
+  }
+
+  String _formatTime(DateTime dt) =>
+      '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
 }
 
-/// Persistent banner that floats above the home map when the user has an
-/// active booking (accepted or in-progress ride). Tapping it re-enters the
-/// correct screen without needing to navigate through My Rides first.
-///
-/// States handled:
-///  • accepted booking + unpaid  → booking pending (complete payment)
-///  • accepted booking + paid    → countdown screen
-///  • accepted booking + ride inProgress → navigation screen
-///  • pending booking            → subtle "awaiting driver" chip
+// ─────────────────────────────────────────────────────────────
+// Notification badge helper widget
+// ─────────────────────────────────────────────────────────────
+
+class _NotificationBadge extends StatelessWidget {
+  final int count;
+  final Widget child;
+  const _NotificationBadge({required this.count, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    if (count == 0) return child;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        child,
+        Positioned(
+          top: -4,
+          right: -4,
+          child: Container(
+            padding: EdgeInsets.all(3.w),
+            decoration: BoxDecoration(
+              color: AppColors.error,
+              shape: BoxShape.circle,
+            ),
+            constraints: BoxConstraints(minWidth: 16.w, minHeight: 16.w),
+            child: Text(
+              count > 99 ? '99+' : '$count',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 9.sp,
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Active Trip Banner
+// ─────────────────────────────────────────────────────────────
+
 class _ActiveTripBanner extends ConsumerWidget {
   const _ActiveTripBanner();
 
@@ -2372,49 +2789,40 @@ class _ActiveTripBanner extends ConsumerWidget {
     final bookings =
         ref.watch(bookingsByPassengerProvider(user.uid)).value ?? [];
 
-    // ── 1. Find the most relevant in-flight booking ─────────────────────
-    // Priority: accepted (sorted by departure) > pending
-    final acceptedBookings =
+    final accepted =
         bookings.where((b) => b.status == BookingStatus.accepted).toList()
-          ..sort((a, b) {
-            final aTime = a.createdAt ?? DateTime(0);
-            final bTime = b.createdAt ?? DateTime(0);
-            return aTime.compareTo(bTime);
-          });
-
-    final pendingBookings = bookings
+          ..sort(
+            (a, b) => (a.createdAt ?? DateTime(0)).compareTo(
+              b.createdAt ?? DateTime(0),
+            ),
+          );
+    final pending = bookings
         .where((b) => b.status == BookingStatus.pending)
         .toList();
 
-    if (acceptedBookings.isEmpty && pendingBookings.isEmpty) {
-      return const SizedBox.shrink();
-    }
+    if (accepted.isEmpty && pending.isEmpty) return const SizedBox.shrink();
 
-    // ── 2. If there's an accepted booking, show full banner ──────────────
-    if (acceptedBookings.isNotEmpty) {
-      final booking = acceptedBookings.first;
+    if (accepted.isNotEmpty) {
+      final booking = accepted.first;
       final ride = ref.watch(rideStreamProvider(booking.rideId)).value;
 
-      // Don't show for finished rides
       if (ride != null &&
           (ride.status == RideStatus.completed ||
               ride.status == RideStatus.cancelled)) {
-        return _buildPendingChip(context, pendingBookings);
+        return _pendingChip(context, pending);
       }
-
-      return _buildAcceptedBanner(context, booking, ride);
+      return _acceptedBanner(context, booking, ride);
     }
 
-    // ── 3. Only pending bookings → subtle chip ───────────────────────────
-    return _buildPendingChip(context, pendingBookings);
+    return _pendingChip(context, pending);
   }
 
-  /// Full-width banner for an accepted (or in-progress) booking.
-  Widget _buildAcceptedBanner(
+  Widget _acceptedBanner(
     BuildContext context,
     RideBooking booking,
     RideModel? ride,
   ) {
+    final l10n = AppLocalizations.of(context);
     final isInProgress = ride?.status == RideStatus.inProgress;
     final needsPayment =
         !isInProgress &&
@@ -2425,39 +2833,38 @@ class _ActiveTripBanner extends ConsumerWidget {
     final String title;
     final String subtitle;
     final VoidCallback onTap;
-    final Color bannerColor;
+    final Color color;
 
     if (isInProgress) {
       icon = Icons.navigation_rounded;
-      title = 'Ride In Progress';
+      title = l10n.rideInProgress;
       subtitle = ride != null
-          ? '${ride.origin.city ?? ride.origin.address} → '
-                '${ride.destination.city ?? ride.destination.address}'
-          : 'Tap to open navigation';
+          ? '${ride.origin.city ?? ride.origin.address} → ${ride.destination.city ?? ride.destination.address}'
+          : l10n.tapToOpenNavigation;
       onTap = () => context.push(
         AppRoutes.rideNavigation.path.replaceFirst(':id', booking.rideId),
       );
-      bannerColor = AppColors.success;
+      color = AppColors.success;
     } else if (needsPayment) {
       icon = Icons.payment_rounded;
-      title = 'Complete Payment';
-      subtitle = 'Your booking is accepted — payment required';
+      title = l10n.completePayment;
+      subtitle = l10n.bookingAcceptedPaymentRequired;
       onTap = () => context.pushNamed(
         AppRoutes.rideBookingPending.name,
         pathParameters: {'rideId': booking.rideId},
       );
-      bannerColor = AppColors.warning;
+      color = AppColors.warning;
     } else {
       icon = Icons.access_time_rounded;
-      title = 'Booking Confirmed';
+      title = l10n.bookingConfirmed;
       subtitle = ride != null
-          ? 'Departing ${_formatDeparture(ride.departureTime)}'
-          : 'Tap to view countdown';
+          ? l10n.departingValue(_formatDeparture(ride.departureTime, context))
+          : l10n.tapToViewCountdown;
       onTap = () => context.pushNamed(
         AppRoutes.rideCountdown.name,
         pathParameters: {'bookingId': booking.id},
       );
-      bannerColor = AppColors.primary;
+      color = AppColors.primary;
     }
 
     return GestureDetector(
@@ -2466,11 +2873,11 @@ class _ActiveTripBanner extends ConsumerWidget {
           Container(
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
                 decoration: BoxDecoration(
-                  color: bannerColor,
+                  color: color,
                   borderRadius: BorderRadius.circular(16.r),
                   boxShadow: [
                     BoxShadow(
-                      color: bannerColor.withValues(alpha: 0.45),
+                      color: color.withValues(alpha: 0.45),
                       blurRadius: 18,
                       offset: const Offset(0, 5),
                     ),
@@ -2527,9 +2934,9 @@ class _ActiveTripBanner extends ConsumerWidget {
     );
   }
 
-  /// Small pill shown when bookings are only in the pending state.
-  Widget _buildPendingChip(BuildContext context, List<RideBooking> pending) {
+  Widget _pendingChip(BuildContext context, List<RideBooking> pending) {
     if (pending.isEmpty) return const SizedBox.shrink();
+    final l10n = AppLocalizations.of(context);
     return Align(
           alignment: Alignment.centerRight,
           child: GestureDetector(
@@ -2552,17 +2959,15 @@ class _ActiveTripBanner extends ConsumerWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  SizedBox(
-                    width: 10.w,
-                    height: 10.w,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.primary,
-                    ),
+                  // Static clock icon — spinner was misleading (passive wait, not active loading)
+                  Icon(
+                    Icons.schedule_rounded,
+                    size: 14.sp,
+                    color: AppColors.primary,
                   ),
                   SizedBox(width: 8.w),
                   Text(
-                    'Awaiting driver (${pending.length})',
+                    l10n.awaitingDriverCount(pending.length),
                     style: TextStyle(
                       fontSize: 12.sp,
                       fontWeight: FontWeight.w600,
@@ -2579,16 +2984,14 @@ class _ActiveTripBanner extends ConsumerWidget {
         .slideY(begin: 0.2, curve: Curves.easeOutCubic);
   }
 
-  String _formatDeparture(DateTime dt) {
-    final now = DateTime.now();
-    final diff = dt.difference(now);
-    if (diff.inDays == 0) {
-      final h = dt.hour.toString().padLeft(2, '0');
-      final m = dt.minute.toString().padLeft(2, '0');
-      return 'today at $h:$m';
-    } else if (diff.inDays == 1) {
-      return 'tomorrow';
-    }
-    return 'in ${diff.inDays} days';
+  /// Fully localized departure formatter.
+  String _formatDeparture(DateTime dt, BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final diff = dt.difference(DateTime.now());
+    final h = dt.hour.toString().padLeft(2, '0');
+    final m = dt.minute.toString().padLeft(2, '0');
+    if (diff.inDays == 0) return l10n.departingTodayAt(h, m);
+    if (diff.inDays == 1) return l10n.departingTomorrow;
+    return l10n.departingInDays(diff.inDays);
   }
 }

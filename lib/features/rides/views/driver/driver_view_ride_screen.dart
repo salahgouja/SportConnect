@@ -16,11 +16,15 @@ import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/passenger_info_widget.dart';
 
+import 'package:sport_connect/core/widgets/ride_feature_widgets.dart';
+import 'package:sport_connect/core/widgets/safety_widgets.dart';
+
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
+import 'package:sport_connect/features/rides/view_models/driver_view_ride_view_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/core/utils/distance_formatter.dart';
@@ -41,7 +45,6 @@ class DriverViewRideScreen extends ConsumerStatefulWidget {
 class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  bool _isProcessing = false;
 
   @override
   void initState() {
@@ -55,14 +58,38 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
     super.dispose();
   }
 
+  void _showInfoSnackBar({
+    required Widget content,
+    Color backgroundColor = AppColors.success,
+  }) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: content,
+        backgroundColor: backgroundColor,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.r),
+        ),
+      ),
+    );
+  }
+
+  void _showErrorMessage(String message) {
+    _showInfoSnackBar(content: Text(message), backgroundColor: AppColors.error);
+  }
+
   @override
   Widget build(BuildContext context) {
     // Watch only the ViewModel — it already aggregates ride + bookings.
     final vmState = ref.watch(rideDetailViewModelProvider(widget.rideId));
+    final uiState = ref.watch(
+      driverRideScreenUiViewModelProvider(widget.rideId),
+    );
 
     return vmState.ride.when(
       data: (ride) => ride != null
-          ? _buildContent(ride, vmState.bookings)
+          ? _buildContent(ride, vmState.bookings, vmState, uiState)
           : _buildErrorState(AppLocalizations.of(context).rideNotFound),
       loading: () => _buildLoadingState(),
       error: (error, _) => _buildErrorState(error.toString()),
@@ -129,7 +156,44 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
     );
   }
 
-  Widget _buildContent(RideModel ride, List<RideBooking> bookings) {
+  Widget _buildContent(
+    RideModel ride,
+    List<RideBooking> bookings,
+    RideDetailState vmState,
+    DriverRideScreenUiState uiState,
+  ) {
+    // Trigger OSRM route loading
+    if (uiState.osrmRouteRideId != ride.id) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref
+            .read(driverRideScreenUiViewModelProvider(widget.rideId).notifier)
+            .ensureRouteLoaded(ride);
+      });
+    }
+
+    // ── Auto-navigate when ride transitions to inProgress ────────────────
+    // Only navigate on a *transition* (not re-entry) to avoid bouncing the
+    // driver back to the active screen while they intentionally came here.
+    if (ride.status == RideStatus.inProgress) {
+      final notifier = ref.read(
+        driverRideScreenUiViewModelProvider(widget.rideId).notifier,
+      );
+      final shouldNavigate = notifier.registerRideStatus(ride.status);
+      if (shouldNavigate) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (context.mounted) {
+            context.pushReplacement(
+              '${AppRoutes.driverActiveRide.path}?rideId=${ride.id}',
+            );
+          }
+        });
+      }
+    } else {
+      ref
+          .read(driverRideScreenUiViewModelProvider(widget.rideId).notifier)
+          .registerRideStatus(ride.status);
+    }
+
     final pendingBookings = bookings
         .where((b) => b.status == BookingStatus.pending)
         .toList();
@@ -142,7 +206,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [
-            _buildSliverAppBar(ride, confirmedBookings),
+            _buildSliverAppBar(ride, confirmedBookings, uiState),
             SliverToBoxAdapter(
               child: _buildStatsBar(
                 ride,
@@ -245,6 +309,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
   Widget _buildSliverAppBar(
     RideModel ride,
     List<RideBooking> confirmedBookings,
+    DriverRideScreenUiState uiState,
   ) {
     return SliverAppBar(
       expandedHeight: 200.h,
@@ -306,6 +371,38 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                 TileLayer(
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.sportconnect.app',
+                ),
+                PolylineLayer(
+                  polylines: [
+                    Polyline(
+                      points:
+                          uiState.osrmRoutePoints ??
+                          [
+                            LatLng(ride.origin.latitude, ride.origin.longitude),
+                            LatLng(
+                              ride.destination.latitude,
+                              ride.destination.longitude,
+                            ),
+                          ],
+                      strokeWidth: 6.0,
+                      color: Colors.white,
+                      borderStrokeWidth: 2.0,
+                      borderColor: Colors.white,
+                    ),
+                    Polyline(
+                      points:
+                          uiState.osrmRoutePoints ??
+                          [
+                            LatLng(ride.origin.latitude, ride.origin.longitude),
+                            LatLng(
+                              ride.destination.latitude,
+                              ride.destination.longitude,
+                            ),
+                          ],
+                      strokeWidth: 4.0,
+                      color: AppColors.primary,
+                    ),
+                  ],
                 ),
                 MarkerLayer(
                   markers: [
@@ -1154,7 +1251,10 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: _isProcessing
+                  onPressed:
+                      ref
+                          .watch(rideDetailViewModelProvider(widget.rideId))
+                          .isActing
                       ? null
                       : () => _rejectBooking(ride, booking),
                   icon: Icon(Icons.close_rounded, size: 18.sp),
@@ -1175,7 +1275,10 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
               Expanded(
                 flex: 2,
                 child: ElevatedButton.icon(
-                  onPressed: _isProcessing
+                  onPressed:
+                      ref
+                          .watch(rideDetailViewModelProvider(widget.rideId))
+                          .isActing
                       ? null
                       : () => _acceptBooking(ride, booking),
                   icon: Icon(
@@ -1342,6 +1445,29 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                   color: AppColors.textSecondary,
                 ),
               ),
+              if (ride.status == RideStatus.inProgress)
+                IconButton(
+                  tooltip: 'Mark no-show',
+                  onPressed: () async {
+                    final confirmed = await NoShowDialog.show(
+                      context,
+                      passengerName: 'Passenger',
+                    );
+                    if (confirmed == true && context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('No-show reported')),
+                      );
+                    }
+                  },
+                  style: IconButton.styleFrom(
+                    backgroundColor: AppColors.warning.withValues(alpha: 0.1),
+                  ),
+                  icon: Icon(
+                    Icons.person_off_rounded,
+                    size: 18.sp,
+                    color: AppColors.warning,
+                  ),
+                ),
             ],
           ),
         ],
@@ -1463,6 +1589,28 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                 _duplicateRide(ride);
               },
             ),
+            if (ride.status == RideStatus.inProgress)
+              ListTile(
+                leading: Icon(
+                  Icons.report_problem_rounded,
+                  color: AppColors.warning,
+                ),
+                title: const Text('Report Incident'),
+                onTap: () {
+                  Navigator.pop(context);
+                  IncidentReportSheet.show(
+                    context,
+                    rideId: ride.id,
+                    onSubmit: (report) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Incident report submitted'),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
             if (ride.status == RideStatus.active)
               ListTile(
                 leading: Icon(Icons.cancel_rounded, color: AppColors.error),
@@ -1544,7 +1692,6 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
 
   Future<void> _acceptBooking(RideModel ride, RideBooking booking) async {
     HapticFeedback.mediumImpact();
-    setState(() => _isProcessing = true);
 
     try {
       // Fetch passenger profile for confirmation message
@@ -1552,59 +1699,47 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
         userProfileProvider(booking.passengerId).future,
       );
 
-      if (!mounted) return;
+      if (!context.mounted) return;
 
       // Use fallback if profile is null
       final passengerName = passengerProfile?.displayName ?? 'Passenger';
 
-      await ref
+      final success = await ref
           .read(rideDetailViewModelProvider(ride.id).notifier)
           .acceptBooking(booking.id);
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle_rounded, color: Colors.white),
-                SizedBox(width: 8.w),
-                Text(
-                  AppLocalizations.of(
-                    context,
-                  ).bookingConfirmedForValue(passengerName),
-                ),
-              ],
+      if (!success) {
+        _showErrorMessage('Could not confirm booking. Please try again.');
+        return;
+      }
+
+      _showInfoSnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle_rounded, color: Colors.white),
+            SizedBox(width: 8.w),
+            Text(
+              AppLocalizations.of(
+                context,
+              ).bookingConfirmedForValue(passengerName),
             ),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+          ],
+        ),
+      );
     } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Could not confirm booking. Please try again.'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isProcessing = false);
+      _showErrorMessage('Could not confirm booking. Please try again.');
     }
   }
 
   Future<void> _rejectBooking(RideModel ride, RideBooking booking) async {
-    if (_isProcessing) return;
-    setState(() => _isProcessing = true);
+    if (ref.read(rideDetailViewModelProvider(ride.id)).isActing) return;
 
     // Fetch passenger profile for dialog message
     final passengerProfile = await ref.read(
       userProfileProvider(booking.passengerId).future,
     );
 
-    if (!mounted) return;
+    if (!context.mounted) return;
 
     // Use fallback if profile is null
     final passengerName = passengerProfile?.displayName ?? 'Passenger';
@@ -1635,32 +1770,20 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
     );
 
     if (confirmed != true) {
-      if (mounted) setState(() => _isProcessing = false);
       return;
     }
 
     HapticFeedback.mediumImpact();
 
     try {
-      await ref
-          .read(rideActionsViewModelProvider)
-          .updateBookingStatus(
-            rideId: ride.id,
-            bookingId: booking.id,
-            newStatus: BookingStatus.rejected,
-          );
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Could not decline booking. Please try again.'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+      final success = await ref
+          .read(rideDetailViewModelProvider(ride.id).notifier)
+          .rejectBooking(booking.id);
+      if (!success) {
+        _showErrorMessage('Could not decline booking. Please try again.');
       }
-    } finally {
-      if (mounted) setState(() => _isProcessing = false);
+    } catch (_) {
+      _showErrorMessage('Could not decline booking. Please try again.');
     }
   }
 
@@ -1673,11 +1796,9 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       final phoneNumber = passenger?.phoneNumber;
 
       if (phoneNumber == null || phoneNumber.isEmpty) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).phoneNumberNotAvailable),
-          ),
+        _showInfoSnackBar(
+          content: Text(AppLocalizations.of(context).phoneNumberNotAvailable),
+          backgroundColor: AppColors.textPrimary,
         );
         return;
       }
@@ -1686,19 +1807,15 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       if (await canLaunchUrl(phoneUri)) {
         await launchUrl(phoneUri);
       } else {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).cannotMakePhoneCalls),
-          ),
+        _showInfoSnackBar(
+          content: Text(AppLocalizations.of(context).cannotMakePhoneCalls),
+          backgroundColor: AppColors.textPrimary,
         );
       }
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).failedToLaunchDialer),
-        ),
+      _showInfoSnackBar(
+        content: Text(AppLocalizations.of(context).failedToLaunchDialer),
+        backgroundColor: AppColors.textPrimary,
       );
     }
   }
@@ -1709,7 +1826,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       userProfileProvider(booking.passengerId).future,
     );
 
-    if (!mounted) return;
+    if (!context.mounted) return;
 
     // Use fallback if profile is null
     final passengerName = passengerProfile?.displayName ?? 'Passenger';
@@ -1748,17 +1865,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
             newStatus: BookingStatus.cancelled,
           );
     } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              'Could not remove passenger. Please try again.',
-            ),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+      _showErrorMessage('Could not remove passenger. Please try again.');
     }
   }
 
@@ -1774,7 +1881,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
         userProfileProvider(booking.passengerId).future,
       );
 
-      if (!mounted) return;
+      if (!context.mounted) return;
 
       // If profile doesn't exist, show error and return
       if (passengerProfile == null) {
@@ -1798,7 +1905,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
         ).future,
       );
 
-      if (!mounted) return;
+      if (!context.mounted) return;
 
       final passengerUser = UserModel.rider(
         uid: booking.passengerId,
@@ -1813,13 +1920,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
         extra: passengerUser,
       );
     } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Failed to open chat. Please try again.'),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      _showErrorMessage('Failed to open chat. Please try again.');
     }
   }
 
@@ -1899,20 +2000,19 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
     if (confirmed != true) return;
 
     try {
-      await ref.read(rideActionsViewModelProvider).startRide(ride.id);
+      final success = await ref
+          .read(rideDetailViewModelProvider(ride.id).notifier)
+          .startRide();
+      if (!success) {
+        _showErrorMessage('Could not start ride. Please try again.');
+        return;
+      }
       // Navigate directly to the active ride management screen
-      if (mounted) {
+      if (context.mounted) {
         context.push('${AppRoutes.driverActiveRide.path}?rideId=${ride.id}');
       }
     } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Could not start ride. Please try again.'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
+      _showErrorMessage('Could not start ride. Please try again.');
     }
   }
 
@@ -1938,24 +2038,19 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
     if (confirmed != true) return;
 
     try {
-      await ref.read(rideActionsViewModelProvider).completeRide(ride.id);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).rideCompleted),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+      final success = await ref
+          .read(rideDetailViewModelProvider(ride.id).notifier)
+          .completeRide();
+      if (!success) {
+        _showErrorMessage('Could not complete ride. Please try again.');
+        return;
       }
+      _showInfoSnackBar(
+        content: Text(AppLocalizations.of(context).rideCompleted),
+        backgroundColor: AppColors.textPrimary,
+      );
     } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Could not complete ride. Please try again.'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
+      _showErrorMessage('Could not complete ride. Please try again.');
     }
   }
 
@@ -1984,19 +2079,16 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
     if (confirmed != true) return;
 
     try {
-      await ref
-          .read(rideActionsViewModelProvider)
-          .cancelRide(ride.id, 'Cancelled by driver');
-      if (mounted) context.pop();
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Could not cancel ride. Please try again.'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+      final success = await ref
+          .read(rideDetailViewModelProvider(ride.id).notifier)
+          .cancelRide(reason: 'Cancelled by driver');
+      if (!success) {
+        _showErrorMessage('Could not cancel ride. Please try again.');
+        return;
       }
+      if (context.mounted) context.pop();
+    } catch (_) {
+      _showErrorMessage('Could not cancel ride. Please try again.');
     }
   }
 }

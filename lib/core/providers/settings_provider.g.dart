@@ -8,6 +8,106 @@ part of 'settings_provider.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// Provider for app theme mode (light, dark, system)
+
+@ProviderFor(ThemeModeProvider)
+final themeModeProviderProvider = ThemeModeProviderProvider._();
+
+/// Provider for app theme mode (light, dark, system)
+final class ThemeModeProviderProvider
+    extends $AsyncNotifierProvider<ThemeModeProvider, ThemeMode> {
+  /// Provider for app theme mode (light, dark, system)
+  ThemeModeProviderProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'themeModeProviderProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$themeModeProviderHash();
+
+  @$internal
+  @override
+  ThemeModeProvider create() => ThemeModeProvider();
+}
+
+String _$themeModeProviderHash() => r'f6e0a6e14f7d3aeb608c51aef14607c53ec3d48c';
+
+/// Provider for app theme mode (light, dark, system)
+
+abstract class _$ThemeModeProvider extends $AsyncNotifier<ThemeMode> {
+  FutureOr<ThemeMode> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<ThemeMode>, ThemeMode>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<ThemeMode>, ThemeMode>,
+              AsyncValue<ThemeMode>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
+
+/// Provider for map style preference
+
+@ProviderFor(MapStyleProvider)
+final mapStyleProviderProvider = MapStyleProviderProvider._();
+
+/// Provider for map style preference
+final class MapStyleProviderProvider
+    extends $AsyncNotifierProvider<MapStyleProvider, String> {
+  /// Provider for map style preference
+  MapStyleProviderProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'mapStyleProviderProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$mapStyleProviderHash();
+
+  @$internal
+  @override
+  MapStyleProvider create() => MapStyleProvider();
+}
+
+String _$mapStyleProviderHash() => r'ead5635ac5018d0d7060a602c8aa7ab73401acc4';
+
+/// Provider for map style preference
+
+abstract class _$MapStyleProvider extends $AsyncNotifier<String> {
+  FutureOr<String> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<String>, String>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<String>, String>,
+              AsyncValue<String>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
+
 /// Provider for current app locale
 ///
 /// Reads from SettingsRepository and provides reactive locale state.

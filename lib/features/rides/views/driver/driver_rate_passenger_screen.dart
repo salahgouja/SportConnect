@@ -5,13 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
-import 'package:sport_connect/features/reviews/models/review_model.dart';
-import 'package:sport_connect/features/reviews/view_models/review_view_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
+import 'package:sport_connect/features/rides/view_models/driver_rate_passenger_view_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -36,14 +36,6 @@ class DriverRatePassengerScreen extends ConsumerStatefulWidget {
 
 class _DriverRatePassengerScreenState
     extends ConsumerState<DriverRatePassengerScreen> {
-  double _rating = 0;
-  String _commentText = '';
-  bool _isSubmitting = false;
-
-  // Track which booking / passenger is selected
-  String? _selectedBookingId;
-  String? _selectedPassengerId;
-
   @override
   void dispose() {
     super.dispose();
@@ -52,6 +44,9 @@ class _DriverRatePassengerScreenState
   @override
   Widget build(BuildContext context) {
     final vmState = ref.watch(rideDetailViewModelProvider(widget.rideId));
+    final formState = ref.watch(
+      driverPassengerRatingViewModelProvider(widget.rideId),
+    );
 
     final bookings = vmState.bookings
         .where(
@@ -61,17 +56,56 @@ class _DriverRatePassengerScreenState
         )
         .toList();
 
-    // Auto-select if exactly one passenger
-    if (bookings.length == 1 && _selectedBookingId == null) {
+    if (bookings.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {
-            _selectedBookingId = bookings.first.id;
-            _selectedPassengerId = bookings.first.passengerId;
-          });
-        }
+        ref
+            .read(
+              driverPassengerRatingViewModelProvider(widget.rideId).notifier,
+            )
+            .syncBookings(bookings);
       });
     }
+
+    ref.listen(driverPassengerRatingViewModelProvider(widget.rideId), (
+      previous,
+      next,
+    ) {
+      if (next.errorMessage != null &&
+          next.errorMessage != previous?.errorMessage &&
+          context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.errorMessage!),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+      if (next.isSubmitted &&
+          previous?.isSubmitted != true &&
+          context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle_rounded, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Rating submitted — thank you!'),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+        context.go(AppRoutes.driverRides.path);
+      }
+    });
 
     return vmState.ride.when(
       data: (ride) {
@@ -80,7 +114,7 @@ class _DriverRatePassengerScreenState
             body: const Center(child: Text('Ride not found.')),
           );
         }
-        return _buildContent(ride, bookings);
+        return _buildContent(ride, bookings, formState);
       },
       loading: () => _buildScaffold(
         body: const Center(child: CircularProgressIndicator()),
@@ -101,7 +135,11 @@ class _DriverRatePassengerScreenState
     );
   }
 
-  Widget _buildContent(RideModel ride, List<RideBooking> bookings) {
+  Widget _buildContent(
+    RideModel ride,
+    List<RideBooking> bookings,
+    DriverPassengerRatingState formState,
+  ) {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -166,7 +204,7 @@ class _DriverRatePassengerScreenState
               ...bookings.asMap().entries.map(
                 (entry) => _buildPassengerTile(
                   entry.value,
-                  isSelected: _selectedBookingId == entry.value.id,
+                  isSelected: formState.selectedBookingId == entry.value.id,
                 ).animate().slideY(delay: (entry.key * 80).ms),
               ),
 
@@ -190,21 +228,29 @@ class _DriverRatePassengerScreenState
                     return GestureDetector(
                       onTap: () {
                         HapticFeedback.selectionClick();
-                        setState(() => _rating = starValue);
+                        ref
+                            .read(
+                              driverPassengerRatingViewModelProvider(
+                                widget.rideId,
+                              ).notifier,
+                            )
+                            .setRating(starValue);
                       },
                       child: Padding(
                         padding: EdgeInsets.symmetric(horizontal: 5.w),
                         child:
                             Icon(
-                                  _rating >= starValue
+                                  formState.rating >= starValue
                                       ? Icons.star_rounded
                                       : Icons.star_outline_rounded,
-                                  color: _rating >= starValue
+                                  color: formState.rating >= starValue
                                       ? AppColors.warning
                                       : AppColors.divider,
                                   size: 44.sp,
                                 )
-                                .animate(target: _rating >= starValue ? 1 : 0)
+                                .animate(
+                                  target: formState.rating >= starValue ? 1 : 0,
+                                )
                                 .scale(
                                   begin: const Offset(0.85, 0.85),
                                   end: const Offset(1, 1),
@@ -217,11 +263,11 @@ class _DriverRatePassengerScreenState
                 ),
               ),
 
-              if (_rating > 0) ...[
+              if (formState.rating > 0) ...[
                 SizedBox(height: 8.h),
                 Center(
                   child: Text(
-                    _getRatingLabel(_rating),
+                    _getRatingLabel(formState.rating),
                     style: TextStyle(
                       fontSize: 14.sp,
                       color: AppColors.warning,
@@ -244,7 +290,17 @@ class _DriverRatePassengerScreenState
               ),
               SizedBox(height: 8.h),
               TextField(
-                onChanged: (v) => setState(() => _commentText = v),
+                onChanged: (v) => ref
+                    .read(
+                      driverPassengerRatingViewModelProvider(
+                        widget.rideId,
+                      ).notifier,
+                    )
+                    .setComment(v),
+                controller: TextEditingController(text: formState.comment)
+                  ..selection = TextSelection.collapsed(
+                    offset: formState.comment.length,
+                  ),
                 maxLines: 4,
                 maxLength: 300,
                 style: TextStyle(fontSize: 14.sp, color: AppColors.textPrimary),
@@ -283,11 +339,9 @@ class _DriverRatePassengerScreenState
               // Submit button
               PremiumButton(
                 text: 'Submit Rating',
-                isLoading: _isSubmitting,
-                isDisabled: _rating == 0 || _selectedPassengerId == null,
-                onPressed: (_rating > 0 && _selectedPassengerId != null)
-                    ? () => _submitRating(ride)
-                    : null,
+                isLoading: formState.isSubmitting,
+                isDisabled: !formState.canSubmit,
+                onPressed: formState.canSubmit ? () => _submitRating() : null,
               ),
               SizedBox(height: 12.h),
               Center(
@@ -316,10 +370,11 @@ class _DriverRatePassengerScreenState
     return GestureDetector(
       onTap: () {
         HapticFeedback.selectionClick();
-        setState(() {
-          _selectedBookingId = booking.id;
-          _selectedPassengerId = booking.passengerId;
-        });
+        ref
+            .read(
+              driverPassengerRatingViewModelProvider(widget.rideId).notifier,
+            )
+            .selectBooking(booking);
       },
       child: Container(
         margin: EdgeInsets.only(bottom: 10.h),
@@ -437,59 +492,24 @@ class _DriverRatePassengerScreenState
     return l10n.ratingPoor;
   }
 
-  Future<void> _submitRating(RideModel ride) async {
-    if (_selectedPassengerId == null || _rating <= 0) return;
-
+  Future<void> _submitRating() async {
+    final formState = ref.read(
+      driverPassengerRatingViewModelProvider(widget.rideId),
+    );
+    if (formState.selectedPassengerId == null || formState.rating <= 0) return;
     HapticFeedback.mediumImpact();
-    setState(() => _isSubmitting = true);
 
     try {
       final passengerProfile = ref
-          .read(userProfileProvider(_selectedPassengerId!))
+          .read(userProfileProvider(formState.selectedPassengerId!))
           .value;
 
-      final notifier = ref.read(reviewFormViewModelProvider.notifier);
-      notifier.setRating(_rating.round());
-      notifier.setComment(_commentText.trim());
-
-      final success = await notifier.submitReview(
-        rideId: widget.rideId,
-        revieweeId: _selectedPassengerId!,
-        revieweeName: passengerProfile?.displayName ?? 'Passenger',
-        revieweePhotoUrl: passengerProfile?.photoUrl,
-        type: ReviewType.rider,
-      );
-
-      if (mounted) {
-        if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Row(
-                children: [
-                  Icon(Icons.check_circle_rounded, color: Colors.white),
-                  SizedBox(width: 8),
-                  Text('Rating submitted — thank you!'),
-                ],
-              ),
-              backgroundColor: AppColors.success,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
+      await ref
+          .read(driverPassengerRatingViewModelProvider(widget.rideId).notifier)
+          .submit(
+            revieweeName: passengerProfile?.displayName ?? 'Passenger',
+            revieweePhotoUrl: passengerProfile?.photoUrl,
           );
-          context.go(AppRoutes.driverRides.path);
-        } else {
-          final vmError = ref.read(reviewFormViewModelProvider).error;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(vmError ?? 'Failed to submit rating'),
-              backgroundColor: AppColors.error,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -497,11 +517,12 @@ class _DriverRatePassengerScreenState
             content: Text('Failed to submit: $e'),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
         );
       }
-    } finally {
-      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 }

@@ -6,17 +6,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/providers/settings_provider.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/form_validators.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:sport_connect/core/widgets/utility_widgets.dart';
 import 'package:sport_connect/features/auth/models/auth_exception.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
+import 'package:sport_connect/features/auth/view_models/social_auth_view_model.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -32,15 +30,10 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormBuilderState>();
-  // Stores saved email for FormBuilder initialValue
-  String _savedEmail = '';
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
-  bool _rememberMe = false;
-  bool _isSocialLoading = false;
-  bool _obscurePassword = true;
   final FocusNode _emailFocus = FocusNode();
   final FocusNode _passwordFocus = FocusNode();
 
@@ -48,7 +41,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   void initState() {
     super.initState();
     _setupAnimations();
-    _loadSavedCredentials();
 
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
@@ -56,73 +48,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         statusBarIconBrightness: Brightness.dark,
       ),
     );
-
-    // Show notification rationale after the first frame so the screen is
-    // fully visible before any dialog appears.
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _requestNotificationPermission(),
-    );
-  }
-
-  /// Requests notification permission, always preceded by our rationale dialog.
-  ///
-  /// On some Android OEMs / Android < 13, Firebase reports `denied` on a
-  /// fresh install instead of `notDetermined`, which would make us skip the
-  /// dialog entirely.  We guard against this by persisting a
-  /// `notification_dialog_shown` flag: we only treat `denied` as a genuine
-  /// previous refusal when that flag is already `true`.
-  Future<void> _requestNotificationPermission() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final alreadyAsked = prefs.getBool('notification_dialog_shown') ?? false;
-
-      final settings = await FirebaseMessaging.instance
-          .getNotificationSettings();
-      final status = settings.authorizationStatus;
-
-      // Already granted — nothing to do.
-      if (status == AuthorizationStatus.authorized ||
-          status == AuthorizationStatus.provisional) {
-        TalkerService.info('Notification permission already granted: $status');
-        return;
-      }
-
-      // Genuinely denied after a previous explicit OS prompt — cannot re-ask.
-      if (status == AuthorizationStatus.denied && alreadyAsked) {
-        TalkerService.info(
-          'Notification permission denied; user must re-enable from settings.',
-        );
-        return;
-      }
-
-      // `notDetermined` OR `denied` on first launch (OEM quirk):
-      // show our rationale dialog, then request from the OS.
-      await Future.delayed(const Duration(seconds: 1));
-      if (!mounted) return;
-
-      final accepted = await PermissionDialogHelper.showNotificationRationale(
-        context,
-      );
-
-      // Mark that we have now shown the dialog regardless of the user's choice.
-      await prefs.setBool('notification_dialog_shown', true);
-
-      if (!accepted) {
-        TalkerService.info('User dismissed notification rationale.');
-        return;
-      }
-
-      final result = await FirebaseMessaging.instance.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
-      TalkerService.info(
-        'Notification permission result: ${result.authorizationStatus}',
-      );
-    } catch (e) {
-      TalkerService.error('Failed to request notification permission', e);
-    }
   }
 
   void _setupAnimations() {
@@ -138,24 +63,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     _animationController.forward();
   }
 
-  Future<void> _loadSavedCredentials() async {
-    final credentials = await ref.read(savedCredentialsProvider.future);
-    if (credentials.rememberMe && credentials.email != null) {
-      setState(() {
-        _savedEmail = credentials.email!;
-        _rememberMe = true;
-      });
-    }
-  }
-
   Future<void> _saveCredentials() async {
-    final notifier = ref.read(savedCredentialsProvider.notifier);
-    if (_rememberMe) {
-      final email = (_formKey.currentState?.value['email'] as String? ?? '').trim();
-      await notifier.save(email);
-    } else {
-      await notifier.clear();
-    }
+    final email = (_formKey.currentState?.value['email'] as String? ?? '').trim();
+    await ref.read(loginUiViewModelProvider.notifier).persistCredentials(email);
   }
 
   @override
@@ -171,54 +81,46 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       return;
     }
 
-    try {
-      final email = (_formKey.currentState!.value['email'] as String).trim();
-      final password = _formKey.currentState!.value['password'] as String;
-      await ref
-          .read(loginViewModelProvider.notifier)
-          .login(email, password, _rememberMe);
+    final email = (_formKey.currentState!.value['email'] as String).trim();
+    final password = _formKey.currentState!.value['password'] as String;
+    final rememberMe = ref.read(loginUiViewModelProvider).rememberMe;
+    final success = await ref
+        .read(loginViewModelProvider.notifier)
+        .login(email, password, rememberMe);
+    if (success) {
       await _saveCredentials();
-    } catch (e) {
-      if (!mounted) return;
-      final errorMessage = _getAuthErrorMessage(e);
-      TalkerService.error('Login failed: $errorMessage');
-      await _showAdaptiveMessage(errorMessage, isError: true);
     }
   }
 
-  Future<void> _handleGoogleSignIn() async {
-    if (_isSocialLoading) return;
-    setState(() => _isSocialLoading = true);
-    try {
-      final authActions = ref.read(authActionsViewModelProvider);
-      await authActions.signInWithGoogle();
-    } catch (e) {
-      if (mounted) {
-        await _showAdaptiveMessage(_getAuthErrorMessage(e), isError: true);
-      }
-    } finally {
-      if (mounted) setState(() => _isSocialLoading = false);
-    }
+  void _handleGoogleSignIn() {
+    ref.read(socialAuthViewModelProvider.notifier).signInWithGoogle();
   }
 
-  Future<void> _handleAppleSignIn() async {
-    if (_isSocialLoading) return;
-    setState(() => _isSocialLoading = true);
-    try {
-      final authActions = ref.read(authActionsViewModelProvider);
-      await authActions.signInWithApple();
-    } catch (e) {
-      if (mounted) {
-        await _showAdaptiveMessage(_getAuthErrorMessage(e), isError: true);
-      }
-    } finally {
-      if (mounted) setState(() => _isSocialLoading = false);
-    }
+  void _handleAppleSignIn() {
+    ref.read(socialAuthViewModelProvider.notifier).signInWithApple();
   }
 
   @override
   Widget build(BuildContext context) {
     final loginState = ref.watch(loginViewModelProvider);
+    final socialState = ref.watch(socialAuthViewModelProvider);
+
+    ref.listen(loginViewModelProvider, (previous, next) {
+      if (next.hasError && previous?.error != next.error) {
+        final errorMessage = _getAuthErrorMessage(next.error);
+        TalkerService.error('Login failed: $errorMessage');
+        _showAdaptiveMessage(errorMessage, isError: true);
+      }
+    });
+
+    ref.listen(socialAuthViewModelProvider, (previous, next) {
+      if (next.errorMessage != null && next.errorMessage != previous?.errorMessage) {
+        final errorMessage = _getAuthErrorMessage(next.errorMessage);
+        TalkerService.error('Social sign-in failed: $errorMessage');
+        _showAdaptiveMessage(errorMessage, isError: true);
+      }
+    });
+
     final loginBody = SafeArea(
       child: FadeTransition(
         opacity: _fadeAnimation,
@@ -235,7 +137,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   SizedBox(height: 32.h),
                   _buildWelcomeText(),
                   SizedBox(height: 32.h),
-                  _buildSocialButtons(),
+                  _buildSocialButtons(socialState),
                   SizedBox(height: 24.h),
                   _buildDivider(),
                   SizedBox(height: 24.h),
@@ -245,7 +147,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   SizedBox(height: 14.h),
                   _buildOptionsRow(),
                   SizedBox(height: 28.h),
-                  _buildSignInButton(loginState),
+                  _buildSignInButton(loginState, socialState),
                   SizedBox(height: 28.h),
                   _buildSignUpLink(),
                   SizedBox(height: 8.h),
@@ -364,11 +266,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     // The prefixIcon is purely decorative — excluded so SR does not read it.
     return FormBuilderTextField(
       name: 'email',
-      initialValue: _savedEmail,
+      initialValue: ref.watch(loginUiViewModelProvider).savedEmail,
       focusNode: _emailFocus,
       keyboardType: TextInputType.emailAddress,
       textInputAction: TextInputAction.next,
-      validator: FormBuilderValidators.email(),
+      validator: (value) => FormValidators.email(value),
       autofillHints: const [AutofillHints.email],
       autocorrect: false,
       enableSuggestions: false,
@@ -386,12 +288,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     final passwordHint = AppLocalizations.of(context).enterYourPassword;
     // Dynamic label reflects the current state so SR users know what the
     // button will do before they activate it.
-    final toggleLabel = _obscurePassword ? 'Show password' : 'Hide password';
+    final loginUiState = ref.watch(loginUiViewModelProvider);
+    final toggleLabel = loginUiState.obscurePassword
+        ? AppLocalizations.of(context).showPasswordTooltip
+        : AppLocalizations.of(context).hidePasswordTooltip;
 
     return FormBuilderTextField(
       name: 'password',
       focusNode: _passwordFocus,
-      obscureText: _obscurePassword,
+      obscureText: loginUiState.obscurePassword,
       textInputAction: TextInputAction.done,
       validator: FormBuilderValidators.compose([
         FormBuilderValidators.required(),
@@ -411,9 +316,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           // `tooltip` is used by both TalkBack and VoiceOver as the button's
           // accessible name. Dynamic string keeps the state accurate.
           tooltip: toggleLabel,
-          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+          onPressed: () => ref
+              .read(loginUiViewModelProvider.notifier)
+              .togglePasswordVisibility(),
           icon: Icon(
-            _obscurePassword
+            loginUiState.obscurePassword
                 ? Icons.visibility_outlined
                 : Icons.visibility_off_outlined,
           ),
@@ -424,6 +331,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   Widget _buildOptionsRow() {
     final rememberMeLabel = AppLocalizations.of(context).rememberMe;
+    final loginUiState = ref.watch(loginUiViewModelProvider);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -437,14 +345,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             padding: EdgeInsets.symmetric(vertical: 12.h),
             child: Row(
               children: [
-                  Checkbox(
-                    value: _rememberMe,
-                    onChanged: (value) {
-                      HapticFeedback.selectionClick();
-                      setState(() => _rememberMe = value ?? false);
-                    },
-                    visualDensity: VisualDensity.compact,
-                  ),
+                Checkbox(
+                  value: loginUiState.rememberMe,
+                  onChanged: (value) {
+                    HapticFeedback.selectionClick();
+                    ref
+                        .read(loginUiViewModelProvider.notifier)
+                        .setRememberMe(value ?? false);
+                  },
+                  visualDensity: VisualDensity.compact,
+                ),
                 SizedBox(width: 8.w),
                 Text(
                   rememberMeLabel,
@@ -468,18 +378,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           ),
           child: Text(
             AppLocalizations.of(context).authForgotPassword,
-            style: TextStyle(
-              fontSize: 13.sp,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
           ),
         ),
       ],
     ).animate().fadeIn(duration: 400.ms, delay: 450.ms);
   }
 
-  Widget _buildSignInButton(AsyncValue<void> loginState) {
-    final isLoading = loginState.isLoading || _isSocialLoading;
+  Widget _buildSignInButton(
+    AsyncValue<void> loginState,
+    SocialAuthState socialState,
+  ) {
+    final isLoading = loginState.isLoading || socialState.isLoading;
     final signInLabel = AppLocalizations.of(context).authSignIn;
 
     return SizedBox(
@@ -510,7 +420,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     ).animate().fadeIn(duration: 400.ms, delay: 300.ms);
   }
 
-  Widget _buildSocialButtons() {
+  Widget _buildSocialButtons(SocialAuthState socialState) {
     return Stack(
       children: [
         Column(
@@ -529,7 +439,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             ).animate().fadeIn(duration: 300.ms, delay: 300.ms),
           ],
         ),
-        if (_isSocialLoading)
+        if (socialState.isLoading)
           Positioned.fill(
             child: Semantics(
               // liveRegion announces this as soon as it appears without the
@@ -774,8 +684,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     String message, {
     bool isError = false,
   }) async {
-    if (!mounted) return;
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),

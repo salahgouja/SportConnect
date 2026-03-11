@@ -7,15 +7,20 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/widgets/map_location_picker.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/premium_card.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
 import 'package:sport_connect/features/events/view_models/event_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Full-screen event detail with hero banner, info sections and join/leave CTA.
 class EventDetailScreen extends ConsumerStatefulWidget {
@@ -93,7 +98,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         error: (e, _) => _ErrorBody(message: e.toString()),
         data: (event) {
           if (event == null) {
-            return const _ErrorBody(message: 'Event not found.');
+            return _ErrorBody(message: AppLocalizations.of(context).eventNotFound);
           }
           return _buildBody(event, userId, detailVm);
         },
@@ -176,7 +181,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                 if (event.description != null &&
                     event.description!.isNotEmpty) ...[
                   Text(
-                    'About',
+                    AppLocalizations.of(context).eventAbout,
                     style: TextStyle(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.w700,
@@ -198,7 +203,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                 // ── Participant list preview ──
                 if (event.participantIds.isNotEmpty) ...[
                   Text(
-                    'Participants (${event.participantIds.length})',
+                    AppLocalizations.of(context).eventParticipantsCount(event.participantIds.length),
                     style: TextStyle(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.w700,
@@ -229,11 +234,114 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                     detailState,
                   ).animate().fadeIn(delay: 400.ms, duration: 400.ms),
 
-                // ── Find Rides CTA ──
+                // ── #27: Event Attendee Ride Counter ──
+                if (event.participantIds.isNotEmpty) ...[
+                  SizedBox(height: 16.h),
+                  _RideStatusCounter(
+                    event: event,
+                  ).animate().fadeIn(delay: 410.ms, duration: 350.ms),
+                ],
+
+                // ── #24: RSVP with Ride Status ──
+                if (!isOwner && isJoined && event.isUpcoming) ...[
+                  SizedBox(height: 16.h),
+                  _RideStatusSelector(
+                    event: event,
+                    userId: userId,
+                    onStatusSelected: (status) async {
+                      HapticFeedback.selectionClick();
+                      await ref
+                          .read(
+                            eventDetailViewModelProvider(
+                              widget.eventId,
+                            ).notifier,
+                          )
+                          .setRideStatus(userId, status);
+                    },
+                  ).animate().fadeIn(delay: 420.ms, duration: 350.ms),
+                ],
+
+                // ── #22: Rides to This Event ──
+                if (event.isUpcoming || event.isOngoing) ...[
+                  SizedBox(height: 24.h),
+                  _EventRidesSection(
+                    eventId: widget.eventId,
+                    event: event,
+                  ).animate().fadeIn(delay: 430.ms, duration: 350.ms),
+                ],
+
+                // ── #31: Parking Info ──
+                if (event.parkingInfo != null &&
+                    event.parkingInfo!.isNotEmpty) ...[
+                  SizedBox(height: 16.h),
+                  _ParkingInfoCard(
+                    info: event.parkingInfo!,
+                  ).animate().fadeIn(delay: 440.ms, duration: 350.ms),
+                ],
+
+                // ── #28: Recurring Event Info ──
+                if (event.isRecurring) ...[
+                  SizedBox(height: 16.h),
+                  _RecurringEventBadge(
+                    event: event,
+                  ).animate().fadeIn(delay: 445.ms, duration: 350.ms),
+                ],
+
+                // ── #32: Cost Split Badge ──
+                if (event.costSplitEnabled) ...[
+                  SizedBox(height: 12.h),
+                  _CostSplitBadge().animate().fadeIn(
+                    delay: 448.ms,
+                    duration: 350.ms,
+                  ),
+                ],
+
+                // ── #30: Post-Event Meetup Pin ──
+                if ((event.isOngoing || event.hasEnded) && isJoined) ...[
+                  SizedBox(height: 16.h),
+                  _MeetupPinSection(
+                    event: event,
+                    isOwner: isOwner,
+                    onSetPin: () => _setMeetupPin(event),
+                  ).animate().fadeIn(delay: 450.ms, duration: 350.ms),
+                ],
+
+                // ── #29: Event Chat Group ──
+                if (isJoined && event.participantIds.length >= 2) ...[
+                  SizedBox(height: 16.h),
+                  _EventChatButton(
+                    event: event,
+                  ).animate().fadeIn(delay: 455.ms, duration: 350.ms),
+                ],
+
+                // ── #23: Need Ride Home button ──
+                if ((event.isOngoing || event.hasEnded) && isJoined) ...[
+                  SizedBox(height: 16.h),
+                  PremiumButton(
+                    text: AppLocalizations.of(context).eventNeedRideHome,
+                    icon: Icons.home_rounded,
+                    style: PremiumButtonStyle.secondary,
+                    fullWidth: true,
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      context.push(
+                        AppRoutes.searchRides.path,
+                        extra: {
+                          'originAddress':
+                              event.venueName ?? event.location.address,
+                          'originLat': event.location.latitude,
+                          'originLng': event.location.longitude,
+                        },
+                      );
+                    },
+                  ).animate().fadeIn(delay: 460.ms, duration: 350.ms),
+                ],
+
+                // ── Find Rides CTA (#26: Auto-Suggest Carpool) ──
                 if (event.isUpcoming) ...[
                   SizedBox(height: 16.h),
                   PremiumButton(
-                    text: 'Find Rides to Event',
+                    text: AppLocalizations.of(context).eventFindRides,
                     icon: Icons.directions_car_rounded,
                     style: PremiumButtonStyle.secondary,
                     fullWidth: true,
@@ -246,7 +354,29 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                         'destinationLng': event.location.longitude,
                       },
                     ),
-                  ).animate().fadeIn(delay: 450.ms, duration: 350.ms),
+                  ).animate().fadeIn(delay: 470.ms, duration: 350.ms),
+                  SizedBox(height: 8.h),
+                  // #21: Offer a ride to this event (Event-Linked Carpool)
+                  PremiumButton(
+                    text: AppLocalizations.of(context).eventOfferRide,
+                    icon: Icons.add_road_rounded,
+                    style: PremiumButtonStyle.ghost,
+                    fullWidth: true,
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      context.push(
+                        AppRoutes.driverOfferRide.path,
+                        extra: {
+                          'eventId': event.id,
+                          'eventName': event.title,
+                          'destinationAddress':
+                              event.venueName ?? event.location.address,
+                          'destinationLat': event.location.latitude,
+                          'destinationLng': event.location.longitude,
+                        },
+                      );
+                    },
+                  ).animate().fadeIn(delay: 480.ms, duration: 350.ms),
                 ],
 
                 // Bottom safe-area padding
@@ -321,7 +451,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
   ) {
     if (isJoined) {
       return PremiumButton(
-        text: 'Leave Event',
+        text: AppLocalizations.of(context).eventLeave,
         style: PremiumButtonStyle.ghost,
         icon: Icons.logout_rounded,
         fullWidth: true,
@@ -337,7 +467,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
 
     final isFull = event.isFull;
     return PremiumButton(
-      text: isFull ? 'Event Full' : 'Join Event',
+      text: isFull ? AppLocalizations.of(context).eventFull : AppLocalizations.of(context).eventJoin,
       icon: isFull ? Icons.block_rounded : Icons.group_add_rounded,
       fullWidth: true,
       isLoading: detailState.isJoining,
@@ -360,7 +490,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     return Column(
       children: [
         PremiumButton(
-          text: 'Edit Event',
+          text: AppLocalizations.of(context).eventEdit,
           icon: Icons.edit_rounded,
           style: PremiumButtonStyle.secondary,
           fullWidth: true,
@@ -369,7 +499,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         ),
         SizedBox(height: 12.h),
         PremiumButton(
-          text: 'Delete Event',
+          text: AppLocalizations.of(context).eventDelete,
           icon: Icons.delete_outline_rounded,
           style: PremiumButtonStyle.danger,
           fullWidth: true,
@@ -389,27 +519,48 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
   }
 
   Future<bool> _confirmDelete() async {
+    final l10n = AppLocalizations.of(context);
     return await showDialog<bool>(
           context: context,
+          barrierLabel: 'Delete event dialog',
           builder: (ctx) => AlertDialog(
-            title: const Text('Delete Event?'),
-            content: const Text(
-              'This action cannot be undone. All participants will be removed.',
+            title: Text(l10n.eventDeleteConfirmTitle),
+            content: Text(
+              l10n.eventDeleteWarning,
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(false),
-                child: const Text('Cancel'),
+                child: Text(l10n.actionCancel),
               ),
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(true),
                 style: TextButton.styleFrom(foregroundColor: AppColors.error),
-                child: const Text('Delete'),
+                child: Text(l10n.actionDelete),
               ),
             ],
           ),
         ) ??
         false;
+  }
+
+  /// Opens map to set post-event meetup pin (#30).
+  Future<void> _setMeetupPin(EventModel event) async {
+    final result = await MapLocationPicker.show(
+      context,
+      title: AppLocalizations.of(context).eventSetMeetupPoint,
+      initialLocation: event.location.toLatLng(),
+    );
+    if (result != null && mounted) {
+      final pin = LocationPoint(
+        latitude: result.location.latitude,
+        longitude: result.location.longitude,
+        address: result.address,
+      );
+      await ref
+          .read(eventDetailViewModelProvider(widget.eventId).notifier)
+          .setMeetupPin(pin);
+    }
   }
 
   void _addToCalendar(EventModel event) {
@@ -679,7 +830,7 @@ class _OrganizerRow extends ConsumerWidget {
                 ),
                 SizedBox(height: 2.h),
                 Text(
-                  'Organizer',
+                  AppLocalizations.of(context).eventOrganizer,
                   style: TextStyle(
                     fontSize: 12.sp,
                     color: AppColors.textTertiary,
@@ -724,7 +875,7 @@ class _ParticipantChip extends StatelessWidget {
           if (event.seatsLeft > 0) ...[
             SizedBox(width: 4.w),
             Text(
-              '· ${event.seatsLeft} left',
+              '· ${AppLocalizations.of(context).eventSeatsLeftCount(event.seatsLeft)}',
               style: TextStyle(
                 fontSize: 12.sp,
                 color: color.withValues(alpha: 0.7),
@@ -810,7 +961,7 @@ class _ErrorBody extends StatelessWidget {
             ),
             SizedBox(height: 24.h),
             PremiumButton(
-              text: 'Go Back',
+              text: AppLocalizations.of(context).goBack,
               style: PremiumButtonStyle.ghost,
               onPressed: () => context.pop(),
             ),
@@ -835,6 +986,7 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final (IconData icon, String label, Color color) = switch ((
       isOwner,
       isJoined,
@@ -842,32 +994,32 @@ class _StatusBadge extends StatelessWidget {
     )) {
       (true, _, true) => (
         Icons.stars_rounded,
-        'You are the organizer',
+        l10n.eventYouAreOrganizer,
         AppColors.primary,
       ),
       (true, _, false) => (
         Icons.stars_rounded,
-        'You organized this event',
+        l10n.eventOrganizedThis,
         AppColors.textTertiary,
       ),
       (false, true, true) => (
         Icons.check_circle_rounded,
-        'You\'re going',
+        l10n.eventYoureGoing,
         AppColors.success,
       ),
       (false, true, false) => (
         Icons.check_circle_rounded,
-        'You attended',
+        l10n.eventYouAttended,
         AppColors.textTertiary,
       ),
       (false, false, true) => (
         Icons.info_outline_rounded,
-        'You haven\'t joined yet',
+        l10n.eventNotJoinedYet,
         AppColors.warning,
       ),
       _ => (
         Icons.event_busy_rounded,
-        'This event has ended',
+        l10n.eventHasEnded,
         AppColors.textTertiary,
       ),
     };
@@ -914,13 +1066,14 @@ class _CountdownText extends StatelessWidget {
     final diff = startsAt.difference(DateTime.now());
     if (diff.isNegative) return const SizedBox.shrink();
 
+    final l10n = AppLocalizations.of(context);
     final String text;
     if (diff.inDays > 0) {
-      text = 'In ${diff.inDays}d ${diff.inHours.remainder(24)}h';
+      text = l10n.eventCountdownDaysHours(diff.inDays, diff.inHours.remainder(24));
     } else if (diff.inHours > 0) {
-      text = 'In ${diff.inHours}h ${diff.inMinutes.remainder(60)}m';
+      text = l10n.eventCountdownHoursMinutes(diff.inHours, diff.inMinutes.remainder(60));
     } else {
-      text = 'In ${diff.inMinutes}m';
+      text = l10n.eventCountdownMinutes(diff.inMinutes);
     }
 
     return Text(
@@ -930,6 +1083,500 @@ class _CountdownText extends StatelessWidget {
         fontWeight: FontWeight.w500,
         color: color.withValues(alpha: 0.7),
       ),
+    );
+  }
+}
+
+// ── #27: Ride Status Counter ──
+class _RideStatusCounter extends StatelessWidget {
+  const _RideStatusCounter({required this.event});
+
+  final EventModel event;
+
+  @override
+  Widget build(BuildContext context) {
+    final driving = event.driversCount;
+    final needRide = event.needRideCount;
+    final selfArranged = event.selfArrangedCount;
+
+    if (driving == 0 && needRide == 0 && selfArranged == 0) {
+      return const SizedBox.shrink();
+    }
+
+    return PremiumCard(
+      child: Row(
+        children: [
+          Icon(
+            Icons.people_outline_rounded,
+            size: 18.sp,
+            color: AppColors.primary,
+          ),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: Text(
+              event.rideStatusSummary,
+              style: TextStyle(
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── #24: Ride Status Selector (I'm driving / Need ride / Self-arranged) ──
+class _RideStatusSelector extends StatelessWidget {
+  const _RideStatusSelector({
+    required this.event,
+    required this.userId,
+    required this.onStatusSelected,
+  });
+
+  final EventModel event;
+  final String userId;
+  final ValueChanged<String> onStatusSelected;
+
+  static List<(String, IconData, String)> _options(AppLocalizations l10n) => [
+    ('driving', Icons.directions_car_rounded, l10n.eventImDriving),
+    ('need_ride', Icons.hail_rounded, l10n.eventNeedRide),
+    ('self_arranged', Icons.check_circle_outline_rounded, l10n.eventSelfArranged),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final current = event.rideStatusFor(userId);
+    final l10n = AppLocalizations.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          l10n.eventHowGettingThere,
+          style: TextStyle(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        SizedBox(height: 10.h),
+        Wrap(
+          spacing: 8.w,
+          runSpacing: 8.h,
+          children: _options(l10n).map((opt) {
+            final (value, icon, label) = opt;
+            final selected = current == value;
+            return ChoiceChip(
+              avatar: Icon(
+                icon,
+                size: 18.sp,
+                color: selected ? Colors.white : AppColors.textSecondary,
+              ),
+              label: Text(label),
+              selected: selected,
+              selectedColor: AppColors.primary,
+              labelStyle: TextStyle(
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w500,
+                color: selected ? Colors.white : AppColors.textPrimary,
+              ),
+              onSelected: (_) => onStatusSelected(value),
+              side: BorderSide(
+                color: selected
+                    ? AppColors.primary
+                    : AppColors.textTertiary.withValues(alpha: 0.3),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+}
+
+// ── #22: Event Rides Section (rides linked to this event) ──
+class _EventRidesSection extends ConsumerWidget {
+  const _EventRidesSection({required this.eventId, required this.event});
+
+  final String eventId;
+  final EventModel event;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ridesAsync = ref.watch(eventLinkedRidesProvider(eventId));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.directions_car_rounded,
+              size: 20.sp,
+              color: AppColors.primary,
+            ),
+            SizedBox(width: 8.w),
+            Text(
+              AppLocalizations.of(context).eventRidesToEvent,
+              style: TextStyle(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 12.h),
+        ridesAsync.when(
+          data: (rides) {
+            if (rides.isEmpty) {
+              return PremiumCard(
+                child: Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16.h),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.no_transfer_rounded,
+                          size: 32.sp,
+                          color: AppColors.textTertiary,
+                        ),
+                        SizedBox(height: 8.h),
+                        Text(
+                          AppLocalizations.of(context).eventNoRidesOffered,
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }
+            return Column(
+              children: rides.take(5).map((ride) {
+                return Padding(
+                  padding: EdgeInsets.only(bottom: 8.h),
+                  child: _EventRideTile(ride: ride),
+                );
+              }).toList(),
+            );
+          },
+          loading: () => Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 16.h),
+              child: SizedBox(
+                width: 24.w,
+                height: 24.w,
+                child: const CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          ),
+          error: (_, __) => PremiumCard(
+            child: Center(
+              child: Text(
+                AppLocalizations.of(context).eventCouldNotLoadRides,
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Single ride tile for event rides list ──
+class _EventRideTile extends StatelessWidget {
+  const _EventRideTile({required this.ride});
+
+  final RideModel ride;
+
+  @override
+  Widget build(BuildContext context) {
+    final timeFormat = DateFormat('h:mm a');
+    return PremiumCard(
+      onTap: () =>
+          context.push(AppRoutes.rideDetail.path.replaceFirst(':id', ride.id)),
+      child: Row(
+        children: [
+          Container(
+            width: 40.w,
+            height: 40.w,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10.r),
+            ),
+            child: Icon(
+              Icons.directions_car_rounded,
+              size: 20.sp,
+              color: AppColors.primary,
+            ),
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${ride.origin.address} → ${ride.destination.address}',
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  '${timeFormat.format(ride.departureTime)} · ${AppLocalizations.of(context).valueSeatsLeft(ride.remainingSeats)}',
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(
+            Icons.chevron_right_rounded,
+            size: 20.sp,
+            color: AppColors.textTertiary,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── #31: Parking Info Card ──
+class _ParkingInfoCard extends StatelessWidget {
+  const _ParkingInfoCard({required this.info});
+
+  final String info;
+
+  @override
+  Widget build(BuildContext context) {
+    return PremiumCard(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.local_parking_rounded,
+            size: 20.sp,
+            color: AppColors.primary,
+          ),
+          SizedBox(width: 10.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  AppLocalizations.of(context).eventParkingInfo,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  info,
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    color: AppColors.textSecondary,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── #28: Recurring Event Badge ──
+class _RecurringEventBadge extends StatelessWidget {
+  const _RecurringEventBadge({required this.event});
+
+  final EventModel event;
+
+  static const _dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final days = event.recurringDays
+        .where((d) => d >= 1 && d <= 7)
+        .map((d) => _dayNames[d - 1])
+        .join(', ');
+
+    final endStr = event.recurringEndDate != null
+        ? ' ${l10n.eventUntilDate(DateFormat('MMM d').format(event.recurringEndDate!))}'
+        : '';
+
+    return PremiumCard(
+      child: Row(
+        children: [
+          Icon(Icons.repeat_rounded, size: 20.sp, color: AppColors.primary),
+          SizedBox(width: 10.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.eventRecurringTitle,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                if (days.isNotEmpty) ...[
+                  SizedBox(height: 2.h),
+                  Text(
+                    '${l10n.eventEvery} $days$endStr',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── #32: Cost Split Badge ──
+class _CostSplitBadge extends StatelessWidget {
+  const _CostSplitBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10.r),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.payments_outlined, size: 16.sp, color: AppColors.primary),
+          SizedBox(width: 6.w),
+          Text(
+            AppLocalizations.of(context).eventCostSplitEnabled,
+            style: TextStyle(
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── #30: Meetup Pin Section ──
+class _MeetupPinSection extends StatelessWidget {
+  const _MeetupPinSection({
+    required this.event,
+    required this.isOwner,
+    required this.onSetPin,
+  });
+
+  final EventModel event;
+  final bool isOwner;
+  final VoidCallback onSetPin;
+
+  @override
+  Widget build(BuildContext context) {
+    final pin = event.meetupPinLocation;
+
+    return PremiumCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.pin_drop_rounded,
+                size: 20.sp,
+                color: AppColors.primary,
+              ),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: Text(
+                  AppLocalizations.of(context).eventMeetupPoint,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8.h),
+          if (pin != null)
+            Text(
+              pin.address,
+              style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
+            )
+          else if (isOwner)
+            PremiumButton(
+              text: AppLocalizations.of(context).eventSetMeetupPoint,
+              icon: Icons.add_location_alt_rounded,
+              style: PremiumButtonStyle.ghost,
+              size: PremiumButtonSize.small,
+              onPressed: onSetPin,
+            )
+          else
+            Text(
+              AppLocalizations.of(context).eventNoMeetupPoint,
+              style: TextStyle(fontSize: 13.sp, color: AppColors.textTertiary),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── #29: Event Chat Button ──
+class _EventChatButton extends StatelessWidget {
+  const _EventChatButton({required this.event});
+
+  final EventModel event;
+
+  @override
+  Widget build(BuildContext context) {
+    return PremiumButton(
+      text: AppLocalizations.of(context).eventGroupChat,
+      icon: Icons.chat_bubble_outline_rounded,
+      style: PremiumButtonStyle.secondary,
+      fullWidth: true,
+      onPressed: () {
+        HapticFeedback.lightImpact();
+        final chatId = event.chatGroupId ?? event.id;
+        context.push(AppRoutes.chatGroup.path.replaceFirst(':id', chatId));
+      },
     );
   }
 }

@@ -641,9 +641,8 @@ export const createConnectedAccount = onCall(
         // otherwise don't include it (Stripe accepts blank phone)
         const normalizedPhone = String(phone).trim();
         if (normalizedPhone.startsWith('+')) {
-          individual.phone = "+216" + normalizedPhone;
+          individual.phone = normalizedPhone;
         }
-        // Do NOT blindly prepend +216 — that only applies for Tunisian numbers
       }
 
       if (dateOfBirth) {

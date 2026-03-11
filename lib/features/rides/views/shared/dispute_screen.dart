@@ -1,17 +1,17 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Dispute filing screen for ride fare or service disagreements.
 class DisputeScreen extends ConsumerStatefulWidget {
@@ -25,54 +25,53 @@ class DisputeScreen extends ConsumerStatefulWidget {
 }
 
 class _DisputeScreenState extends ConsumerState<DisputeScreen> {
-  final _formKey = GlobalKey<FormBuilderState>();
   final _imagePicker = ImagePicker();
-  final List<File> _attachedFiles = [];
-  String? _selectedDisputeType;
-  bool _isSubmitting = false;
-  bool _showTypeError = false;
-  bool _isSubmitted = false;
 
-  static const _maxAttachments = 5;
-  static const _maxFileSizeBytes = 10 * 1024 * 1024; // 10 MB
+  static const _disputeTypeIds = [
+    ('incorrect_fare', Icons.attach_money_rounded),
+    ('incomplete_ride', Icons.wrong_location_rounded),
+    ('unauthorized_charge', Icons.credit_card_off_rounded),
+    ('poor_service', Icons.sentiment_dissatisfied_rounded),
+    ('safety_concern', Icons.health_and_safety_rounded),
+    ('other', Icons.more_horiz_rounded),
+  ];
 
-  static const _disputeTypes = [
+  List<_DisputeType> _getDisputeTypes(AppLocalizations l10n) => [
     _DisputeType(
       id: 'incorrect_fare',
       icon: Icons.attach_money_rounded,
-      title: 'Incorrect Fare',
-      description: 'The fare charged was different from the quoted amount',
+      title: l10n.incorrectFareType,
+      description: l10n.incorrectFareDesc,
     ),
     _DisputeType(
       id: 'incomplete_ride',
       icon: Icons.wrong_location_rounded,
-      title: 'Incomplete Ride',
-      description: 'The ride did not reach the intended destination',
+      title: l10n.incompleteRideType,
+      description: l10n.incompleteRideDesc,
     ),
     _DisputeType(
       id: 'unauthorized_charge',
       icon: Icons.credit_card_off_rounded,
-      title: 'Unauthorized Charge',
-      description:
-          'I was charged without authorization or for a cancelled ride',
+      title: l10n.unauthorizedChargeType,
+      description: l10n.unauthorizedChargeDesc,
     ),
     _DisputeType(
       id: 'poor_service',
       icon: Icons.sentiment_dissatisfied_rounded,
-      title: 'Poor Service',
-      description: 'The ride quality was unacceptable',
+      title: l10n.poorServiceType,
+      description: l10n.poorServiceDesc,
     ),
     _DisputeType(
       id: 'safety_concern',
       icon: Icons.health_and_safety_rounded,
-      title: 'Safety Concern',
-      description: 'I felt unsafe during the ride',
+      title: l10n.safetyConcernType,
+      description: l10n.safetyConcernDesc,
     ),
     _DisputeType(
       id: 'other',
       icon: Icons.more_horiz_rounded,
-      title: 'Other',
-      description: 'A different issue not listed above',
+      title: l10n.otherDisputeType,
+      description: l10n.otherDisputeDesc,
     ),
   ];
 
@@ -82,21 +81,7 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
   }
 
   Future<void> _pickFiles() async {
-    if (_attachedFiles.length >= _maxAttachments) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Maximum $_maxAttachments files allowed'),
-          backgroundColor: AppColors.warning,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-        ),
-      );
-      return;
-    }
-
+    final l10n = AppLocalizations.of(context);
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       shape: RoundedRectangleBorder(
@@ -108,12 +93,12 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.photo_library_rounded),
-              title: const Text('Choose from Gallery'),
+              title: Text(l10n.chooseFromGallery),
               onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
             ListTile(
               leading: const Icon(Icons.camera_alt_rounded),
-              title: const Text('Take a Photo'),
+              title: Text(l10n.takeAPhoto),
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
           ],
@@ -141,84 +126,53 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
 
     if (picked == null) return;
 
-    final file = File(picked.path);
-    final size = await file.length();
-
-    if (size > _maxFileSizeBytes) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('File exceeds 10 MB limit'),
-          backgroundColor: AppColors.warning,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-        ),
-      );
-      return;
-    }
-
-    setState(() => _attachedFiles.add(file));
+    await ref
+        .read(disputeFormViewModelProvider(widget.rideId).notifier)
+        .addAttachment(File(picked.path));
   }
 
   Future<void> _submitDispute() async {
-    if (!_formKey.currentState!.saveAndValidate() || _selectedDisputeType == null) {
-      if (_selectedDisputeType == null) {
-        setState(() => _showTypeError = true);
-      }
+    final user = ref.read(currentUserProvider).value;
+    if (user == null) {
       return;
     }
 
-    setState(() => _isSubmitting = true);
-
-    try {
-      final user = ref.read(currentUserProvider).value;
-      if (user == null) {
-        if (mounted) setState(() => _isSubmitting = false);
-        return;
-      }
-
-      await ref
-          .read(disputeViewModelProvider)
-          .submitDispute(
-            rideId: widget.rideId,
-            userId: user.uid,
-            userEmail: user.email,
-            disputeType: _selectedDisputeType!,
-            description: (_formKey.currentState!.value['description'] as String).trim(),
-            rideSummary: widget.rideSummary,
-            attachments: _attachedFiles,
-          );
-
-      if (mounted) {
-        setState(() {
-          _isSubmitted = true;
-          _isSubmitting = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isSubmitting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Failed to submit dispute. Please try again.'),
-            backgroundColor: AppColors.error,
-          ),
+    await ref
+        .read(disputeFormViewModelProvider(widget.rideId).notifier)
+        .submit(
+          userId: user.uid,
+          userEmail: user.email,
+          rideSummary: widget.rideSummary,
         );
-      }
-    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final formState = ref.watch(disputeFormViewModelProvider(widget.rideId));
+    final l10n = AppLocalizations.of(context);
+
+    ref.listen<DisputeFormState>(disputeFormViewModelProvider(widget.rideId), (
+      previous,
+      next,
+    ) {
+      if (next.errorMessage != null &&
+          next.errorMessage != previous?.errorMessage) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.errorMessage!),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    });
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
-          'File a Dispute',
+          l10n.fileDisputeTitle,
           style: TextStyle(
             fontSize: 18.sp,
             fontWeight: FontWeight.w700,
@@ -231,11 +185,13 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
           onPressed: () => context.pop(),
         ),
       ),
-      body: _isSubmitted ? _buildSuccessView() : _buildFormView(),
+      body: formState.isSubmitted
+          ? _buildSuccessView(l10n)
+          : _buildFormView(formState, l10n),
     );
   }
 
-  Widget _buildSuccessView() {
+  Widget _buildSuccessView(AppLocalizations l10n) {
     return Center(
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 32.w),
@@ -261,7 +217,7 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
             ),
             SizedBox(height: 24.h),
             Text(
-              'Dispute Submitted',
+              l10n.disputeSubmittedTitle,
               style: TextStyle(
                 fontSize: 22.sp,
                 fontWeight: FontWeight.w700,
@@ -270,8 +226,7 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
             ).animate().fadeIn(delay: 200.ms),
             SizedBox(height: 12.h),
             Text(
-              'Our team will review your dispute within 24-48 hours. '
-              "You'll receive a notification once it's resolved.",
+              l10n.disputeSubmittedMessage,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14.sp,
@@ -293,7 +248,7 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
                   ),
                 ),
                 child: Text(
-                  'Done',
+                  l10n.doneButton,
                   style: TextStyle(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w600,
@@ -307,445 +262,438 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
     );
   }
 
-  Widget _buildFormView() {
-    return FormBuilder(
-      key: _formKey,
-      child: ListView(
-        padding: EdgeInsets.symmetric(horizontal: 24.w),
-        children: [
-          SizedBox(height: 16.h),
+  Widget _buildFormView(DisputeFormState formState, AppLocalizations l10n) {
+    return ListView(
+      padding: EdgeInsets.symmetric(horizontal: 24.w),
+      children: [
+        SizedBox(height: 16.h),
 
-          // Ride info card
-          Container(
-            padding: EdgeInsets.all(16.w),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(12.r),
-              border: Border.all(
-                color: AppColors.primary.withValues(alpha: 0.15),
+        // Ride info card
+        Container(
+          padding: EdgeInsets.all(16.w),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(12.r),
+            border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.15),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.directions_car_rounded,
+                size: 20.sp,
+                color: AppColors.primary,
               ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.directions_car_rounded,
-                  size: 20.sp,
-                  color: AppColors.primary,
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.rideIdLabel,
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        color: AppColors.textTertiary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SizedBox(height: 2.h),
+                    Text(
+                      widget.rideId,
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'monospace',
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Ride ID',
-                        style: TextStyle(
-                          fontSize: 11.sp,
-                          color: AppColors.textTertiary,
-                          fontWeight: FontWeight.w500,
+              ),
+            ],
+          ),
+        ).animate().fadeIn(duration: 300.ms),
+
+        SizedBox(height: 24.h),
+
+        // Dispute type selection
+        Text(
+          l10n.disputeTypeLabel,
+          style: TextStyle(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ).animate().fadeIn(delay: 100.ms),
+        SizedBox(height: 4.h),
+        Text(
+          l10n.selectDisputeReason,
+          style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
+        ).animate().fadeIn(delay: 150.ms),
+
+        SizedBox(height: 16.h),
+
+        ..._getDisputeTypes(l10n).asMap().entries.map((entry) {
+          final index = entry.key;
+          final type = entry.value;
+          final isSelected = formState.selectedDisputeType == type.id;
+
+          return Padding(
+            padding: EdgeInsets.only(bottom: 8.h),
+            child:
+                GestureDetector(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        ref
+                            .read(
+                              disputeFormViewModelProvider(
+                                widget.rideId,
+                              ).notifier,
+                            )
+                            .selectType(type.id);
+                      },
+                      child: AnimatedContainer(
+                        duration: 200.ms,
+                        padding: EdgeInsets.all(14.w),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppColors.primary.withValues(alpha: 0.08)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(12.r),
+                          border: Border.all(
+                            color: isSelected
+                                ? AppColors.primary
+                                : AppColors.border,
+                            width: isSelected ? 1.5 : 1,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(8.w),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? AppColors.primary.withValues(alpha: 0.15)
+                                    : AppColors.surfaceVariant,
+                                borderRadius: BorderRadius.circular(8.r),
+                              ),
+                              child: Icon(
+                                type.icon,
+                                size: 20.sp,
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : AppColors.textTertiary,
+                              ),
+                            ),
+                            SizedBox(width: 12.w),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    type.title,
+                                    style: TextStyle(
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                  SizedBox(height: 2.h),
+                                  Text(
+                                    type.description,
+                                    style: TextStyle(
+                                      fontSize: 12.sp,
+                                      color: AppColors.textTertiary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (isSelected)
+                              Icon(
+                                Icons.check_circle_rounded,
+                                size: 22.sp,
+                                color: AppColors.primary,
+                              ),
+                          ],
                         ),
                       ),
-                      SizedBox(height: 2.h),
-                      Text(
-                        widget.rideId,
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'monospace',
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ).animate().fadeIn(duration: 300.ms),
+                    )
+                    .animate()
+                    .fadeIn(delay: (200 + index * 50).ms)
+                    .slideX(begin: 0.03),
+          );
+        }),
 
-          SizedBox(height: 24.h),
-
-          // Dispute type selection
-          Text(
-            'Dispute Type',
-            style: TextStyle(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ).animate().fadeIn(delay: 100.ms),
+        if (formState.typeError != null) ...[
           SizedBox(height: 4.h),
           Text(
-            'Select the reason for your dispute',
-            style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
-          ).animate().fadeIn(delay: 150.ms),
-
-          SizedBox(height: 16.h),
-
-          ..._disputeTypes.asMap().entries.map((entry) {
-            final index = entry.key;
-            final type = entry.value;
-            final isSelected = _selectedDisputeType == type.id;
-
-            return Padding(
-              padding: EdgeInsets.only(bottom: 8.h),
-              child:
-                  GestureDetector(
-                        onTap: () =>
-                            setState(() => _selectedDisputeType = type.id),
-                        child: AnimatedContainer(
-                          duration: 200.ms,
-                          padding: EdgeInsets.all(14.w),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? AppColors.primary.withValues(alpha: 0.08)
-                                : Colors.white,
-                            borderRadius: BorderRadius.circular(12.r),
-                            border: Border.all(
-                              color: isSelected
-                                  ? AppColors.primary
-                                  : AppColors.border,
-                              width: isSelected ? 1.5 : 1,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: EdgeInsets.all(8.w),
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? AppColors.primary.withValues(
-                                          alpha: 0.15,
-                                        )
-                                      : AppColors.surfaceVariant,
-                                  borderRadius: BorderRadius.circular(8.r),
-                                ),
-                                child: Icon(
-                                  type.icon,
-                                  size: 20.sp,
-                                  color: isSelected
-                                      ? AppColors.primary
-                                      : AppColors.textTertiary,
-                                ),
-                              ),
-                              SizedBox(width: 12.w),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      type.title,
-                                      style: TextStyle(
-                                        fontSize: 14.sp,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppColors.textPrimary,
-                                      ),
-                                    ),
-                                    SizedBox(height: 2.h),
-                                    Text(
-                                      type.description,
-                                      style: TextStyle(
-                                        fontSize: 12.sp,
-                                        color: AppColors.textTertiary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              if (isSelected)
-                                Icon(
-                                  Icons.check_circle_rounded,
-                                  size: 22.sp,
-                                  color: AppColors.primary,
-                                ),
-                            ],
-                          ),
-                        ),
-                      )
-                      .animate()
-                      .fadeIn(delay: (200 + index * 50).ms)
-                      .slideX(begin: 0.03),
-            );
-          }),
-
-          if (_selectedDisputeType == null && _showTypeError) ...[
-            SizedBox(height: 4.h),
-            Text(
-              'Please select a dispute type',
-              style: TextStyle(fontSize: 12.sp, color: AppColors.error),
-            ),
-          ],
-
-          SizedBox(height: 20.h),
-
-          // Description
-          Text(
-            'Details',
-            style: TextStyle(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
+            formState.typeError!,
+            style: TextStyle(fontSize: 12.sp, color: AppColors.error),
           ),
-          SizedBox(height: 8.h),
-          FormBuilderTextField(
-            name: 'description',
-            maxLines: 5,
-            maxLength: 1000,
-            decoration: InputDecoration(
-              hintText: 'Describe your issue in detail...',
-              hintStyle: TextStyle(
-                fontSize: 14.sp,
-                color: AppColors.textTertiary,
-              ),
-              filled: true,
-              fillColor: Colors.white,
-              counterStyle: TextStyle(fontSize: 11.sp),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12.r),
-                borderSide: BorderSide(color: AppColors.border),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12.r),
-                borderSide: BorderSide(color: AppColors.border),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12.r),
-                borderSide: BorderSide(color: AppColors.primary, width: 1.5),
-              ),
-              contentPadding: EdgeInsets.all(14.w),
-            ),
-            validator: FormBuilderValidators.compose([
-              FormBuilderValidators.required(
-                errorText: 'Please describe your issue',
-              ),
-              FormBuilderValidators.minLength(
-                20,
-                errorText: 'Please provide more detail (at least 20 characters)',
-              ),
-            ]),
+        ],
+
+        SizedBox(height: 20.h),
+
+        // Description
+        Text(
+          l10n.detailsLabel,
+          style: TextStyle(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
           ),
+        ),
+        SizedBox(height: 8.h),
+        TextField(
+          maxLines: 5,
+          maxLength: 1000,
+          onChanged: (value) => ref
+              .read(disputeFormViewModelProvider(widget.rideId).notifier)
+              .updateDescription(value),
+          textCapitalization: TextCapitalization.sentences,
+          decoration: InputDecoration(
+            hintText: l10n.describeIssueDetailPlaceholder,
+            errorText: formState.descriptionError,
+            hintStyle: TextStyle(
+              fontSize: 14.sp,
+              color: AppColors.textTertiary,
+            ),
+            filled: true,
+            fillColor: Colors.white,
+            counterStyle: TextStyle(fontSize: 11.sp),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+              borderSide: BorderSide(color: AppColors.border),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+              borderSide: BorderSide(color: AppColors.border),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+              borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+            ),
+            contentPadding: EdgeInsets.all(14.w),
+          ),
+        ),
 
-          SizedBox(height: 12.h),
+        SizedBox(height: 12.h),
 
-          // Note
-          Container(
-            padding: EdgeInsets.all(12.w),
+        // Note
+        Container(
+          padding: EdgeInsets.all(12.w),
+          decoration: BoxDecoration(
+            color: AppColors.warning.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(10.r),
+            border: Border.all(color: AppColors.warning.withValues(alpha: 0.2)),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.info_outline_rounded,
+                size: 18.sp,
+                color: AppColors.warning,
+              ),
+              SizedBox(width: 10.w),
+              Expanded(
+                child: Text(
+                  l10n.disputeWarningNote,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: AppColors.textSecondary,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        SizedBox(height: 20.h),
+
+        // Evidence attachment
+        Text(
+          l10n.evidenceOptionalLabel,
+          style: TextStyle(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        SizedBox(height: 8.h),
+        GestureDetector(
+          onTap: _pickFiles,
+          child: Container(
+            padding: EdgeInsets.all(16.w),
             decoration: BoxDecoration(
-              color: AppColors.warning.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(10.r),
-              border: Border.all(
-                color: AppColors.warning.withValues(alpha: 0.2),
-              ),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(color: AppColors.border),
             ),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Icon(
-                  Icons.info_outline_rounded,
-                  size: 18.sp,
-                  color: AppColors.warning,
+                  Icons.attach_file_rounded,
+                  size: 20.sp,
+                  color: AppColors.textSecondary,
                 ),
                 SizedBox(width: 10.w),
                 Expanded(
                   child: Text(
-                    'Disputes are reviewed within 24-48 hours. Submitting '
-                    'false disputes may result in account restrictions.',
+                    formState.attachedFiles.isEmpty
+                        ? l10n.attachReceiptsPlaceholder
+                        : l10n.filesAttachedCount(formState.attachedFiles.length, DisputeFormViewModel.maxAttachments),
                     style: TextStyle(
-                      fontSize: 12.sp,
-                      color: AppColors.textSecondary,
-                      height: 1.4,
+                      fontSize: 13.sp,
+                      color: formState.attachedFiles.isEmpty
+                          ? AppColors.textTertiary
+                          : AppColors.textPrimary,
                     ),
                   ),
+                ),
+                Icon(
+                  Icons.add_circle_outline_rounded,
+                  size: 20.sp,
+                  color: AppColors.primary,
                 ),
               ],
             ),
           ),
-
-          SizedBox(height: 20.h),
-
-          // Evidence attachment
-          Text(
-            'Evidence (optional)',
-            style: TextStyle(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          SizedBox(height: 8.h),
-          GestureDetector(
-            onTap: _pickFiles,
-            child: Container(
-              padding: EdgeInsets.all(16.w),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.attach_file_rounded,
-                    size: 20.sp,
-                    color: AppColors.textSecondary,
-                  ),
-                  SizedBox(width: 10.w),
-                  Expanded(
-                    child: Text(
-                      _attachedFiles.isEmpty
-                          ? 'Attach receipts or screenshots'
-                          : '${_attachedFiles.length}/$_maxAttachments files attached',
-                      style: TextStyle(
-                        fontSize: 13.sp,
-                        color: _attachedFiles.isEmpty
-                            ? AppColors.textTertiary
-                            : AppColors.textPrimary,
+        ),
+        if (formState.attachedFiles.isNotEmpty) ...[
+          SizedBox(height: 10.h),
+          SizedBox(
+            height: 80.h,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: formState.attachedFiles.length,
+              separatorBuilder: (_, _) => SizedBox(width: 8.w),
+              itemBuilder: (context, index) {
+                return Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8.r),
+                      child: Image.file(
+                        formState.attachedFiles[index],
+                        width: 80.w,
+                        height: 80.h,
+                        fit: BoxFit.cover,
                       ),
                     ),
-                  ),
-                  Icon(
-                    Icons.add_circle_outline_rounded,
-                    size: 20.sp,
-                    color: AppColors.primary,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (_attachedFiles.isNotEmpty) ...[
-            SizedBox(height: 10.h),
-            SizedBox(
-              height: 80.h,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: _attachedFiles.length,
-                separatorBuilder: (_, _) => SizedBox(width: 8.w),
-                itemBuilder: (context, index) {
-                  return Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8.r),
-                        child: Image.file(
-                          _attachedFiles[index],
-                          width: 80.w,
-                          height: 80.h,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      Positioned(
-                        top: 4.h,
-                        right: 4.w,
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _attachedFiles.removeAt(index);
-                            });
-                          },
-                          child: Container(
-                            padding: EdgeInsets.all(2.w),
-                            decoration: const BoxDecoration(
-                              color: Colors.black54,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.close_rounded,
-                              size: 14.sp,
-                              color: Colors.white,
-                            ),
+                    Positioned(
+                      top: 4.h,
+                      right: 4.w,
+                      child: GestureDetector(
+                        onTap: () => ref
+                            .read(
+                              disputeFormViewModelProvider(
+                                widget.rideId,
+                              ).notifier,
+                            )
+                            .removeAttachmentAt(index),
+                        child: Container(
+                          padding: EdgeInsets.all(2.w),
+                          decoration: const BoxDecoration(
+                            color: Colors.black54,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: 14.sp,
+                            color: Colors.white,
                           ),
                         ),
                       ),
-                    ],
-                  );
-                },
-              ),
-            ),
-          ],
-
-          SizedBox(height: 20.h),
-
-          // Resolution expectation
-          Container(
-            padding: EdgeInsets.all(14.w),
-            decoration: BoxDecoration(
-              color: AppColors.primarySurface,
-              borderRadius: BorderRadius.circular(10.r),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'What to expect',
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                SizedBox(height: 8.h),
-                _buildExpectationRow(
-                  Icons.access_time_rounded,
-                  'Review within 24-48 hours',
-                ),
-                SizedBox(height: 6.h),
-                _buildExpectationRow(
-                  Icons.email_outlined,
-                  'Email notification on status updates',
-                ),
-                SizedBox(height: 6.h),
-                _buildExpectationRow(
-                  Icons.gavel_rounded,
-                  'Fair resolution based on evidence',
-                ),
-              ],
-            ),
-          ),
-
-          SizedBox(height: 28.h),
-
-          // Submit
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: (_isSubmitting || _selectedDisputeType == null)
-                  ? null
-                  : _submitDispute,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: AppColors.primary.withValues(
-                  alpha: 0.4,
-                ),
-                padding: EdgeInsets.symmetric(vertical: 14.h),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                elevation: 0,
-              ),
-              child: _isSubmitting
-                  ? SizedBox(
-                      height: 20.h,
-                      width: 20.h,
-                      child: const CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : Text(
-                      'Submit Dispute',
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w600,
-                      ),
                     ),
+                  ],
+                );
+              },
             ),
           ),
-
-          SizedBox(height: 32.h),
         ],
-      ),
+
+        SizedBox(height: 20.h),
+
+        // Resolution expectation
+        Container(
+          padding: EdgeInsets.all(14.w),
+          decoration: BoxDecoration(
+            color: AppColors.primarySurface,
+            borderRadius: BorderRadius.circular(10.r),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.whatToExpectTitle,
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              SizedBox(height: 8.h),
+              _buildExpectationRow(
+                Icons.access_time_rounded,
+                l10n.reviewWithinHours,
+              ),
+              SizedBox(height: 6.h),
+              _buildExpectationRow(
+                Icons.email_outlined,
+                l10n.emailNotificationExpectation,
+              ),
+              SizedBox(height: 6.h),
+              _buildExpectationRow(
+                Icons.gavel_rounded,
+                l10n.fairResolutionExpectation,
+              ),
+            ],
+          ),
+        ),
+
+        SizedBox(height: 28.h),
+
+        // Submit
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: formState.isSubmitting ? null : _submitDispute,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.4),
+              padding: EdgeInsets.symmetric(vertical: 14.h),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              elevation: 0,
+            ),
+            child: formState.isSubmitting
+                ? SizedBox(
+                    height: 20.h,
+                    width: 20.h,
+                    child: const CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : Text(
+                    l10n.submitDisputeButton,
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+          ),
+        ),
+
+        SizedBox(height: 32.h),
+      ],
     );
   }
 

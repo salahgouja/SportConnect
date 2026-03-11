@@ -1,105 +1,42 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
-import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-
-part 'user_search_screen.g.dart';
-
-/// Search results provider — accepts the query as a family parameter
-/// so ephemeral search state stays local to the widget.
-@riverpod
-Future<List<UserModel>> searchResults(Ref ref, String query) async {
-  if (query.isEmpty || query.length < 2) return [];
-
-  final vm = ref.watch(profileActionsViewModelProvider);
-  return vm.searchUsers(query: query);
-}
+import 'package:sport_connect/features/profile/view_models/user_search_view_model.dart';
 
 /// Premium User Search Screen with autocomplete
-class UserSearchScreen extends ConsumerStatefulWidget {
+class UserSearchScreen extends ConsumerWidget {
   const UserSearchScreen({super.key});
 
   @override
-  ConsumerState<UserSearchScreen> createState() => _UserSearchScreenState();
-}
-
-class _UserSearchScreenState extends ConsumerState<UserSearchScreen>
-    with SingleTickerProviderStateMixin {
-  final TextEditingController _searchController = TextEditingController();
-  final FocusNode _searchFocus = FocusNode();
-  Timer? _debounceTimer;
-  String _searchQuery = '';
-
-  late AnimationController _animationController;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-
-    // Auto-focus search field
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _searchFocus.requestFocus();
-    });
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    _searchFocus.dispose();
-    _debounceTimer?.cancel();
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  void _onSearchChanged(String query) {
-    _debounceTimer?.cancel();
-    _debounceTimer = Timer(const Duration(milliseconds: 400), () {
-      setState(() => _searchQuery = query);
-    });
-  }
-
-  void _clearSearch() {
-    _searchController.clear();
-    setState(() => _searchQuery = '');
-    HapticFeedback.lightImpact();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final searchResults = ref.watch(searchResultsProvider(_searchQuery));
-    final query = _searchQuery;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final uiState = ref.watch(userSearchUiViewModelProvider);
+    final searchResults = ref.watch(searchResultsProvider(uiState.query));
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(),
-            _buildSearchBar(),
+            _buildHeader(context),
+            _buildSearchBar(context, ref, uiState),
             Expanded(
-              child: query.isEmpty
-                  ? _buildEmptyState()
+              child: uiState.query.isEmpty
+                  ? _buildEmptyState(context, ref)
                   : searchResults.when(
                       data: (users) => users.isEmpty
-                          ? _buildNoResults(query)
-                          : _buildResults(users),
-                      loading: () => _buildLoadingState(),
-                      error: (error, _) => _buildErrorState(error.toString()),
+                          ? _buildNoResults(context, uiState.query)
+                          : _buildResults(context, users),
+                      loading: () => _buildLoadingState(context),
+                      error: (error, _) =>
+                          _buildErrorState(context, error.toString()),
                     ),
             ),
           ],
@@ -108,7 +45,7 @@ class _UserSearchScreenState extends ConsumerState<UserSearchScreen>
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
       child: Row(
@@ -157,7 +94,11 @@ class _UserSearchScreenState extends ConsumerState<UserSearchScreen>
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildSearchBar(
+    BuildContext context,
+    WidgetRef ref,
+    UserSearchUiState uiState,
+  ) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
       child: Container(
@@ -165,15 +106,16 @@ class _UserSearchScreenState extends ConsumerState<UserSearchScreen>
           color: AppColors.cardBg,
           borderRadius: BorderRadius.circular(16.r),
           boxShadow: AppSpacing.shadowSm,
-          border: Border.all(
-            color: _searchFocus.hasFocus ? AppColors.primary : AppColors.border,
-            width: _searchFocus.hasFocus ? 2 : 1,
-          ),
+          border: Border.all(color: AppColors.border),
         ),
-        child: TextField(
-          controller: _searchController,
-          focusNode: _searchFocus,
-          onChanged: _onSearchChanged,
+        child: TextFormField(
+          key: ValueKey(uiState.searchFieldKey),
+          initialValue: uiState.query,
+          autofocus: true,
+          onChanged: (query) => ref
+              .read(userSearchUiViewModelProvider.notifier)
+              .scheduleQuery(query),
+          textInputAction: TextInputAction.search,
           style: TextStyle(fontSize: 16.sp, color: AppColors.textPrimary),
           decoration: InputDecoration(
             hintText: AppLocalizations.of(context).searchUsers,
@@ -187,15 +129,16 @@ class _UserSearchScreenState extends ConsumerState<UserSearchScreen>
               child: Icon(
                 Icons.search_rounded,
                 size: 24.sp,
-                color: _searchFocus.hasFocus
-                    ? AppColors.primary
-                    : AppColors.textSecondary,
+                color: AppColors.textSecondary,
               ),
             ),
-            suffixIcon: _searchController.text.isNotEmpty
+            suffixIcon: uiState.query.isNotEmpty
                 ? IconButton(
                     tooltip: 'Clear search',
-                    onPressed: _clearSearch,
+                    onPressed: () {
+                      ref.read(userSearchUiViewModelProvider.notifier).clear();
+                      HapticFeedback.lightImpact();
+                    },
                     icon: Icon(
                       Icons.close_rounded,
                       size: 20.sp,
@@ -214,7 +157,7 @@ class _UserSearchScreenState extends ConsumerState<UserSearchScreen>
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context, WidgetRef ref) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -265,8 +208,9 @@ class _UserSearchScreenState extends ConsumerState<UserSearchScreen>
             children: ['Drivers', 'Riders', 'Sports', 'Events'].map((tag) {
               return GestureDetector(
                 onTap: () {
-                  _searchController.text = tag;
-                  _onSearchChanged(tag);
+                  ref
+                      .read(userSearchUiViewModelProvider.notifier)
+                      .applySuggestion(tag);
                   HapticFeedback.selectionClick();
                 },
                 child: Container(
@@ -295,7 +239,7 @@ class _UserSearchScreenState extends ConsumerState<UserSearchScreen>
     ).animate().fadeIn(delay: 200.ms);
   }
 
-  Widget _buildLoadingState() {
+  Widget _buildLoadingState(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -318,7 +262,7 @@ class _UserSearchScreenState extends ConsumerState<UserSearchScreen>
     );
   }
 
-  Widget _buildNoResults(String query) {
+  Widget _buildNoResults(BuildContext context, String query) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -360,7 +304,7 @@ class _UserSearchScreenState extends ConsumerState<UserSearchScreen>
     ).animate().fadeIn();
   }
 
-  Widget _buildErrorState(String error) {
+  Widget _buildErrorState(BuildContext context, String error) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -397,7 +341,7 @@ class _UserSearchScreenState extends ConsumerState<UserSearchScreen>
     );
   }
 
-  Widget _buildResults(List<UserModel> users) {
+  Widget _buildResults(BuildContext context, List<UserModel> users) {
     return ListView.builder(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
       itemCount: users.length,

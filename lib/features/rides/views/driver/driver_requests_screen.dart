@@ -14,6 +14,7 @@ import 'package:sport_connect/features/messaging/view_models/chat_view_model.dar
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 
 import 'package:sport_connect/features/rides/view_models/driver_view_model.dart';
+import 'package:sport_connect/features/rides/view_models/driver_requests_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
 import 'package:sport_connect/features/rides/models/ride_request_model.dart';
@@ -447,6 +448,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
     ).format(request.requestedDate);
     showDialog(
       context: context,
+      barrierLabel: 'Ride request details',
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
@@ -1261,9 +1263,6 @@ class _DeclineReasonSheet extends StatefulWidget {
 }
 
 class _DeclineReasonSheetState extends State<_DeclineReasonSheet> {
-  String? _selectedReason;
-  String _otherText = '';
-
   final _reasons = [
     'Schedule conflict',
     'Route not convenient',
@@ -1274,142 +1273,149 @@ class _DeclineReasonSheetState extends State<_DeclineReasonSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(24.r),
-          topRight: Radius.circular(24.r),
-        ),
-      ),
-      padding: EdgeInsets.all(20.w),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40.w,
-              height: 4.h,
-              decoration: BoxDecoration(
-                color: AppColors.border,
-                borderRadius: BorderRadius.circular(2.r),
-              ),
+    return Consumer(
+      builder: (context, ref, _) {
+        final state = ref.watch(
+          declineReasonSheetViewModelProvider(widget.request.id),
+        );
+        final notifier = ref.read(
+          declineReasonSheetViewModelProvider(widget.request.id).notifier,
+        );
+
+        return Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24.r),
+              topRight: Radius.circular(24.r),
             ),
           ),
-          SizedBox(height: 20.h),
-          Text(
-            AppLocalizations.of(context).declineRequest,
-            style: TextStyle(
-              fontSize: 20.sp,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            AppLocalizations.of(
-              context,
-            ).pleaseLetValueKnowWhy(widget.request.passenger.displayName),
-            style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
-          ),
-          SizedBox(height: 20.h),
-          ..._reasons.map(
-            (reason) => Padding(
-              padding: EdgeInsets.only(bottom: 8.h),
-              child: InkWell(
-                onTap: () => setState(() => _selectedReason = reason),
-                borderRadius: BorderRadius.circular(12.r),
+          padding: EdgeInsets.all(20.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
                 child: Container(
-                  padding: EdgeInsets.all(16.w),
+                  width: 40.w,
+                  height: 4.h,
                   decoration: BoxDecoration(
-                    color: _selectedReason == reason
-                        ? AppColors.primary.withValues(alpha: 0.1)
-                        : AppColors.background,
-                    borderRadius: BorderRadius.circular(12.r),
-                    border: Border.all(
-                      color: _selectedReason == reason
-                          ? AppColors.primary
-                          : AppColors.border,
-                    ),
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(2.r),
                   ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        _selectedReason == reason
-                            ? Icons.radio_button_checked_rounded
-                            : Icons.radio_button_off_rounded,
-                        color: _selectedReason == reason
-                            ? AppColors.primary
-                            : AppColors.textTertiary,
-                      ),
-                      SizedBox(width: 12.w),
-                      Text(
-                        reason,
-                        style: TextStyle(
-                          fontSize: 15.sp,
-                          fontWeight: _selectedReason == reason
-                              ? FontWeight.w600
-                              : FontWeight.w500,
-                          color: AppColors.textPrimary,
+                ),
+              ),
+              SizedBox(height: 20.h),
+              Text(
+                AppLocalizations.of(context).declineRequest,
+                style: TextStyle(
+                  fontSize: 20.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              SizedBox(height: 8.h),
+              Text(
+                AppLocalizations.of(
+                  context,
+                ).pleaseLetValueKnowWhy(widget.request.passenger.displayName),
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              SizedBox(height: 20.h),
+              ..._reasons.map(
+                (reason) => Padding(
+                  padding: EdgeInsets.only(bottom: 8.h),
+                  child: InkWell(
+                    onTap: () => notifier.selectReason(reason),
+                    borderRadius: BorderRadius.circular(12.r),
+                    child: Container(
+                      padding: EdgeInsets.all(16.w),
+                      decoration: BoxDecoration(
+                        color: state.selectedReason == reason
+                            ? AppColors.primary.withValues(alpha: 0.1)
+                            : AppColors.background,
+                        borderRadius: BorderRadius.circular(12.r),
+                        border: Border.all(
+                          color: state.selectedReason == reason
+                              ? AppColors.primary
+                              : AppColors.border,
                         ),
                       ),
-                    ],
+                      child: Row(
+                        children: [
+                          Icon(
+                            state.selectedReason == reason
+                                ? Icons.radio_button_checked_rounded
+                                : Icons.radio_button_off_rounded,
+                            color: state.selectedReason == reason
+                                ? AppColors.primary
+                                : AppColors.textTertiary,
+                          ),
+                          SizedBox(width: 12.w),
+                          Text(
+                            reason,
+                            style: TextStyle(
+                              fontSize: 15.sp,
+                              fontWeight: state.selectedReason == reason
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
-          if (_selectedReason == 'Other') ...[
-            SizedBox(height: 12.h),
-            TextField(
-              decoration: InputDecoration(
-                hintText: AppLocalizations.of(context).pleaseSpecify,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-              ),
-              maxLines: 2,
-              onChanged: (v) => setState(() => _otherText = v),
-            ),
-          ],
-          SizedBox(height: 24.h),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => context.pop(),
-                  style: OutlinedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 16.h),
+              if (state.selectedReason == 'Other') ...[
+                SizedBox(height: 12.h),
+                TextField(
+                  decoration: InputDecoration(
+                    hintText: AppLocalizations.of(context).pleaseSpecify,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
                   ),
-                  child: Text(AppLocalizations.of(context).actionCancel),
+                  maxLines: 2,
+                  onChanged: notifier.setOtherText,
                 ),
-              ),
-              SizedBox(width: 12.w),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed:
-                      _selectedReason != null &&
-                          (_selectedReason != 'Other' ||
-                          _otherText.trim().isNotEmpty)
-                      ? () => widget.onDecline(
-                          _selectedReason == 'Other'
-                              ? _otherText.trim()
-                              : _selectedReason!,
-                        )
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.error,
-                    padding: EdgeInsets.symmetric(vertical: 16.h),
+              ],
+              SizedBox(height: 24.h),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => context.pop(),
+                      style: OutlinedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(vertical: 16.h),
+                      ),
+                      child: Text(AppLocalizations.of(context).actionCancel),
+                    ),
                   ),
-                  child: Text(AppLocalizations.of(context).decline),
-                ),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: state.canSubmit
+                          ? () => widget.onDecline(state.resolvedReason)
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.error,
+                        padding: EdgeInsets.symmetric(vertical: 16.h),
+                      ),
+                      child: Text(AppLocalizations.of(context).decline),
+                    ),
+                  ),
+                ],
               ),
+              SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
             ],
           ),
-          SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
-        ],
-      ),
+        );
+      },
     );
   }
 }

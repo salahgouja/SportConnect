@@ -8,11 +8,13 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
+import 'package:sport_connect/core/utils/form_validators.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/core/widgets/glass_panel.dart';
+import 'package:sport_connect/core/widgets/intl_phone_input.dart';
+import 'package:sport_connect/core/widgets/address_autocomplete_field.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
-import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
-import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
+import 'package:sport_connect/features/auth/view_models/onboarding_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 class RiderOnboardingScreen extends ConsumerStatefulWidget {
@@ -25,6 +27,8 @@ class RiderOnboardingScreen extends ConsumerStatefulWidget {
 
 class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
   final _formKey = GlobalKey<FormBuilderState>();
+  final _phoneKey = GlobalKey<IntlPhoneInputState>();
+  final _cityKey = GlobalKey<AddressAutocompleteFieldState>();
 
   final List<String> _availableInterests = [
     'Football',
@@ -38,15 +42,6 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
     'Hiking',
   ];
 
-  bool _isLoading = false;
-  bool _isPopulated = false;
-  UserModel? _currentUser;
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
   void _populateProfileFields(UserModel user) {
     _formKey.currentState?.patchValue({
       'name': user.displayName,
@@ -59,8 +54,9 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
     });
   }
 
-  Future<void> _completeOnboarding() async {
-    if (_currentUser == null) {
+  Future<void> _completeOnboarding(OnboardingState vmState) async {
+    final currentUser = ref.read(currentUserProvider).value;
+    if (currentUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please wait, loading your profile...')),
       );
@@ -68,53 +64,34 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
     }
     if (!_formKey.currentState!.saveAndValidate()) return;
 
-    setState(() => _isLoading = true);
+    // Validate external widgets
+    final phoneValid = _phoneKey.currentState?.validate() ?? true;
+    final cityValid = _cityKey.currentState?.validate() ?? true;
+    if (phoneValid != true || cityValid != true) return;
 
-    try {
-      final values = _formKey.currentState!.value;
-      final updatedUser = _currentUser!.map(
-        rider: (rider) => rider.copyWith(
-          displayName: values['name'],
-          phoneNumber: (values['phone'] as String?)?.isEmpty ?? true
-              ? null
-              : values['phone'],
-          city: values['city'],
-          bio: (values['bio'] as String?)?.isEmpty ?? true
-              ? null
-              : values['bio'],
-          gender: values['gender'],
-          dateOfBirth: values['dob'],
-          interests: (values['interests'] as List<dynamic>? ?? [])
-              .cast<String>(),
-        ),
-        driver: (driver) => driver,
-      );
+    final values = _formKey.currentState!.value;
+  final phoneStr = vmState.riderPhoneNumber;
+  final cityStr = vmState.riderCity ?? _cityKey.currentState?.text;
+  final updatedUser = currentUser.map(
+      rider: (rider) => rider.copyWith(
+        displayName: values['name'],
+        phoneNumber: phoneStr,
+        city: cityStr,
+    country: vmState.riderCountry,
+        bio: (values['bio'] as String?)?.isEmpty ?? true
+            ? null
+            : values['bio'],
+        gender: values['gender'],
+        dateOfBirth: values['dob'],
+        interests: (values['interests'] as List<dynamic>? ?? [])
+            .cast<String>(),
+      ),
+      driver: (driver) => driver,
+    );
 
-      await ref
-          .read(profileActionsViewModelProvider)
-          .updateProfile(updatedUser.uid, updatedUser.toJson());
-
-      await ref
-          .read(authActionsViewModelProvider)
-          .clearNeedsRoleSelection(updatedUser.uid);
-
-      if (!mounted) return;
-      context.go(AppRoutes.home.path);
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'We could not complete setup right now. Please try again.',
-          ),
-          backgroundColor: AppColors.error,
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
+    ref
+        .read(onboardingViewModelProvider.notifier)
+        .completeRiderOnboarding(updatedUser.uid, updatedUser.toJson());
   }
 
   @override
@@ -122,10 +99,28 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
     final userAsync = ref.watch(currentUserProvider);
     final user = userAsync.value;
     final l10n = AppLocalizations.of(context);
+    final vmState = ref.watch(onboardingViewModelProvider);
 
-    if (!_isPopulated && user != null) {
-      _currentUser = user;
-      _isPopulated = true;
+    // Navigate to home on successful onboarding.
+    ref.listen(onboardingViewModelProvider, (prev, next) {
+      if (next.completedAction == 'riderDone' &&
+          prev?.completedAction != 'riderDone') {
+        context.go(AppRoutes.home.path);
+      }
+      if (next.errorMessage != null &&
+          next.errorMessage != prev?.errorMessage) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.errorMessage!),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    });
+
+    if (!vmState.riderProfilePopulated && user != null) {
+      ref.read(onboardingViewModelProvider.notifier).markRiderProfilePopulated();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _populateProfileFields(user);
       });
@@ -137,11 +132,11 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
         elevation: 0,
         backgroundColor: Colors.transparent,
         leading: IconButton(
-          tooltip: 'Back to role selection',
+          tooltip: l10n.goBackTooltip,
           onPressed: () => context.go(AppRoutes.roleSelection.path),
           icon: const Icon(Icons.arrow_back_rounded),
         ),
-        title: const Text('Rider onboarding'),
+        title: Text(l10n.riderOnboardingTitle),
       ),
       body: SafeArea(
         child: Semantics(
@@ -170,7 +165,7 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
                         ),
                         SizedBox(height: 10.h),
                         Text(
-                          'Complete your rider profile',
+                          l10n.completeRiderProfile,
                           style: TextStyle(
                             fontSize: 22.sp,
                             fontWeight: FontWeight.w800,
@@ -179,7 +174,7 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
                         ),
                         SizedBox(height: 8.h),
                         Text(
-                          'Add your details so we can personalize rides and matching for you.',
+                          l10n.riderProfileDescription,
                           style: TextStyle(
                             fontSize: 14.sp,
                             height: 1.4,
@@ -201,47 +196,57 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
                     textInputAction: TextInputAction.next,
                     validator: FormBuilderValidators.compose([
                       FormBuilderValidators.required(
-                        errorText: "Name is required",
+                        errorText: l10n.nameRequiredError,
                       ),
                       FormBuilderValidators.minLength(
                         2,
                         errorText: "Name Must be at least 2 characters",
                       ),
+                      FormBuilderValidators.maxLength(60),
+                      (value) => FormValidators.name(value),
                     ]),
                   ).animate().fadeIn(duration: 400.ms, delay: 50.ms),
 
                   SizedBox(height: 16.h),
 
-                  // Phone (optional)
-                  FormBuilderTextField(
-                    name: 'phone',
-                    decoration: InputDecoration(
-                      labelText: l10n.authPhoneOptional,
-                      hintText: l10n.authPhoneHint,
-                      prefixIcon: Icon(Icons.phone_rounded),
-                    ),
-                    keyboardType: TextInputType.phone,
-                    textInputAction: TextInputAction.next,
-                    validator: FormBuilderValidators.conditional(
-                      (value) => value != null && value.trim().isNotEmpty,
-                      FormBuilderValidators.phoneNumber(),
-                    ),
+                  // Phone (optional) — international input
+                  IntlPhoneInput(
+                    key: _phoneKey,
+                    initialValue: user?.phoneNumber,
+                    label: l10n.authPhoneOptional,
+                    hint: l10n.authPhoneHint,
+                    accentColor: AppColors.primary,
+                    fillColor: AppColors.background,
+                    onChanged: (phone) => ref
+                        .read(onboardingViewModelProvider.notifier)
+                        .setRiderDraftContact(
+                          phoneNumber: phone.isValid ? phone.fullNumber : null,
+                        ),
                   ).animate().fadeIn(duration: 400.ms, delay: 100.ms),
 
                   SizedBox(height: 16.h),
 
-                  // City
-                  FormBuilderTextField(
-                    name: 'city',
-                    decoration: InputDecoration(
-                      labelText: l10n.driverCityLabel,
-                      hintText: l10n.driverCityHint,
-                      prefixIcon: Icon(Icons.location_city_rounded),
-                    ),
-                    textInputAction: TextInputAction.next,
-                    validator: FormBuilderValidators.required(
-                      errorText: l10n.driverCityLabel,
-                    ),
+                  // City — autocomplete with map picker
+                  AddressAutocompleteField(
+                    key: _cityKey,
+                    label: l10n.driverCityLabel,
+                    hint: l10n.driverCityHint,
+                    cityOnly: true,
+                    initialValue: user?.city,
+                    accentColor: AppColors.primary,
+                    fillColor: AppColors.background,
+                    onSelected: (result) => ref
+                        .read(onboardingViewModelProvider.notifier)
+                        .setRiderDraftContact(
+                          city: result.address,
+                          country: result.country,
+                        ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return l10n.driverCityLabel;
+                      }
+                      return null;
+                    },
                   ).animate().fadeIn(duration: 400.ms, delay: 150.ms),
 
                   SizedBox(height: 16.h),
@@ -255,9 +260,10 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
                       prefixIcon: Icon(Icons.info_outline_rounded),
                     ),
                     maxLines: 3,
-                    maxLength: 160,
+                    maxLength: 500,
                     textInputAction: TextInputAction.newline,
                     keyboardType: TextInputType.multiline,
+                    validator: (value) => FormValidators.bio(value),
                   ).animate().fadeIn(duration: 400.ms, delay: 200.ms),
 
                   SizedBox(height: 16.h),
@@ -350,9 +356,11 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
                     button: true,
                     label: 'Complete rider onboarding',
                     child: PremiumButton(
-                      text: 'Complete setup',
-                      onPressed: _isLoading ? null : _completeOnboarding,
-                      isLoading: _isLoading,
+                      text: l10n.completeSetupButton,
+                      onPressed: vmState.isLoading
+                          ? null
+                          : () => _completeOnboarding(vmState),
+                      isLoading: vmState.isLoading,
                       style: PremiumButtonStyle.gradient,
                     ),
                   ),

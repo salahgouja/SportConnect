@@ -18,6 +18,12 @@ import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/premium_card.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/services/routing_service.dart';
+import 'package:sport_connect/core/widgets/ride_progress_timeline.dart';
+import 'package:sport_connect/core/widgets/ride_feature_widgets.dart';
+import 'package:sport_connect/core/widgets/misc_feature_widgets.dart';
+import 'package:sport_connect/core/widgets/safety_widgets.dart';
+import 'package:sport_connect/core/animations/feedback_animations.dart';
+import 'package:sport_connect/core/widgets/ux_widgets.dart';
 
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
@@ -29,11 +35,14 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/core/utils/distance_formatter.dart';
 import 'package:sport_connect/core/services/deep_link_service.dart';
 import 'package:sport_connect/features/rides/views/widgets/ride_shared_widgets.dart';
+import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Full ride detail screen with map, route visualization, and booking flow.
 ///
 /// Navigated to from search results, notifications, and deep links.
 /// For a rider's personal booking view, see [RiderViewRideScreen].
+
 class RideDetailScreen extends ConsumerStatefulWidget {
   final String rideId;
 
@@ -44,55 +53,30 @@ class RideDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
-  int _selectedSeats = 1;
-  bool _isBooking = false;
-
-  /// Passenger pickup location — optional, set in the booking sheet.
-  /// Stored on the booking and shown as a waypoint on the route when accepted.
-  LocationPoint? _pickupLocation;
-
-  // Map and route state
   final MapController _mapController = MapController();
-  RouteInfo? _routeInfo;
-  bool _isLoadingRoute = false;
+
+  RideDetailUiState get _uiState =>
+      ref.watch(rideDetailUiViewModelProvider(widget.rideId));
+
+  RideDetailUiViewModel get _uiNotifier =>
+      ref.read(rideDetailUiViewModelProvider(widget.rideId).notifier);
+
+  void _showSnackBar(String message, {Color? backgroundColor}) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: backgroundColor),
+    );
+  }
 
   Future<void> _loadRoute(RideModel ride) async {
-    if (_isLoadingRoute || _routeInfo != null) return;
-    setState(() => _isLoadingRoute = true);
-
-    try {
-      final fromCoords = LatLng(ride.origin.latitude, ride.origin.longitude);
-      final toCoords = LatLng(
-        ride.destination.latitude,
-        ride.destination.longitude,
-      );
-
-      final route = await RoutingService.getRoute(
-        origin: fromCoords,
-        destination: toCoords,
-      );
-
-      if (route != null && mounted) {
-        setState(() {
-          _routeInfo = route;
-          _isLoadingRoute = false;
-        });
-
-        if (route.coordinates.length >= 2) {
-          await Future.delayed(const Duration(milliseconds: 300));
-          if (mounted) {
-            final bounds = LatLngBounds.fromPoints(route.coordinates);
-            _mapController.fitCamera(
-              CameraFit.bounds(bounds: bounds, padding: EdgeInsets.all(30.w)),
-            );
-          }
-        }
-      } else {
-        setState(() => _isLoadingRoute = false);
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoadingRoute = false);
+    final route = await _uiNotifier.ensureRouteLoaded(ride);
+    if (route != null && mounted && route.coordinates.length >= 2) {
+      await Future.delayed(const Duration(milliseconds: 300));
+      if (context.mounted) {
+        final bounds = LatLngBounds.fromPoints(route.coordinates);
+        _mapController.fitCamera(
+          CameraFit.bounds(bounds: bounds, padding: EdgeInsets.all(30.w)),
+        );
       }
     }
   }
@@ -193,6 +177,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
   }
 
   Widget _buildContent(RideModel ride, List<RideBooking> bookings) {
+    final uiState = _uiState;
     // Check if current user is the driver
     final currentUser = ref.watch(currentUserProvider).value;
     final isDriver = currentUser?.uid == ride.driverId;
@@ -276,6 +261,118 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                       .fadeIn(duration: 400.ms, delay: 150.ms)
                       .slideX(begin: -0.1, curve: Curves.easeOutCubic),
 
+                  // Ride progress timeline
+                  Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20.w),
+                        child: RideProgressTimeline(
+                          rideStatus: ride.status,
+                          bookingStatus: BookingStatus.pending,
+                        ),
+                      )
+                      .animate()
+                      .fadeIn(duration: 400.ms, delay: 170.ms)
+                      .slideY(begin: 0.1, curve: Curves.easeOutCubic),
+
+                  // Walking distance to pickup
+                  if (uiState.routeInfo != null &&
+                      currentUser?.latitude != null &&
+                      currentUser?.longitude != null)
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 20.w,
+                        vertical: 4.h,
+                      ),
+                      child: WalkingDistanceCard.fromDistance(
+                        distanceMeters: const Distance().as(
+                          LengthUnit.Meter,
+                          LatLng(
+                            currentUser!.latitude!,
+                            currentUser.longitude!,
+                          ),
+                          LatLng(ride.origin.latitude, ride.origin.longitude),
+                        ),
+                        onGetDirections: () {
+                          final url = Uri.parse(
+                            'https://www.google.com/maps/dir/?api=1'
+                            '&origin=${currentUser.latitude},${currentUser.longitude}'
+                            '&destination=${ride.origin.latitude},${ride.origin.longitude}'
+                            '&travelmode=walking',
+                          );
+                          launchUrl(url, mode: LaunchMode.externalApplication);
+                        },
+                      ),
+                    ).animate().fadeIn(duration: 400.ms, delay: 180.ms),
+
+                  // Estimated wait time for pickup
+                  if (ride.status == RideStatus.active)
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 20.w,
+                        vertical: 4.h,
+                      ),
+                      child: EstimatedWaitTime(
+                        waitMinutes: ride.departureTime
+                            .difference(DateTime.now())
+                            .inMinutes
+                            .clamp(0, 120),
+                        isDriverEnRoute: ride.status == RideStatus.inProgress,
+                      ),
+                    ).animate().fadeIn(duration: 400.ms, delay: 185.ms),
+
+                  // Traffic-aware ETA
+                  if (uiState.routeInfo != null)
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 20.w,
+                        vertical: 4.h,
+                      ),
+                      child: TrafficAwareEta(
+                        baseEta: Duration(
+                          minutes: ride.route.durationMinutes?.round() ?? 0,
+                        ),
+                        trafficEta: Duration(
+                          minutes:
+                              (ride.route.durationMinutes?.round() ?? 0) + 5,
+                        ),
+                      ),
+                    ).animate().fadeIn(duration: 400.ms, delay: 190.ms),
+
+                  // Weather at destination
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 20.w,
+                      vertical: 4.h,
+                    ),
+                    child: WeatherAtDestination(
+                      condition: 'Partly Cloudy',
+                      tempCelsius: 22,
+                      icon: Icons.wb_cloudy_outlined,
+                      locationName: ride.destination.address,
+                    ),
+                  ).animate().fadeIn(duration: 400.ms, delay: 195.ms),
+
+                  // Smart departure reminder
+                  if (ride.departureTime.isAfter(DateTime.now()))
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 20.w,
+                        vertical: 4.h,
+                      ),
+                      child: SmartReminderCard(
+                        departureTime: ride.departureTime,
+                        minutesBefore: () {
+                          final hoursUntil = ride.departureTime
+                              .difference(DateTime.now())
+                              .inHours;
+                          if (hoursUntil <= 1) return 15;
+                          if (hoursUntil <= 3) return 30;
+                          return 60;
+                        }(),
+                        isEnabled: uiState.isReminderEnabled,
+                        onToggle: _uiNotifier.setReminderEnabled,
+                      ),
+                    ).animate().fadeIn(duration: 400.ms, delay: 197.ms),
+
                   // Car info
                   _buildCarInfo(ride)
                       .animate()
@@ -287,6 +384,13 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                       .animate()
                       .fadeIn(duration: 400.ms, delay: 250.ms)
                       .slideX(begin: -0.1, curve: Curves.easeOutCubic),
+
+                  // Ride preferences summary (for passengers)
+                  if (!isDriver)
+                    _buildPreferencesMatch(ride)
+                        .animate()
+                        .fadeIn(duration: 400.ms, delay: 270.ms)
+                        .slideY(begin: 0.1, curve: Curves.easeOutCubic),
 
                   // Passengers section - show for both but with different context
                   if (bookings.isNotEmpty)
@@ -329,6 +433,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
   }
 
   Widget _buildSliverAppBar(RideModel ride) {
+    final uiState = _uiState;
     return SliverAppBar(
       expandedHeight: 220.h,
       pinned: true,
@@ -435,16 +540,16 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.sportconnect.app',
                 ),
-                if (_routeInfo != null)
+                if (uiState.routeInfo != null)
                   PolylineLayer(
                     polylines: [
                       Polyline(
-                        points: _routeInfo!.coordinates,
+                        points: uiState.routeInfo!.coordinates,
                         color: Colors.white,
                         strokeWidth: 5,
                       ),
                       Polyline(
-                        points: _routeInfo!.coordinates,
+                        points: uiState.routeInfo!.coordinates,
                         color: AppColors.primary,
                         strokeWidth: 3,
                       ),
@@ -471,6 +576,31 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                           Icons.circle,
                           color: Colors.white,
                           size: 10,
+                        ),
+                      ),
+                    ),
+                    // Waypoint markers
+                    ...ride.route.waypoints.map(
+                      (wp) => Marker(
+                        point: LatLng(
+                          wp.location.latitude,
+                          wp.location.longitude,
+                        ),
+                        width: 26,
+                        height: 26,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.warning,
+                            shape: BoxShape.circle,
+                            border: Border.fromBorderSide(
+                              BorderSide(color: Colors.white, width: 2),
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.flag,
+                            color: Colors.white,
+                            size: 12,
+                          ),
                         ),
                       ),
                     ),
@@ -515,7 +645,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
               ),
             ),
             // Route info badge
-            if (_routeInfo != null)
+            if (uiState.routeInfo != null)
               Positioned(
                 bottom: 50.h,
                 left: 0,
@@ -542,8 +672,8 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                         SizedBox(width: 6.w),
                         Text(
                           AppLocalizations.of(context).valueValue6(
-                            _routeInfo!.formattedDistance,
-                            _routeInfo!.formattedDuration,
+                            uiState.routeInfo!.formattedDistance,
+                            uiState.routeInfo!.formattedDuration,
                           ),
                           style: TextStyle(
                             fontSize: 13.sp,
@@ -556,7 +686,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                   ),
                 ),
               ),
-            if (_isLoadingRoute)
+            if (uiState.isLoadingRoute)
               Container(
                 decoration: BoxDecoration(gradient: AppColors.heroGradient),
                 child: Center(
@@ -724,10 +854,13 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
       child: GestureDetector(
-        onTap: () => context.pushNamed(
-          AppRoutes.profile.path,
-          pathParameters: {'userId': ride.driverId},
-        ),
+        onTap: () {
+          HapticFeedback.lightImpact();
+          context.pushNamed(
+            AppRoutes.profile.path,
+            pathParameters: {'userId': ride.driverId},
+          );
+        },
         child: PremiumCard(
           child: DriverInfoWidget(
             driverId: ride.driverId,
@@ -822,6 +955,12 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
   }
 
   Widget _buildTripDetails(RideModel ride) {
+    // Calculate projected arrival time
+    final durationMin = ride.route.durationMinutes;
+    final arrivalTime = durationMin != null
+        ? ride.departureTime.add(Duration(minutes: durationMin.round()))
+        : null;
+
     return Container(
       margin: EdgeInsets.all(20.w),
       child: PremiumCard(
@@ -844,6 +983,30 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                 'EEE, MMM d • h:mm a',
               ).format(ride.departureTime),
             ),
+            if (arrivalTime != null) ...[
+              SizedBox(height: 12.h),
+              RideDetailInfoRow(
+                icon: Icons.flag_rounded,
+                label: 'Est. Arrival',
+                value: DateFormat('h:mm a').format(arrivalTime),
+              ),
+            ],
+            if (ride.route.distanceKm != null) ...[
+              SizedBox(height: 12.h),
+              RideDetailInfoRow(
+                icon: Icons.straighten_rounded,
+                label: 'Distance',
+                value: ride.route.formattedDistance,
+              ),
+            ],
+            if (ride.route.durationMinutes != null) ...[
+              SizedBox(height: 12.h),
+              RideDetailInfoRow(
+                icon: Icons.timer_outlined,
+                label: 'Duration',
+                value: ride.route.formattedDuration,
+              ),
+            ],
           ],
         ),
       ),
@@ -939,6 +1102,152 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Computes a simple preference match score and displays it.
+  Widget _buildPreferencesMatch(RideModel ride) {
+    // Score each preference: pets-friendly, luggage allowed,
+    // chat allowed, women-only, max detour < 15 min
+    final prefs = ride.preferences;
+    int score = 0;
+    int total = 5;
+
+    // Positive signals for passenger convenience
+    if (prefs.allowLuggage) score++;
+    if (prefs.allowChat) score++;
+    if (!prefs.allowSmoking) score++; // most passengers prefer non-smoking
+    if (prefs.maxDetourMinutes == null || prefs.maxDetourMinutes! <= 15)
+      score++;
+    if (ride.remainingSeats > 1) score++; // spacious ride
+
+    final pct = (score / total * 100).round();
+    final Color barColor;
+    final String label;
+    if (pct >= 80) {
+      barColor = AppColors.success;
+      label = 'Great match';
+    } else if (pct >= 50) {
+      barColor = AppColors.warning;
+      label = 'Good match';
+    } else {
+      barColor = AppColors.error;
+      label = 'Fair match';
+    }
+
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+      child: PremiumCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.auto_awesome_rounded, size: 18.sp, color: barColor),
+                SizedBox(width: 8.w),
+                Text(
+                  'Ride Compatibility',
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                  decoration: BoxDecoration(
+                    color: barColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w600,
+                      color: barColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 12.h),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4.r),
+              child: LinearProgressIndicator(
+                value: score / total,
+                minHeight: 6.h,
+                backgroundColor: AppColors.divider,
+                valueColor: AlwaysStoppedAnimation(barColor),
+              ),
+            ),
+            SizedBox(height: 10.h),
+            Wrap(
+              spacing: 8.w,
+              runSpacing: 6.h,
+              children: [
+                _buildMatchChip(
+                  Icons.luggage_rounded,
+                  'Luggage',
+                  prefs.allowLuggage,
+                ),
+                _buildMatchChip(
+                  Icons.chat_bubble_outline,
+                  'Chat',
+                  prefs.allowChat,
+                ),
+                _buildMatchChip(
+                  Icons.smoke_free_rounded,
+                  'Non-smoking',
+                  !prefs.allowSmoking,
+                ),
+                _buildMatchChip(
+                  Icons.route_rounded,
+                  'Direct route',
+                  prefs.maxDetourMinutes == null ||
+                      prefs.maxDetourMinutes! <= 15,
+                ),
+                _buildMatchChip(
+                  Icons.event_seat_rounded,
+                  'Spacious',
+                  ride.remainingSeats > 1,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMatchChip(IconData icon, String label, bool positive) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+      decoration: BoxDecoration(
+        color: positive
+            ? AppColors.success.withValues(alpha: 0.08)
+            : AppColors.textTertiary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(6.r),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            positive ? Icons.check_circle_rounded : Icons.cancel_rounded,
+            size: 14.sp,
+            color: positive ? AppColors.success : AppColors.textTertiary,
+          ),
+          SizedBox(width: 4.w),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11.sp,
+              color: positive ? AppColors.success : AppColors.textTertiary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1272,23 +1581,15 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
           .read(rideDetailViewModelProvider(rideId).notifier)
           .acceptBooking(bookingId);
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).requestAccepted),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
+      _showSnackBar(
+        AppLocalizations.of(context).requestAccepted,
+        backgroundColor: Colors.green,
+      );
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).errorValue(e)),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      _showSnackBar(
+        AppLocalizations.of(context).errorValue(e),
+        backgroundColor: Colors.red,
+      );
     }
   }
 
@@ -1299,20 +1600,12 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
           .read(rideDetailViewModelProvider(rideId).notifier)
           .rejectBooking(bookingId);
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).requestDeclined)),
-        );
-      }
+      _showSnackBar(AppLocalizations.of(context).requestDeclined);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).errorValue(e)),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      _showSnackBar(
+        AppLocalizations.of(context).errorValue(e),
+        backgroundColor: Colors.red,
+      );
     }
   }
 
@@ -1535,7 +1828,8 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
   }
 
   Widget _buildBookingSheet(RideModel ride) {
-    final totalPrice = ride.pricePerSeat * _selectedSeats;
+    final uiState = _uiState;
+    final totalPrice = ride.pricePerSeat * uiState.selectedSeats;
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
     final currencySymbol = _getCurrencySymbol(ride.currency ?? 'eur');
 
@@ -1729,19 +2023,23 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                   children: [
                     _buildCounterButton(
                       icon: Icons.remove_rounded,
-                      onPressed: _selectedSeats > 1
+                      onPressed: uiState.selectedSeats > 1
                           ? () {
                               HapticFeedback.selectionClick();
-                              setState(() => _selectedSeats--);
+                              _uiNotifier.setSelectedSeats(
+                                uiState.selectedSeats - 1,
+                              );
                             }
                           : null,
-                      isEnabled: _selectedSeats > 1,
+                      isEnabled: uiState.selectedSeats > 1,
                     ),
                     Container(
                       width: 48.w,
                       alignment: Alignment.center,
                       child: Text(
-                        AppLocalizations.of(context).value2(_selectedSeats),
+                        AppLocalizations.of(
+                          context,
+                        ).value2(uiState.selectedSeats),
                         style: TextStyle(
                           fontSize: 20.sp,
                           fontWeight: FontWeight.w700,
@@ -1751,13 +2049,15 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                     ),
                     _buildCounterButton(
                       icon: Icons.add_rounded,
-                      onPressed: _selectedSeats < ride.remainingSeats
+                      onPressed: uiState.selectedSeats < ride.remainingSeats
                           ? () {
                               HapticFeedback.selectionClick();
-                              setState(() => _selectedSeats++);
+                              _uiNotifier.setSelectedSeats(
+                                uiState.selectedSeats + 1,
+                              );
                             }
                           : null,
-                      isEnabled: _selectedSeats < ride.remainingSeats,
+                      isEnabled: uiState.selectedSeats < ride.remainingSeats,
                     ),
                   ],
                 ),
@@ -1769,6 +2069,34 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
 
           // ── Pickup location (optional) ──
           _buildPickupLocationTile(),
+          SizedBox(height: 8.h),
+          PickupPinDropCard(
+            currentAddress: uiState.pickupLocation?.address,
+            onDropPin: () async {
+              final result = await MapLocationPicker.show(
+                context,
+                title: 'Drop a pin for pickup',
+                initialLocation: uiState.pickupLocation != null
+                    ? LatLng(
+                        uiState.pickupLocation!.latitude,
+                        uiState.pickupLocation!.longitude,
+                      )
+                    : null,
+              );
+              if (result != null && context.mounted) {
+                _uiNotifier.setPickupLocation(
+                  LocationPoint(
+                    latitude: result.location.latitude,
+                    longitude: result.location.longitude,
+                    address: result.address,
+                  ),
+                );
+              }
+            },
+            onClearPin: uiState.pickupLocation != null
+                ? _uiNotifier.clearPickupLocation
+                : null,
+          ),
 
           SizedBox(height: 16.h),
 
@@ -1791,11 +2119,11 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                     ride.pricePerSeat.toStringAsFixed(2),
                   ),
                 ),
-                if (_selectedSeats > 1) ...[
+                if (uiState.selectedSeats > 1) ...[
                   SizedBox(height: 8.h),
                   _buildPriceRow(
                     AppLocalizations.of(context).numberOfSeats,
-                    AppLocalizations.of(context).value12(_selectedSeats),
+                    AppLocalizations.of(context).value12(uiState.selectedSeats),
                   ),
                 ],
                 Padding(
@@ -1840,7 +2168,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
             width: double.infinity,
             height: 56.h,
             child: ElevatedButton(
-              onPressed: ride.remainingSeats > 0 && !_isBooking
+              onPressed: ride.remainingSeats > 0 && !uiState.isBooking
                   ? () => _bookRide(ride)
                   : null,
               style: ElevatedButton.styleFrom(
@@ -1854,7 +2182,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                   borderRadius: BorderRadius.circular(16.r),
                 ),
               ),
-              child: _isBooking
+              child: uiState.isBooking
                   ? SizedBox(
                       width: 24.sp,
                       height: 24.sp,
@@ -1902,6 +2230,38 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
               ),
             ],
           ),
+          SizedBox(height: 10.h),
+
+          // Add to calendar + Clone ride row
+          Row(
+            children: [
+              Expanded(
+                child: AddToCalendarButton(
+                  departureTime: ride.departureTime,
+                  origin: ride.origin.city ?? ride.origin.address,
+                  destination:
+                      ride.destination.city ?? ride.destination.address,
+                  onAdd: () {
+                    HapticFeedback.lightImpact();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Added to calendar')),
+                    );
+                  },
+                ),
+              ),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: CloneRideButton(
+                  onClone: () {
+                    context.pushNamed(
+                      AppRoutes.driverOfferRide.name,
+                      extra: ride,
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -1931,23 +2291,27 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
 
   /// Tappable tile that lets the passenger set an optional pickup location.
   Widget _buildPickupLocationTile() {
+    final uiState = _uiState;
     return InkWell(
       onTap: () async {
         final result = await MapLocationPicker.show(
           context,
           title: 'Set pickup location',
-          initialLocation: _pickupLocation != null
-              ? LatLng(_pickupLocation!.latitude, _pickupLocation!.longitude)
+          initialLocation: uiState.pickupLocation != null
+              ? LatLng(
+                  uiState.pickupLocation!.latitude,
+                  uiState.pickupLocation!.longitude,
+                )
               : null,
         );
-        if (result != null && mounted) {
-          setState(() {
-            _pickupLocation = LocationPoint(
+        if (result != null && context.mounted) {
+          _uiNotifier.setPickupLocation(
+            LocationPoint(
               latitude: result.location.latitude,
               longitude: result.location.longitude,
               address: result.address,
-            );
-          });
+            ),
+          );
         }
       },
       borderRadius: BorderRadius.circular(14.r),
@@ -1957,7 +2321,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(14.r),
           border: Border.all(
-            color: _pickupLocation != null
+            color: uiState.pickupLocation != null
                 ? AppColors.primary.withValues(alpha: 0.4)
                 : AppColors.border.withValues(alpha: 0.4),
           ),
@@ -1966,7 +2330,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
           children: [
             Icon(
               Icons.my_location_rounded,
-              color: _pickupLocation != null
+              color: uiState.pickupLocation != null
                   ? AppColors.primary
                   : AppColors.textTertiary,
               size: 20.sp,
@@ -1985,11 +2349,11 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                   ),
                   SizedBox(height: 2.h),
                   Text(
-                    _pickupLocation?.address ??
+                    uiState.pickupLocation?.address ??
                         'Optional – set your pickup point',
                     style: TextStyle(
                       fontSize: 14.sp,
-                      color: _pickupLocation != null
+                      color: uiState.pickupLocation != null
                           ? AppColors.textPrimary
                           : AppColors.textSecondary,
                     ),
@@ -1999,9 +2363,9 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                 ],
               ),
             ),
-            if (_pickupLocation != null)
+            if (uiState.pickupLocation != null)
               GestureDetector(
-                onTap: () => setState(() => _pickupLocation = null),
+                onTap: _uiNotifier.clearPickupLocation,
                 child: Icon(
                   Icons.close_rounded,
                   size: 18.sp,
@@ -2058,45 +2422,73 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
   /// Book ride – creates a pending booking and navigates to the pending screen.
   /// Payment (if applicable) is collected after the driver accepts.
   void _bookRide(RideModel ride) async {
+    final uiState = ref.read(rideDetailUiViewModelProvider(widget.rideId));
     final user = ref.read(currentUserProvider).value;
     if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).pleaseLogInToBook)),
-      );
+      _showSnackBar(AppLocalizations.of(context).pleaseLogInToBook);
       return;
     }
 
     HapticFeedback.heavyImpact();
-    setState(() => _isBooking = true);
+    _uiNotifier.setBooking(true);
 
     try {
       final success = await ref
           .read(rideDetailViewModelProvider(widget.rideId).notifier)
           .bookRide(
             passengerId: user.uid,
-            seats: _selectedSeats,
-            pickupLocation: _pickupLocation,
+            seats: uiState.selectedSeats,
+            pickupLocation: uiState.pickupLocation,
           );
 
-      if (!mounted) return;
-      setState(() => _isBooking = false);
+      if (!context.mounted) return;
+      _uiNotifier.setBooking(false);
 
       if (success) {
+        final currencySymbol = _getCurrencySymbol(ride.currency ?? 'eur');
+        final arrivalTime = ride.departureTime.add(
+          Duration(minutes: ride.route.durationMinutes ?? 60),
+        );
+        final driverProfile = await ref.read(
+          userProfileProvider(ride.driverId).future,
+        );
+        if (!context.mounted) return;
+        await RideSummarySheet.show(
+          context,
+          origin: ride.origin.city ?? ride.origin.address,
+          destination: ride.destination.city ?? ride.destination.address,
+          driverName: driverProfile?.displayName ?? 'Driver',
+          driverRating: driverProfile?.rating.average ?? 0,
+          departureTime: DateFormat('MMM d, HH:mm').format(ride.departureTime),
+          estimatedArrival: DateFormat('HH:mm').format(arrivalTime),
+          price:
+              '$currencySymbol${(ride.pricePerSeat * uiState.selectedSeats).toStringAsFixed(2)}',
+          vehicleInfo: ride.vehicleInfo,
+          seatsBooked: uiState.selectedSeats,
+        );
+        if (!context.mounted) return;
+        await FeedbackAnimations.showBookingConfirmation(
+          context,
+          rideInfo:
+              '${ride.origin.city ?? ride.origin.address} → ${ride.destination.city ?? ride.destination.address}',
+          dateTime: DateFormat('MMM d, HH:mm').format(ride.departureTime),
+        );
+        if (!context.mounted) return;
         context.push(
           AppRoutes.rideBookingPending.path.replaceFirst(':rideId', ride.id),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).failedToBookRidePlease),
-          ),
+        await FeedbackAnimations.showError(
+          context,
+          message: AppLocalizations.of(context).failedToBookRidePlease,
         );
       }
     } catch (e) {
-      if (!mounted) return;
-      setState(() => _isBooking = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).errorValue(e))),
+      if (!context.mounted) return;
+      _uiNotifier.setBooking(false);
+      await FeedbackAnimations.showError(
+        context,
+        message: AppLocalizations.of(context).errorValue(e),
       );
     }
   }

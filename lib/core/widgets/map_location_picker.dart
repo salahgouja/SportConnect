@@ -128,25 +128,25 @@ class _MapLocationPickerState extends State<MapLocationPicker>
 
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!mounted) return;
       if (!serviceEnabled) {
         setState(() => _isLoadingLocation = false);
         return;
       }
 
       LocationPermission permission = await Geolocator.checkPermission();
+      if (!mounted) return;
       if (permission == LocationPermission.denied) {
-        if (!mounted) {
-          setState(() => _isLoadingLocation = false);
-          return;
-        }
         final accepted = await PermissionDialogHelper.showLocationRationale(
           context,
         );
+        if (!mounted) return;
         if (!accepted) {
           setState(() => _isLoadingLocation = false);
           return;
         }
         permission = await Geolocator.requestPermission();
+        if (!mounted) return;
         if (permission == LocationPermission.denied) {
           setState(() => _isLoadingLocation = false);
           return;
@@ -154,6 +154,7 @@ class _MapLocationPickerState extends State<MapLocationPicker>
       }
 
       Position position = await Geolocator.getCurrentPosition();
+      if (!mounted) return;
       final location = LatLng(position.latitude, position.longitude);
 
       setState(() {
@@ -165,7 +166,7 @@ class _MapLocationPickerState extends State<MapLocationPicker>
       _reverseGeocode(location);
       _animateMarker();
     } catch (e) {
-      setState(() => _isLoadingLocation = false);
+      if (mounted) setState(() => _isLoadingLocation = false);
     }
   }
 

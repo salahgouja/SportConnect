@@ -28,6 +28,20 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
+  void _showStatusSnackBar(String message, {required Color backgroundColor}) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: backgroundColor,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.r),
+        ),
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -42,17 +56,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
 
   void _markAllAsRead() async {
     await ref.read(notificationViewModelProvider.notifier).markAllAsRead();
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            AppLocalizations.of(context).allNotificationsMarkedAsRead,
-          ),
-          backgroundColor: AppColors.success,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
+    _showStatusSnackBar(
+      AppLocalizations.of(context).allNotificationsMarkedAsRead,
+      backgroundColor: AppColors.success,
+    );
   }
 
   void _clearAll() {
@@ -64,6 +71,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
 
     showDialog(
       context: scaffoldContext,
+      barrierLabel: 'Clear notifications dialog',
       builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
@@ -82,7 +90,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                 await ref
                     .read(notificationViewModelProvider.notifier)
                     .archiveAll();
-                if (!mounted) return;
+                if (!scaffoldContext.mounted) return;
                 ScaffoldMessenger.of(scaffoldContext).showSnackBar(
                   SnackBar(
                     content: Text(
@@ -90,10 +98,13 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                     ),
                     backgroundColor: AppColors.success,
                     behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
                   ),
                 );
               } on Object catch (_) {
-                if (!mounted) return;
+                if (!scaffoldContext.mounted) return;
                 ScaffoldMessenger.of(scaffoldContext).showSnackBar(
                   SnackBar(
                     content: Text(
@@ -101,6 +112,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                     ),
                     backgroundColor: AppColors.error,
                     behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
                   ),
                 );
               }
@@ -559,7 +573,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
       final chatController = ref.read(chatActionsViewModelProvider);
       final chat = await chatController.getChatById(chatId);
 
-      if (chat != null && mounted) {
+      if (chat != null && context.mounted) {
         final title = chat.getChatTitle(userId);
         final photoUrl = chat.getChatPhoto(userId);
 
@@ -579,15 +593,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
         );
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).couldNotOpenChat),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+      _showStatusSnackBar(
+        AppLocalizations.of(context).couldNotOpenChat,
+        backgroundColor: AppColors.error,
+      );
     }
   }
 }

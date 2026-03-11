@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
@@ -20,8 +18,8 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 ///   1. **Phone input** – user enters their phone number and taps "Send Code".
 ///   2. **Code input** – user enters the 6-digit SMS code and taps "Verify".
 ///
-/// Uses [PhoneAuthViewModel] for state management, and the route guard
-/// handles navigation once the user is authenticated.
+/// Uses [PhoneAuthViewModel] for state management (including resend cooldown).
+/// The route guard handles navigation once the user is authenticated.
 class PhoneOtpScreen extends ConsumerStatefulWidget {
   const PhoneOtpScreen({super.key});
 
@@ -33,58 +31,53 @@ class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
   final _phoneFormKey = GlobalKey<FormBuilderState>();
   final _codeFormKey = GlobalKey<FormBuilderState>();
 
-  String _sentPhone = '';
-
-  int _resendCooldown = 0;
-  Timer? _cooldownTimer;
-
-  @override
-  void dispose() {
-    _cooldownTimer?.cancel();
-    super.dispose();
-  }
-
   // ---------------------------------------------------------------------------
-  // Actions
+  // Actions – thin pass-throughs to the ViewModel
   // ---------------------------------------------------------------------------
 
   Future<void> _sendCode() async {
     if (!(_phoneFormKey.currentState?.saveAndValidate() ?? false)) return;
     final phone = (_phoneFormKey.currentState!.value['phone'] as String).trim();
-    setState(() => _sentPhone = phone);
     await ref.read(phoneAuthViewModelProvider.notifier).sendCode(phone);
-    _startResendCooldown();
   }
 
   Future<void> _verifyCode() async {
     if (!(_codeFormKey.currentState?.saveAndValidate() ?? false)) return;
     final code = (_codeFormKey.currentState!.value['code'] as String).trim();
     if (code.length != 6) return;
+    final sentPhone = ref.read(phoneAuthViewModelProvider).map(
+      idle: (state) => state.sentPhone,
+      sending: (state) => state.sentPhone,
+      codeSent: (state) => state.sentPhone,
+      verifying: (state) => state.sentPhone,
+      verified: (state) => state.sentPhone,
+      error: (state) => state.sentPhone,
+    );
     await ref
         .read(phoneAuthViewModelProvider.notifier)
-        .verifyCode(code, phoneNumber: _sentPhone);
+        .verifyCode(code, phoneNumber: sentPhone);
   }
 
   Future<void> _resendCode() async {
-    if (_resendCooldown > 0) return;
-    await ref.read(phoneAuthViewModelProvider.notifier).resendCode(_sentPhone);
-    _startResendCooldown();
-  }
-
-  void _startResendCooldown() {
-    if (!mounted) return;
-    setState(() => _resendCooldown = 60);
-    _cooldownTimer?.cancel();
-    _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!mounted) {
-        _cooldownTimer?.cancel();
-        return;
-      }
-      setState(() {
-        _resendCooldown--;
-        if (_resendCooldown <= 0) _cooldownTimer?.cancel();
-      });
-    });
+    final phoneState = ref.read(phoneAuthViewModelProvider);
+    final sentPhone = phoneState.map(
+      idle: (state) => state.sentPhone,
+      sending: (state) => state.sentPhone,
+      codeSent: (state) => state.sentPhone,
+      verifying: (state) => state.sentPhone,
+      verified: (state) => state.sentPhone,
+      error: (state) => state.sentPhone,
+    );
+    final resendCooldown = phoneState.map(
+      idle: (state) => state.resendCooldown,
+      sending: (state) => state.resendCooldown,
+      codeSent: (state) => state.resendCooldown,
+      verifying: (state) => state.resendCooldown,
+      verified: (state) => state.resendCooldown,
+      error: (state) => state.resendCooldown,
+    );
+    if (resendCooldown > 0) return;
+    await ref.read(phoneAuthViewModelProvider.notifier).resendCode(sentPhone);
   }
 
   // ---------------------------------------------------------------------------
@@ -194,10 +187,12 @@ class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
               if (value == null || value.trim().isEmpty) {
                 return l10n.otpPhoneRequired;
               }
-              // Minimal validation: at least 8 digits
               final digits = value.replaceAll(RegExp(r'[^\d]'), '');
               if (digits.length < 8) {
                 return l10n.otpInvalidPhone;
+              }
+              if (digits.length > 15) {
+                return 'Phone number is too long';
               }
               return null;
             },
@@ -243,6 +238,24 @@ class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
   // ---------------------------------------------------------------------------
 
   Widget _buildCodeInput(AppLocalizations l10n, {bool isLoading = false}) {
+    final phoneState = ref.watch(phoneAuthViewModelProvider);
+    final sentPhone = phoneState.map(
+      idle: (state) => state.sentPhone,
+      sending: (state) => state.sentPhone,
+      codeSent: (state) => state.sentPhone,
+      verifying: (state) => state.sentPhone,
+      verified: (state) => state.sentPhone,
+      error: (state) => state.sentPhone,
+    );
+    final resendCooldown = phoneState.map(
+      idle: (state) => state.resendCooldown,
+      sending: (state) => state.resendCooldown,
+      codeSent: (state) => state.resendCooldown,
+      verifying: (state) => state.resendCooldown,
+      verified: (state) => state.resendCooldown,
+      error: (state) => state.resendCooldown,
+    );
+
     return FormBuilder(
       key: _codeFormKey,
       child: Column(
@@ -281,7 +294,7 @@ class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
           SizedBox(height: 12.h),
 
           Text(
-            '${l10n.otpEnterCode} $_sentPhone',
+            '${l10n.otpEnterCode} $sentPhone',
             style: TextStyle(
               fontSize: 15.sp,
               color: AppColors.textSecondary,
@@ -305,6 +318,15 @@ class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
               FilteringTextInputFormatter.digitsOnly,
               LengthLimitingTextInputFormatter(6),
             ],
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Please enter the verification code';
+              }
+              if (value.trim().length != 6) {
+                return 'Code must be exactly 6 digits';
+              }
+              return null;
+            },
             onSubmitted: (_) => _verifyCode(),
           ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1),
 
@@ -325,9 +347,9 @@ class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
 
           // Resend code
           Center(
-            child: _resendCooldown > 0
+            child: resendCooldown > 0
                 ? Text(
-                    l10n.otpResendIn(_resendCooldown),
+                    l10n.otpResendIn(resendCooldown),
                     style: TextStyle(
                       fontSize: 14.sp,
                       color: AppColors.textSecondary,

@@ -6,10 +6,12 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/form_validators.dart';
+import 'package:sport_connect/core/widgets/intl_phone_input.dart';
+import 'package:sport_connect/core/widgets/address_autocomplete_field.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
-import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
-import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
+import 'package:sport_connect/features/auth/view_models/onboarding_view_model.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
@@ -29,13 +31,10 @@ class DriverOnboardingScreen extends ConsumerStatefulWidget {
 
 class _DriverOnboardingScreenState
     extends ConsumerState<DriverOnboardingScreen> {
-  final PageController _pageController = PageController();
-  int _currentStep = 0;
-  bool _isLoading = false;
-  bool _isProfilePopulated = false;
-
   // ── Profile form (Step 0) ──────────────────────────────────────────
   final _profileFormKey = GlobalKey<FormBuilderState>();
+  final _phoneKey = GlobalKey<IntlPhoneInputState>();
+  final _cityKey = GlobalKey<AddressAutocompleteFieldState>();
 
   final List<String> _availableInterests = [
     'Football',
@@ -60,38 +59,29 @@ class _DriverOnboardingScreenState
     FuelType.hydrogen,
   ];
 
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
   // ── Navigation helpers ──────────────────────────────────────────────
 
-  void _nextStep() {
+  void _nextStep(OnboardingState vmState) {
     // Validate the current step before advancing.
-    if (_currentStep == 0) {
+    if (vmState.driverCurrentStep == 0) {
       if (!_profileFormKey.currentState!.validate()) return;
-    } else if (_currentStep == 1) {
+      // Also validate phone and city widgets
+      final phoneError = _phoneKey.currentState?.validate();
+      if (phoneError != null) return;
+      final cityError = _cityKey.currentState?.validate();
+      if (cityError != null) return;
+    } else if (vmState.driverCurrentStep == 1) {
       if (!_vehicleFormKey.currentState!.validate()) return;
     }
 
-    if (_currentStep < 2) {
-      setState(() => _currentStep++);
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutCubic,
-      );
+    if (vmState.driverCurrentStep < 2) {
+      ref.read(onboardingViewModelProvider.notifier).advanceDriverStep();
     }
   }
 
-  void _previousStep() {
-    if (_currentStep > 0) {
-      setState(() => _currentStep--);
-      _pageController.previousPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutCubic,
-      );
+  void _previousStep(OnboardingState vmState) {
+    if (vmState.driverCurrentStep > 0) {
+      ref.read(onboardingViewModelProvider.notifier).retreatDriverStep();
     }
   }
 
@@ -109,138 +99,78 @@ class _DriverOnboardingScreenState
     });
   }
 
-  Future<void> _saveProfileAndContinue() async {
+  void _saveProfileAndContinue() {
     if (!_profileFormKey.currentState!.saveAndValidate()) return;
     final values = _profileFormKey.currentState!.value;
 
-    setState(() => _isLoading = true);
+    final currentUser = ref.read(currentUserProvider).value;
+    if (currentUser == null) return;
 
-    try {
-      final currentUser = ref.read(currentUserProvider).value;
-      if (currentUser == null) return;
+    final updatedUser = currentUser.map(
+      rider: (rider) => rider, // Should not reach this in driver flow
+      driver: (driver) => driver.copyWith(
+        displayName: values['name'],
+        phoneNumber: (ref.read(onboardingViewModelProvider).driverPhoneNumber
+              ?.isNotEmpty ??
+            false)
+          ? ref.read(onboardingViewModelProvider).driverPhoneNumber
+            : null,
+        city: ref.read(onboardingViewModelProvider).driverCity ??
+          _cityKey.currentState?.text ??
+          '',
+        bio: (values['bio'] as String?)?.isEmpty ?? true
+            ? null
+            : values['bio'],
+        gender: values['gender'],
+        dateOfBirth: values['dob'],
+        interests: (values['interests'] as List<dynamic>? ?? [])
+            .cast<String>(),
+      ),
+    );
 
-      final updatedUser = currentUser.map(
-        rider: (rider) => rider, // Should not reach this in driver flow
-        driver: (driver) => driver.copyWith(
-          displayName: values['name'],
-          phoneNumber: (values['phone'] as String?)?.isEmpty ?? true
-              ? null
-              : values['phone'],
-          city: values['city'],
-          bio: (values['bio'] as String?)?.isEmpty ?? true
-              ? null
-              : values['bio'],
-          gender: values['gender'],
-          dateOfBirth: values['dob'],
-          interests: (values['interests'] as List<dynamic>? ?? [])
-              .cast<String>(),
-        ),
-      );
-
-      await ref
-          .read(profileActionsViewModelProvider)
-          .updateProfile(updatedUser.uid, updatedUser.toJson());
-
-      if (!mounted) return;
-      _nextStep();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString()),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
+    ref
+        .read(onboardingViewModelProvider.notifier)
+        .saveDriverProfile(updatedUser.uid, updatedUser.toJson());
   }
 
   // ── Vehicle + Stripe helpers ───────────────────────────────────────
 
-  Future<void> _saveVehicleAndContinue() async {
+  void _saveVehicleAndContinue() {
     if (!_vehicleFormKey.currentState!.saveAndValidate()) return;
     final values = _vehicleFormKey.currentState!.value;
-    setState(() => _isLoading = true);
 
-    try {
-      final currentUser = ref.read(currentUserProvider).value;
+    final currentUser = ref.read(currentUserProvider).value;
+    if (currentUser == null) return;
 
-      if (currentUser != null) {
-        final driver = currentUser.asDriver!;
+    final driver = currentUser.asDriver!;
 
-        // Create vehicle object
-        final vehicle = VehicleModel(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          ownerId: driver.uid,
-          ownerName: driver.displayName,
-          ownerPhotoUrl: driver.photoUrl,
-          make: values['make'] as String,
-          model: values['model'] as String,
-          year: int.parse(values['year'] as String),
-          color: values['color'] as String,
-          licensePlate: values['license_plate'] as String,
-          capacity: int.parse(values['seats'] as String),
-          fuelType: values['fuel_type'] as FuelType,
-          isActive: true,
-          verificationStatus: VehicleVerificationStatus.pending,
-        );
+    final vehicle = VehicleModel(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      ownerId: driver.uid,
+      ownerName: driver.displayName,
+      ownerPhotoUrl: driver.photoUrl,
+      make: values['make'] as String,
+      model: values['model'] as String,
+      year: int.parse(values['year'] as String),
+      color: values['color'] as String,
+      licensePlate: values['license_plate'] as String,
+      capacity: int.parse(values['seats'] as String),
+      fuelType: values['fuel_type'] as FuelType,
+      isActive: true,
+      verificationStatus: VehicleVerificationStatus.pending,
+    );
 
-        // Add vehicle to user's profile using actions provider
-        // to avoid auto-dispose family provider lifecycle issues.
-        final profileActions = ref.read(profileActionsViewModelProvider);
-        await profileActions.addVehicle(currentUser.uid, vehicle);
-
-        if (!mounted) return;
-        _nextStep();
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(
-                context,
-              ).errorSavingVehicleValue(e.toString()),
-            ),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
+    ref
+        .read(onboardingViewModelProvider.notifier)
+        .saveVehicle(currentUser.uid, vehicle);
   }
 
-  Future<void> _setupStripe() async {
-    // Clear the needsRoleSelection flag — driver setup is complete
-    final authActions = ref.read(authActionsViewModelProvider);
-    final uid = authActions.currentUser?.uid;
-    if (uid != null) {
-      await authActions.clearNeedsRoleSelection(uid);
-    }
-    if (mounted) context.go(AppRoutes.driverStripeOnboarding.path);
+  void _setupStripe() {
+    ref.read(onboardingViewModelProvider.notifier).finalizeDriverSetupForStripe();
   }
 
-  Future<void> _skipStripeForNow() async {
-    // Clear the needsRoleSelection flag — driver setup is complete
-    final authActions = ref.read(authActionsViewModelProvider);
-    final uid = authActions.currentUser?.uid;
-    if (uid != null) {
-      await authActions.clearNeedsRoleSelection(uid);
-    }
-    if (mounted) context.go(AppRoutes.driverHome.path);
+  void _skipStripeForNow() {
+    ref.read(onboardingViewModelProvider.notifier).finalizeDriverSetup();
   }
 
   @override
@@ -248,22 +178,52 @@ class _DriverOnboardingScreenState
     // Pre-populate profile fields from the current user (once).
     final userAsync = ref.watch(currentUserProvider);
     final user = userAsync.value;
-    if (!_isProfilePopulated && user != null) {
-      _isProfilePopulated = true;
+    final vmState = ref.watch(onboardingViewModelProvider);
+    if (!vmState.driverProfilePopulated && user != null) {
+      ref.read(onboardingViewModelProvider.notifier).markDriverProfilePopulated();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _populateProfileFields(user);
       });
     }
+
+    // React to ViewModel completed actions & errors.
+    ref.listen(onboardingViewModelProvider, (prev, next) {
+      final action = next.completedAction;
+      if (action != null && action != prev?.completedAction) {
+        switch (action) {
+          case 'profileSaved':
+          case 'vehicleSaved':
+            _nextStep(next);
+          case 'finalizedStripe':
+            context.go(AppRoutes.driverStripeOnboarding.path);
+          case 'finalized':
+            context.go(AppRoutes.driverHome.path);
+        }
+      }
+      if (next.errorMessage != null &&
+          next.errorMessage != prev?.errorMessage) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.errorMessage!),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+          ),
+        );
+      }
+    });
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
-        leading: _currentStep > 0
+        leading: vmState.driverCurrentStep > 0
             ? IconButton(
-                tooltip: 'Previous step',
-                onPressed: _previousStep,
+                tooltip: AppLocalizations.of(context).previousStepTooltip,
+                onPressed: () => _previousStep(vmState),
                 icon: Icon(
                   Icons.arrow_back_ios_new_rounded,
                   color: AppColors.textPrimary,
@@ -271,7 +231,7 @@ class _DriverOnboardingScreenState
                 ),
               )
             : IconButton(
-                tooltip: 'Go back',
+                tooltip: AppLocalizations.of(context).goBackTooltip,
                 onPressed: () => context.go(AppRoutes.roleSelection.path),
                 icon: Icon(
                   Icons.arrow_back_ios_new_rounded,
@@ -292,18 +252,20 @@ class _DriverOnboardingScreenState
       body: Column(
         children: [
           // Progress indicator
-          _buildProgressIndicator(),
+          _buildProgressIndicator(vmState),
 
           // Page content
           Expanded(
-            child: PageView(
-              controller: _pageController,
-              physics: const NeverScrollableScrollPhysics(),
-              children: [
-                _buildProfileStep(),
-                _buildVehicleStep(),
-                _buildStripeStep(),
-              ],
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              child: KeyedSubtree(
+                key: ValueKey(vmState.driverCurrentStep),
+                child: switch (vmState.driverCurrentStep) {
+                  0 => _buildProfileStep(vmState),
+                  1 => _buildVehicleStep(vmState),
+                  _ => _buildStripeStep(),
+                },
+              ),
             ),
           ),
         ],
@@ -311,7 +273,7 @@ class _DriverOnboardingScreenState
     );
   }
 
-  Widget _buildProgressIndicator() {
+  Widget _buildProgressIndicator(OnboardingState vmState) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
       child: Row(
@@ -320,13 +282,16 @@ class _DriverOnboardingScreenState
             0,
             AppLocalizations.of(context).navProfile,
             Icons.person_outline_rounded,
+            vmState.driverCurrentStep,
           ),
           Expanded(
             child: Container(
               height: 2,
               margin: EdgeInsets.symmetric(horizontal: 8.w),
               decoration: BoxDecoration(
-                color: _currentStep >= 1 ? AppColors.primary : AppColors.border,
+                color: vmState.driverCurrentStep >= 1
+                    ? AppColors.primary
+                    : AppColors.border,
                 borderRadius: BorderRadius.circular(1),
               ),
             ),
@@ -335,13 +300,16 @@ class _DriverOnboardingScreenState
             1,
             AppLocalizations.of(context).vehicle,
             Icons.directions_car_outlined,
+            vmState.driverCurrentStep,
           ),
           Expanded(
             child: Container(
               height: 2,
               margin: EdgeInsets.symmetric(horizontal: 8.w),
               decoration: BoxDecoration(
-                color: _currentStep >= 2 ? AppColors.primary : AppColors.border,
+                color: vmState.driverCurrentStep >= 2
+                    ? AppColors.primary
+                    : AppColors.border,
                 borderRadius: BorderRadius.circular(1),
               ),
             ),
@@ -350,15 +318,21 @@ class _DriverOnboardingScreenState
             2,
             AppLocalizations.of(context).payouts,
             Icons.account_balance_outlined,
+            vmState.driverCurrentStep,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStepIndicator(int step, String label, IconData icon) {
-    final isActive = _currentStep >= step;
-    final isCurrent = _currentStep == step;
+  Widget _buildStepIndicator(
+    int step,
+    String label,
+    IconData icon,
+    int currentStep,
+  ) {
+    final isActive = currentStep >= step;
+    final isCurrent = currentStep == step;
 
     return Column(
       children: [
@@ -393,7 +367,7 @@ class _DriverOnboardingScreenState
 
   // ── Step 0: Profile ─────────────────────────────────────────────────
 
-  Widget _buildProfileStep() {
+  Widget _buildProfileStep(OnboardingState vmState) {
     final l10n = AppLocalizations.of(context);
 
     return SingleChildScrollView(
@@ -428,41 +402,45 @@ class _DriverOnboardingScreenState
                   2,
                   errorText: "Name Must be at least 2 characters",
                 ),
+                FormBuilderValidators.maxLength(60),
+                (value) => FormValidators.name(value),
               ]),
             ).animate().fadeIn(duration: 400.ms, delay: 50.ms),
 
             SizedBox(height: 16.h),
 
-            // Phone (optional)
-            FormBuilderTextField(
-              name: 'phone',
-              decoration: InputDecoration(
-                labelText: l10n.authPhoneOptional,
-                hintText: l10n.authPhoneHint,
-                prefixIcon: Icon(Icons.phone_rounded),
-              ),
-              keyboardType: TextInputType.phone,
-              textInputAction: TextInputAction.next,
-              validator: FormBuilderValidators.conditional(
-                (value) => value != null && value.trim().isNotEmpty,
-                FormBuilderValidators.phoneNumber(),
-              ),
+            // Phone (optional) — International phone input
+            IntlPhoneInput(
+              key: _phoneKey,
+              label: l10n.authPhoneOptional,
+              hint: l10n.authPhoneHint,
+              accentColor: AppColors.primary,
+              fillColor: AppColors.primary.withValues(alpha: 0.06),
+              onChanged: (phone) => ref
+                  .read(onboardingViewModelProvider.notifier)
+                  .setDriverDraftContact(
+                    phoneNumber: phone.isValid ? phone.fullNumber : null,
+                  ),
             ).animate().fadeIn(duration: 400.ms, delay: 100.ms),
 
             SizedBox(height: 16.h),
 
-            // City
-            FormBuilderTextField(
-              name: 'city',
-              decoration: InputDecoration(
-                labelText: l10n.driverCityLabel,
-                hintText: l10n.driverCityHint,
-                prefixIcon: Icon(Icons.location_city_rounded),
-              ),
-              textInputAction: TextInputAction.next,
-              validator: FormBuilderValidators.required(
-                errorText: l10n.driverCityLabel,
-              ),
+            // City — Autocomplete with Nominatim
+            AddressAutocompleteField(
+              key: _cityKey,
+              label: l10n.driverCityLabel,
+              hint: l10n.driverCityHint,
+              cityOnly: true,
+              accentColor: AppColors.primary,
+              onSelected: (result) => ref
+                  .read(onboardingViewModelProvider.notifier)
+                  .setDriverDraftContact(city: result.address),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return l10n.driverCityLabel;
+                }
+                return null;
+              },
             ).animate().fadeIn(duration: 400.ms, delay: 150.ms),
 
             SizedBox(height: 16.h),
@@ -476,9 +454,10 @@ class _DriverOnboardingScreenState
                 prefixIcon: Icon(Icons.info_outline_rounded),
               ),
               maxLines: 3,
-              maxLength: 160,
+              maxLength: 500,
               textInputAction: TextInputAction.newline,
               keyboardType: TextInputType.multiline,
+              validator: (value) => FormValidators.bio(value),
             ).animate().fadeIn(duration: 400.ms, delay: 200.ms),
 
             SizedBox(height: 16.h),
@@ -487,9 +466,9 @@ class _DriverOnboardingScreenState
             FormBuilderDropdown<String>(
               name: 'gender',
               decoration: InputDecoration(labelText: l10n.gender),
-              items: const [
-                DropdownMenuItem(value: 'Male', child: Text('Male')),
-                DropdownMenuItem(value: 'Female', child: Text('Female')),
+              items: [
+                DropdownMenuItem(value: 'Male', child: Text(AppLocalizations.of(context).genderMale)),
+                DropdownMenuItem(value: 'Female', child: Text(AppLocalizations.of(context).genderFemale)),
               ],
               validator: FormBuilderValidators.required(
                 errorText: l10n.driverGenderRequired,
@@ -565,8 +544,8 @@ class _DriverOnboardingScreenState
               width: double.infinity,
               child: PremiumButton(
                 text: l10n.driverSaveAndContinue,
-                onPressed: _isLoading ? null : _saveProfileAndContinue,
-                isLoading: _isLoading,
+                onPressed: vmState.isLoading ? null : _saveProfileAndContinue,
+                isLoading: vmState.isLoading,
                 style: PremiumButtonStyle.primary,
                 size: PremiumButtonSize.large,
                 trailingIcon: Icons.arrow_forward_rounded,
@@ -582,7 +561,7 @@ class _DriverOnboardingScreenState
 
   // ── Step 1: Vehicle ────────────────────────────────────────────────
 
-  Widget _buildVehicleStep() {
+  Widget _buildVehicleStep(OnboardingState vmState) {
     return SingleChildScrollView(
       padding: EdgeInsets.all(24.w),
       child: FormBuilder(
@@ -644,12 +623,7 @@ class _DriverOnboardingScreenState
                     textInputAction: TextInputAction.next,
                     validator: FormBuilderValidators.compose([
                       FormBuilderValidators.required(errorText: 'Required'),
-                      FormBuilderValidators.integer(errorText: 'Numbers only'),
-                      FormBuilderValidators.between(
-                        1990,
-                        DateTime.now().year.toDouble(),
-                        errorText: 'Invalid year',
-                      ),
+                      (value) => FormValidators.vehicleYear(value),
                     ]),
                   ),
                 ),
@@ -679,13 +653,14 @@ class _DriverOnboardingScreenState
                 labelText: 'License Plate',
                 hintText: 'e.g., ABC 123',
                 prefixIcon: Icon(Icons.credit_card_rounded),
+                helperText: '2-12 characters, letters & numbers',
               ),
               textCapitalization: TextCapitalization.characters,
               validator: FormBuilderValidators.compose([
                 FormBuilderValidators.required(
                   errorText: 'Please enter license plate',
                 ),
-                FormBuilderValidators.licensePlate(),
+                (value) => FormValidators.licensePlate(value),
               ]),
             ).animate().fadeIn(duration: 400.ms, delay: 250.ms),
 
@@ -738,8 +713,8 @@ class _DriverOnboardingScreenState
               width: double.infinity,
               child: PremiumButton(
                 text: 'Save & Continue',
-                onPressed: _isLoading ? null : _saveVehicleAndContinue,
-                isLoading: _isLoading,
+                onPressed: vmState.isLoading ? null : _saveVehicleAndContinue,
+                isLoading: vmState.isLoading,
                 style: PremiumButtonStyle.primary,
                 size: PremiumButtonSize.large,
                 trailingIcon: Icons.arrow_forward_rounded,

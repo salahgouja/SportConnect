@@ -9,7 +9,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/form_validators.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
+import 'package:sport_connect/core/widgets/intl_phone_input.dart';
+import 'package:sport_connect/core/widgets/address_autocomplete_field.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
@@ -26,21 +29,15 @@ class EditProfileScreen extends ConsumerStatefulWidget {
 
 class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _formKey = GlobalKey<FormBuilderState>();
+  final _phoneKey = GlobalKey<IntlPhoneInputState>();
+  final _cityKey = GlobalKey<AddressAutocompleteFieldState>();
 
-  // State
-  String _selectedGender = 'Male';
-  DateTime _dateOfBirth = DateTime(1990, 1, 1);
-  bool _isLoading = false;
-  bool _hasChanges = false;
   bool _isPopulated = false;
-  UserModel? _currentUser; // Keep a reference to the actual model for mapping
+  UserModel? _currentUser;
 
   // Image picker
   final ImagePicker _imagePicker = ImagePicker();
-  File? _selectedImage;
-  bool _imageRemoved = false;
 
-  final List<String> _interests = [];
   final List<String> _availableInterests = [
     'Football',
     'Basketball',
@@ -76,20 +73,16 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       source: ImageSource.gallery,
     );
     if (image != null) {
-      setState(() {
-        _selectedImage = File(image.path);
-        _imageRemoved = false;
-        _hasChanges = true;
-      });
+      ref
+          .read(profileEditViewModelProvider(_currentUser!.uid).notifier)
+          .setPhotoFile(File(image.path));
     }
   }
 
   void _removePhoto() {
-    setState(() {
-      _selectedImage = null;
-      _imageRemoved = true;
-      _hasChanges = true;
-    });
+    ref
+        .read(profileEditViewModelProvider(_currentUser!.uid).notifier)
+        .removePhoto();
   }
 
   @override
@@ -97,19 +90,56 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     // Populate form from user data reactively, only once.
     final userAsync = ref.watch(currentUserProvider);
     final user = userAsync.value;
+    final editState = ref.watch(
+      profileEditViewModelProvider(_currentUser?.uid ?? ''),
+    );
     if (user != null && !_isPopulated) {
       _currentUser = user;
       _populateFromUser(user);
       _isPopulated = true;
+      ref
+          .read(profileEditViewModelProvider(user.uid).notifier)
+          .initFromUser(user);
+    }
+
+    if (_currentUser != null) {
+      ref.listen(profileEditViewModelProvider(_currentUser!.uid), (
+        previous,
+        next,
+      ) {
+        if (next.isSaved && previous?.isSaved != true && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AppLocalizations.of(context).profileUpdated),
+              backgroundColor: AppColors.success,
+            ),
+          );
+        }
+
+        if (next.error != null &&
+            next.error != previous?.error &&
+            context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(context).errorValue(next.error!),
+              ),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      });
     }
 
     final isDriver = _currentUser?.isDriver ?? false;
+    final selectedGender = editState.gender ?? 'Male';
+    final selectedDateOfBirth = editState.dateOfBirth ?? DateTime(1990, 1, 1);
 
     return PopScope(
-      canPop: !_hasChanges,
+      canPop: !editState.hasChanges,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-        if (_hasChanges) {
+        if (editState.hasChanges) {
           final shouldPop = await _showDiscardChangesDialog();
           if (shouldPop == true && mounted) context.pop();
         }
@@ -131,8 +161,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           ),
           child: PremiumButton(
             text: 'Save Changes',
-            onPressed: _hasChanges ? _saveProfile : null,
-            isLoading: _isLoading,
+            onPressed: editState.hasChanges ? _saveProfile : null,
+            isLoading: editState.isLoading,
             icon: Icons.check_rounded,
           ),
         ),
@@ -234,7 +264,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 child: FormBuilder(
                   key: _formKey,
                   onChanged: () {
-                    if (!_hasChanges) setState(() => _hasChanges = true);
+                    ref
+                        .read(
+                          profileEditViewModelProvider(
+                            _currentUser!.uid,
+                          ).notifier,
+                        )
+                        .markChanged();
                   },
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -252,9 +288,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                 Icons.person_outline_rounded,
                               ),
                             ),
-                            validator: FormBuilderValidators.required(
-                              errorText: 'Required',
-                            ),
+                            validator: FormBuilderValidators.compose([
+                              FormBuilderValidators.required(
+                                errorText: 'Required',
+                              ),
+                              FormBuilderValidators.minLength(2),
+                              FormBuilderValidators.maxLength(60),
+                              (value) => FormValidators.name(value),
+                            ]),
                           ),
                           SizedBox(height: 16.h),
                           FormBuilderTextField(
@@ -269,13 +310,24 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                             enabled: false,
                           ),
                           SizedBox(height: 16.h),
-                          FormBuilderTextField(
-                            name: 'phone',
-                            decoration: InputDecoration(
-                              labelText: 'Phone Number',
-                              prefixIcon: const Icon(Icons.phone_outlined),
+                          IntlPhoneInput(
+                            key: _phoneKey,
+                            label: 'Phone Number',
+                            hint: 'Enter your phone number',
+                            accentColor: AppColors.primary,
+                            fillColor: AppColors.primary.withValues(
+                              alpha: 0.06,
                             ),
-                            keyboardType: TextInputType.phone,
+                            initialValue: _currentUser?.phoneNumber,
+                            onChanged: (phone) {
+                              ref
+                                  .read(
+                                    profileEditViewModelProvider(
+                                      _currentUser!.uid,
+                                    ).notifier,
+                                  )
+                                  .setPhoneNumber(phone.fullNumber);
+                            },
                           ),
                         ],
                       ),
@@ -313,15 +365,26 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               prefixIcon: Icon(Icons.edit_note_rounded),
                             ),
                             maxLines: 3,
-                            maxLength: 150,
+                            maxLength: 500,
+                            validator: (value) => FormValidators.bio(value),
                           ),
                           SizedBox(height: 16.h),
-                          FormBuilderTextField(
-                            name: 'city',
-                            decoration: const InputDecoration(
-                              labelText: 'City',
-                              prefixIcon: Icon(Icons.location_city_rounded),
-                            ),
+                          AddressAutocompleteField(
+                            key: _cityKey,
+                            label: 'City',
+                            hint: 'Search your city...',
+                            cityOnly: true,
+                            initialValue: _currentUser?.city,
+                            accentColor: AppColors.primary,
+                            onSelected: (result) {
+                              ref
+                                  .read(
+                                    profileEditViewModelProvider(
+                                      _currentUser!.uid,
+                                    ).notifier,
+                                  )
+                                  .setCityResult(result);
+                            },
                           ),
                           SizedBox(height: 16.h),
                           FormBuilderTextField(
@@ -341,7 +404,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       ),
                       _buildActionTile(
                         label: AppLocalizations.of(context).gender,
-                        value: _selectedGender,
+                        value: selectedGender,
                         icon: Icons.wc_rounded,
                         onTap: _showGenderPicker,
                       ),
@@ -349,7 +412,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       _buildActionTile(
                         label: AppLocalizations.of(context).birthday,
                         value:
-                            '${_dateOfBirth.day.toString().padLeft(2, '0')}/${_dateOfBirth.month.toString().padLeft(2, '0')}/${_dateOfBirth.year}',
+                            '${selectedDateOfBirth.day.toString().padLeft(2, '0')}/${selectedDateOfBirth.month.toString().padLeft(2, '0')}/${selectedDateOfBirth.year}',
                         icon: Icons.cake_rounded,
                         onTap: _selectDateOfBirth,
                       ),
@@ -388,7 +451,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           borderRadius: BorderRadius.circular(16.r),
                           border: Border.all(color: AppColors.border),
                         ),
-                        child: _interests.isEmpty
+                        child: editState.interests.isEmpty
                             ? Center(
                                 child: Text(
                                   AppLocalizations.of(
@@ -402,7 +465,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                             : Wrap(
                                 spacing: 8.w,
                                 runSpacing: 8.h,
-                                children: _interests.map((interest) {
+                                children: editState.interests.map((interest) {
                                   return Chip(
                                     label: Text(
                                       interest,
@@ -427,12 +490,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                       size: 14.sp,
                                       color: AppColors.primary,
                                     ),
-                                    onDeleted: () {
-                                      setState(() {
-                                        _interests.remove(interest);
-                                        _hasChanges = true;
-                                      });
-                                    },
+                                    onDeleted: () => ref
+                                        .read(
+                                          profileEditViewModelProvider(
+                                            _currentUser!.uid,
+                                          ).notifier,
+                                        )
+                                        .removeInterest(interest),
                                   );
                                 }).toList(),
                               ),
@@ -452,16 +516,19 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   // --- Helpers ---
 
   Widget _buildProfileImage() {
-    if (_selectedImage != null) {
+    final editState = ref.watch(
+      profileEditViewModelProvider(_currentUser!.uid),
+    );
+    if (editState.newPhotoFile != null) {
       return Image.file(
-        _selectedImage!,
+        editState.newPhotoFile!,
         width: 110.w,
         height: 110.w,
         fit: BoxFit.cover,
       );
     }
     // Using the photoUrl from the model
-    if (_currentUser?.photoUrl != null && !_imageRemoved) {
+    if (_currentUser?.photoUrl != null && !editState.imageRemoved) {
       return Image.network(
         _currentUser!.photoUrl!,
         width: 110.w,
@@ -576,12 +643,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   // --- Logic ---
 
   void _populateFromUser(UserModel user) {
-    setState(() {
-      _selectedGender = user.gender ?? 'Male';
-      _dateOfBirth = user.dateOfBirth ?? DateTime(1990);
-      _interests.clear();
-      _interests.addAll(user.interests);
-    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _formKey.currentState?.patchValue({
@@ -598,83 +659,74 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.saveAndValidate() || _currentUser == null)
       return;
-    setState(() => _isLoading = true);
+
+    // Validate phone if entered
+    final phoneError = _phoneKey.currentState?.validate();
+    if (phoneError != null) return;
 
     try {
-      String? photoUrl;
-
-      // Upload new profile image if selected
-      if (_selectedImage != null) {
-        photoUrl = await ref
-            .read(authRepositoryProvider)
-            .uploadProfileImage(_selectedImage!, _currentUser!.uid);
-      }
-
-      // Determine final photoUrl
-      final String? finalPhotoUrl;
-      if (_imageRemoved) {
-        finalPhotoUrl = null;
-      } else if (photoUrl != null) {
-        finalPhotoUrl = photoUrl;
-      } else {
-        finalPhotoUrl = _currentUser!.photoUrl;
-      }
-
       final formValues = _formKey.currentState!.value;
+      final editState = ref.read(
+        profileEditViewModelProvider(_currentUser!.uid),
+      );
+
+      // Get phone from IntlPhoneInput
+      final phoneStr = editState.phoneNumber?.trim().isNotEmpty == true
+          ? editState.phoneNumber!
+          : (formValues['phone'] as String? ?? '');
+
+      // Get city from AddressAutocompleteField or form
+      final cityStr =
+          editState.cityResult?.address ??
+          _cityKey.currentState?.text ??
+          (formValues['city'] as String? ?? '');
+
+      // Get country from AddressAutocompleteField result or form
+      final countryStr =
+          editState.cityResult?.country ??
+          (formValues['country'] as String? ?? '');
 
       // 1. Create updated model using 'map' to preserve subclass type
       final updatedUser = _currentUser!.map(
         rider: (rider) => rider.copyWith(
           displayName: formValues['name'] as String? ?? '',
-          phoneNumber: formValues['phone'] as String? ?? '',
+          phoneNumber: phoneStr,
           bio: formValues['bio'] as String? ?? '',
-          city: formValues['city'] as String? ?? '',
-          country: formValues['country'] as String? ?? '',
-          gender: _selectedGender,
-          dateOfBirth: _dateOfBirth,
-          interests: _interests,
-          photoUrl: finalPhotoUrl,
+          city: cityStr,
+          country: countryStr,
+          gender: editState.gender,
+          dateOfBirth: editState.dateOfBirth,
+          interests: editState.interests,
+          photoUrl: _currentUser!.photoUrl,
         ),
         driver: (driver) => driver.copyWith(
           displayName: formValues['name'] as String? ?? '',
-          phoneNumber: formValues['phone'] as String? ?? '',
+          phoneNumber: phoneStr,
           bio: formValues['bio'] as String? ?? '',
-          city: formValues['city'] as String? ?? '',
-          country: formValues['country'] as String? ?? '',
-          gender: _selectedGender,
-          dateOfBirth: _dateOfBirth,
-          interests: _interests,
-          photoUrl: finalPhotoUrl,
+          city: cityStr,
+          country: countryStr,
+          gender: editState.gender,
+          dateOfBirth: editState.dateOfBirth,
+          interests: editState.interests,
+          photoUrl: _currentUser!.photoUrl,
         ),
       );
 
-      // 2. Call view model action
       await ref
-          .read(profileActionsViewModelProvider)
-          .updateProfile(updatedUser.uid, updatedUser.toJson());
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).profileUpdated),
-            backgroundColor: AppColors.success,
-          ),
-        );
-        setState(() {
-          _isLoading = false;
-          _hasChanges = false;
-        });
-      }
+          .read(profileEditViewModelProvider(_currentUser!.uid).notifier)
+          .saveUserProfile(
+            updatedUser: updatedUser,
+            newPhotoFile: editState.newPhotoFile,
+            removePhoto: editState.imageRemoved,
+          );
     } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).errorValue(e)),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context).errorValue(e)),
+          backgroundColor: AppColors.error,
+        ),
+      );
     }
   }
 
@@ -745,11 +797,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     source: ImageSource.camera,
                   );
                   if (image != null) {
-                    setState(() {
-                      _selectedImage = File(image.path);
-                      _imageRemoved = false;
-                      _hasChanges = true;
-                    });
+                    ref
+                        .read(
+                          profileEditViewModelProvider(
+                            _currentUser!.uid,
+                          ).notifier,
+                        )
+                        .setPhotoFile(File(image.path));
                   }
                 },
               ),
@@ -777,7 +831,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   await _pickImageFromGallery();
                 },
               ),
-              if (_currentUser?.photoUrl != null && !_imageRemoved)
+              if (_currentUser?.photoUrl != null &&
+                  !ref
+                      .watch(profileEditViewModelProvider(_currentUser!.uid))
+                      .imageRemoved)
                 ListTile(
                   leading: Container(
                     padding: EdgeInsets.all(10.w),
@@ -808,6 +865,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   void _showGenderPicker() {
+    final editNotifier = ref.read(
+      profileEditViewModelProvider(_currentUser!.uid).notifier,
+    );
+    final currentGender =
+        ref.read(profileEditViewModelProvider(_currentUser!.uid)).gender ??
+        'Male';
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.surface,
@@ -842,12 +905,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 (gender) => ListTile(
                   leading: Radio<String>(
                     value: gender,
-                    groupValue: _selectedGender,
+                    groupValue: currentGender,
                     onChanged: (value) {
-                      setState(() {
-                        _selectedGender = value!;
-                        _hasChanges = true;
-                      });
+                      editNotifier.setGender(value!);
                       Navigator.pop(context);
                     },
                     activeColor: AppColors.primary,
@@ -860,10 +920,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     ),
                   ),
                   onTap: () {
-                    setState(() {
-                      _selectedGender = gender;
-                      _hasChanges = true;
-                    });
+                    editNotifier.setGender(gender);
                     Navigator.pop(context);
                   },
                 ),
@@ -877,9 +934,15 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   void _selectDateOfBirth() async {
+    final editNotifier = ref.read(
+      profileEditViewModelProvider(_currentUser!.uid).notifier,
+    );
+    final currentDate =
+        ref.read(profileEditViewModelProvider(_currentUser!.uid)).dateOfBirth ??
+        DateTime(1990, 1, 1);
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _dateOfBirth,
+      initialDate: currentDate,
       firstDate: DateTime(1920),
       lastDate: DateTime.now().subtract(const Duration(days: 365 * 13)),
       builder: (context, child) {
@@ -897,15 +960,18 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         );
       },
     );
-    if (picked != null && picked != _dateOfBirth) {
-      setState(() {
-        _dateOfBirth = picked;
-        _hasChanges = true;
-      });
+    if (picked != null && picked != currentDate) {
+      editNotifier.setDateOfBirth(picked);
     }
   }
 
   void _showInterestsDialog() {
+    final editNotifier = ref.read(
+      profileEditViewModelProvider(_currentUser!.uid).notifier,
+    );
+    final selectedInterests = [
+      ...ref.read(profileEditViewModelProvider(_currentUser!.uid)).interests,
+    ];
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -948,7 +1014,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       itemCount: _availableInterests.length,
                       itemBuilder: (context, index) {
                         final interest = _availableInterests[index];
-                        final isSelected = _interests.contains(interest);
+                        final isSelected = selectedInterests.contains(interest);
                         return CheckboxListTile(
                           value: isSelected,
                           activeColor: AppColors.primary,
@@ -962,12 +1028,16 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           onChanged: (value) {
                             setModalState(() {
                               if (value == true) {
-                                _interests.add(interest);
+                                if (!selectedInterests.contains(interest)) {
+                                  selectedInterests.add(interest);
+                                }
                               } else {
-                                _interests.remove(interest);
+                                selectedInterests.remove(interest);
                               }
                             });
-                            setState(() => _hasChanges = true);
+                            editNotifier.setInterests(
+                              List<String>.from(selectedInterests),
+                            );
                           },
                         );
                       },

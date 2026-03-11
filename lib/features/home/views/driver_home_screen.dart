@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,7 +8,6 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/services/location_service.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
@@ -19,8 +16,11 @@ import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/rides/models/driver_stats.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/ride_request_model.dart';
+import 'package:sport_connect/features/home/view_models/driver_location_view_model.dart';
 import 'package:sport_connect/features/rides/view_models/driver_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Driver Home Screen - Responsive dashboard with location support.
 class DriverHomeScreen extends ConsumerStatefulWidget {
@@ -31,59 +31,74 @@ class DriverHomeScreen extends ConsumerStatefulWidget {
 }
 
 class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
-  bool _isLoadingLocation = true;
-  bool _locationGranted = false;
-  bool _locationDeniedForever = false;
-  Position? _currentPosition;
-  StreamSubscription<Position>? _positionStream;
-
   @override
   void initState() {
     super.initState();
-    _checkLocationStatus();
+    ref.read(driverLocationViewModelProvider.notifier).initialize();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _requestLocationPermission();
+      _requestNotificationPermission();
+    });
   }
 
-  @override
-  void dispose() {
-    _positionStream?.cancel();
-    super.dispose();
-  }
-
-  /// Checks current location permission status without requesting.
-  /// This is non-invasive and happens on init.
-  Future<void> _checkLocationStatus() async {
+  /// Requests notification permission, always preceded by our rationale dialog.
+  ///
+  /// On some Android OEMs / Android < 13, Firebase reports `denied` on a
+  /// fresh install instead of `notDetermined`, which would make us skip the
+  /// dialog entirely.  We guard against this by persisting a
+  /// `notification_dialog_shown` flag: we only treat `denied` as a genuine
+  /// previous refusal when that flag is already `true`.
+  Future<void> _requestNotificationPermission() async {
     try {
-      final hasPermission = await LocationServiceImpl.instance
-          .checkPermission();
-      if (mounted) {
-        setState(() {
-          _isLoadingLocation = false;
-          _locationGranted = hasPermission;
-        });
+      final prefs = await SharedPreferences.getInstance();
+      final alreadyAsked = prefs.getBool('notification_dialog_shown') ?? false;
+
+      final settings = await FirebaseMessaging.instance
+          .getNotificationSettings();
+      final status = settings.authorizationStatus;
+
+      // Already granted — nothing to do.
+      if (status == AuthorizationStatus.authorized ||
+          status == AuthorizationStatus.provisional) {
+        TalkerService.info('Notification permission already granted: $status');
+        return;
       }
 
-      if (hasPermission) {
-        final position = await LocationServiceImpl.instance
-            .getCurrentLocation();
-        if (position != null && mounted) {
-          setState(() {
-            _currentPosition = position;
-            _locationGranted = true;
-          });
-        }
-        _startLocationTracking();
-      } else {
-        // Check if permission is denied forever
-        final permission = await Geolocator.checkPermission();
-        if (mounted && permission == LocationPermission.deniedForever) {
-          setState(() => _locationDeniedForever = true);
-        }
+      // Genuinely denied after a previous explicit OS prompt — cannot re-ask.
+      if (status == AuthorizationStatus.denied && alreadyAsked) {
+        TalkerService.info(
+          'Notification permission denied; user must re-enable from settings.',
+        );
+        return;
       }
+
+      // `notDetermined` OR `denied` on first launch (OEM quirk):
+      // show our rationale dialog, then request from the OS.
+      await Future.delayed(const Duration(seconds: 1));
+      if (!context.mounted) return;
+
+      final accepted = await PermissionDialogHelper.showNotificationRationale(
+        context,
+      );
+
+      // Mark that we have now shown the dialog regardless of the user's choice.
+      await prefs.setBool('notification_dialog_shown', true);
+
+      if (!accepted) {
+        TalkerService.info('User dismissed notification rationale.');
+        return;
+      }
+
+      final result = await FirebaseMessaging.instance.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      TalkerService.info(
+        'Notification permission result: ${result.authorizationStatus}',
+      );
     } catch (e) {
-      TalkerService.debug('Error checking location status: $e');
-      if (mounted) {
-        setState(() => _isLoadingLocation = false);
-      }
+      TalkerService.error('Failed to request notification permission', e);
     }
   }
 
@@ -91,60 +106,32 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
   /// Opens location settings if permission denied or services disabled.
   Future<void> _requestLocationPermission() async {
     try {
-      if (!mounted) return;
       final accepted = await PermissionDialogHelper.showLocationRationale(
         context,
       );
       if (!accepted) return;
-      final granted = await LocationServiceImpl.instance.requestPermission();
-      if (mounted) {
-        setState(() {
-          _isLoadingLocation = false;
-          _locationGranted = granted;
-        });
-      }
-
-      if (granted) {
-        final position = await LocationServiceImpl.instance
-            .getCurrentLocation();
-        if (position != null && mounted) {
-          setState(() => _currentPosition = position);
-        }
-        _startLocationTracking();
-      } else {
-        // Permission still denied, open location settings
+      await ref.read(driverLocationViewModelProvider.notifier).requestPermission();
+      final locationState = ref.read(driverLocationViewModelProvider);
+      if (!locationState.locationGranted) {
         await Geolocator.openLocationSettings();
       }
     } catch (e) {
       TalkerService.debug('Error requesting location permission: $e');
-      if (mounted) {
-        setState(() => _isLoadingLocation = false);
-      }
     }
-  }
-
-  void _startLocationTracking() {
-    _positionStream = LocationServiceImpl.instance.getLocationStream().listen(
-      (position) {
-        if (mounted) {
-          setState(() => _currentPosition = position);
-        }
-      },
-      onError: (Object e) {
-        TalkerService.debug('Location stream error: $e');
-      },
-    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final locationState = ref.watch(driverLocationViewModelProvider);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: _DriverDashboard(
-        isLoadingLocation: _isLoadingLocation,
-        locationGranted: _locationGranted,
-        locationDeniedForever: _locationDeniedForever,
-        currentPosition: _currentPosition,
+        isLoadingLocation: locationState.isLoading,
+        locationGranted: locationState.locationGranted,
+        locationDeniedForever: locationState.locationDeniedForever,
+        servicesDisabled: locationState.servicesDisabled,
+        currentPosition: locationState.currentPosition,
         onRetryLocation: _requestLocationPermission,
         onOpenSettings: () => Geolocator.openLocationSettings(),
       ),
@@ -173,6 +160,7 @@ class _DriverDashboard extends ConsumerWidget {
     required this.isLoadingLocation,
     required this.locationGranted,
     required this.locationDeniedForever,
+    required this.servicesDisabled,
     required this.currentPosition,
     required this.onRetryLocation,
     required this.onOpenSettings,
@@ -181,6 +169,7 @@ class _DriverDashboard extends ConsumerWidget {
   final bool isLoadingLocation;
   final bool locationGranted;
   final bool locationDeniedForever;
+  final bool servicesDisabled;
   final Position? currentPosition;
   final VoidCallback onRetryLocation;
   final VoidCallback onOpenSettings;
@@ -195,9 +184,7 @@ class _DriverDashboard extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
 
     return RefreshIndicator(
-      onRefresh: () async {
-        ref.read(driverViewModelProvider.notifier).refresh();
-      },
+      onRefresh: () => ref.read(driverViewModelProvider.notifier).refresh(),
       child: OrientationBuilder(
         builder: (context, orientation) {
           return LayoutBuilder(
@@ -229,17 +216,14 @@ class _DriverDashboard extends ConsumerWidget {
                       ),
                     ),
 
-                  // Online status
+                  // Active ride banner — shown when an inProgress ride exists
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 0),
-                      child: _buildOnlineStatus(
-                        context,
-                        ref,
-                        l10n,
-                        driverStats,
-                        isSmall,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: hPad,
+                        vertical: 4,
                       ),
+                      child: _ActiveDriverRideBanner(driverState: driverState),
                     ),
                   ),
 
@@ -310,6 +294,7 @@ class _DriverDashboard extends ConsumerWidget {
                       child: _buildPendingRequests(
                         context,
                         ref,
+                        driverState,
                         l10n,
                         pendingRequests,
                       ),
@@ -320,7 +305,12 @@ class _DriverDashboard extends ConsumerWidget {
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: EdgeInsets.all(hPad),
-                      child: _buildUpcomingRides(context, l10n, upcomingRides),
+                      child: _buildUpcomingRides(
+                        context,
+                        driverState,
+                        l10n,
+                        upcomingRides,
+                      ),
                     ),
                   ),
 
@@ -440,6 +430,8 @@ class _DriverDashboard extends ConsumerWidget {
   }
 
   Widget _buildLocationBanner(AppLocalizations l10n) {
+    final shouldOpenSettings = locationDeniedForever || servicesDisabled;
+
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -486,9 +478,9 @@ class _DriverDashboard extends ConsumerWidget {
             ),
           ),
           SizedBox(width: 8.w),
-          if (locationDeniedForever)
+          if (shouldOpenSettings)
             TextButton(
-              onPressed: () => Geolocator.openLocationSettings(),
+              onPressed: onOpenSettings,
               child: Text(
                 l10n.openSettings,
                 style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
@@ -505,142 +497,6 @@ class _DriverDashboard extends ConsumerWidget {
         ],
       ),
     ).animate().fadeIn(duration: 300.ms).slideY(begin: -0.1);
-  }
-
-  Widget _buildOnlineStatus(
-    BuildContext context,
-    WidgetRef ref,
-    AppLocalizations l10n,
-    AsyncValue<DriverStats> stats,
-    bool isSmall,
-  ) {
-    return stats.when(
-      data: (driverStats) {
-        final isOnline = driverStats.isOnline;
-        final isLoading = ref.watch(driverViewModelProvider).isLoading;
-        final iconSize = isSmall ? 40.w : 56.w;
-        return GestureDetector(
-          onTap: isLoading
-              ? null
-              : () async {
-                  HapticFeedback.mediumImpact();
-                  await ref
-                      .read(driverViewModelProvider.notifier)
-                      .toggleOnlineStatus();
-                },
-          behavior: HitTestBehavior.opaque,
-          child: Container(
-            padding: EdgeInsets.all(isSmall ? 14.w : 20.w),
-            decoration: BoxDecoration(
-              gradient: isOnline
-                  ? LinearGradient(
-                      colors: [
-                        AppColors.success.withAlpha(30),
-                        AppColors.success.withAlpha(10),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    )
-                  : null,
-              color: isOnline ? null : AppColors.surface,
-              borderRadius: BorderRadius.circular(20.r),
-              border: Border.all(
-                color: isOnline
-                    ? AppColors.success.withAlpha(60)
-                    : AppColors.border,
-                width: 1.5,
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: iconSize,
-                  height: iconSize,
-                  decoration: BoxDecoration(
-                    color: isOnline
-                        ? AppColors.success
-                        : AppColors.textTertiary,
-                    shape: BoxShape.circle,
-                    boxShadow: isOnline
-                        ? [
-                            BoxShadow(
-                              color: AppColors.success.withAlpha(60),
-                              blurRadius: 16,
-                              spreadRadius: 2,
-                            ),
-                          ]
-                        : null,
-                  ),
-                  child: Icon(
-                    isOnline ? Icons.wifi_tethering : Icons.wifi_tethering_off,
-                    color: Colors.white,
-                    size: isSmall ? 20.sp : 28.sp,
-                  ),
-                ),
-                SizedBox(width: isSmall ? 10.w : 16.w),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 10.w,
-                            height: 10.w,
-                            decoration: BoxDecoration(
-                              color: isOnline
-                                  ? AppColors.success
-                                  : AppColors.textTertiary,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          SizedBox(width: 8.w),
-                          Flexible(
-                            child: Text(
-                              isOnline ? l10n.online : l10n.offline,
-                              style: TextStyle(
-                                fontSize: isSmall ? 15.sp : 18.sp,
-                                fontWeight: FontWeight.w800,
-                                color: isOnline
-                                    ? AppColors.success
-                                    : AppColors.textPrimary,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 4.h),
-                      Text(
-                        isOnline
-                            ? l10n.acceptingRideRequests
-                            : l10n.tapToGoOnlineAnd,
-                        style: TextStyle(
-                          fontSize: isSmall ? 11.sp : 13.sp,
-                          color: AppColors.textSecondary,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(
-                  Icons.touch_app_rounded,
-                  color: isOnline
-                      ? AppColors.success.withAlpha(150)
-                      : AppColors.textTertiary,
-                  size: isSmall ? 20.sp : 24.sp,
-                ),
-              ],
-            ),
-          ),
-        ).animate().fadeIn(duration: 400.ms, delay: 100.ms).slideY(begin: 0.1);
-      },
-      loading: () => _buildShimmerCard(height: 100),
-      error: (_, _) => _buildErrorCard(l10n.failedToLoadStatus),
-    );
   }
 
   Widget _buildQuickActions(BuildContext context, AppLocalizations l10n) {
@@ -888,6 +744,7 @@ class _DriverDashboard extends ConsumerWidget {
   Widget _buildPendingRequests(
     BuildContext context,
     WidgetRef ref,
+    DriverState driverState,
     AppLocalizations l10n,
     AsyncValue<List<RideRequestModel>> requestsAsync,
   ) {
@@ -926,8 +783,8 @@ class _DriverDashboard extends ConsumerWidget {
         ),
         SizedBox(height: 12.h),
         requestsAsync.when(
-          data: (requests) {
-            if (requests.isEmpty) {
+          data: (_) {
+            if (driverState.pendingRequestPreview.isEmpty) {
               return _buildEmptyState(
                 icon: Icons.inbox_outlined,
                 title: l10n.noPendingRequests,
@@ -935,11 +792,13 @@ class _DriverDashboard extends ConsumerWidget {
               );
             }
             return Column(
-              children: requests.take(2).map((request) {
+              children: driverState.pendingRequestPreview.map((request) {
                 return Padding(
                   padding: EdgeInsets.only(bottom: 12.h),
                   child: _RequestCard(
                     request: request,
+                    isProcessing:
+                        driverState.isRequestActionInProgress(request.id),
                     onAccept: () async {
                       HapticFeedback.heavyImpact();
                       await ref
@@ -966,6 +825,7 @@ class _DriverDashboard extends ConsumerWidget {
 
   Widget _buildUpcomingRides(
     BuildContext context,
+    DriverState driverState,
     AppLocalizations l10n,
     AsyncValue<List<RideModel>> ridesAsync,
   ) {
@@ -982,8 +842,9 @@ class _DriverDashboard extends ConsumerWidget {
         ),
         SizedBox(height: 12.h),
         ridesAsync.when(
-          data: (rides) {
-            if (rides.isEmpty) {
+          data: (_) {
+            final ridePreview = driverState.upcomingRidePreview;
+            if (ridePreview.isEmpty) {
               return _buildEmptyState(
                 icon: Icons.event_available_outlined,
                 title: l10n.noUpcomingRides,
@@ -991,7 +852,7 @@ class _DriverDashboard extends ConsumerWidget {
               );
             }
             return Column(
-              children: rides.take(3).map((ride) {
+              children: ridePreview.map((ride) {
                 return Padding(
                   padding: EdgeInsets.only(bottom: 12.h),
                   child: _UpcomingRideCard(
@@ -1258,11 +1119,13 @@ class _StatCard extends StatelessWidget {
 
 class _RequestCard extends StatelessWidget {
   final RideRequestModel request;
+  final bool isProcessing;
   final VoidCallback onAccept;
   final VoidCallback onDecline;
 
   const _RequestCard({
     required this.request,
+    required this.isProcessing,
     required this.onAccept,
     required this.onDecline,
   });
@@ -1449,7 +1312,7 @@ class _RequestCard extends StatelessWidget {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: onDecline,
+                  onPressed: isProcessing ? null : onDecline,
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.error,
                     side: BorderSide(color: AppColors.error.withAlpha(80)),
@@ -1470,7 +1333,7 @@ class _RequestCard extends StatelessWidget {
               SizedBox(width: 12.w),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: onAccept,
+                  onPressed: isProcessing ? null : onAccept,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.success,
                     foregroundColor: Colors.white,
@@ -1479,15 +1342,26 @@ class _RequestCard extends StatelessWidget {
                     ),
                     padding: EdgeInsets.symmetric(vertical: 12.h),
                   ),
-                  child: Text(
-                    AppLocalizations.of(context).accept,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  child: isProcessing
+                      ? SizedBox(
+                          width: 18.w,
+                          height: 18.w,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                      : Text(
+                          AppLocalizations.of(context).accept,
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                   ),
                 ),
-              ),
             ],
           ),
         ],
@@ -1647,6 +1521,96 @@ class _UpcomingRideCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Persistent banner shown at the top of the driver dashboard whenever the
+/// driver has an active (inProgress) ride.  Tapping it jumps straight to the
+/// active-ride management screen.
+class _ActiveDriverRideBanner extends StatelessWidget {
+  const _ActiveDriverRideBanner({required this.driverState});
+
+  final DriverState driverState;
+
+  @override
+  Widget build(BuildContext context) {
+    final ride = driverState.activeRide;
+    if (ride == null) return const SizedBox.shrink();
+
+    final origin = ride.origin.city ?? ride.origin.address;
+    final dest = ride.destination.city ?? ride.destination.address;
+
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.mediumImpact();
+        context.push('${AppRoutes.driverActiveRide.path}?rideId=${ride.id}');
+      },
+      child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+            decoration: BoxDecoration(
+              color: AppColors.success,
+              borderRadius: BorderRadius.circular(16.r),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.success.withValues(alpha: 0.40),
+                  blurRadius: 18,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(9.w),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.22),
+                    borderRadius: BorderRadius.circular(11.r),
+                  ),
+                  child: Icon(
+                    Icons.navigation_rounded,
+                    color: Colors.white,
+                    size: 22.sp,
+                  ),
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Ride In Progress',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      SizedBox(height: 2.h),
+                      Text(
+                        '$origin → $dest',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.87),
+                          fontSize: 12.sp,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: Colors.white,
+                  size: 26.sp,
+                ),
+              ],
+            ),
+          )
+          .animate()
+          .fadeIn(delay: 200.ms, duration: 400.ms)
+          .slideY(begin: -0.2, curve: Curves.easeOutCubic),
     );
   }
 }

@@ -161,6 +161,36 @@ abstract class EventModel with _$EventModel {
     @Default([]) List<String> participantIds,
     @Default(0) int maxParticipants,
     @Default(true) bool isActive,
+
+    // ── Event-Ride Integration fields ──
+
+    /// IDs of rides linked to this event.
+    @Default([]) List<String> linkedRideIds,
+
+    /// RSVP ride status per participant: { uid: 'driving' | 'need_ride' | 'self_arranged' }.
+    @Default({}) Map<String, String> rideStatuses,
+
+    /// Parking info / instructions for attendees.
+    String? parkingInfo,
+
+    /// Post-event meetup pin location for coordinating departure.
+    LocationPoint? meetupPinLocation,
+
+    /// Auto-created chat group ID for event participants.
+    String? chatGroupId,
+
+    /// Whether this is a recurring event (e.g. weekly training).
+    @Default(false) bool isRecurring,
+
+    /// Days of the week for recurring events (1=Mon … 7=Sun).
+    @Default([]) List<int> recurringDays,
+
+    /// End date for the recurring series.
+    @TimestampConverter() DateTime? recurringEndDate,
+
+    /// Whether cost-splitting is enabled for event carpools.
+    @Default(false) bool costSplitEnabled,
+
     @TimestampConverter() DateTime? createdAt,
     @TimestampConverter() DateTime? updatedAt,
   }) = _EventModel;
@@ -183,4 +213,46 @@ abstract class EventModel with _$EventModel {
     if (maxParticipants <= 0) return '${participantIds.length} joined';
     return '${participantIds.length}/$maxParticipants';
   }
+
+  // ── Event-Ride Integration getters ──
+
+  /// Number of attendees who are driving and offering seats.
+  int get driversCount =>
+      rideStatuses.values.where((s) => s == 'driving').length;
+
+  /// Number of attendees who need a ride.
+  int get needRideCount =>
+      rideStatuses.values.where((s) => s == 'need_ride').length;
+
+  /// Number of attendees who arranged their own transport.
+  int get selfArrangedCount =>
+      rideStatuses.values.where((s) => s == 'self_arranged').length;
+
+  /// Number of attendees who haven't set a ride status yet.
+  int get noRideStatusCount => participantIds.length - rideStatuses.length;
+
+  /// Summary label: "4 driving · 3 need rides"
+  String get rideStatusSummary {
+    final parts = <String>[];
+    if (driversCount > 0) parts.add('$driversCount driving');
+    if (needRideCount > 0) parts.add('$needRideCount need rides');
+    if (parts.isEmpty) return 'No ride info yet';
+    return parts.join(' · ');
+  }
+
+  /// Whether the event has ended (for "need ride home" button).
+  bool get hasEnded {
+    final end = endsAt ?? startsAt.add(const Duration(hours: 2));
+    return end.isBefore(DateTime.now());
+  }
+
+  /// Whether the event is currently happening.
+  bool get isOngoing {
+    final now = DateTime.now();
+    final end = endsAt ?? startsAt.add(const Duration(hours: 2));
+    return startsAt.isBefore(now) && end.isAfter(now);
+  }
+
+  /// Ride status for a specific user.
+  String? rideStatusFor(String userId) => rideStatuses[userId];
 }

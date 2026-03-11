@@ -36,6 +36,127 @@ Map<String, dynamic> _$DriverStripeStatusToJson(_DriverStripeStatus instance) =>
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+
+@ProviderFor(PaymentHistoryFilterViewModel)
+final paymentHistoryFilterViewModelProvider =
+    PaymentHistoryFilterViewModelProvider._();
+
+final class PaymentHistoryFilterViewModelProvider
+    extends
+        $NotifierProvider<
+          PaymentHistoryFilterViewModel,
+          PaymentHistoryFilterState
+        > {
+  PaymentHistoryFilterViewModelProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'paymentHistoryFilterViewModelProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$paymentHistoryFilterViewModelHash();
+
+  @$internal
+  @override
+  PaymentHistoryFilterViewModel create() => PaymentHistoryFilterViewModel();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(PaymentHistoryFilterState value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<PaymentHistoryFilterState>(value),
+    );
+  }
+}
+
+String _$paymentHistoryFilterViewModelHash() =>
+    r'278887e569705a80be26a3204c143e9f8532fca7';
+
+abstract class _$PaymentHistoryFilterViewModel
+    extends $Notifier<PaymentHistoryFilterState> {
+  PaymentHistoryFilterState build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref =
+        this.ref as $Ref<PaymentHistoryFilterState, PaymentHistoryFilterState>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<PaymentHistoryFilterState, PaymentHistoryFilterState>,
+              PaymentHistoryFilterState,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
+
+@ProviderFor(DriverEarningsPeriodViewModel)
+final driverEarningsPeriodViewModelProvider =
+    DriverEarningsPeriodViewModelProvider._();
+
+final class DriverEarningsPeriodViewModelProvider
+    extends
+        $NotifierProvider<
+          DriverEarningsPeriodViewModel,
+          DriverEarningsPeriodState
+        > {
+  DriverEarningsPeriodViewModelProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'driverEarningsPeriodViewModelProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$driverEarningsPeriodViewModelHash();
+
+  @$internal
+  @override
+  DriverEarningsPeriodViewModel create() => DriverEarningsPeriodViewModel();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(DriverEarningsPeriodState value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<DriverEarningsPeriodState>(value),
+    );
+  }
+}
+
+String _$driverEarningsPeriodViewModelHash() =>
+    r'a33f6a320443ef760d48dcc9f3a4e1c602a14e95';
+
+abstract class _$DriverEarningsPeriodViewModel
+    extends $Notifier<DriverEarningsPeriodState> {
+  DriverEarningsPeriodState build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref =
+        this.ref as $Ref<DriverEarningsPeriodState, DriverEarningsPeriodState>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<DriverEarningsPeriodState, DriverEarningsPeriodState>,
+              DriverEarningsPeriodState,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
+
 /// Payment Processing View Model
 
 @ProviderFor(PaymentViewModel)
@@ -138,6 +259,77 @@ abstract class _$DriverOnboardingViewModel extends $AsyncNotifier<void> {
             as $ClassProviderElement<
               AnyNotifier<AsyncValue<void>, void>,
               AsyncValue<void>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
+
+@ProviderFor(DriverStripeOnboardingFlowViewModel)
+final driverStripeOnboardingFlowViewModelProvider =
+    DriverStripeOnboardingFlowViewModelProvider._();
+
+final class DriverStripeOnboardingFlowViewModelProvider
+    extends
+        $NotifierProvider<
+          DriverStripeOnboardingFlowViewModel,
+          DriverStripeOnboardingFlowState
+        > {
+  DriverStripeOnboardingFlowViewModelProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'driverStripeOnboardingFlowViewModelProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() =>
+      _$driverStripeOnboardingFlowViewModelHash();
+
+  @$internal
+  @override
+  DriverStripeOnboardingFlowViewModel create() =>
+      DriverStripeOnboardingFlowViewModel();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(DriverStripeOnboardingFlowState value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<DriverStripeOnboardingFlowState>(
+        value,
+      ),
+    );
+  }
+}
+
+String _$driverStripeOnboardingFlowViewModelHash() =>
+    r'6873e89d6acb191d5eea0eaadbdcc1f06de22816';
+
+abstract class _$DriverStripeOnboardingFlowViewModel
+    extends $Notifier<DriverStripeOnboardingFlowState> {
+  DriverStripeOnboardingFlowState build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref =
+        this.ref
+            as $Ref<
+              DriverStripeOnboardingFlowState,
+              DriverStripeOnboardingFlowState
+            >;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<
+                DriverStripeOnboardingFlowState,
+                DriverStripeOnboardingFlowState
+              >,
+              DriverStripeOnboardingFlowState,
               Object?,
               Object?
             >;

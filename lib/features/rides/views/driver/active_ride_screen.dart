@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,14 +6,11 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:go_router/go_router.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
-import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/passenger_info_widget.dart';
 import 'package:sport_connect/core/widgets/poi_search_sheet.dart';
-import 'package:sport_connect/core/services/map_service.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
@@ -26,6 +22,7 @@ import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
 import 'package:sport_connect/features/rides/views/widgets/ride_shared_widgets.dart';
+import 'package:sport_connect/core/widgets/safety_widgets.dart';
 
 /// Active Ride Navigation Screen - Shows map and ride details for drivers during active rides
 class DriverActiveRideScreen extends ConsumerStatefulWidget {
@@ -42,23 +39,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
     with TickerProviderStateMixin {
   final MapController _mapController = MapController();
   late AnimationController _pulseController;
-
-  // Ride navigation status
-  _RideStatus _rideStatus = _RideStatus.pickingUp;
-
-  // Current driver location (updated by GPS location service)
-  LatLng? _currentLocation;
-  bool _isLoadingLocation = true;
-  StreamSubscription<Position>? _positionStreamSubscription;
-  double _userHeading = 0.0;
-
-  bool _isNavigationExpanded = true;
-  bool _showPassengerDetails = false;
-  bool _isProcessing = false;
-
-  // POI search state
-  List<PointOfInterest> _nearbyPOIs = [];
-  bool _showPOIMarkers = false;
+  bool _hasCenteredInitialLocation = false;
 
   @override
   void initState() {
@@ -75,118 +56,51 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
       ),
     );
 
-    // Initialize GPS location tracking for driver
-    _initLocationTracking();
+    _initializeRideSession();
   }
 
-  /// Initialize GPS location tracking for real-time driver position
-  Future<void> _initLocationTracking() async {
-    try {
-      // Check if location services are enabled
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        setState(() => _isLoadingLocation = false);
-        return;
-      }
+  Future<void> _initializeRideSession() async {
+    final rideId = widget.rideId;
+    if (rideId == null || rideId.isEmpty) return;
 
-      // Check and request location permission
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        if (!mounted) return;
-        final accepted = await PermissionDialogHelper.showRideTrackingRationale(
-          context,
-        );
-        if (!accepted) {
-          setState(() => _isLoadingLocation = false);
-          return;
-        }
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          setState(() => _isLoadingLocation = false);
-          return;
-        }
-      }
+    final notifier = ref.read(activeRideViewModelProvider(rideId).notifier);
+    final initialResult = await notifier.initializeLocationTracking();
 
-      if (permission == LocationPermission.deniedForever) {
-        setState(() => _isLoadingLocation = false);
-        return;
-      }
-
-      // Get initial position
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-        ),
-      );
-
-      if (mounted) {
-        setState(() {
-          _currentLocation = LatLng(position.latitude, position.longitude);
-          _userHeading = position.heading;
-          _isLoadingLocation = false;
-        });
-
-        // Center map on driver location
-        _mapController.move(_currentLocation!, 15);
-      }
-
-      // Start continuous location tracking
-      _startLocationStream();
-    } catch (e) {
-      TalkerService.error('Error initializing location: $e');
-      if (mounted) {
-        setState(() => _isLoadingLocation = false);
-      }
+    if (!mounted ||
+        initialResult != ActiveRideLocationInitResult.permissionRequired) {
+      return;
     }
-  }
 
-  /// Start continuous GPS location stream for real-time updates
-  void _startLocationStream() {
-    const locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 5, // Update every 5 meters
+    final accepted = await PermissionDialogHelper.showRideTrackingRationale(
+      context,
     );
+    if (!mounted || !accepted) return;
 
-    _positionStreamSubscription =
-        Geolocator.getPositionStream(
-          locationSettings: locationSettings,
-        ).listen((Position position) {
-          if (mounted) {
-            setState(() {
-              _currentLocation = LatLng(position.latitude, position.longitude);
-              _userHeading = position.heading;
-            });
-          }
-        });
+    await notifier.initializeLocationTracking(requestPermission: true);
   }
 
   @override
   void dispose() {
-    _positionStreamSubscription?.cancel();
     _pulseController.dispose();
     super.dispose();
   }
 
   /// Open POI search sheet to find nearby places
   void _openPOISearch() {
-    if (_currentLocation == null) return;
+    final rideState = ref.read(activeRideViewModelProvider(widget.rideId!));
+    final currentLocation = rideState.currentLocation;
+    if (currentLocation == null) return;
+
     POISearchSheet.show(
       context,
-      currentLocation: _currentLocation!,
+      currentLocation: currentLocation,
       onPOISelected: (poi) {
-        // Add selected POI to map and navigate to it
-        setState(() {
-          _nearbyPOIs = [poi];
-          _showPOIMarkers = true;
-        });
+        ref
+            .read(activeRideViewModelProvider(widget.rideId!).notifier)
+            .selectPoi(poi);
 
-        // Move map to show the POI
         _mapController.move(poi.location, 16);
-
-        // Get address from tags
         final address = poi.tags['addr:street'] ?? poi.tags['addr:city'];
-
-        // Show snackbar with POI info
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -238,19 +152,28 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
       return _buildNoRideState();
     }
 
-    // Watch the ride stream for real-time updates
-    final rideAsync = ref.watch(rideStreamProvider(widget.rideId!));
-    // Bookings are stored in a separate collection — watch them alongside the ride
-    final bookings =
-        ref.watch(bookingsByRideProvider(widget.rideId!)).value ??
-        const <RideBooking>[];
+    final rideState = ref.watch(activeRideViewModelProvider(widget.rideId!));
 
-    return rideAsync.when(
+    ref.listen<LatLng?>(
+      activeRideViewModelProvider(
+        widget.rideId!,
+      ).select((state) => state.currentLocation),
+      (_, nextLocation) {
+        if (_hasCenteredInitialLocation || nextLocation == null) return;
+        _hasCenteredInitialLocation = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          _mapController.move(nextLocation, 15);
+        });
+      },
+    );
+
+    return rideState.ride.when(
       data: (ride) {
         if (ride == null) {
           return _buildNoRideState();
         }
-        return _buildRideContent(ride, bookings);
+        return _buildRideContent(ride, rideState);
       },
       loading: () => const Scaffold(
         backgroundColor: AppColors.background,
@@ -317,14 +240,11 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
     );
   }
 
-  Widget _buildRideContent(RideModel ride, List<RideBooking> bookings) {
+  Widget _buildRideContent(RideModel ride, ActiveRideState rideState) {
     // Handle cancelled ride
     if (ride.status == RideStatus.cancelled) {
       return _buildCancelledState();
     }
-
-    // Sync local status with Firestore ride status (forward-only)
-    _syncRideStatus(ride);
 
     // Get locations from the ride model
     final pickupLocation = LatLng(ride.origin.latitude, ride.origin.longitude);
@@ -337,30 +257,36 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
       body: Stack(
         children: [
           // Map
-          _buildMap(pickupLocation, dropoffLocation),
+          _buildMap(pickupLocation, dropoffLocation, rideState),
 
           // Top Controls
-          _buildTopControls(),
+          _buildTopControls(rideState),
 
           // Navigation Instructions (Collapsible)
-          if (_isNavigationExpanded) _buildNavigationPanel(ride),
+          if (rideState.isNavigationExpanded)
+            _buildNavigationPanel(ride, rideState),
 
           // Bottom Panel with Ride Info
-          _buildBottomPanel(ride, pickupLocation, dropoffLocation, bookings),
+          _buildBottomPanel(ride, rideState),
 
           // Passenger Details Sheet
-          if (_showPassengerDetails) _buildPassengerSheet(ride, bookings),
+          if (rideState.showPassengerDetails)
+            _buildPassengerSheet(ride, rideState),
         ],
       ),
     );
   }
 
-  Widget _buildMap(LatLng pickupLocation, LatLng dropoffLocation) {
+  Widget _buildMap(
+    LatLng pickupLocation,
+    LatLng dropoffLocation,
+    ActiveRideState rideState,
+  ) {
     // Use driver's current GPS location, or fallback to pickup location if still loading
-    final driverLocation = _currentLocation ?? pickupLocation;
+    final driverLocation = rideState.currentLocation ?? pickupLocation;
 
     // Show loading indicator while getting GPS location
-    if (_isLoadingLocation) {
+    if (rideState.isLoadingLocation) {
       return Container(
         color: AppColors.background,
         child: Center(
@@ -398,11 +324,20 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
           userAgentPackageName: 'com.sportconnect.app',
         ),
 
-        // Route Line
+        // Route Line — use OSRM real road route when available, else fallback to segments
         PolylineLayer(
           polylines: [
             Polyline(
-              points: [driverLocation, pickupLocation, dropoffLocation],
+              points:
+                  rideState.osrmRoutePoints ??
+                  [driverLocation, pickupLocation, dropoffLocation],
+              color: Colors.white,
+              strokeWidth: 6,
+            ),
+            Polyline(
+              points:
+                  rideState.osrmRoutePoints ??
+                  [driverLocation, pickupLocation, dropoffLocation],
               color: AppColors.primary,
               strokeWidth: 4,
             ),
@@ -418,8 +353,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
               width: 50.w,
               height: 50.w,
               child: Transform.rotate(
-                angle:
-                    _userHeading * 3.14159 / 180, // Convert heading to radians
+                angle: rideState.userHeading * 3.14159 / 180,
                 child: AnimatedBuilder(
                   animation: _pulseController,
                   builder: (context, child) {
@@ -507,8 +441,8 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
             ),
 
             // POI Markers (if any)
-            if (_showPOIMarkers)
-              ..._nearbyPOIs.map(
+            if (rideState.showPOIMarkers)
+              ...rideState.nearbyPOIs.map(
                 (poi) => Marker(
                   point: poi.location,
                   width: 40.w,
@@ -544,7 +478,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
     );
   }
 
-  Widget _buildTopControls() {
+  Widget _buildTopControls(ActiveRideState rideState) {
     return Positioned(
       top: 0,
       left: 0,
@@ -582,8 +516,8 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
 
               // Recenter Button
               GestureDetector(
-                onTap: _currentLocation != null
-                    ? () => _mapController.move(_currentLocation!, 15)
+                onTap: rideState.currentLocation != null
+                    ? () => _mapController.move(rideState.currentLocation!, 15)
                     : null,
                 child: Container(
                   padding: EdgeInsets.all(12.w),
@@ -614,7 +548,9 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                 child: Container(
                   padding: EdgeInsets.all(12.w),
                   decoration: BoxDecoration(
-                    color: _showPOIMarkers ? AppColors.success : Colors.white,
+                    color: rideState.showPOIMarkers
+                        ? AppColors.success
+                        : Colors.white,
                     borderRadius: BorderRadius.circular(12.r),
                     boxShadow: [
                       BoxShadow(
@@ -626,7 +562,9 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                   ),
                   child: Icon(
                     Icons.explore_rounded,
-                    color: _showPOIMarkers ? Colors.white : AppColors.success,
+                    color: rideState.showPOIMarkers
+                        ? Colors.white
+                        : AppColors.success,
                     size: 22.w,
                   ),
                 ),
@@ -636,15 +574,13 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
 
               // Toggle Navigation
               GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _isNavigationExpanded = !_isNavigationExpanded;
-                  });
-                },
+                onTap: () => ref
+                    .read(activeRideViewModelProvider(widget.rideId!).notifier)
+                    .toggleNavigationExpanded(),
                 child: Container(
                   padding: EdgeInsets.all(12.w),
                   decoration: BoxDecoration(
-                    color: _isNavigationExpanded
+                    color: rideState.isNavigationExpanded
                         ? AppColors.primary
                         : Colors.white,
                     borderRadius: BorderRadius.circular(12.r),
@@ -658,7 +594,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                   ),
                   child: Icon(
                     Icons.directions,
-                    color: _isNavigationExpanded
+                    color: rideState.isNavigationExpanded
                         ? Colors.white
                         : AppColors.primary,
                     size: 22.w,
@@ -672,12 +608,13 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
     );
   }
 
-  Widget _buildNavigationPanel(RideModel ride) {
-    final nextStop = _rideStatus == _RideStatus.pickingUp
+  Widget _buildNavigationPanel(RideModel ride, ActiveRideState rideState) {
+    final nextStop = rideState.phase == ActiveRidePhase.pickingUp
         ? ride.origin.address
         : ride.destination.address;
-    final eta = ride.durationMinutes ?? 0;
-    final distance = ride.distanceKm ?? 0.0;
+    // Use dynamic ETA/distance from GPS position when available, else fallback to static
+    final eta = rideState.remainingEtaMinutes ?? ride.durationMinutes ?? 0;
+    final distance = rideState.remainingDistanceKm ?? ride.distanceKm ?? 0.0;
 
     return Positioned(
       top: 100.h,
@@ -708,7 +645,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                   child: Icon(
-                    _rideStatus == _RideStatus.pickingUp
+                    rideState.phase == ActiveRidePhase.pickingUp
                         ? Icons.person_pin_circle
                         : Icons.flag,
                     color: Colors.white,
@@ -721,7 +658,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _rideStatus == _RideStatus.pickingUp
+                        rideState.phase == ActiveRidePhase.pickingUp
                             ? AppLocalizations.of(context).headingToPickup
                             : AppLocalizations.of(context).headingToDestination,
                         style: TextStyle(
@@ -764,23 +701,57 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
               ],
             ),
             SizedBox(height: 12.h),
-            // Progress Bar
-            Container(
-              height: 4.h,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(2.r),
-              ),
-              child: FractionallySizedBox(
-                alignment: Alignment.centerLeft,
-                widthFactor: _getRideProgress(),
-                child: Container(
+            // Speed indicator + progress bar
+            Row(
+              children: [
+                // Live speed badge
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 10.w,
+                    vertical: 4.h,
+                  ),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(2.r),
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.speed, size: 14.sp, color: Colors.white),
+                      SizedBox(width: 4.w),
+                      Text(
+                        '${rideState.currentSpeedKmh.toInt()} km/h',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
+                SizedBox(width: 12.w),
+                // Progress Bar
+                Expanded(
+                  child: Container(
+                    height: 4.h,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(2.r),
+                    ),
+                    child: FractionallySizedBox(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: _getRideProgress(ride, rideState),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(2.r),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
             SizedBox(height: 12.h),
             Row(
@@ -810,12 +781,8 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
     );
   }
 
-  Widget _buildBottomPanel(
-    RideModel ride,
-    LatLng pickupLocation,
-    LatLng dropoffLocation,
-    List<RideBooking> bookings,
-  ) {
+  Widget _buildBottomPanel(RideModel ride, ActiveRideState rideState) {
+    final bookings = rideState.bookings;
     final distance = ride.distanceKm ?? 0.0;
     final duration = ride.durationMinutes ?? 0;
     final fare =
@@ -857,10 +824,27 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
               ),
 
               // Ride Status
-              _buildRideStatusBanner(ride),
+              _buildRideStatusBanner(ride, rideState),
+
+              // Safety Check-In
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 4.h),
+                child: SafetyCheckInBanner(
+                  onCheckIn: () {
+                    HapticFeedback.lightImpact();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('Safety check-in confirmed!'),
+                        backgroundColor: AppColors.success,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
+                ),
+              ),
 
               // Passenger Info
-              _buildPassengerInfo(ride, bookings),
+              _buildPassengerInfo(ride, rideState),
 
               Divider(color: AppColors.border),
 
@@ -1018,13 +1002,14 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _isProcessing
+                    onPressed: rideState.isProcessing
                         ? null
                         : () => _handleMainAction(ride),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _getActionButtonColor(),
-                      disabledBackgroundColor: _getActionButtonColor()
-                          .withValues(alpha: 0.6),
+                      backgroundColor: _getActionButtonColor(rideState.phase),
+                      disabledBackgroundColor: _getActionButtonColor(
+                        rideState.phase,
+                      ).withValues(alpha: 0.6),
                       foregroundColor: Colors.white,
                       padding: EdgeInsets.symmetric(vertical: 16.h),
                       shape: RoundedRectangleBorder(
@@ -1032,7 +1017,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                       ),
                       elevation: 0,
                     ),
-                    child: _isProcessing
+                    child: rideState.isProcessing
                         ? SizedBox(
                             height: 22.w,
                             width: 22.w,
@@ -1044,10 +1029,13 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                         : Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(_getActionButtonIcon(), size: 22.w),
+                              Icon(
+                                _getActionButtonIcon(rideState.phase),
+                                size: 22.w,
+                              ),
                               SizedBox(width: 8.w),
                               Text(
-                                _getActionButtonText(),
+                                _getActionButtonText(rideState.phase),
                                 style: TextStyle(
                                   fontSize: 16.sp,
                                   fontWeight: FontWeight.bold,
@@ -1067,30 +1055,30 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
     );
   }
 
-  Widget _buildRideStatusBanner(RideModel ride) {
+  Widget _buildRideStatusBanner(RideModel ride, ActiveRideState rideState) {
     final l10n = AppLocalizations.of(context);
     final eta = ride.durationMinutes ?? 0;
     Color statusColor;
     String statusText;
     IconData statusIcon;
 
-    switch (_rideStatus) {
-      case _RideStatus.pickingUp:
+    switch (rideState.phase) {
+      case ActiveRidePhase.pickingUp:
         statusColor = AppColors.warning;
         statusText = l10n.headingToPickup;
         statusIcon = Icons.person_pin_circle;
         break;
-      case _RideStatus.enRoute:
+      case ActiveRidePhase.enRoute:
         statusColor = AppColors.primary;
         statusText = l10n.tripInProgress;
         statusIcon = Icons.navigation;
         break;
-      case _RideStatus.arriving:
+      case ActiveRidePhase.arriving:
         statusColor = AppColors.success;
         statusText = l10n.headingToDestination;
         statusIcon = Icons.flag;
         break;
-      case _RideStatus.completed:
+      case ActiveRidePhase.completed:
         statusColor = AppColors.success;
         statusText = l10n.rideCompleted;
         statusIcon = Icons.check_circle;
@@ -1119,7 +1107,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
               ),
             ),
           ),
-          if (_rideStatus != _RideStatus.completed)
+          if (rideState.phase != ActiveRidePhase.completed)
             Container(
               padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
               decoration: BoxDecoration(
@@ -1140,7 +1128,8 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
     );
   }
 
-  Widget _buildPassengerInfo(RideModel ride, List<RideBooking> bookings) {
+  Widget _buildPassengerInfo(RideModel ride, ActiveRideState rideState) {
+    final bookings = rideState.bookings;
     // Get first accepted booking as primary passenger
     final booking = bookings.isNotEmpty ? bookings.first : null;
     if (booking == null) {
@@ -1154,13 +1143,12 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
     }
 
     final passengerCount = ride.bookedSeats;
+    final pickedUp = rideState.pickedUpPassengerIds.length;
 
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          _showPassengerDetails = true;
-        });
-      },
+      onTap: () => ref
+          .read(activeRideViewModelProvider(widget.rideId!).notifier)
+          .showPassengerDetails(),
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
         child: Row(
@@ -1225,17 +1213,31 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                           color: AppColors.textSecondary,
                         ),
                       ),
-                      SizedBox(width: 8.w),
-                      Text(
-                        AppLocalizations.of(context).valueSeatValueBooked(
-                          booking.seatsBooked,
-                          booking.seatsBooked != 1 ? 's' : '',
+                      if (pickedUp > 0) ...[
+                        SizedBox(width: 10.w),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 6.w,
+                            vertical: 2.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: pickedUp >= bookings.length
+                                ? AppColors.success.withValues(alpha: 0.15)
+                                : AppColors.warning.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(6.r),
+                          ),
+                          child: Text(
+                            '$pickedUp/${bookings.length} picked up',
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.w600,
+                              color: pickedUp >= bookings.length
+                                  ? AppColors.success
+                                  : AppColors.warning,
+                            ),
+                          ),
                         ),
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
+                      ],
                     ],
                   ),
                 ],
@@ -1248,7 +1250,8 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
     );
   }
 
-  Widget _buildPassengerSheet(RideModel ride, List<RideBooking> bookings) {
+  Widget _buildPassengerSheet(RideModel ride, ActiveRideState rideState) {
+    final bookings = rideState.bookings;
     final booking = bookings.isNotEmpty ? bookings.first : null;
     if (booking == null) {
       return const SizedBox.shrink();
@@ -1257,11 +1260,9 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
 
     return Positioned.fill(
       child: GestureDetector(
-        onTap: () {
-          setState(() {
-            _showPassengerDetails = false;
-          });
-        },
+        onTap: () => ref
+            .read(activeRideViewModelProvider(widget.rideId!).notifier)
+            .hidePassengerDetails(),
         child: Container(
           color: Colors.black.withValues(alpha: 0.5),
           child: Align(
@@ -1327,11 +1328,13 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                         IconButton(
                           tooltip: 'Close passenger details',
                           icon: Icon(Icons.close),
-                          onPressed: () {
-                            setState(() {
-                              _showPassengerDetails = false;
-                            });
-                          },
+                          onPressed: () => ref
+                              .read(
+                                activeRideViewModelProvider(
+                                  widget.rideId!,
+                                ).notifier,
+                              )
+                              .hidePassengerDetails(),
                         ),
                       ],
                     ),
@@ -1397,6 +1400,112 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                     ),
 
                     SizedBox(height: 16.h),
+
+                    // Passenger pickup checklist
+                    if (bookings.length > 0) ...[
+                      Container(
+                        padding: EdgeInsets.all(16.w),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(16.r),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.checklist_rounded,
+                                  size: 18.sp,
+                                  color: AppColors.primary,
+                                ),
+                                SizedBox(width: 8.w),
+                                Text(
+                                  'Pickup Checklist',
+                                  style: TextStyle(
+                                    fontSize: 14.sp,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Text(
+                                  '${rideState.pickedUpPassengerIds.intersection(bookings.map((b) => b.passengerId).toSet()).length}/${bookings.length}',
+                                  style: TextStyle(
+                                    fontSize: 13.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 10.h),
+                            ...bookings.map((b) {
+                              final isChecked = rideState.pickedUpPassengerIds
+                                  .contains(b.passengerId);
+                              return InkWell(
+                                onTap: () {
+                                  ref
+                                      .read(
+                                        activeRideViewModelProvider(
+                                          widget.rideId!,
+                                        ).notifier,
+                                      )
+                                      .togglePickedUpPassenger(b.passengerId);
+                                  HapticFeedback.selectionClick();
+                                },
+                                borderRadius: BorderRadius.circular(8.r),
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 6.h),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        isChecked
+                                            ? Icons.check_circle_rounded
+                                            : Icons.radio_button_unchecked,
+                                        color: isChecked
+                                            ? AppColors.success
+                                            : AppColors.textTertiary,
+                                        size: 22.sp,
+                                      ),
+                                      SizedBox(width: 10.w),
+                                      PassengerAvatarWidget(
+                                        passengerId: b.passengerId,
+                                        radius: 16,
+                                      ),
+                                      SizedBox(width: 8.w),
+                                      Expanded(
+                                        child: PassengerNameWidget(
+                                          passengerId: b.passengerId,
+                                          style: TextStyle(
+                                            fontSize: 14.sp,
+                                            fontWeight: FontWeight.w500,
+                                            color: isChecked
+                                                ? AppColors.textSecondary
+                                                : AppColors.textPrimary,
+                                            decoration: isChecked
+                                                ? TextDecoration.lineThrough
+                                                : null,
+                                          ),
+                                        ),
+                                      ),
+                                      Text(
+                                        '${b.seatsBooked} seat${b.seatsBooked > 1 ? 's' : ''}',
+                                        style: TextStyle(
+                                          fontSize: 12.sp,
+                                          color: AppColors.textTertiary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 16.h),
+                    ],
 
                     // Notes (if any ride notes exist)
                     if (bookings.isNotEmpty)
@@ -1499,16 +1608,34 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
     );
   }
 
-  /// Calculate ride progress based on current status
-  double _getRideProgress() {
-    switch (_rideStatus) {
-      case _RideStatus.pickingUp:
+  /// Calculate ride progress based on GPS position along route when available.
+  double _getRideProgress(RideModel ride, ActiveRideState rideState) {
+    // Use dynamic distance if available to compute real progress
+    if (rideState.remainingDistanceKm != null) {
+      final totalDist = ride.distanceKm ?? ride.route.distanceKm ?? 1.0;
+      final progress = (1.0 - (rideState.remainingDistanceKm! / totalDist))
+          .clamp(0.0, 1.0);
+      // Map progress into the status phases
+      switch (rideState.phase) {
+        case ActiveRidePhase.pickingUp:
+          return (progress * 0.3).clamp(0.0, 0.3);
+        case ActiveRidePhase.enRoute:
+          return (0.3 + progress * 0.5).clamp(0.3, 0.8);
+        case ActiveRidePhase.arriving:
+          return (0.8 + progress * 0.2).clamp(0.8, 1.0);
+        case ActiveRidePhase.completed:
+          return 1.0;
+      }
+    }
+    // Fallback to static values
+    switch (rideState.phase) {
+      case ActiveRidePhase.pickingUp:
         return 0.25;
-      case _RideStatus.enRoute:
+      case ActiveRidePhase.enRoute:
         return 0.5;
-      case _RideStatus.arriving:
+      case ActiveRidePhase.arriving:
         return 0.85;
-      case _RideStatus.completed:
+      case ActiveRidePhase.completed:
         return 1.0;
     }
   }
@@ -1524,70 +1651,62 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
     return '$displayHour:$minute $period';
   }
 
-  String _getActionButtonText() {
+  String _getActionButtonText(ActiveRidePhase phase) {
     final l10n = AppLocalizations.of(context);
-    switch (_rideStatus) {
-      case _RideStatus.pickingUp:
+    switch (phase) {
+      case ActiveRidePhase.pickingUp:
         return 'Arrived at Pickup';
-      case _RideStatus.enRoute:
+      case ActiveRidePhase.enRoute:
         return l10n.completeRide;
-      case _RideStatus.arriving:
+      case ActiveRidePhase.arriving:
         return 'Drop Off Passenger';
-      case _RideStatus.completed:
+      case ActiveRidePhase.completed:
         return l10n.rateYourRide;
     }
   }
 
-  IconData _getActionButtonIcon() {
-    switch (_rideStatus) {
-      case _RideStatus.pickingUp:
+  IconData _getActionButtonIcon(ActiveRidePhase phase) {
+    switch (phase) {
+      case ActiveRidePhase.pickingUp:
         return Icons.person_pin_circle;
-      case _RideStatus.enRoute:
+      case ActiveRidePhase.enRoute:
         return Icons.flag;
-      case _RideStatus.arriving:
+      case ActiveRidePhase.arriving:
         return Icons.exit_to_app;
-      case _RideStatus.completed:
+      case ActiveRidePhase.completed:
         return Icons.star;
     }
   }
 
-  Color _getActionButtonColor() {
-    switch (_rideStatus) {
-      case _RideStatus.pickingUp:
+  Color _getActionButtonColor(ActiveRidePhase phase) {
+    switch (phase) {
+      case ActiveRidePhase.pickingUp:
         return AppColors.success;
-      case _RideStatus.enRoute:
+      case ActiveRidePhase.enRoute:
         return AppColors.primary;
-      case _RideStatus.arriving:
+      case ActiveRidePhase.arriving:
         return AppColors.warning;
-      case _RideStatus.completed:
+      case ActiveRidePhase.completed:
         return AppColors.success;
-    }
-  }
-
-  /// Sync local ride status with Firestore ride status (forward-only).
-  void _syncRideStatus(RideModel ride) {
-    if (ride.status == RideStatus.completed) {
-      _rideStatus = _RideStatus.completed;
-    } else if (ride.status == RideStatus.inProgress &&
-        _rideStatus == _RideStatus.pickingUp) {
-      _rideStatus = _RideStatus.enRoute;
     }
   }
 
   /// Handles the main action button based on current ride status.
   void _handleMainAction(RideModel ride) {
-    if (_isProcessing) return;
-    switch (_rideStatus) {
-      case _RideStatus.pickingUp:
+    final rideState = ref.read(activeRideViewModelProvider(widget.rideId!));
+    if (rideState.isProcessing) return;
+
+    switch (rideState.phase) {
+      case ActiveRidePhase.pickingUp:
         _confirmArrivedAtPickup(ride);
         break;
-      case _RideStatus.enRoute:
+      case ActiveRidePhase.enRoute:
         _confirmCompleteTrip();
         break;
-      case _RideStatus.arriving:
+      case ActiveRidePhase.arriving:
         _confirmDropOff(ride);
         break;
-      case _RideStatus.completed:
+      case ActiveRidePhase.completed:
         _navigateToRating(ride);
         break;
     }
@@ -1630,20 +1749,17 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
       ),
     );
 
-    if (confirmed != true || !mounted) return;
+    if (confirmed != true || !context.mounted) return;
 
-    setState(() => _isProcessing = true);
     try {
       final success = await ref
-          .read(rideDetailViewModelProvider(widget.rideId!).notifier)
+          .read(activeRideViewModelProvider(widget.rideId!).notifier)
           .startRide();
 
-      if (!mounted) return;
-      setState(() => _isProcessing = false);
+      if (!context.mounted) return;
 
       if (success) {
         HapticFeedback.mediumImpact();
-        setState(() => _rideStatus = _RideStatus.enRoute);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -1661,11 +1777,13 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
           ),
         );
       } else {
-        _showErrorSnackBar(l10n.failedToLoadRide);
+        _showErrorSnackBar(
+          ref.read(activeRideViewModelProvider(widget.rideId!)).actionError ??
+              l10n.failedToLoadRide,
+        );
       }
     } catch (e) {
-      if (!mounted) return;
-      setState(() => _isProcessing = false);
+      if (!context.mounted) return;
       _showErrorSnackBar('$e');
     }
   }
@@ -1673,7 +1791,9 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
   /// Step 2: Transition to arriving state (local UI change only).
   void _confirmCompleteTrip() {
     HapticFeedback.lightImpact();
-    setState(() => _rideStatus = _RideStatus.arriving);
+    ref
+        .read(activeRideViewModelProvider(widget.rideId!).notifier)
+        .transitionToArriving();
   }
 
   /// Step 3: Drop off passenger → Completes ride in Firestore.
@@ -1713,27 +1833,26 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
       ),
     );
 
-    if (confirmed != true || !mounted) return;
+    if (confirmed != true || !context.mounted) return;
 
-    setState(() => _isProcessing = true);
     try {
       final success = await ref
-          .read(rideDetailViewModelProvider(widget.rideId!).notifier)
+          .read(activeRideViewModelProvider(widget.rideId!).notifier)
           .completeRide();
 
-      if (!mounted) return;
-      setState(() => _isProcessing = false);
+      if (!context.mounted) return;
 
       if (success) {
         HapticFeedback.heavyImpact();
-        setState(() => _rideStatus = _RideStatus.completed);
         _showCompletionCelebration(ride);
       } else {
-        _showErrorSnackBar(l10n.failedToLoadRide);
+        _showErrorSnackBar(
+          ref.read(activeRideViewModelProvider(widget.rideId!)).actionError ??
+              l10n.failedToLoadRide,
+        );
       }
     } catch (e) {
-      if (!mounted) return;
-      setState(() => _isProcessing = false);
+      if (!context.mounted) return;
       _showErrorSnackBar('$e');
     }
   }
@@ -1932,7 +2051,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
       final phoneNumber = passenger?.phoneNumber;
 
       if (phoneNumber == null || phoneNumber.isEmpty) {
-        if (!mounted) return;
+        if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(AppLocalizations.of(context).phoneNumberNotAvailable),
@@ -1945,7 +2064,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
       if (await canLaunchUrl(phoneUri)) {
         await launchUrl(phoneUri);
       } else {
-        if (!mounted) return;
+        if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(AppLocalizations.of(context).cannotMakePhoneCalls),
@@ -1953,7 +2072,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
         );
       }
     } catch (e) {
-      if (!mounted) return;
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(AppLocalizations.of(context).failedToLaunchDialer),
@@ -2015,15 +2134,17 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
   /// Shows exit / cancel ride confirmation dialog.
   void _showExitConfirmation() {
     final l10n = AppLocalizations.of(context);
+    final rideState = ref.read(activeRideViewModelProvider(widget.rideId!));
 
     // If ride is already completed, just pop without confirmation
-    if (_rideStatus == _RideStatus.completed) {
+    if (rideState.phase == ActiveRidePhase.completed) {
       context.pop();
       return;
     }
 
     showDialog(
       context: context,
+      barrierLabel: 'Cancel ride dialog',
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
@@ -2038,16 +2159,19 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
           ElevatedButton(
             onPressed: () async {
               Navigator.of(ctx).pop();
-              setState(() => _isProcessing = true);
-              try {
-                await ref
-                    .read(rideDetailViewModelProvider(widget.rideId!).notifier)
-                    .cancelRide();
-              } catch (_) {
-                // Cancellation failed — still pop to avoid stuck state
+              final success = await ref
+                  .read(activeRideViewModelProvider(widget.rideId!).notifier)
+                  .cancelRide();
+              if (!context.mounted) return;
+              if (!success) {
+                _showErrorSnackBar(
+                  ref
+                          .read(activeRideViewModelProvider(widget.rideId!))
+                          .actionError ??
+                      l10n.failedToLoadRide,
+                );
+                return;
               }
-              if (!mounted) return;
-              setState(() => _isProcessing = false);
               context.pop();
             },
             style: ElevatedButton.styleFrom(
@@ -2064,5 +2188,3 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
     );
   }
 }
-
-enum _RideStatus { pickingUp, enRoute, arriving, completed }

@@ -8,6 +8,400 @@ part of 'ride_view_model.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+
+@ProviderFor(RideDetailUiViewModel)
+final rideDetailUiViewModelProvider = RideDetailUiViewModelFamily._();
+
+final class RideDetailUiViewModelProvider
+    extends $NotifierProvider<RideDetailUiViewModel, RideDetailUiState> {
+  RideDetailUiViewModelProvider._({
+    required RideDetailUiViewModelFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'rideDetailUiViewModelProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$rideDetailUiViewModelHash();
+
+  @override
+  String toString() {
+    return r'rideDetailUiViewModelProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  RideDetailUiViewModel create() => RideDetailUiViewModel();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(RideDetailUiState value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<RideDetailUiState>(value),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is RideDetailUiViewModelProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$rideDetailUiViewModelHash() =>
+    r'4b13c359685d25e4f4aff58ef17a0781e0d22fbe';
+
+final class RideDetailUiViewModelFamily extends $Family
+    with
+        $ClassFamilyOverride<
+          RideDetailUiViewModel,
+          RideDetailUiState,
+          RideDetailUiState,
+          RideDetailUiState,
+          String
+        > {
+  RideDetailUiViewModelFamily._()
+    : super(
+        retry: null,
+        name: r'rideDetailUiViewModelProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  RideDetailUiViewModelProvider call(String rideId) =>
+      RideDetailUiViewModelProvider._(argument: rideId, from: this);
+
+  @override
+  String toString() => r'rideDetailUiViewModelProvider';
+}
+
+abstract class _$RideDetailUiViewModel extends $Notifier<RideDetailUiState> {
+  late final _$args = ref.$arg as String;
+  String get rideId => _$args;
+
+  RideDetailUiState build(String rideId);
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<RideDetailUiState, RideDetailUiState>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<RideDetailUiState, RideDetailUiState>,
+              RideDetailUiState,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, () => build(_$args));
+  }
+}
+
+@ProviderFor(CancellationReasonViewModel)
+final cancellationReasonViewModelProvider =
+    CancellationReasonViewModelFamily._();
+
+final class CancellationReasonViewModelProvider
+    extends
+        $NotifierProvider<
+          CancellationReasonViewModel,
+          CancellationReasonState
+        > {
+  CancellationReasonViewModelProvider._({
+    required CancellationReasonViewModelFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'cancellationReasonViewModelProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$cancellationReasonViewModelHash();
+
+  @override
+  String toString() {
+    return r'cancellationReasonViewModelProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  CancellationReasonViewModel create() => CancellationReasonViewModel();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(CancellationReasonState value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<CancellationReasonState>(value),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is CancellationReasonViewModelProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$cancellationReasonViewModelHash() =>
+    r'87aab65f5118d8a004015de36d59b2c66e898d2d';
+
+final class CancellationReasonViewModelFamily extends $Family
+    with
+        $ClassFamilyOverride<
+          CancellationReasonViewModel,
+          CancellationReasonState,
+          CancellationReasonState,
+          CancellationReasonState,
+          String
+        > {
+  CancellationReasonViewModelFamily._()
+    : super(
+        retry: null,
+        name: r'cancellationReasonViewModelProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  CancellationReasonViewModelProvider call(String rideId) =>
+      CancellationReasonViewModelProvider._(argument: rideId, from: this);
+
+  @override
+  String toString() => r'cancellationReasonViewModelProvider';
+}
+
+abstract class _$CancellationReasonViewModel
+    extends $Notifier<CancellationReasonState> {
+  late final _$args = ref.$arg as String;
+  String get rideId => _$args;
+
+  CancellationReasonState build(String rideId);
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref =
+        this.ref as $Ref<CancellationReasonState, CancellationReasonState>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<CancellationReasonState, CancellationReasonState>,
+              CancellationReasonState,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, () => build(_$args));
+  }
+}
+
+@ProviderFor(DisputeFormViewModel)
+final disputeFormViewModelProvider = DisputeFormViewModelFamily._();
+
+final class DisputeFormViewModelProvider
+    extends $NotifierProvider<DisputeFormViewModel, DisputeFormState> {
+  DisputeFormViewModelProvider._({
+    required DisputeFormViewModelFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'disputeFormViewModelProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$disputeFormViewModelHash();
+
+  @override
+  String toString() {
+    return r'disputeFormViewModelProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  DisputeFormViewModel create() => DisputeFormViewModel();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(DisputeFormState value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<DisputeFormState>(value),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is DisputeFormViewModelProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$disputeFormViewModelHash() =>
+    r'7639ff573e76db96e9acbdbe97c94a2304f244bc';
+
+final class DisputeFormViewModelFamily extends $Family
+    with
+        $ClassFamilyOverride<
+          DisputeFormViewModel,
+          DisputeFormState,
+          DisputeFormState,
+          DisputeFormState,
+          String
+        > {
+  DisputeFormViewModelFamily._()
+    : super(
+        retry: null,
+        name: r'disputeFormViewModelProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  DisputeFormViewModelProvider call(String rideId) =>
+      DisputeFormViewModelProvider._(argument: rideId, from: this);
+
+  @override
+  String toString() => r'disputeFormViewModelProvider';
+}
+
+abstract class _$DisputeFormViewModel extends $Notifier<DisputeFormState> {
+  late final _$args = ref.$arg as String;
+  String get rideId => _$args;
+
+  DisputeFormState build(String rideId);
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<DisputeFormState, DisputeFormState>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<DisputeFormState, DisputeFormState>,
+              DisputeFormState,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, () => build(_$args));
+  }
+}
+
+/// Streams the driver's live GPS location for a ride.
+
+@ProviderFor(driverLiveLocation)
+final driverLiveLocationProvider = DriverLiveLocationFamily._();
+
+/// Streams the driver's live GPS location for a ride.
+
+final class DriverLiveLocationProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<({double latitude, double longitude})?>,
+          ({double latitude, double longitude})?,
+          Stream<({double latitude, double longitude})?>
+        >
+    with
+        $FutureModifier<({double latitude, double longitude})?>,
+        $StreamProvider<({double latitude, double longitude})?> {
+  /// Streams the driver's live GPS location for a ride.
+  DriverLiveLocationProvider._({
+    required DriverLiveLocationFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'driverLiveLocationProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$driverLiveLocationHash();
+
+  @override
+  String toString() {
+    return r'driverLiveLocationProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<({double latitude, double longitude})?> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<({double latitude, double longitude})?> create(Ref ref) {
+    final argument = this.argument as String;
+    return driverLiveLocation(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is DriverLiveLocationProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$driverLiveLocationHash() =>
+    r'217785d5126bdeb025740f7076c5e6489bebdab5';
+
+/// Streams the driver's live GPS location for a ride.
+
+final class DriverLiveLocationFamily extends $Family
+    with
+        $FunctionalFamilyOverride<
+          Stream<({double latitude, double longitude})?>,
+          String
+        > {
+  DriverLiveLocationFamily._()
+    : super(
+        retry: null,
+        name: r'driverLiveLocationProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Streams the driver's live GPS location for a ride.
+
+  DriverLiveLocationProvider call(String rideId) =>
+      DriverLiveLocationProvider._(argument: rideId, from: this);
+
+  @override
+  String toString() => r'driverLiveLocationProvider';
+}
+
 /// Ride Form View Model
 
 @ProviderFor(RideFormViewModel)
@@ -44,7 +438,7 @@ final class RideFormViewModelProvider
   }
 }
 
-String _$rideFormViewModelHash() => r'985aef02e0317c139ebba22d8ed6c0946ad89fa5';
+String _$rideFormViewModelHash() => r'25a3c2094056f8a1c2d9ace297f738b35f9a6b29';
 
 /// Ride Form View Model
 
@@ -118,7 +512,7 @@ final class RideSearchViewModelProvider
 }
 
 String _$rideSearchViewModelHash() =>
-    r'197846cc6968996779c47b877753f02ce614db24';
+    r'4424f90b40a019ae151b704ca25603480658f838';
 
 /// Ride Search View Model
 ///
@@ -202,7 +596,7 @@ final class RideDetailViewModelProvider
 }
 
 String _$rideDetailViewModelHash() =>
-    r'7f1e9ee2ce954c3b0e25a499aab8488fb7fca26d';
+    r'19f8388737ac27eec2f9d50c35bf18430fea4852';
 
 /// Single Ride Detail View Model — views watch only this, never separate
 /// stream/booking providers directly.
@@ -313,7 +707,7 @@ final class ActiveRideViewModelProvider
 }
 
 String _$activeRideViewModelHash() =>
-    r'5de98b89bea7f3946d19bf41f32d920b9ba50192';
+    r'f2b93fe4a62d7ac5276636590bb8f88a220bc9c9';
 
 /// ViewModel for active-ride screens — views watch only this provider.
 
@@ -1151,4 +1545,110 @@ final class RideStreamFamily extends $Family
 
   @override
   String toString() => r'rideStreamProvider';
+}
+
+/// Ride reliability stats for a user (cancel & no-show counts).
+///
+/// Streams the user's ride history (completed + cancelled) and counts
+/// how many were cancelled by the driver.
+
+@ProviderFor(userRideReliability)
+final userRideReliabilityProvider = UserRideReliabilityFamily._();
+
+/// Ride reliability stats for a user (cancel & no-show counts).
+///
+/// Streams the user's ride history (completed + cancelled) and counts
+/// how many were cancelled by the driver.
+
+final class UserRideReliabilityProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<({int cancelCount, int noShowCount})>,
+          ({int cancelCount, int noShowCount}),
+          Stream<({int cancelCount, int noShowCount})>
+        >
+    with
+        $FutureModifier<({int cancelCount, int noShowCount})>,
+        $StreamProvider<({int cancelCount, int noShowCount})> {
+  /// Ride reliability stats for a user (cancel & no-show counts).
+  ///
+  /// Streams the user's ride history (completed + cancelled) and counts
+  /// how many were cancelled by the driver.
+  UserRideReliabilityProvider._({
+    required UserRideReliabilityFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'userRideReliabilityProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$userRideReliabilityHash();
+
+  @override
+  String toString() {
+    return r'userRideReliabilityProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<({int cancelCount, int noShowCount})> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<({int cancelCount, int noShowCount})> create(Ref ref) {
+    final argument = this.argument as String;
+    return userRideReliability(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is UserRideReliabilityProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$userRideReliabilityHash() =>
+    r'9de8f8cc8996ccbf815777b27d249879e7132ac4';
+
+/// Ride reliability stats for a user (cancel & no-show counts).
+///
+/// Streams the user's ride history (completed + cancelled) and counts
+/// how many were cancelled by the driver.
+
+final class UserRideReliabilityFamily extends $Family
+    with
+        $FunctionalFamilyOverride<
+          Stream<({int cancelCount, int noShowCount})>,
+          String
+        > {
+  UserRideReliabilityFamily._()
+    : super(
+        retry: null,
+        name: r'userRideReliabilityProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Ride reliability stats for a user (cancel & no-show counts).
+  ///
+  /// Streams the user's ride history (completed + cancelled) and counts
+  /// how many were cancelled by the driver.
+
+  UserRideReliabilityProvider call(String userId) =>
+      UserRideReliabilityProvider._(argument: userId, from: this);
+
+  @override
+  String toString() => r'userRideReliabilityProvider';
 }
