@@ -130,12 +130,20 @@ class _MapLocationPickerState extends State<MapLocationPicker>
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!mounted) return;
       if (!serviceEnabled) {
+        await Geolocator.openLocationSettings();
         setState(() => _isLoadingLocation = false);
         return;
       }
 
       LocationPermission permission = await Geolocator.checkPermission();
       if (!mounted) return;
+
+      if (permission == LocationPermission.deniedForever) {
+        await Geolocator.openAppSettings();
+        setState(() => _isLoadingLocation = false);
+        return;
+      }
+
       if (permission == LocationPermission.denied) {
         final accepted = await PermissionDialogHelper.showLocationRationale(
           context,
@@ -147,7 +155,8 @@ class _MapLocationPickerState extends State<MapLocationPicker>
         }
         permission = await Geolocator.requestPermission();
         if (!mounted) return;
-        if (permission == LocationPermission.denied) {
+        if (permission == LocationPermission.denied ||
+            permission == LocationPermission.deniedForever) {
           setState(() => _isLoadingLocation = false);
           return;
         }

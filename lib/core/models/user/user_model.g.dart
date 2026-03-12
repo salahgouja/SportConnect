@@ -56,6 +56,9 @@ RiderModel _$RiderModelFromJson(Map json) => RiderModel(
       : UserPreferences.fromJson(
           Map<String, dynamic>.from(json['preferences'] as Map),
         ),
+  expertise:
+      $enumDecodeNullable(_$ExpertiseEnumMap, json['expertise']) ??
+      Expertise.rookie,
   createdAt: const TimestampConverter().fromJson(json['createdAt']),
   updatedAt: const TimestampConverter().fromJson(json['updatedAt']),
   lastSeenAt: const TimestampConverter().fromJson(json['lastSeenAt']),
@@ -91,11 +94,19 @@ Map<String, dynamic> _$RiderModelToJson(RiderModel instance) =>
       'gamification': instance.gamification.toJson(),
       'needsRoleSelection': instance.needsRoleSelection,
       'preferences': instance.preferences.toJson(),
+      'expertise': _$ExpertiseEnumMap[instance.expertise]!,
       'createdAt': const TimestampConverter().toJson(instance.createdAt),
       'updatedAt': const TimestampConverter().toJson(instance.updatedAt),
       'lastSeenAt': const TimestampConverter().toJson(instance.lastSeenAt),
       'role': instance.$type,
     };
+
+const _$ExpertiseEnumMap = {
+  Expertise.rookie: 'rookie',
+  Expertise.intermediate: 'intermediate',
+  Expertise.advanced: 'advanced',
+  Expertise.expert: 'expert',
+};
 
 DriverModel _$DriverModelFromJson(Map json) => DriverModel(
   uid: json['uid'] as String,
@@ -161,6 +172,9 @@ DriverModel _$DriverModelFromJson(Map json) => DriverModel(
       : UserPreferences.fromJson(
           Map<String, dynamic>.from(json['preferences'] as Map),
         ),
+  expertise:
+      $enumDecodeNullable(_$ExpertiseEnumMap, json['expertise']) ??
+      Expertise.rookie,
   createdAt: const TimestampConverter().fromJson(json['createdAt']),
   updatedAt: const TimestampConverter().fromJson(json['updatedAt']),
   lastSeenAt: const TimestampConverter().fromJson(json['lastSeenAt']),
@@ -206,6 +220,7 @@ Map<String, dynamic> _$DriverModelToJson(DriverModel instance) =>
       'stripeDisabledReason': instance.stripeDisabledReason,
       'needsRoleSelection': instance.needsRoleSelection,
       'preferences': instance.preferences.toJson(),
+      'expertise': _$ExpertiseEnumMap[instance.expertise]!,
       'createdAt': const TimestampConverter().toJson(instance.createdAt),
       'updatedAt': const TimestampConverter().toJson(instance.updatedAt),
       'lastSeenAt': const TimestampConverter().toJson(instance.lastSeenAt),

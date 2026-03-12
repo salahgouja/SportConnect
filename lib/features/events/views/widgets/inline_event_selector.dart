@@ -12,15 +12,12 @@ import 'package:sport_connect/features/events/view_models/event_view_model.dart'
 
 /// Drop-in replacement for EventPickerSheet.
 ///
-/// Usage in RiderRequestRideScreen:
 /// ```dart
 /// InlineEventSelector(
 ///   selected: _event,
 ///   onChanged: (e) => setState(() => _event = e),
 /// )
 /// ```
-///
-/// No sheets. No nested navigators. No bugs.
 class InlineEventSelector extends ConsumerStatefulWidget {
   const InlineEventSelector({
     super.key,

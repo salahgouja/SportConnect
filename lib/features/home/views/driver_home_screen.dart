@@ -13,6 +13,7 @@ import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/core/widgets/gamification_widgets.dart';
 import 'package:sport_connect/features/rides/models/driver_stats.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/ride_request_model.dart';
@@ -222,6 +223,11 @@ class _DriverDashboard extends ConsumerWidget {
                   // Header
                   SliverToBoxAdapter(
                     child: _buildHeader(context, ref, user, l10n, hPad),
+                  ),
+
+                  // XP & Streak strip
+                  SliverToBoxAdapter(
+                    child: _buildGamificationStrip(user, hPad),
                   ),
 
                   // Location banner when permission not granted
@@ -449,6 +455,41 @@ class _DriverDashboard extends ConsumerWidget {
     if (hour < 12) return l10n.goodMorning;
     if (hour < 17) return l10n.goodAfternoon;
     return l10n.goodEvening;
+  }
+
+  Widget _buildGamificationStrip(AsyncValue<UserModel?> user, double hPad) {
+    final userData = user.whenOrNull<UserModel?>(data: (u) => u);
+    if (userData == null) return const SizedBox.shrink();
+
+    final level = userData.userLevel;
+    final totalXP = userData.totalXP;
+    final int streak;
+    switch (userData) {
+      case RiderModel(:final gamification):
+        streak = gamification.currentStreak;
+      case DriverModel(:final gamification):
+        streak = gamification.currentStreak;
+    }
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: hPad, vertical: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: XPProgressBar(
+              currentXP: totalXP,
+              maxXP: level.maxXP.isFinite ? level.maxXP.toInt() : totalXP,
+              level: level.level,
+              showLabel: true,
+            ),
+          ),
+          if (streak > 0) ...[
+            SizedBox(width: 12.w),
+            StreakCounter(days: streak, isActive: true),
+          ],
+        ],
+      ),
+    );
   }
 
   Widget _buildLocationBanner(AppLocalizations l10n) {
@@ -707,10 +748,10 @@ class _DriverDashboard extends ConsumerWidget {
             label: l10n.totalRides,
           ),
           _StatCard(
-            icon: Icons.eco_rounded,
+            icon: Icons.check_circle_rounded,
             iconColor: AppColors.success,
-            value: '${driverStats.co2Saved.toStringAsFixed(0)}kg',
-            label: l10n.driverCo2Saved,
+            value: '${driverStats.ridesCompleted}',
+            label: 'Completed',
           ),
           _StatCard(
             icon: Icons.timer_outlined,

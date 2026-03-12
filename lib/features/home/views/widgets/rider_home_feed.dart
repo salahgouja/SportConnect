@@ -1,0 +1,1229 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/driver_info_widget.dart';
+import 'package:sport_connect/core/widgets/premium_avatar.dart';
+import 'package:sport_connect/features/events/models/event_model.dart';
+import 'package:sport_connect/features/events/view_models/event_view_model.dart';
+import 'package:sport_connect/features/home/view_models/home_view_model.dart';
+import 'package:sport_connect/features/home/view_models/rider_home_view_model.dart';
+import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
+import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/core/models/user/user_model.dart';
+import 'package:sport_connect/core/widgets/gamification_widgets.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
+
+/// Scrollable content-first feed for the Rider Home Screen.
+/// Replaces the blank map with an engaging, social feed.
+class RiderHomeFeed extends ConsumerWidget {
+  const RiderHomeFeed({super.key, required this.onSearchTap});
+
+  /// Callback when the compact search bar is tapped.
+  final VoidCallback onSearchTap;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final homeState = ref.watch(homeViewModelProvider);
+    final user = homeState.user;
+    final vmState = ref.watch(riderHomeViewModelProvider);
+
+    return CustomScrollView(
+      slivers: [
+        // ── Greeting + Search ────────────────────────────────
+        SliverToBoxAdapter(
+          child: _GreetingHeader(
+            user: user,
+            onSearchTap: onSearchTap,
+          ),
+        ),
+
+        // ── XP & Streak Strip ────────────────────────────────
+        SliverToBoxAdapter(
+          child: _GamificationStrip(user: user),
+        ),
+
+        // ── Next Ride ────────────────────────────────────────
+        const SliverToBoxAdapter(child: _NextRideSection()),
+
+        // ── Quick Actions ────────────────────────────────────
+        const SliverToBoxAdapter(child: _QuickActionsSection()),
+
+        // ── Events Near You ──────────────────────────────────
+        const SliverToBoxAdapter(child: _EventsNearYouSection()),
+
+        // ── Available Rides Nearby ───────────────────────────
+        SliverToBoxAdapter(
+          child: _NearbyRidesSection(vmState: vmState),
+        ),
+
+        // ── Map Toggle ───────────────────────────────────────
+        SliverToBoxAdapter(
+          child: _MapToggleCard(
+            onTap: () => ref
+                .read(riderHomeViewModelProvider.notifier)
+                .showMap(),
+          ),
+        ),
+
+        // Bottom padding
+        SliverToBoxAdapter(child: SizedBox(height: 100.h)),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Greeting Header
+// ─────────────────────────────────────────────────────────────
+
+class _GreetingHeader extends StatelessWidget {
+  const _GreetingHeader({required this.user, required this.onSearchTap});
+
+  final AsyncValue<dynamic> user;
+  final VoidCallback onSearchTap;
+
+  String _getGreeting(AppLocalizations l10n) {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return l10n.goodMorning;
+    if (hour < 18) return l10n.goodAfternoon;
+    return l10n.goodEvening;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final greeting = _getGreeting(l10n);
+    final userName = user.whenOrNull(
+      data: (u) => u?.displayName?.split(' ').first,
+    );
+
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 8.h),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Greeting row with avatar and notifications
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        userName != null
+                            ? '$greeting, $userName!'
+                            : '$greeting!',
+                        style: TextStyle(
+                          fontSize: 24.sp,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      SizedBox(height: 2.h),
+                      Text(
+                        l10n.whereTo,
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Notification bell
+                GestureDetector(
+                  onTap: () => context.push(AppRoutes.notifications.path),
+                  child: Container(
+                    padding: EdgeInsets.all(10.w),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.06),
+                          blurRadius: 8,
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.notifications_outlined,
+                      color: AppColors.textPrimary,
+                      size: 22.sp,
+                    ),
+                  ),
+                ),
+              ],
+            )
+                .animate()
+                .fadeIn(duration: 400.ms)
+                .slideY(begin: -0.15),
+
+            SizedBox(height: 16.h),
+
+            // Compact search bar
+            GestureDetector(
+              onTap: onSearchTap,
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 16.w,
+                  vertical: 14.h,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.06),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.search_rounded,
+                      color: AppColors.textSecondary,
+                      size: 22.sp,
+                    ),
+                    SizedBox(width: 12.w),
+                    Text(
+                      l10n.whereAreYouGoing,
+                      style: TextStyle(
+                        fontSize: 15.sp,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+                .animate()
+                .fadeIn(delay: 100.ms, duration: 400.ms)
+                .slideY(begin: 0.1),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Gamification Strip
+// ─────────────────────────────────────────────────────────────
+
+class _GamificationStrip extends StatelessWidget {
+  const _GamificationStrip({required this.user});
+
+  final AsyncValue<dynamic> user;
+
+  @override
+  Widget build(BuildContext context) {
+    final userData = user.whenOrNull<UserModel?>(data: (u) => u as UserModel?);
+    if (userData == null) return const SizedBox.shrink();
+
+    final level = userData.userLevel;
+    final totalXP = userData.totalXP;
+    final int streak;
+    switch (userData) {
+      case RiderModel(:final gamification):
+        streak = gamification.currentStreak;
+      case DriverModel(:final gamification):
+        streak = gamification.currentStreak;
+    }
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 4.h),
+      child: Row(
+        children: [
+          Expanded(
+            child: XPProgressBar(
+              currentXP: totalXP,
+              maxXP: level.maxXP.isFinite ? level.maxXP.toInt() : totalXP,
+              level: level.level,
+              showLabel: true,
+            ),
+          ),
+          if (streak > 0) ...[
+            SizedBox(width: 12.w),
+            StreakCounter(days: streak, isActive: true),
+          ],
+        ],
+      ),
+    ).animate().fadeIn(delay: 150.ms, duration: 400.ms).slideY(begin: 0.1);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Next Ride Section
+// ─────────────────────────────────────────────────────────────
+
+class _NextRideSection extends ConsumerWidget {
+  const _NextRideSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(currentUserProvider).value;
+    if (user == null) return const SizedBox.shrink();
+
+    final bookingsAsync = ref.watch(bookingsByPassengerProvider(user.uid));
+
+    return bookingsAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (bookings) {
+        // Find upcoming accepted bookings
+        final upcoming = bookings.where((b) =>
+            b.status == BookingStatus.accepted ||
+            b.status == BookingStatus.pending,
+        ).toList();
+
+        if (upcoming.isEmpty) return const SizedBox.shrink();
+
+        // Take the first accepted, or first pending
+        final nextBooking = upcoming.firstWhere(
+          (b) => b.status == BookingStatus.accepted,
+          orElse: () => upcoming.first,
+        );
+
+        return _NextRideCard(booking: nextBooking);
+      },
+    );
+  }
+}
+
+class _NextRideCard extends ConsumerWidget {
+  const _NextRideCard({required this.booking});
+
+  final RideBooking booking;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final rideAsync = ref.watch(rideStreamProvider(booking.rideId));
+
+    return rideAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (ride) {
+        if (ride == null) return const SizedBox.shrink();
+        // Skip completed/cancelled
+        if (ride.status == RideStatus.completed ||
+            ride.status == RideStatus.cancelled) {
+          return const SizedBox.shrink();
+        }
+
+        return Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+          child: GestureDetector(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              if (ride.status == RideStatus.inProgress) {
+                context.push(
+                  '${AppRoutes.riderActiveRide.path}?rideId=${ride.id}',
+                );
+              } else {
+                context.pushNamed(
+                  AppRoutes.rideDetail.name,
+                  pathParameters: {'id': ride.id},
+                );
+              }
+            },
+            child: Container(
+              padding: EdgeInsets.all(16.w),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.primary,
+                    AppColors.primaryDark,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20.r),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Section label
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.access_time_rounded,
+                        color: Colors.white.withValues(alpha: 0.9),
+                        size: 16.sp,
+                      ),
+                      SizedBox(width: 6.w),
+                      Text(
+                        l10n.upcomingRidesTitle.toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white.withValues(alpha: 0.8),
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                      const Spacer(),
+                      if (ride.status == RideStatus.inProgress)
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 8.w,
+                            vertical: 3.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                          child: Text(
+                            l10n.rideInProgress,
+                            style: TextStyle(
+                              fontSize: 10.sp,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+
+                  SizedBox(height: 12.h),
+
+                  // Route
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${ride.origin.city ?? ride.origin.address} → '
+                          '${ride.destination.city ?? ride.destination.address}',
+                          style: TextStyle(
+                            fontSize: 17.sp,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  SizedBox(height: 8.h),
+
+                  // Details row
+                  Row(
+                    children: [
+                      // Driver info
+                      DriverInfoWidget(
+                        driverId: ride.driverId,
+                        builder: (ctx, name, photo, rating) => Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            PremiumAvatar(
+                              imageUrl: photo,
+                              name: name,
+                              size: 28.w,
+                            ),
+                            SizedBox(width: 8.w),
+                            Text(
+                              name,
+                              style: TextStyle(
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white.withValues(alpha: 0.9),
+                              ),
+                            ),
+                            SizedBox(width: 6.w),
+                            Icon(
+                              Icons.star_rounded,
+                              color: AppColors.starFilled,
+                              size: 14.sp,
+                            ),
+                            Text(
+                              rating.average.toStringAsFixed(1),
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: Colors.white.withValues(alpha: 0.8),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const Spacer(),
+
+                      // Date/Time
+                      Text(
+                        _formatDepartureShort(ride.departureTime, context),
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withValues(alpha: 0.9),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  SizedBox(height: 10.h),
+
+                  // View Details button
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 14.w,
+                        vertical: 6.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(20.r),
+                      ),
+                      child: Text(
+                        l10n.viewDetails,
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ).animate().fadeIn(delay: 200.ms, duration: 500.ms).slideY(begin: 0.1);
+      },
+    );
+  }
+
+  String _formatDepartureShort(DateTime dt, BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final departureDay = DateTime(dt.year, dt.month, dt.day);
+    final time =
+        '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+
+    if (departureDay == today) return '${l10n.today}, $time';
+    if (departureDay == today.add(const Duration(days: 1))) {
+      return '${l10n.tomorrow}, $time';
+    }
+    return '${dt.day}/${dt.month}, $time';
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Quick Actions Section (recent/frequent routes)
+// ─────────────────────────────────────────────────────────────
+
+class _QuickActionsSection extends ConsumerWidget {
+  const _QuickActionsSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final user = ref.watch(currentUserProvider).value;
+
+    // Use favorite routes from user model as quick actions (rider-specific field)
+    final routes = user is RiderModel ? user.favoriteRoutes : <String>[];
+    if (routes.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionTitle(
+            icon: Icons.bolt_rounded,
+            title: l10n.quickActions,
+          ),
+          SizedBox(height: 10.h),
+          SizedBox(
+            height: 44.h,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: routes.length > 5 ? 5 : routes.length,
+              separatorBuilder: (_, _) => SizedBox(width: 8.w),
+              itemBuilder: (context, index) {
+                final route = routes[index];
+                return GestureDetector(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    context.push(AppRoutes.searchRides.path);
+                  },
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 14.w,
+                      vertical: 10.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primarySurface,
+                      borderRadius: BorderRadius.circular(22.r),
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.route_rounded,
+                          size: 16.sp,
+                          color: AppColors.primary,
+                        ),
+                        SizedBox(width: 6.w),
+                        Text(
+                          route,
+                          style: TextStyle(
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primaryDark,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(delay: 250.ms, duration: 400.ms);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Events Near You Section
+// ─────────────────────────────────────────────────────────────
+
+class _EventsNearYouSection extends ConsumerWidget {
+  const _EventsNearYouSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final eventsAsync = ref.watch(upcomingEventsStreamProvider);
+
+    return eventsAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (events) {
+        if (events.isEmpty) return const SizedBox.shrink();
+
+        // Show up to 10 upcoming events
+        final upcoming = events.take(10).toList();
+
+        return Padding(
+          padding: EdgeInsets.only(left: 20.w, top: 8.h, bottom: 8.h),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: EdgeInsets.only(right: 20.w),
+                child: Row(
+                  children: [
+                    _SectionTitle(
+                      icon: Icons.emoji_events_rounded,
+                      title: l10n.events,
+                    ),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () => context.push(AppRoutes.events.path),
+                      child: Text(
+                        l10n.seeAll,
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 10.h),
+              SizedBox(
+                height: 130.h,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: EdgeInsets.only(right: 20.w),
+                  itemCount: upcoming.length,
+                  separatorBuilder: (_, _) => SizedBox(width: 12.w),
+                  itemBuilder: (context, index) =>
+                      _EventCard(event: upcoming[index]),
+                ),
+              ),
+            ],
+          ),
+        ).animate().fadeIn(delay: 300.ms, duration: 400.ms);
+      },
+    );
+  }
+}
+
+class _EventCard extends StatelessWidget {
+  const _EventCard({required this.event});
+
+  final EventModel event;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        context.pushNamed(
+          AppRoutes.eventDetail.name,
+          pathParameters: {'id': event.id},
+        );
+      },
+      child: Container(
+        width: 140.w,
+        padding: EdgeInsets.all(12.w),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(
+            color: event.type.color.withValues(alpha: 0.3),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Sport icon + type
+            Container(
+              padding: EdgeInsets.all(8.w),
+              decoration: BoxDecoration(
+                color: event.type.color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              child: Icon(
+                event.type.icon,
+                color: event.type.color,
+                size: 22.sp,
+              ),
+            ),
+
+            SizedBox(height: 8.h),
+
+            // Title
+            Text(
+              event.title,
+              style: TextStyle(
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+
+            const Spacer(),
+
+            // Date + participants
+            Row(
+              children: [
+                Icon(
+                  Icons.calendar_today_rounded,
+                  size: 11.sp,
+                  color: AppColors.textSecondary,
+                ),
+                SizedBox(width: 4.w),
+                Expanded(
+                  child: Text(
+                    _formatEventDate(event.startsAt, context),
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      color: AppColors.textSecondary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatEventDate(DateTime dt, BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final eventDay = DateTime(dt.year, dt.month, dt.day);
+
+    if (eventDay == today) return l10n.today;
+    if (eventDay == today.add(const Duration(days: 1))) return l10n.tomorrow;
+
+    final weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return '${weekdays[dt.weekday - 1]}, ${dt.day}/${dt.month}';
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Nearby Rides Section
+// ─────────────────────────────────────────────────────────────
+
+class _NearbyRidesSection extends ConsumerWidget {
+  const _NearbyRidesSection({required this.vmState});
+
+  final RiderHomeState vmState;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final anchor = vmState.nearbyQueryAnchor ??
+        vmState.currentLocation ??
+        const LatLng(0, 0);
+    final searchRadius = vmState.searchRadius;
+    final nearbyRides =
+        ref.watch(nearbyRidesStreamProvider(anchor, searchRadius));
+
+    return nearbyRides.when(
+      loading: () => Padding(
+        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SectionTitle(
+              icon: Icons.directions_car_rounded,
+              title: l10n.availableRides,
+            ),
+            SizedBox(height: 12.h),
+            Center(
+              child: SizedBox(
+                width: 24.w,
+                height: 24.w,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (rides) {
+        if (rides.isEmpty) {
+          return Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _SectionTitle(
+                  icon: Icons.directions_car_rounded,
+                  title: l10n.availableRides,
+                ),
+                SizedBox(height: 12.h),
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(20.w),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceVariant,
+                    borderRadius: BorderRadius.circular(16.r),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.directions_car_outlined,
+                        size: 36.sp,
+                        color: AppColors.textMuted,
+                      ),
+                      SizedBox(height: 8.h),
+                      Text(
+                        l10n.noRidesAvailableNearby,
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          color: AppColors.textSecondary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 12.h),
+                      TextButton(
+                        onPressed: () =>
+                            context.push(AppRoutes.searchRides.path),
+                        child: Text(
+                          l10n.findARide,
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ).animate().fadeIn(delay: 350.ms, duration: 400.ms);
+        }
+
+        // Show up to 5 nearby rides
+        final displayRides = rides.take(5).toList();
+
+        return Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  _SectionTitle(
+                    icon: Icons.directions_car_rounded,
+                    title: l10n.availableRides,
+                  ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () => context.push(AppRoutes.searchRides.path),
+                    child: Text(
+                      l10n.seeAll,
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 10.h),
+              ...displayRides.map(
+                (ride) => Padding(
+                  padding: EdgeInsets.only(bottom: 10.h),
+                  child: _NearbyRideCard(ride: ride),
+                ),
+              ),
+            ],
+          ),
+        ).animate().fadeIn(delay: 350.ms, duration: 400.ms);
+      },
+    );
+  }
+}
+
+class _NearbyRideCard extends StatelessWidget {
+  const _NearbyRideCard({required this.ride});
+
+  final RideModel ride;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        context.pushNamed(
+          AppRoutes.rideDetail.name,
+          pathParameters: {'id': ride.id},
+        );
+      },
+      child: Container(
+        padding: EdgeInsets.all(14.w),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16.r),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            // Route row
+            Row(
+              children: [
+                // Route dots
+                Column(
+                  children: [
+                    Container(
+                      width: 8.w,
+                      height: 8.w,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    Container(
+                      width: 1.5.w,
+                      height: 20.h,
+                      color: AppColors.border,
+                    ),
+                    Icon(
+                      Icons.location_on,
+                      color: AppColors.error,
+                      size: 14.sp,
+                    ),
+                  ],
+                ),
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        ride.origin.city ?? ride.origin.address,
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: 10.h),
+                      Text(
+                        ride.destination.city ?? ride.destination.address,
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                // Price badge
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 12.w,
+                    vertical: 6.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(20.r),
+                  ),
+                  child: Text(
+                    l10n.value5(ride.pricePerSeat.toStringAsFixed(0)),
+                    style: TextStyle(
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            SizedBox(height: 10.h),
+
+            // Info chips row
+            Row(
+              children: [
+                // Driver
+                DriverInfoWidget(
+                  driverId: ride.driverId,
+                  builder: (ctx, name, photo, rating) => Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      PremiumAvatar(
+                        imageUrl: photo,
+                        name: name,
+                        size: 24.w,
+                      ),
+                      SizedBox(width: 6.w),
+                      Text(
+                        name.split(' ').first,
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      SizedBox(width: 4.w),
+                      Icon(
+                        Icons.star_rounded,
+                        color: AppColors.starFilled,
+                        size: 12.sp,
+                      ),
+                      Text(
+                        rating.average.toStringAsFixed(1),
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                // Departure time
+                Icon(
+                  Icons.schedule_rounded,
+                  size: 13.sp,
+                  color: AppColors.textSecondary,
+                ),
+                SizedBox(width: 4.w),
+                Text(
+                  '${ride.departureTime.hour.toString().padLeft(2, '0')}:${ride.departureTime.minute.toString().padLeft(2, '0')}',
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                SizedBox(width: 10.w),
+                // Seats
+                Icon(
+                  Icons.event_seat_rounded,
+                  size: 13.sp,
+                  color: AppColors.textSecondary,
+                ),
+                SizedBox(width: 4.w),
+                Text(
+                  l10n.seatsAvailableCount(ride.availableSeats),
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Map Toggle Card
+// ─────────────────────────────────────────────────────────────
+
+class _MapToggleCard extends StatelessWidget {
+  const _MapToggleCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.mediumImpact();
+          onTap();
+        },
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceVariant,
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(
+              color: AppColors.border,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(10.w),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                child: Icon(
+                  Icons.map_rounded,
+                  color: AppColors.primary,
+                  size: 24.sp,
+                ),
+              ),
+              SizedBox(width: 14.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.exploreOnMap,
+                      style: TextStyle(
+                        fontSize: 15.sp,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    SizedBox(height: 2.h),
+                    Text(
+                      l10n.findRidesNearYou,
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: AppColors.textSecondary,
+                size: 16.sp,
+              ),
+            ],
+          ),
+        ),
+      ),
+    ).animate().fadeIn(delay: 400.ms, duration: 400.ms);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Shared Section Title Widget
+// ─────────────────────────────────────────────────────────────
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({required this.icon, required this.title});
+
+  final IconData icon;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 18.sp, color: AppColors.primary),
+        SizedBox(width: 8.w),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+      ],
+    );
+  }
+}

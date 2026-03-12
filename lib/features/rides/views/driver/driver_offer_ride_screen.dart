@@ -887,11 +887,6 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                   ref
                       .read(driverOfferRideViewModelProvider.notifier)
                       .setRecurring(v);
-                  if (!v) {
-                    ref
-                        .read(driverOfferRideViewModelProvider.notifier)
-                        .setRecurringDays([]);
-                  }
                 },
               ),
             ],
@@ -906,8 +901,6 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                 final selected = _recurringDays.contains(dayNum);
                 return GestureDetector(
                   onTap: () {
-                    final dayNum = i + 1;
-                    final selected = _recurringDays.contains(dayNum);
                     final updated = List<int>.from(_recurringDays);
                     if (selected) {
                       updated.remove(dayNum);
@@ -945,6 +938,75 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                 );
               }),
             ),
+            if (_recurringDays.isNotEmpty) ...[
+              SizedBox(height: 16.h),
+              // Recurring end date picker
+              GestureDetector(
+                onTap: () async {
+                  final baseDate = _departureDate ?? DateTime.now();
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: _formState.recurringEndDate ??
+                        baseDate.add(const Duration(days: 28)),
+                    firstDate: baseDate.add(const Duration(days: 1)),
+                    lastDate: baseDate.add(const Duration(days: 365)),
+                    builder: (context, child) {
+                      return Theme(
+                        data: Theme.of(context).copyWith(
+                          colorScheme: ColorScheme.light(
+                            primary: AppColors.primary,
+                            onPrimary: Colors.white,
+                            surface: AppColors.cardBg,
+                            onSurface: AppColors.textPrimary,
+                          ),
+                        ),
+                        child: child!,
+                      );
+                    },
+                  );
+                  if (picked != null) {
+                    ref
+                        .read(driverOfferRideViewModelProvider.notifier)
+                        .setRecurringEndDate(picked);
+                  }
+                },
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 12.w,
+                    vertical: 10.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceVariant,
+                    borderRadius: BorderRadius.circular(10.r),
+                    border: Border.all(
+                      color: AppColors.border.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.event_rounded,
+                        color: AppColors.primary,
+                        size: 18.sp,
+                      ),
+                      SizedBox(width: 8.w),
+                      Text(
+                        _formState.recurringEndDate != null
+                            ? 'Ends ${DateFormat('MMM d, yyyy').format(_formState.recurringEndDate!)}'
+                            : 'Set end date',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w500,
+                          color: _formState.recurringEndDate != null
+                              ? AppColors.textPrimary
+                              : AppColors.textTertiary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ],
         ],
       ),
@@ -1888,6 +1950,14 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                   )
                   .join(', '),
             ),
+            if (_formState.recurringEndDate != null) ...[
+              SizedBox(height: 8.h),
+              _buildSummaryRow(
+                Icons.event_rounded,
+                'Ends',
+                DateFormat('MMM d, yyyy').format(_formState.recurringEndDate!),
+              ),
+            ],
           ],
         ],
       ),

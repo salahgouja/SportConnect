@@ -2118,6 +2118,12 @@ abstract class AppLocalizations {
   /// **'Environmental Impact'**
   String get environmentalImpact;
 
+  /// Label for total distance driven stat
+  ///
+  /// In en, this message translates to:
+  /// **'Total Distance'**
+  String get totalDistance;
+
   /// Text from Text in driver_earnings_screen.dart
   ///
   /// In en, this message translates to:
@@ -5424,6 +5430,12 @@ abstract class AppLocalizations {
   /// **'Music allowed'**
   String get musicAllowed;
 
+  /// Filter label for excluding rides that allow smoking
+  ///
+  /// In en, this message translates to:
+  /// **'No Smoking'**
+  String get noSmoking;
+
   /// Text from _buildFilterSectionTitle in ride_search_screen.dart
   ///
   /// In en, this message translates to:
@@ -6839,6 +6851,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Find Rides Near You'**
   String get findRidesNearYou;
+
+  /// Label for the map toggle card on the rider home feed
+  ///
+  /// In en, this message translates to:
+  /// **'Explore on Map'**
+  String get exploreOnMap;
+
+  /// No description provided for @howItWorks.
+  ///
+  /// In en, this message translates to:
+  /// **'How it works'**
+  String get howItWorks;
+
+  /// No description provided for @pickupAndDropoff.
+  ///
+  /// In en, this message translates to:
+  /// **'Pickup & Drop-off'**
+  String get pickupAndDropoff;
+
+  /// No description provided for @enterPickupAndDestination.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your pickup and destination locations'**
+  String get enterPickupAndDestination;
+
+  /// No description provided for @selectDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Date'**
+  String get selectDate;
+
+  /// No description provided for @chooseWhenYouWantToTravel.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose when you want to travel'**
+  String get chooseWhenYouWantToTravel;
+
+  /// No description provided for @findAndBook.
+  ///
+  /// In en, this message translates to:
+  /// **'Find & Book'**
+  String get findAndBook;
+
+  /// No description provided for @browseAvailableRidesAndBook.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse available rides and book instantly'**
+  String get browseAvailableRidesAndBook;
+
+  /// No description provided for @verifiedDrivers.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified Drivers'**
+  String get verifiedDrivers;
+
+  /// No description provided for @allDriversAreVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'All drivers are verified for your safety and comfort'**
+  String get allDriversAreVerified;
 
   /// No description provided for @locationGateDescription.
   ///
@@ -9479,6 +9551,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sports'**
   String get sportsLabel;
+
+  /// No description provided for @yourJourneyStartsHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Journey Starts Here'**
+  String get yourJourneyStartsHere;
+
+  /// No description provided for @searchRidesAndConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for rides and connect with verified drivers heading your way'**
+  String get searchRidesAndConnect;
+
+  /// No description provided for @searchForRides.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for Rides'**
+  String get searchForRides;
+
+  /// No description provided for @easyBooking.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy Booking'**
+  String get easyBooking;
+
+  /// No description provided for @bookInJustAFewTaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Book in just a few taps'**
+  String get bookInJustAFewTaps;
+
+  /// No description provided for @realTimeTracking.
+  ///
+  /// In en, this message translates to:
+  /// **'Real-time Tracking'**
+  String get realTimeTracking;
+
+  /// No description provided for @trackYourRideLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Track your ride live'**
+  String get trackYourRideLive;
+
+  /// No description provided for @startSharingTheRoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Sharing the Road'**
+  String get startSharingTheRoad;
+
+  /// No description provided for @offerFirstRideMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Offer your first ride and connect with riders heading your way'**
+  String get offerFirstRideMessage;
+
+  /// No description provided for @connectWithRiders.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get connectWithRiders;
+
+  /// No description provided for @earnPerRide.
+  ///
+  /// In en, this message translates to:
+  /// **'Earn'**
+  String get earnPerRide;
+
+  /// No description provided for @flexibleSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Flexible'**
+  String get flexibleSchedule;
+
+  /// No description provided for @offerYourFirstRide.
+  ///
+  /// In en, this message translates to:
+  /// **'Offer Your First Ride'**
+  String get offerYourFirstRide;
+
+  /// No description provided for @noRidesYetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No Rides Yet'**
+  String get noRidesYetTitle;
+
+  /// No description provided for @noRidesYetSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Find a carpool to your next game, practice, or event. Share the ride, split the cost.'**
+  String get noRidesYetSubtitle;
+
+  /// No description provided for @findACarpoolNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Find a Carpool'**
+  String get findACarpoolNow;
+
+  /// No description provided for @allDriversVerifiedAndRated.
+  ///
+  /// In en, this message translates to:
+  /// **'All drivers are verified and rated'**
+  String get allDriversVerifiedAndRated;
 }
 
 class _AppLocalizationsDelegate

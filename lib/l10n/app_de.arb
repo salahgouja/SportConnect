@@ -1102,6 +1102,10 @@
   "@environmentalImpact": {
     "description": "Text from Text in driver_earnings_screen.dart"
   },
+  "totalDistance": "Gesamtdistanz",
+  "@totalDistance": {
+    "description": "Label for total distance driven stat"
+  },
   "valueKgCoSaved": "{value} kg CO₂ eingespart",
   "@valueKgCoSaved": {
     "description": "Text from Text in driver_earnings_screen.dart"
@@ -3294,6 +3298,10 @@
   "@musicAllowed": {
     "description": "Text from _buildToggleChip.label in ride_search_screen.dart"
   },
+  "noSmoking": "Nichtraucher",
+  "@noSmoking": {
+    "description": "Filter label for excluding rides that allow smoking"
+  },
   "vehicleType": "Fahrzeugtyp",
   "@vehicleType": {
     "description": "Text from _buildFilterSectionTitle in ride_search_screen.dart"
@@ -4098,6 +4106,16 @@
   "events": "Veranstaltungen",
   "findingYourLocation": "Standort wird ermittelt...",
   "findRidesNearYou": "Fahrten in deiner Nähe finden",
+  "exploreOnMap": "Auf der Karte erkunden",
+  "howItWorks": "So funktioniert's",
+  "pickupAndDropoff": "Abholung & Ziel",
+  "enterPickupAndDestination": "Geben Sie Ihren Abhol- und Zielort ein",
+  "selectDate": "Datum wählen",
+  "chooseWhenYouWantToTravel": "Wählen Sie, wann Sie reisen möchten",
+  "findAndBook": "Finden & Buchen",
+  "browseAvailableRidesAndBook": "Verfügbare Fahrten durchsuchen und sofort buchen",
+  "verifiedDrivers": "Verifizierte Fahrer",
+  "allDriversAreVerified": "Alle Fahrer sind für Ihre Sicherheit verifiziert",
   "forgotPasswordBackToLogin": "Zurück zur Anmeldung",
   "forgotPasswordCheckEmail": "E-Mail überprüfen",
   "forgotPasswordEmailRequired": "Bitte E-Mail-Adresse eingeben",
@@ -4187,5 +4205,22 @@
 "confirmAllPassengersPickedUp": "Bestätige, dass alle Fahrgäste abgeholt wurden und du bereit bist, die Fahrt zu starten.",
 "@confirmAllPassengersPickedUp": {
   "description": "Content text in pickup confirmation dialog"
-}
+},
+  "yourJourneyStartsHere": "Deine Reise beginnt hier",
+  "searchRidesAndConnect": "Suche nach Fahrten und verbinde dich mit verifizierten Fahrern",
+  "searchForRides": "Fahrten suchen",
+  "easyBooking": "Einfache Buchung",
+  "bookInJustAFewTaps": "Buche mit nur wenigen Klicks",
+  "realTimeTracking": "Echtzeit-Tracking",
+  "trackYourRideLive": "Verfolge deine Fahrt live",
+  "startSharingTheRoad": "Fang an, die Straße zu teilen",
+  "offerFirstRideMessage": "Biete deine erste Fahrt an und verbinde dich mit Mitfahrern",
+  "connectWithRiders": "Verbinden",
+  "earnPerRide": "Verdienen",
+  "flexibleSchedule": "Flexibel",
+  "offerYourFirstRide": "Biete deine erste Fahrt an",
+  "noRidesYetTitle": "Noch keine Fahrten",
+  "noRidesYetSubtitle": "Finde eine Fahrgemeinschaft für dein nächstes Spiel, Training oder Event. Teile die Fahrt, teile die Kosten.",
+  "findACarpoolNow": "Fahrgemeinschaft finden",
+  "allDriversVerifiedAndRated": "Alle Fahrer sind verifiziert und bewertet"
 }

@@ -97,9 +97,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       _currentUser = user;
       _populateFromUser(user);
       _isPopulated = true;
-      ref
-          .read(profileEditViewModelProvider(user.uid).notifier)
-          .initFromUser(user);
+      Future.microtask(() {
+        ref
+            .read(profileEditViewModelProvider(user.uid).notifier)
+            .initFromUser(user);
+      });
     }
 
     if (_currentUser != null) {

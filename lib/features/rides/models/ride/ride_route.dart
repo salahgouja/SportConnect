@@ -49,7 +49,4 @@ abstract class RideRoute with _$RideRoute {
     }
     return '${mins}m';
   }
-
-  /// Calculate CO2 saved per passenger (kg) - approx 0.12 kg per km
-  double get co2SavedPerPassenger => (distanceKm ?? 0) * 0.12;
 }

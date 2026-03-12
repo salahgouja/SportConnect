@@ -8,6 +8,7 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
+import 'package:sport_connect/core/widgets/gamification_widgets.dart';
 import 'package:sport_connect/core/widgets/rating_and_profile_widgets.dart';
 import 'package:sport_connect/core/widgets/safety_widgets.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
@@ -237,6 +238,17 @@ class ProfileScreen extends ConsumerWidget {
                     .animate()
                     .fadeIn(duration: 400.ms, delay: 80.ms)
                     .slideY(begin: 0.1, curve: Curves.easeOutCubic),
+          ),
+
+        if (_isOwnProfile) SliverToBoxAdapter(child: SizedBox(height: 16.h)),
+
+        // XP & Level progress
+        if (_isOwnProfile)
+          SliverToBoxAdapter(
+            child: _buildXPSection(context, user)
+                .animate()
+                .fadeIn(duration: 400.ms, delay: 90.ms)
+                .slideY(begin: 0.1, curve: Curves.easeOutCubic),
           ),
 
         if (_isOwnProfile) SliverToBoxAdapter(child: SizedBox(height: 16.h)),
@@ -607,15 +619,15 @@ class ProfileScreen extends ConsumerWidget {
   Widget _buildRideStats(BuildContext context, UserModel user) {
     // Get gamification stats based on user type
     final int totalRides = user.totalRides;
-    final double co2Saved;
+    final double totalDistance;
     final int currentStreak;
 
     switch (user) {
       case RiderModel(:final gamification):
-        co2Saved = gamification.co2Saved;
+        totalDistance = gamification.totalDistance;
         currentStreak = gamification.currentStreak;
       case DriverModel(:final gamification):
-        co2Saved = gamification.co2Saved;
+        totalDistance = gamification.totalDistance;
         currentStreak = gamification.currentStreak;
     }
 
@@ -677,9 +689,9 @@ class ProfileScreen extends ConsumerWidget {
                 SizedBox(width: 12.w),
                 Expanded(
                   child: _buildStatCard(
-                    icon: Icons.eco_rounded,
-                    value: '${co2Saved.toStringAsFixed(0)}kg',
-                    label: AppLocalizations.of(context).coSaved,
+                    icon: Icons.route_rounded,
+                    value: '${totalDistance.toStringAsFixed(0)} km',
+                    label: 'Distance',
                     color: AppColors.success,
                   ),
                 ),
@@ -708,6 +720,99 @@ class ProfileScreen extends ConsumerWidget {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// XP & Level section with progress bar and streak
+  Widget _buildXPSection(BuildContext context, UserModel user) {
+    final level = user.userLevel;
+    final totalXP = user.totalXP;
+    final int currentStreak;
+    switch (user) {
+      case RiderModel(:final gamification):
+        currentStreak = gamification.currentStreak;
+      case DriverModel(:final gamification):
+        currentStreak = gamification.currentStreak;
+    }
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20.w),
+      child: GestureDetector(
+        onTap: () => context.push(AppRoutes.achievements.path),
+        child: Container(
+          padding: EdgeInsets.all(16.w),
+          decoration: BoxDecoration(
+            color: AppColors.cardBg,
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.emoji_events_rounded,
+                    color: AppColors.xpGold,
+                    size: 20.sp,
+                  ),
+                  SizedBox(width: 8.w),
+                  Text(
+                    'Level & XP',
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const Spacer(),
+                  StreakCounter(
+                    days: currentStreak,
+                    isActive: currentStreak > 0,
+                  ),
+                ],
+              ),
+              SizedBox(height: 12.h),
+              XPProgressBar(
+                currentXP: totalXP,
+                maxXP: level.maxXP.isFinite ? level.maxXP.toInt() : totalXP,
+                level: level.level,
+              ),
+              SizedBox(height: 8.h),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    level.name,
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'View achievements',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        color: AppColors.textSecondary,
+                        size: 16.sp,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

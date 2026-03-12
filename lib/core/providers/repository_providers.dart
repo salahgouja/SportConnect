@@ -257,12 +257,13 @@ ISupportRepository supportRepository(Ref ref) {
 }
 
 // ---------------------------------------------------------------------------
-// 🚘  Vehicle  —  keepAlive: false (auto-dispose)
-// Only consumed in the Vehicles feature; auto-dispose is appropriate.
+// 🚘  Vehicle  —  keepAlive: true
+// Also consumed by DriverOfferRideViewModel (keepAlive) during ride creation
+// to resolve vehicle info for denormalization.
 // ---------------------------------------------------------------------------
 
 /// Vehicle repository provider (interface-based).
-@riverpod
+@Riverpod(keepAlive: true)
 IVehicleRepository vehicleRepository(Ref ref) {
   return VehicleRepository(
     ref.watch(firestoreInstanceProvider),

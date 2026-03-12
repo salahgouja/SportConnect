@@ -60,7 +60,7 @@ final class RideCountdownUiViewModelProvider
 }
 
 String _$rideCountdownUiViewModelHash() =>
-    r'97819770ba0d9312d3150e4c282c5fd746c42f4f';
+    r'4abbc95548548ff8eae938e200ff078abbb6f83b';
 
 final class RideCountdownUiViewModelFamily extends $Family
     with

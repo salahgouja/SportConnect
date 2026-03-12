@@ -15,7 +15,6 @@ RiderGamificationStats _$RiderGamificationStatsFromJson(Map json) =>
       totalRides: (json['totalRides'] as num?)?.toInt() ?? 0,
       currentStreak: (json['currentStreak'] as num?)?.toInt() ?? 0,
       longestStreak: (json['longestStreak'] as num?)?.toInt() ?? 0,
-      co2Saved: (json['co2Saved'] as num?)?.toDouble() ?? 0.0,
       totalDistance: (json['totalDistance'] as num?)?.toDouble() ?? 0.0,
       unlockedBadges:
           (json['unlockedBadges'] as List<dynamic>?)
@@ -45,7 +44,6 @@ Map<String, dynamic> _$RiderGamificationStatsToJson(
   'totalRides': instance.totalRides,
   'currentStreak': instance.currentStreak,
   'longestStreak': instance.longestStreak,
-  'co2Saved': instance.co2Saved,
   'totalDistance': instance.totalDistance,
   'unlockedBadges': instance.unlockedBadges,
   'achievements': instance.achievements.map((e) => e.toJson()).toList(),
@@ -63,7 +61,6 @@ DriverGamificationStats _$DriverGamificationStatsFromJson(Map json) =>
       totalRides: (json['totalRides'] as num?)?.toInt() ?? 0,
       currentStreak: (json['currentStreak'] as num?)?.toInt() ?? 0,
       longestStreak: (json['longestStreak'] as num?)?.toInt() ?? 0,
-      co2Saved: (json['co2Saved'] as num?)?.toDouble() ?? 0.0,
       totalDistance: (json['totalDistance'] as num?)?.toDouble() ?? 0.0,
       unlockedBadges:
           (json['unlockedBadges'] as List<dynamic>?)
@@ -93,7 +90,6 @@ Map<String, dynamic> _$DriverGamificationStatsToJson(
   'totalRides': instance.totalRides,
   'currentStreak': instance.currentStreak,
   'longestStreak': instance.longestStreak,
-  'co2Saved': instance.co2Saved,
   'totalDistance': instance.totalDistance,
   'unlockedBadges': instance.unlockedBadges,
   'achievements': instance.achievements.map((e) => e.toJson()).toList(),

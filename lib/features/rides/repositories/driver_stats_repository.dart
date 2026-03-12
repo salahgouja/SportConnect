@@ -206,7 +206,6 @@ class DriverStatsRepository implements IDriverStatsRepository {
     required double earnings,
     required double distanceKm,
   }) async {
-    final co2Saved = distanceKm * 0.12; // ~120g CO2 per km saved
     DriverStats? currentStats = await getDriverStats(driverId);
     final updatedStats = currentStats.copyWith(
       totalRides: currentStats.totalRides + 1,
@@ -217,7 +216,7 @@ class DriverStatsRepository implements IDriverStatsRepository {
       earningsThisWeek: currentStats.earningsThisWeek + earnings,
       earningsThisMonth: currentStats.earningsThisMonth + earnings,
       earningsToday: currentStats.earningsToday + earnings,
-      co2Saved: currentStats.co2Saved + co2Saved,
+      totalDistance: currentStats.totalDistance + distanceKm,
       lastRideAt: DateTime.now(),
     );
     await _driverStatsCollection

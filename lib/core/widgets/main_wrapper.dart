@@ -32,9 +32,6 @@ class MainWrapper extends ConsumerWidget {
       backgroundColor: AppColors.background,
       body: navigationShell,
       bottomNavigationBar: userAsync.when(
-        // Show a fixed-height placeholder while the user state is loading to
-        // prevent the shell body from expanding and then snapping back, which
-        // produces a visible layout jump.
         loading: () => const SizedBox(height: kBottomNavigationBarHeight),
         error: (_, _) => const SizedBox(height: kBottomNavigationBarHeight),
         data: (user) => _buildBottomNav(context, user),
@@ -192,24 +189,24 @@ class _CustomBottomNavBar extends StatelessWidget {
   // ============ RIDER TABS (5 ITEMS) ============
   static const _riderTabs = [
     _NavBarItem(
-      icon: Icons.explore_outlined,
-      activeIcon: Icons.explore_rounded,
-      label: 'Explore',
+      icon: Icons.home_outlined,
+      activeIcon: Icons.home_rounded,
+      label: 'Home',
     ),
     _NavBarItem(
-      icon: Icons.receipt_long_outlined,
-      activeIcon: Icons.receipt_long_rounded,
-      label: 'Activity',
+      icon: Icons.directions_car_outlined,
+      activeIcon: Icons.directions_car_rounded,
+      label: 'My Rides',
     ),
     _NavBarItem(
       icon: Icons.add_circle_outline_rounded,
-      activeIcon: Icons.add_circle_rounded,
-      label: 'Request',
+      activeIcon: Icons.flag,
+      label: 'Events',
     ),
     _NavBarItem(
       icon: Icons.chat_bubble_outline_rounded,
       activeIcon: Icons.chat_bubble_rounded,
-      label: 'Chat',
+      label: 'Inbox',
     ),
     _NavBarItem(
       icon: Icons.person_outline_rounded,
@@ -221,19 +218,19 @@ class _CustomBottomNavBar extends StatelessWidget {
   // ============ DRIVER TABS (5 ITEMS) ============
   static const _driverTabs = [
     _NavBarItem(
-      icon: Icons.dashboard_outlined,
-      activeIcon: Icons.dashboard_rounded,
+      icon: Icons.home_outlined,
+      activeIcon: Icons.home_rounded,
       label: 'Home',
     ),
     _NavBarItem(
-      icon: Icons.calendar_today_outlined,
-      activeIcon: Icons.calendar_today_rounded,
-      label: 'Schedule',
+      icon: Icons.directions_car_outlined,
+      activeIcon: Icons.directions_car_rounded,
+      label: 'My Rides',
     ),
     _NavBarItem(
-      icon: Icons.account_balance_wallet_outlined,
-      activeIcon: Icons.account_balance_wallet_rounded,
-      label: 'Earnings',
+      icon: Icons.add_circle_outline_rounded,
+      activeIcon: Icons.add_circle_rounded,
+      label: 'Offer',
     ),
     _NavBarItem(
       icon: Icons.chat_bubble_outline_rounded,

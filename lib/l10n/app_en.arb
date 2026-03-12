@@ -1110,6 +1110,10 @@
   "@environmentalImpact": {
     "description": "Text from Text in driver_earnings_screen.dart"
   },
+  "totalDistance": "Total Distance",
+  "@totalDistance": {
+    "description": "Label for total distance driven stat"
+  },
   "valueKgCoSaved": "{value} kg CO₂ saved",
   "@valueKgCoSaved": {
     "description": "Text from Text in driver_earnings_screen.dart"
@@ -3314,6 +3318,10 @@
   "@musicAllowed": {
     "description": "Text from _buildToggleChip.label in ride_search_screen.dart"
   },
+  "noSmoking": "No Smoking",
+  "@noSmoking": {
+    "description": "Filter label for excluding rides that allow smoking"
+  },
   "vehicleType": "Vehicle Type",
   "@vehicleType": {
     "description": "Text from _buildFilterSectionTitle in ride_search_screen.dart"
@@ -3722,6 +3730,19 @@
   "ratingPoor": "Poor",
 
   "findRidesNearYou": "Find Rides Near You",
+  "exploreOnMap": "Explore on Map",
+  "@exploreOnMap": {
+    "description": "Label for the map toggle card on the rider home feed"
+  },
+  "howItWorks": "How it works",
+  "pickupAndDropoff": "Pickup & Drop-off",
+  "enterPickupAndDestination": "Enter your pickup and destination locations",
+  "selectDate": "Select Date",
+  "chooseWhenYouWantToTravel": "Choose when you want to travel",
+  "findAndBook": "Find & Book",
+  "browseAvailableRidesAndBook": "Browse available rides and book instantly",
+  "verifiedDrivers": "Verified Drivers",
+  "allDriversAreVerified": "All drivers are verified for your safety and comfort",
   "locationGateDescription": "Enable location to discover rides near you, get accurate pickup times, and navigate safely.",
   "locationBenefitFind": "Find rides near your location",
   "locationBenefitNavigate": "Get turn-by-turn navigation",
@@ -4348,5 +4369,22 @@
   "supportCategoryFeatureRequest": "Feature Request",
   "driversLabel": "Drivers",
   "ridersLabel": "Riders",
-  "sportsLabel": "Sports"
+  "sportsLabel": "Sports",
+  "yourJourneyStartsHere": "Your Journey Starts Here",
+  "searchRidesAndConnect": "Search for rides and connect with verified drivers heading your way",
+  "searchForRides": "Search for Rides",
+  "easyBooking": "Easy Booking",
+  "bookInJustAFewTaps": "Book in just a few taps",
+  "realTimeTracking": "Real-time Tracking",
+  "trackYourRideLive": "Track your ride live",
+  "startSharingTheRoad": "Start Sharing the Road",
+  "offerFirstRideMessage": "Offer your first ride and connect with riders heading your way",
+  "connectWithRiders": "Connect",
+  "earnPerRide": "Earn",
+  "flexibleSchedule": "Flexible",
+  "offerYourFirstRide": "Offer Your First Ride",
+  "noRidesYetTitle": "No Rides Yet",
+  "noRidesYetSubtitle": "Find a carpool to your next game, practice, or event. Share the ride, split the cost.",
+  "findACarpoolNow": "Find a Carpool",
+  "allDriversVerifiedAndRated": "All drivers are verified and rated"
 }

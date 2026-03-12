@@ -46,7 +46,7 @@ class RideRoutes implements RouteConfig {
         },
       ),
 
-      // NOTE: riderRequestRide and riderMyRides are defined as StatefulShellBranches
+      // NOTE: riderMyRides is defined as a StatefulShellBranch
       // in app_router.dart for bottom navigation tabs. Don't duplicate here.
 
       // Rider: View Ride

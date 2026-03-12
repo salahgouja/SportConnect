@@ -50,6 +50,7 @@ class RiderHomeState {
     this.isLoadingRoute = false,
     this.showRouteInfo = false,
     this.selectedRouteIndex = 0,
+    this.showMapView = false,
   });
 
   // Location permission and acquisition
@@ -80,6 +81,9 @@ class RiderHomeState {
   final bool showRouteInfo;
   final int selectedRouteIndex;
 
+  // View mode: false = feed (default), true = full map
+  final bool showMapView;
+
   RiderHomeState copyWith({
     LocationPermissionState? locationState,
     LatLng? currentLocation,
@@ -99,6 +103,7 @@ class RiderHomeState {
     bool? isLoadingRoute,
     bool? showRouteInfo,
     int? selectedRouteIndex,
+    bool? showMapView,
   }) {
     return RiderHomeState(
       locationState: locationState ?? this.locationState,
@@ -119,6 +124,7 @@ class RiderHomeState {
       isLoadingRoute: isLoadingRoute ?? this.isLoadingRoute,
       showRouteInfo: showRouteInfo ?? this.showRouteInfo,
       selectedRouteIndex: selectedRouteIndex ?? this.selectedRouteIndex,
+      showMapView: showMapView ?? this.showMapView,
     );
   }
 
@@ -142,6 +148,7 @@ class RiderHomeState {
       isLoadingRoute: isLoadingRoute,
       showRouteInfo: showRouteInfo,
       selectedRouteIndex: selectedRouteIndex,
+      showMapView: showMapView,
     );
   }
 
@@ -165,6 +172,7 @@ class RiderHomeState {
       isLoadingRoute: false,
       showRouteInfo: false,
       selectedRouteIndex: 0,
+      showMapView: showMapView,
     );
   }
 }
@@ -470,5 +478,20 @@ class RiderHomeViewModel extends _$RiderHomeViewModel {
   /// Clear all route state
   void clearRoutes() {
     state = state.clearRoute();
+  }
+
+  /// Toggle between feed view and full map view
+  void toggleMapView() {
+    state = state.copyWith(showMapView: !state.showMapView);
+  }
+
+  /// Switch to map view
+  void showMap() {
+    state = state.copyWith(showMapView: true);
+  }
+
+  /// Switch to feed view
+  void showFeed() {
+    state = state.copyWith(showMapView: false);
   }
 }

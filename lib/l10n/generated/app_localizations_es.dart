@@ -1125,6 +1125,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get environmentalImpact => 'Impacto ambiental';
 
   @override
+  String get totalDistance => 'Distancia total';
+
+  @override
   String valueKgCoSaved(Object value) {
     return '$value kg CO₂ ahorrados';
   }
@@ -2994,6 +2997,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get musicAllowed => 'Música permitida';
 
   @override
+  String get noSmoking => 'No fumar';
+
+  @override
   String get vehicleType => 'Tipo de vehículo';
 
   @override
@@ -3757,6 +3763,39 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get findRidesNearYou => 'Encuentra viajes cerca de ti';
+
+  @override
+  String get exploreOnMap => 'Explorar en el mapa';
+
+  @override
+  String get howItWorks => 'Cómo funciona';
+
+  @override
+  String get pickupAndDropoff => 'Recogida y destino';
+
+  @override
+  String get enterPickupAndDestination =>
+      'Ingresa tu lugar de recogida y destino';
+
+  @override
+  String get selectDate => 'Seleccionar fecha';
+
+  @override
+  String get chooseWhenYouWantToTravel => 'Elige cuándo quieres viajar';
+
+  @override
+  String get findAndBook => 'Buscar y reservar';
+
+  @override
+  String get browseAvailableRidesAndBook =>
+      'Explora los viajes disponibles y reserva al instante';
+
+  @override
+  String get verifiedDrivers => 'Conductores verificados';
+
+  @override
+  String get allDriversAreVerified =>
+      'Todos los conductores están verificados para tu seguridad';
 
   @override
   String get locationGateDescription =>
@@ -5202,4 +5241,59 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get sportsLabel => 'Deportes';
+
+  @override
+  String get yourJourneyStartsHere => 'Tu viaje comienza aquí';
+
+  @override
+  String get searchRidesAndConnect =>
+      'Busca viajes y conéctate con conductores verificados';
+
+  @override
+  String get searchForRides => 'Buscar viajes';
+
+  @override
+  String get easyBooking => 'Reserva fácil';
+
+  @override
+  String get bookInJustAFewTaps => 'Reserva en pocos toques';
+
+  @override
+  String get realTimeTracking => 'Seguimiento en tiempo real';
+
+  @override
+  String get trackYourRideLive => 'Sigue tu viaje en vivo';
+
+  @override
+  String get startSharingTheRoad => 'Empieza a compartir el camino';
+
+  @override
+  String get offerFirstRideMessage =>
+      'Ofrece tu primer viaje y conéctate con pasajeros';
+
+  @override
+  String get connectWithRiders => 'Conectar';
+
+  @override
+  String get earnPerRide => 'Ganar';
+
+  @override
+  String get flexibleSchedule => 'Flexible';
+
+  @override
+  String get offerYourFirstRide => 'Ofrece tu primer viaje';
+
+  @override
+  String get noRidesYetTitle => 'Aún no hay viajes';
+
+  @override
+  String get noRidesYetSubtitle =>
+      'Encuentra un viaje compartido para tu próximo partido, entrenamiento o evento. Comparte el viaje, divide el costo.';
+
+  @override
+  String get findACarpoolNow => 'Buscar un viaje compartido';
+
+  @override
+  String get allDriversVerifiedAndRated =>
+      'Todos los conductores están verificados y calificados';
 }

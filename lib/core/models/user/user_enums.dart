@@ -44,3 +44,15 @@ enum UserLevel {
     return UserLevel.bronze;
   }
 }
+
+/// Expertise ranks for users
+enum Expertise {
+  rookie('Rookie'),
+  intermediate('Intermediate'),
+  advanced('Advanced'),
+  expert('Expert');
+
+  final String displayName;
+
+  const Expertise(this.displayName);
+}

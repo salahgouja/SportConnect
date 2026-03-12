@@ -88,12 +88,16 @@ class RideCountdownUiViewModel extends _$RideCountdownUiViewModel {
         waypoints: waypoints,
       );
 
+      if (!ref.mounted) return;
+
       state = state.copyWith(
         osrmRoutePoints: routeInfo?.coordinates,
         osrmRouteRideId: ride.id,
         isLoadingOsrmRoute: false,
       );
     } catch (_) {
+      if (!ref.mounted) return;
+
       state = state.copyWith(isLoadingOsrmRoute: false);
     }
   }
@@ -106,14 +110,21 @@ class RideCountdownUiViewModel extends _$RideCountdownUiViewModel {
       timeUntilDeparture: _remaining(departure),
     );
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!ref.mounted) return;
       state = state.copyWith(timeUntilDeparture: _remaining(departure));
     });
   }
 
   bool registerRideStatus(RideStatus status) {
+    final previousStatus = state.lastKnownRideStatus;
+    if (previousStatus == null) {
+      state = state.copyWith(lastKnownRideStatus: status);
+      return false;
+    }
+
     final shouldNavigateToActive =
         status == RideStatus.inProgress &&
-        state.lastKnownRideStatus != RideStatus.inProgress &&
+        previousStatus != RideStatus.inProgress &&
         !state.hasNavigated;
     final shouldNavigateTerminal =
         (status == RideStatus.cancelled || status == RideStatus.completed) &&

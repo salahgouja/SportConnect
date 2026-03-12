@@ -101,11 +101,16 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
           if (_hasActiveFilters)
             SliverToBoxAdapter(child: _buildActiveFilters()),
 
-          // Results Header
-          SliverToBoxAdapter(child: _buildResultsHeader()),
+          // Pre-search discovery or search results
+          if (!_resultsState.hasSearched && !_resultsState.isLoading && _resultsState.visibleResults.isEmpty)
+            ..._buildDiscoverySection()
+          else ...[
+            // Results Header
+            SliverToBoxAdapter(child: _buildResultsHeader()),
 
-          // Ride Results
-          _buildResultsList(),
+            // Ride Results
+            _buildResultsList(),
+          ],
 
           // Bottom Padding
           SliverToBoxAdapter(child: SizedBox(height: 100.h)),
@@ -639,15 +644,6 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
         }),
       );
     }
-    if (_searchState.draftVerifiedOnly) {
-      filters.add(
-        _buildFilterTag(AppLocalizations.of(context).verified, () {
-          ref
-              .read(rideSearchViewModelProvider.notifier)
-              .setDraftVerifiedOnly(false);
-        }),
-      );
-    }
     if (_searchState.draftPetFriendly) {
       filters.add(
         _buildFilterTag(AppLocalizations.of(context).petFriendly, () {
@@ -657,12 +653,12 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
         }),
       );
     }
-    if (_searchState.draftMusicAllowed) {
+    if (_searchState.draftNoSmoking) {
       filters.add(
-        _buildFilterTag(AppLocalizations.of(context).musicAllowed, () {
+        _buildFilterTag(AppLocalizations.of(context).noSmoking, () {
           ref
               .read(rideSearchViewModelProvider.notifier)
-              .setDraftMusicAllowed(false);
+              .setDraftNoSmoking(false);
         }),
       );
     }
@@ -758,6 +754,220 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
               color: AppColors.primary,
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================================
+  // Pre-search Discovery Section
+  // ============================================================================
+
+  List<Widget> _buildDiscoverySection() {
+    final l10n = AppLocalizations.of(context);
+    return [
+      // Search prompt hero
+      SliverToBoxAdapter(
+        child: Container(
+          margin: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 16.h),
+          padding: EdgeInsets.all(24.w),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.primary.withValues(alpha: 0.08),
+                AppColors.primary.withValues(alpha: 0.03),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(20.r),
+            border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.15),
+            ),
+          ),
+          child: Column(
+            children: [
+              Icon(
+                Icons.directions_car_rounded,
+                size: 48.sp,
+                color: AppColors.primary,
+              ),
+              SizedBox(height: 12.h),
+              Text(
+                l10n.whereTo,
+                style: TextStyle(
+                  fontSize: 20.sp,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              SizedBox(height: 8.h),
+              Text(
+                l10n.findARide,
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: AppColors.textSecondary,
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1),
+      ),
+
+      // How it works
+      SliverToBoxAdapter(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.w),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.howItWorks,
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              SizedBox(height: 12.h),
+              _buildStepTile(
+                icon: Icons.location_on_rounded,
+                color: AppColors.primary,
+                title: l10n.pickupAndDropoff,
+                subtitle: l10n.enterPickupAndDestination,
+                step: '1',
+              ),
+              SizedBox(height: 8.h),
+              _buildStepTile(
+                icon: Icons.calendar_today_rounded,
+                color: AppColors.info,
+                title: l10n.selectDate,
+                subtitle: l10n.chooseWhenYouWantToTravel,
+                step: '2',
+              ),
+              SizedBox(height: 8.h),
+              _buildStepTile(
+                icon: Icons.search_rounded,
+                color: AppColors.success,
+                title: l10n.findAndBook,
+                subtitle: l10n.browseAvailableRidesAndBook,
+                step: '3',
+              ),
+            ],
+          ),
+        ).animate().fadeIn(delay: 200.ms, duration: 400.ms),
+      ),
+
+      // Safety tips
+      SliverToBoxAdapter(
+        child: Container(
+          margin: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 8.h),
+          padding: EdgeInsets.all(16.w),
+          decoration: BoxDecoration(
+            color: AppColors.info.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(
+              color: AppColors.info.withValues(alpha: 0.15),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.verified_user_rounded,
+                color: AppColors.info,
+                size: 28.sp,
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.verifiedDrivers,
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    SizedBox(height: 2.h),
+                    Text(
+                      l10n.allDriversAreVerified,
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ).animate().fadeIn(delay: 350.ms, duration: 400.ms),
+      ),
+    ];
+  }
+
+  Widget _buildStepTile({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String subtitle,
+    required String step,
+  }) {
+    return Container(
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        color: AppColors.cardBg,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36.w,
+            height: 36.w,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                step,
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(icon, color: color, size: 20.sp),
         ],
       ),
     );
@@ -1122,20 +1332,6 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                               },
                             ),
                             _buildToggleChip(
-                              label: AppLocalizations.of(
-                                context,
-                              ).verifiedDriver2,
-                              icon: Icons.verified_rounded,
-                              isSelected: searchState.draftVerifiedOnly,
-                              onTap: () {
-                                ref
-                                    .read(rideSearchViewModelProvider.notifier)
-                                    .setDraftVerifiedOnly(
-                                      !searchState.draftVerifiedOnly,
-                                    );
-                              },
-                            ),
-                            _buildToggleChip(
                               label: AppLocalizations.of(context).petFriendly,
                               icon: Icons.pets_rounded,
                               isSelected: searchState.draftPetFriendly,
@@ -1148,14 +1344,14 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                               },
                             ),
                             _buildToggleChip(
-                              label: AppLocalizations.of(context).musicAllowed,
-                              icon: Icons.music_note_rounded,
-                              isSelected: searchState.draftMusicAllowed,
+                              label: AppLocalizations.of(context).noSmoking,
+                              icon: Icons.smoke_free_rounded,
+                              isSelected: searchState.draftNoSmoking,
                               onTap: () {
                                 ref
                                     .read(rideSearchViewModelProvider.notifier)
-                                    .setDraftMusicAllowed(
-                                      !searchState.draftMusicAllowed,
+                                    .setDraftNoSmoking(
+                                      !searchState.draftNoSmoking,
                                     );
                               },
                             ),
@@ -1438,8 +1634,10 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
           icon: Icons.search_off_rounded,
           title: 'No rides found',
           subtitle: 'Try adjusting your filters or search for a different date',
-          actionText: 'Offer a Ride',
-          onActionPressed: () => context.push(AppRoutes.driverOfferRide.path),
+          actionText: 'Clear Filters',
+          onActionPressed: () {
+            ref.read(rideSearchViewModelProvider.notifier).resetFilters();
+          },
         ),
       );
     }

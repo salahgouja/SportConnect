@@ -404,11 +404,9 @@ class _DriverStatsScreenState extends ConsumerState<DriverStatsScreen>
                   ),
                 ),
                 _buildStatCard(
-                  AppLocalizations.of(context).coSaved,
-                  AppLocalizations.of(
-                    context,
-                  ).valueKg((stats?.co2Saved ?? 0).toStringAsFixed(0)),
-                  Icons.eco,
+                  AppLocalizations.of(context).totalDistance,
+                  '${(stats?.totalDistance ?? 0).toStringAsFixed(0)} km',
+                  Icons.route,
                   AppColors.secondary,
                   AppLocalizations.of(context).sinceJoining,
                 ),
@@ -839,11 +837,11 @@ class _DriverStatsScreenState extends ConsumerState<DriverStatsScreen>
         'requirement': 'Complete 50 night trips',
       },
       {
-        'name': 'Eco Champion',
-        'icon': Icons.eco,
+        'name': 'Road Tripper',
+        'icon': Icons.route,
         'color': AppColors.success,
-        'earned': (stats?.co2Saved ?? 0) >= 100,
-        'requirement': 'Save 100+ kg CO₂',
+        'earned': (stats?.totalDistance ?? 0) >= 500,
+        'requirement': 'Drive 500+ km',
       },
     ];
 

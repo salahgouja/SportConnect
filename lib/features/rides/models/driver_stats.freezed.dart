@@ -16,7 +16,7 @@ T _$identity<T>(T value) => value;
 mixin _$DriverStats {
 
  String get driverId;// Default to empty string to handle null from Firestore
- double get rating; int get totalRides; int get ridesThisWeek; int get ridesThisMonth; int get ridesCompleted; int get pendingRequests; double get totalEarnings; double get earningsThisWeek; double get earningsThisMonth; double get earningsToday; double get co2Saved; double get hoursOnline; double get hoursOnlineThisWeek; bool get isOnline;@TimestampConverter() DateTime? get lastRideAt;
+ double get rating; int get totalRides; int get ridesThisWeek; int get ridesThisMonth; int get ridesCompleted; int get pendingRequests; double get totalEarnings; double get earningsThisWeek; double get earningsThisMonth; double get earningsToday; double get totalDistance; double get hoursOnline; double get hoursOnlineThisWeek; bool get isOnline;@TimestampConverter() DateTime? get lastRideAt;
 /// Create a copy of DriverStats
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -29,16 +29,16 @@ $DriverStatsCopyWith<DriverStats> get copyWith => _$DriverStatsCopyWithImpl<Driv
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is DriverStats&&(identical(other.driverId, driverId) || other.driverId == driverId)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.totalRides, totalRides) || other.totalRides == totalRides)&&(identical(other.ridesThisWeek, ridesThisWeek) || other.ridesThisWeek == ridesThisWeek)&&(identical(other.ridesThisMonth, ridesThisMonth) || other.ridesThisMonth == ridesThisMonth)&&(identical(other.ridesCompleted, ridesCompleted) || other.ridesCompleted == ridesCompleted)&&(identical(other.pendingRequests, pendingRequests) || other.pendingRequests == pendingRequests)&&(identical(other.totalEarnings, totalEarnings) || other.totalEarnings == totalEarnings)&&(identical(other.earningsThisWeek, earningsThisWeek) || other.earningsThisWeek == earningsThisWeek)&&(identical(other.earningsThisMonth, earningsThisMonth) || other.earningsThisMonth == earningsThisMonth)&&(identical(other.earningsToday, earningsToday) || other.earningsToday == earningsToday)&&(identical(other.co2Saved, co2Saved) || other.co2Saved == co2Saved)&&(identical(other.hoursOnline, hoursOnline) || other.hoursOnline == hoursOnline)&&(identical(other.hoursOnlineThisWeek, hoursOnlineThisWeek) || other.hoursOnlineThisWeek == hoursOnlineThisWeek)&&(identical(other.isOnline, isOnline) || other.isOnline == isOnline)&&(identical(other.lastRideAt, lastRideAt) || other.lastRideAt == lastRideAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is DriverStats&&(identical(other.driverId, driverId) || other.driverId == driverId)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.totalRides, totalRides) || other.totalRides == totalRides)&&(identical(other.ridesThisWeek, ridesThisWeek) || other.ridesThisWeek == ridesThisWeek)&&(identical(other.ridesThisMonth, ridesThisMonth) || other.ridesThisMonth == ridesThisMonth)&&(identical(other.ridesCompleted, ridesCompleted) || other.ridesCompleted == ridesCompleted)&&(identical(other.pendingRequests, pendingRequests) || other.pendingRequests == pendingRequests)&&(identical(other.totalEarnings, totalEarnings) || other.totalEarnings == totalEarnings)&&(identical(other.earningsThisWeek, earningsThisWeek) || other.earningsThisWeek == earningsThisWeek)&&(identical(other.earningsThisMonth, earningsThisMonth) || other.earningsThisMonth == earningsThisMonth)&&(identical(other.earningsToday, earningsToday) || other.earningsToday == earningsToday)&&(identical(other.totalDistance, totalDistance) || other.totalDistance == totalDistance)&&(identical(other.hoursOnline, hoursOnline) || other.hoursOnline == hoursOnline)&&(identical(other.hoursOnlineThisWeek, hoursOnlineThisWeek) || other.hoursOnlineThisWeek == hoursOnlineThisWeek)&&(identical(other.isOnline, isOnline) || other.isOnline == isOnline)&&(identical(other.lastRideAt, lastRideAt) || other.lastRideAt == lastRideAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,driverId,rating,totalRides,ridesThisWeek,ridesThisMonth,ridesCompleted,pendingRequests,totalEarnings,earningsThisWeek,earningsThisMonth,earningsToday,co2Saved,hoursOnline,hoursOnlineThisWeek,isOnline,lastRideAt);
+int get hashCode => Object.hash(runtimeType,driverId,rating,totalRides,ridesThisWeek,ridesThisMonth,ridesCompleted,pendingRequests,totalEarnings,earningsThisWeek,earningsThisMonth,earningsToday,totalDistance,hoursOnline,hoursOnlineThisWeek,isOnline,lastRideAt);
 
 @override
 String toString() {
-  return 'DriverStats(driverId: $driverId, rating: $rating, totalRides: $totalRides, ridesThisWeek: $ridesThisWeek, ridesThisMonth: $ridesThisMonth, ridesCompleted: $ridesCompleted, pendingRequests: $pendingRequests, totalEarnings: $totalEarnings, earningsThisWeek: $earningsThisWeek, earningsThisMonth: $earningsThisMonth, earningsToday: $earningsToday, co2Saved: $co2Saved, hoursOnline: $hoursOnline, hoursOnlineThisWeek: $hoursOnlineThisWeek, isOnline: $isOnline, lastRideAt: $lastRideAt)';
+  return 'DriverStats(driverId: $driverId, rating: $rating, totalRides: $totalRides, ridesThisWeek: $ridesThisWeek, ridesThisMonth: $ridesThisMonth, ridesCompleted: $ridesCompleted, pendingRequests: $pendingRequests, totalEarnings: $totalEarnings, earningsThisWeek: $earningsThisWeek, earningsThisMonth: $earningsThisMonth, earningsToday: $earningsToday, totalDistance: $totalDistance, hoursOnline: $hoursOnline, hoursOnlineThisWeek: $hoursOnlineThisWeek, isOnline: $isOnline, lastRideAt: $lastRideAt)';
 }
 
 
@@ -49,7 +49,7 @@ abstract mixin class $DriverStatsCopyWith<$Res>  {
   factory $DriverStatsCopyWith(DriverStats value, $Res Function(DriverStats) _then) = _$DriverStatsCopyWithImpl;
 @useResult
 $Res call({
- String driverId, double rating, int totalRides, int ridesThisWeek, int ridesThisMonth, int ridesCompleted, int pendingRequests, double totalEarnings, double earningsThisWeek, double earningsThisMonth, double earningsToday, double co2Saved, double hoursOnline, double hoursOnlineThisWeek, bool isOnline,@TimestampConverter() DateTime? lastRideAt
+ String driverId, double rating, int totalRides, int ridesThisWeek, int ridesThisMonth, int ridesCompleted, int pendingRequests, double totalEarnings, double earningsThisWeek, double earningsThisMonth, double earningsToday, double totalDistance, double hoursOnline, double hoursOnlineThisWeek, bool isOnline,@TimestampConverter() DateTime? lastRideAt
 });
 
 
@@ -66,7 +66,7 @@ class _$DriverStatsCopyWithImpl<$Res>
 
 /// Create a copy of DriverStats
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? driverId = null,Object? rating = null,Object? totalRides = null,Object? ridesThisWeek = null,Object? ridesThisMonth = null,Object? ridesCompleted = null,Object? pendingRequests = null,Object? totalEarnings = null,Object? earningsThisWeek = null,Object? earningsThisMonth = null,Object? earningsToday = null,Object? co2Saved = null,Object? hoursOnline = null,Object? hoursOnlineThisWeek = null,Object? isOnline = null,Object? lastRideAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? driverId = null,Object? rating = null,Object? totalRides = null,Object? ridesThisWeek = null,Object? ridesThisMonth = null,Object? ridesCompleted = null,Object? pendingRequests = null,Object? totalEarnings = null,Object? earningsThisWeek = null,Object? earningsThisMonth = null,Object? earningsToday = null,Object? totalDistance = null,Object? hoursOnline = null,Object? hoursOnlineThisWeek = null,Object? isOnline = null,Object? lastRideAt = freezed,}) {
   return _then(_self.copyWith(
 driverId: null == driverId ? _self.driverId : driverId // ignore: cast_nullable_to_non_nullable
 as String,rating: null == rating ? _self.rating : rating // ignore: cast_nullable_to_non_nullable
@@ -79,7 +79,7 @@ as int,totalEarnings: null == totalEarnings ? _self.totalEarnings : totalEarning
 as double,earningsThisWeek: null == earningsThisWeek ? _self.earningsThisWeek : earningsThisWeek // ignore: cast_nullable_to_non_nullable
 as double,earningsThisMonth: null == earningsThisMonth ? _self.earningsThisMonth : earningsThisMonth // ignore: cast_nullable_to_non_nullable
 as double,earningsToday: null == earningsToday ? _self.earningsToday : earningsToday // ignore: cast_nullable_to_non_nullable
-as double,co2Saved: null == co2Saved ? _self.co2Saved : co2Saved // ignore: cast_nullable_to_non_nullable
+as double,totalDistance: null == totalDistance ? _self.totalDistance : totalDistance // ignore: cast_nullable_to_non_nullable
 as double,hoursOnline: null == hoursOnline ? _self.hoursOnline : hoursOnline // ignore: cast_nullable_to_non_nullable
 as double,hoursOnlineThisWeek: null == hoursOnlineThisWeek ? _self.hoursOnlineThisWeek : hoursOnlineThisWeek // ignore: cast_nullable_to_non_nullable
 as double,isOnline: null == isOnline ? _self.isOnline : isOnline // ignore: cast_nullable_to_non_nullable
@@ -169,10 +169,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String driverId,  double rating,  int totalRides,  int ridesThisWeek,  int ridesThisMonth,  int ridesCompleted,  int pendingRequests,  double totalEarnings,  double earningsThisWeek,  double earningsThisMonth,  double earningsToday,  double co2Saved,  double hoursOnline,  double hoursOnlineThisWeek,  bool isOnline, @TimestampConverter()  DateTime? lastRideAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String driverId,  double rating,  int totalRides,  int ridesThisWeek,  int ridesThisMonth,  int ridesCompleted,  int pendingRequests,  double totalEarnings,  double earningsThisWeek,  double earningsThisMonth,  double earningsToday,  double totalDistance,  double hoursOnline,  double hoursOnlineThisWeek,  bool isOnline, @TimestampConverter()  DateTime? lastRideAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _DriverStats() when $default != null:
-return $default(_that.driverId,_that.rating,_that.totalRides,_that.ridesThisWeek,_that.ridesThisMonth,_that.ridesCompleted,_that.pendingRequests,_that.totalEarnings,_that.earningsThisWeek,_that.earningsThisMonth,_that.earningsToday,_that.co2Saved,_that.hoursOnline,_that.hoursOnlineThisWeek,_that.isOnline,_that.lastRideAt);case _:
+return $default(_that.driverId,_that.rating,_that.totalRides,_that.ridesThisWeek,_that.ridesThisMonth,_that.ridesCompleted,_that.pendingRequests,_that.totalEarnings,_that.earningsThisWeek,_that.earningsThisMonth,_that.earningsToday,_that.totalDistance,_that.hoursOnline,_that.hoursOnlineThisWeek,_that.isOnline,_that.lastRideAt);case _:
   return orElse();
 
 }
@@ -190,10 +190,10 @@ return $default(_that.driverId,_that.rating,_that.totalRides,_that.ridesThisWeek
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String driverId,  double rating,  int totalRides,  int ridesThisWeek,  int ridesThisMonth,  int ridesCompleted,  int pendingRequests,  double totalEarnings,  double earningsThisWeek,  double earningsThisMonth,  double earningsToday,  double co2Saved,  double hoursOnline,  double hoursOnlineThisWeek,  bool isOnline, @TimestampConverter()  DateTime? lastRideAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String driverId,  double rating,  int totalRides,  int ridesThisWeek,  int ridesThisMonth,  int ridesCompleted,  int pendingRequests,  double totalEarnings,  double earningsThisWeek,  double earningsThisMonth,  double earningsToday,  double totalDistance,  double hoursOnline,  double hoursOnlineThisWeek,  bool isOnline, @TimestampConverter()  DateTime? lastRideAt)  $default,) {final _that = this;
 switch (_that) {
 case _DriverStats():
-return $default(_that.driverId,_that.rating,_that.totalRides,_that.ridesThisWeek,_that.ridesThisMonth,_that.ridesCompleted,_that.pendingRequests,_that.totalEarnings,_that.earningsThisWeek,_that.earningsThisMonth,_that.earningsToday,_that.co2Saved,_that.hoursOnline,_that.hoursOnlineThisWeek,_that.isOnline,_that.lastRideAt);case _:
+return $default(_that.driverId,_that.rating,_that.totalRides,_that.ridesThisWeek,_that.ridesThisMonth,_that.ridesCompleted,_that.pendingRequests,_that.totalEarnings,_that.earningsThisWeek,_that.earningsThisMonth,_that.earningsToday,_that.totalDistance,_that.hoursOnline,_that.hoursOnlineThisWeek,_that.isOnline,_that.lastRideAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -210,10 +210,10 @@ return $default(_that.driverId,_that.rating,_that.totalRides,_that.ridesThisWeek
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String driverId,  double rating,  int totalRides,  int ridesThisWeek,  int ridesThisMonth,  int ridesCompleted,  int pendingRequests,  double totalEarnings,  double earningsThisWeek,  double earningsThisMonth,  double earningsToday,  double co2Saved,  double hoursOnline,  double hoursOnlineThisWeek,  bool isOnline, @TimestampConverter()  DateTime? lastRideAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String driverId,  double rating,  int totalRides,  int ridesThisWeek,  int ridesThisMonth,  int ridesCompleted,  int pendingRequests,  double totalEarnings,  double earningsThisWeek,  double earningsThisMonth,  double earningsToday,  double totalDistance,  double hoursOnline,  double hoursOnlineThisWeek,  bool isOnline, @TimestampConverter()  DateTime? lastRideAt)?  $default,) {final _that = this;
 switch (_that) {
 case _DriverStats() when $default != null:
-return $default(_that.driverId,_that.rating,_that.totalRides,_that.ridesThisWeek,_that.ridesThisMonth,_that.ridesCompleted,_that.pendingRequests,_that.totalEarnings,_that.earningsThisWeek,_that.earningsThisMonth,_that.earningsToday,_that.co2Saved,_that.hoursOnline,_that.hoursOnlineThisWeek,_that.isOnline,_that.lastRideAt);case _:
+return $default(_that.driverId,_that.rating,_that.totalRides,_that.ridesThisWeek,_that.ridesThisMonth,_that.ridesCompleted,_that.pendingRequests,_that.totalEarnings,_that.earningsThisWeek,_that.earningsThisMonth,_that.earningsToday,_that.totalDistance,_that.hoursOnline,_that.hoursOnlineThisWeek,_that.isOnline,_that.lastRideAt);case _:
   return null;
 
 }
@@ -225,7 +225,7 @@ return $default(_that.driverId,_that.rating,_that.totalRides,_that.ridesThisWeek
 @JsonSerializable()
 
 class _DriverStats implements DriverStats {
-  const _DriverStats({this.driverId = '', this.rating = 0.0, this.totalRides = 0, this.ridesThisWeek = 0, this.ridesThisMonth = 0, this.ridesCompleted = 0, this.pendingRequests = 0, this.totalEarnings = 0.0, this.earningsThisWeek = 0.0, this.earningsThisMonth = 0.0, this.earningsToday = 0.0, this.co2Saved = 0.0, this.hoursOnline = 0.0, this.hoursOnlineThisWeek = 0.0, this.isOnline = false, @TimestampConverter() this.lastRideAt});
+  const _DriverStats({this.driverId = '', this.rating = 0.0, this.totalRides = 0, this.ridesThisWeek = 0, this.ridesThisMonth = 0, this.ridesCompleted = 0, this.pendingRequests = 0, this.totalEarnings = 0.0, this.earningsThisWeek = 0.0, this.earningsThisMonth = 0.0, this.earningsToday = 0.0, this.totalDistance = 0.0, this.hoursOnline = 0.0, this.hoursOnlineThisWeek = 0.0, this.isOnline = false, @TimestampConverter() this.lastRideAt});
   factory _DriverStats.fromJson(Map<String, dynamic> json) => _$DriverStatsFromJson(json);
 
 @override@JsonKey() final  String driverId;
@@ -240,7 +240,7 @@ class _DriverStats implements DriverStats {
 @override@JsonKey() final  double earningsThisWeek;
 @override@JsonKey() final  double earningsThisMonth;
 @override@JsonKey() final  double earningsToday;
-@override@JsonKey() final  double co2Saved;
+@override@JsonKey() final  double totalDistance;
 @override@JsonKey() final  double hoursOnline;
 @override@JsonKey() final  double hoursOnlineThisWeek;
 @override@JsonKey() final  bool isOnline;
@@ -259,16 +259,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DriverStats&&(identical(other.driverId, driverId) || other.driverId == driverId)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.totalRides, totalRides) || other.totalRides == totalRides)&&(identical(other.ridesThisWeek, ridesThisWeek) || other.ridesThisWeek == ridesThisWeek)&&(identical(other.ridesThisMonth, ridesThisMonth) || other.ridesThisMonth == ridesThisMonth)&&(identical(other.ridesCompleted, ridesCompleted) || other.ridesCompleted == ridesCompleted)&&(identical(other.pendingRequests, pendingRequests) || other.pendingRequests == pendingRequests)&&(identical(other.totalEarnings, totalEarnings) || other.totalEarnings == totalEarnings)&&(identical(other.earningsThisWeek, earningsThisWeek) || other.earningsThisWeek == earningsThisWeek)&&(identical(other.earningsThisMonth, earningsThisMonth) || other.earningsThisMonth == earningsThisMonth)&&(identical(other.earningsToday, earningsToday) || other.earningsToday == earningsToday)&&(identical(other.co2Saved, co2Saved) || other.co2Saved == co2Saved)&&(identical(other.hoursOnline, hoursOnline) || other.hoursOnline == hoursOnline)&&(identical(other.hoursOnlineThisWeek, hoursOnlineThisWeek) || other.hoursOnlineThisWeek == hoursOnlineThisWeek)&&(identical(other.isOnline, isOnline) || other.isOnline == isOnline)&&(identical(other.lastRideAt, lastRideAt) || other.lastRideAt == lastRideAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DriverStats&&(identical(other.driverId, driverId) || other.driverId == driverId)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.totalRides, totalRides) || other.totalRides == totalRides)&&(identical(other.ridesThisWeek, ridesThisWeek) || other.ridesThisWeek == ridesThisWeek)&&(identical(other.ridesThisMonth, ridesThisMonth) || other.ridesThisMonth == ridesThisMonth)&&(identical(other.ridesCompleted, ridesCompleted) || other.ridesCompleted == ridesCompleted)&&(identical(other.pendingRequests, pendingRequests) || other.pendingRequests == pendingRequests)&&(identical(other.totalEarnings, totalEarnings) || other.totalEarnings == totalEarnings)&&(identical(other.earningsThisWeek, earningsThisWeek) || other.earningsThisWeek == earningsThisWeek)&&(identical(other.earningsThisMonth, earningsThisMonth) || other.earningsThisMonth == earningsThisMonth)&&(identical(other.earningsToday, earningsToday) || other.earningsToday == earningsToday)&&(identical(other.totalDistance, totalDistance) || other.totalDistance == totalDistance)&&(identical(other.hoursOnline, hoursOnline) || other.hoursOnline == hoursOnline)&&(identical(other.hoursOnlineThisWeek, hoursOnlineThisWeek) || other.hoursOnlineThisWeek == hoursOnlineThisWeek)&&(identical(other.isOnline, isOnline) || other.isOnline == isOnline)&&(identical(other.lastRideAt, lastRideAt) || other.lastRideAt == lastRideAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,driverId,rating,totalRides,ridesThisWeek,ridesThisMonth,ridesCompleted,pendingRequests,totalEarnings,earningsThisWeek,earningsThisMonth,earningsToday,co2Saved,hoursOnline,hoursOnlineThisWeek,isOnline,lastRideAt);
+int get hashCode => Object.hash(runtimeType,driverId,rating,totalRides,ridesThisWeek,ridesThisMonth,ridesCompleted,pendingRequests,totalEarnings,earningsThisWeek,earningsThisMonth,earningsToday,totalDistance,hoursOnline,hoursOnlineThisWeek,isOnline,lastRideAt);
 
 @override
 String toString() {
-  return 'DriverStats(driverId: $driverId, rating: $rating, totalRides: $totalRides, ridesThisWeek: $ridesThisWeek, ridesThisMonth: $ridesThisMonth, ridesCompleted: $ridesCompleted, pendingRequests: $pendingRequests, totalEarnings: $totalEarnings, earningsThisWeek: $earningsThisWeek, earningsThisMonth: $earningsThisMonth, earningsToday: $earningsToday, co2Saved: $co2Saved, hoursOnline: $hoursOnline, hoursOnlineThisWeek: $hoursOnlineThisWeek, isOnline: $isOnline, lastRideAt: $lastRideAt)';
+  return 'DriverStats(driverId: $driverId, rating: $rating, totalRides: $totalRides, ridesThisWeek: $ridesThisWeek, ridesThisMonth: $ridesThisMonth, ridesCompleted: $ridesCompleted, pendingRequests: $pendingRequests, totalEarnings: $totalEarnings, earningsThisWeek: $earningsThisWeek, earningsThisMonth: $earningsThisMonth, earningsToday: $earningsToday, totalDistance: $totalDistance, hoursOnline: $hoursOnline, hoursOnlineThisWeek: $hoursOnlineThisWeek, isOnline: $isOnline, lastRideAt: $lastRideAt)';
 }
 
 
@@ -279,7 +279,7 @@ abstract mixin class _$DriverStatsCopyWith<$Res> implements $DriverStatsCopyWith
   factory _$DriverStatsCopyWith(_DriverStats value, $Res Function(_DriverStats) _then) = __$DriverStatsCopyWithImpl;
 @override @useResult
 $Res call({
- String driverId, double rating, int totalRides, int ridesThisWeek, int ridesThisMonth, int ridesCompleted, int pendingRequests, double totalEarnings, double earningsThisWeek, double earningsThisMonth, double earningsToday, double co2Saved, double hoursOnline, double hoursOnlineThisWeek, bool isOnline,@TimestampConverter() DateTime? lastRideAt
+ String driverId, double rating, int totalRides, int ridesThisWeek, int ridesThisMonth, int ridesCompleted, int pendingRequests, double totalEarnings, double earningsThisWeek, double earningsThisMonth, double earningsToday, double totalDistance, double hoursOnline, double hoursOnlineThisWeek, bool isOnline,@TimestampConverter() DateTime? lastRideAt
 });
 
 
@@ -296,7 +296,7 @@ class __$DriverStatsCopyWithImpl<$Res>
 
 /// Create a copy of DriverStats
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? driverId = null,Object? rating = null,Object? totalRides = null,Object? ridesThisWeek = null,Object? ridesThisMonth = null,Object? ridesCompleted = null,Object? pendingRequests = null,Object? totalEarnings = null,Object? earningsThisWeek = null,Object? earningsThisMonth = null,Object? earningsToday = null,Object? co2Saved = null,Object? hoursOnline = null,Object? hoursOnlineThisWeek = null,Object? isOnline = null,Object? lastRideAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? driverId = null,Object? rating = null,Object? totalRides = null,Object? ridesThisWeek = null,Object? ridesThisMonth = null,Object? ridesCompleted = null,Object? pendingRequests = null,Object? totalEarnings = null,Object? earningsThisWeek = null,Object? earningsThisMonth = null,Object? earningsToday = null,Object? totalDistance = null,Object? hoursOnline = null,Object? hoursOnlineThisWeek = null,Object? isOnline = null,Object? lastRideAt = freezed,}) {
   return _then(_DriverStats(
 driverId: null == driverId ? _self.driverId : driverId // ignore: cast_nullable_to_non_nullable
 as String,rating: null == rating ? _self.rating : rating // ignore: cast_nullable_to_non_nullable
@@ -309,7 +309,7 @@ as int,totalEarnings: null == totalEarnings ? _self.totalEarnings : totalEarning
 as double,earningsThisWeek: null == earningsThisWeek ? _self.earningsThisWeek : earningsThisWeek // ignore: cast_nullable_to_non_nullable
 as double,earningsThisMonth: null == earningsThisMonth ? _self.earningsThisMonth : earningsThisMonth // ignore: cast_nullable_to_non_nullable
 as double,earningsToday: null == earningsToday ? _self.earningsToday : earningsToday // ignore: cast_nullable_to_non_nullable
-as double,co2Saved: null == co2Saved ? _self.co2Saved : co2Saved // ignore: cast_nullable_to_non_nullable
+as double,totalDistance: null == totalDistance ? _self.totalDistance : totalDistance // ignore: cast_nullable_to_non_nullable
 as double,hoursOnline: null == hoursOnline ? _self.hoursOnline : hoursOnline // ignore: cast_nullable_to_non_nullable
 as double,hoursOnlineThisWeek: null == hoursOnlineThisWeek ? _self.hoursOnlineThisWeek : hoursOnlineThisWeek // ignore: cast_nullable_to_non_nullable
 as double,isOnline: null == isOnline ? _self.isOnline : isOnline // ignore: cast_nullable_to_non_nullable

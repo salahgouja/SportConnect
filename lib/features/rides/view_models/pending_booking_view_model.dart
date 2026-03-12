@@ -98,7 +98,7 @@ class PendingBookingState {
   bool get isAcceptedNeedsPayment =>
       booking?.status == BookingStatus.accepted &&
       ride?.acceptsOnlinePayment == true &&
-      booking?.paymentIntentId == null;
+      booking?.paidAt == null;
 
   bool get isPending => booking?.status == BookingStatus.pending;
 
@@ -158,6 +158,21 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
     final currentUserId = ref.watch(
       currentUserProvider.select((value) => value.value?.uid),
     );
+    final initialRideState = ref.watch(rideDetailViewModelProvider(rideId));
+    final initialBookings = currentUserId == null
+        ? const <RideBooking>[]
+        : (ref.watch(bookingsByPassengerProvider(currentUserId)).value ??
+              const <RideBooking>[]);
+    final initialBooking = _latestBookingForRide(initialBookings, rideId);
+    final initialExpiresAt = initialBooking?.createdAt?.add(
+      const Duration(hours: 24),
+    );
+    final initialTimeRemaining = initialExpiresAt == null
+        ? Duration.zero
+        : (() {
+            final remaining = initialExpiresAt.difference(DateTime.now());
+            return remaining.isNegative ? Duration.zero : remaining;
+          })();
 
     ref.onDispose(() {
       _countdownTimer?.cancel();
@@ -168,21 +183,44 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
       (_, next) => syncRideState(next),
     );
 
-    if (currentUserId == null) {
-      // Schedule sync after build completes
-      Future.microtask(
-        () => syncPassengerBookings(
-          const AsyncValue<List<RideBooking>>.data(<RideBooking>[]),
-        ),
-      );
-    } else {
+    if (currentUserId != null) {
       ref.listen<AsyncValue<List<RideBooking>>>(
         bookingsByPassengerProvider(currentUserId),
         (_, next) => syncPassengerBookings(next),
       );
     }
 
-    return PendingBookingState(rideId: rideId, currentUserId: currentUserId);
+    if (initialBooking?.createdAt != null) {
+      Future.microtask(() {
+        if (!ref.mounted) return;
+        _syncCountdown(initialBooking!.createdAt);
+      });
+    }
+
+    final initialRide = initialRideState.ride.value;
+    if (initialRide != null) {
+      Future.microtask(() {
+        if (!ref.mounted) return;
+        unawaited(ensureOsrmRouteLoaded(initialRide));
+      });
+    }
+
+    Future.microtask(() {
+      if (!ref.mounted) return;
+      _emitLifecycleEffects();
+    });
+
+    return PendingBookingState(
+      rideId: rideId,
+      currentUserId: currentUserId,
+      rideAsync: initialRideState.ride,
+      bookingData: initialBooking,
+      expiresAt: initialExpiresAt,
+      timeRemaining: initialTimeRemaining,
+      lastError: initialRideState.ride.hasError
+          ? initialRideState.ride.error.toString()
+          : null,
+    );
   }
 
   bool get hasPendingEffects => _effects.isNotEmpty;
@@ -208,16 +246,8 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
   }
 
   void syncPassengerBookings(AsyncValue<List<RideBooking>> bookingsAsync) {
-    RideBooking? matchingBooking;
     final bookings = bookingsAsync.value;
-    if (bookings != null) {
-      for (final booking in bookings) {
-        if (booking.rideId == state.rideId) {
-          matchingBooking = booking;
-          break;
-        }
-      }
-    }
+    final matchingBooking = _latestBookingForRide(bookings, state.rideId);
 
     final previousCreatedAt = state.booking?.createdAt;
     state = state.copyWith(
@@ -234,6 +264,26 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
     }
 
     _emitLifecycleEffects();
+  }
+
+  RideBooking? _latestBookingForRide(
+    List<RideBooking>? bookings,
+    String rideId,
+  ) {
+    final matches = bookings
+        ?.where((booking) => booking.rideId == rideId)
+        .toList(growable: false);
+    if (matches == null || matches.isEmpty) {
+      return null;
+    }
+
+    matches.sort((a, b) {
+      final aTimestamp = a.createdAt ?? a.respondedAt ?? DateTime(1970);
+      final bTimestamp = b.createdAt ?? b.respondedAt ?? DateTime(1970);
+      return bTimestamp.compareTo(aTimestamp);
+    });
+
+    return matches.first;
   }
 
   Future<void> ensureOsrmRouteLoaded(RideModel ride) async {
@@ -274,6 +324,10 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
         waypoints: waypoints.isEmpty ? null : waypoints,
       );
 
+      if (!ref.mounted) {
+        return;
+      }
+
       if (state.loadingRouteKey != routeKey) {
         return;
       }
@@ -290,6 +344,10 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
         error,
         stackTrace,
       );
+      if (!ref.mounted) {
+        return;
+      }
+
       if (state.loadingRouteKey != routeKey) {
         return;
       }
@@ -326,9 +384,14 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
       }
 
       final paymentViewModel = ref.read(paymentViewModelProvider.notifier);
+      final stripeService = ref.read(stripeServiceProvider);
       final driverProfile = await ref.read(
         userProfileProvider(ride.driverId).future,
       );
+      if (!ref.mounted) {
+        return;
+      }
+
       if (driverProfile == null) {
         throw Exception('Driver profile not found');
       }
@@ -351,9 +414,11 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
         name: user.displayName,
         phone: user.phoneNumber,
       );
+      if (!ref.mounted) {
+        return;
+      }
 
       final totalAmount = ride.pricePerSeat * booking.seatsBooked;
-      final stripeService = ref.read(stripeServiceProvider);
       final paymentData = await stripeService.createPaymentIntent(
         rideId: ride.id,
         riderId: user.uid,
@@ -366,12 +431,18 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
         driverStripeAccountId: driverStripeAccountId,
         description: '${ride.origin.address} → ${ride.destination.address}',
       );
+      if (!ref.mounted) {
+        return;
+      }
 
       final paymentSuccess = await stripeService.processPaymentWithSheet(
         paymentIntentClientSecret: paymentData['clientSecret'] as String,
         customerId: customerId,
         ephemeralKeySecret: paymentData['ephemeralKey'] as String?,
       );
+      if (!ref.mounted) {
+        return;
+      }
 
       if (!paymentSuccess) {
         state = state.copyWith(
@@ -389,6 +460,10 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
 
       final paymentIntentId = paymentData['paymentIntentId'] as String;
       try {
+        if (!ref.mounted) {
+          return;
+        }
+
         await ref
             .read(rideActionsViewModelProvider)
             .markBookingPaid(
@@ -397,6 +472,10 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
             );
       } catch (_) {
         // Best effort only.
+      }
+
+      if (!ref.mounted) {
+        return;
       }
 
       final updatedBooking = booking.copyWith(
@@ -413,6 +492,10 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
       );
       _enqueueEffect(PendingBookingEffect.navigateCountdown(booking.id));
     } on StripePaymentException catch (error) {
+      if (!ref.mounted) {
+        return;
+      }
+
       state = state.copyWith(
         isProcessingPayment: false,
         paymentFailed: true,
@@ -423,6 +506,10 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
       );
     } catch (error, stackTrace) {
       TalkerService.error('Pending booking payment failed', error, stackTrace);
+      if (!ref.mounted) {
+        return;
+      }
+
       state = state.copyWith(
         isProcessingPayment: false,
         paymentFailed: true,
