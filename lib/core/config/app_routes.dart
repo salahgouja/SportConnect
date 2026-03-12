@@ -54,10 +54,6 @@ class AppRoutes {
     '/rider/active-ride',
     'rider-active-ride',
   );
-  static const riderRequestRide = AppRoute(
-    '/rider/request',
-    'rider-request-ride',
-  );
   static const riderViewRide = AppRoute('/rider/ride/:id', 'rider-view-ride');
   static const riderMyRides = AppRoute('/rider/my-rides', 'rider-my-rides');
 

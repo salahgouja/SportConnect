@@ -46,7 +46,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
   @override
   void initState() {
     super.initState();
-    _formNotifier.initFromEvent(widget.event);
+    Future.microtask(() => _formNotifier.initFromEvent(widget.event));
   }
 
   @override

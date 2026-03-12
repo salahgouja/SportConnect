@@ -32,7 +32,7 @@ class DriverMyRidesScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'driver_rides_offer_fab',
+        heroTag: null,
         onPressed: () => context.push(AppRoutes.driverOfferRide.path),
         backgroundColor: AppColors.primary,
         elevation: 4,
@@ -1019,9 +1019,10 @@ class _EmptyTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       margin: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 0),
-      padding: EdgeInsets.symmetric(vertical: 36.h, horizontal: 24.w),
+      padding: EdgeInsets.symmetric(vertical: 32.h, horizontal: 24.w),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16.r),
@@ -1029,28 +1030,77 @@ class _EmptyTimeline extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Icon(
-            Icons.calendar_today_outlined,
-            size: 36.sp,
-            color: AppColors.textTertiary,
-          ),
-          SizedBox(height: 12.h),
+          Container(
+            width: 72.w,
+            height: 72.w,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.add_road_rounded, size: 36.sp, color: AppColors.primary),
+          ).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
+          SizedBox(height: 16.h),
           Text(
-            AppLocalizations.of(context).noUpcomingRidesTitle,
+            l10n.startSharingTheRoad,
             style: TextStyle(
-              fontSize: 15.sp,
-              fontWeight: FontWeight.w600,
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
             ),
-          ),
-          SizedBox(height: 4.h),
+          ).animate().fadeIn(delay: 200.ms),
+          SizedBox(height: 6.h),
           Text(
-            AppLocalizations.of(context).useButtonToOfferRide,
+            l10n.offerFirstRideMessage,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
-          ),
+            style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary, height: 1.4),
+          ).animate().fadeIn(delay: 300.ms),
+          SizedBox(height: 20.h),
+          // Feature row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _FeatureChip(icon: Icons.people_rounded, label: l10n.connectWithRiders),
+              _FeatureChip(icon: Icons.attach_money_rounded, label: l10n.earnPerRide),
+              _FeatureChip(icon: Icons.schedule_rounded, label: l10n.flexibleSchedule),
+            ],
+          ).animate().fadeIn(delay: 400.ms),
+          SizedBox(height: 20.h),
+          SizedBox(
+            width: double.infinity,
+            height: 44.h,
+            child: ElevatedButton.icon(
+              onPressed: () => context.push(AppRoutes.driverOfferRide.path),
+              icon: Icon(Icons.add_rounded, size: 20.sp),
+              label: Text(l10n.offerYourFirstRide, style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+              ),
+            ),
+          ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.15),
         ],
       ),
+    );
+  }
+}
+
+class _FeatureChip extends StatelessWidget {
+  const _FeatureChip({required this.icon, required this.label});
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Icon(icon, size: 22.sp, color: AppColors.primary),
+        SizedBox(height: 4.h),
+        Text(
+          label,
+          style: TextStyle(fontSize: 11.sp, color: AppColors.textSecondary),
+        ),
+      ],
     );
   }
 }

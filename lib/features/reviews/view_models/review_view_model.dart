@@ -162,6 +162,14 @@ class ReviewFormViewModel extends _$ReviewFormViewModel {
         ),
       );
 
+      // Award XP for submitting a review
+      try {
+        final profileRepo = ref.read(profileRepositoryProvider);
+        await profileRepo.addXP(currentUser.uid, 15);
+      } catch (_) {
+        // XP failure is non-fatal
+      }
+
       // Reset form after successful submission
       state = const ReviewFormState();
       return true;

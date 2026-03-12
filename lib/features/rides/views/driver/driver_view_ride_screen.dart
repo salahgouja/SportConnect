@@ -45,6 +45,7 @@ class DriverViewRideScreen extends ConsumerStatefulWidget {
 class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  RideStatus? _lastHandledRideStatus;
 
   @override
   void initState() {
@@ -162,9 +163,14 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
     RideDetailState vmState,
     DriverRideScreenUiState uiState,
   ) {
+    final notifier = ref.read(
+      driverRideScreenUiViewModelProvider(widget.rideId).notifier,
+    );
+
     // Trigger OSRM route loading
     if (uiState.osrmRouteRideId != ride.id) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
         ref
             .read(driverRideScreenUiViewModelProvider(widget.rideId).notifier)
             .ensureRouteLoaded(ride);
@@ -174,24 +180,17 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
     // ── Auto-navigate when ride transitions to inProgress ────────────────
     // Only navigate on a *transition* (not re-entry) to avoid bouncing the
     // driver back to the active screen while they intentionally came here.
-    if (ride.status == RideStatus.inProgress) {
-      final notifier = ref.read(
-        driverRideScreenUiViewModelProvider(widget.rideId).notifier,
-      );
-      final shouldNavigate = notifier.registerRideStatus(ride.status);
-      if (shouldNavigate) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (context.mounted) {
-            context.pushReplacement(
-              '${AppRoutes.driverActiveRide.path}?rideId=${ride.id}',
-            );
-          }
-        });
-      }
-    } else {
-      ref
-          .read(driverRideScreenUiViewModelProvider(widget.rideId).notifier)
-          .registerRideStatus(ride.status);
+    if (_lastHandledRideStatus != ride.status) {
+      _lastHandledRideStatus = ride.status;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final shouldNavigate = notifier.registerRideStatus(ride.status);
+        if (!shouldNavigate || !context.mounted) return;
+
+        context.pushReplacement(
+          '${AppRoutes.driverActiveRide.path}?rideId=${ride.id}',
+        );
+      });
     }
 
     final pendingBookings = bookings

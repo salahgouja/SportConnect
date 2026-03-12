@@ -98,7 +98,7 @@ class DriverEarningsScreen extends ConsumerWidget {
       ..writeln()
       ..writeln(l10n.exportRideStatistics)
       ..writeln('  ${l10n.statRides}: ${stats.totalRides}')
-      ..writeln('  CO2:   ${stats.co2Saved.toStringAsFixed(1)} kg')
+      ..writeln('  ${l10n.distance}: ${stats.totalDistance.toStringAsFixed(1)} km')
       ..writeln();
 
     if (txList != null && txList.isNotEmpty) {
@@ -188,7 +188,7 @@ class DriverEarningsScreen extends ConsumerWidget {
                     asPassenger: 0,
                     totalSpent: 0,
                     totalEarned: stats.totalEarnings,
-                    co2Saved: stats.co2Saved,
+                    totalDistance: stats.totalDistance,
                     month: DateFormat('MMMM yyyy').format(DateTime.now()),
                   ),
                 ),
@@ -687,7 +687,7 @@ class DriverEarningsScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          AppLocalizations.of(context).environmentalImpact,
+                          AppLocalizations.of(context).totalDistance,
                           style: TextStyle(
                             fontSize: 14.sp,
                             fontWeight: FontWeight.w600,
@@ -695,9 +695,7 @@ class DriverEarningsScreen extends ConsumerWidget {
                           ),
                         ),
                         Text(
-                          AppLocalizations.of(
-                            context,
-                          ).valueKgCoSaved(stats.co2Saved.toStringAsFixed(1)),
+                          '${stats.totalDistance.toStringAsFixed(1)} km',
                           style: TextStyle(
                             fontSize: 12.sp,
                             color: AppColors.success,

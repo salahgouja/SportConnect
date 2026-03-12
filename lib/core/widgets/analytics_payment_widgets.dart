@@ -17,7 +17,7 @@ class MonthlyRideSummary extends StatelessWidget {
   final int asPassenger;
   final double totalSpent;
   final double totalEarned;
-  final double co2Saved;
+  final double totalDistance;
   final String month;
 
   const MonthlyRideSummary({
@@ -27,7 +27,7 @@ class MonthlyRideSummary extends StatelessWidget {
     required this.asPassenger,
     required this.totalSpent,
     required this.totalEarned,
-    required this.co2Saved,
+    required this.totalDistance,
     required this.month,
   });
 
@@ -116,10 +116,10 @@ class MonthlyRideSummary extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.eco_rounded, size: 16.sp, color: Colors.white),
+                Icon(Icons.route_rounded, size: 16.sp, color: Colors.white),
                 SizedBox(width: 6.w),
                 Text(
-                  '${co2Saved.toStringAsFixed(1)} kg CO₂ saved',
+                  '${totalDistance.toStringAsFixed(1)} km covered',
                   style: TextStyle(
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w500,

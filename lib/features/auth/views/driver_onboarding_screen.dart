@@ -67,18 +67,6 @@ class _DriverOnboardingScreenState
     return state.uri.queryParameters['skipProfile'] == 'true';
   }
 
-  bool _hasPersistedDriverProfileData(UserModel? user) {
-    final driver = user?.asDriver;
-    if (driver == null) return false;
-
-    return (driver.phoneNumber?.isNotEmpty ?? false) ||
-        (driver.city?.isNotEmpty ?? false) ||
-        (driver.bio?.isNotEmpty ?? false) ||
-        driver.dateOfBirth != null ||
-        (driver.gender?.isNotEmpty ?? false) ||
-        driver.interests.isNotEmpty;
-  }
-
   int _effectiveStep(OnboardingState vmState, bool skipProfileStep) {
     if (skipProfileStep && vmState.driverCurrentStep == 0) {
       return 1;
@@ -215,8 +203,7 @@ class _DriverOnboardingScreenState
     final userAsync = ref.watch(currentUserProvider);
     final user = userAsync.value;
     final vmState = ref.watch(onboardingViewModelProvider);
-    final skipProfileStep =
-        _skipProfileStep(context) || _hasPersistedDriverProfileData(user);
+    final skipProfileStep = _skipProfileStep(context);
     final effectiveStep = _effectiveStep(vmState, skipProfileStep);
 
     if (skipProfileStep &&

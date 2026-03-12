@@ -405,7 +405,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
     // Estimate: carpooling saves ~120g CO2/km on average
     final riders = bookings.length.clamp(1, 10);
     final distanceKm = ride.route.distanceKm ?? 15.0;
-    final co2SavedKg = (riders * 0.12 * distanceKm).toStringAsFixed(1);
+    final totalSharedKm = (riders * distanceKm).toStringAsFixed(1);
 
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 24.w),
@@ -433,7 +433,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
               borderRadius: BorderRadius.circular(12.r),
             ),
             child: Icon(
-              Icons.eco_rounded,
+              Icons.route_rounded,
               size: 24.sp,
               color: const Color(0xFF2E7D32),
             ),
@@ -444,7 +444,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'You helped save $co2SavedKg kg CO₂',
+                  '$totalSharedKm km shared together',
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w700,
@@ -453,7 +453,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                 ),
                 SizedBox(height: 2.h),
                 Text(
-                  'By sharing this ride with $riders other '
+                  'Carpooled with $riders '
                   '${riders == 1 ? 'person' : 'people'}',
                   style: TextStyle(
                     fontSize: 12.sp,

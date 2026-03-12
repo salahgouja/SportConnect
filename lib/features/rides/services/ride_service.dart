@@ -30,7 +30,17 @@ class RideService extends _$RideService {
 
     // Save to repository
     final repo = ref.read(rideRepositoryProvider);
-    return await repo.createRide(ride);
+    final rideId = await repo.createRide(ride);
+
+    // Award XP for creating a ride
+    try {
+      final profileRepo = ref.read(profileRepositoryProvider);
+      await profileRepo.addXP(ride.driverId, 10);
+    } catch (e) {
+      TalkerService.error('Failed to award ride creation XP: $e');
+    }
+
+    return rideId;
   }
 
   /// Update ride with business rules
@@ -94,6 +104,23 @@ class RideService extends _$RideService {
 
     await repo.updateRide(cancelled);
 
+    // Cancel all pending/accepted bookings for this ride
+    try {
+      final bookingRepo = ref.read(bookingRepositoryProvider);
+      final bookings = await bookingRepo.getBookingsByRideId(
+        rideId,
+        ride.driverId,
+      );
+      for (final booking in bookings) {
+        if (booking.status == BookingStatus.pending ||
+            booking.status == BookingStatus.accepted) {
+          await repo.cancelBooking(rideId: rideId, bookingId: booking.id);
+        }
+      }
+    } catch (e) {
+      TalkerService.error('Failed to cancel bookings for ride $rideId: $e');
+    }
+
     // Notify all passengers about the cancellation
     await _notifyPassengersOfCancellation(ride: ride, reason: reason);
   }
@@ -118,7 +145,29 @@ class RideService extends _$RideService {
     // Mark ride as completed in Firestore
     await repo.completeRide(rideId);
 
-    // Award XP and record driver stats
+    // Mark all accepted bookings as completed and collect passenger IDs
+    final completedPassengerIds = <String>[];
+    try {
+      final bookingRepo = ref.read(bookingRepositoryProvider);
+      final bookings = await bookingRepo.getBookingsByRideId(
+        rideId,
+        ride.driverId,
+      );
+      for (final booking in bookings) {
+        if (booking.status == BookingStatus.accepted) {
+          await repo.updateBookingStatus(
+            rideId: rideId,
+            bookingId: booking.id,
+            newStatus: BookingStatus.completed,
+          );
+          completedPassengerIds.add(booking.passengerId);
+        }
+      }
+    } catch (e) {
+      TalkerService.error('Failed to update booking statuses: $e');
+    }
+
+    // Award XP, update stats, streaks, and achievements
     try {
       final xp = calculateXpReward(ride);
       final distanceKm = ride.route.distanceKm ?? 0.0;
@@ -131,6 +180,73 @@ class RideService extends _$RideService {
         distanceKm: distanceKm,
       );
 
+      final profileRepo = ref.read(profileRepositoryProvider);
+      final notificationRepo = ref.read(notificationRepositoryProvider);
+
+      // Driver gamification
+      final driverLevelUp = await profileRepo.addXP(ride.driverId, xp);
+      await profileRepo.updateStreak(ride.driverId);
+      await profileRepo.updateRideStats(
+        uid: ride.driverId,
+        asDriver: true,
+        distance: distanceKm,
+      );
+
+      // Passenger gamification: each passenger earns 60% of driver XP
+      final passengerXp = (xp * 0.6).round();
+      for (final passengerId in completedPassengerIds) {
+        final passengerLevelUp =
+            await profileRepo.addXP(passengerId, passengerXp);
+        await profileRepo.updateStreak(passengerId);
+        await profileRepo.updateRideStats(
+          uid: passengerId,
+          asDriver: false,
+          distance: distanceKm,
+        );
+        if (passengerLevelUp != null) {
+          await notificationRepo.sendLevelUpNotification(
+            userId: passengerId,
+            newLevel: passengerLevelUp,
+          );
+        }
+      }
+
+      // Evaluate achievements for driver and all passengers
+      final driverBadges =
+          await profileRepo.evaluateAchievements(ride.driverId);
+      for (final passengerId in completedPassengerIds) {
+        final passengerBadges =
+            await profileRepo.evaluateAchievements(passengerId);
+        for (final badgeId in passengerBadges) {
+          final info = _badgeInfo[badgeId];
+          if (info != null) {
+            await notificationRepo.sendAchievementNotification(
+              userId: passengerId,
+              achievementName: info.$1,
+              achievementDescription: info.$2,
+            );
+          }
+        }
+      }
+
+      // Send driver level-up and badge notifications
+      if (driverLevelUp != null) {
+        await notificationRepo.sendLevelUpNotification(
+          userId: ride.driverId,
+          newLevel: driverLevelUp,
+        );
+      }
+      for (final badgeId in driverBadges) {
+        final info = _badgeInfo[badgeId];
+        if (info != null) {
+          await notificationRepo.sendAchievementNotification(
+            userId: ride.driverId,
+            achievementName: info.$1,
+            achievementDescription: info.$2,
+          );
+        }
+      }
+
       TalkerService.info(
         'Ride $rideId completed. XP awarded: $xp, earnings: $earnings',
       );
@@ -139,6 +255,15 @@ class RideService extends _$RideService {
       TalkerService.error('Failed to record ride completion stats: $e');
     }
   }
+
+  /// Badge ID → (name, description) for achievement notifications.
+  static const _badgeInfo = <String, (String, String)>{
+    'first_ride': ('First Ride', 'Complete your first carpool ride'),
+    'road_tripper': ('Road Tripper', 'Travel 50 km total'),
+    'speed_demon': ('Speed Demon', 'Maintain a 7-day ride streak'),
+    'road_master': ('Road Master', 'Complete 100 rides'),
+    'marathon_driver': ('Marathon Driver', 'Travel 1000 km total'),
+  };
 
   /// Calculate XP reward based on ride characteristics
   int calculateXpReward(RideModel ride) {

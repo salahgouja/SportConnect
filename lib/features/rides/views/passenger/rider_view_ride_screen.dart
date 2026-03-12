@@ -44,6 +44,26 @@ class RiderViewRideScreen extends ConsumerStatefulWidget {
 class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
   bool _hasNavigatedToActiveRide = false;
 
+  RideBooking? _latestBookingForRide(
+    List<RideBooking>? bookings,
+    String rideId,
+  ) {
+    final matches = bookings
+        ?.where((booking) => booking.rideId == rideId)
+        .toList(growable: false);
+    if (matches == null || matches.isEmpty) {
+      return null;
+    }
+
+    matches.sort((a, b) {
+      final aTimestamp = a.createdAt ?? a.respondedAt ?? DateTime(1970);
+      final bTimestamp = b.createdAt ?? b.respondedAt ?? DateTime(1970);
+      return bTimestamp.compareTo(aTimestamp);
+    });
+
+    return matches.first;
+  }
+
   RideDetailState get _rideDetailState =>
       ref.watch(rideDetailViewModelProvider(widget.rideId));
 
@@ -788,15 +808,13 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        Icons.eco_rounded,
+                        Icons.route_rounded,
                         size: 16.sp,
                         color: AppColors.ecoGreen,
                       ),
                       SizedBox(width: 6.w),
                       Text(
-                        AppLocalizations.of(context).valueKgCoSavedPer(
-                          ride.co2SavedPerPassenger.toStringAsFixed(1),
-                        ),
+                        '${(ride.route.distanceKm ?? 0).toStringAsFixed(1)} km',
                         style: TextStyle(
                           fontSize: 12.sp,
                           fontWeight: FontWeight.w500,
@@ -1268,20 +1286,19 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
     // this ride. The ride-scoped provider filters by driverId and returns
     // nothing when the current user is a passenger.
     final existingBooking = currentUser != null
-        ? ref
-              .watch(bookingsByPassengerProvider(currentUser.uid))
-              .value
-              ?.where((b) => b.rideId == ride.id)
-              .firstOrNull
+        ? _latestBookingForRide(
+            ref.watch(bookingsByPassengerProvider(currentUser.uid)).value,
+            ride.id,
+          )
         : null;
 
     // Rider has an accepted booking on a ride that requires online payment.
     // Show "Complete Payment" only if they haven't paid yet;
-    // once paymentIntentId is stamped on the booking, show Confirmed instead.
+    // once paidAt is stamped on the booking, show Confirmed instead.
     if (existingBooking != null &&
         existingBooking.status == BookingStatus.accepted &&
         ride.acceptsOnlinePayment) {
-      if (existingBooking.paymentIntentId != null) {
+      if (existingBooking.paidAt != null) {
         return _buildExistingBookingBar(
           label: 'Booking Confirmed',
           icon: Icons.check_circle_rounded,

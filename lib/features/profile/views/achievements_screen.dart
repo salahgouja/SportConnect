@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Premium Achievements Screen with gamification UI
@@ -52,38 +53,9 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
 
   Widget _buildContent(BuildContext context, UserModel user) {
     // Get gamification stats based on user type
-    final GamificationStats gamification;
-    gamification = switch (user) {
-      RiderModel(:final gamification as RiderGamificationStats) =>
-        GamificationStats.rider(
-          totalXP: gamification.totalXP,
-          level: gamification.level,
-          currentLevelXP: gamification.currentLevelXP,
-          xpToNextLevel: gamification.xpToNextLevel,
-          totalRides: gamification.totalRides,
-          currentStreak: gamification.currentStreak,
-          longestStreak: gamification.longestStreak,
-          co2Saved: gamification.co2Saved,
-          totalDistance: gamification.totalDistance,
-          unlockedBadges: gamification.unlockedBadges,
-          achievements: gamification.achievements,
-          lastRideDate: gamification.lastRideDate,
-        ),
-      DriverModel(:final gamification as DriverGamificationStats) =>
-        GamificationStats.driver(
-          totalXP: gamification.totalXP,
-          level: gamification.level,
-          currentLevelXP: gamification.currentLevelXP,
-          xpToNextLevel: gamification.xpToNextLevel,
-          totalRides: gamification.totalRides,
-          currentStreak: gamification.currentStreak,
-          longestStreak: gamification.longestStreak,
-          co2Saved: gamification.co2Saved,
-          totalDistance: gamification.totalDistance,
-          unlockedBadges: gamification.unlockedBadges,
-          achievements: gamification.achievements,
-          lastRideDate: gamification.lastRideDate,
-        ),
+    final GamificationStats gamification = switch (user) {
+      RiderModel(:final gamification) => gamification,
+      DriverModel(:final gamification) => gamification,
     };
 
     return Scaffold(
@@ -170,8 +142,8 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
           controller: _tabController,
           children: [
             _buildBadgesTab(gamification),
-            _buildChallengesTab(),
-            _buildLeaderboardTab(),
+            _buildChallengesTab(gamification),
+            _buildLeaderboardTab(user),
           ],
         ),
       ),
@@ -179,19 +151,18 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
   }
 
   Widget _buildLevelBadge(GamificationStats gamification) {
-    final level = gamification.level;
-    final levelName = UserLevel.fromXP(gamification.totalXP).name;
+    final userLevel = UserLevel.fromXP(gamification.totalXP);
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+          colors: [Color(0xFF52B788), Color(0xFF40916C)],
         ),
         borderRadius: BorderRadius.circular(30.r),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFFFD700).withValues(alpha: 0.4),
+            color: const Color(0xFF52B788).withValues(alpha: 0.4),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -203,7 +174,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
           Icon(Icons.star_rounded, color: Colors.white, size: 24.sp),
           SizedBox(width: 8.w),
           Text(
-            AppLocalizations.of(context).levelValueValue(level, levelName),
+            AppLocalizations.of(context).levelValueValue(userLevel.level, userLevel.name),
             style: TextStyle(
               fontSize: 18.sp,
               fontWeight: FontWeight.w700,
@@ -216,12 +187,14 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
   }
 
   Widget _buildXPProgress(GamificationStats gamification) {
-    final currentXP = gamification.currentLevelXP;
-    final maxXP = gamification.xpToNextLevel;
-    final xpNeeded = maxXP - currentXP;
-    final level = gamification.level;
-    final progress = maxXP > 0 ? (currentXP / maxXP).clamp(0.0, 1.0) : 0.0;
-
+    final userLevel = UserLevel.fromXP(gamification.totalXP);
+    final currentXP = gamification.totalXP - userLevel.minXP.toInt();
+    final isMaxLevel = !userLevel.maxXP.isFinite;
+    final maxXP = isMaxLevel
+        ? currentXP  // At max level, show full bar
+        : (userLevel.maxXP - userLevel.minXP).toInt();
+    final xpNeeded = isMaxLevel ? 0 : (maxXP - currentXP).clamp(0, maxXP);
+    final progress = isMaxLevel ? 1.0 : (maxXP > 0 ? (currentXP / maxXP).clamp(0.0, 1.0) : 1.0);
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 40.w),
       child: Column(
@@ -238,7 +211,9 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
                 ),
               ),
               Text(
-                AppLocalizations.of(context).valueXp2(_formatNumber(maxXP)),
+                isMaxLevel
+                    ? '★ MAX'
+                    : AppLocalizations.of(context).valueXp2(_formatNumber(maxXP)),
                 style: TextStyle(
                   fontSize: 14.sp,
                   color: Colors.white.withValues(alpha: 0.8),
@@ -262,7 +237,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
                   height: 10.h,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                      colors: [Color(0xFF74C69D), Color(0xFF40916C)],
                     ),
                     borderRadius: BorderRadius.circular(5.r),
                   ),
@@ -272,9 +247,12 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
           ),
           SizedBox(height: 6.h),
           Text(
-            AppLocalizations.of(
-              context,
-            ).valueXpToLevelValue(_formatNumber(xpNeeded), level + 1),
+            isMaxLevel
+                ? AppLocalizations.of(context).maxLevel
+                : AppLocalizations.of(context).valueXpToLevelValue(
+                    _formatNumber(xpNeeded),
+                    userLevel.level + 1,
+                  ),
             style: TextStyle(
               fontSize: 12.sp,
               color: Colors.white.withValues(alpha: 0.9),
@@ -291,7 +269,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
         .where((a) => a.isUnlocked)
         .length;
     final rides = gamification.totalRides;
-    final co2 = gamification.co2Saved;
+    final distance = gamification.totalDistance;
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 24.w),
@@ -317,9 +295,9 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
           ),
           _buildStatDivider(),
           _buildStatItem(
-            Icons.eco_rounded,
-            _formatCO2(co2),
-            AppLocalizations.of(context).kgCo,
+            Icons.route_rounded,
+            '${distance.toStringAsFixed(0)} km',
+            'Distance',
           ),
         ],
       ),
@@ -377,11 +355,11 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
 
   Widget _buildBadgeCard(_BadgeData badge) {
     final tierColors = {
-      'bronze': const Color(0xFFCD7F32),
-      'silver': const Color(0xFFC0C0C0),
-      'gold': const Color(0xFFFFD700),
-      'platinum': const Color(0xFFE5E4E2),
-      'diamond': const Color(0xFFB9F2FF),
+      'bronze': const Color(0xFFB7E4C7),
+      'silver': const Color(0xFF95D5B2),
+      'gold': const Color(0xFF74C69D),
+      'platinum': const Color(0xFF40916C),
+      'diamond': const Color(0xFF2D6A4F),
     };
 
     final color = tierColors[badge.tier] ?? AppColors.primary;
@@ -578,61 +556,69 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
     );
   }
 
-  Widget _buildChallengesTab() {
+  Widget _buildChallengesTab(GamificationStats gamification) {
+    final l10n = AppLocalizations.of(context);
+    final totalRides = gamification.totalRides;
+    final totalDistance = gamification.totalDistance;
+    final currentStreak = gamification.currentStreak;
+
+    String status(bool done) =>
+        done ? l10n.challengeCompleted : l10n.challengeInProgress;
+
     final challenges = [
       _ChallengeData(
-        'Weekly Warrior',
-        'Complete 5 rides this week',
-        '3/5',
-        0.6,
+        l10n.challengeFirstRide,
+        l10n.challengeFirstRideDesc,
+        '${totalRides.clamp(0, 1)}/1',
+        totalRides >= 1 ? 1.0 : 0.0,
+        50,
+        Icons.directions_car_rounded,
+        status(totalRides >= 1),
+      ),
+      _ChallengeData(
+        l10n.challengeRideRegular,
+        l10n.challengeRideRegularDesc,
+        '${totalRides.clamp(0, 10)}/10',
+        (totalRides / 10).clamp(0.0, 1.0),
         100,
         Icons.calendar_today_rounded,
-        '3 days left',
+        status(totalRides >= 10),
       ),
       _ChallengeData(
-        'Green Champion',
-        'Save 50kg CO₂ this month',
-        '32/50',
-        0.64,
+        l10n.challengeRoadTripper,
+        l10n.challengeRoadTripperDesc,
+        '${totalDistance.toStringAsFixed(0)}/50',
+        (totalDistance / 50).clamp(0.0, 1.0),
         250,
-        Icons.eco_rounded,
-        '12 days left',
+        Icons.map_rounded,
+        status(totalDistance >= 50),
       ),
       _ChallengeData(
-        'Social Star',
-        'Get 3 five-star reviews',
-        '2/3',
-        0.67,
-        75,
-        Icons.star_rounded,
-        '5 days left',
-      ),
-      _ChallengeData(
-        'Distance Master',
-        'Drive 100km total',
-        '78/100',
-        0.78,
+        l10n.challengeDistanceMaster,
+        l10n.challengeDistanceMasterDesc,
+        '${totalDistance.toStringAsFixed(0)}/100',
+        (totalDistance / 100).clamp(0.0, 1.0),
         150,
         Icons.route_rounded,
-        '7 days left',
+        status(totalDistance >= 100),
       ),
       _ChallengeData(
-        'Chat Active',
-        'Reply to 10 messages',
-        '10/10',
-        1.0,
-        50,
-        Icons.chat_rounded,
-        'Completed!',
+        l10n.challengeStreakBuilder,
+        l10n.challengeStreakBuilderDesc,
+        '$currentStreak/7',
+        (currentStreak / 7).clamp(0.0, 1.0),
+        200,
+        Icons.local_fire_department_rounded,
+        status(currentStreak >= 7),
       ),
       _ChallengeData(
-        'Peak Hours',
-        'Complete 3 rush hour rides',
-        '1/3',
-        0.33,
-        125,
-        Icons.access_time_rounded,
-        '4 days left',
+        l10n.challengeCenturyRider,
+        l10n.challengeCenturyRiderDesc,
+        '${totalRides.clamp(0, 100)}/100',
+        (totalRides / 100).clamp(0.0, 1.0),
+        500,
+        Icons.emoji_events_rounded,
+        status(totalRides >= 100),
       ),
     ];
 
@@ -717,7 +703,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
                       vertical: 4.h,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFD700).withValues(alpha: 0.1),
+                      color: const Color(0xFF52B788).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8.r),
                     ),
                     child: Text(
@@ -725,7 +711,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
                       style: TextStyle(
                         fontSize: 12.sp,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFFD4A100),
+                        color: const Color(0xFF40916C),
                       ),
                     ),
                   ),
@@ -778,33 +764,67 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
     );
   }
 
-  Widget _buildLeaderboardTab() {
-    final leaderboard = [
-      _LeaderboardEntry('Sarah Johnson', 12450, 1),
-      _LeaderboardEntry('Mike Chen', 11200, 2),
-      _LeaderboardEntry('Emily Davis', 9800, 3),
-      _LeaderboardEntry('John Smith (You)', 8650, 4, isCurrentUser: true),
-      _LeaderboardEntry('Alex Wilson', 8200, 5),
-      _LeaderboardEntry('Lisa Brown', 7900, 6),
-      _LeaderboardEntry('David Lee', 7500, 7),
-      _LeaderboardEntry('Amy Taylor', 7100, 8),
-      _LeaderboardEntry('Chris Miller', 6800, 9),
-      _LeaderboardEntry('Jessica White', 6500, 10),
-    ];
+  Widget _buildLeaderboardTab(UserModel user) {
+    final leaderboardAsync = ref.watch(leaderboardProvider);
 
-    return ListView.builder(
-      padding: EdgeInsets.all(16.w),
-      itemCount: leaderboard.length + 1, // +1 for header
-      itemBuilder: (context, index) {
-        if (index == 0) {
-          return _buildLeaderboardHeader();
+    return leaderboardAsync.when(
+      data: (entries) {
+        if (entries.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.leaderboard_rounded,
+                    size: 64.sp, color: AppColors.textTertiary),
+                SizedBox(height: 16.h),
+                Text(
+                  AppLocalizations.of(context).noResultsFound,
+                  style: TextStyle(
+                      fontSize: 16.sp, color: AppColors.textSecondary),
+                ),
+              ],
+            ),
+          );
         }
-        return _buildLeaderboardRow(leaderboard[index - 1]);
+
+        return ListView.builder(
+          padding: EdgeInsets.all(16.w),
+          itemCount: entries.length + 1,
+          itemBuilder: (context, index) {
+            if (index == 0) {
+              return _buildLeaderboardHeader(entries, user);
+            }
+            final entry = entries[index - 1];
+            return _buildLeaderboardRow(_LeaderboardEntry(
+              entry.displayName,
+              entry.totalXP,
+              entry.rank,
+              level: entry.level,
+              isCurrentUser: entry.odid == user.uid,
+            ));
+          },
+        );
       },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(
+        child: Text(
+          AppLocalizations.of(context).errorLoadingAchievements,
+          style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
+        ),
+      ),
     );
   }
 
-  Widget _buildLeaderboardHeader() {
+  Widget _buildLeaderboardHeader(
+      List<LeaderboardEntry> entries, UserModel user) {
+    // Need at least 3 entries for the podium
+    if (entries.length < 3) {
+      return SizedBox(height: 16.h);
+    }
+
+    final medals = ['🥈', '🥇', '🥉'];
+    final top3 = entries.take(3).toList();
+    // Display order: 2nd, 1st, 3rd
     return Container(
       margin: EdgeInsets.only(bottom: 16.h),
       padding: EdgeInsets.all(20.w),
@@ -818,22 +838,25 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildTopRanker(
-            AppLocalizations.of(context).text8,
-            AppLocalizations.of(context).mikeC,
-            AppLocalizations.of(context).text112k,
+            medals[0],
+            top3[1].displayName,
+            AppLocalizations.of(context).valueXp2(
+                _formatNumber(top3[1].totalXP)),
             2,
           ),
           _buildTopRanker(
-            AppLocalizations.of(context).text10,
-            AppLocalizations.of(context).sarahJ,
-            AppLocalizations.of(context).text124k,
+            medals[1],
+            top3[0].displayName,
+            AppLocalizations.of(context).valueXp2(
+                _formatNumber(top3[0].totalXP)),
             1,
             isFirst: true,
           ),
           _buildTopRanker(
-            AppLocalizations.of(context).text11,
-            AppLocalizations.of(context).emilyD,
-            AppLocalizations.of(context).text98k,
+            medals[2],
+            top3[2].displayName,
+            AppLocalizations.of(context).valueXp2(
+                _formatNumber(top3[2].totalXP)),
             3,
           ),
         ],
@@ -920,9 +943,9 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
                     ),
                     decoration: BoxDecoration(
                       color: [
-                        const Color(0xFFFFD700),
-                        const Color(0xFFC0C0C0),
-                        const Color(0xFFCD7F32),
+                        const Color(0xFF2D6A4F),
+                        const Color(0xFF40916C),
+                        const Color(0xFF74C69D),
                       ][entry.rank - 1].withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(6.r),
                     ),
@@ -932,9 +955,9 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w800,
                         color: [
-                          const Color(0xFFB8860B),
-                          const Color(0xFF707070),
-                          const Color(0xFF8B4513),
+                          const Color(0xFF1B4332),
+                          const Color(0xFF2D6A4F),
+                          const Color(0xFF40916C),
                         ][entry.rank - 1],
                       ),
                       textAlign: TextAlign.center,
@@ -984,9 +1007,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
                   ),
                 ),
                 Text(
-                  AppLocalizations.of(
-                    context,
-                  ).levelValue(10 + (10 - entry.rank)),
+                  UserLevel.fromXP(entry.xp).name,
                   style: TextStyle(
                     fontSize: 12.sp,
                     color: AppColors.textSecondary,
@@ -1026,20 +1047,11 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
     );
   }
 
-  /// Helper method to format CO2 values
-  String _formatCO2(double co2) {
-    if (co2 >= 1000) {
-      return '${(co2 / 1000).toStringAsFixed(1)}K';
-    }
-    return co2.toStringAsFixed(1);
-  }
-
   /// Get badge definitions with unlocked status based on gamification data
   List<_BadgeData> _getBadgeDefinitions(GamificationStats gamification) {
     final totalRides = gamification.totalRides;
-    final co2Saved = gamification.co2Saved;
     final totalDistance = gamification.totalDistance;
-    final currentStreak = gamification.currentStreak;
+    final longestStreak = gamification.longestStreak;
     final unlockedBadges = gamification.unlockedBadges;
 
     return [
@@ -1058,17 +1070,18 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
         'silver',
       ),
       _BadgeData(
-        'Eco Warrior',
-        'Save 100kg of CO₂',
-        Icons.eco_rounded,
-        co2Saved >= 100 || unlockedBadges.contains('eco_warrior'),
+        'Road Tripper',
+        'Travel 50 km total',
+        Icons.map_rounded,
+        totalDistance >= 50 || unlockedBadges.contains('road_tripper'),
         'gold',
+        totalDistance < 50 ? totalDistance / 50 : null,
       ),
       _BadgeData(
         'Speed Demon',
-        'Complete 10 rides in a week',
+        'Maintain a 7-day ride streak',
         Icons.speed_rounded,
-        currentStreak >= 7 || unlockedBadges.contains('speed_demon'),
+        longestStreak >= 7 || unlockedBadges.contains('speed_demon'),
         'gold',
       ),
       _BadgeData(
@@ -1104,7 +1117,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
       ),
       _BadgeData(
         'Marathon Driver',
-        'Drive 1000 km total',
+        'Travel 1000 km total',
         Icons.straighten_rounded,
         totalDistance >= 1000 || unlockedBadges.contains('marathon_driver'),
         'diamond',
@@ -1179,12 +1192,14 @@ class _LeaderboardEntry {
   final String name;
   final int xp;
   final int rank;
+  final int level;
   final bool isCurrentUser;
 
   _LeaderboardEntry(
     this.name,
     this.xp,
     this.rank, {
+    this.level = 1,
     this.isCurrentUser = false,
   });
 }

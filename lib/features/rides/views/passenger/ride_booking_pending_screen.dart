@@ -153,7 +153,7 @@ class _RideBookingPendingScreenState
     final isAcceptedNeedsPayment =
         booking?.status == BookingStatus.accepted &&
         ride.acceptsOnlinePayment &&
-        booking?.paymentIntentId == null;
+        booking?.paidAt == null;
     final hours = state.timeRemaining.inHours;
     final minutes = state.timeRemaining.inMinutes.remainder(60);
     final seconds = state.timeRemaining.inSeconds.remainder(60);
@@ -255,7 +255,7 @@ class _RideBookingPendingScreenState
                     ),
                   ],
                 )
-              else if (state.paymentFailed)
+              else
                 PremiumButton(
                   text: AppLocalizations.of(context).completePaymentButton,
                   onPressed: notifier.processPayment,

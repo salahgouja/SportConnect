@@ -32,6 +32,10 @@ class RideCountdownScreen extends ConsumerStatefulWidget {
 }
 
 class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
+  DateTime? _lastSyncedDeparture;
+  String? _lastRequestedRouteRideId;
+  RideStatus? _lastHandledRideStatus;
+
   @override
   void dispose() {
     super.dispose();
@@ -135,13 +139,24 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
     RideBooking booking,
     RideCountdownUiState uiState,
   ) {
-    ref
-        .read(rideCountdownUiViewModelProvider(widget.bookingId).notifier)
-        .syncDeparture(ride.schedule.departureTime);
+    final notifier = ref.read(
+      rideCountdownUiViewModelProvider(widget.bookingId).notifier,
+    );
+
+    if (_lastSyncedDeparture != ride.schedule.departureTime) {
+      _lastSyncedDeparture = ride.schedule.departureTime;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        notifier.syncDeparture(ride.schedule.departureTime);
+      });
+    }
 
     // Trigger OSRM route loading
-    if (uiState.osrmRouteRideId != ride.id) {
+    if (uiState.osrmRouteRideId != ride.id &&
+        _lastRequestedRouteRideId != ride.id) {
+      _lastRequestedRouteRideId = ride.id;
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
         ref
             .read(rideCountdownUiViewModelProvider(widget.bookingId).notifier)
             .ensureRouteLoaded(ride);
@@ -151,36 +166,29 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
     // Auto-navigate ONLY when we observe the ride status TRANSITION into inProgress.
     // If the ride is already inProgress when the screen first opens (re-entry case),
     // skip auto-navigation so we don't immediately bounce the user away again.
-    final shouldNavigate = ref
-        .read(rideCountdownUiViewModelProvider(widget.bookingId).notifier)
-        .registerRideStatus(ride.status);
-
-    if (ride.status == RideStatus.inProgress && shouldNavigate) {
+    if (_lastHandledRideStatus != ride.status) {
+      _lastHandledRideStatus = ride.status;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
+        if (!mounted) return;
+        final shouldNavigate = notifier.registerRideStatus(ride.status);
+        if (!shouldNavigate || !mounted) return;
+
+        if (ride.status == RideStatus.inProgress) {
           context.pushReplacement(
             '${AppRoutes.riderActiveRide.path}?rideId=${booking.rideId}',
           );
+          return;
         }
-      });
-    }
 
-    // Handle ride cancellation — navigate back to My Rides and show a message.
-    if (ride.status == RideStatus.cancelled && shouldNavigate) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
+        if (ride.status == RideStatus.cancelled) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('This ride has been cancelled.')),
           );
           context.goNamed(AppRoutes.riderMyRides.name);
+          return;
         }
-      });
-    }
 
-    // Handle ride completion (rare: passenger re-opens countdown after ride done).
-    if (ride.status == RideStatus.completed && shouldNavigate) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
+        if (ride.status == RideStatus.completed) {
           context.pushReplacement(
             AppRoutes.rideCompletion.path.replaceFirst(':id', booking.rideId),
           );
@@ -210,7 +218,9 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
             // Countdown display
             if (!isInPast) ...[
               Text(
-                isImminent ? AppLocalizations.of(context).departingSoonLabel : AppLocalizations.of(context).departureInLabel,
+                isImminent
+                    ? AppLocalizations.of(context).departingSoonLabel
+                    : AppLocalizations.of(context).departureInLabel,
                 style: TextStyle(
                   fontSize: 14.sp,
                   color: isImminent
@@ -603,7 +613,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-        content: Text(AppLocalizations.of(context).failedOpenChatError),
+          content: Text(AppLocalizations.of(context).failedOpenChatError),
           backgroundColor: AppColors.error,
         ),
       );
@@ -617,7 +627,11 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
       if (phone == null || phone.isEmpty) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).driverPhoneUnavailableError)),
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context).driverPhoneUnavailableError,
+            ),
+          ),
         );
         return;
       }
@@ -628,7 +642,9 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).couldNotLaunchDialerError)),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).couldNotLaunchDialerError),
+        ),
       );
     }
   }

@@ -298,6 +298,24 @@ class NotificationRepository implements INotificationRepository {
     );
   }
 
+  /// Send level-up notification
+  @override
+  Future<void> sendLevelUpNotification({
+    required String userId,
+    required int newLevel,
+  }) async {
+    await createNotification(
+      NotificationModel(
+        id: '',
+        userId: userId,
+        type: NotificationType.levelUp,
+        title: 'Level Up! 🎉',
+        body: 'Congratulations! You reached Level $newLevel. Keep riding!',
+        priority: NotificationPriority.normal,
+      ),
+    );
+  }
+
   @override
   Future<void> sendDriverArrivedAtPickup({
     required String toUserId,

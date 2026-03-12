@@ -1107,6 +1107,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get environmentalImpact => 'Environmental Impact';
 
   @override
+  String get totalDistance => 'Total Distance';
+
+  @override
   String valueKgCoSaved(Object value) {
     return '$value kg CO₂ saved';
   }
@@ -2959,6 +2962,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get musicAllowed => 'Music allowed';
 
   @override
+  String get noSmoking => 'No Smoking';
+
+  @override
   String get vehicleType => 'Vehicle Type';
 
   @override
@@ -3702,6 +3708,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get findRidesNearYou => 'Find Rides Near You';
+
+  @override
+  String get exploreOnMap => 'Explore on Map';
+
+  @override
+  String get howItWorks => 'How it works';
+
+  @override
+  String get pickupAndDropoff => 'Pickup & Drop-off';
+
+  @override
+  String get enterPickupAndDestination =>
+      'Enter your pickup and destination locations';
+
+  @override
+  String get selectDate => 'Select Date';
+
+  @override
+  String get chooseWhenYouWantToTravel => 'Choose when you want to travel';
+
+  @override
+  String get findAndBook => 'Find & Book';
+
+  @override
+  String get browseAvailableRidesAndBook =>
+      'Browse available rides and book instantly';
+
+  @override
+  String get verifiedDrivers => 'Verified Drivers';
+
+  @override
+  String get allDriversAreVerified =>
+      'All drivers are verified for your safety and comfort';
 
   @override
   String get locationGateDescription =>
@@ -5134,4 +5173,109 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sportsLabel => 'Sports';
+
+  @override
+  String get yourJourneyStartsHere => 'Your Journey Starts Here';
+
+  @override
+  String get searchRidesAndConnect =>
+      'Search for rides and connect with verified drivers heading your way';
+
+  @override
+  String get searchForRides => 'Search for Rides';
+
+  @override
+  String get easyBooking => 'Easy Booking';
+
+  @override
+  String get bookInJustAFewTaps => 'Book in just a few taps';
+
+  @override
+  String get realTimeTracking => 'Real-time Tracking';
+
+  @override
+  String get trackYourRideLive => 'Track your ride live';
+
+  @override
+  String get startSharingTheRoad => 'Start Sharing the Road';
+
+  @override
+  String get offerFirstRideMessage =>
+      'Offer your first ride and connect with riders heading your way';
+
+  @override
+  String get connectWithRiders => 'Connect';
+
+  @override
+  String get earnPerRide => 'Earn';
+
+  @override
+  String get flexibleSchedule => 'Flexible';
+
+  @override
+  String get offerYourFirstRide => 'Offer Your First Ride';
+
+  @override
+  String get noRidesYetTitle => 'No Rides Yet';
+
+  @override
+  String get noRidesYetSubtitle =>
+      'Find a carpool to your next game, practice, or event. Share the ride, split the cost.';
+
+  @override
+  String get findACarpoolNow => 'Find a Carpool';
+
+  @override
+  String get allDriversVerifiedAndRated => 'All drivers are verified and rated';
+
+  @override
+  String get levelAndXp => 'Level & XP';
+
+  @override
+  String get viewAchievements => 'View achievements';
+
+  @override
+  String get maxLevel => 'Max Level Reached!';
+
+  @override
+  String get challengeCompleted => 'Completed!';
+
+  @override
+  String get challengeInProgress => 'In progress';
+
+  @override
+  String get challengeFirstRide => 'First Ride';
+
+  @override
+  String get challengeFirstRideDesc => 'Complete your first carpool ride';
+
+  @override
+  String get challengeRideRegular => 'Ride Regular';
+
+  @override
+  String get challengeRideRegularDesc => 'Complete 10 rides';
+
+  @override
+  String get challengeRoadTripper => 'Road Tripper';
+
+  @override
+  String get challengeRoadTripperDesc => 'Travel 50 km total';
+
+  @override
+  String get challengeDistanceMaster => 'Distance Master';
+
+  @override
+  String get challengeDistanceMasterDesc => 'Travel 100 km total';
+
+  @override
+  String get challengeStreakBuilder => 'Streak Builder';
+
+  @override
+  String get challengeStreakBuilderDesc => 'Maintain a 7-day ride streak';
+
+  @override
+  String get challengeCenturyRider => 'Century Rider';
+
+  @override
+  String get challengeCenturyRiderDesc => 'Complete 100 rides';
 }

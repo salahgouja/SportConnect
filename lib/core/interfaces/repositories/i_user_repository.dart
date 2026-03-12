@@ -38,4 +38,17 @@ abstract class IUserRepository {
   // Leaderboard / Gamification
   Future<List<LeaderboardEntry>> getLeaderboard({int limit = 50});
   Future<int> getUserRank(String uid);
+
+  /// Add XP to user. Returns the new level if a level-up occurred, or null.
+  Future<int?> addXP(String uid, int xp);
+  Future<void> updateStreak(String uid);
+  Future<void> updateRideStats({
+    required String uid,
+    required bool asDriver,
+    required double distance,
+  });
+  Future<void> unlockAchievement(String uid, String achievementId);
+
+  /// Evaluate and unlock achievements. Returns list of newly unlocked badge IDs.
+  Future<List<String>> evaluateAchievements(String uid);
 }

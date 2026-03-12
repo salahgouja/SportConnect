@@ -62,6 +62,9 @@ sealed class UserModel with _$UserModel {
     // Preferences
     @Default(UserPreferences()) UserPreferences preferences,
 
+    // Expertise
+    @Default(Expertise.rookie) Expertise expertise,
+
     // Timestamps
     @TimestampConverter() DateTime? createdAt,
     @TimestampConverter() DateTime? updatedAt,
@@ -138,6 +141,9 @@ sealed class UserModel with _$UserModel {
 
     // Preferences
     @Default(UserPreferences()) UserPreferences preferences,
+
+    // Expertise
+    @Default(Expertise.rookie) Expertise expertise,
 
     // Timestamps
     @TimestampConverter() DateTime? createdAt,

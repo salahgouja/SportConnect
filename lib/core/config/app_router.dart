@@ -46,7 +46,6 @@ import 'package:sport_connect/features/messaging/views/chat_list_screen.dart';
 import 'package:sport_connect/features/messaging/views/chat_detail_screen.dart';
 
 // Feature imports - Rides (used in StatefulShellRoute)
-import 'package:sport_connect/features/rides/views/passenger/rider_request_ride_screen.dart';
 import 'package:sport_connect/features/rides/views/passenger/rider_my_rides_screen.dart';
 import 'package:sport_connect/features/rides/views/driver/driver_my_rides_screen.dart';
 
@@ -323,8 +322,10 @@ List<StatefulShellBranch> _buildRiderBranches() {
         GoRoute(
           path: AppRoutes.riderMyRides.path,
           name: AppRoutes.riderMyRides.name,
-          pageBuilder: (context, state) =>
-              const NoTransitionPage(child: RiderMyRidesScreen()),
+          pageBuilder: (context, state) => NoTransitionPage(
+            key: state.pageKey,
+            child: const RiderMyRidesScreen(),
+          ),
         ),
       ],
     ),
@@ -335,8 +336,10 @@ List<StatefulShellBranch> _buildRiderBranches() {
         GoRoute(
           path: AppRoutes.events.path,
           name: AppRoutes.events.name,
-          pageBuilder: (context, state) =>
-              const NoTransitionPage(child: EventListScreen()),
+          pageBuilder: (context, state) => NoTransitionPage(
+            key: state.pageKey,
+            child: const EventListScreen(),
+          ),
         ),
       ],
     ),
@@ -347,8 +350,10 @@ List<StatefulShellBranch> _buildRiderBranches() {
         GoRoute(
           path: AppRoutes.chat.path,
           name: AppRoutes.chat.name,
-          pageBuilder: (context, state) =>
-              const NoTransitionPage(child: ChatListScreen()),
+          pageBuilder: (context, state) => NoTransitionPage(
+            key: state.pageKey,
+            child: const ChatListScreen(),
+          ),
         ),
       ],
     ),
@@ -359,8 +364,10 @@ List<StatefulShellBranch> _buildRiderBranches() {
         GoRoute(
           path: AppRoutes.profile.path,
           name: AppRoutes.profile.name,
-          pageBuilder: (context, state) =>
-              const NoTransitionPage(child: ProfileScreen()),
+          pageBuilder: (context, state) => NoTransitionPage(
+            key: state.pageKey,
+            child: const ProfileScreen(),
+          ),
         ),
       ],
     ),
@@ -389,8 +396,10 @@ List<StatefulShellBranch> _buildDriverBranches() {
         GoRoute(
           path: AppRoutes.driverRides.path,
           name: AppRoutes.driverRides.name,
-          pageBuilder: (context, state) =>
-              const NoTransitionPage(child: DriverMyRidesScreen()),
+          pageBuilder: (context, state) => NoTransitionPage(
+            key: state.pageKey,
+            child: const DriverMyRidesScreen(),
+          ),
         ),
       ],
     ),
@@ -401,8 +410,10 @@ List<StatefulShellBranch> _buildDriverBranches() {
         GoRoute(
           path: AppRoutes.driverEarnings.path,
           name: AppRoutes.driverEarnings.name,
-          pageBuilder: (context, state) =>
-              const NoTransitionPage(child: DriverEarningsScreen()),
+          pageBuilder: (context, state) => NoTransitionPage(
+            key: state.pageKey,
+            child: const DriverEarningsScreen(),
+          ),
         ),
       ],
     ),
@@ -413,8 +424,10 @@ List<StatefulShellBranch> _buildDriverBranches() {
         GoRoute(
           path: AppRoutes.driverChat.path,
           name: AppRoutes.driverChat.name,
-          pageBuilder: (context, state) =>
-              const NoTransitionPage(child: ChatListScreen()),
+          pageBuilder: (context, state) => NoTransitionPage(
+            key: state.pageKey,
+            child: const ChatListScreen(),
+          ),
         ),
       ],
     ),
@@ -425,8 +438,10 @@ List<StatefulShellBranch> _buildDriverBranches() {
         GoRoute(
           path: AppRoutes.driverProfileTab.path,
           name: AppRoutes.driverProfileTab.name,
-          pageBuilder: (context, state) =>
-              const NoTransitionPage(child: ProfileScreen()),
+          pageBuilder: (context, state) => NoTransitionPage(
+            key: state.pageKey,
+            child: const ProfileScreen(),
+          ),
         ),
       ],
     ),

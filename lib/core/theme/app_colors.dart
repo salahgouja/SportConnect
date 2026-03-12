@@ -92,14 +92,14 @@ class AppColors {
   // ═══════════════════════════════════════════════════════════════
   // GAMIFICATION COLORS
   // ═══════════════════════════════════════════════════════════════
-  static const Color xpGold = Color(0xFFD4A373);
+  static const Color xpGold = Color(0xFF52B788); // Emerald XP
   static const Color xpPurple = Color(0xFF7B6D8D);
-  static const Color levelBronze = Color(0xFF8B7355);
-  static const Color levelSilver = Color(0xFF9BA8AB);
-  static const Color levelGold = Color(0xFFD4A373);
-  static const Color levelPlatinum = Color(0xFFCDD5D0);
-  static const Color levelDiamond = Color(0xFFA3C4BC);
-  static const Color levelMaster = Color(0xFF40916C); // Emerald Green
+  static const Color levelBronze = Color(0xFFB7E4C7); // Light Mint (Level 1)
+  static const Color levelSilver = Color(0xFF95D5B2); // Soft Sage (Level 2)
+  static const Color levelGold = Color(0xFF74C69D); // Sage Green (Level 3)
+  static const Color levelPlatinum = Color(0xFF40916C); // Emerald (Level 4)
+  static const Color levelDiamond = Color(0xFF2D6A4F); // Forest Green (Level 5)
+  static const Color levelMaster = Color(0xFF1B4332); // Deep Forest
 
   // Rating Stars
   static const Color starFilled = Color(0xFFD4A373);
@@ -171,7 +171,7 @@ class AppColors {
   static const LinearGradient goldGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFE6BE8A), Color(0xFFD4A373), Color(0xFFBC8A5F)],
+    colors: [Color(0xFF74C69D), Color(0xFF52B788), Color(0xFF40916C)],
   );
 
   // Hero gradient for headers - Light Classy Green
@@ -248,19 +248,19 @@ class AppColors {
   static const LinearGradient goldGradientLevel = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFD4A373), Color(0xFFBC8A5F), Color(0xFFD4A373)],
+    colors: [Color(0xFF52B788), Color(0xFF40916C), Color(0xFF52B788)],
   );
 
   static const LinearGradient silverGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF9BA8AB), Color(0xFF7D8A8D), Color(0xFF9BA8AB)],
+    colors: [Color(0xFF95D5B2), Color(0xFF74C69D), Color(0xFF95D5B2)],
   );
 
   static const LinearGradient bronzeGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF8B7355), Color(0xFF6B5642), Color(0xFF8B7355)],
+    colors: [Color(0xFFB7E4C7), Color(0xFF95D5B2), Color(0xFFB7E4C7)],
   );
 
   // ═══════════════════════════════════════════════════════════════
@@ -268,7 +268,7 @@ class AppColors {
   // ═══════════════════════════════════════════════════════════════
   static const Color ecoGreen = Color(0xFF2D6A4F);
   static const Color ecoLeaf = Color(0xFF40916C);
-  static const Color co2Saved = Color(0xFF2D6A4F);
+  static const Color distanceGreen = Color(0xFF2D6A4F);
 
   // ═══════════════════════════════════════════════════════════════
   // UTILITY METHODS

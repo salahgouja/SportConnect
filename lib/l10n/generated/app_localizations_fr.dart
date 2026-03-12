@@ -1136,6 +1136,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get environmentalImpact => 'Impact environnemental';
 
   @override
+  String get totalDistance => 'Distance totale';
+
+  @override
   String valueKgCoSaved(Object value) {
     return '$value kg CO₂ économisés';
   }
@@ -3019,6 +3022,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get musicAllowed => 'Musique autorisée';
 
   @override
+  String get noSmoking => 'Non-fumeur';
+
+  @override
   String get vehicleType => 'Type de véhicule';
 
   @override
@@ -3785,6 +3791,40 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get findRidesNearYou => 'Trouvez des trajets près de vous';
+
+  @override
+  String get exploreOnMap => 'Explorer sur la carte';
+
+  @override
+  String get howItWorks => 'Comment ça marche';
+
+  @override
+  String get pickupAndDropoff => 'Départ et arrivée';
+
+  @override
+  String get enterPickupAndDestination =>
+      'Entrez vos lieux de départ et d\'arrivée';
+
+  @override
+  String get selectDate => 'Sélectionner la date';
+
+  @override
+  String get chooseWhenYouWantToTravel =>
+      'Choisissez quand vous voulez voyager';
+
+  @override
+  String get findAndBook => 'Trouver et réserver';
+
+  @override
+  String get browseAvailableRidesAndBook =>
+      'Parcourez les trajets disponibles et réservez';
+
+  @override
+  String get verifiedDrivers => 'Conducteurs vérifiés';
+
+  @override
+  String get allDriversAreVerified =>
+      'Tous les conducteurs sont vérifiés pour votre sécurité';
 
   @override
   String get locationGateDescription =>
@@ -5245,4 +5285,110 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get sportsLabel => 'Sports';
+
+  @override
+  String get yourJourneyStartsHere => 'Votre voyage commence ici';
+
+  @override
+  String get searchRidesAndConnect =>
+      'Recherchez des trajets et connectez-vous avec des conducteurs vérifiés';
+
+  @override
+  String get searchForRides => 'Rechercher des trajets';
+
+  @override
+  String get easyBooking => 'Réservation facile';
+
+  @override
+  String get bookInJustAFewTaps => 'Réservez en quelques clics';
+
+  @override
+  String get realTimeTracking => 'Suivi en temps réel';
+
+  @override
+  String get trackYourRideLive => 'Suivez votre trajet en direct';
+
+  @override
+  String get startSharingTheRoad => 'Commencez à partager la route';
+
+  @override
+  String get offerFirstRideMessage =>
+      'Offrez votre premier trajet et connectez-vous avec des passagers';
+
+  @override
+  String get connectWithRiders => 'Connecter';
+
+  @override
+  String get earnPerRide => 'Gagner';
+
+  @override
+  String get flexibleSchedule => 'Flexible';
+
+  @override
+  String get offerYourFirstRide => 'Offrir votre premier trajet';
+
+  @override
+  String get noRidesYetTitle => 'Pas encore de trajets';
+
+  @override
+  String get noRidesYetSubtitle =>
+      'Trouvez un covoiturage pour votre prochain match, entraînement ou événement. Partagez le trajet, divisez les frais.';
+
+  @override
+  String get findACarpoolNow => 'Trouver un covoiturage';
+
+  @override
+  String get allDriversVerifiedAndRated =>
+      'Tous les conducteurs sont vérifiés et notés';
+
+  @override
+  String get levelAndXp => 'Niveau & XP';
+
+  @override
+  String get viewAchievements => 'Voir les succès';
+
+  @override
+  String get maxLevel => 'Niveau maximum atteint !';
+
+  @override
+  String get challengeCompleted => 'Terminé !';
+
+  @override
+  String get challengeInProgress => 'En cours';
+
+  @override
+  String get challengeFirstRide => 'Premier trajet';
+
+  @override
+  String get challengeFirstRideDesc => 'Complétez votre premier covoiturage';
+
+  @override
+  String get challengeRideRegular => 'Habitué de la route';
+
+  @override
+  String get challengeRideRegularDesc => 'Complétez 10 trajets';
+
+  @override
+  String get challengeRoadTripper => 'Voyageur';
+
+  @override
+  String get challengeRoadTripperDesc => 'Parcourez 50 km au total';
+
+  @override
+  String get challengeDistanceMaster => 'Maître de la distance';
+
+  @override
+  String get challengeDistanceMasterDesc => 'Parcourez 100 km au total';
+
+  @override
+  String get challengeStreakBuilder => 'Série en cours';
+
+  @override
+  String get challengeStreakBuilderDesc => 'Maintenez une série de 7 jours';
+
+  @override
+  String get challengeCenturyRider => 'Centurion';
+
+  @override
+  String get challengeCenturyRiderDesc => 'Complétez 100 trajets';
 }

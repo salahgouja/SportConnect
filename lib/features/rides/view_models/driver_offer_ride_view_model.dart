@@ -15,8 +15,12 @@ import 'package:sport_connect/features/rides/models/ride/ride_pricing.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_route.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_schedule.dart';
 import 'package:sport_connect/features/rides/services/ride_service.dart';
+import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 
 part 'driver_offer_ride_view_model.g.dart';
+
+/// Sentinel value used in [copyWith] to distinguish "not provided" from "null".
+const _sentinel = Object();
 
 /// Form state for creating or editing a ride offer
 class DriverOfferRideFormState {
@@ -40,6 +44,7 @@ class DriverOfferRideFormState {
   final bool acceptOnlinePayment;
   final bool isRecurring;
   final List<int> recurringDays;
+  final DateTime? recurringEndDate;
 
   // Step 3: Preferences
   final bool allowPets;
@@ -57,6 +62,8 @@ class DriverOfferRideFormState {
   // Route preview state
   final List<LatLng>? osrmRoutePoints;
   final bool isLoadingRoute;
+  final double? routeDistanceKm;
+  final int? routeDurationMinutes;
 
   // Submission state
   final bool isSubmitting;
@@ -81,6 +88,7 @@ class DriverOfferRideFormState {
     this.acceptOnlinePayment = true,
     this.isRecurring = false,
     this.recurringDays = const [],
+    this.recurringEndDate,
     this.allowPets = false,
     this.allowSmoking = false,
     this.allowLuggage = true,
@@ -92,6 +100,8 @@ class DriverOfferRideFormState {
     this.isLoadingSelectedEvent = false,
     this.osrmRoutePoints,
     this.isLoadingRoute = false,
+    this.routeDistanceKm,
+    this.routeDurationMinutes,
     this.isSubmitting = false,
     this.submissionError,
     this.existingRideId,
@@ -113,6 +123,7 @@ class DriverOfferRideFormState {
     bool? acceptOnlinePayment,
     bool? isRecurring,
     List<int>? recurringDays,
+    Object? recurringEndDate = _sentinel,
     bool? allowPets,
     bool? allowSmoking,
     bool? allowLuggage,
@@ -124,6 +135,8 @@ class DriverOfferRideFormState {
     bool? isLoadingSelectedEvent,
     List<LatLng>? osrmRoutePoints,
     bool? isLoadingRoute,
+    Object? routeDistanceKm = _sentinel,
+    Object? routeDurationMinutes = _sentinel,
     bool? isSubmitting,
     String? submissionError,
     String? existingRideId,
@@ -144,6 +157,9 @@ class DriverOfferRideFormState {
       acceptOnlinePayment: acceptOnlinePayment ?? this.acceptOnlinePayment,
       isRecurring: isRecurring ?? this.isRecurring,
       recurringDays: recurringDays ?? this.recurringDays,
+      recurringEndDate: recurringEndDate == _sentinel
+          ? this.recurringEndDate
+          : recurringEndDate as DateTime?,
       allowPets: allowPets ?? this.allowPets,
       allowSmoking: allowSmoking ?? this.allowSmoking,
       allowLuggage: allowLuggage ?? this.allowLuggage,
@@ -156,6 +172,12 @@ class DriverOfferRideFormState {
           isLoadingSelectedEvent ?? this.isLoadingSelectedEvent,
       osrmRoutePoints: osrmRoutePoints ?? this.osrmRoutePoints,
       isLoadingRoute: isLoadingRoute ?? this.isLoadingRoute,
+      routeDistanceKm: routeDistanceKm == _sentinel
+          ? this.routeDistanceKm
+          : routeDistanceKm as double?,
+      routeDurationMinutes: routeDurationMinutes == _sentinel
+          ? this.routeDurationMinutes
+          : routeDurationMinutes as int?,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       submissionError: submissionError,
       existingRideId: existingRideId ?? this.existingRideId,
@@ -196,6 +218,10 @@ class DriverOfferRideFormState {
   /// Validation: price must be at least 1
   bool get hasValidPrice => pricePerSeat >= 1.0;
 
+  /// Validation: recurring config is consistent
+  bool get hasValidRecurring =>
+      !isRecurring || (recurringDays.isNotEmpty && recurringEndDate != null);
+
   /// Check if form is complete enough to submit
   bool get canSubmit =>
       hasCompleteRoute &&
@@ -203,6 +229,7 @@ class DriverOfferRideFormState {
       selectedVehicleId != null &&
       hasValidSeats &&
       hasValidPrice &&
+      hasValidRecurring &&
       !isSubmitting;
 
   /// Human-readable reason why submission is blocked
@@ -235,6 +262,12 @@ class DriverOfferRideFormState {
     }
     if (!hasValidPrice) {
       return 'Price per seat must be at least \$1 — go back to Step 2';
+    }
+    if (isRecurring && recurringDays.isEmpty) {
+      return 'Please select at least one recurring day';
+    }
+    if (isRecurring && recurringEndDate == null) {
+      return 'Please set a recurring end date';
     }
     return null;
   }
@@ -334,11 +367,29 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
   }
 
   void setRecurring(bool recurring) {
-    state = state.copyWith(isRecurring: recurring);
+    if (recurring) {
+      // Default end date: 4 weeks from departure (or 4 weeks from now)
+      final baseDate = state.departureDate ?? DateTime.now();
+      state = state.copyWith(
+        isRecurring: true,
+        recurringEndDate:
+            state.recurringEndDate ?? baseDate.add(const Duration(days: 28)),
+      );
+    } else {
+      state = state.copyWith(
+        isRecurring: false,
+        recurringDays: const [],
+        recurringEndDate: null,
+      );
+    }
   }
 
   void setRecurringDays(List<int> days) {
     state = state.copyWith(recurringDays: days);
+  }
+
+  void setRecurringEndDate(DateTime? endDate) {
+    state = state.copyWith(recurringEndDate: endDate);
   }
 
   // --- Preferences (Step 3) ---
@@ -438,6 +489,8 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
       state = state.copyWith(
         osrmRoutePoints: routeInfo?.coordinates,
         isLoadingRoute: false,
+        routeDistanceKm: routeInfo?.distanceKm,
+        routeDurationMinutes: routeInfo?.durationMinutes.round(),
       );
     } catch (_) {
       // Fallback: no route preview, just reset loading state
@@ -464,6 +517,7 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
       acceptOnlinePayment: ride.pricing.acceptsOnlinePayment,
       isRecurring: ride.schedule.isRecurring,
       recurringDays: ride.schedule.recurringDays,
+      recurringEndDate: ride.schedule.recurringEndDate,
       allowPets: ride.preferences.allowPets,
       allowSmoking: ride.preferences.allowSmoking,
       allowLuggage: ride.preferences.allowLuggage,
@@ -472,6 +526,8 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
       eventId: ride.eventId,
       eventName: ride.eventName,
       selectedEvent: null,
+      routeDistanceKm: ride.route.distanceKm,
+      routeDurationMinutes: ride.route.durationMinutes,
     );
     _triggerRoutePreview();
   }
@@ -500,6 +556,26 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
         // that the caller has already validated this at the UI level
       }
 
+      // Resolve vehicle info for denormalization on the ride document
+      String? vehicleInfo;
+      final tags = <String>[];
+      if (state.selectedVehicleId != null) {
+        final vehicle = await ref
+            .read(vehicleRepositoryProvider)
+            .getVehicleById(state.selectedVehicleId!);
+        if (vehicle != null) {
+          vehicleInfo = vehicle.fullDisplayName;
+          if (const {
+            FuelType.electric,
+            FuelType.hybrid,
+            FuelType.pluginHybrid,
+            FuelType.hydrogen,
+          }.contains(vehicle.fuelType)) {
+            tags.add('eco');
+          }
+        }
+      }
+
       final ride = RideModel(
         id: state.existingRideId ?? const Uuid().v4(),
         driverId: driverId,
@@ -511,11 +587,14 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
               .entries
               .map((e) => RouteWaypoint(location: e.value, order: e.key))
               .toList(),
+          distanceKm: state.routeDistanceKm,
+          durationMinutes: state.routeDurationMinutes,
         ),
         schedule: RideSchedule(
           departureTime: departure,
           isRecurring: state.isRecurring,
           recurringDays: state.recurringDays,
+          recurringEndDate: state.recurringEndDate,
         ),
         capacity: RideCapacity(available: state.availableSeats, booked: 0),
         pricing: RidePricing(
@@ -535,6 +614,8 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
         status: RideStatus.active,
         createdAt: DateTime.now(),
         vehicleId: state.selectedVehicleId,
+        vehicleInfo: vehicleInfo,
+        tags: tags,
       );
 
       final rideId = await ref

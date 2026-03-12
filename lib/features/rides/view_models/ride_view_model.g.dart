@@ -512,7 +512,7 @@ final class RideSearchViewModelProvider
 }
 
 String _$rideSearchViewModelHash() =>
-    r'4424f90b40a019ae151b704ca25603480658f838';
+    r'8e660105ea1e667a05658e7b049948e1799fb73a';
 
 /// Ride Search View Model
 ///
@@ -596,7 +596,7 @@ final class RideDetailViewModelProvider
 }
 
 String _$rideDetailViewModelHash() =>
-    r'19f8388737ac27eec2f9d50c35bf18430fea4852';
+    r'31a552b8b4247ee8ef2f90ca5f148cf536ed2194';
 
 /// Single Ride Detail View Model — views watch only this, never separate
 /// stream/booking providers directly.

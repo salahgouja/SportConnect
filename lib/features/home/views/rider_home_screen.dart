@@ -22,6 +22,7 @@ import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/features/home/views/widgets/rider_home_feed.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/core/widgets/misc_feature_widgets.dart';
 
@@ -194,9 +195,10 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
       }
     }
 
-    // Auto-follow map when location changes
+    // Auto-follow map when location changes (only when map is visible)
     ref.listen<RiderHomeState>(riderHomeViewModelProvider, (previous, next) {
       if (next.locationState == LocationPermissionState.ready &&
+          next.showMapView &&
           next.isFollowingUser &&
           next.currentLocation != null) {
         final vm = ref.read(riderHomeViewModelProvider.notifier);
@@ -211,7 +213,9 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
       body: switch (locationState) {
         LocationPermissionState.unknown => _buildLocationGate(),
         LocationPermissionState.acquiring => _buildAcquiringState(),
-        LocationPermissionState.ready => _buildMapHome(vmState),
+        LocationPermissionState.ready => vmState.showMapView
+            ? _buildMapHome(vmState)
+            : _buildFeedHome(vmState),
         LocationPermissionState.deniedSoft => _buildDeniedSoftState(),
         LocationPermissionState.deniedHard => _buildDeniedHardState(),
         LocationPermissionState.serviceDisabled => _buildServiceDisabledState(),
@@ -685,6 +689,16 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
   }
 
   // ─────────────────────────────────────────────────────────────
+  // Feed home — content-first scrollable feed (default view)
+  // ─────────────────────────────────────────────────────────────
+
+  Widget _buildFeedHome(RiderHomeState vmState) {
+    return RiderHomeFeed(
+      onSearchTap: _showInlineSearchSheet,
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
   // Map home — only rendered when locationState == ready
   // ─────────────────────────────────────────────────────────────
 
@@ -698,7 +712,6 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
     final showHotspots = vmState.showHotspots;
     final showDistanceRadius = vmState.showDistanceRadius;
     final searchRadius = vmState.searchRadius;
-    final isFollowingUser = vmState.isFollowingUser;
     final activeRoute = vmState.activeRoute;
     final alternativeRoutes = vmState.alternativeRoutes;
     final selectedRouteIndex = vmState.selectedRouteIndex;
@@ -932,6 +945,50 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
 
         // ── Quick stats ───────────────────────────────────────
         _buildQuickStatsBar(filteredNearbyRides),
+
+        // ── Back to feed button ───────────────────────────────
+        Positioned(
+          left: 16.w,
+          bottom: 60.h,
+          child: GestureDetector(
+            onTap: () {
+              HapticFeedback.mediumImpact();
+              ref.read(riderHomeViewModelProvider.notifier).showFeed();
+            },
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(24.r),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.12),
+                    blurRadius: 10,
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.view_agenda_rounded,
+                    size: 18.sp,
+                    color: AppColors.primary,
+                  ),
+                  SizedBox(width: 6.w),
+                  Text(
+                    AppLocalizations.of(context).navHome,
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ],
     ).animate().fadeIn(duration: 400.ms);
   }

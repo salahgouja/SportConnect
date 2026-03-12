@@ -27,8 +27,6 @@ class RiderMyRidesScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      floatingActionButton: _buildFab(context),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       body: userAsync.when(
         loading: () => _buildFullLoading(),
         error: (err, _) => _buildErrorState(context, err.toString()),
@@ -81,20 +79,25 @@ class RiderMyRidesScreen extends ConsumerWidget {
                       (a, b) => b.departureTime.compareTo(a.departureTime),
                     );
 
-              // 2. Build the Unified Feed
-              return CustomScrollView(
-                slivers: [
-                  _buildSliverAppBar(context),
-                  if (activeRides.isNotEmpty)
-                    _buildActiveSection(context, activeRides),
-                  if (upcomingRides.isNotEmpty)
-                    _buildUpcomingSection(context, upcomingRides),
-                  if (pastRides.isNotEmpty)
-                    ..._buildHistorySection(context, pastRides),
+              // 2. Build the Unified Feed with FAB
+              return Scaffold(
+                backgroundColor: Colors.transparent,
+                floatingActionButton: _buildFab(context),
+                floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+                body: CustomScrollView(
+                  slivers: [
+                    _buildSliverAppBar(context),
+                    if (activeRides.isNotEmpty)
+                      _buildActiveSection(context, activeRides),
+                    if (upcomingRides.isNotEmpty)
+                      _buildUpcomingSection(context, upcomingRides),
+                    if (pastRides.isNotEmpty)
+                      ..._buildHistorySection(context, pastRides),
 
-                  // Bottom padding to ensure the FAB doesn't block the last item
-                  SliverToBoxAdapter(child: SizedBox(height: 100.h)),
-                ],
+                    // Bottom padding to ensure the FAB doesn't block the last item
+                    SliverToBoxAdapter(child: SizedBox(height: 100.h)),
+                  ],
+                ),
               );
             },
           );
@@ -546,8 +549,8 @@ class RiderMyRidesScreen extends ConsumerWidget {
       padding: EdgeInsets.symmetric(horizontal: 20.w),
       width: double.infinity,
       child: FloatingActionButton.extended(
-        heroTag: 'rider_request_ride_fab',
-        onPressed: () => context.go(AppRoutes.riderRequestRide.path),
+        heroTag: null,
+        onPressed: () => context.push(AppRoutes.searchRides.path),
         backgroundColor: AppColors.primary,
         elevation: 6,
         shape: RoundedRectangleBorder(
@@ -621,31 +624,98 @@ class RiderMyRidesScreen extends ConsumerWidget {
   }
 
   Widget _buildEmptyState(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.directions_car_rounded,
-            size: 64.sp,
-            color: AppColors.textTertiary.withValues(alpha: 0.5),
-          ),
-          SizedBox(height: 16.h),
-          Text(
-            'No rides yet',
-            style: TextStyle(
-              fontSize: 20.sp,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+    final l10n = AppLocalizations.of(context);
+    return CustomScrollView(
+      slivers: [
+        _buildSliverAppBar(context),
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
+            child: Column(
+              children: [
+                const Spacer(flex: 2),
+                // Visual: stacked avatars representing community
+                SizedBox(
+                  height: 64.h,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: List.generate(3, (i) {
+                      final offsets = [-30.w, 0.0, 30.w];
+                      final icons = [Icons.person, Icons.directions_car, Icons.person];
+                      final colors = [AppColors.primary, AppColors.success, AppColors.info];
+                      return Positioned(
+                        left: MediaQuery.of(context).size.width / 2 - 32.w + offsets[i] - 20.w,
+                        child: CircleAvatar(
+                          radius: 28.r,
+                          backgroundColor: colors[i].withValues(alpha: 0.15),
+                          child: Icon(icons[i], color: colors[i], size: 24.sp),
+                        ),
+                      );
+                    }),
+                  ),
+                ).animate().fadeIn(duration: 400.ms).scale(begin: const Offset(0.8, 0.8)),
+                SizedBox(height: 24.h),
+                Text(
+                  l10n.noRidesYetTitle,
+                  style: TextStyle(
+                    fontSize: 22.sp,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ).animate().fadeIn(delay: 150.ms),
+                SizedBox(height: 8.h),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w),
+                  child: Text(
+                    l10n.noRidesYetSubtitle,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: AppColors.textSecondary,
+                      height: 1.5,
+                    ),
+                  ),
+                ).animate().fadeIn(delay: 250.ms),
+                SizedBox(height: 32.h),
+                // Single prominent CTA
+                SizedBox(
+                  width: double.infinity,
+                  height: 52.h,
+                  child: ElevatedButton.icon(
+                    onPressed: () => context.push(AppRoutes.searchRides.path),
+                    icon: Icon(Icons.search_rounded, size: 22.sp),
+                    label: Text(
+                      l10n.findACarpoolNow,
+                      style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w700),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.r)),
+                      elevation: 2,
+                    ),
+                  ),
+                ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.15),
+                SizedBox(height: 16.h),
+                // Subtle trust badge
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.verified_rounded, size: 14.sp, color: AppColors.success),
+                    SizedBox(width: 6.w),
+                    Text(
+                      l10n.allDriversVerifiedAndRated,
+                      style: TextStyle(fontSize: 12.sp, color: AppColors.textTertiary),
+                    ),
+                  ],
+                ).animate().fadeIn(delay: 500.ms),
+                const Spacer(flex: 3),
+              ],
             ),
           ),
-          SizedBox(height: 8.h),
-          Text(
-            'When you take a trip, it will appear here.',
-            style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

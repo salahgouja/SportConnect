@@ -95,6 +95,12 @@ abstract class INotificationRepository {
     required String achievementDescription,
   });
 
+  /// Send level-up notification
+  Future<void> sendLevelUpNotification({
+    required String userId,
+    required int newLevel,
+  });
+
   /// H2: Send notification when driver arrives at passenger's pickup
   Future<void> sendDriverArrivedAtPickup({
     required String toUserId,

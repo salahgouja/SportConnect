@@ -753,7 +753,7 @@ class RideSearchState {
   final bool draftInstantBook;
   final bool draftVerifiedOnly;
   final bool draftPetFriendly;
-  final bool draftMusicAllowed;
+  final bool draftNoSmoking;
   final double draftMinRating;
   final String draftSortBy;
   final String draftVehicleType;
@@ -781,7 +781,7 @@ class RideSearchState {
     this.draftInstantBook = false,
     this.draftVerifiedOnly = false,
     this.draftPetFriendly = false,
-    this.draftMusicAllowed = false,
+    this.draftNoSmoking = false,
     this.draftMinRating = 0,
     this.draftSortBy = 'recommended',
     this.draftVehicleType = 'any',
@@ -810,7 +810,7 @@ class RideSearchState {
     bool? draftInstantBook,
     bool? draftVerifiedOnly,
     bool? draftPetFriendly,
-    bool? draftMusicAllowed,
+    bool? draftNoSmoking,
     double? draftMinRating,
     String? draftSortBy,
     String? draftVehicleType,
@@ -842,7 +842,7 @@ class RideSearchState {
       draftInstantBook: draftInstantBook ?? this.draftInstantBook,
       draftVerifiedOnly: draftVerifiedOnly ?? this.draftVerifiedOnly,
       draftPetFriendly: draftPetFriendly ?? this.draftPetFriendly,
-      draftMusicAllowed: draftMusicAllowed ?? this.draftMusicAllowed,
+      draftNoSmoking: draftNoSmoking ?? this.draftNoSmoking,
       draftMinRating: draftMinRating ?? this.draftMinRating,
       draftSortBy: draftSortBy ?? this.draftSortBy,
       draftVehicleType: draftVehicleType ?? this.draftVehicleType,
@@ -863,7 +863,7 @@ class RideSearchState {
       draftInstantBook ||
       draftVerifiedOnly ||
       draftPetFriendly ||
-      draftMusicAllowed ||
+      draftNoSmoking ||
       draftMaxPrice < 50 ||
       draftMinRating > 0 ||
       draftVehicleType != 'any';
@@ -875,7 +875,7 @@ class RideSearchState {
     if (draftInstantBook) count++;
     if (draftVerifiedOnly) count++;
     if (draftPetFriendly) count++;
-    if (draftMusicAllowed) count++;
+    if (draftNoSmoking) count++;
     if (draftMinRating > 0) count++;
     if (draftVehicleType != 'any') count++;
     return count;
@@ -964,7 +964,10 @@ List<RideModel> _applyRideSearchPresentation(
   RideSearchState state,
 ) {
   final filtered = rides.where((ride) {
-    if (!_isSameCalendarDay(ride.departureTime, state.draftDate)) {
+    // Only apply date filter when user has performed an explicit search.
+    // Pre-search discovery should show rides on all upcoming dates.
+    if (state.hasSearched &&
+        !_isSameCalendarDay(ride.departureTime, state.draftDate)) {
       return false;
     }
     if (ride.remainingSeats < state.draftSeats) {
@@ -979,7 +982,8 @@ List<RideModel> _applyRideSearchPresentation(
     if (state.draftPetFriendly && !ride.allowPets) {
       return false;
     }
-    if (state.draftMusicAllowed && ride.allowSmoking) {
+    // "No Smoking" filter: exclude rides that allow smoking
+    if (state.draftNoSmoking && ride.allowSmoking) {
       return false;
     }
     if (state.draftMinRating > 0 && ride.averageRating < state.draftMinRating) {
@@ -992,6 +996,9 @@ List<RideModel> _applyRideSearchPresentation(
       return false;
     }
     if (state.draftInstantBook && !ride.acceptsOnlinePayment) {
+      return false;
+    }
+    if (state.draftVerifiedOnly && !ride.isDriverVerified) {
       return false;
     }
     return true;
@@ -1126,9 +1133,9 @@ class RideSearchViewModel extends _$RideSearchViewModel {
     );
   }
 
-  void setDraftMusicAllowed(bool value) {
+  void setDraftNoSmoking(bool value) {
     state = state.copyWith(
-      draftMusicAllowed: value,
+      draftNoSmoking: value,
       visibleResultCount: _pageSize,
     );
   }
@@ -1172,8 +1179,9 @@ class RideSearchViewModel extends _$RideSearchViewModel {
       draftInstantBook: false,
       draftVerifiedOnly: false,
       draftPetFriendly: false,
-      draftMusicAllowed: false,
+      draftNoSmoking: false,
       draftMinRating: 0,
+      draftSortBy: 'recommended',
       draftVehicleType: 'any',
       visibleResultCount: _pageSize,
     );
@@ -1265,6 +1273,7 @@ class RideSearchViewModel extends _$RideSearchViewModel {
       maxPrice: state.draftMaxPrice < 50 ? state.draftMaxPrice : null,
       womenOnly: state.draftFemaleOnly,
       allowPets: state.draftPetFriendly,
+      allowSmoking: state.draftNoSmoking,
       minDriverRating: state.draftMinRating > 0 ? state.draftMinRating : null,
       sortBy: state.draftSortBy == 'recommended'
           ? 'departure_time'
@@ -1291,6 +1300,10 @@ class RideSearchViewModel extends _$RideSearchViewModel {
       }
       if (filters.allowPets) {
         rides = rides.where((r) => r.preferences.allowPets).toList();
+      }
+      // allowSmoking in filters means "user wants no smoking"
+      if (filters.allowSmoking) {
+        rides = rides.where((r) => !r.preferences.allowSmoking).toList();
       }
       if (filters.minDriverRating != null) {
         rides = rides
@@ -1376,9 +1389,8 @@ String _buildDraftQueryKey(RideSearchState state) {
     state.draftMaxPrice.toStringAsFixed(2),
     state.draftFemaleOnly,
     state.draftInstantBook,
-    state.draftVerifiedOnly,
     state.draftPetFriendly,
-    state.draftMusicAllowed,
+    state.draftNoSmoking,
     state.draftMinRating.toStringAsFixed(1),
     state.draftSortBy,
     state.draftVehicleType,
@@ -1491,6 +1503,14 @@ class RideDetailViewModel extends _$RideDetailViewModel {
         // Notification failure is non-fatal
       }
 
+      // Award small XP to passenger for booking a ride
+      try {
+        final profileRepo = ref.read(profileRepositoryProvider);
+        await profileRepo.addXP(passengerId, 5);
+      } catch (_) {
+        // XP failure is non-fatal
+      }
+
       state = state.copyWith(isActing: false, actionError: null);
       return true;
     } catch (e) {
@@ -1531,6 +1551,14 @@ class RideDetailViewModel extends _$RideDetailViewModel {
           await ref.read(rideRepositoryProvider).updateRideFields(ride.id, {
             'route.waypoints': updated.map((w) => w.toJson()).toList(),
           });
+        }
+
+        // 3. Award XP to passenger for confirmed booking
+        try {
+          final profileRepo = ref.read(profileRepositoryProvider);
+          await profileRepo.addXP(booking.passengerId, 10);
+        } catch (_) {
+          // XP failure is non-fatal
         }
       }
 

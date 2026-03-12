@@ -793,7 +793,7 @@ final class VehicleRepositoryProvider
         argument: null,
         retry: null,
         name: r'vehicleRepositoryProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -821,7 +821,7 @@ final class VehicleRepositoryProvider
   }
 }
 
-String _$vehicleRepositoryHash() => r'ac07025ef3b54af9c0c4cfd1511c638f183fffd3';
+String _$vehicleRepositoryHash() => r'9eeb6462992136ba861111ef12a5d6b7b3d283bb';
 
 /// Onboarding repository provider (async, SharedPreferences-backed).
 

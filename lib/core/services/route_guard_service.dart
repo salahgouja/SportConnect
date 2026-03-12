@@ -54,6 +54,25 @@ class RouteGuardService {
     return (user as DriverModel).vehicleIds.isNotEmpty;
   }
 
+  bool get _driverHasPersistedProfileData {
+    final driver = user is DriverModel ? user as DriverModel : null;
+    if (driver == null) return false;
+
+    return (driver.phoneNumber?.isNotEmpty ?? false) ||
+        (driver.city?.isNotEmpty ?? false) ||
+        (driver.bio?.isNotEmpty ?? false) ||
+        driver.dateOfBirth != null ||
+        (driver.gender?.isNotEmpty ?? false) ||
+        driver.interests.isNotEmpty;
+  }
+
+  String get _driverOnboardingRedirectPath {
+    if (_driverHasPersistedProfileData) {
+      return '${AppRoutes.driverOnboarding.path}?skipProfile=true';
+    }
+    return AppRoutes.driverOnboarding.path;
+  }
+
   /// Determine redirect for the given path
   ///
   /// Returns null if no redirect is needed, otherwise returns the target path.
@@ -139,7 +158,7 @@ class RouteGuardService {
     // 6. Driver-specific route protection
     if (_isDriverRoute(currentPath) && !_isDriverOnboardingRoute(currentPath)) {
       if (!hasCompletedDriverOnboarding) {
-        return AppRoutes.driverOnboarding.path;
+        return _driverOnboardingRedirectPath;
       }
     }
 
@@ -168,7 +187,7 @@ class RouteGuardService {
       rider: (_) => AppRoutes.home.path,
       driver: (driver) {
         if (driver.vehicleIds.isEmpty) {
-          return AppRoutes.driverOnboarding.path;
+          return _driverOnboardingRedirectPath;
         }
         return AppRoutes.driverHome.path;
       },

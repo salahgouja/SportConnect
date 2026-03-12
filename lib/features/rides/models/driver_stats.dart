@@ -20,7 +20,7 @@ abstract class DriverStats with _$DriverStats {
     @Default(0.0) double earningsThisWeek,
     @Default(0.0) double earningsThisMonth,
     @Default(0.0) double earningsToday,
-    @Default(0.0) double co2Saved,
+    @Default(0.0) double totalDistance,
     @Default(0.0) double hoursOnline,
     @Default(0.0) double hoursOnlineThisWeek,
     @Default(false) bool isOnline,

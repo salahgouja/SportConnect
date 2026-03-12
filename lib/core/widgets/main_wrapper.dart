@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
@@ -32,9 +33,6 @@ class MainWrapper extends ConsumerWidget {
       backgroundColor: AppColors.background,
       body: navigationShell,
       bottomNavigationBar: userAsync.when(
-        // Show a fixed-height placeholder while the user state is loading to
-        // prevent the shell body from expanding and then snapping back, which
-        // produces a visible layout jump.
         loading: () => const SizedBox(height: kBottomNavigationBarHeight),
         error: (_, _) => const SizedBox(height: kBottomNavigationBarHeight),
         data: (user) => _buildBottomNav(context, user),
@@ -118,7 +116,8 @@ class _CustomBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tabs = isDriver ? _driverTabs : _riderTabs;
+    final l10n = AppLocalizations.of(context);
+    final tabs = isDriver ? _driverTabs(l10n) : _riderTabs(l10n);
     final totalTabs = tabs.length;
 
     // Platform-adaptive bottom navigation
@@ -190,60 +189,60 @@ class _CustomBottomNavBar extends StatelessWidget {
   }
 
   // ============ RIDER TABS (5 ITEMS) ============
-  static const _riderTabs = [
+  static List<_NavBarItem> _riderTabs(AppLocalizations l10n) => [
     _NavBarItem(
-      icon: Icons.explore_outlined,
-      activeIcon: Icons.explore_rounded,
-      label: 'Explore',
+      icon: Icons.home_outlined,
+      activeIcon: Icons.home_rounded,
+      label: l10n.navHome,
     ),
     _NavBarItem(
-      icon: Icons.receipt_long_outlined,
-      activeIcon: Icons.receipt_long_rounded,
-      label: 'Activity',
+      icon: Icons.directions_car_outlined,
+      activeIcon: Icons.directions_car_rounded,
+      label: l10n.navRides,
     ),
     _NavBarItem(
       icon: Icons.add_circle_outline_rounded,
-      activeIcon: Icons.add_circle_rounded,
-      label: 'Request',
+      activeIcon: Icons.flag,
+      label: l10n.events,
     ),
     _NavBarItem(
       icon: Icons.chat_bubble_outline_rounded,
       activeIcon: Icons.chat_bubble_rounded,
-      label: 'Chat',
+      label: l10n.navChat,
     ),
     _NavBarItem(
       icon: Icons.person_outline_rounded,
       activeIcon: Icons.person_rounded,
-      label: 'Profile',
+      label: l10n.navProfile,
     ),
   ];
 
   // ============ DRIVER TABS (5 ITEMS) ============
-  static const _driverTabs = [
+  static List<_NavBarItem> _driverTabs(AppLocalizations l10n) => [
     _NavBarItem(
-      icon: Icons.dashboard_outlined,
-      activeIcon: Icons.dashboard_rounded,
-      label: 'Home',
+      icon: Icons.home_outlined,
+      activeIcon: Icons.home_rounded,
+      label: l10n.navHome,
     ),
     _NavBarItem(
-      icon: Icons.calendar_today_outlined,
-      activeIcon: Icons.calendar_today_rounded,
-      label: 'Schedule',
+      icon: Icons.directions_car_outlined,
+      activeIcon: Icons.directions_car_rounded,
+      label: l10n.navRides,
     ),
     _NavBarItem(
-      icon: Icons.account_balance_wallet_outlined,
-      activeIcon: Icons.account_balance_wallet_rounded,
-      label: 'Earnings',
+      icon: Icons.add_circle_outline_rounded,
+      activeIcon: Icons.add_circle_rounded,
+      label: l10n.earnings,
     ),
     _NavBarItem(
       icon: Icons.chat_bubble_outline_rounded,
       activeIcon: Icons.chat_bubble_rounded,
-      label: 'Inbox',
+      label: l10n.navChat,
     ),
     _NavBarItem(
       icon: Icons.person_outline_rounded,
       activeIcon: Icons.person_rounded,
-      label: 'Profile',
+      label: l10n.navProfile,
     ),
   ];
 }

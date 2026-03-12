@@ -1102,6 +1102,10 @@
   "@environmentalImpact": {
     "description": "Text from Text in driver_earnings_screen.dart"
   },
+  "totalDistance": "Distancia total",
+  "@totalDistance": {
+    "description": "Label for total distance driven stat"
+  },
   "valueKgCoSaved": "{value} kg CO₂ ahorrados",
   "@valueKgCoSaved": {
     "description": "Text from Text in driver_earnings_screen.dart"
@@ -3294,6 +3298,10 @@
   "@musicAllowed": {
     "description": "Text from _buildToggleChip.label in ride_search_screen.dart"
   },
+  "noSmoking": "No fumar",
+  "@noSmoking": {
+    "description": "Filter label for excluding rides that allow smoking"
+  },
   "vehicleType": "Tipo de vehículo",
   "@vehicleType": {
     "description": "Text from _buildFilterSectionTitle in ride_search_screen.dart"
@@ -4098,6 +4106,16 @@
   "events": "Eventos",
   "findingYourLocation": "Buscando tu ubicación...",
   "findRidesNearYou": "Encuentra viajes cerca de ti",
+  "exploreOnMap": "Explorar en el mapa",
+  "howItWorks": "Cómo funciona",
+  "pickupAndDropoff": "Recogida y destino",
+  "enterPickupAndDestination": "Ingresa tu lugar de recogida y destino",
+  "selectDate": "Seleccionar fecha",
+  "chooseWhenYouWantToTravel": "Elige cuándo quieres viajar",
+  "findAndBook": "Buscar y reservar",
+  "browseAvailableRidesAndBook": "Explora los viajes disponibles y reserva al instante",
+  "verifiedDrivers": "Conductores verificados",
+  "allDriversAreVerified": "Todos los conductores están verificados para tu seguridad",
   "forgotPasswordBackToLogin": "Volver al inicio de sesión",
   "forgotPasswordCheckEmail": "Revisa tu correo",
   "forgotPasswordEmailRequired": "Por favor introduce tu correo",
@@ -4187,5 +4205,40 @@
 "confirmAllPassengersPickedUp": "Confirma que todos los pasajeros han sido recogidos y que estás listo para iniciar el viaje.",
 "@confirmAllPassengersPickedUp": {
   "description": "Content text in pickup confirmation dialog"
-}
+},
+  "yourJourneyStartsHere": "Tu viaje comienza aquí",
+  "searchRidesAndConnect": "Busca viajes y conéctate con conductores verificados",
+  "searchForRides": "Buscar viajes",
+  "easyBooking": "Reserva fácil",
+  "bookInJustAFewTaps": "Reserva en pocos toques",
+  "realTimeTracking": "Seguimiento en tiempo real",
+  "trackYourRideLive": "Sigue tu viaje en vivo",
+  "startSharingTheRoad": "Empieza a compartir el camino",
+  "offerFirstRideMessage": "Ofrece tu primer viaje y conéctate con pasajeros",
+  "connectWithRiders": "Conectar",
+  "earnPerRide": "Ganar",
+  "flexibleSchedule": "Flexible",
+  "offerYourFirstRide": "Ofrece tu primer viaje",
+  "noRidesYetTitle": "Aún no hay viajes",
+  "noRidesYetSubtitle": "Encuentra un viaje compartido para tu próximo partido, entrenamiento o evento. Comparte el viaje, divide el costo.",
+  "findACarpoolNow": "Buscar un viaje compartido",
+  "allDriversVerifiedAndRated": "Todos los conductores están verificados y calificados",
+
+  "levelAndXp": "Nivel y XP",
+  "viewAchievements": "Ver logros",
+  "maxLevel": "¡Nivel máximo alcanzado!",
+  "challengeCompleted": "¡Completado!",
+  "challengeInProgress": "En progreso",
+  "challengeFirstRide": "Primer viaje",
+  "challengeFirstRideDesc": "Completa tu primer viaje compartido",
+  "challengeRideRegular": "Viajero habitual",
+  "challengeRideRegularDesc": "Completa 10 viajes",
+  "challengeRoadTripper": "Viajero de ruta",
+  "challengeRoadTripperDesc": "Recorre 50 km en total",
+  "challengeDistanceMaster": "Maestro de la distancia",
+  "challengeDistanceMasterDesc": "Recorre 100 km en total",
+  "challengeStreakBuilder": "Racha imparable",
+  "challengeStreakBuilderDesc": "Mantén una racha de 7 días",
+  "challengeCenturyRider": "Centurión",
+  "challengeCenturyRiderDesc": "Completa 100 viajes"
 }

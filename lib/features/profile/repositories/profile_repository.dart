@@ -231,10 +231,11 @@ class ProfileRepository implements IUserRepository {
 
   // ==================== GAMIFICATION ====================
 
-  /// Add XP to user - works with both RiderModel and DriverModel
-  Future<void> addXP(String uid, int xp) async {
+  /// Add XP to user. Returns the new level if a level-up occurred, or null.
+  @override
+  Future<int?> addXP(String uid, int xp) async {
     final user = await getUserById(uid);
-    if (user == null) return;
+    if (user == null) return null;
 
     // Get current gamification stats based on user type
     final (
@@ -275,9 +276,12 @@ class ProfileRepository implements IUserRepository {
       'gamification.currentLevelXP': newCurrentLevelXP,
       'gamification.xpToNextLevel': newXpToNextLevel,
     });
+
+    return newLevel > level ? newLevel : null;
   }
 
   /// Update streak
+  @override
   Future<void> updateStreak(String uid) async {
     final user = await getUserById(uid);
     if (user == null) return;
@@ -326,6 +330,7 @@ class ProfileRepository implements IUserRepository {
   }
 
   /// Update ride stats
+  @override
   Future<void> updateRideStats({
     required String uid,
     required bool asDriver,
@@ -334,7 +339,6 @@ class ProfileRepository implements IUserRepository {
     final updates = <String, dynamic>{
       'gamification.totalRides': FieldValue.increment(1),
       'gamification.totalDistance': FieldValue.increment(distance),
-      'gamification.co2Saved': FieldValue.increment(distance * 0.12),
     };
 
     if (asDriver) {
@@ -350,10 +354,62 @@ class ProfileRepository implements IUserRepository {
   }
 
   /// Unlock achievement
+  @override
   Future<void> unlockAchievement(String uid, String achievementId) async {
     await _usersCollection.doc(uid).update({
       'gamification.unlockedBadges': FieldValue.arrayUnion([achievementId]),
     });
+  }
+
+  /// Evaluate and unlock achievements based on current user stats.
+  /// Returns list of newly unlocked badge IDs.
+  @override
+  Future<List<String>> evaluateAchievements(String uid) async {
+    final user = await getUserById(uid);
+    if (user == null) return [];
+
+    final (
+      int totalRides,
+      double totalDistance,
+      int longestStreak,
+      List<String> unlockedBadges,
+    ) = switch (user) {
+      RiderModel(:final gamification) => (
+        gamification.totalRides,
+        gamification.totalDistance,
+        gamification.longestStreak,
+        gamification.unlockedBadges,
+      ),
+      DriverModel(:final gamification) => (
+        gamification.totalRides,
+        gamification.totalDistance,
+        gamification.longestStreak,
+        gamification.unlockedBadges,
+      ),
+    };
+
+    // Badge definitions: id → condition
+    final badgeCriteria = <String, bool>{
+      'first_ride': totalRides >= 1,
+      'road_tripper': totalDistance >= 50,
+      'speed_demon': longestStreak >= 7,
+      'road_master': totalRides >= 100,
+      'marathon_driver': totalDistance >= 1000,
+    };
+
+    final newBadges = badgeCriteria.entries
+        .where((e) => e.value && !unlockedBadges.contains(e.key))
+        .map((e) => e.key)
+        .toList();
+
+    if (newBadges.isEmpty) return [];
+
+    // Batch-unlock all newly earned badges
+    await _usersCollection.doc(uid).update({
+      'gamification.unlockedBadges': FieldValue.arrayUnion(newBadges),
+    });
+
+    return newBadges;
   }
 
   // ==================== RATINGS ====================
@@ -396,6 +452,7 @@ class ProfileRepository implements IUserRepository {
   // ==================== LEADERBOARD ====================
 
   /// Get leaderboard
+  @override
   Future<List<LeaderboardEntry>> getLeaderboard({int limit = 50}) async {
     final query = await _usersCollection
         .orderBy('gamification.totalXP', descending: true)
@@ -419,6 +476,7 @@ class ProfileRepository implements IUserRepository {
   }
 
   /// Get user's rank
+  @override
   Future<int> getUserRank(String uid) async {
     final user = await getUserById(uid);
     if (user == null) return 0;

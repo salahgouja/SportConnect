@@ -1230,6 +1230,41 @@ export const stripeWebhook = onRequest(
             ...(brand && {paymentMethodBrand: brand}),
           });
         }
+
+        const rideId = pi.metadata?.rideId;
+        const riderId = pi.metadata?.riderId;
+        if (rideId && riderId) {
+          const bookingsSnap = await db
+            .collection("bookings")
+            .where("rideId", "==", rideId)
+            .where("passengerId", "==", riderId)
+            .where("status", "==", "accepted")
+            .get();
+
+          const matchingBookings = bookingsSnap.docs
+            .filter((doc) => !doc.data()["paidAt"])
+            .sort((a, b) => {
+              const aTimestamp =
+                (a.data()["createdAt"] ??
+                  a.data()["respondedAt"]) as admin.firestore.Timestamp | undefined;
+              const bTimestamp =
+                (b.data()["createdAt"] ??
+                  b.data()["respondedAt"]) as admin.firestore.Timestamp | undefined;
+
+              const aMillis = aTimestamp?.toMillis() ?? 0;
+              const bMillis = bTimestamp?.toMillis() ?? 0;
+              return bMillis - aMillis;
+            });
+
+          const bookingDoc = matchingBookings[0];
+
+          if (bookingDoc) {
+            await bookingDoc.ref.update({
+              paymentIntentId: pi.id,
+              paidAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+          }
+        }
         break;
       }
 
