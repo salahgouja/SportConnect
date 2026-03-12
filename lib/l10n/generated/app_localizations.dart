@@ -9653,6 +9653,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'All drivers are verified and rated'**
   String get allDriversVerifiedAndRated;
+
+  /// No description provided for @levelAndXp.
+  ///
+  /// In en, this message translates to:
+  /// **'Level & XP'**
+  String get levelAndXp;
+
+  /// No description provided for @viewAchievements.
+  ///
+  /// In en, this message translates to:
+  /// **'View achievements'**
+  String get viewAchievements;
+
+  /// No description provided for @maxLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Max Level Reached!'**
+  String get maxLevel;
+
+  /// No description provided for @challengeCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed!'**
+  String get challengeCompleted;
+
+  /// No description provided for @challengeInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'In progress'**
+  String get challengeInProgress;
+
+  /// No description provided for @challengeFirstRide.
+  ///
+  /// In en, this message translates to:
+  /// **'First Ride'**
+  String get challengeFirstRide;
+
+  /// No description provided for @challengeFirstRideDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete your first carpool ride'**
+  String get challengeFirstRideDesc;
+
+  /// No description provided for @challengeRideRegular.
+  ///
+  /// In en, this message translates to:
+  /// **'Ride Regular'**
+  String get challengeRideRegular;
+
+  /// No description provided for @challengeRideRegularDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete 10 rides'**
+  String get challengeRideRegularDesc;
+
+  /// No description provided for @challengeRoadTripper.
+  ///
+  /// In en, this message translates to:
+  /// **'Road Tripper'**
+  String get challengeRoadTripper;
+
+  /// No description provided for @challengeRoadTripperDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Travel 50 km total'**
+  String get challengeRoadTripperDesc;
+
+  /// No description provided for @challengeDistanceMaster.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance Master'**
+  String get challengeDistanceMaster;
+
+  /// No description provided for @challengeDistanceMasterDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Travel 100 km total'**
+  String get challengeDistanceMasterDesc;
+
+  /// No description provided for @challengeStreakBuilder.
+  ///
+  /// In en, this message translates to:
+  /// **'Streak Builder'**
+  String get challengeStreakBuilder;
+
+  /// No description provided for @challengeStreakBuilderDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Maintain a 7-day ride streak'**
+  String get challengeStreakBuilderDesc;
+
+  /// No description provided for @challengeCenturyRider.
+  ///
+  /// In en, this message translates to:
+  /// **'Century Rider'**
+  String get challengeCenturyRider;
+
+  /// No description provided for @challengeCenturyRiderDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete 100 rides'**
+  String get challengeCenturyRiderDesc;
 }
 
 class _AppLocalizationsDelegate

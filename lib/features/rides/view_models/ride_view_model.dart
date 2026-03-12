@@ -861,6 +861,7 @@ class RideSearchState {
   bool get hasActiveFilters =>
       draftFemaleOnly ||
       draftInstantBook ||
+      draftVerifiedOnly ||
       draftPetFriendly ||
       draftNoSmoking ||
       draftMaxPrice < 50 ||
@@ -872,6 +873,7 @@ class RideSearchState {
     if (draftMaxPrice < 50) count++;
     if (draftFemaleOnly) count++;
     if (draftInstantBook) count++;
+    if (draftVerifiedOnly) count++;
     if (draftPetFriendly) count++;
     if (draftNoSmoking) count++;
     if (draftMinRating > 0) count++;

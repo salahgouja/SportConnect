@@ -189,11 +189,12 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
   Widget _buildXPProgress(GamificationStats gamification) {
     final userLevel = UserLevel.fromXP(gamification.totalXP);
     final currentXP = gamification.totalXP - userLevel.minXP.toInt();
-    final maxXP = userLevel.maxXP.isFinite
-        ? (userLevel.maxXP - userLevel.minXP).toInt()
-        : 1;
-    final xpNeeded = maxXP - currentXP;
-    final progress = maxXP > 0 ? (currentXP / maxXP).clamp(0.0, 1.0) : 1.0;
+    final isMaxLevel = !userLevel.maxXP.isFinite;
+    final maxXP = isMaxLevel
+        ? currentXP  // At max level, show full bar
+        : (userLevel.maxXP - userLevel.minXP).toInt();
+    final xpNeeded = isMaxLevel ? 0 : (maxXP - currentXP).clamp(0, maxXP);
+    final progress = isMaxLevel ? 1.0 : (maxXP > 0 ? (currentXP / maxXP).clamp(0.0, 1.0) : 1.0);
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 40.w),
       child: Column(
@@ -210,7 +211,9 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
                 ),
               ),
               Text(
-                AppLocalizations.of(context).valueXp2(_formatNumber(maxXP)),
+                isMaxLevel
+                    ? '★ MAX'
+                    : AppLocalizations.of(context).valueXp2(_formatNumber(maxXP)),
                 style: TextStyle(
                   fontSize: 14.sp,
                   color: Colors.white.withValues(alpha: 0.8),
@@ -244,10 +247,12 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
           ),
           SizedBox(height: 6.h),
           Text(
-            AppLocalizations.of(context).valueXpToLevelValue(
-              _formatNumber(xpNeeded),
-              userLevel.level + 1,
-            ),
+            isMaxLevel
+                ? AppLocalizations.of(context).maxLevel
+                : AppLocalizations.of(context).valueXpToLevelValue(
+                    _formatNumber(xpNeeded),
+                    userLevel.level + 1,
+                  ),
             style: TextStyle(
               fontSize: 12.sp,
               color: Colors.white.withValues(alpha: 0.9),
@@ -552,17 +557,18 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
   }
 
   Widget _buildChallengesTab(GamificationStats gamification) {
+    final l10n = AppLocalizations.of(context);
     final totalRides = gamification.totalRides;
     final totalDistance = gamification.totalDistance;
     final currentStreak = gamification.currentStreak;
 
     String status(bool done) =>
-        done ? 'Completed!' : 'In progress';
+        done ? l10n.challengeCompleted : l10n.challengeInProgress;
 
     final challenges = [
       _ChallengeData(
-        'First Ride',
-        'Complete your first carpool ride',
+        l10n.challengeFirstRide,
+        l10n.challengeFirstRideDesc,
         '${totalRides.clamp(0, 1)}/1',
         totalRides >= 1 ? 1.0 : 0.0,
         50,
@@ -570,8 +576,8 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
         status(totalRides >= 1),
       ),
       _ChallengeData(
-        'Ride Regular',
-        'Complete 10 rides',
+        l10n.challengeRideRegular,
+        l10n.challengeRideRegularDesc,
         '${totalRides.clamp(0, 10)}/10',
         (totalRides / 10).clamp(0.0, 1.0),
         100,
@@ -579,8 +585,8 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
         status(totalRides >= 10),
       ),
       _ChallengeData(
-        'Road Tripper',
-        'Travel 50 km total',
+        l10n.challengeRoadTripper,
+        l10n.challengeRoadTripperDesc,
         '${totalDistance.toStringAsFixed(0)}/50',
         (totalDistance / 50).clamp(0.0, 1.0),
         250,
@@ -588,8 +594,8 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
         status(totalDistance >= 50),
       ),
       _ChallengeData(
-        'Distance Master',
-        'Travel 100 km total',
+        l10n.challengeDistanceMaster,
+        l10n.challengeDistanceMasterDesc,
         '${totalDistance.toStringAsFixed(0)}/100',
         (totalDistance / 100).clamp(0.0, 1.0),
         150,
@@ -597,8 +603,8 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
         status(totalDistance >= 100),
       ),
       _ChallengeData(
-        'Streak Builder',
-        'Maintain a 7-day ride streak',
+        l10n.challengeStreakBuilder,
+        l10n.challengeStreakBuilderDesc,
         '$currentStreak/7',
         (currentStreak / 7).clamp(0.0, 1.0),
         200,
@@ -606,8 +612,8 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
         status(currentStreak >= 7),
       ),
       _ChallengeData(
-        'Century Rider',
-        'Complete 100 rides',
+        l10n.challengeCenturyRider,
+        l10n.challengeCenturyRiderDesc,
         '${totalRides.clamp(0, 100)}/100',
         (totalRides / 100).clamp(0.0, 1.0),
         500,

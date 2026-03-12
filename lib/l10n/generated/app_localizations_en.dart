@@ -5227,4 +5227,55 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get allDriversVerifiedAndRated => 'All drivers are verified and rated';
+
+  @override
+  String get levelAndXp => 'Level & XP';
+
+  @override
+  String get viewAchievements => 'View achievements';
+
+  @override
+  String get maxLevel => 'Max Level Reached!';
+
+  @override
+  String get challengeCompleted => 'Completed!';
+
+  @override
+  String get challengeInProgress => 'In progress';
+
+  @override
+  String get challengeFirstRide => 'First Ride';
+
+  @override
+  String get challengeFirstRideDesc => 'Complete your first carpool ride';
+
+  @override
+  String get challengeRideRegular => 'Ride Regular';
+
+  @override
+  String get challengeRideRegularDesc => 'Complete 10 rides';
+
+  @override
+  String get challengeRoadTripper => 'Road Tripper';
+
+  @override
+  String get challengeRoadTripperDesc => 'Travel 50 km total';
+
+  @override
+  String get challengeDistanceMaster => 'Distance Master';
+
+  @override
+  String get challengeDistanceMasterDesc => 'Travel 100 km total';
+
+  @override
+  String get challengeStreakBuilder => 'Streak Builder';
+
+  @override
+  String get challengeStreakBuilderDesc => 'Maintain a 7-day ride streak';
+
+  @override
+  String get challengeCenturyRider => 'Century Rider';
+
+  @override
+  String get challengeCenturyRiderDesc => 'Complete 100 rides';
 }

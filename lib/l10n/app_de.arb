@@ -4222,5 +4222,23 @@
   "noRidesYetTitle": "Noch keine Fahrten",
   "noRidesYetSubtitle": "Finde eine Fahrgemeinschaft für dein nächstes Spiel, Training oder Event. Teile die Fahrt, teile die Kosten.",
   "findACarpoolNow": "Fahrgemeinschaft finden",
-  "allDriversVerifiedAndRated": "Alle Fahrer sind verifiziert und bewertet"
+  "allDriversVerifiedAndRated": "Alle Fahrer sind verifiziert und bewertet",
+
+  "levelAndXp": "Level & XP",
+  "viewAchievements": "Erfolge anzeigen",
+  "maxLevel": "Maximales Level erreicht!",
+  "challengeCompleted": "Abgeschlossen!",
+  "challengeInProgress": "In Bearbeitung",
+  "challengeFirstRide": "Erste Fahrt",
+  "challengeFirstRideDesc": "Absolviere deine erste Fahrgemeinschaft",
+  "challengeRideRegular": "Stammfahrer",
+  "challengeRideRegularDesc": "Absolviere 10 Fahrten",
+  "challengeRoadTripper": "Straßenreisender",
+  "challengeRoadTripperDesc": "Lege insgesamt 50 km zurück",
+  "challengeDistanceMaster": "Distanzmeister",
+  "challengeDistanceMasterDesc": "Lege insgesamt 100 km zurück",
+  "challengeStreakBuilder": "Serienfahrer",
+  "challengeStreakBuilderDesc": "Halte eine 7-Tage-Serie aufrecht",
+  "challengeCenturyRider": "Jahrhundert-Fahrer",
+  "challengeCenturyRiderDesc": "Absolviere 100 Fahrten"
 }

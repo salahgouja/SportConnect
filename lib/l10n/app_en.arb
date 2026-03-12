@@ -4386,5 +4386,23 @@
   "noRidesYetTitle": "No Rides Yet",
   "noRidesYetSubtitle": "Find a carpool to your next game, practice, or event. Share the ride, split the cost.",
   "findACarpoolNow": "Find a Carpool",
-  "allDriversVerifiedAndRated": "All drivers are verified and rated"
+  "allDriversVerifiedAndRated": "All drivers are verified and rated",
+
+  "levelAndXp": "Level & XP",
+  "viewAchievements": "View achievements",
+  "maxLevel": "Max Level Reached!",
+  "challengeCompleted": "Completed!",
+  "challengeInProgress": "In progress",
+  "challengeFirstRide": "First Ride",
+  "challengeFirstRideDesc": "Complete your first carpool ride",
+  "challengeRideRegular": "Ride Regular",
+  "challengeRideRegularDesc": "Complete 10 rides",
+  "challengeRoadTripper": "Road Tripper",
+  "challengeRoadTripperDesc": "Travel 50 km total",
+  "challengeDistanceMaster": "Distance Master",
+  "challengeDistanceMasterDesc": "Travel 100 km total",
+  "challengeStreakBuilder": "Streak Builder",
+  "challengeStreakBuilderDesc": "Maintain a 7-day ride streak",
+  "challengeCenturyRider": "Century Rider",
+  "challengeCenturyRiderDesc": "Complete 100 rides"
 }

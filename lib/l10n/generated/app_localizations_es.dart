@@ -5296,4 +5296,55 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get allDriversVerifiedAndRated =>
       'Todos los conductores están verificados y calificados';
+
+  @override
+  String get levelAndXp => 'Nivel y XP';
+
+  @override
+  String get viewAchievements => 'Ver logros';
+
+  @override
+  String get maxLevel => '¡Nivel máximo alcanzado!';
+
+  @override
+  String get challengeCompleted => '¡Completado!';
+
+  @override
+  String get challengeInProgress => 'En progreso';
+
+  @override
+  String get challengeFirstRide => 'Primer viaje';
+
+  @override
+  String get challengeFirstRideDesc => 'Completa tu primer viaje compartido';
+
+  @override
+  String get challengeRideRegular => 'Viajero habitual';
+
+  @override
+  String get challengeRideRegularDesc => 'Completa 10 viajes';
+
+  @override
+  String get challengeRoadTripper => 'Viajero de ruta';
+
+  @override
+  String get challengeRoadTripperDesc => 'Recorre 50 km en total';
+
+  @override
+  String get challengeDistanceMaster => 'Maestro de la distancia';
+
+  @override
+  String get challengeDistanceMasterDesc => 'Recorre 100 km en total';
+
+  @override
+  String get challengeStreakBuilder => 'Racha imparable';
+
+  @override
+  String get challengeStreakBuilderDesc => 'Mantén una racha de 7 días';
+
+  @override
+  String get challengeCenturyRider => 'Centurión';
+
+  @override
+  String get challengeCenturyRiderDesc => 'Completa 100 viajes';
 }

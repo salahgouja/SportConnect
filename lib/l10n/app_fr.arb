@@ -4222,5 +4222,23 @@
   "noRidesYetTitle": "Pas encore de trajets",
   "noRidesYetSubtitle": "Trouvez un covoiturage pour votre prochain match, entraînement ou événement. Partagez le trajet, divisez les frais.",
   "findACarpoolNow": "Trouver un covoiturage",
-  "allDriversVerifiedAndRated": "Tous les conducteurs sont vérifiés et notés"
+  "allDriversVerifiedAndRated": "Tous les conducteurs sont vérifiés et notés",
+
+  "levelAndXp": "Niveau & XP",
+  "viewAchievements": "Voir les succès",
+  "maxLevel": "Niveau maximum atteint !",
+  "challengeCompleted": "Terminé !",
+  "challengeInProgress": "En cours",
+  "challengeFirstRide": "Premier trajet",
+  "challengeFirstRideDesc": "Complétez votre premier covoiturage",
+  "challengeRideRegular": "Habitué de la route",
+  "challengeRideRegularDesc": "Complétez 10 trajets",
+  "challengeRoadTripper": "Voyageur",
+  "challengeRoadTripperDesc": "Parcourez 50 km au total",
+  "challengeDistanceMaster": "Maître de la distance",
+  "challengeDistanceMasterDesc": "Parcourez 100 km au total",
+  "challengeStreakBuilder": "Série en cours",
+  "challengeStreakBuilderDesc": "Maintenez une série de 7 jours",
+  "challengeCenturyRider": "Centurion",
+  "challengeCenturyRiderDesc": "Complétez 100 trajets"
 }

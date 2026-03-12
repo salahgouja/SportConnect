@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -783,8 +784,8 @@ class _EventCard extends StatelessWidget {
     if (eventDay == today) return l10n.today;
     if (eventDay == today.add(const Duration(days: 1))) return l10n.tomorrow;
 
-    final weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    return '${weekdays[dt.weekday - 1]}, ${dt.day}/${dt.month}';
+    final weekday = DateFormat.E(Localizations.localeOf(context).toString()).format(dt);
+    return '$weekday, ${dt.day}/${dt.month}';
   }
 }
 

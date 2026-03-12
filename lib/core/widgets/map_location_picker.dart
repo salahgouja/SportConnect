@@ -131,6 +131,7 @@ class _MapLocationPickerState extends State<MapLocationPicker>
       if (!mounted) return;
       if (!serviceEnabled) {
         await Geolocator.openLocationSettings();
+        if (!mounted) return;
         setState(() => _isLoadingLocation = false);
         return;
       }
@@ -140,6 +141,7 @@ class _MapLocationPickerState extends State<MapLocationPicker>
 
       if (permission == LocationPermission.deniedForever) {
         await Geolocator.openAppSettings();
+        if (!mounted) return;
         setState(() => _isLoadingLocation = false);
         return;
       }

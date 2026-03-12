@@ -19,6 +19,9 @@ import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 
 part 'driver_offer_ride_view_model.g.dart';
 
+/// Sentinel value used in [copyWith] to distinguish "not provided" from "null".
+const _sentinel = Object();
+
 /// Form state for creating or editing a ride offer
 class DriverOfferRideFormState {
   // Step management
@@ -120,7 +123,7 @@ class DriverOfferRideFormState {
     bool? acceptOnlinePayment,
     bool? isRecurring,
     List<int>? recurringDays,
-    DateTime? recurringEndDate,
+    Object? recurringEndDate = _sentinel,
     bool? allowPets,
     bool? allowSmoking,
     bool? allowLuggage,
@@ -132,8 +135,8 @@ class DriverOfferRideFormState {
     bool? isLoadingSelectedEvent,
     List<LatLng>? osrmRoutePoints,
     bool? isLoadingRoute,
-    double? routeDistanceKm,
-    int? routeDurationMinutes,
+    Object? routeDistanceKm = _sentinel,
+    Object? routeDurationMinutes = _sentinel,
     bool? isSubmitting,
     String? submissionError,
     String? existingRideId,
@@ -154,7 +157,9 @@ class DriverOfferRideFormState {
       acceptOnlinePayment: acceptOnlinePayment ?? this.acceptOnlinePayment,
       isRecurring: isRecurring ?? this.isRecurring,
       recurringDays: recurringDays ?? this.recurringDays,
-      recurringEndDate: recurringEndDate ?? this.recurringEndDate,
+      recurringEndDate: recurringEndDate == _sentinel
+          ? this.recurringEndDate
+          : recurringEndDate as DateTime?,
       allowPets: allowPets ?? this.allowPets,
       allowSmoking: allowSmoking ?? this.allowSmoking,
       allowLuggage: allowLuggage ?? this.allowLuggage,
@@ -167,8 +172,12 @@ class DriverOfferRideFormState {
           isLoadingSelectedEvent ?? this.isLoadingSelectedEvent,
       osrmRoutePoints: osrmRoutePoints ?? this.osrmRoutePoints,
       isLoadingRoute: isLoadingRoute ?? this.isLoadingRoute,
-      routeDistanceKm: routeDistanceKm ?? this.routeDistanceKm,
-      routeDurationMinutes: routeDurationMinutes ?? this.routeDurationMinutes,
+      routeDistanceKm: routeDistanceKm == _sentinel
+          ? this.routeDistanceKm
+          : routeDistanceKm as double?,
+      routeDurationMinutes: routeDurationMinutes == _sentinel
+          ? this.routeDurationMinutes
+          : routeDurationMinutes as int?,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       submissionError: submissionError,
       existingRideId: existingRideId ?? this.existingRideId,

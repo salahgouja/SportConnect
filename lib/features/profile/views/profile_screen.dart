@@ -691,7 +691,7 @@ class ProfileScreen extends ConsumerWidget {
                   child: _buildStatCard(
                     icon: Icons.route_rounded,
                     value: '${totalDistance.toStringAsFixed(0)} km',
-                    label: 'Distance',
+                    label: AppLocalizations.of(context).distance,
                     color: AppColors.success,
                   ),
                 ),
@@ -760,7 +760,7 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                   SizedBox(width: 8.w),
                   Text(
-                    'Level & XP',
+                    AppLocalizations.of(context).levelAndXp,
                     style: TextStyle(
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w700,
@@ -796,7 +796,7 @@ class ProfileScreen extends ConsumerWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'View achievements',
+                        AppLocalizations.of(context).viewAchievements,
                         style: TextStyle(
                           fontSize: 12.sp,
                           color: AppColors.textSecondary,

@@ -751,7 +751,7 @@ class _DriverDashboard extends ConsumerWidget {
             icon: Icons.check_circle_rounded,
             iconColor: AppColors.success,
             value: '${driverStats.ridesCompleted}',
-            label: 'Completed',
+            label: l10n.complete,
           ),
           _StatCard(
             icon: Icons.timer_outlined,

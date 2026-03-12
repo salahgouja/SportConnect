@@ -4222,5 +4222,23 @@
   "noRidesYetTitle": "Aún no hay viajes",
   "noRidesYetSubtitle": "Encuentra un viaje compartido para tu próximo partido, entrenamiento o evento. Comparte el viaje, divide el costo.",
   "findACarpoolNow": "Buscar un viaje compartido",
-  "allDriversVerifiedAndRated": "Todos los conductores están verificados y calificados"
+  "allDriversVerifiedAndRated": "Todos los conductores están verificados y calificados",
+
+  "levelAndXp": "Nivel y XP",
+  "viewAchievements": "Ver logros",
+  "maxLevel": "¡Nivel máximo alcanzado!",
+  "challengeCompleted": "¡Completado!",
+  "challengeInProgress": "En progreso",
+  "challengeFirstRide": "Primer viaje",
+  "challengeFirstRideDesc": "Completa tu primer viaje compartido",
+  "challengeRideRegular": "Viajero habitual",
+  "challengeRideRegularDesc": "Completa 10 viajes",
+  "challengeRoadTripper": "Viajero de ruta",
+  "challengeRoadTripperDesc": "Recorre 50 km en total",
+  "challengeDistanceMaster": "Maestro de la distancia",
+  "challengeDistanceMasterDesc": "Recorre 100 km en total",
+  "challengeStreakBuilder": "Racha imparable",
+  "challengeStreakBuilderDesc": "Mantén una racha de 7 días",
+  "challengeCenturyRider": "Centurión",
+  "challengeCenturyRiderDesc": "Completa 100 viajes"
 }
