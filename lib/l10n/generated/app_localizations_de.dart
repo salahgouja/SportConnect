@@ -1864,7 +1864,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get legal => 'Rechtliches';
 
   @override
-  String get sportconnectV100 => 'SportConnect v0.0.10';
+  String get sportconnectV100 => 'SportConnect v0.0.11';
 
   @override
   String get noBlockedUsers => 'Keine gesperrten Benutzer';

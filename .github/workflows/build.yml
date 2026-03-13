@@ -2,7 +2,7 @@ name: Flutter Build and Release
 
 on:
   push:
-    # This triggers the workflow ONLY when you push a tag like "v0.0.10"
+    # This triggers the workflow ONLY when you push a tag like "v0.0.11"
     tags:
       - 'v*' 
 

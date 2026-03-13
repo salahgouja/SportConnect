@@ -3441,7 +3441,7 @@ abstract class AppLocalizations {
   /// Text from Text in settings_screen.dart
   ///
   /// In en, this message translates to:
-  /// **'SportConnect v0.0.10'**
+  /// **'SportConnect v0.0.11'**
   String get sportconnectV100;
 
   /// Text from Text in settings_screen.dart
