@@ -582,6 +582,7 @@ class _PassengerActiveRideScreenState
     });
 
     final routePoints =
+        rideState.remainingRoutePoints ??
         rideState.osrmRoutePoints ??
         [
           originLatLng,
@@ -970,19 +971,24 @@ class _PassengerActiveRideScreenState
             ).animate().fadeIn(duration: 300.ms),
           ),
 
-        // ── Bottom info panel ──
-        Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          child: _buildRideInfoPanel(
-            context,
-            ride,
-            rideState,
-            driverAsync,
-            etaMinutes,
-            distToDest,
-          ),
+        // ── Bottom draggable info sheet ──
+        DraggableScrollableSheet(
+          initialChildSize: 0.38,
+          minChildSize: 0.15,
+          maxChildSize: 0.80,
+          snap: true,
+          snapSizes: const [0.15, 0.38, 0.80],
+          builder: (context, scrollController) {
+            return _buildRideInfoSheet(
+              context,
+              ride,
+              rideState,
+              driverAsync,
+              etaMinutes,
+              distToDest,
+              scrollController,
+            );
+          },
         ),
       ],
     );
@@ -1070,18 +1076,20 @@ class _PassengerActiveRideScreenState
     );
   }
 
-  /// Bottom info panel for the map-first layout — shows ETA, driver info,
-  /// and a consolidated share button.
-  Widget _buildRideInfoPanel(
+  /// Draggable bottom sheet for the map-first layout — shows ETA, driver info,
+  /// route itinerary, and action buttons in a scrollable sheet.
+  Widget _buildRideInfoSheet(
     BuildContext context,
     RideModel ride,
     ActiveRideState rideState,
     AsyncValue<UserModel?> driverAsync,
     int etaMinutes,
     double distToDest,
+    ScrollController scrollController,
   ) {
     final driver = driverAsync.value;
     final l10n = AppLocalizations.of(context);
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Container(
       decoration: BoxDecoration(
@@ -1098,13 +1106,14 @@ class _PassengerActiveRideScreenState
           ),
         ],
       ),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle
-            Container(
+      clipBehavior: Clip.antiAlias,
+      child: ListView(
+        controller: scrollController,
+        padding: EdgeInsets.zero,
+        children: [
+          // Handle
+          Center(
+            child: Container(
               margin: EdgeInsets.symmetric(vertical: 10.h),
               width: 40.w,
               height: 4.h,
@@ -1113,32 +1122,26 @@ class _PassengerActiveRideScreenState
                 borderRadius: BorderRadius.circular(2.r),
               ),
             ),
+          ),
 
-            // ETA + Distance row
-            // Connectivity indicator
-            if (!rideState.isConnected)
-              Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 20.w,
-                ).copyWith(bottom: 8.h),
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 12.w,
-                    vertical: 6.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.warning.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(10.r),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.wifi_off,
-                        size: 16.sp,
-                        color: AppColors.warning,
-                      ),
-                      SizedBox(width: 6.w),
-                      Text(
+          // Connectivity indicator
+          if (!rideState.isConnected)
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: 20.w,
+              ).copyWith(bottom: 8.h),
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10.r),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.wifi_off, size: 16.sp, color: AppColors.warning),
+                    SizedBox(width: 6.w),
+                    Expanded(
+                      child: Text(
                         'Poor connection — updates may be delayed',
                         style: TextStyle(
                           fontSize: 11.sp,
@@ -1146,31 +1149,30 @@ class _PassengerActiveRideScreenState
                           color: AppColors.warning,
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
+            ),
 
-            // Delay banner
-            if (rideState.rideDelayMinutes >= 5)
-              Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 20.w,
-                ).copyWith(bottom: 8.h),
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 12.w,
-                    vertical: 6.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.error.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10.r),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.schedule, size: 16.sp, color: AppColors.error),
-                      SizedBox(width: 6.w),
-                      Text(
+          // Delay banner
+          if (rideState.rideDelayMinutes >= 5)
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: 20.w,
+              ).copyWith(bottom: 8.h),
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10.r),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.schedule, size: 16.sp, color: AppColors.error),
+                    SizedBox(width: 6.w),
+                    Expanded(
+                      child: Text(
                         'Departure delayed by ${rideState.rideDelayMinutes} min',
                         style: TextStyle(
                           fontSize: 11.sp,
@@ -1178,13 +1180,17 @@ class _PassengerActiveRideScreenState
                           color: AppColors.error,
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
+            ),
 
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20.w),
+          // ETA + Distance row
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
                   // ETA badge
@@ -1287,173 +1293,177 @@ class _PassengerActiveRideScreenState
                 ],
               ),
             ),
+          ),
 
-            SizedBox(height: 16.h),
+          SizedBox(height: 16.h),
 
-            // Driver info row
-            if (driver != null)
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 24.r,
-                      backgroundImage: driver.photoUrl != null
-                          ? NetworkImage(driver.photoUrl!)
-                          : null,
-                      child: driver.photoUrl == null
-                          ? Text(
-                              driver.displayName[0].toUpperCase(),
-                              style: TextStyle(
-                                fontSize: 16.sp,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            )
-                          : null,
-                    ),
-                    SizedBox(width: 12.w),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
+          // Driver info row
+          if (driver != null)
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.w),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 24.r,
+                    backgroundImage: driver.photoUrl != null
+                        ? NetworkImage(driver.photoUrl!)
+                        : null,
+                    child: driver.photoUrl == null
+                        ? Text(
+                            driver.displayName[0].toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          )
+                        : null,
+                  ),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
                                 driver.displayName,
                                 style: TextStyle(
                                   fontSize: 16.sp,
                                   fontWeight: FontWeight.w600,
                                   color: AppColors.textPrimary,
                                 ),
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              if (driver.isIdVerified) ...[
-                                SizedBox(width: 6.w),
-                                Icon(
-                                  Icons.verified,
-                                  size: 16.sp,
-                                  color: Colors.blue,
-                                ),
-                              ],
-                            ],
-                          ),
-                          SizedBox(height: 2.h),
-                          Row(
-                            children: [
+                            ),
+                            if (driver.isIdVerified) ...[
+                              SizedBox(width: 6.w),
                               Icon(
-                                Icons.star,
-                                size: 14.sp,
-                                color: Colors.amber,
-                              ),
-                              SizedBox(width: 4.w),
-                              Text(
-                                driver.rating.average.toStringAsFixed(1),
-                                style: TextStyle(
-                                  fontSize: 13.sp,
-                                  color: AppColors.textSecondary,
-                                ),
+                                Icons.verified,
+                                size: 16.sp,
+                                color: Colors.blue,
                               ),
                             ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Call button
-                    _buildMapCircleButton(
-                      Icons.phone,
-                      () => _callDriver(driver.phoneNumber),
-                    ),
-                    SizedBox(width: 10.w),
-                    // Message button
-                    _buildMapCircleButton(
-                      Icons.message,
-                      () => _sendMessage(ride.driverId),
-                    ),
-                  ],
-                ),
-              ),
-
-            SizedBox(height: 16.h),
-
-            // Quick message chips (7D)
-            if (ride.status == RideStatus.inProgress)
-              _buildPassengerQuickMessages(ride, rideState),
-
-            // Request mid-ride stop button (E1)
-            if (ride.status == RideStatus.inProgress &&
-                rideState.phase == ActiveRidePhase.enRoute)
-              Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 20.w,
-                ).copyWith(bottom: 12.h),
-                child: OutlinedButton.icon(
-                  onPressed: () => _showRequestStopDialog(ride),
-                  icon: Icon(Icons.add_location_alt, size: 18.sp),
-                  label: const Text('Request a Stop'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.warning,
-                    side: BorderSide(
-                      color: AppColors.warning.withValues(alpha: 0.4),
-                    ),
-                    padding: EdgeInsets.symmetric(vertical: 12.h),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.r),
+                          ],
+                        ),
+                        SizedBox(height: 2.h),
+                        Row(
+                          children: [
+                            Icon(Icons.star, size: 14.sp, color: Colors.amber),
+                            SizedBox(width: 4.w),
+                            Text(
+                              driver.rating.average.toStringAsFixed(1),
+                              style: TextStyle(
+                                fontSize: 13.sp,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ),
-
-            // Share live trip + SOS row
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20.w),
-              child: Row(
-                children: [
-                  // Share button
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => _shareTrip(ride),
-                      icon: Icon(Icons.share_location, size: 18.sp),
-                      label: Text(l10n.shareRide),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primary,
-                        side: BorderSide(
-                          color: AppColors.primary.withValues(alpha: 0.3),
-                        ),
-                        padding: EdgeInsets.symmetric(vertical: 12.h),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                      ),
-                    ),
+                  // Call button
+                  _buildMapCircleButton(
+                    Icons.phone,
+                    () => _callDriver(driver.phoneNumber),
                   ),
                   SizedBox(width: 10.w),
-                  // SOS / Emergency button (7C)
-                  SizedBox(
-                    height: 48.h,
-                    child: ElevatedButton.icon(
-                      onPressed: () => _triggerSOS(ride, rideState),
-                      icon: Icon(Icons.sos, size: 18.sp),
-                      label: const Text('SOS'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.error,
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 16.w,
-                          vertical: 12.h,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                        elevation: 0,
-                      ),
-                    ),
+                  // Message button
+                  _buildMapCircleButton(
+                    Icons.message,
+                    () => _sendMessage(ride.driverId),
                   ),
                 ],
               ),
             ),
 
-            SizedBox(height: 12.h),
-          ],
-        ),
+          SizedBox(height: 16.h),
+
+          // Quick message chips (7D)
+          if (ride.status == RideStatus.inProgress)
+            _buildPassengerQuickMessages(ride, rideState),
+
+          // Request mid-ride stop button (E1)
+          if (ride.status == RideStatus.inProgress &&
+              rideState.phase == ActiveRidePhase.enRoute)
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: 20.w,
+              ).copyWith(bottom: 12.h),
+              child: OutlinedButton.icon(
+                onPressed: () => _showRequestStopDialog(ride),
+                icon: Icon(Icons.add_location_alt, size: 18.sp),
+                label: const Text('Request a Stop'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.warning,
+                  side: BorderSide(
+                    color: AppColors.warning.withValues(alpha: 0.4),
+                  ),
+                  padding: EdgeInsets.symmetric(vertical: 12.h),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                ),
+              ),
+            ),
+
+          // Route itinerary
+          _buildRouteDetails(context, ride),
+
+          SizedBox(height: 12.h),
+
+          // Share live trip + SOS row
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
+            child: Row(
+              children: [
+                // Share button
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _shareTrip(ride),
+                    icon: Icon(Icons.share_location, size: 18.sp),
+                    label: Text(l10n.shareRide),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      side: BorderSide(
+                        color: AppColors.primary.withValues(alpha: 0.3),
+                      ),
+                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 10.w),
+                // SOS / Emergency button (7C)
+                SizedBox(
+                  height: 48.h,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _triggerSOS(ride, rideState),
+                    icon: Icon(Icons.sos, size: 18.sp),
+                    label: const Text('SOS'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.error,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 12.h,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          SizedBox(height: 12.h + bottomPadding),
+        ],
       ),
     );
   }
@@ -1526,11 +1536,12 @@ class _PassengerActiveRideScreenState
                               'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                           userAgentPackageName: 'com.sportconnect.app',
                         ),
-                        // Route polyline — OSRM road route
+                        // Route polyline — remaining route from driver position
                         PolylineLayer(
                           polylines: [
                             Polyline(
                               points:
+                                  rideState.remainingRoutePoints ??
                                   rideState.osrmRoutePoints ??
                                   [
                                     originLatLng,
@@ -1547,6 +1558,7 @@ class _PassengerActiveRideScreenState
                             ),
                             Polyline(
                               points:
+                                  rideState.remainingRoutePoints ??
                                   rideState.osrmRoutePoints ??
                                   [
                                     originLatLng,

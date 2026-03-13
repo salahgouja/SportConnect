@@ -351,7 +351,8 @@ class _PendingRequestCard extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        request.passengerName ?? AppLocalizations.of(context).bookingRequestTitle,
+                        request.passengerName ??
+                            AppLocalizations.of(context).bookingRequestTitle,
                         style: TextStyle(
                           fontSize: 14.sp,
                           fontWeight: FontWeight.w600,
@@ -462,7 +463,9 @@ class _PendingRequestCard extends ConsumerWidget {
             padding: EdgeInsets.symmetric(horizontal: 16.w),
             child: _DetailChip(
               icon: Icons.people_outline_rounded,
-              text: AppLocalizations.of(context).seatsCount(request.requestedSeats),
+              text: AppLocalizations.of(
+                context,
+              ).seatsCount(request.requestedSeats),
             ),
           ),
 
@@ -490,9 +493,7 @@ class _PendingRequestCard extends ConsumerWidget {
                             borderRadius: BorderRadius.circular(16.r),
                           ),
                           title: Text(l10n.declineRequestTitle),
-                          content: Text(
-                            l10n.declineRequestMessage,
-                          ),
+                          content: Text(l10n.declineRequestMessage),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.of(ctx).pop(false),
@@ -533,7 +534,9 @@ class _PendingRequestCard extends ConsumerWidget {
                           ),
                           title: Text(l10n.acceptRequestTitle),
                           content: Text(
-                            l10n.acceptRequestMessage(request.passengerName ?? 'this passenger'),
+                            l10n.acceptRequestMessage(
+                              request.passengerName ?? 'this passenger',
+                            ),
                           ),
                           actions: [
                             TextButton(
@@ -768,28 +771,26 @@ class _RidesTimeline extends ConsumerWidget {
                 builder: (ctx) {
                   final l10n = AppLocalizations.of(context);
                   return AlertDialog(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16.r),
-                  ),
-                  title: Text(l10n.cancelRideTitle),
-                  content: Text(
-                    l10n.cancelRideConfirmMessage,
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(ctx).pop(false),
-                      child: Text(l10n.keepRideButton),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16.r),
                     ),
-                    ElevatedButton(
-                      onPressed: () => Navigator.of(ctx).pop(true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.error,
-                        foregroundColor: Colors.white,
+                    title: Text(l10n.cancelRideTitle),
+                    content: Text(l10n.cancelRideConfirmMessage),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        child: Text(l10n.keepRideButton),
                       ),
-                      child: Text(l10n.actionCancel),
-                    ),
-                  ],
-                );
+                      ElevatedButton(
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.error,
+                          foregroundColor: Colors.white,
+                        ),
+                        child: Text(l10n.actionCancel),
+                      ),
+                    ],
+                  );
                 },
               );
               if ((confirmed ?? false) && context.mounted) {
@@ -1037,7 +1038,11 @@ class _EmptyTimeline extends StatelessWidget {
               color: AppColors.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.add_road_rounded, size: 36.sp, color: AppColors.primary),
+            child: Icon(
+              Icons.add_road_rounded,
+              size: 36.sp,
+              color: AppColors.primary,
+            ),
           ).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
           SizedBox(height: 16.h),
           Text(
@@ -1052,16 +1057,29 @@ class _EmptyTimeline extends StatelessWidget {
           Text(
             l10n.offerFirstRideMessage,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary, height: 1.4),
+            style: TextStyle(
+              fontSize: 13.sp,
+              color: AppColors.textSecondary,
+              height: 1.4,
+            ),
           ).animate().fadeIn(delay: 300.ms),
           SizedBox(height: 20.h),
           // Feature row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _FeatureChip(icon: Icons.people_rounded, label: l10n.connectWithRiders),
-              _FeatureChip(icon: Icons.attach_money_rounded, label: l10n.earnPerRide),
-              _FeatureChip(icon: Icons.schedule_rounded, label: l10n.flexibleSchedule),
+              _FeatureChip(
+                icon: Icons.people_rounded,
+                label: l10n.connectWithRiders,
+              ),
+              _FeatureChip(
+                icon: Icons.attach_money_rounded,
+                label: l10n.earnPerRide,
+              ),
+              _FeatureChip(
+                icon: Icons.schedule_rounded,
+                label: l10n.flexibleSchedule,
+              ),
             ],
           ).animate().fadeIn(delay: 400.ms),
           SizedBox(height: 20.h),
@@ -1071,11 +1089,16 @@ class _EmptyTimeline extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: () => context.push(AppRoutes.driverOfferRide.path),
               icon: Icon(Icons.add_rounded, size: 20.sp),
-              label: Text(l10n.offerYourFirstRide, style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600)),
+              label: Text(
+                l10n.offerYourFirstRide,
+                style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
               ),
             ),
           ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.15),

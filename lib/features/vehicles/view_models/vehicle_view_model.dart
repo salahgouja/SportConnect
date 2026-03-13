@@ -51,8 +51,7 @@ class VehicleState {
       errorMessage: errorMessage,
       selectedVehicle: selectedVehicle ?? this.selectedVehicle,
       actionType: clearAction ? null : (actionType ?? this.actionType),
-      actionMessage:
-          clearAction ? null : (actionMessage ?? this.actionMessage),
+      actionMessage: clearAction ? null : (actionMessage ?? this.actionMessage),
       userId: userId ?? this.userId,
       vehicles: vehicles ?? this.vehicles,
     );

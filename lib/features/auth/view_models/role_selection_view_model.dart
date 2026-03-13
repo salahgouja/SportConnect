@@ -24,13 +24,12 @@ class RoleSelectionState {
     UserRole? selectedRole,
     String? errorMessage,
     bool clearError = false,
-  }) =>
-      RoleSelectionState(
-        isLoading: isLoading ?? this.isLoading,
-        isSuccess: isSuccess ?? this.isSuccess,
-        selectedRole: selectedRole ?? this.selectedRole,
-        errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
-      );
+  }) => RoleSelectionState(
+    isLoading: isLoading ?? this.isLoading,
+    isSuccess: isSuccess ?? this.isSuccess,
+    selectedRole: selectedRole ?? this.selectedRole,
+    errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+  );
 }
 
 @riverpod
@@ -57,7 +56,11 @@ class RoleSelectionViewModel extends _$RoleSelectionViewModel {
       await authActions.updateUserRole(currentUser.uid, role);
       if (!ref.mounted) return;
 
-      state = state.copyWith(isLoading: false, isSuccess: true, clearError: true);
+      state = state.copyWith(
+        isLoading: false,
+        isSuccess: true,
+        clearError: true,
+      );
     } catch (e) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, errorMessage: e.toString());

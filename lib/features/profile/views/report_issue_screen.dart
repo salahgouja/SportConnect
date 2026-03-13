@@ -390,7 +390,10 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
                 Text(
                   formState.attachedFiles.isEmpty
                       ? l10n.attachScreenshotsPlaceholder
-                      : l10n.filesAttachedCount(formState.attachedFiles.length, ReportIssueFormViewModel.maxAttachments),
+                      : l10n.filesAttachedCount(
+                          formState.attachedFiles.length,
+                          ReportIssueFormViewModel.maxAttachments,
+                        ),
                   style: TextStyle(
                     fontSize: 13.sp,
                     color: formState.attachedFiles.isEmpty

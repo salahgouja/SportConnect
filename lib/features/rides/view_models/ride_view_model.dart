@@ -1673,6 +1673,7 @@ class ActiveRideState {
     this.nearbyPOIs = const <PointOfInterest>[],
     this.showPOIMarkers = false,
     this.osrmRoutePoints,
+    this.remainingRoutePoints,
     this.loadedRouteKey,
     this.loadingRouteKey,
     this.isLoadingOsrmRoute = false,
@@ -1728,6 +1729,7 @@ class ActiveRideState {
   final List<PointOfInterest> nearbyPOIs;
   final bool showPOIMarkers;
   final List<LatLng>? osrmRoutePoints;
+  final List<LatLng>? remainingRoutePoints;
   final String? loadedRouteKey;
   final String? loadingRouteKey;
   final bool isLoadingOsrmRoute;
@@ -1785,6 +1787,7 @@ class ActiveRideState {
     List<PointOfInterest>? nearbyPOIs,
     bool? showPOIMarkers,
     Object? osrmRoutePoints = _unset,
+    Object? remainingRoutePoints = _unset,
     Object? loadedRouteKey = _unset,
     Object? loadingRouteKey = _unset,
     bool? isLoadingOsrmRoute,
@@ -1842,6 +1845,9 @@ class ActiveRideState {
     osrmRoutePoints: osrmRoutePoints == _unset
         ? this.osrmRoutePoints
         : osrmRoutePoints as List<LatLng>?,
+    remainingRoutePoints: remainingRoutePoints == _unset
+        ? this.remainingRoutePoints
+        : remainingRoutePoints as List<LatLng>?,
     loadedRouteKey: loadedRouteKey == _unset
         ? this.loadedRouteKey
         : loadedRouteKey as String?,
@@ -1913,15 +1919,24 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     ref.onDispose(() => _positionStreamSubscription?.cancel());
 
     ref.listen(rideStreamProvider(rideId), (_, next) {
-      _handleRideUpdate(next);
+      Future.microtask(() {
+        if (!ref.mounted) return;
+        _handleRideUpdate(next);
+      });
     });
 
     ref.listen(bookingsByRideProvider(rideId), (_, next) {
-      _handleBookingsUpdate(next.value ?? const <RideBooking>[]);
+      Future.microtask(() {
+        if (!ref.mounted) return;
+        _handleBookingsUpdate(next.value ?? const <RideBooking>[]);
+      });
     });
 
     ref.listen(driverLiveLocationProvider(rideId), (_, next) {
-      _handleDriverLiveLocationUpdate(next.value);
+      Future.microtask(() {
+        if (!ref.mounted) return;
+        _handleDriverLiveLocationUpdate(next.value);
+      });
     });
 
     final rideAsync = ref.read(rideStreamProvider(rideId));
@@ -2612,6 +2627,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
         // Force route reload
         loadedRouteKey: null,
         osrmRoutePoints: null,
+        remainingRoutePoints: null,
       );
     } catch (e) {
       if (!ref.mounted) return;
@@ -2636,7 +2652,11 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
 
       if (!ref.mounted) return;
       RoutingService.clearRouteCache();
-      state = state.copyWith(loadedRouteKey: null, osrmRoutePoints: null);
+      state = state.copyWith(
+        loadedRouteKey: null,
+        osrmRoutePoints: null,
+        remainingRoutePoints: null,
+      );
     } catch (e) {
       if (!ref.mounted) return;
       state = state.copyWith(actionError: e.toString());
@@ -3057,7 +3077,14 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     // B6: EMA smoothing — cap single-update change to ±30%
     final smoothedEta = _smoothEta(rawEta);
 
+    // Build the remaining-portion polyline: driver position + route from closest point onward
+    final remaining = <LatLng>[
+      currentLocation,
+      ...routePoints.sublist(closestIndex),
+    ];
+
     state = state.copyWith(
+      remainingRoutePoints: remaining,
       remainingDistanceKm: remainingDistance,
       remainingEtaMinutes: smoothedEta,
     );
@@ -3096,6 +3123,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
   void _clearDynamicEta() {
     _recentEtaValues.clear();
     state = state.copyWith(
+      remainingRoutePoints: null,
       remainingDistanceKm: null,
       remainingEtaMinutes: null,
     );

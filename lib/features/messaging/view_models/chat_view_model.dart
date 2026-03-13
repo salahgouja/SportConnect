@@ -234,9 +234,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
         if (chat != null) {
           final notificationRepo = ref.read(notificationRepositoryProvider);
           final preview = type == MessageType.text
-              ? (content.length > 60
-                  ? '${content.substring(0, 60)}…'
-                  : content)
+              ? (content.length > 60 ? '${content.substring(0, 60)}…' : content)
               : '[${type.name}]';
           for (final participantId in chat.participantIds) {
             if (participantId == currentUserId) continue;

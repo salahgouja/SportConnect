@@ -289,8 +289,10 @@ class PushNotificationService {
       case 'ride_booking_accepted':
         // Navigate to the pending screen so the rider can complete payment
         context.push(
-          AppRoutes.rideBookingPending.path
-              .replaceFirst(':rideId', referenceId),
+          AppRoutes.rideBookingPending.path.replaceFirst(
+            ':rideId',
+            referenceId,
+          ),
         );
       case 'ride_update':
       case 'ride_booking_rejected':

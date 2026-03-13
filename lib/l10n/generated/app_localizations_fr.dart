@@ -1871,7 +1871,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get legal => 'Légal';
 
   @override
-  String get sportconnectV100 => 'SportConnect v1.0.0';
+  String get sportconnectV100 => 'SportConnect v0.0.10';
 
   @override
   String get noBlockedUsers => 'Aucun utilisateur bloqué';

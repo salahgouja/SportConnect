@@ -98,7 +98,9 @@ class DriverEarningsScreen extends ConsumerWidget {
       ..writeln()
       ..writeln(l10n.exportRideStatistics)
       ..writeln('  ${l10n.statRides}: ${stats.totalRides}')
-      ..writeln('  ${l10n.distance}: ${stats.totalDistance.toStringAsFixed(1)} km')
+      ..writeln(
+        '  ${l10n.distance}: ${stats.totalDistance.toStringAsFixed(1)} km',
+      )
       ..writeln();
 
     if (txList != null && txList.isNotEmpty) {

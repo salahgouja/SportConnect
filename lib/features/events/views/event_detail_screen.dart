@@ -98,7 +98,9 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         error: (e, _) => _ErrorBody(message: e.toString()),
         data: (event) {
           if (event == null) {
-            return _ErrorBody(message: AppLocalizations.of(context).eventNotFound);
+            return _ErrorBody(
+              message: AppLocalizations.of(context).eventNotFound,
+            );
           }
           return _buildBody(event, userId, detailVm);
         },
@@ -203,7 +205,9 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                 // ── Participant list preview ──
                 if (event.participantIds.isNotEmpty) ...[
                   Text(
-                    AppLocalizations.of(context).eventParticipantsCount(event.participantIds.length),
+                    AppLocalizations.of(
+                      context,
+                    ).eventParticipantsCount(event.participantIds.length),
                     style: TextStyle(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.w700,
@@ -467,7 +471,9 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
 
     final isFull = event.isFull;
     return PremiumButton(
-      text: isFull ? AppLocalizations.of(context).eventFull : AppLocalizations.of(context).eventJoin,
+      text: isFull
+          ? AppLocalizations.of(context).eventFull
+          : AppLocalizations.of(context).eventJoin,
       icon: isFull ? Icons.block_rounded : Icons.group_add_rounded,
       fullWidth: true,
       isLoading: detailState.isJoining,
@@ -525,9 +531,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
           barrierLabel: 'Delete event dialog',
           builder: (ctx) => AlertDialog(
             title: Text(l10n.eventDeleteConfirmTitle),
-            content: Text(
-              l10n.eventDeleteWarning,
-            ),
+            content: Text(l10n.eventDeleteWarning),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(false),
@@ -1069,9 +1073,15 @@ class _CountdownText extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final String text;
     if (diff.inDays > 0) {
-      text = l10n.eventCountdownDaysHours(diff.inDays, diff.inHours.remainder(24));
+      text = l10n.eventCountdownDaysHours(
+        diff.inDays,
+        diff.inHours.remainder(24),
+      );
     } else if (diff.inHours > 0) {
-      text = l10n.eventCountdownHoursMinutes(diff.inHours, diff.inMinutes.remainder(60));
+      text = l10n.eventCountdownHoursMinutes(
+        diff.inHours,
+        diff.inMinutes.remainder(60),
+      );
     } else {
       text = l10n.eventCountdownMinutes(diff.inMinutes);
     }
@@ -1143,7 +1153,11 @@ class _RideStatusSelector extends StatelessWidget {
   static List<(String, IconData, String)> _options(AppLocalizations l10n) => [
     ('driving', Icons.directions_car_rounded, l10n.eventImDriving),
     ('need_ride', Icons.hail_rounded, l10n.eventNeedRide),
-    ('self_arranged', Icons.check_circle_outline_rounded, l10n.eventSelfArranged),
+    (
+      'self_arranged',
+      Icons.check_circle_outline_rounded,
+      l10n.eventSelfArranged,
+    ),
   ];
 
   @override

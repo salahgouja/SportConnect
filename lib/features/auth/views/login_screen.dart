@@ -64,7 +64,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Future<void> _saveCredentials() async {
-    final email = (_formKey.currentState?.value['email'] as String? ?? '').trim();
+    final email =
+        (_formKey.currentState?.fields['email']!.value as String? ?? '').trim();
     await ref.read(loginUiViewModelProvider.notifier).persistCredentials(email);
   }
 
@@ -81,8 +82,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       return;
     }
 
-    final email = (_formKey.currentState!.value['email'] as String).trim();
-    final password = _formKey.currentState!.value['password'] as String;
+    final email = (_formKey.currentState!.fields['email']!.value as String)
+        .trim();
+    final password = _formKey.currentState!.fields['password']!.value as String;
     final rememberMe = ref.read(loginUiViewModelProvider).rememberMe;
     final success = await ref
         .read(loginViewModelProvider.notifier)
@@ -114,7 +116,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     });
 
     ref.listen(socialAuthViewModelProvider, (previous, next) {
-      if (next.errorMessage != null && next.errorMessage != previous?.errorMessage) {
+      if (next.errorMessage != null &&
+          next.errorMessage != previous?.errorMessage) {
         final errorMessage = _getAuthErrorMessage(next.errorMessage);
         TalkerService.error('Social sign-in failed: $errorMessage');
         _showAdaptiveMessage(errorMessage, isError: true);
@@ -134,25 +137,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                 children: [
                   SizedBox(height: 40.h),
                   _buildLogoHeader(),
-                  SizedBox(height: 32.h),
+                  SizedBox(height: 20.h),
                   _buildWelcomeText(),
                   SizedBox(height: 32.h),
-                  _buildSocialButtons(socialState),
-                  SizedBox(height: 24.h),
-                  _buildDivider(),
-                  SizedBox(height: 24.h),
                   _buildEmailField(),
                   SizedBox(height: 16.h),
                   _buildPasswordField(),
                   SizedBox(height: 14.h),
                   _buildOptionsRow(),
-                  SizedBox(height: 28.h),
+                  SizedBox(height: 12.h),
                   _buildSignInButton(loginState, socialState),
+                  SizedBox(height: 24.h),
+                  _buildDivider(),
+                  SizedBox(height: 16.h),
+                  _buildSocialButtons(socialState),
                   SizedBox(height: 28.h),
                   _buildSignUpLink(),
-                  SizedBox(height: 8.h),
-                  _buildAlternateAuthLinks(),
-                  SizedBox(height: 16.h),
+                  SizedBox(height: 24.h),
                   _buildLegalFooter(),
                   SizedBox(height: 32.h),
                 ],
@@ -177,33 +178,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           label: 'SportConnect logo',
           image: true,
           child:
-              Container(
-                    width: 80.w,
-                    height: 80.w,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [AppColors.primary, AppColors.primaryDark],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.25),
-                          blurRadius: 24,
-                          spreadRadius: 0,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: Center(
+              ClipRRect(
+                    borderRadius: BorderRadius.circular(200.r),
+                    child: Container(
+                      width: 120.w,
+                      height: 120.w,
+                      padding: EdgeInsets.all(16.w),
                       child: ExcludeSemantics(
-                        // Icon is non-interactive and already described by the
-                        // parent Semantics label — exclude to avoid duplication.
-                        child: Icon(
-                          Icons.directions_run_rounded,
-                          size: 40.sp,
-                          color: Colors.white,
+                        child: Image.asset(
+                          'assets/images/branding.png',
+                          fit: BoxFit.contain,
                         ),
                       ),
                     ),
@@ -216,7 +200,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     duration: 600.ms,
                   ),
         ),
-
         SizedBox(height: 16.h),
 
         // App name — plain Text, no changes needed.
@@ -416,7 +399,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   Widget _buildDivider() {
     return TextDivider(
-      text: AppLocalizations.of(context).orSignInWithEmail,
+      text: "Or continue with",
     ).animate().fadeIn(duration: 400.ms, delay: 300.ms);
   }
 
@@ -565,40 +548,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         ),
       ],
     ).animate().fadeIn(duration: 400.ms, delay: 550.ms);
-  }
-
-  Widget _buildAlternateAuthLinks() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        TextButton(
-          onPressed: () => context.push(AppRoutes.phoneOtp.path),
-          child: Text(
-            'Use phone OTP',
-            style: TextStyle(
-              fontSize: 13.sp,
-              fontWeight: FontWeight.w600,
-              color: AppColors.primary,
-            ),
-          ),
-        ),
-        Text(
-          '•',
-          style: TextStyle(fontSize: 13.sp, color: AppColors.textTertiary),
-        ),
-        TextButton(
-          onPressed: () => context.push(AppRoutes.onboarding.path),
-          child: Text(
-            'View onboarding',
-            style: TextStyle(
-              fontSize: 13.sp,
-              fontWeight: FontWeight.w600,
-              color: AppColors.primary,
-            ),
-          ),
-        ),
-      ],
-    ).animate().fadeIn(duration: 400.ms, delay: 575.ms);
   }
 
   Widget _buildLegalFooter() {

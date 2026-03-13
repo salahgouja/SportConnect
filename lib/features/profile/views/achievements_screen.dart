@@ -174,7 +174,9 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
           Icon(Icons.star_rounded, color: Colors.white, size: 24.sp),
           SizedBox(width: 8.w),
           Text(
-            AppLocalizations.of(context).levelValueValue(userLevel.level, userLevel.name),
+            AppLocalizations.of(
+              context,
+            ).levelValueValue(userLevel.level, userLevel.name),
             style: TextStyle(
               fontSize: 18.sp,
               fontWeight: FontWeight.w700,
@@ -191,10 +193,12 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
     final currentXP = gamification.totalXP - userLevel.minXP.toInt();
     final isMaxLevel = !userLevel.maxXP.isFinite;
     final maxXP = isMaxLevel
-        ? currentXP  // At max level, show full bar
+        ? currentXP // At max level, show full bar
         : (userLevel.maxXP - userLevel.minXP).toInt();
     final xpNeeded = isMaxLevel ? 0 : (maxXP - currentXP).clamp(0, maxXP);
-    final progress = isMaxLevel ? 1.0 : (maxXP > 0 ? (currentXP / maxXP).clamp(0.0, 1.0) : 1.0);
+    final progress = isMaxLevel
+        ? 1.0
+        : (maxXP > 0 ? (currentXP / maxXP).clamp(0.0, 1.0) : 1.0);
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 40.w),
       child: Column(
@@ -213,7 +217,9 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
               Text(
                 isMaxLevel
                     ? '★ MAX'
-                    : AppLocalizations.of(context).valueXp2(_formatNumber(maxXP)),
+                    : AppLocalizations.of(
+                        context,
+                      ).valueXp2(_formatNumber(maxXP)),
                 style: TextStyle(
                   fontSize: 14.sp,
                   color: Colors.white.withValues(alpha: 0.8),
@@ -774,13 +780,18 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.leaderboard_rounded,
-                    size: 64.sp, color: AppColors.textTertiary),
+                Icon(
+                  Icons.leaderboard_rounded,
+                  size: 64.sp,
+                  color: AppColors.textTertiary,
+                ),
                 SizedBox(height: 16.h),
                 Text(
                   AppLocalizations.of(context).noResultsFound,
                   style: TextStyle(
-                      fontSize: 16.sp, color: AppColors.textSecondary),
+                    fontSize: 16.sp,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -795,13 +806,15 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
               return _buildLeaderboardHeader(entries, user);
             }
             final entry = entries[index - 1];
-            return _buildLeaderboardRow(_LeaderboardEntry(
-              entry.displayName,
-              entry.totalXP,
-              entry.rank,
-              level: entry.level,
-              isCurrentUser: entry.odid == user.uid,
-            ));
+            return _buildLeaderboardRow(
+              _LeaderboardEntry(
+                entry.displayName,
+                entry.totalXP,
+                entry.rank,
+                level: entry.level,
+                isCurrentUser: entry.odid == user.uid,
+              ),
+            );
           },
         );
       },
@@ -816,7 +829,9 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
   }
 
   Widget _buildLeaderboardHeader(
-      List<LeaderboardEntry> entries, UserModel user) {
+    List<LeaderboardEntry> entries,
+    UserModel user,
+  ) {
     // Need at least 3 entries for the podium
     if (entries.length < 3) {
       return SizedBox(height: 16.h);
@@ -840,23 +855,26 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
           _buildTopRanker(
             medals[0],
             top3[1].displayName,
-            AppLocalizations.of(context).valueXp2(
-                _formatNumber(top3[1].totalXP)),
+            AppLocalizations.of(
+              context,
+            ).valueXp2(_formatNumber(top3[1].totalXP)),
             2,
           ),
           _buildTopRanker(
             medals[1],
             top3[0].displayName,
-            AppLocalizations.of(context).valueXp2(
-                _formatNumber(top3[0].totalXP)),
+            AppLocalizations.of(
+              context,
+            ).valueXp2(_formatNumber(top3[0].totalXP)),
             1,
             isFirst: true,
           ),
           _buildTopRanker(
             medals[2],
             top3[2].displayName,
-            AppLocalizations.of(context).valueXp2(
-                _formatNumber(top3[2].totalXP)),
+            AppLocalizations.of(
+              context,
+            ).valueXp2(_formatNumber(top3[2].totalXP)),
             3,
           ),
         ],

@@ -215,36 +215,26 @@ class RiderHomeViewModel extends _$RiderHomeViewModel {
     }
 
     if (permission == LocationPermission.deniedForever) {
-      state = state.copyWith(
-        locationState: LocationPermissionState.deniedHard,
-      );
+      state = state.copyWith(locationState: LocationPermissionState.deniedHard);
       return;
     }
 
     // First launch or soft-denied previously
-    state = state.copyWith(
-      locationState: LocationPermissionState.unknown,
-    );
+    state = state.copyWith(locationState: LocationPermissionState.unknown);
   }
 
   /// Transition to acquiring state (called when user taps "Allow Location")
   void setAcquiringLocation() {
-    state = state.copyWith(
-      locationState: LocationPermissionState.acquiring,
-    );
+    state = state.copyWith(locationState: LocationPermissionState.acquiring);
   }
 
   /// Handle permission denial states
   void setLocationDeniedSoft() {
-    state = state.copyWith(
-      locationState: LocationPermissionState.deniedSoft,
-    );
+    state = state.copyWith(locationState: LocationPermissionState.deniedSoft);
   }
 
   void setLocationDeniedHard() {
-    state = state.copyWith(
-      locationState: LocationPermissionState.deniedHard,
-    );
+    state = state.copyWith(locationState: LocationPermissionState.deniedHard);
   }
 
   void setLocationServiceDisabled() {
@@ -257,9 +247,7 @@ class RiderHomeViewModel extends _$RiderHomeViewModel {
   Future<void> acquireLocationAndShowMap() async {
     // Stay in acquiring if not already
     if (state.locationState != LocationPermissionState.acquiring) {
-      state = state.copyWith(
-        locationState: LocationPermissionState.acquiring,
-      );
+      state = state.copyWith(locationState: LocationPermissionState.acquiring);
     }
 
     try {
@@ -300,50 +288,49 @@ class RiderHomeViewModel extends _$RiderHomeViewModel {
       distanceFilter: 20,
     );
 
-    _positionStreamSubscription = Geolocator.getPositionStream(
-      locationSettings: settings,
-    ).listen(
-      (Position position) {
-        final next = LatLng(position.latitude, position.longitude);
+    _positionStreamSubscription =
+        Geolocator.getPositionStream(locationSettings: settings).listen(
+          (Position position) {
+            final next = LatLng(position.latitude, position.longitude);
 
-        // Skip tiny movements to avoid unnecessary rebuilds
-        final current = state.currentLocation;
-        if (current != null) {
-          final moved = Geolocator.distanceBetween(
-            current.latitude,
-            current.longitude,
-            next.latitude,
-            next.longitude,
-          );
-          final headingDelta = (state.userHeading - position.heading).abs();
-          if (moved < 12 && headingDelta < 8) return;
-        }
+            // Skip tiny movements to avoid unnecessary rebuilds
+            final current = state.currentLocation;
+            if (current != null) {
+              final moved = Geolocator.distanceBetween(
+                current.latitude,
+                current.longitude,
+                next.latitude,
+                next.longitude,
+              );
+              final headingDelta = (state.userHeading - position.heading).abs();
+              if (moved < 12 && headingDelta < 8) return;
+            }
 
-        // Update location
-        var newState = state.copyWith(
-          currentLocation: next,
-          userHeading: position.heading,
+            // Update location
+            var newState = state.copyWith(
+              currentLocation: next,
+              userHeading: position.heading,
+            );
+
+            // Refresh Firestore query anchor every 1 km
+            final anchor = state.nearbyQueryAnchor;
+            if (anchor == null ||
+                Geolocator.distanceBetween(
+                      anchor.latitude,
+                      anchor.longitude,
+                      next.latitude,
+                      next.longitude,
+                    ) >=
+                    1000) {
+              newState = newState.copyWith(nearbyQueryAnchor: next);
+            }
+
+            state = newState;
+          },
+          onError: (e) {
+            TalkerService.error('Location stream error: $e');
+          },
         );
-
-        // Refresh Firestore query anchor every 1 km
-        final anchor = state.nearbyQueryAnchor;
-        if (anchor == null ||
-            Geolocator.distanceBetween(
-                  anchor.latitude,
-                  anchor.longitude,
-                  next.latitude,
-                  next.longitude,
-                ) >=
-                1000) {
-          newState = newState.copyWith(nearbyQueryAnchor: next);
-        }
-
-        state = newState;
-      },
-      onError: (e) {
-        TalkerService.error('Location stream error: $e');
-      },
-    );
   }
 
   /// Stop location tracking (cleanup)
@@ -444,10 +431,7 @@ class RiderHomeViewModel extends _$RiderHomeViewModel {
 
   /// Set active route
   void setActiveRoute(RouteInfo? route) {
-    state = state.copyWith(
-      activeRoute: route,
-      showRouteInfo: route != null,
-    );
+    state = state.copyWith(activeRoute: route, showRouteInfo: route != null);
   }
 
   /// Set alternative routes

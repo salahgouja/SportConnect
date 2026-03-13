@@ -56,7 +56,9 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
       ),
     );
 
-    _initializeRideSession();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _initializeRideSession();
+    });
   }
 
   Future<void> _initializeRideSession() async {
@@ -248,15 +250,14 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
     // (e.g. driver force-quit app and returned to a finished ride).
     if (ride.status == RideStatus.completed &&
         !rideState.hasAutoNavigatedToCompletion) {
-      ref
-          .read(activeRideViewModelProvider(widget.rideId!).notifier)
-          .markCompletionNavigationHandled();
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          context.pushReplacement(
-            AppRoutes.rideCompletion.path.replaceFirst(':id', ride.id),
-          );
-        }
+        if (!mounted) return;
+        ref
+            .read(activeRideViewModelProvider(widget.rideId!).notifier)
+            .markCompletionNavigationHandled();
+        context.pushReplacement(
+          AppRoutes.rideCompletion.path.replaceFirst(':id', ride.id),
+        );
       });
     }
 
@@ -338,7 +339,15 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
             _buildNavigationPanel(ride, rideState),
 
           // Bottom Panel with Ride Info
-          _buildBottomPanel(ride, rideState),
+          DraggableScrollableSheet(
+            initialChildSize: 0.38,
+            minChildSize: 0.15,
+            maxChildSize: 0.80,
+            snap: true,
+            snapSizes: const [0.15, 0.38, 0.80],
+            builder: (context, scrollController) =>
+                _buildBottomSheet(scrollController, ride, rideState),
+          ),
 
           // Passenger Details Sheet
           if (rideState.showPassengerDetails)
@@ -396,11 +405,12 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
           userAgentPackageName: 'com.sportconnect.app',
         ),
 
-        // Route Line — use OSRM real road route when available, else fallback with waypoints
+        // Route Line — remaining route from driver's current position, or full route as fallback
         PolylineLayer(
           polylines: [
             Polyline(
               points:
+                  rideState.remainingRoutePoints ??
                   rideState.osrmRoutePoints ??
                   [
                     pickupLocation,
@@ -419,6 +429,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
             ),
             Polyline(
               points:
+                  rideState.remainingRoutePoints ??
                   rideState.osrmRoutePoints ??
                   [
                     pickupLocation,
@@ -972,312 +983,300 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
     );
   }
 
-  Widget _buildBottomPanel(RideModel ride, ActiveRideState rideState) {
+  Widget _buildBottomSheet(
+    ScrollController scrollController,
+    RideModel ride,
+    ActiveRideState rideState,
+  ) {
     final bookings = rideState.bookings;
     final distance = rideState.remainingDistanceKm ?? ride.distanceKm ?? 0.0;
     final duration = rideState.remainingEtaMinutes ?? ride.durationMinutes ?? 0;
     final fare =
         ride.pricePerSeat * (ride.bookedSeats > 0 ? ride.bookedSeats : 1);
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
 
-    return Positioned(
-      bottom: 0,
-      left: 0,
-      right: 0,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24.r),
-            topRight: Radius.circular(24.r),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 20,
-              offset: const Offset(0, -5),
-            ),
-          ],
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(24.r),
+          topRight: Radius.circular(24.r),
         ),
-        child: SafeArea(
-          top: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Handle
-              Container(
-                margin: EdgeInsets.symmetric(vertical: 10.h),
-                width: 40.w,
-                height: 4.h,
-                decoration: BoxDecoration(
-                  color: AppColors.border,
-                  borderRadius: BorderRadius.circular(2.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: ListView(
+        controller: scrollController,
+        padding: EdgeInsets.zero,
+        children: [
+          // Handle
+          Container(
+            margin: EdgeInsets.symmetric(vertical: 10.h),
+            width: 40.w,
+            height: 4.h,
+            decoration: BoxDecoration(
+              color: AppColors.border,
+              borderRadius: BorderRadius.circular(2.r),
+            ),
+          ),
+
+          // Ride Status
+          _buildRideStatusBanner(ride, rideState),
+
+          // Connectivity indicator
+          if (!rideState.isConnected)
+            Container(
+              margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 4.h),
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10.r),
+                border: Border.all(
+                  color: AppColors.warning.withValues(alpha: 0.4),
                 ),
               ),
-
-              // Ride Status
-              _buildRideStatusBanner(ride, rideState),
-
-              // Connectivity indicator
-              if (!rideState.isConnected)
-                Container(
-                  margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 4.h),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 12.w,
-                    vertical: 8.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.warning.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(10.r),
-                    border: Border.all(
-                      color: AppColors.warning.withValues(alpha: 0.4),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.wifi_off,
-                        size: 18.sp,
+              child: Row(
+                children: [
+                  Icon(Icons.wifi_off, size: 18.sp, color: AppColors.warning),
+                  SizedBox(width: 8.w),
+                  Expanded(
+                    child: Text(
+                      'Poor connection — location updates queued'
+                      '${rideState.pendingLocationWrites > 0 ? ' (${rideState.pendingLocationWrites})' : ''}',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w500,
                         color: AppColors.warning,
                       ),
-                      SizedBox(width: 8.w),
-                      Expanded(
-                        child: Text(
-                          'Poor connection — location updates queued'
-                          '${rideState.pendingLocationWrites > 0 ? ' (${rideState.pendingLocationWrites})' : ''}',
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.warning,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-
-              // Delay banner
-              if (rideState.rideDelayMinutes >= 5 &&
-                  ride.status != RideStatus.inProgress)
-                Container(
-                  margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 4.h),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 12.w,
-                    vertical: 8.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.error.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10.r),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.schedule, size: 18.sp, color: AppColors.error),
-                      SizedBox(width: 8.w),
-                      Expanded(
-                        child: Text(
-                          'Departure delayed by ${rideState.rideDelayMinutes} min — passengers notified',
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.error,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-              // Pending stop request from passenger
-              if (rideState.pendingStopRequest != null)
-                _buildPendingStopBanner(rideState.pendingStopRequest!),
-
-              // Timeout warning
-              if (rideState.rideTimeoutMinutes != null &&
-                  !rideState.hasShownTimeoutWarning)
-                _buildTimeoutWarning(ride, rideState),
-
-              // Safety Check-In
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 4.h),
-                child: SafetyCheckInBanner(
-                  onCheckIn: () {
-                    HapticFeedback.lightImpact();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text('Safety check-in confirmed!'),
-                        backgroundColor: AppColors.success,
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  },
-                ),
+                ],
               ),
+            ),
 
-              // Passenger Info
-              _buildPassengerInfo(ride, rideState),
-
-              Divider(color: AppColors.border),
-
-              // Trip Details
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    RideTripStat(
-                      label: AppLocalizations.of(context).distance,
-                      value: AppLocalizations.of(
-                        context,
-                      ).valueKm(distance.toStringAsFixed(1)),
-                      icon: Icons.straighten,
-                    ),
-                    RideTripStat(
-                      label: AppLocalizations.of(context).duration,
-                      value: AppLocalizations.of(context).valueMin(duration),
-                      icon: Icons.schedule,
-                    ),
-                    RideTripStat(
-                      label: AppLocalizations.of(context).fare,
-                      value: AppLocalizations.of(
-                        context,
-                      ).value5(fare.toStringAsFixed(0)),
-                      icon: Icons.attach_money,
-                    ),
-                  ],
-                ),
+          // Delay banner
+          if (rideState.rideDelayMinutes >= 5 &&
+              ride.status != RideStatus.inProgress)
+            Container(
+              margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 4.h),
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10.r),
               ),
-
-              SizedBox(height: 16.h),
-
-              // Quick Message Chips
-              if (ride.status == RideStatus.inProgress)
-                _buildQuickMessageChips(ride, rideState),
-
-              // Action Buttons
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w),
-                child: Row(
-                  children: [
-                    // Call Button
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          if (bookings.isEmpty) return;
-                          if (bookings.length == 1) {
-                            _callPassenger(bookings.first.passengerId);
-                          } else {
-                            _showPassengerPicker(
-                              bookings,
-                              (passengerId) => _callPassenger(passengerId),
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.phone),
-                        label: Text(AppLocalizations.of(context).call),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.primary,
-                          side: BorderSide(color: AppColors.primary),
-                          padding: EdgeInsets.symmetric(vertical: 14.h),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12.r),
-                          ),
-                        ),
+              child: Row(
+                children: [
+                  Icon(Icons.schedule, size: 18.sp, color: AppColors.error),
+                  SizedBox(width: 8.w),
+                  Expanded(
+                    child: Text(
+                      'Departure delayed by ${rideState.rideDelayMinutes} min — passengers notified',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.error,
                       ),
                     ),
-                    SizedBox(width: 12.w),
-                    // Message Button
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          if (bookings.isEmpty) return;
-                          if (bookings.length == 1) {
-                            _messagePassenger(bookings.first.passengerId);
-                          } else {
-                            _showPassengerPicker(
-                              bookings,
-                              (passengerId) => _messagePassenger(passengerId),
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.message),
-                        label: Text(AppLocalizations.of(context).message),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.primary,
-                          side: BorderSide(color: AppColors.primary),
-                          padding: EdgeInsets.symmetric(vertical: 14.h),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12.r),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              SizedBox(height: 12.h),
-
-              // Main Action Button
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: rideState.isProcessing
-                        ? null
-                        : () => _handleMainAction(ride),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _getActionButtonColor(rideState.phase),
-                      disabledBackgroundColor: _getActionButtonColor(
-                        rideState.phase,
-                      ).withValues(alpha: 0.6),
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(vertical: 16.h),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16.r),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: rideState.isProcessing
-                        ? SizedBox(
-                            height: 22.w,
-                            width: 22.w,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2.5,
-                            ),
-                          )
-                        : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                _getActionButtonIcon(
-                                  rideState.phase,
-                                  status: ride.status,
-                                ),
-                                size: 22.w,
-                              ),
-                              SizedBox(width: 8.w),
-                              Text(
-                                _getActionButtonText(
-                                  rideState.phase,
-                                  status: ride.status,
-                                ),
-                                style: TextStyle(
-                                  fontSize: 16.sp,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
                   ),
-                ),
+                ],
               ),
+            ),
 
-              SizedBox(height: 20.h),
-            ],
+          // Pending stop request from passenger
+          if (rideState.pendingStopRequest != null)
+            _buildPendingStopBanner(rideState.pendingStopRequest!),
+
+          // Timeout warning
+          if (rideState.rideTimeoutMinutes != null &&
+              !rideState.hasShownTimeoutWarning)
+            _buildTimeoutWarning(ride, rideState),
+
+          // Safety Check-In
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 4.h),
+            child: SafetyCheckInBanner(
+              onCheckIn: () {
+                HapticFeedback.lightImpact();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Safety check-in confirmed!'),
+                    backgroundColor: AppColors.success,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+            ),
           ),
-        ),
-      ).animate().fadeIn().slideY(begin: 0.3),
+
+          // Passenger Info
+          _buildPassengerInfo(ride, rideState),
+
+          Divider(color: AppColors.border),
+
+          // Trip Details
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                RideTripStat(
+                  label: AppLocalizations.of(context).distance,
+                  value: AppLocalizations.of(
+                    context,
+                  ).valueKm(distance.toStringAsFixed(1)),
+                  icon: Icons.straighten,
+                ),
+                RideTripStat(
+                  label: AppLocalizations.of(context).duration,
+                  value: AppLocalizations.of(context).valueMin(duration),
+                  icon: Icons.schedule,
+                ),
+                RideTripStat(
+                  label: AppLocalizations.of(context).fare,
+                  value: AppLocalizations.of(
+                    context,
+                  ).value5(fare.toStringAsFixed(0)),
+                  icon: Icons.attach_money,
+                ),
+              ],
+            ),
+          ),
+
+          SizedBox(height: 16.h),
+
+          // Quick Message Chips
+          if (ride.status == RideStatus.inProgress)
+            _buildQuickMessageChips(ride, rideState),
+
+          // Action Buttons
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
+            child: Row(
+              children: [
+                // Call Button
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      if (bookings.isEmpty) return;
+                      if (bookings.length == 1) {
+                        _callPassenger(bookings.first.passengerId);
+                      } else {
+                        _showPassengerPicker(
+                          bookings,
+                          (passengerId) => _callPassenger(passengerId),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.phone),
+                    label: Text(AppLocalizations.of(context).call),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      side: BorderSide(color: AppColors.primary),
+                      padding: EdgeInsets.symmetric(vertical: 14.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 12.w),
+                // Message Button
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      if (bookings.isEmpty) return;
+                      if (bookings.length == 1) {
+                        _messagePassenger(bookings.first.passengerId);
+                      } else {
+                        _showPassengerPicker(
+                          bookings,
+                          (passengerId) => _messagePassenger(passengerId),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.message),
+                    label: Text(AppLocalizations.of(context).message),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      side: BorderSide(color: AppColors.primary),
+                      padding: EdgeInsets.symmetric(vertical: 14.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          SizedBox(height: 12.h),
+
+          // Main Action Button
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: rideState.isProcessing
+                    ? null
+                    : () => _handleMainAction(ride),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _getActionButtonColor(rideState.phase),
+                  disabledBackgroundColor: _getActionButtonColor(
+                    rideState.phase,
+                  ).withValues(alpha: 0.6),
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(vertical: 16.h),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16.r),
+                  ),
+                  elevation: 0,
+                ),
+                child: rideState.isProcessing
+                    ? SizedBox(
+                        height: 22.w,
+                        width: 22.w,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2.5,
+                        ),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            _getActionButtonIcon(
+                              rideState.phase,
+                              status: ride.status,
+                            ),
+                            size: 22.w,
+                          ),
+                          SizedBox(width: 8.w),
+                          Text(
+                            _getActionButtonText(
+                              rideState.phase,
+                              status: ride.status,
+                            ),
+                            style: TextStyle(
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            ),
+          ),
+
+          SizedBox(height: 12.h + bottomPadding),
+        ],
+      ),
     );
   }
 

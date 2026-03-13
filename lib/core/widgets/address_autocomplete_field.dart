@@ -70,7 +70,7 @@ class AddressAutocompleteFieldState extends State<AddressAutocompleteField> {
   LatLng? get location => _selectedLocation;
 
   String? validate() {
-    if (!mounted) return null; 
+    if (!mounted) return null;
     _hasInteracted = true;
     final error = widget.validator?.call(_controller.text);
     setState(() => _errorText = error);

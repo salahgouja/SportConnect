@@ -28,8 +28,11 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
   Future<void> _sendResetEmail() async {
     if (!(_formKey.currentState?.saveAndValidate() ?? false)) return;
-    final email = (_formKey.currentState!.value['email'] as String).trim();
-    await ref.read(forgotPasswordViewModelProvider.notifier).sendResetEmail(email);
+    final email = (_formKey.currentState!.fields['email']!.value as String)
+        .trim();
+    await ref
+        .read(forgotPasswordViewModelProvider.notifier)
+        .sendResetEmail(email);
   }
 
   @override
@@ -38,7 +41,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     final vmState = ref.watch(forgotPasswordViewModelProvider);
 
     ref.listen(forgotPasswordViewModelProvider, (previous, next) {
-      if (next.errorMessage != null && next.errorMessage != previous?.errorMessage) {
+      if (next.errorMessage != null &&
+          next.errorMessage != previous?.errorMessage) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(l10n.forgotPasswordSendError),
@@ -173,7 +177,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     );
   }
 
-  Widget _buildSuccessState(AppLocalizations l10n, ForgotPasswordState vmState) {
+  Widget _buildSuccessState(
+    AppLocalizations l10n,
+    ForgotPasswordState vmState,
+  ) {
     return Column(
       children: [
         SizedBox(height: 60.h),

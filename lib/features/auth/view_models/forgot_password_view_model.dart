@@ -28,14 +28,13 @@ class ForgotPasswordState {
     String? sentEmail,
     String? errorMessage,
     bool clearError = false,
-  }) =>
-      ForgotPasswordState(
-        isLoading: isLoading ?? this.isLoading,
-        emailSent: emailSent ?? this.emailSent,
-        resendCooldown: resendCooldown ?? this.resendCooldown,
-        sentEmail: sentEmail ?? this.sentEmail,
-        errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
-      );
+  }) => ForgotPasswordState(
+    isLoading: isLoading ?? this.isLoading,
+    emailSent: emailSent ?? this.emailSent,
+    resendCooldown: resendCooldown ?? this.resendCooldown,
+    sentEmail: sentEmail ?? this.sentEmail,
+    errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+  );
 }
 
 @riverpod
@@ -66,10 +65,7 @@ class ForgotPasswordViewModel extends _$ForgotPasswordViewModel {
       _startCooldown();
     } catch (e) {
       if (!ref.mounted) return;
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
   }
 

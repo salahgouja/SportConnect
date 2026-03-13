@@ -213,9 +213,10 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
       body: switch (locationState) {
         LocationPermissionState.unknown => _buildLocationGate(),
         LocationPermissionState.acquiring => _buildAcquiringState(),
-        LocationPermissionState.ready => vmState.showMapView
-            ? _buildMapHome(vmState)
-            : _buildFeedHome(vmState),
+        LocationPermissionState.ready =>
+          vmState.showMapView
+              ? _buildMapHome(vmState)
+              : _buildFeedHome(vmState),
         LocationPermissionState.deniedSoft => _buildDeniedSoftState(),
         LocationPermissionState.deniedHard => _buildDeniedHardState(),
         LocationPermissionState.serviceDisabled => _buildServiceDisabledState(),
@@ -693,9 +694,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
   // ─────────────────────────────────────────────────────────────
 
   Widget _buildFeedHome(RiderHomeState vmState) {
-    return RiderHomeFeed(
-      onSearchTap: _showInlineSearchSheet,
-    );
+    return RiderHomeFeed(onSearchTap: _showInlineSearchSheet);
   }
 
   // ─────────────────────────────────────────────────────────────

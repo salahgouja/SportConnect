@@ -359,7 +359,9 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
               ),
               SizedBox(width: 8.w),
               Text(
-                widget.isEditMode ? AppLocalizations.of(context).editRideTitle : AppLocalizations.of(context).offerARideTitle,
+                widget.isEditMode
+                    ? AppLocalizations.of(context).editRideTitle
+                    : AppLocalizations.of(context).offerARideTitle,
                 style: TextStyle(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.w700,
@@ -795,7 +797,9 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
               Expanded(
                 child: _buildTimeInput(
                   label: AppLocalizations.of(context).timeLabel,
-                  value: _departureTime?.format(context) ?? AppLocalizations.of(context).selectTimePlaceholder,
+                  value:
+                      _departureTime?.format(context) ??
+                      AppLocalizations.of(context).selectTimePlaceholder,
                   icon: Icons.access_time_rounded,
                   onTap: _selectTime,
                 ),
@@ -856,7 +860,15 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
 
   Widget _buildRecurringDaysSelector() {
     final l10n = AppLocalizations.of(context);
-    final dayLabels = [l10n.dayMon, l10n.dayTue, l10n.dayWed, l10n.dayThu, l10n.dayFri, l10n.daySat, l10n.daySun];
+    final dayLabels = [
+      l10n.dayMon,
+      l10n.dayTue,
+      l10n.dayWed,
+      l10n.dayThu,
+      l10n.dayFri,
+      l10n.daySat,
+      l10n.daySun,
+    ];
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -946,7 +958,8 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                   final baseDate = _departureDate ?? DateTime.now();
                   final picked = await showDatePicker(
                     context: context,
-                    initialDate: _formState.recurringEndDate ??
+                    initialDate:
+                        _formState.recurringEndDate ??
                         baseDate.add(const Duration(days: 28)),
                     firstDate: baseDate.add(const Duration(days: 1)),
                     lastDate: baseDate.add(const Duration(days: 365)),
@@ -1149,7 +1162,9 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                 ),
                 SizedBox(height: 2.h),
                 Text(
-                  wp.address.isNotEmpty ? wp.address : AppLocalizations.of(context).tapToSetLocation,
+                  wp.address.isNotEmpty
+                      ? wp.address
+                      : AppLocalizations.of(context).tapToSetLocation,
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 13.sp,
@@ -1185,7 +1200,9 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   Future<void> _addWaypoint() async {
     final result = await MapLocationPicker.show(
       context,
-      title: AppLocalizations.of(context).selectStopTitle(_waypoints.length + 1),
+      title: AppLocalizations.of(
+        context,
+      ).selectStopTitle(_waypoints.length + 1),
     );
     if (result != null) {
       final waypoint = LocationPoint(
@@ -1249,9 +1266,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              Text(
-                AppLocalizations.of(context).noVehiclesError,
-              ),
+              Text(AppLocalizations.of(context).noVehiclesError),
               TextButton(
                 onPressed: () => context.push(AppRoutes.driverVehicles.path),
                 child: Text(AppLocalizations.of(context).addVehicleButton),
@@ -1480,7 +1495,12 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                   Text(
                     _pricePerSeat < 1
                         ? l10n.minimumPriceError
-                        : l10n.totalPriceForSeats((_pricePerSeat * _availableSeats).toStringAsFixed(0), _availableSeats),
+                        : l10n.totalPriceForSeats(
+                            (_pricePerSeat * _availableSeats).toStringAsFixed(
+                              0,
+                            ),
+                            _availableSeats,
+                          ),
                     style: TextStyle(
                       fontSize: 11.sp,
                       color: _pricePerSeat < 1
@@ -1629,7 +1649,12 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                   Text(
                     _pricePerSeat < 1
                         ? l10n.minimumPriceError
-                        : l10n.totalPriceForSeats((_pricePerSeat * _availableSeats).toStringAsFixed(0), _availableSeats),
+                        : l10n.totalPriceForSeats(
+                            (_pricePerSeat * _availableSeats).toStringAsFixed(
+                              0,
+                            ),
+                            _availableSeats,
+                          ),
                     style: TextStyle(
                       fontSize: 11.sp,
                       color: _pricePerSeat < 1
@@ -1920,7 +1945,9 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
             Icons.attach_money_rounded,
             l10n.priceSummaryLabel,
             _isPriceNegotiable
-                ? l10n.pricePerSeatNegotiableSummary('\$${_pricePerSeat.toInt()}')
+                ? l10n.pricePerSeatNegotiableSummary(
+                    '\$${_pricePerSeat.toInt()}',
+                  )
                 : l10n.pricePerSeatSummary('\$${_pricePerSeat.toInt()}'),
           ),
           if (_selectedEvent != null) ...[
@@ -2045,7 +2072,9 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                   borderRadius: BorderRadius.circular(8.r),
                 ),
                 child: Text(
-                  _maxDetourMinutes != null ? l10n.maxDetourMinutesValue(_maxDetourMinutes!) : l10n.noneLabel,
+                  _maxDetourMinutes != null
+                      ? l10n.maxDetourMinutesValue(_maxDetourMinutes!)
+                      : l10n.noneLabel,
                   style: TextStyle(
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w700,
@@ -2295,7 +2324,9 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                             ),
                           )
                         : Text(
-                            isLastStep ? AppLocalizations.of(context).createRideButton : AppLocalizations.of(context).nextButton,
+                            isLastStep
+                                ? AppLocalizations.of(context).createRideButton
+                                : AppLocalizations.of(context).nextButton,
                             style: TextStyle(
                               fontSize: 15.sp,
                               fontWeight: FontWeight.w700,
@@ -2357,7 +2388,9 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   Future<void> _selectLocation({required bool isFrom}) async {
     final result = await MapLocationPicker.show(
       context,
-      title: isFrom ? AppLocalizations.of(context).selectOriginTitle : AppLocalizations.of(context).selectDestinationTitle,
+      title: isFrom
+          ? AppLocalizations.of(context).selectOriginTitle
+          : AppLocalizations.of(context).selectDestinationTitle,
       initialLocation: isFrom
           ? (_fromLocation != null
                 ? LatLng(_fromLocation!.latitude, _fromLocation!.longitude)
@@ -2436,9 +2469,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         if (selected.isBefore(DateTime.now())) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
-                AppLocalizations.of(context).timeInPastWarning,
-              ),
+              content: Text(AppLocalizations.of(context).timeInPastWarning),
               backgroundColor: AppColors.warning,
               behavior: SnackBarBehavior.floating,
             ),

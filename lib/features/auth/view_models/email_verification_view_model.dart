@@ -33,14 +33,13 @@ class EmailVerificationState {
     String? userEmail,
     String? errorMessage,
     bool clearError = false,
-  }) =>
-      EmailVerificationState(
-        isEmailVerified: isEmailVerified ?? this.isEmailVerified,
-        isSending: isSending ?? this.isSending,
-        resendCooldown: resendCooldown ?? this.resendCooldown,
-        userEmail: userEmail ?? this.userEmail,
-        errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
-      );
+  }) => EmailVerificationState(
+    isEmailVerified: isEmailVerified ?? this.isEmailVerified,
+    isSending: isSending ?? this.isSending,
+    resendCooldown: resendCooldown ?? this.resendCooldown,
+    userEmail: userEmail ?? this.userEmail,
+    errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+  );
 }
 
 @riverpod
@@ -58,7 +57,8 @@ class EmailVerificationViewModel extends _$EmailVerificationViewModel {
     // Start polling immediately.
     _startPolling();
 
-    final userEmail = ref.read(authActionsViewModelProvider).currentUser?.email ?? '';
+    final userEmail =
+        ref.read(authActionsViewModelProvider).currentUser?.email ?? '';
     return EmailVerificationState(userEmail: userEmail);
   }
 
@@ -121,10 +121,7 @@ class EmailVerificationViewModel extends _$EmailVerificationViewModel {
       _startCooldown();
     } catch (e) {
       if (!ref.mounted) return;
-      state = state.copyWith(
-        isSending: false,
-        errorMessage: e.toString(),
-      );
+      state = state.copyWith(isSending: false, errorMessage: e.toString());
     }
   }
 

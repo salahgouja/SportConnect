@@ -32,12 +32,15 @@ class RideCountdownScreen extends ConsumerStatefulWidget {
 }
 
 class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
+  final MapController _mapController = MapController();
   DateTime? _lastSyncedDeparture;
   String? _lastRequestedRouteRideId;
   RideStatus? _lastHandledRideStatus;
+  bool _hasFittedBounds = false;
 
   @override
   void dispose() {
+    _mapController.dispose();
     super.dispose();
   }
 
@@ -313,6 +316,18 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
     );
   }
 
+  void _fitMapToBounds(List<LatLng> routePoints) {
+    if (_hasFittedBounds || routePoints.length < 2) return;
+    _hasFittedBounds = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final bounds = LatLngBounds.fromPoints(routePoints);
+      _mapController.fitCamera(
+        CameraFit.bounds(bounds: bounds, padding: EdgeInsets.all(40.w)),
+      );
+    });
+  }
+
   Widget _buildRouteMapPreview(RideModel ride, RideCountdownUiState uiState) {
     final origin = LatLng(ride.origin.latitude, ride.origin.longitude);
     final dest = LatLng(ride.destination.latitude, ride.destination.longitude);
@@ -322,9 +337,10 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
     );
 
     final routePoints = uiState.osrmRoutePoints ?? [origin, dest];
+    _fitMapToBounds(routePoints);
 
     return Container(
-      height: 180.h,
+      height: 280.h,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16.r),
         border: Border.all(color: AppColors.divider),
@@ -333,13 +349,8 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
       child: Stack(
         children: [
           FlutterMap(
-            options: MapOptions(
-              initialCenter: center,
-              initialZoom: 10,
-              interactionOptions: const InteractionOptions(
-                flags: InteractiveFlag.none,
-              ),
-            ),
+            mapController: _mapController,
+            options: MapOptions(initialCenter: center, initialZoom: 10),
             children: [
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -453,6 +464,39 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
                 ),
               ),
             ),
+          // Zoom controls
+          Positioned(
+            right: 8.w,
+            bottom: 8.h,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _ZoomButton(
+                  icon: Icons.add,
+                  onTap: () {
+                    final zoom = _mapController.camera.zoom;
+                    _mapController.move(_mapController.camera.center, zoom + 1);
+                  },
+                ),
+                SizedBox(height: 4.h),
+                _ZoomButton(
+                  icon: Icons.remove,
+                  onTap: () {
+                    final zoom = _mapController.camera.zoom;
+                    _mapController.move(_mapController.camera.center, zoom - 1);
+                  },
+                ),
+                SizedBox(height: 4.h),
+                _ZoomButton(
+                  icon: Icons.my_location_rounded,
+                  onTap: () {
+                    _hasFittedBounds = false;
+                    _fitMapToBounds(uiState.osrmRoutePoints ?? [origin, dest]);
+                  },
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -913,6 +957,36 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
           style: TextStyle(fontSize: 11.sp, color: AppColors.textSecondary),
         ),
       ],
+    );
+  }
+}
+
+class _ZoomButton extends StatelessWidget {
+  const _ZoomButton({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 36.w,
+        height: 36.w,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8.r),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Icon(icon, size: 20.sp, color: AppColors.textPrimary),
+      ),
     );
   }
 }

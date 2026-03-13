@@ -27,12 +27,11 @@ class ReauthState {
     bool? isSuccess,
     String? errorCode,
     bool clearError = false,
-  }) =>
-      ReauthState(
-        isLoading: isLoading ?? this.isLoading,
-        isSuccess: isSuccess ?? this.isSuccess,
-        errorCode: clearError ? null : (errorCode ?? this.errorCode),
-      );
+  }) => ReauthState(
+    isLoading: isLoading ?? this.isLoading,
+    isSuccess: isSuccess ?? this.isSuccess,
+    errorCode: clearError ? null : (errorCode ?? this.errorCode),
+  );
 }
 
 /// Manages the re-authentication flow for sensitive operations.
@@ -67,9 +66,7 @@ class ReauthViewModel extends _$ReauthViewModel {
   Future<void> reauthWithGoogle() async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      await ref
-          .read(authActionsViewModelProvider)
-          .reauthenticateWithGoogle();
+      await ref.read(authActionsViewModelProvider).reauthenticateWithGoogle();
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, isSuccess: true);
     } catch (_) {

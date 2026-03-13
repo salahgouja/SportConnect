@@ -94,7 +94,6 @@ class AppRoutes {
     'email-verification',
   );
   static const changePassword = AppRoute('/change-password', 'change-password');
-  static const phoneOtp = AppRoute('/phone-otp', 'phone-otp');
 
   // Reviews & Ratings
   static const submitReview = AppRoute('/review/submit', 'submit-review');

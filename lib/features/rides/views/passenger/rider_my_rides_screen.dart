@@ -83,7 +83,8 @@ class RiderMyRidesScreen extends ConsumerWidget {
               return Scaffold(
                 backgroundColor: Colors.transparent,
                 floatingActionButton: _buildFab(context),
-                floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+                floatingActionButtonLocation:
+                    FloatingActionButtonLocation.centerFloat,
                 body: CustomScrollView(
                   slivers: [
                     _buildSliverAppBar(context),
@@ -637,24 +638,45 @@ class RiderMyRidesScreen extends ConsumerWidget {
                 const Spacer(flex: 2),
                 // Visual: stacked avatars representing community
                 SizedBox(
-                  height: 64.h,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: List.generate(3, (i) {
-                      final offsets = [-30.w, 0.0, 30.w];
-                      final icons = [Icons.person, Icons.directions_car, Icons.person];
-                      final colors = [AppColors.primary, AppColors.success, AppColors.info];
-                      return Positioned(
-                        left: MediaQuery.of(context).size.width / 2 - 32.w + offsets[i] - 20.w,
-                        child: CircleAvatar(
-                          radius: 28.r,
-                          backgroundColor: colors[i].withValues(alpha: 0.15),
-                          child: Icon(icons[i], color: colors[i], size: 24.sp),
-                        ),
-                      );
-                    }),
-                  ),
-                ).animate().fadeIn(duration: 400.ms).scale(begin: const Offset(0.8, 0.8)),
+                      height: 64.h,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: List.generate(3, (i) {
+                          final offsets = [-30.w, 0.0, 30.w];
+                          final icons = [
+                            Icons.person,
+                            Icons.directions_car,
+                            Icons.person,
+                          ];
+                          final colors = [
+                            AppColors.primary,
+                            AppColors.success,
+                            AppColors.info,
+                          ];
+                          return Positioned(
+                            left:
+                                MediaQuery.of(context).size.width / 2 -
+                                32.w +
+                                offsets[i] -
+                                20.w,
+                            child: CircleAvatar(
+                              radius: 28.r,
+                              backgroundColor: colors[i].withValues(
+                                alpha: 0.15,
+                              ),
+                              child: Icon(
+                                icons[i],
+                                color: colors[i],
+                                size: 24.sp,
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
+                    )
+                    .animate()
+                    .fadeIn(duration: 400.ms)
+                    .scale(begin: const Offset(0.8, 0.8)),
                 SizedBox(height: 24.h),
                 Text(
                   l10n.noRidesYetTitle,
@@ -687,12 +709,17 @@ class RiderMyRidesScreen extends ConsumerWidget {
                     icon: Icon(Icons.search_rounded, size: 22.sp),
                     label: Text(
                       l10n.findACarpoolNow,
-                      style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w700),
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.r)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14.r),
+                      ),
                       elevation: 2,
                     ),
                   ),
@@ -702,11 +729,18 @@ class RiderMyRidesScreen extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.verified_rounded, size: 14.sp, color: AppColors.success),
+                    Icon(
+                      Icons.verified_rounded,
+                      size: 14.sp,
+                      color: AppColors.success,
+                    ),
                     SizedBox(width: 6.w),
                     Text(
                       l10n.allDriversVerifiedAndRated,
-                      style: TextStyle(fontSize: 12.sp, color: AppColors.textTertiary),
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: AppColors.textTertiary,
+                      ),
                     ),
                   ],
                 ).animate().fadeIn(delay: 500.ms),

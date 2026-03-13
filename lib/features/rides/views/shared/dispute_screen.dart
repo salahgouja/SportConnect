@@ -547,7 +547,10 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
                   child: Text(
                     formState.attachedFiles.isEmpty
                         ? l10n.attachReceiptsPlaceholder
-                        : l10n.filesAttachedCount(formState.attachedFiles.length, DisputeFormViewModel.maxAttachments),
+                        : l10n.filesAttachedCount(
+                            formState.attachedFiles.length,
+                            DisputeFormViewModel.maxAttachments,
+                          ),
                     style: TextStyle(
                       fontSize: 13.sp,
                       color: formState.attachedFiles.isEmpty

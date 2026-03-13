@@ -44,10 +44,7 @@ class SocialAuthViewModel extends Notifier<SocialAuthState> {
 
     try {
       await ref.read(authActionsViewModelProvider).signInWithGoogle();
-      state = state.copyWith(
-        isLoading: false,
-        completedProvider: 'google',
-      );
+      state = state.copyWith(isLoading: false, completedProvider: 'google');
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
@@ -64,10 +61,7 @@ class SocialAuthViewModel extends Notifier<SocialAuthState> {
 
     try {
       await ref.read(authActionsViewModelProvider).signInWithApple();
-      state = state.copyWith(
-        isLoading: false,
-        completedProvider: 'apple',
-      );
+      state = state.copyWith(isLoading: false, completedProvider: 'apple');
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }

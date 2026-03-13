@@ -110,7 +110,6 @@ class RouteGuardService {
         AppRoutes.driverStripeOnboarding.path,
         AppRoutes.riderOnboarding.path,
         AppRoutes.emailVerification.path,
-        AppRoutes.phoneOtp.path,
       ];
       if (!allowedDuringSetup.contains(currentPath)) {
         return AppRoutes.roleSelection.path;
@@ -207,8 +206,7 @@ class RouteGuardService {
     return path == AppRoutes.onboarding.path ||
         path == AppRoutes.login.path ||
         path == AppRoutes.signupWizard.path ||
-        path == AppRoutes.forgotPassword.path ||
-        path == AppRoutes.phoneOtp.path;
+        path == AppRoutes.forgotPassword.path;
   }
 
   /// Check if route is a driver-specific route

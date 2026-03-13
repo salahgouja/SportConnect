@@ -29,7 +29,8 @@ class RoleSelectionScreen extends ConsumerWidget {
         }
       }
 
-      if (next.errorMessage != null && next.errorMessage != previous?.errorMessage) {
+      if (next.errorMessage != null &&
+          next.errorMessage != previous?.errorMessage) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(l10n.roleSelectionError),
@@ -76,15 +77,14 @@ class RoleSelectionScreen extends ConsumerWidget {
 
               // Role options
               _buildRoleCard(
-                  onRoleSelected: (role) => ref
-                    .read(roleSelectionViewModelProvider.notifier)
-                    .selectRole(role),
-                  selectedRole: vmState.selectedRole,
+                    onRoleSelected: (role) => ref
+                        .read(roleSelectionViewModelProvider.notifier)
+                        .selectRole(role),
+                    selectedRole: vmState.selectedRole,
                     role: UserRole.rider,
                     icon: Icons.person_rounded,
                     title: l10n.iMARider,
-                    description:
-                        l10n.riderRoleDescription,
+                    description: l10n.riderRoleDescription,
                     features: [
                       l10n.riderFeatureSearch,
                       l10n.riderFeatureBook,
@@ -99,15 +99,14 @@ class RoleSelectionScreen extends ConsumerWidget {
               SizedBox(height: 16.h),
 
               _buildRoleCard(
-                  onRoleSelected: (role) => ref
-                    .read(roleSelectionViewModelProvider.notifier)
-                    .selectRole(role),
-                  selectedRole: vmState.selectedRole,
+                    onRoleSelected: (role) => ref
+                        .read(roleSelectionViewModelProvider.notifier)
+                        .selectRole(role),
+                    selectedRole: vmState.selectedRole,
                     role: UserRole.driver,
                     icon: Icons.directions_car_rounded,
                     title: l10n.iMADriver,
-                    description:
-                        l10n.driverRoleDescription,
+                    description: l10n.driverRoleDescription,
                     features: [
                       l10n.driverFeatureCreate,
                       l10n.driverFeaturePrice,
@@ -137,7 +136,8 @@ class RoleSelectionScreen extends ConsumerWidget {
                     width: double.infinity,
                     child: PremiumButton(
                       text: l10n.continueButton,
-                      onPressed: vmState.selectedRole == null || vmState.isLoading
+                      onPressed:
+                          vmState.selectedRole == null || vmState.isLoading
                           ? null
                           : continueWithRole,
                       isLoading: vmState.isLoading,

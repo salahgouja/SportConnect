@@ -540,7 +540,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     }
     return PremiumAvatar(
       name:
-          (_formKey.currentState?.value['name'] as String? ??
+          (_formKey.currentState?.fields['name']!.value as String? ??
           _currentUser?.displayName ??
           ''),
       size: 110,

@@ -31,7 +31,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
     if (!_formKey.currentState!.saveAndValidate()) return;
     await ref
         .read(changePasswordViewModelProvider.notifier)
-        .submit(_formKey.currentState!.value['new_password'] as String);
+        .submit(_formKey.currentState!.fields['new_password']!.value as String);
   }
 
   @override
@@ -53,7 +53,8 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
         }
       }
 
-      if (next.errorMessage != null && next.errorMessage != previous?.errorMessage) {
+      if (next.errorMessage != null &&
+          next.errorMessage != previous?.errorMessage) {
         final errorText = next.errorMessage == 'weak-password'
             ? l10n.changePasswordWeakError
             : l10n.changePasswordGenericError;
@@ -101,10 +102,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
     );
   }
 
-  Widget _buildFormState(
-    AppLocalizations l10n,
-    ChangePasswordState vmState,
-  ) {
+  Widget _buildFormState(AppLocalizations l10n, ChangePasswordState vmState) {
     return FormBuilder(
       key: _formKey,
       child: Column(

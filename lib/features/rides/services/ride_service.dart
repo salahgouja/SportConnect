@@ -195,8 +195,10 @@ class RideService extends _$RideService {
       // Passenger gamification: each passenger earns 60% of driver XP
       final passengerXp = (xp * 0.6).round();
       for (final passengerId in completedPassengerIds) {
-        final passengerLevelUp =
-            await profileRepo.addXP(passengerId, passengerXp);
+        final passengerLevelUp = await profileRepo.addXP(
+          passengerId,
+          passengerXp,
+        );
         await profileRepo.updateStreak(passengerId);
         await profileRepo.updateRideStats(
           uid: passengerId,
@@ -212,11 +214,13 @@ class RideService extends _$RideService {
       }
 
       // Evaluate achievements for driver and all passengers
-      final driverBadges =
-          await profileRepo.evaluateAchievements(ride.driverId);
+      final driverBadges = await profileRepo.evaluateAchievements(
+        ride.driverId,
+      );
       for (final passengerId in completedPassengerIds) {
-        final passengerBadges =
-            await profileRepo.evaluateAchievements(passengerId);
+        final passengerBadges = await profileRepo.evaluateAchievements(
+          passengerId,
+        );
         for (final badgeId in passengerBadges) {
           final info = _badgeInfo[badgeId];
           if (info != null) {

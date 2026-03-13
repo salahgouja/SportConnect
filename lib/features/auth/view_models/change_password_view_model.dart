@@ -65,10 +65,9 @@ class ChangePasswordViewModel extends Notifier<ChangePasswordState> {
         return;
       }
 
-      final errorMessage =
-          e is AuthException && e.code == 'weak-password'
-              ? 'weak-password'
-              : 'generic';
+      final errorMessage = e is AuthException && e.code == 'weak-password'
+          ? 'weak-password'
+          : 'generic';
       state = state.copyWith(isLoading: false, errorMessage: errorMessage);
     }
   }

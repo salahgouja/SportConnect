@@ -86,22 +86,22 @@ class PhoneAuthViewModel extends _$PhoneAuthViewModel {
   }
 
   int get _currentResendCooldown => state.map(
-        idle: (value) => value.resendCooldown,
-        sending: (value) => value.resendCooldown,
-        codeSent: (value) => value.resendCooldown,
-        verifying: (value) => value.resendCooldown,
-        verified: (value) => value.resendCooldown,
-        error: (value) => value.resendCooldown,
-      );
+    idle: (value) => value.resendCooldown,
+    sending: (value) => value.resendCooldown,
+    codeSent: (value) => value.resendCooldown,
+    verifying: (value) => value.resendCooldown,
+    verified: (value) => value.resendCooldown,
+    error: (value) => value.resendCooldown,
+  );
 
   String get _currentSentPhone => state.map(
-        idle: (value) => value.sentPhone,
-        sending: (value) => value.sentPhone,
-        codeSent: (value) => value.sentPhone,
-        verifying: (value) => value.sentPhone,
-        verified: (value) => value.sentPhone,
-        error: (value) => value.sentPhone,
-      );
+    idle: (value) => value.sentPhone,
+    sending: (value) => value.sentPhone,
+    codeSent: (value) => value.sentPhone,
+    verifying: (value) => value.sentPhone,
+    verified: (value) => value.sentPhone,
+    error: (value) => value.sentPhone,
+  );
 
   void _updateResendCooldown(int value) {
     state = state.map(

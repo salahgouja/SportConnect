@@ -151,8 +151,13 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     HapticFeedback.lightImpact();
     _messageController.clear();
     ref
-      .read(chatDetailViewModelProvider(widget.chatId, currentUser?.uid ?? '').notifier)
-      .setEmojiPickerVisible(false);
+        .read(
+          chatDetailViewModelProvider(
+            widget.chatId,
+            currentUser?.uid ?? '',
+          ).notifier,
+        )
+        .setEmojiPickerVisible(false);
 
     final viewModel = ref.read(
       chatDetailViewModelProvider(
@@ -224,7 +229,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       if (!success) {
         final errorMessage = viewState.error ?? 'Failed to send image';
         _showStatusSnackBar(
-          Text(AppLocalizations.of(context).failedToSendImageValue(errorMessage)),
+          Text(
+            AppLocalizations.of(context).failedToSendImageValue(errorMessage),
+          ),
           backgroundColor: AppColors.error,
         );
         return;
@@ -282,7 +289,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       if (!success) {
         final errorMessage = viewState.error ?? 'Failed to send image';
         _showStatusSnackBar(
-          Text(AppLocalizations.of(context).failedToSendImageValue(errorMessage)),
+          Text(
+            AppLocalizations.of(context).failedToSendImageValue(errorMessage),
+          ),
           backgroundColor: AppColors.error,
         );
         return;
@@ -315,7 +324,12 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         );
 
         ref
-            .read(chatDetailViewModelProvider(widget.chatId, currentUser?.uid ?? '').notifier)
+            .read(
+              chatDetailViewModelProvider(
+                widget.chatId,
+                currentUser?.uid ?? '',
+              ).notifier,
+            )
             .beginRecording(path);
 
         // Start recording timer (updates every 100ms for smooth UI)
@@ -324,8 +338,15 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         ) {
           if (!mounted) return;
           ref
-              .read(chatDetailViewModelProvider(widget.chatId, currentUser?.uid ?? '').notifier)
-              .updateRecordingDuration(Duration(milliseconds: timer.tick * 100));
+              .read(
+                chatDetailViewModelProvider(
+                  widget.chatId,
+                  currentUser?.uid ?? '',
+                ).notifier,
+              )
+              .updateRecordingDuration(
+                Duration(milliseconds: timer.tick * 100),
+              );
         });
 
         HapticFeedback.mediumImpact();
@@ -351,13 +372,23 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       }
 
       ref
-          .read(chatDetailViewModelProvider(widget.chatId, currentUser?.uid ?? '').notifier)
+          .read(
+            chatDetailViewModelProvider(
+              widget.chatId,
+              currentUser?.uid ?? '',
+            ).notifier,
+          )
           .clearRecording();
 
       HapticFeedback.mediumImpact();
     } catch (e) {
       ref
-          .read(chatDetailViewModelProvider(widget.chatId, currentUser?.uid ?? '').notifier)
+          .read(
+            chatDetailViewModelProvider(
+              widget.chatId,
+              currentUser?.uid ?? '',
+            ).notifier,
+          )
           .clearRecording();
 
       _showStatusSnackBar(
@@ -381,7 +412,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
 
       // Delete the recording file
       final recordingPath = ref
-          .read(chatDetailViewModelProvider(widget.chatId, currentUser?.uid ?? ''))
+          .read(
+            chatDetailViewModelProvider(widget.chatId, currentUser?.uid ?? ''),
+          )
           .recordingPath;
       if (recordingPath != null) {
         final file = File(recordingPath);
@@ -391,7 +424,12 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       }
 
       ref
-          .read(chatDetailViewModelProvider(widget.chatId, currentUser?.uid ?? '').notifier)
+          .read(
+            chatDetailViewModelProvider(
+              widget.chatId,
+              currentUser?.uid ?? '',
+            ).notifier,
+          )
           .clearRecording();
 
       HapticFeedback.lightImpact();
@@ -480,13 +518,23 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     );
     if (chatState.showEmojiPicker) {
       ref
-          .read(chatDetailViewModelProvider(widget.chatId, currentUser?.uid ?? '').notifier)
+          .read(
+            chatDetailViewModelProvider(
+              widget.chatId,
+              currentUser?.uid ?? '',
+            ).notifier,
+          )
           .setEmojiPickerVisible(false);
       _focusNode.requestFocus();
     } else {
       _focusNode.unfocus();
       ref
-          .read(chatDetailViewModelProvider(widget.chatId, currentUser?.uid ?? '').notifier)
+          .read(
+            chatDetailViewModelProvider(
+              widget.chatId,
+              currentUser?.uid ?? '',
+            ).notifier,
+          )
           .setEmojiPickerVisible(true);
     }
   }

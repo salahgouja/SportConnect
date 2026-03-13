@@ -405,7 +405,9 @@ class _DriverStatsScreenState extends ConsumerState<DriverStatsScreen>
                 ),
                 _buildStatCard(
                   AppLocalizations.of(context).totalDistance,
-                  AppLocalizations.of(context).valueKm((stats?.totalDistance ?? 0).toStringAsFixed(0)),
+                  AppLocalizations.of(
+                    context,
+                  ).valueKm((stats?.totalDistance ?? 0).toStringAsFixed(0)),
                   Icons.route,
                   AppColors.secondary,
                   AppLocalizations.of(context).sinceJoining,

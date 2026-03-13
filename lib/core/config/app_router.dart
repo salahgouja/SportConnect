@@ -26,7 +26,6 @@ import 'package:sport_connect/features/auth/views/rider_onboarding_screen.dart';
 import 'package:sport_connect/features/auth/views/forgot_password_screen.dart';
 import 'package:sport_connect/features/auth/views/email_verification_screen.dart';
 import 'package:sport_connect/features/auth/views/change_password_screen.dart';
-import 'package:sport_connect/features/auth/views/phone_otp_screen.dart';
 import 'package:sport_connect/features/events/views/create_event_screen.dart';
 import 'package:sport_connect/features/events/views/event_detail_screen.dart';
 import 'package:sport_connect/features/events/views/event_list_screen.dart';
@@ -245,14 +244,6 @@ List<GoRoute> _buildAuthRoutes() {
       pageBuilder: (context, state) => SlideUpTransitionPage(
         key: state.pageKey,
         child: const ChangePasswordScreen(),
-      ),
-    ),
-    GoRoute(
-      path: AppRoutes.phoneOtp.path,
-      name: AppRoutes.phoneOtp.name,
-      pageBuilder: (context, state) => SlideUpTransitionPage(
-        key: state.pageKey,
-        child: const PhoneOtpScreen(),
       ),
     ),
   ];

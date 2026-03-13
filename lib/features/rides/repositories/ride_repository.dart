@@ -539,9 +539,13 @@ class RideRepository implements IRideRepository {
       final rideSnap = await transaction.get(rideRef);
       if (!rideSnap.exists) throw ArgumentError('Ride not found');
 
+      final driverId = rideSnap.data()!.driverId;
+
       // Validate: at least one accepted booking
+      // Include driverId filter to satisfy Firestore security rules.
       final bookingsSnap = await _rideBookingsCollection
           .where('rideId', isEqualTo: rideId)
+          .where('driverId', isEqualTo: driverId)
           .where('status', isEqualTo: BookingStatus.accepted.name)
           .limit(1)
           .get();

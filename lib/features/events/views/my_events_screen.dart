@@ -122,9 +122,7 @@ class _CreatedTab extends ConsumerWidget {
       error: (_, __) => _EmptyTab(message: l10n.unableToLoadEvents),
       data: (events) {
         if (events.isEmpty) {
-          return _EmptyTab(
-            message: l10n.noCreatedEvents,
-          );
+          return _EmptyTab(message: l10n.noCreatedEvents);
         }
         return _EventListView(events: events);
       },
@@ -247,9 +245,15 @@ class _MyEventCard extends StatelessWidget {
                     _badge(event),
                     const Spacer(),
                     if (!event.isUpcoming)
-                      _statusChip(AppLocalizations.of(context).eventPastStatus, AppColors.textTertiary),
+                      _statusChip(
+                        AppLocalizations.of(context).eventPastStatus,
+                        AppColors.textTertiary,
+                      ),
                     if (event.isUpcoming && event.isFull)
-                      _statusChip(AppLocalizations.of(context).eventFullStatus, AppColors.warning),
+                      _statusChip(
+                        AppLocalizations.of(context).eventFullStatus,
+                        AppColors.warning,
+                      ),
                   ],
                 ),
               ],

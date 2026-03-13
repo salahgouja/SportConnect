@@ -27,8 +27,7 @@ class _ReauthBottomSheet extends ConsumerStatefulWidget {
   const _ReauthBottomSheet();
 
   @override
-  ConsumerState<_ReauthBottomSheet> createState() =>
-      _ReauthBottomSheetState();
+  ConsumerState<_ReauthBottomSheet> createState() => _ReauthBottomSheetState();
 }
 
 class _ReauthBottomSheetState extends ConsumerState<_ReauthBottomSheet> {
@@ -158,7 +157,7 @@ class _ReauthBottomSheetState extends ConsumerState<_ReauthBottomSheet> {
               if (errorText != null) ...[
                 SizedBox(height: 8.h),
                 Text(
-                  errorText!,
+                  errorText,
                   style: TextStyle(fontSize: 13.sp, color: AppColors.error),
                 ),
               ],
@@ -180,7 +179,7 @@ class _ReauthBottomSheetState extends ConsumerState<_ReauthBottomSheet> {
                           ref
                               .read(reauthViewModelProvider.notifier)
                               .reauthWithPassword(
-                                _formKey.currentState!.value['password']
+                                _formKey.currentState!.fields['password']!.value
                                     as String,
                               );
                         },
@@ -199,8 +198,8 @@ class _ReauthBottomSheetState extends ConsumerState<_ReauthBottomSheet> {
                   onPressed: vmState.isLoading
                       ? null
                       : () => ref
-                          .read(reauthViewModelProvider.notifier)
-                          .reauthWithGoogle(),
+                            .read(reauthViewModelProvider.notifier)
+                            .reauthWithGoogle(),
                   style: PremiumButtonStyle.secondary,
                   icon: Icons.g_mobiledata_rounded,
                 ),

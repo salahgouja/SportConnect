@@ -132,10 +132,10 @@ appId: com.sportconnect.sport_connect
 
 # Step 13: Verify version info
 - scrollUntilVisible:
-    element: "SportConnect v1.0.0"
+    element: "SportConnect v0.0.10"
     direction: DOWN
     timeout: 5000
-- assertVisible: "SportConnect v1.0.0"
+- assertVisible: "SportConnect v0.0.10"
 
 # Step 14: Verify delete account option
 - scrollUntilVisible:

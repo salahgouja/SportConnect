@@ -1990,7 +1990,7 @@
   "@legal": {
     "description": "Text from _buildSectionHeader in settings_screen.dart"
   },
-  "sportconnectV100": "SportConnect v1.0.0",
+  "sportconnectV100": "SportConnect v0.0.10",
   "@sportconnectV100": {
     "description": "Text from Text in settings_screen.dart"
   },

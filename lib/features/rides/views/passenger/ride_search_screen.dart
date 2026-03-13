@@ -102,7 +102,9 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
             SliverToBoxAdapter(child: _buildActiveFilters()),
 
           // Pre-search discovery or search results
-          if (!_resultsState.hasSearched && !_resultsState.isLoading && _resultsState.visibleResults.isEmpty)
+          if (!_resultsState.hasSearched &&
+              !_resultsState.isLoading &&
+              _resultsState.visibleResults.isEmpty)
             ..._buildDiscoverySection()
           else ...[
             // Results Header
@@ -868,9 +870,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
           decoration: BoxDecoration(
             color: AppColors.info.withValues(alpha: 0.06),
             borderRadius: BorderRadius.circular(16.r),
-            border: Border.all(
-              color: AppColors.info.withValues(alpha: 0.15),
-            ),
+            border: Border.all(color: AppColors.info.withValues(alpha: 0.15)),
           ),
           child: Row(
             children: [

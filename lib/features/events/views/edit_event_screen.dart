@@ -230,10 +230,15 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
       initialValue: _formState.title,
       maxLength: 100,
       textCapitalization: TextCapitalization.words,
-      decoration: _deco(AppLocalizations.of(context).eventTitleField, Icons.title_rounded),
+      decoration: _deco(
+        AppLocalizations.of(context).eventTitleField,
+        Icons.title_rounded,
+      ),
       onChanged: (value) => _formNotifier.setTitle(value ?? ''),
       validator: FormBuilderValidators.compose([
-        FormBuilderValidators.required(errorText: AppLocalizations.of(context).eventTitleRequired),
+        FormBuilderValidators.required(
+          errorText: AppLocalizations.of(context).eventTitleRequired,
+        ),
         FormBuilderValidators.minLength(
           3,
           errorText: AppLocalizations.of(context).eventTitleMinLength,
@@ -248,7 +253,10 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
       initialValue: _formState.venueName,
       textCapitalization: TextCapitalization.words,
       onChanged: (value) => _formNotifier.setVenueName(value ?? ''),
-      decoration: _deco(AppLocalizations.of(context).eventVenueName, Icons.stadium_rounded),
+      decoration: _deco(
+        AppLocalizations.of(context).eventVenueName,
+        Icons.stadium_rounded,
+      ),
     ).animate().fadeIn(duration: 250.ms, delay: 100.ms);
   }
 
@@ -261,7 +269,10 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
       maxLength: 500,
       textCapitalization: TextCapitalization.sentences,
       onChanged: (value) => _formNotifier.setDescription(value ?? ''),
-      decoration: _deco(AppLocalizations.of(context).eventDescriptionField, Icons.notes_rounded),
+      decoration: _deco(
+        AppLocalizations.of(context).eventDescriptionField,
+        Icons.notes_rounded,
+      ),
     ).animate().fadeIn(duration: 250.ms, delay: 140.ms);
   }
 
@@ -438,7 +449,9 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _label(AppLocalizations.of(context).eventWhenField.replaceAll(' *', '')),
+        _label(
+          AppLocalizations.of(context).eventWhenField.replaceAll(' *', ''),
+        ),
         SizedBox(height: 8.h),
         // Start date + time
         Row(
@@ -653,7 +666,11 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
                   SizedBox(width: 10.w),
                   Text(
                     _formState.recurringEndDate != null
-                        ? AppLocalizations.of(context).eventRepeatsUntil(DateFormat('MMM d, y').format(_formState.recurringEndDate!))
+                        ? AppLocalizations.of(context).eventRepeatsUntil(
+                            DateFormat(
+                              'MMM d, y',
+                            ).format(_formState.recurringEndDate!),
+                          )
                         : AppLocalizations.of(context).eventRepeatEndDate,
                     style: TextStyle(
                       fontSize: 13.sp,
@@ -730,20 +747,26 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
     if (!(_formKey.currentState?.saveAndValidate() ?? false)) return;
     if (_formState.location == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).selectLocationError)),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).selectLocationError),
+        ),
       );
       return;
     }
     if ((_formState.startsAt ?? DateTime.now()).isBefore(DateTime.now())) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).eventStartTimeFuture)),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).eventStartTimeFuture),
+        ),
       );
       return;
     }
     if (_formState.endsAt != null &&
         !_formState.endsAt!.isAfter(_formState.startsAt!)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).eventEndTimeAfterStart)),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).eventEndTimeAfterStart),
+        ),
       );
       return;
     }

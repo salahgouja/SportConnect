@@ -40,16 +40,11 @@ class RiderHomeFeed extends ConsumerWidget {
       slivers: [
         // ── Greeting + Search ────────────────────────────────
         SliverToBoxAdapter(
-          child: _GreetingHeader(
-            user: user,
-            onSearchTap: onSearchTap,
-          ),
+          child: _GreetingHeader(user: user, onSearchTap: onSearchTap),
         ),
 
         // ── XP & Streak Strip ────────────────────────────────
-        SliverToBoxAdapter(
-          child: _GamificationStrip(user: user),
-        ),
+        SliverToBoxAdapter(child: _GamificationStrip(user: user)),
 
         // ── Next Ride ────────────────────────────────────────
         const SliverToBoxAdapter(child: _NextRideSection()),
@@ -61,16 +56,13 @@ class RiderHomeFeed extends ConsumerWidget {
         const SliverToBoxAdapter(child: _EventsNearYouSection()),
 
         // ── Available Rides Nearby ───────────────────────────
-        SliverToBoxAdapter(
-          child: _NearbyRidesSection(vmState: vmState),
-        ),
+        SliverToBoxAdapter(child: _NearbyRidesSection(vmState: vmState)),
 
         // ── Map Toggle ───────────────────────────────────────
         SliverToBoxAdapter(
           child: _MapToggleCard(
-            onTap: () => ref
-                .read(riderHomeViewModelProvider.notifier)
-                .showMap(),
+            onTap: () =>
+                ref.read(riderHomeViewModelProvider.notifier).showMap(),
           ),
         ),
 
@@ -164,51 +156,48 @@ class _GreetingHeader extends StatelessWidget {
                   ),
                 ),
               ],
-            )
-                .animate()
-                .fadeIn(duration: 400.ms)
-                .slideY(begin: -0.15),
+            ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.15),
 
             SizedBox(height: 16.h),
 
             // Compact search bar
             GestureDetector(
-              onTap: onSearchTap,
-              child: Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 16.w,
-                  vertical: 14.h,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(16.r),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.06),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
+                  onTap: onSearchTap,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 14.h,
                     ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.search_rounded,
-                      color: AppColors.textSecondary,
-                      size: 22.sp,
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(16.r),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.06),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    SizedBox(width: 12.w),
-                    Text(
-                      l10n.whereAreYouGoing,
-                      style: TextStyle(
-                        fontSize: 15.sp,
-                        color: AppColors.textSecondary,
-                      ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.search_rounded,
+                          color: AppColors.textSecondary,
+                          size: 22.sp,
+                        ),
+                        SizedBox(width: 12.w),
+                        Text(
+                          l10n.whereAreYouGoing,
+                          style: TextStyle(
+                            fontSize: 15.sp,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-            )
+                  ),
+                )
                 .animate()
                 .fadeIn(delay: 100.ms, duration: 400.ms)
                 .slideY(begin: 0.1),
@@ -284,10 +273,13 @@ class _NextRideSection extends ConsumerWidget {
       error: (_, _) => const SizedBox.shrink(),
       data: (bookings) {
         // Find upcoming accepted bookings
-        final upcoming = bookings.where((b) =>
-            b.status == BookingStatus.accepted ||
-            b.status == BookingStatus.pending,
-        ).toList();
+        final upcoming = bookings
+            .where(
+              (b) =>
+                  b.status == BookingStatus.accepted ||
+                  b.status == BookingStatus.pending,
+            )
+            .toList();
 
         if (upcoming.isEmpty) return const SizedBox.shrink();
 
@@ -334,9 +326,11 @@ class _NextRideCard extends ConsumerWidget {
                   '${AppRoutes.riderActiveRide.path}?rideId=${ride.id}',
                 );
               } else {
-                context.pushNamed(
-                  AppRoutes.rideDetail.name,
-                  pathParameters: {'id': ride.id},
+                context.push(
+                  AppRoutes.rideCountdown.path.replaceFirst(
+                    ':bookingId',
+                    booking.id,
+                  ),
                 );
               }
             },
@@ -344,10 +338,7 @@ class _NextRideCard extends ConsumerWidget {
               padding: EdgeInsets.all(16.w),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [
-                    AppColors.primary,
-                    AppColors.primaryDark,
-                  ],
+                  colors: [AppColors.primary, AppColors.primaryDark],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -551,10 +542,7 @@ class _QuickActionsSection extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SectionTitle(
-            icon: Icons.bolt_rounded,
-            title: l10n.quickActions,
-          ),
+          _SectionTitle(icon: Icons.bolt_rounded, title: l10n.quickActions),
           SizedBox(height: 10.h),
           SizedBox(
             height: 44.h,
@@ -703,9 +691,7 @@ class _EventCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(
-            color: event.type.color.withValues(alpha: 0.3),
-          ),
+          border: Border.all(color: event.type.color.withValues(alpha: 0.3)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.04),
@@ -784,7 +770,9 @@ class _EventCard extends StatelessWidget {
     if (eventDay == today) return l10n.today;
     if (eventDay == today.add(const Duration(days: 1))) return l10n.tomorrow;
 
-    final weekday = DateFormat.E(Localizations.localeOf(context).toString()).format(dt);
+    final weekday = DateFormat.E(
+      Localizations.localeOf(context).toString(),
+    ).format(dt);
     return '$weekday, ${dt.day}/${dt.month}';
   }
 }
@@ -801,12 +789,14 @@ class _NearbyRidesSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final anchor = vmState.nearbyQueryAnchor ??
+    final anchor =
+        vmState.nearbyQueryAnchor ??
         vmState.currentLocation ??
         const LatLng(0, 0);
     final searchRadius = vmState.searchRadius;
-    final nearbyRides =
-        ref.watch(nearbyRidesStreamProvider(anchor, searchRadius));
+    final nearbyRides = ref.watch(
+      nearbyRidesStreamProvider(anchor, searchRadius),
+    );
 
     return nearbyRides.when(
       loading: () => Padding(
@@ -1051,11 +1041,7 @@ class _NearbyRideCard extends StatelessWidget {
                   builder: (ctx, name, photo, rating) => Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      PremiumAvatar(
-                        imageUrl: photo,
-                        name: name,
-                        size: 24.w,
-                      ),
+                      PremiumAvatar(imageUrl: photo, name: name, size: 24.w),
                       SizedBox(width: 6.w),
                       Text(
                         name.split(' ').first,
@@ -1144,9 +1130,7 @@ class _MapToggleCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.surfaceVariant,
             borderRadius: BorderRadius.circular(16.r),
-            border: Border.all(
-              color: AppColors.border,
-            ),
+            border: Border.all(color: AppColors.border),
           ),
           child: Row(
             children: [

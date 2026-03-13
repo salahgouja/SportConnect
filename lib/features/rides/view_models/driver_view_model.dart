@@ -104,34 +104,35 @@ class DriverState {
     this.earningsTransactions = const AsyncLoading(),
   });
 
-    UserModel? get currentUser => user is AsyncData<UserModel?>
+  UserModel? get currentUser => user is AsyncData<UserModel?>
       ? (user as AsyncData<UserModel?>).value
       : null;
-    DriverStats? get currentStats => stats is AsyncData<DriverStats>
+  DriverStats? get currentStats => stats is AsyncData<DriverStats>
       ? (stats as AsyncData<DriverStats>).value
       : null;
-    RideModel? get activeRide => activeRideAsync is AsyncData<RideModel?>
+  RideModel? get activeRide => activeRideAsync is AsyncData<RideModel?>
       ? (activeRideAsync as AsyncData<RideModel?>).value
       : null;
   bool get hasActiveRide => activeRide != null;
   bool get hasProfileData => currentUser != null;
   List<RideRequestModel> get pendingRequestPreview =>
       (pendingRequests is AsyncData<List<RideRequestModel>>
-          ? (pendingRequests as AsyncData<List<RideRequestModel>>).value
-          : const <RideRequestModel>[])
+              ? (pendingRequests as AsyncData<List<RideRequestModel>>).value
+              : const <RideRequestModel>[])
           .take(2)
           .toList(growable: false);
   List<RideModel> get upcomingRidePreview =>
       (upcomingRides is AsyncData<List<RideModel>>
-          ? (upcomingRides as AsyncData<List<RideModel>>).value
-          : const <RideModel>[])
+              ? (upcomingRides as AsyncData<List<RideModel>>).value
+              : const <RideModel>[])
           .take(3)
           .toList(growable: false);
-    int get pendingRequestCount => pendingRequests is AsyncData<List<RideRequestModel>>
+  int get pendingRequestCount =>
+      pendingRequests is AsyncData<List<RideRequestModel>>
       ? (pendingRequests as AsyncData<List<RideRequestModel>>).value.length
       : 0;
   bool get hasPendingRequests => pendingRequestCount > 0;
-    bool get hasUpcomingRides => upcomingRides is AsyncData<List<RideModel>>
+  bool get hasUpcomingRides => upcomingRides is AsyncData<List<RideModel>>
       ? (upcomingRides as AsyncData<List<RideModel>>).value.isNotEmpty
       : false;
   bool isRequestActionInProgress(String requestId) =>
@@ -157,12 +158,13 @@ class DriverState {
     return DriverState(
       isLoading: isLoading ?? this.isLoading,
       isRefreshing: isRefreshing ?? this.isRefreshing,
-      errorMessage:
-        errorMessage == _unset ? this.errorMessage : errorMessage as String?,
+      errorMessage: errorMessage == _unset
+          ? this.errorMessage
+          : errorMessage as String?,
       lastStatusChange: lastStatusChange ?? this.lastStatusChange,
       lastRefreshAt: lastRefreshAt ?? this.lastRefreshAt,
       pendingRequestActionIds:
-        pendingRequestActionIds ?? this.pendingRequestActionIds,
+          pendingRequestActionIds ?? this.pendingRequestActionIds,
       isOnline: isOnline ?? this.isOnline,
       activeRideAsync: activeRideAsync ?? this.activeRideAsync,
       user: user ?? this.user,

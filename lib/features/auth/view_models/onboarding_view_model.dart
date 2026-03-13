@@ -1,5 +1,4 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
@@ -64,30 +63,28 @@ class OnboardingState {
     bool clearRiderCountry = false,
     bool clearAction = false,
     bool clearError = false,
-  }) =>
-      OnboardingState(
-        isLoading: isLoading ?? this.isLoading,
-        completedAction:
-            clearAction ? null : (completedAction ?? this.completedAction),
-        errorMessage:
-            clearError ? null : (errorMessage ?? this.errorMessage),
-        driverCurrentStep: driverCurrentStep ?? this.driverCurrentStep,
-        driverProfilePopulated:
-          driverProfilePopulated ?? this.driverProfilePopulated,
-        riderProfilePopulated:
-          riderProfilePopulated ?? this.riderProfilePopulated,
-        driverPhoneNumber: clearDriverPhoneNumber
-          ? null
-          : (driverPhoneNumber ?? this.driverPhoneNumber),
-        driverCity: clearDriverCity ? null : (driverCity ?? this.driverCity),
-        riderPhoneNumber: clearRiderPhoneNumber
-          ? null
-          : (riderPhoneNumber ?? this.riderPhoneNumber),
-        riderCity: clearRiderCity ? null : (riderCity ?? this.riderCity),
-        riderCountry: clearRiderCountry
-          ? null
-          : (riderCountry ?? this.riderCountry),
-      );
+  }) => OnboardingState(
+    isLoading: isLoading ?? this.isLoading,
+    completedAction: clearAction
+        ? null
+        : (completedAction ?? this.completedAction),
+    errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+    driverCurrentStep: driverCurrentStep ?? this.driverCurrentStep,
+    driverProfilePopulated:
+        driverProfilePopulated ?? this.driverProfilePopulated,
+    riderProfilePopulated: riderProfilePopulated ?? this.riderProfilePopulated,
+    driverPhoneNumber: clearDriverPhoneNumber
+        ? null
+        : (driverPhoneNumber ?? this.driverPhoneNumber),
+    driverCity: clearDriverCity ? null : (driverCity ?? this.driverCity),
+    riderPhoneNumber: clearRiderPhoneNumber
+        ? null
+        : (riderPhoneNumber ?? this.riderPhoneNumber),
+    riderCity: clearRiderCity ? null : (riderCity ?? this.riderCity),
+    riderCountry: clearRiderCountry
+        ? null
+        : (riderCountry ?? this.riderCountry),
+  );
 }
 
 @riverpod
@@ -118,10 +115,7 @@ class OnboardingViewModel extends _$OnboardingViewModel {
   }
 
   void setDriverDraftContact({String? phoneNumber, String? city}) {
-    state = state.copyWith(
-      driverPhoneNumber: phoneNumber,
-      driverCity: city,
-    );
+    state = state.copyWith(driverPhoneNumber: phoneNumber, driverCity: city);
   }
 
   void setRiderDraftContact({
@@ -141,17 +135,18 @@ class OnboardingViewModel extends _$OnboardingViewModel {
     String uid,
     Map<String, dynamic> profileJson,
   ) async {
-    state = state.copyWith(isLoading: true, clearAction: true, clearError: true);
+    state = state.copyWith(
+      isLoading: true,
+      clearAction: true,
+      clearError: true,
+    );
     try {
-      await ref.read(profileActionsViewModelProvider).updateProfile(
-            uid,
-            profileJson,
-          );
+      await ref
+          .read(profileActionsViewModelProvider)
+          .updateProfile(uid, profileJson);
       if (!ref.mounted) return;
 
-      await ref
-          .read(authActionsViewModelProvider)
-          .clearNeedsRoleSelection(uid);
+      await ref.read(authActionsViewModelProvider).clearNeedsRoleSelection(uid);
       if (!ref.mounted) return;
 
       state = state.copyWith(isLoading: false, completedAction: 'riderDone');
@@ -166,15 +161,17 @@ class OnboardingViewModel extends _$OnboardingViewModel {
     String uid,
     Map<String, dynamic> profileJson,
   ) async {
-    state = state.copyWith(isLoading: true, clearAction: true, clearError: true);
+    state = state.copyWith(
+      isLoading: true,
+      clearAction: true,
+      clearError: true,
+    );
     try {
-      await ref.read(profileActionsViewModelProvider).updateProfile(
-            uid,
-            profileJson,
-          );
+      await ref
+          .read(profileActionsViewModelProvider)
+          .updateProfile(uid, profileJson);
       if (!ref.mounted) return;
-      state =
-          state.copyWith(isLoading: false, completedAction: 'profileSaved');
+      state = state.copyWith(isLoading: false, completedAction: 'profileSaved');
     } catch (e) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
@@ -183,14 +180,15 @@ class OnboardingViewModel extends _$OnboardingViewModel {
 
   /// Saves a vehicle (step 2 of driver onboarding).
   Future<void> saveVehicle(String uid, VehicleModel vehicle) async {
-    state = state.copyWith(isLoading: true, clearAction: true, clearError: true);
+    state = state.copyWith(
+      isLoading: true,
+      clearAction: true,
+      clearError: true,
+    );
     try {
-      await ref
-          .read(profileActionsViewModelProvider)
-          .addVehicle(uid, vehicle);
+      await ref.read(profileActionsViewModelProvider).addVehicle(uid, vehicle);
       if (!ref.mounted) return;
-      state =
-          state.copyWith(isLoading: false, completedAction: 'vehicleSaved');
+      state = state.copyWith(isLoading: false, completedAction: 'vehicleSaved');
     } catch (e) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
