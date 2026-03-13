@@ -50,7 +50,7 @@ jobs:
   # iOS Build Job
   # ==========================================
   build-ios:
-    name: Build iOS App
+    name: Build iOS IPA
     runs-on: macos-latest
 
     steps:
@@ -68,15 +68,13 @@ jobs:
       - name: Build iOS (Unsigned)
         run: flutter build ios --release --no-codesign
 
-      # Compresses the iOS .app file into a standard zipped package so it can be uploaded
-      - name: Compress iOS Payload
+      - name: Create IPA
         run: |
           mkdir -p Payload
-          mv build/ios/iphoneos/Runner.app Payload
-          zip -qq -r ios-release-unsigned.zip Payload
+          cp -r build/ios/iphoneos/Runner.app Payload/
+          zip -r app-unsigned.ipa Payload
 
       - name: Push to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          # Attaches the zipped iOS app to the same GitHub Release
-          files: ios-release-unsigned.zip
+          files: app-unsigned.ipa
