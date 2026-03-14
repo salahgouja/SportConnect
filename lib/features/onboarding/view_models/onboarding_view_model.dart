@@ -43,7 +43,7 @@ class OnboardingViewModel extends _$OnboardingViewModel {
   }
 
   /// Get all onboarding pages
-  List<OnboardingPage> get pages => OnboardingPages.pages;
+  List<OnboardingPage> get pages => onboardingPages;
 
   /// Set current page index
   void setPageIndex(int index) {

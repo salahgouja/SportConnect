@@ -56,7 +56,9 @@ class _DriverOnboardingScreenState
     FuelType.diesel,
     FuelType.electric,
     FuelType.hybrid,
+    FuelType.pluginHybrid,
     FuelType.hydrogen,
+    FuelType.other
   ];
 
   bool _didScheduleProfilePrefill = false;

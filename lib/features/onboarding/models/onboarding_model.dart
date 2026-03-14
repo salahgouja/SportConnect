@@ -1,44 +1,86 @@
-/// Onboarding page model
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:sport_connect/core/theme/app_colors.dart';
+
+// ---------------------------------------------------------------------------
+// Data model
+// ---------------------------------------------------------------------------
+
 class OnboardingPage {
   final String title;
+  final String subtitle;
   final String description;
-  final String imagePath;
-  final String? lottieAnimation;
+  final List<Color> gradientColors;
+  final List<String> features;
+  final IllustrationVariant illustration;
 
   const OnboardingPage({
     required this.title,
+    required this.subtitle,
     required this.description,
-    required this.imagePath,
-    this.lottieAnimation,
+    required this.gradientColors,
+    required this.illustration,
+    this.features = const [],
   });
 }
 
-/// Default onboarding pages for SportConnect
-class OnboardingPages {
-  static const List<OnboardingPage> pages = [
-    OnboardingPage(
-      title: 'Welcome to SportConnect',
-      description:
-          'Connect with fellow sports enthusiasts and share rides to events, games, and training sessions.',
-      imagePath: 'assets/images/onboarding_1.png',
-    ),
-    OnboardingPage(
-      title: 'Find Rides Easily',
-      description:
-          'Search for rides going to your favorite sports venues. Filter by sport type, time, and destination.',
-      imagePath: 'assets/images/onboarding_2.png',
-    ),
-    OnboardingPage(
-      title: 'Share Your Journey',
-      description:
-          'Offer rides to others and earn money while reducing carbon footprint. Make new friends along the way!',
-      imagePath: 'assets/images/onboarding_3.png',
-    ),
-    OnboardingPage(
-      title: 'Safe & Secure',
-      description:
-          'Verified profiles, secure payments, and real-time tracking ensure a safe experience for everyone.',
-      imagePath: 'assets/images/onboarding_4.png',
-    ),
-  ];
-}
+enum IllustrationVariant { findRide, offerSeat, planRoute, connectGo }
+
+// ---------------------------------------------------------------------------
+// Page definitions
+// ---------------------------------------------------------------------------
+
+final List<OnboardingPage> onboardingPages = [
+  OnboardingPage(
+    title: 'Find Your\nRide',
+    subtitle: 'Match with Runners',
+    description:
+        'Instantly match with runners heading the same direction. '
+        'Share a car, save money, and arrive at the start-line together.',
+    gradientColors: [
+      AppColors.primary,
+      AppColors.primary.withValues(alpha: 0.65),
+    ],
+    illustration: IllustrationVariant.findRide,
+    features: ['Smart Matching', 'Nearby Runners', 'Pace Filters'],
+  ),
+  OnboardingPage(
+    title: 'Offer a\nSeat',
+    subtitle: 'Drive & Split Costs',
+    description:
+        'Got a car? Offer spare seats to fellow runners. '
+        'Cover fuel costs and build bonds with your local running community.',
+    gradientColors: [
+      AppColors.secondary,
+      AppColors.secondary.withValues(alpha: 0.65),
+    ],
+    illustration: IllustrationVariant.offerSeat,
+    features: ['Cost Splitting', 'Seat Control', 'Driver Rating'],
+  ),
+  OnboardingPage(
+    title: 'Plan Your\nRoute',
+    subtitle: 'Smart Route Sync',
+    description:
+        'Set your pickup point, race venue, or training ground. '
+        'SportConnect syncs detours automatically to keep everyone on schedule.',
+    gradientColors: [
+      AppColors.primary,
+      AppColors.primary.withValues(alpha: 0.65),
+    ],
+    illustration: IllustrationVariant.planRoute,
+    features: ['Live Routing', 'Detour Sync', 'Event Zones'],
+  ),
+  OnboardingPage(
+    title: 'Connect\n& Go',
+    subtitle: 'Community You Trust',
+    description:
+        'Verified runner profiles, in-app chat, and real-time tracking '
+        'keep every carpool safe, social, and on time.',
+    gradientColors: [
+      AppColors.secondary,
+      AppColors.secondary.withValues(alpha: 0.65),
+    ],
+    illustration: IllustrationVariant.connectGo,
+    features: ['Verified Profiles', 'In-App Chat', 'Live Tracking'],
+  ),
+];

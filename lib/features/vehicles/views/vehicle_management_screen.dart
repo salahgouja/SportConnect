@@ -965,7 +965,7 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
                               ),
                             ),
                             child: Text(
-                              _getFuelTypeName(type),
+                              type.name,
                               style: TextStyle(
                                 fontSize: 14.sp,
                                 fontWeight: isSelected
@@ -1072,25 +1072,6 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
           customValidator ??
           FormBuilderValidators.required(errorText: 'Please enter $label'),
     );
-  }
-
-  String _getFuelTypeName(FuelType type) {
-    switch (type) {
-      case FuelType.gasoline:
-        return 'Gasoline';
-      case FuelType.diesel:
-        return 'Diesel';
-      case FuelType.electric:
-        return 'Electric';
-      case FuelType.hybrid:
-        return 'Hybrid';
-      case FuelType.pluginHybrid:
-        return 'Plug-in Hybrid';
-      case FuelType.hydrogen:
-        return 'Hydrogen';
-      case FuelType.other:
-        return 'Other';
-    }
   }
 }
 
