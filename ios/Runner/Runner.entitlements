@@ -10,7 +10,7 @@
 	<!-- Associated Domains for Universal Links -->
 	<key>com.apple.developer.associated-domains</key>
 	<array>
-		<string>applinks:marathon-connect.web.app</string>
+		<string>applinks:sportaxitrip.com</string>
 	</array>
 	<!-- Push Notifications -->
 	<key>aps-environment</key>

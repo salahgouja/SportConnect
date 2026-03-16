@@ -1,11 +1,11 @@
 import 'dart:async';
+import 'package:accessibility_tools/accessibility_tools.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_devtools_tracker/riverpod_devtools_tracker.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:device_preview/device_preview.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -92,16 +92,14 @@ void _runApp() {
   runApp(
     ProviderScope(
       observers: [
-        if (kDebugMode) TalkerService.riverpodObserver,
-        if (kDebugMode)
+        if (kDebugMode) ...[
+          TalkerService.riverpodObserver,
           RiverpodDevToolsObserver(
             config: TrackerConfig.forPackage('com.sportconnect.app'),
           ),
+        ],
       ],
-      child: DevicePreview(
-        enabled: false, // Set to kDebugMode if you want to use it
-        builder: (context) => const SportConnectApp(),
-      ),
+      child:  const SportConnectApp(),
     ),
   );
 }
@@ -176,7 +174,9 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           routerConfig: router,
-          builder: DevicePreview.appBuilder,
+          builder: (context, child) {
+            return AccessibilityTools(child: child);
+          },
         );
       },
     );

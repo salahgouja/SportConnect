@@ -88,7 +88,6 @@ class SignupWizardUiState {
     this.selectedRole = UserRole.rider,
     this.profileImage,
     this.dateOfBirth,
-    this.selectedInterests = const [],
     this.phoneNumber,
   });
 
@@ -100,7 +99,6 @@ class SignupWizardUiState {
   final UserRole selectedRole;
   final File? profileImage;
   final DateTime? dateOfBirth;
-  final List<String> selectedInterests;
   final String? phoneNumber;
 
   SignupWizardUiState copyWith({
@@ -114,7 +112,6 @@ class SignupWizardUiState {
     bool clearProfileImage = false,
     DateTime? dateOfBirth,
     bool clearDateOfBirth = false,
-    List<String>? selectedInterests,
     String? phoneNumber,
   }) {
     return SignupWizardUiState(
@@ -129,7 +126,6 @@ class SignupWizardUiState {
           ? null
           : (profileImage ?? this.profileImage),
       dateOfBirth: clearDateOfBirth ? null : (dateOfBirth ?? this.dateOfBirth),
-      selectedInterests: selectedInterests ?? this.selectedInterests,
       phoneNumber: phoneNumber ?? this.phoneNumber,
     );
   }
@@ -167,16 +163,6 @@ class SignupWizardUiViewModel extends Notifier<SignupWizardUiState> {
 
   void setSelectedRole(UserRole role) {
     state = state.copyWith(selectedRole: role);
-  }
-
-  void toggleInterest(String interest) {
-    final interests = [...state.selectedInterests];
-    if (interests.contains(interest)) {
-      interests.remove(interest);
-    } else {
-      interests.add(interest);
-    }
-    state = state.copyWith(selectedInterests: interests);
   }
 
   void setProfileImage(File? image) {
@@ -251,8 +237,6 @@ class RegisterViewModel extends _$RegisterViewModel {
     required String displayName,
     required UserRole role,
     String? phone,
-    String? bio,
-    List<String> interests = const [],
     File? profileImage,
   }) async {
     state = const AsyncValue.loading();
@@ -266,8 +250,6 @@ class RegisterViewModel extends _$RegisterViewModel {
             displayName: displayName,
             role: role,
             phone: phone,
-            bio: bio,
-            interests: interests,
             profileImage: profileImage,
           );
       if (!ref.mounted) return false;
@@ -300,6 +282,7 @@ class AuthActionsViewModel {
   final Ref _ref;
 
   Future<void> signOut() {
+    _ref.invalidate(signupWizardUiViewModelProvider);
     return _ref.read(authRepositoryProvider).signOut();
   }
 

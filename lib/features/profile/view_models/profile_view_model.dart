@@ -13,11 +13,9 @@ part 'profile_view_model.g.dart';
 /// Profile Edit State
 class ProfileEditState {
   final String displayName;
-  final String? bio;
   final String? phoneNumber;
   final DateTime? dateOfBirth;
   final String? gender;
-  final List<String> interests;
   final AddressResult? cityResult;
   final File? newPhotoFile;
   final bool imageRemoved;
@@ -28,11 +26,9 @@ class ProfileEditState {
 
   const ProfileEditState({
     this.displayName = '',
-    this.bio,
     this.phoneNumber,
     this.dateOfBirth,
     this.gender,
-    this.interests = const [],
     this.cityResult,
     this.newPhotoFile,
     this.imageRemoved = false,
@@ -44,11 +40,9 @@ class ProfileEditState {
 
   ProfileEditState copyWith({
     String? displayName,
-    String? bio,
     String? phoneNumber,
     DateTime? dateOfBirth,
     String? gender,
-    List<String>? interests,
     AddressResult? cityResult,
     bool clearCityResult = false,
     File? newPhotoFile,
@@ -61,11 +55,9 @@ class ProfileEditState {
   }) {
     return ProfileEditState(
       displayName: displayName ?? this.displayName,
-      bio: bio ?? this.bio,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       gender: gender ?? this.gender,
-      interests: interests ?? this.interests,
       cityResult: clearCityResult ? null : (cityResult ?? this.cityResult),
       newPhotoFile: clearNewPhotoFile
           ? null
@@ -81,11 +73,9 @@ class ProfileEditState {
   factory ProfileEditState.fromUser(UserModel user) {
     return ProfileEditState(
       displayName: user.displayName,
-      bio: user.bio,
       phoneNumber: user.phoneNumber,
       dateOfBirth: user.dateOfBirth,
       gender: user.gender,
-      interests: user.interests,
       hasChanges: false,
     );
   }
@@ -487,10 +477,6 @@ class ProfileEditViewModel extends _$ProfileEditViewModel {
     state = state.copyWith(displayName: name, hasChanges: true, isSaved: false);
   }
 
-  void setBio(String bio) {
-    state = state.copyWith(bio: bio, hasChanges: true, isSaved: false);
-  }
-
   void setPhoneNumber(String phone) {
     state = state.copyWith(
       phoneNumber: phone,
@@ -507,36 +493,10 @@ class ProfileEditViewModel extends _$ProfileEditViewModel {
     state = state.copyWith(gender: gender, hasChanges: true, isSaved: false);
   }
 
-  void setInterests(List<String> interests) {
-    state = state.copyWith(
-      interests: interests,
-      hasChanges: true,
-      isSaved: false,
-    );
-  }
-
   void setCityResult(AddressResult? result) {
     state = state.copyWith(
       cityResult: result,
       clearCityResult: result == null,
-      hasChanges: true,
-      isSaved: false,
-    );
-  }
-
-  void addInterest(String interest) {
-    if (!state.interests.contains(interest)) {
-      state = state.copyWith(
-        interests: [...state.interests, interest],
-        hasChanges: true,
-        isSaved: false,
-      );
-    }
-  }
-
-  void removeInterest(String interest) {
-    state = state.copyWith(
-      interests: state.interests.where((i) => i != interest).toList(),
       hasChanges: true,
       isSaved: false,
     );
@@ -581,11 +541,9 @@ class ProfileEditViewModel extends _$ProfileEditViewModel {
       // Update profile
       await repository.updateProfile(uid, {
         'displayName': state.displayName,
-        'bio': state.bio,
         'phoneNumber': state.phoneNumber,
         'dateOfBirth': state.dateOfBirth,
         'gender': state.gender,
-        'interests': state.interests,
       });
 
       if (!ref.mounted) return true;

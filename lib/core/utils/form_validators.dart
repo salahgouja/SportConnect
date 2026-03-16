@@ -6,7 +6,7 @@ import 'package:sport_connect/core/widgets/intl_phone_input.dart';
 /// - Names, emails, phone numbers
 /// - Passwords with strength checks
 /// - Prices, seats, dates
-/// - License plates, bio text
+/// - License plates
 /// - Generic required/length/pattern validators
 class FormValidators {
   FormValidators._();
@@ -245,17 +245,6 @@ class FormValidators {
     if (year == null) return 'Please enter a valid year';
     if (year < 1980) return 'Vehicle is too old';
     if (year > DateTime.now().year) return 'Invalid year';
-    return null;
-  }
-
-  // ── Bio ─────────────────────────────────────────────────────────────
-
-  /// Validates bio/description text.
-  static String? bio(String? value, {int maxLen = 500}) {
-    if (value == null || value.trim().isEmpty) return null; // Optional
-    if (value.trim().length > maxLen) {
-      return 'Maximum $maxLen characters';
-    }
     return null;
   }
 

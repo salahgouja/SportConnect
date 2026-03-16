@@ -526,18 +526,6 @@ class _UserCard extends StatelessWidget {
                             ),
                         ],
                       ),
-                      if (user.bio != null && user.bio!.isNotEmpty) ...[
-                        SizedBox(height: 6.h),
-                        Text(
-                          user.bio!,
-                          style: TextStyle(
-                            fontSize: 13.sp,
-                            color: AppColors.textSecondary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
                     ],
                   ),
                 ),

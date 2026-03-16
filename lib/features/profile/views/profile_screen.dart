@@ -30,10 +30,8 @@ class ProfileScreen extends ConsumerWidget {
     int count = 0;
     if (user.displayName.isNotEmpty) count++;
     if (user.photoUrl != null && user.photoUrl!.isNotEmpty) count++;
-    if (user.bio != null && user.bio!.isNotEmpty) count++;
     if (user.isPhoneVerified) count++;
     if (user.isEmailVerified) count++;
-    if (user.interests.isNotEmpty) count++;
     return count;
   }
 
@@ -301,85 +299,6 @@ class ProfileScreen extends ConsumerWidget {
         if (!_isOwnProfile) SliverToBoxAdapter(child: SizedBox(height: 8.h)),
 
         SliverToBoxAdapter(child: SizedBox(height: 24.h)),
-
-        // About section
-        if (user.bio != null && user.bio!.isNotEmpty)
-          SliverToBoxAdapter(
-            child: _buildAboutSection(context, user)
-                .animate()
-                .fadeIn(duration: 400.ms, delay: 300.ms)
-                .slideY(begin: 0.1, curve: Curves.easeOutCubic),
-          ),
-
-        if (user.bio != null && user.bio!.isNotEmpty)
-          SliverToBoxAdapter(child: SizedBox(height: 24.h)),
-
-        // Bio prompt for own profile when bio is empty
-        if (_isOwnProfile && (user.bio == null || user.bio!.isEmpty))
-          SliverToBoxAdapter(
-            child:
-                Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20.w),
-                      child: GestureDetector(
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          context.push(AppRoutes.editProfile.path);
-                        },
-                        child: Container(
-                          padding: EdgeInsets.all(16.w),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.05),
-                            borderRadius: BorderRadius.circular(16.r),
-                            border: Border.all(
-                              color: AppColors.primary.withValues(alpha: 0.2),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.edit_note_rounded,
-                                color: AppColors.primary,
-                                size: 24.sp,
-                              ),
-                              SizedBox(width: 12.w),
-                              Expanded(
-                                child: Text(
-                                  'Add a bio to let others know more about you',
-                                  style: TextStyle(
-                                    fontSize: 14.sp,
-                                    color: AppColors.primary,
-                                  ),
-                                ),
-                              ),
-                              Icon(
-                                Icons.chevron_right_rounded,
-                                color: AppColors.primary,
-                                size: 20.sp,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    )
-                    .animate()
-                    .fadeIn(duration: 400.ms, delay: 300.ms)
-                    .slideY(begin: 0.1, curve: Curves.easeOutCubic),
-          ),
-
-        if (_isOwnProfile && (user.bio == null || user.bio!.isEmpty))
-          SliverToBoxAdapter(child: SizedBox(height: 24.h)),
-
-        // Interests section
-        if (user.interests.isNotEmpty)
-          SliverToBoxAdapter(
-            child: _buildInterestsSection(context, user)
-                .animate()
-                .fadeIn(duration: 400.ms, delay: 350.ms)
-                .slideY(begin: 0.1, curve: Curves.easeOutCubic),
-          ),
-
-        if (user.interests.isNotEmpty)
-          SliverToBoxAdapter(child: SizedBox(height: 24.h)),
 
         // Quick actions menu
         if (_isOwnProfile)
@@ -864,119 +783,6 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 ],
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// About section with bio
-  Widget _buildAboutSection(BuildContext context, UserModel user) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20.w),
-      child: Container(
-        padding: EdgeInsets.all(16.w),
-        decoration: BoxDecoration(
-          color: AppColors.cardBg,
-          borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.person_outline_rounded,
-                  color: AppColors.primary,
-                  size: 20.sp,
-                ),
-                SizedBox(width: 8.w),
-                Text(
-                  AppLocalizations.of(context).settingsAbout,
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 12.h),
-            Text(
-              user.bio!,
-              style: TextStyle(
-                fontSize: 14.sp,
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Interests section
-  Widget _buildInterestsSection(BuildContext context, UserModel user) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20.w),
-      child: Container(
-        padding: EdgeInsets.all(16.w),
-        decoration: BoxDecoration(
-          color: AppColors.cardBg,
-          borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.interests_rounded,
-                  color: AppColors.primary,
-                  size: 20.sp,
-                ),
-                SizedBox(width: 8.w),
-                Text(
-                  'Interests',
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 12.h),
-            Wrap(
-              spacing: 8.w,
-              runSpacing: 8.h,
-              children: user.interests.map((interest) {
-                return Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 12.w,
-                    vertical: 6.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(20.r),
-                    border: Border.all(
-                      color: AppColors.primary.withValues(alpha: 0.2),
-                    ),
-                  ),
-                  child: Text(
-                    interest,
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                );
-              }).toList(),
             ),
           ],
         ),

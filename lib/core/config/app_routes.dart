@@ -104,10 +104,6 @@ class AppRoutes {
     '/ride/completion/:id',
     'ride-completion',
   );
-  static const rideNavigation = AppRoute(
-    '/ride/navigation/:id',
-    'ride-navigation',
-  );
   static const cancellationReason = AppRoute(
     '/ride/cancel/:id',
     'cancellation-reason',

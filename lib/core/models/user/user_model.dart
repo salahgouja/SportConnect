@@ -22,10 +22,8 @@ sealed class UserModel with _$UserModel {
     required String displayName,
     String? photoUrl,
     String? phoneNumber,
-    String? bio,
     @TimestampConverter() DateTime? dateOfBirth,
     String? gender,
-    @Default([]) List<String> interests,
     @Default("") String fcmToken,
 
     // Address & location
@@ -79,10 +77,8 @@ sealed class UserModel with _$UserModel {
     required String displayName,
     String? photoUrl,
     String? phoneNumber,
-    String? bio,
     @TimestampConverter() DateTime? dateOfBirth,
     String? gender,
-    @Default([]) List<String> interests,
     @Default("") String fcmToken,
 
     // Address & location

@@ -18,6 +18,7 @@ import 'package:sport_connect/features/messaging/view_models/chat_view_model.dar
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
+import 'package:sport_connect/features/payments/view_models/payment_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/core/widgets/safety_widgets.dart';
 import 'package:sport_connect/core/widgets/ride_feature_widgets.dart';
@@ -1186,115 +1187,85 @@ class _PassengerActiveRideScreenState
               ),
             ),
 
-          // ETA + Distance row
+          // Progress bar
+          _buildProgressBar(ride, rideState),
+          SizedBox(height: 20.h),
+
+          // ETA, distance and speed tiles
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 20.w),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  // ETA badge
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 16.w,
-                      vertical: 10.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(14.r),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.schedule, color: Colors.white, size: 18.w),
-                        SizedBox(width: 8.w),
-                        Text(
-                          etaMinutes < 1
-                              ? 'Arriving'
-                              : l10n.valueMin(etaMinutes),
-                          style: TextStyle(
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(width: 12.w),
-                  // Distance badge
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 16.w,
-                      vertical: 10.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(14.r),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.straighten,
-                          color: AppColors.textPrimary,
-                          size: 18.w,
-                        ),
-                        SizedBox(width: 8.w),
-                        Text(
-                          distToDest < 1
-                              ? '${(distToDest * 1000).toInt()} m'
-                              : '${distToDest.toStringAsFixed(1)} km',
-                          style: TextStyle(
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Pickup queue position badge (7A)
-                  if (rideState.phase == ActiveRidePhase.pickingUp &&
-                      rideState.pickupOrder.isNotEmpty) ...[
-                    SizedBox(width: 12.w),
-                    Builder(
-                      builder: (context) {
-                        final user = ref.read(currentUserProvider).value;
-                        final pos = user != null
-                            ? rideState.pickupOrder.indexOf(user.uid) + 1
-                            : 0;
-                        if (pos <= 0) return const SizedBox.shrink();
-                        return Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 14.w,
-                            vertical: 10.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.info.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(14.r),
-                            border: Border.all(
-                              color: AppColors.info.withValues(alpha: 0.3),
-                            ),
-                          ),
-                          child: Text(
-                            '#$pos pickup',
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.info,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ],
-              ),
+            child: Row(
+              children: [
+                _buildInfoTile(
+                  icon: Icons.access_time_rounded,
+                  label: 'ETA',
+                  value: etaMinutes < 1 ? 'Arriving' : l10n.valueMin(etaMinutes),
+                  color: AppColors.primary,
+                ),
+                SizedBox(width: 12.w),
+                _buildInfoTile(
+                  icon: Icons.straighten_rounded,
+                  label: 'Distance',
+                  value: distToDest < 1 ? '${(distToDest * 1000).toInt()} m' : '${distToDest.toStringAsFixed(1)} km',
+                  color: AppColors.warning,
+                ),
+                SizedBox(width: 12.w),
+                _buildInfoTile(
+                  icon: Icons.speed_rounded,
+                  label: 'Speed',
+                  value: '${rideState.currentSpeedKmh.toStringAsFixed(0)} km/h',
+                  color: AppColors.success,
+                ),
+              ],
             ),
           ),
-
+          
+          // Pickup queue position badge (7A)
+          if (rideState.phase == ActiveRidePhase.pickingUp &&
+              rideState.pickupOrder.isNotEmpty) ...[
+            SizedBox(height: 12.h),
+            Builder(
+              builder: (context) {
+                final user = ref.read(currentUserProvider).value;
+                final pos = user != null
+                    ? rideState.pickupOrder.indexOf(user.uid) + 1
+                    : 0;
+                if (pos <= 0) return const SizedBox.shrink();
+                return Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20.w),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 14.w,
+                      vertical: 10.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.info.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(14.r),
+                      border: Border.all(
+                        color: AppColors.info.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.people_alt, color: AppColors.info, size: 18.sp),
+                        SizedBox(width: 8.w),
+                        Text(
+                          'You are #$pos in the pickup queue',
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.info,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+          
           SizedBox(height: 16.h),
 
           // Driver info row
@@ -1408,8 +1379,42 @@ class _PassengerActiveRideScreenState
               ),
             ),
 
-          // Route itinerary
-          _buildRouteDetails(context, ride),
+          // Route itinerary (Compact)
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
+            child: Container(
+              padding: EdgeInsets.all(16.w),
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              child: Column(
+                children: [
+                  _buildMiniRouteRow(
+                    Icons.trip_origin_rounded,
+                    AppColors.success,
+                    ride.origin.address,
+                  ),
+                  // Show intermediate waypoints
+                  for (final wp in ride.route.waypoints)
+                    Padding(
+                      padding: EdgeInsets.only(top: 8.h),
+                      child: _buildMiniRouteRow(
+                        Icons.circle,
+                        AppColors.warning,
+                        wp.location.address,
+                      ),
+                    ),
+                  SizedBox(height: 8.h),
+                  _buildMiniRouteRow(
+                    Icons.location_on_rounded,
+                    AppColors.error,
+                    ride.destination.address,
+                  ),
+                ],
+              ),
+            ),
+          ),
 
           SizedBox(height: 12.h),
 
@@ -2570,7 +2575,9 @@ class _PassengerActiveRideScreenState
           ),
           // Waypoints
           if (ride.route.waypoints.isNotEmpty)
-            ...ride.route.waypoints.map((wp) {
+            ...ride.route.waypoints.asMap().entries.map((entry) {
+              final index = entry.key;
+              final wp = entry.value;
               final isPassed = passedWaypoints.contains(wp.order);
               return Column(
                 mainAxisSize: MainAxisSize.min,
@@ -2602,7 +2609,7 @@ class _PassengerActiveRideScreenState
                             Row(
                               children: [
                                 Text(
-                                  'Waypoint ${wp.order + 1}',
+                                  'Waypoint ${index + 1}',
                                   style: TextStyle(
                                     fontSize: 12.sp,
                                     color: AppColors.textTertiary,
@@ -2653,10 +2660,9 @@ class _PassengerActiveRideScreenState
                     ],
                   ),
                   Container(
-                    padding: EdgeInsets.only(left: 16.w),
+                    margin: EdgeInsets.only(left: 16.w, top: 4.h, bottom: 4.h),
                     height: 24.h,
                     width: 2,
-                    margin: EdgeInsets.symmetric(vertical: 4.h),
                     decoration: BoxDecoration(
                       border: Border(
                         left: BorderSide(
@@ -3199,6 +3205,21 @@ class _PassengerActiveRideScreenState
       await ref
           .read(rideActionsViewModelProvider)
           .cancelBooking(rideId: ride.id, bookingId: myBooking.id);
+
+      // Auto-refund if payment was made and intent ID exists
+      if (myBooking.paymentIntentId != null) {
+        try {
+          await ref
+              .read(paymentViewModelProvider.notifier)
+              .refundBookingPayment(
+                paymentId: myBooking.paymentIntentId!,
+                reason: 'User cancelled ride',
+              );
+        } catch (e) {
+          debugPrint('Failed to refund: $e');
+        }
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -3258,6 +3279,110 @@ class _PassengerActiveRideScreenState
     final minute = dateTime.minute.toString().padLeft(2, '0');
     return '$hour:$minute';
   }
+
+  Widget _buildProgressBar(RideModel ride, ActiveRideState rideState) {
+    double progress = 0.0;
+    if (ride.distanceKm != null && ride.distanceKm! > 0) {
+      final remaining = rideState.remainingDistanceKm ?? ride.distanceKm!;
+      progress = ((ride.distanceKm! - remaining) / ride.distanceKm!).clamp(0.0, 1.0);
+    }
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Trip Progress',
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              Text(
+                '${(progress * 100).toInt()}%',
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primary,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8.h),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4.r),
+            child: LinearProgressIndicator(
+              value: progress,
+              backgroundColor: AppColors.border,
+              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+              minHeight: 6.h,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoTile({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Expanded(
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 8.w),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12.r),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 20.sp, color: color),
+            SizedBox(height: 6.h),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            SizedBox(height: 2.h),
+            Text(
+              label,
+              style: TextStyle(fontSize: 12.sp, color: AppColors.textTertiary),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMiniRouteRow(IconData icon, Color color, String text) {
+    return Row(
+      children: [
+        Icon(icon, size: 16.sp, color: color),
+        SizedBox(width: 10.w),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textPrimary,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class InfoItem extends StatelessWidget {
@@ -3292,3 +3417,4 @@ class InfoItem extends StatelessWidget {
     );
   }
 }
+

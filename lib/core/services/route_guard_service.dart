@@ -60,10 +60,8 @@ class RouteGuardService {
 
     return (driver.phoneNumber?.isNotEmpty ?? false) ||
         (driver.city?.isNotEmpty ?? false) ||
-        (driver.bio?.isNotEmpty ?? false) ||
         driver.dateOfBirth != null ||
-        (driver.gender?.isNotEmpty ?? false) ||
-        driver.interests.isNotEmpty;
+        (driver.gender?.isNotEmpty ?? false);
   }
 
   String get _driverOnboardingRedirectPath {

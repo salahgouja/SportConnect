@@ -18,7 +18,7 @@ import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 
 /// Driver Onboarding Screen - Multi-step wizard for new drivers
-/// Step 1: Complete driver profile (name, phone, city, bio, gender, DOB, interests)
+/// Step 1: Complete driver profile (name, phone, city, gender, DOB)
 /// Step 2: Add vehicle information
 /// Step 3: Setup Stripe for payouts
 class DriverOnboardingScreen extends ConsumerStatefulWidget {
@@ -35,18 +35,6 @@ class _DriverOnboardingScreenState
   final _profileFormKey = GlobalKey<FormBuilderState>();
   final _phoneKey = GlobalKey<IntlPhoneInputState>();
   final _cityKey = GlobalKey<AddressAutocompleteFieldState>();
-
-  final List<String> _availableInterests = [
-    'Football',
-    'Basketball',
-    'Gym',
-    'Tennis',
-    'Running',
-    'Cycling',
-    'Swimming',
-    'Yoga',
-    'Hiking',
-  ];
 
   // ── Vehicle form (Step 1) ──────────────────────────────────────────
   final _vehicleFormKey = GlobalKey<FormBuilderState>();
@@ -115,10 +103,8 @@ class _DriverOnboardingScreenState
       'name': user.displayName,
       'phone': user.phoneNumber ?? '',
       'city': user.city ?? '',
-      'bio': user.bio ?? '',
       'gender': user.gender,
       'dob': user.dateOfBirth,
-      'interests': user.interests,
     });
   }
 
@@ -145,10 +131,8 @@ class _DriverOnboardingScreenState
             ref.read(onboardingViewModelProvider).driverCity ??
             _cityKey.currentState?.text ??
             '',
-        bio: (values['bio'] as String?)?.isEmpty ?? true ? null : values['bio'],
         gender: values['gender'],
         dateOfBirth: values['dob'],
-        interests: (values['interests'] as List<dynamic>? ?? []).cast<String>(),
       ),
     );
 
@@ -536,23 +520,6 @@ class _DriverOnboardingScreenState
 
             SizedBox(height: 16.h),
 
-            // About you (optional)
-            FormBuilderTextField(
-              name: 'bio',
-              decoration: InputDecoration(
-                labelText: l10n.authAboutYou,
-                hintText: l10n.authAboutYouHint,
-                prefixIcon: Icon(Icons.info_outline_rounded),
-              ),
-              maxLines: 3,
-              maxLength: 500,
-              textInputAction: TextInputAction.newline,
-              keyboardType: TextInputType.multiline,
-              validator: (value) => FormValidators.bio(value),
-            ).animate().fadeIn(duration: 400.ms, delay: 200.ms),
-
-            SizedBox(height: 16.h),
-
             // Gender dropdown
             FormBuilderDropdown<String>(
               name: 'gender',
@@ -595,35 +562,6 @@ class _DriverOnboardingScreenState
               ]),
             ),
             SizedBox(height: 20.h),
-
-            // Sports interests
-            FormBuilderFilterChips<String>(
-              name: 'interests',
-              decoration: InputDecoration(labelText: l10n.sportsInterests),
-              options: _availableInterests
-                  .map((i) => FormBuilderChipOption(value: i))
-                  .toList(),
-              validator: FormBuilderValidators.minLength(
-                1,
-                errorText: l10n.driverInterestsRequired,
-              ),
-              // Add these:
-              backgroundColor: AppColors.surfaceVariant,
-              selectedColor: AppColors.primary.withAlpha(40),
-              checkmarkColor: AppColors.primary,
-              labelStyle: TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 13.sp,
-              ),
-              selectedShadowColor: Colors.transparent,
-              shadowColor: Colors.transparent,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20.r),
-                side: BorderSide(color: AppColors.border),
-              ),
-              spacing: 4.w,
-            ),
-            SizedBox(height: 18.h),
 
             // Terms checkbox
             FormBuilderCheckbox(

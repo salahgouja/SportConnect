@@ -62,12 +62,14 @@ class FirebaseService implements IFirebaseService {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
-      // await FirebaseAppCheck.instance.activate(
-      //   androidProvider:
-      //       kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
-      //   appleProvider:
-      //       kDebugMode ? AppleProvider.debug : AppleProvider.deviceCheck,
-      // );
+      await FirebaseAppCheck.instance.activate(
+        androidProvider: kDebugMode
+            ? AndroidProvider.debug
+            : AndroidProvider.playIntegrity,
+        appleProvider: kDebugMode
+            ? AppleProvider.debug
+            : AppleProvider.deviceCheck,
+      );
       TalkerService.info('Firebase initialized successfully');
       TalkerService.info('Environment: ${AppConfig.environmentStatus}');
 

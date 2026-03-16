@@ -810,7 +810,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
         final etaMin = rideState.waypointEtaMinutes[wp.order];
         nextStop = wp.location.address.isNotEmpty
             ? wp.location.address
-            : 'Waypoint ${wp.order + 1}';
+            : 'Waypoint ${ride.route.waypoints.indexOf(wp) + 1}';
         nextStopIcon = Icons.location_on;
         nextStopLabel = etaMin != null
             ? 'Next stop (${AppLocalizations.of(context).valueMin(etaMin)})'

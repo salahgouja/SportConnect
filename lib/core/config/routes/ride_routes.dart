@@ -15,7 +15,6 @@ import 'package:sport_connect/features/rides/views/passenger/active_ride_screen.
 import 'package:sport_connect/features/rides/views/driver/active_ride_screen.dart'
     as driver_active;
 import 'package:sport_connect/features/rides/views/shared/ride_completion_screen.dart';
-import 'package:sport_connect/features/rides/views/shared/ride_navigation_screen.dart';
 import 'package:sport_connect/features/rides/views/shared/cancellation_reason_screen.dart';
 import 'package:sport_connect/features/rides/views/shared/dispute_screen.dart';
 import 'package:sport_connect/features/rides/views/passenger/ride_booking_pending_screen.dart';
@@ -196,21 +195,6 @@ class RideRoutes implements RouteConfig {
           return SlideUpTransitionPage(
             key: state.pageKey,
             child: RideCompletionScreen(rideId: rideId),
-          );
-        },
-      ),
-
-      // Ride Navigation (real-time GPS)
-      GoRoute(
-        path: AppRoutes.rideNavigation.path,
-        name: AppRoutes.rideNavigation.name,
-        pageBuilder: (context, state) {
-          final params = state.params;
-          final rideId = params.getStringOrThrow('id');
-
-          return SlideUpTransitionPage(
-            key: state.pageKey,
-            child: RideNavigationScreen(rideId: rideId),
           );
         },
       ),

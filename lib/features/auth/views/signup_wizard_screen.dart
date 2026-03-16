@@ -43,34 +43,28 @@ const _kAccent = Color(0xFF40916C);
 const _kCard = Color(0xFFFFFFFF);
 const _kText = Color(0xFF1A1A1A);
 
+// UX: 3 steps
 const _stepThemes = [
   _StepTheme(
     bg: _kBg,
     accent: _kAccent,
     card: _kCard,
     text: _kText,
-    label: 'Your Details',
+    label: 'Account Setup',
   ),
   _StepTheme(
     bg: _kBg,
     accent: _kAccent,
     card: _kCard,
     text: _kText,
-    label: 'Security',
+    label: 'Identity',
   ),
   _StepTheme(
     bg: _kBg,
     accent: _kAccent,
     card: _kCard,
     text: _kText,
-    label: 'Your Role',
-  ),
-  _StepTheme(
-    bg: _kBg,
-    accent: _kAccent,
-    card: _kCard,
-    text: _kText,
-    label: 'Your Profile',
+    label: 'Profile',
   ),
 ];
 
@@ -86,7 +80,7 @@ class SignupWizardScreen extends ConsumerStatefulWidget {
 class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
   // ── Controllers & State ──
   final List<GlobalKey<FormBuilderState>> _formKeys = List.generate(
-    4,
+    3, // UX FIX: 3 steps
     (_) => GlobalKey<FormBuilderState>(),
   );
   final _phoneKey = GlobalKey<IntlPhoneInputState>();
@@ -94,6 +88,11 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
   @override
   void initState() {
     super.initState();
+    // If the widget is re-mounted (e.g. they left and came back), our new local _formKeys
+    // will be completely blank. Invalidate the global step state to ensure they start at Step 0.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.invalidate(signupWizardUiViewModelProvider);
+    });
   }
 
   @override
@@ -104,33 +103,39 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
   // ── Navigation ──
   void _goToStep(int target) async {
     final uiState = ref.read(signupWizardUiViewModelProvider);
+
     // Validate current step
     if (_formKeys[uiState.currentStep].currentState != null) {
-      if (!_formKeys[uiState.currentStep].currentState!.saveAndValidate())
+      if (!_formKeys[uiState.currentStep].currentState!.saveAndValidate()) {
         return;
+      }
     }
-    // Validate phone in step 0 (optional but format-checked if entered)
-    if (uiState.currentStep == 0) {
-      final phoneError = _phoneKey.currentState?.validate();
-      if (phoneError != null) return;
-    }
-    if (uiState.currentStep == 0 && uiState.dateOfBirth == null) {
-      _showError(AppLocalizations.of(context).authDobError);
+
+    // Step 0 validation: Legal Terms
+    if (uiState.currentStep == 0 && !uiState.agreedToTerms) {
+      _showError(AppLocalizations.of(context).authAgreeTermsError);
       return;
     }
-    if (uiState.currentStep == 0 && uiState.dateOfBirth != null) {
+
+    // Step 1 validation: Phone & DOB
+    if (uiState.currentStep == 1) {
+      final phoneError = _phoneKey.currentState?.validate();
+      if (phoneError != null) return;
+
+      if (uiState.dateOfBirth == null) {
+        _showError(AppLocalizations.of(context).authDobError);
+        return;
+      }
+
       final age = DateTime.now().difference(uiState.dateOfBirth!).inDays ~/ 365;
       if (age < 18) {
         _showError(AppLocalizations.of(context).authDobMinAge);
         return;
       }
     }
-    if (uiState.currentStep == 1 && !uiState.agreedToTerms) {
-      _showError(AppLocalizations.of(context).authAgreeTermsError);
-      return;
-    }
 
-    if (target >= 4) {
+    // Move to next step or complete
+    if (target >= 3) {
       _handleSignup();
       return;
     }
@@ -165,26 +170,23 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
 
   Future<void> _handleSignup() async {
     final uiState = ref.read(signupWizardUiViewModelProvider);
-    final step0Values = _formKeys[0].currentState!.value;
-    final step1Values = _formKeys[1].currentState!.value;
-    final step3Values = _formKeys[3].currentState?.value ?? {};
+    final step0Values = _formKeys[0].currentState?.value ?? {};
+
     final success = await ref
         .read(registerViewModelProvider.notifier)
         .register(
           email: (step0Values['email'] as String).trim(),
-          password: step1Values['password'] as String,
+          password: step0Values['password'] as String,
           displayName: (step0Values['name'] as String).trim(),
           role: uiState.selectedRole,
           phone: uiState.phoneNumber,
-          bio: (step3Values['bio'] as String? ?? '').trim().isEmpty
-              ? null
-              : (step3Values['bio'] as String).trim(),
-          interests: uiState.selectedInterests,
           profileImage: uiState.profileImage,
         );
     if (!mounted) return;
 
     if (success) {
+      // Reset the provider instance so the next signup starts clean
+      ref.invalidate(signupWizardUiViewModelProvider);
       context.go(AppRoutes.emailVerification.path);
     }
   }
@@ -274,36 +276,30 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
   Widget _buildTopBar(_StepTheme theme) {
     final wizardUiState = ref.watch(signupWizardUiViewModelProvider);
     final l10n = AppLocalizations.of(context);
-    final stepLabels = [
-      l10n.yourDetailsStep,
-      l10n.securityStep,
-      l10n.yourRoleStep,
-      l10n.yourProfileStep,
-    ];
+    final stepLabels = ['Account Setup', 'Identity & Role', 'Your Profile'];
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: _prevStep,
-            child: AnimatedContainer(
-              duration: 300.ms,
-              width: 40.w,
-              height: 40.w,
-              decoration: BoxDecoration(
-                color: theme.accent.withOpacity(0.15),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                wizardUiState.currentStep == 0
-                    ? Icons.close_rounded
-                    : Icons.arrow_back_ios_new_rounded,
-                size: 18.sp,
-                color: theme.accent,
-              ),
+          IconButton(
+            onPressed: _prevStep,
+            tooltip: wizardUiState.currentStep == 0
+                ? MaterialLocalizations.of(context).closeButtonTooltip
+                : MaterialLocalizations.of(context).backButtonTooltip,
+            style: IconButton.styleFrom(
+              backgroundColor: theme.accent.withOpacity(0.15),
+              foregroundColor: theme.accent,
+              minimumSize: Size(48.w, 48.w),
+              shape: const CircleBorder(),
+            ),
+            icon: Icon(
+              wizardUiState.currentStep == 0
+                  ? Icons.close_rounded
+                  : Icons.arrow_back_ios_new_rounded,
+              size: 18.sp,
             ),
           ),
-          SizedBox(width: 14.w),
+          SizedBox(width: 10.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -314,7 +310,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                     stepLabels[wizardUiState.currentStep],
                     key: ValueKey(wizardUiState.currentStep),
                     style: TextStyle(
-                      fontFamily: 'Syne', // bold geometric
+                      fontFamily: 'Syne',
                       fontSize: 20.sp,
                       fontWeight: FontWeight.w800,
                       color: theme.text,
@@ -322,7 +318,10 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                   ),
                 ),
                 Text(
-                  l10n.stepOfCount(wizardUiState.currentStep + 1, 4),
+                  l10n.stepOfCount(
+                    wizardUiState.currentStep + 1,
+                    3,
+                  ), // UX FIX: 3 steps
                   style: TextStyle(
                     fontSize: 12.sp,
                     color: theme.accent.withOpacity(0.8),
@@ -331,10 +330,9 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
               ],
             ),
           ),
-          // Step dots
           Row(
             children: List.generate(
-              4,
+              3, // UX FIX: 3 steps
               (i) => AnimatedContainer(
                 duration: 300.ms,
                 margin: EdgeInsets.only(left: 5.w),
@@ -360,11 +358,12 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
     return Padding(
       padding: EdgeInsets.fromLTRB(24.w, 4.h, 24.w, 12.h),
       child: Row(
-        children: List.generate(4, (i) {
+        children: List.generate(3, (i) {
+          // UX FIX: 3 steps
           return Expanded(
             child: AnimatedContainer(
               duration: 300.ms,
-              margin: EdgeInsets.only(right: i < 3 ? 6.w : 0),
+              margin: EdgeInsets.only(right: i < 2 ? 6.w : 0),
               height: 4.h,
               decoration: BoxDecoration(
                 color: i <= wizardUiState.currentStep
@@ -405,74 +404,54 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
 
   Widget _buildStepContent(_StepTheme theme) {
     final currentStep = ref.watch(signupWizardUiViewModelProvider).currentStep;
-    return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(24.w, 20.h, 24.w, 24.h),
-      child: IndexedStack(
-        index: currentStep,
-        children: [
-          _buildStep1(theme),
-          _buildStep2(theme),
-          _buildStep3(theme),
-          _buildStep4(theme),
-        ],
-      ),
+    return IndexedStack(
+      index: currentStep,
+      children: [
+        SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(24.w, 20.h, 24.w, 24.h),
+          child: _buildStep1(theme),
+        ),
+        SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(24.w, 20.h, 24.w, 24.h),
+          child: _buildStep2(theme),
+        ),
+        SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(24.w, 20.h, 24.w, 24.h),
+          child: _buildStep3(theme),
+        ),
+      ],
     );
   }
 
-  // ── Step 1: Basic Info ──────────────────────────────────────────────────────
+  // ── Step 1: Account Setup (Merged Email + Password) ──────────────────────────
   Widget _buildStep1(_StepTheme theme) {
     final l10n = AppLocalizations.of(context);
     final wizardUiState = ref.watch(signupWizardUiViewModelProvider);
+    final socialState = ref.watch(socialAuthViewModelProvider);
     return FormBuilder(
       key: _formKeys[0],
       child: Column(
         key: const ValueKey('step1'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Welcome banner
-          Container(
-            padding: EdgeInsets.all(16.w),
-            decoration: BoxDecoration(
-              color: theme.accent.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(16.r),
-              border: Border.all(color: theme.accent.withOpacity(0.2)),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: EdgeInsets.all(10.w),
-                  decoration: BoxDecoration(
-                    color: theme.accent.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  child: Icon(
-                    Icons.eco_outlined,
-                    color: theme.accent,
-                    size: 24.sp,
-                  ),
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.joinOurCommunityOfEco,
-                        style: TextStyle(
-                          fontFamily: 'Syne',
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w700,
-                          color: theme.accent,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          // SSO First
+          _GoogleButton(
+            onPressed: socialState.isLoading ? null : _handleGoogleSignIn,
+            l10n: l10n,
+          ),
+          SizedBox(height: 10.h),
+          SignInWithAppleButton(
+            onPressed: socialState.isLoading ? () {} : _handleAppleSignIn,
+            text: l10n.continueWithApple,
+            height: 48.h,
+            borderRadius: BorderRadius.circular(14.r),
+            style: SignInWithAppleButtonStyle.black,
           ),
           SizedBox(height: 24.h),
+          _Divider(accent: theme.accent, label: 'Or continue with email'),
+          SizedBox(height: 24.h),
+
+          // Name
           _StyledField(
             name: 'name',
             label: l10n.authFullName,
@@ -488,6 +467,8 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             capitalization: TextCapitalization.words,
           ),
           SizedBox(height: 14.h),
+
+          // Email
           _StyledField(
             name: 'email',
             label: l10n.authEmailAddress,
@@ -501,61 +482,8 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             theme: theme,
           ),
           SizedBox(height: 14.h),
-          // International phone input with country codes
-          IntlPhoneInput(
-            key: _phoneKey,
-            label: l10n.authPhoneOptional,
-            hint: l10n.authPhoneHint,
-            accentColor: theme.accent,
-            fillColor: theme.accent.withOpacity(0.06),
-            onChanged: (phone) => ref
-                .read(signupWizardUiViewModelProvider.notifier)
-                .setPhoneNumber(phone.isValid ? phone.fullNumber : null),
-          ),
-          SizedBox(height: 14.h),
-          // DOB picker
-          _DobPicker(
-            selected: wizardUiState.dateOfBirth,
-            accent: theme.accent,
-            textColor: theme.text,
-            cardBg: theme.card,
-            onPicked: (d) => ref
-                .read(signupWizardUiViewModelProvider.notifier)
-                .setDateOfBirth(d),
-          ),
-          SizedBox(height: 28.h),
-          _Divider(accent: theme.accent, label: l10n.orSignUpWith),
-          SizedBox(height: 16.h),
-          _GoogleButton(onPressed: _handleGoogleSignIn, l10n: l10n),
-          SizedBox(height: 10.h),
-          SignInWithAppleButton(
-            onPressed: _handleAppleSignIn,
-            text: l10n.continueWithApple,
-            height: 48.h,
-            borderRadius: BorderRadius.circular(14.r),
-            style: SignInWithAppleButtonStyle.black,
-          ),
-          SizedBox(height: 16.h),
-        ],
-      ),
-    );
-  }
 
-  // ── Step 2: Password ────────────────────────────────────────────────────────
-  Widget _buildStep2(_StepTheme theme) {
-    final l10n = AppLocalizations.of(context);
-    final wizardUiState = ref.watch(signupWizardUiViewModelProvider);
-    return FormBuilder(
-      key: _formKeys[1],
-      child: Column(
-        key: const ValueKey('step2'),
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _SecurityBadge(
-            accent: theme.accent,
-            text: l10n.use8CharactersWithLetters,
-          ),
-          SizedBox(height: 28.h),
+          // Password
           _StyledField(
             name: 'password',
             label: l10n.authCreatePassword,
@@ -571,6 +499,9 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             ]),
             theme: theme,
             suffix: IconButton(
+              tooltip: wizardUiState.obscurePassword
+                  ? 'Show password'
+                  : 'Hide password',
               icon: Icon(
                 wizardUiState.obscurePassword
                     ? Icons.visibility_outlined
@@ -583,6 +514,8 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             ),
           ),
           SizedBox(height: 14.h),
+
+          // Confirm Password
           _StyledField(
             name: 'confirm_password',
             label: l10n.authConfirmPassword,
@@ -591,12 +524,15 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             obscure: wizardUiState.obscureConfirmPassword,
             validator: (v) =>
                 v !=
-                    (_formKeys[1].currentState?.fields['password']?.value
+                    (_formKeys[0].currentState?.fields['password']?.value
                         as String?)
                 ? 'Passwords do not match'
                 : null,
             theme: theme,
             suffix: IconButton(
+              tooltip: wizardUiState.obscureConfirmPassword
+                  ? 'Show password'
+                  : 'Hide password',
               icon: Icon(
                 wizardUiState.obscureConfirmPassword
                     ? Icons.visibility_outlined
@@ -609,11 +545,13 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             ),
           ),
           SizedBox(height: 20.h),
+
           _PasswordStrengthBar(
             password: wizardUiState.passwordText,
             accent: theme.accent,
           ),
           SizedBox(height: 28.h),
+
           _TermsCard(
             agreed: wizardUiState.agreedToTerms,
             accent: theme.accent,
@@ -626,20 +564,19 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             onTermsTap: () => context.push(AppRoutes.terms.path),
             onPrivacyTap: () => context.push(AppRoutes.privacy.path),
           ),
-          SizedBox(height: 16.h),
         ],
       ),
     );
   }
 
-  // ── Step 3: Role & Interests ────────────────────────────────────────────────
-  Widget _buildStep3(_StepTheme theme) {
+  // ── Step 2: Identity & Role ──────────────────────────────────────────────────
+  Widget _buildStep2(_StepTheme theme) {
     final l10n = AppLocalizations.of(context);
     final wizardUiState = ref.watch(signupWizardUiViewModelProvider);
     return FormBuilder(
-      key: _formKeys[2],
+      key: _formKeys[1],
       child: Column(
-        key: const ValueKey('step3'),
+        key: const ValueKey('step2'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
@@ -682,8 +619,9 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             },
           ),
           SizedBox(height: 28.h),
+
           Text(
-            l10n.yourInterestsOptional,
+            'Verification Requirements',
             style: TextStyle(
               fontFamily: 'Syne',
               fontSize: 16.sp,
@@ -691,30 +629,30 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
               color: theme.text,
             ),
           ),
-          SizedBox(height: 12.h),
-          _InterestChips(
-            interests: const [
-              'Football',
-              'Basketball',
-              'Tennis',
-              'Running',
-              'Cycling',
-              'Swimming',
-              'Golf',
-              'Gym',
-              'Yoga',
-              'Boxing',
-              'Skiing',
-              'Surfing',
-            ],
-            selected: wizardUiState.selectedInterests,
+          SizedBox(height: 14.h),
+
+          // Phone
+          IntlPhoneInput(
+            key: _phoneKey,
+            label: l10n.authPhoneOptional,
+            hint: l10n.authPhoneHint,
+            accentColor: theme.accent,
+            fillColor: theme.accent.withOpacity(0.06),
+            onChanged: (phone) => ref
+                .read(signupWizardUiViewModelProvider.notifier)
+                .setPhoneNumber(phone.isValid ? phone.fullNumber : null),
+          ),
+          SizedBox(height: 14.h),
+
+          // DOB picker
+          _DobPicker(
+            selected: wizardUiState.dateOfBirth,
             accent: theme.accent,
-            onToggle: (i) {
-              HapticFeedback.selectionClick();
-              ref
-                  .read(signupWizardUiViewModelProvider.notifier)
-                  .toggleInterest(i);
-            },
+            textColor: theme.text,
+            cardBg: theme.card,
+            onPicked: (d) => ref
+                .read(signupWizardUiViewModelProvider.notifier)
+                .setDateOfBirth(d),
           ),
           SizedBox(height: 16.h),
         ],
@@ -722,64 +660,69 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
     );
   }
 
-  // ── Step 4: Profile & Tree ──────────────────────────────────────────────────
-  Widget _buildStep4(_StepTheme theme) {
+  // ── Step 3: Profile (Skippable) ─────────────────────────────────────────────
+  Widget _buildStep3(_StepTheme theme) {
     final l10n = AppLocalizations.of(context);
     final wizardUiState = ref.watch(signupWizardUiViewModelProvider);
     return FormBuilder(
-      key: _formKeys[3],
+      key: _formKeys[2],
       child: Column(
-        key: const ValueKey('step4'),
+        key: const ValueKey('step3'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           SizedBox(height: 8.h),
-
           // Avatar picker
           Center(
-            child: GestureDetector(
-              onTap: _pickImage,
-              child: Stack(
-                children: [
-                  Container(
-                    width: 110.w,
-                    height: 110.w,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: theme.accent.withOpacity(0.12),
-                      image: wizardUiState.profileImage != null
-                          ? DecorationImage(
-                              image: FileImage(wizardUiState.profileImage!),
-                              fit: BoxFit.cover,
+            child: Semantics(
+              button: true,
+              label: wizardUiState.profileImage == null
+                  ? 'Add profile photo'
+                  : 'Change profile photo',
+              child: GestureDetector(
+                onTap: _pickImage,
+                child: Stack(
+                  children: [
+                    Container(
+                      width: 110.w,
+                      height: 110.w,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: theme.accent.withOpacity(0.12),
+                        image: wizardUiState.profileImage != null
+                            ? DecorationImage(
+                                image: FileImage(wizardUiState.profileImage!),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
+                        border: Border.all(color: theme.accent, width: 3),
+                      ),
+                      child: wizardUiState.profileImage == null
+                          ? Icon(
+                              Icons.person_rounded,
+                              size: 50.sp,
+                              color: theme.accent.withOpacity(0.5),
                             )
                           : null,
-                      border: Border.all(color: theme.accent, width: 3),
                     ),
-                    child: wizardUiState.profileImage == null
-                        ? Icon(
-                            Icons.person_rounded,
-                            size: 50.sp,
-                            color: theme.accent.withOpacity(0.5),
-                          )
-                        : null,
-                  ),
-                  Positioned(
-                    bottom: 2,
-                    right: 2,
-                    child: Container(
-                      padding: EdgeInsets.all(7.w),
-                      decoration: BoxDecoration(
-                        color: theme.accent,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: theme.card, width: 2),
-                      ),
-                      child: Icon(
-                        Icons.camera_alt_rounded,
-                        size: 16.sp,
-                        color: Colors.white,
+                    Positioned(
+                      bottom: 2,
+                      right: 2,
+                      child: Container(
+                        padding: EdgeInsets.all(7.w),
+                        decoration: BoxDecoration(
+                          color: theme.accent,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: theme.card, width: 2),
+                        ),
+                        child: Icon(
+                          Icons.camera_alt_rounded,
+                          size: 16.sp,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ).animate().scale(
@@ -797,16 +740,6 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
               color: theme.text,
             ),
             textAlign: TextAlign.center,
-          ),
-          SizedBox(height: 24.h),
-          _StyledField(
-            name: 'bio',
-            label: l10n.authAboutYou,
-            hint: l10n.authAboutYouHint,
-            icon: Icons.edit_note_rounded,
-            maxLines: 3,
-            theme: theme,
-            validator: (value) => FormValidators.bio(value),
           ),
           SizedBox(height: 24.h),
           // Summary card
@@ -857,75 +790,107 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
     SocialAuthState socialState,
   ) {
     final currentStep = ref.watch(signupWizardUiViewModelProvider).currentStep;
-    final isLast = currentStep == 3;
-    final isLoading = registerState.isLoading || socialState.isLoading;
+    final isLast = currentStep == 2; // UX FIX: 3 steps total
+    final isLoading = registerState.isLoading;
+    final isDisabled = registerState.isLoading || socialState.isLoading;
 
     return Container(
       padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 20.h),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: _kBg,
         boxShadow: [
           BoxShadow(
             color: Colors.black12,
             blurRadius: 10,
-            offset: const Offset(0, -4),
+            offset: Offset(0, -4),
           ),
         ],
       ),
       child: SafeArea(
         top: false,
-        child: GestureDetector(
-          onTap: () => _goToStep(currentStep + 1),
-          child: AnimatedContainer(
-            duration: 300.ms,
-            height: 54.h,
-            decoration: BoxDecoration(
-              color: theme.accent,
-              borderRadius: BorderRadius.circular(16.r),
-              boxShadow: [
-                BoxShadow(
-                  color: theme.accent.withOpacity(0.4),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: Center(
-              child: isLoading
-                  ? SizedBox(
-                      width: 24.w,
-                      height: 24.w,
-                      child: const CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2.5,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Semantics(
+              button: true,
+              label: isLast
+                  ? AppLocalizations.of(context).createAccount
+                  : AppLocalizations.of(context).wizardContinue,
+              child: GestureDetector(
+                onTap: isDisabled ? null : () => _goToStep(currentStep + 1),
+                child: AnimatedContainer(
+                  duration: 300.ms,
+                  height: 54.h,
+                  decoration: BoxDecoration(
+                    color: theme.accent,
+                    borderRadius: BorderRadius.circular(16.r),
+                    boxShadow: [
+                      BoxShadow(
+                        color: theme.accent.withOpacity(0.4),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
                       ),
-                    )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          isLast
-                              ? AppLocalizations.of(context).createAccount
-                              : AppLocalizations.of(context).wizardContinue,
-                          style: TextStyle(
-                            fontFamily: 'Syne',
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                    ],
+                  ),
+                  child: Center(
+                    child: isLoading
+                        ? SizedBox(
+                            width: 24.w,
+                            height: 24.w,
+                            child: const CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2.5,
+                            ),
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                isLast
+                                    ? AppLocalizations.of(context).createAccount
+                                    : AppLocalizations.of(
+                                        context,
+                                      ).wizardContinue,
+                                style: TextStyle(
+                                  fontFamily: 'Syne',
+                                  fontSize: 16.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              SizedBox(width: 8.w),
+                              Icon(
+                                isLast
+                                    ? Icons.check_rounded
+                                    : Icons.arrow_forward_rounded,
+                                color: Colors.white,
+                                size: 20.sp,
+                              ),
+                            ],
                           ),
-                        ),
-                        SizedBox(width: 8.w),
-                        Icon(
-                          isLast
-                              ? Icons.check_rounded
-                              : Icons.arrow_forward_rounded,
-                          color: Colors.white,
-                          size: 20.sp,
-                        ),
-                      ],
-                    ),
+                  ),
+                ),
+              ),
             ),
-          ),
+            // UX FIX: Allow users to skip the Profile setup phase
+            if (isLast) ...[
+              SizedBox(height: 8.h),
+              TextButton(
+                onPressed: isDisabled ? null : _handleSignup,
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 48),
+                ),
+                child: Text(
+                  'Skip for now',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                    color: theme.text.withOpacity(0.6),
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );
@@ -1036,8 +1001,6 @@ class _StyledField extends StatelessWidget {
 }
 
 // ─── Custom Inline DOB Picker ─────────────────────────────────────────────────
-// Tap the row to expand a three-column scroll-wheel (Day | Month | Year).
-// No system dialog — fully on-brand with the Road Trip wizard theme.
 
 class _DobPicker extends StatefulWidget {
   final DateTime? selected;
@@ -1070,7 +1033,7 @@ class _DobPickerState extends State<_DobPicker>
   static const int _visibleItems = 3;
 
   late int _day;
-  late int _month; // 0-indexed
+  late int _month;
   late int _year;
 
   static const _monthNames = [
@@ -1143,63 +1106,72 @@ class _DobPickerState extends State<_DobPicker>
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // ── Trigger row ──────────────────────────────────────────────
-        GestureDetector(
-          onTap: _toggle,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 260),
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-            decoration: BoxDecoration(
-              color: accent.withOpacity(0.06),
-              borderRadius: _expanded
-                  ? BorderRadius.vertical(top: Radius.circular(14.r))
-                  : BorderRadius.circular(14.r),
-              border: Border.all(
-                color: _expanded || hasValue ? accent : accent.withOpacity(0.2),
-                width: _expanded ? 2 : 1,
+        Semantics(
+          button: true,
+          label: AppLocalizations.of(context).authDateOfBirth,
+          hint: hasValue ? 'Selected' : 'Tap to select',
+          child: GestureDetector(
+            onTap: _toggle,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 260),
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+              decoration: BoxDecoration(
+                color: accent.withOpacity(0.06),
+                borderRadius: _expanded
+                    ? BorderRadius.vertical(top: Radius.circular(14.r))
+                    : BorderRadius.circular(14.r),
+                border: Border.all(
+                  color: _expanded || hasValue
+                      ? accent
+                      : accent.withOpacity(0.2),
+                  width: _expanded ? 2 : 1,
+                ),
               ),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.cake_outlined, color: accent, size: 20.sp),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        AppLocalizations.of(context).authDateOfBirth,
-                        style: TextStyle(
-                          fontSize: 11.sp,
-                          fontWeight: FontWeight.w600,
-                          color: accent.withOpacity(0.75),
+              child: Row(
+                children: [
+                  Icon(Icons.cake_outlined, color: accent, size: 20.sp),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          AppLocalizations.of(context).authDateOfBirth,
+                          style: TextStyle(
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.w600,
+                            color: accent.withOpacity(0.75),
+                          ),
                         ),
-                      ),
-                      SizedBox(height: 2.h),
-                      Text(
-                        hasValue
-                            ? '${widget.selected!.day} '
-                                  '${_monthNames[widget.selected!.month - 1]} '
-                                  '${widget.selected!.year}'
-                            : AppLocalizations.of(context).authDobPrompt,
-                        style: TextStyle(
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.w600,
-                          color: hasValue ? textCol : textCol.withOpacity(0.38),
+                        SizedBox(height: 2.h),
+                        Text(
+                          hasValue
+                              ? '${widget.selected!.day} '
+                                    '${_monthNames[widget.selected!.month - 1]} '
+                                    '${widget.selected!.year}'
+                              : AppLocalizations.of(context).authDobPrompt,
+                          style: TextStyle(
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.w600,
+                            color: hasValue
+                                ? textCol
+                                : textCol.withOpacity(0.38),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                AnimatedRotation(
-                  turns: _expanded ? 0.5 : 0.0,
-                  duration: const Duration(milliseconds: 260),
-                  child: Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    color: accent,
-                    size: 24.sp,
+                  AnimatedRotation(
+                    turns: _expanded ? 0.5 : 0.0,
+                    duration: const Duration(milliseconds: 260),
+                    child: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: accent,
+                      size: 24.sp,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -1221,7 +1193,6 @@ class _DobPickerState extends State<_DobPicker>
             ),
             child: Column(
               children: [
-                // Column labels
                 Padding(
                   padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 4.h),
                   child: Row(
@@ -1232,13 +1203,10 @@ class _DobPickerState extends State<_DobPicker>
                     ],
                   ),
                 ),
-
-                // Wheel columns with overlay gradients
                 SizedBox(
                   height: _itemH * _visibleItems,
                   child: Stack(
                     children: [
-                      // Selection highlight
                       Positioned(
                         top: _itemH * (_visibleItems ~/ 2),
                         left: 10.w,
@@ -1252,10 +1220,8 @@ class _DobPickerState extends State<_DobPicker>
                           ),
                         ),
                       ),
-                      // Three ListWheelScrollViews
                       Row(
                         children: [
-                          // Day
                           Expanded(
                             child: ListWheelScrollView.useDelegate(
                               controller: _dayCtrl,
@@ -1277,7 +1243,6 @@ class _DobPickerState extends State<_DobPicker>
                               ),
                             ),
                           ),
-                          // Month
                           Expanded(
                             child: ListWheelScrollView.useDelegate(
                               controller: _monthCtrl,
@@ -1299,7 +1264,6 @@ class _DobPickerState extends State<_DobPicker>
                               ),
                             ),
                           ),
-                          // Year
                           Expanded(
                             child: ListWheelScrollView.useDelegate(
                               controller: _yearCtrl,
@@ -1323,7 +1287,6 @@ class _DobPickerState extends State<_DobPicker>
                           ),
                         ],
                       ),
-                      // Top fade mask
                       Positioned(
                         top: 0,
                         left: 0,
@@ -1341,7 +1304,6 @@ class _DobPickerState extends State<_DobPicker>
                           ),
                         ),
                       ),
-                      // Bottom fade mask
                       Positioned(
                         bottom: 0,
                         left: 0,
@@ -1362,32 +1324,27 @@ class _DobPickerState extends State<_DobPicker>
                     ],
                   ),
                 ),
-
                 SizedBox(height: 10.h),
-
-                // Confirm button
                 Padding(
                   padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 14.h),
-                  child: GestureDetector(
-                    onTap: () {
+                  child: TextButton(
+                    onPressed: () {
                       _emit();
                       _toggle();
                     },
-                    child: Container(
-                      height: 42.h,
-                      decoration: BoxDecoration(
-                        color: accent,
+                    style: TextButton.styleFrom(
+                      backgroundColor: accent,
+                      minimumSize: const Size(double.infinity, 48),
+                      shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10.r),
                       ),
-                      child: Center(
-                        child: Text(
-                          'Confirm Date',
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
+                    ),
+                    child: Text(
+                      'Confirm Date',
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
                       ),
                     ),
                   ),
@@ -1447,7 +1404,7 @@ class _Divider extends StatelessWidget {
 }
 
 class _GoogleButton extends StatelessWidget {
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final AppLocalizations l10n;
   const _GoogleButton({required this.onPressed, required this.l10n});
 
@@ -1554,65 +1511,69 @@ class _TermsCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onToggle,
-    child: AnimatedContainer(
-      duration: 200.ms,
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: agreed ? accent.withOpacity(0.1) : Colors.transparent,
-        borderRadius: BorderRadius.circular(14.r),
-        border: Border.all(color: agreed ? accent : accent.withOpacity(0.3)),
-      ),
-      child: Row(
-        children: [
-          AnimatedContainer(
-            duration: 200.ms,
-            width: 24.w,
-            height: 24.w,
-            decoration: BoxDecoration(
-              color: agreed ? accent : Colors.transparent,
-              borderRadius: BorderRadius.circular(6.r),
-              border: Border.all(color: accent, width: 2),
+  Widget build(BuildContext context) => Semantics(
+    label: 'Agree to Terms of Service and Privacy Policy',
+    checked: agreed,
+    child: GestureDetector(
+      onTap: onToggle,
+      child: AnimatedContainer(
+        duration: 200.ms,
+        padding: EdgeInsets.all(16.w),
+        decoration: BoxDecoration(
+          color: agreed ? accent.withOpacity(0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(14.r),
+          border: Border.all(color: agreed ? accent : accent.withOpacity(0.3)),
+        ),
+        child: Row(
+          children: [
+            AnimatedContainer(
+              duration: 200.ms,
+              width: 24.w,
+              height: 24.w,
+              decoration: BoxDecoration(
+                color: agreed ? accent : Colors.transparent,
+                borderRadius: BorderRadius.circular(6.r),
+                border: Border.all(color: accent, width: 2),
+              ),
+              child: agreed
+                  ? Icon(Icons.check_rounded, size: 15.sp, color: Colors.white)
+                  : null,
             ),
-            child: agreed
-                ? Icon(Icons.check_rounded, size: 15.sp, color: Colors.white)
-                : null,
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: RichText(
-              text: TextSpan(
-                style: TextStyle(
-                  fontSize: 13.sp,
-                  color: accent.withOpacity(0.8),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: RichText(
+                text: TextSpan(
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    color: accent.withOpacity(0.8),
+                  ),
+                  children: [
+                    const TextSpan(text: 'I agree to the '),
+                    TextSpan(
+                      text: 'Terms of Service',
+                      style: TextStyle(
+                        color: accent,
+                        fontWeight: FontWeight.w700,
+                        decoration: TextDecoration.underline,
+                      ),
+                      recognizer: TapGestureRecognizer()..onTap = onTermsTap,
+                    ),
+                    const TextSpan(text: ' and '),
+                    TextSpan(
+                      text: 'Privacy Policy',
+                      style: TextStyle(
+                        color: accent,
+                        fontWeight: FontWeight.w700,
+                        decoration: TextDecoration.underline,
+                      ),
+                      recognizer: TapGestureRecognizer()..onTap = onPrivacyTap,
+                    ),
+                  ],
                 ),
-                children: [
-                  const TextSpan(text: 'I agree to the '),
-                  TextSpan(
-                    text: 'Terms of Service',
-                    style: TextStyle(
-                      color: accent,
-                      fontWeight: FontWeight.w700,
-                      decoration: TextDecoration.underline,
-                    ),
-                    recognizer: TapGestureRecognizer()..onTap = onTermsTap,
-                  ),
-                  const TextSpan(text: ' and '),
-                  TextSpan(
-                    text: 'Privacy Policy',
-                    style: TextStyle(
-                      color: accent,
-                      fontWeight: FontWeight.w700,
-                      decoration: TextDecoration.underline,
-                    ),
-                    recognizer: TapGestureRecognizer()..onTap = onPrivacyTap,
-                  ),
-                ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     ),
   );
@@ -1636,121 +1597,85 @@ class _RoleCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: AnimatedContainer(
-      duration: 250.ms,
-      padding: EdgeInsets.all(18.w),
-      decoration: BoxDecoration(
-        color: isSelected ? accent.withOpacity(0.1) : Colors.transparent,
-        borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(
-          color: isSelected ? accent : accent.withOpacity(0.25),
-          width: isSelected ? 2 : 1,
-        ),
-        boxShadow: isSelected
-            ? [
-                BoxShadow(
-                  color: accent.withOpacity(0.15),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : null,
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(12.w),
-            decoration: BoxDecoration(
-              color: isSelected ? accent : accent.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(14.r),
-            ),
-            child: Icon(
-              icon,
-              size: 26.sp,
-              color: isSelected ? Colors.white : accent,
-            ),
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    selected: isSelected,
+    label: title,
+    hint: desc,
+    child: GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: 250.ms,
+        padding: EdgeInsets.all(18.w),
+        decoration: BoxDecoration(
+          color: isSelected ? accent.withOpacity(0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20.r),
+          border: Border.all(
+            color: isSelected ? accent : accent.withOpacity(0.25),
+            width: isSelected ? 2 : 1,
           ),
-          SizedBox(width: 14.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontFamily: 'Syne',
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w700,
-                    color: isSelected ? accent : Colors.black87,
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: accent.withOpacity(0.15),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
                   ),
-                ),
-                SizedBox(height: 3.h),
-                Text(
-                  desc,
-                  style: TextStyle(fontSize: 12.sp, color: Colors.black54),
-                ),
-              ],
-            ),
-          ),
-          if (isSelected)
+                ]
+              : null,
+        ),
+        child: Row(
+          children: [
             Container(
-              padding: EdgeInsets.all(4.w),
-              decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
+              padding: EdgeInsets.all(12.w),
+              decoration: BoxDecoration(
+                color: isSelected ? accent : accent.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(14.r),
+              ),
               child: Icon(
-                Icons.check_rounded,
-                size: 14.sp,
-                color: Colors.white,
+                icon,
+                size: 26.sp,
+                color: isSelected ? Colors.white : accent,
               ),
             ),
-        ],
+            SizedBox(width: 14.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontFamily: 'Syne',
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w700,
+                      color: isSelected ? accent : Colors.black87,
+                    ),
+                  ),
+                  SizedBox(height: 3.h),
+                  Text(
+                    desc,
+                    style: TextStyle(fontSize: 12.sp, color: Colors.black54),
+                  ),
+                ],
+              ),
+            ),
+            if (isSelected)
+              Container(
+                padding: EdgeInsets.all(4.w),
+                decoration: BoxDecoration(
+                  color: accent,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.check_rounded,
+                  size: 14.sp,
+                  color: Colors.white,
+                ),
+              ),
+          ],
+        ),
       ),
     ),
-  );
-}
-
-class _InterestChips extends StatelessWidget {
-  final List<String> interests;
-  final List<String> selected;
-  final Color accent;
-  final ValueChanged<String> onToggle;
-  const _InterestChips({
-    required this.interests,
-    required this.selected,
-    required this.accent,
-    required this.onToggle,
-  });
-
-  @override
-  Widget build(BuildContext context) => Wrap(
-    spacing: 8.w,
-    runSpacing: 8.h,
-    children: interests.map((i) {
-      final sel = selected.contains(i);
-      return GestureDetector(
-        onTap: () => onToggle(i),
-        child: AnimatedContainer(
-          duration: 200.ms,
-          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 9.h),
-          decoration: BoxDecoration(
-            color: sel ? accent.withOpacity(0.12) : Colors.transparent,
-            borderRadius: BorderRadius.circular(25.r),
-            border: Border.all(
-              color: sel ? accent : accent.withOpacity(0.3),
-              width: sel ? 2 : 1,
-            ),
-          ),
-          child: Text(
-            i,
-            style: TextStyle(
-              fontSize: 13.sp,
-              fontWeight: sel ? FontWeight.w600 : FontWeight.w400,
-              color: sel ? accent : Colors.black54,
-            ),
-          ),
-        ),
-      );
-    }).toList(),
   );
 }

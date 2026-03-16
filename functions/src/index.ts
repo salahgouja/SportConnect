@@ -711,7 +711,7 @@ export const createConnectedAccount = onCall(
       });
     }
 
-    const baseUrl = "https://marathon-connect.web.app";
+    const baseUrl = "https://sportaxitrip.com";
 
     let accountLink: Stripe.AccountLink;
     try {
@@ -756,7 +756,7 @@ export const createAccountLink = onCall(
     }
 
     const stripe = getStripeClient(stripeSecretKey.value().trim());
-    const baseUrl = "https://marathon-connect.web.app";
+    const baseUrl = "https://sportaxitrip.com";
 
     const accountLink = await stripe.accountLinks.create({
       account: accountId,

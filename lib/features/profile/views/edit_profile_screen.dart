@@ -15,7 +15,6 @@ import 'package:sport_connect/core/widgets/intl_phone_input.dart';
 import 'package:sport_connect/core/widgets/address_autocomplete_field.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
-import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -37,24 +36,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   // Image picker
   final ImagePicker _imagePicker = ImagePicker();
-
-  final List<String> _availableInterests = [
-    'Football',
-    'Basketball',
-    'Tennis',
-    'Golf',
-    'Swimming',
-    'Running',
-    'Cycling',
-    'Yoga',
-    'Gym',
-    'Hiking',
-    'Soccer',
-    'Baseball',
-    'Hockey',
-    'Volleyball',
-    'Cricket',
-  ];
 
   @override
   void initState() {
@@ -360,17 +341,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       _buildSectionLabel(AppLocalizations.of(context).aboutYou),
                       _buildContainer(
                         children: [
-                          FormBuilderTextField(
-                            name: 'bio',
-                            decoration: const InputDecoration(
-                              labelText: 'Bio',
-                              prefixIcon: Icon(Icons.edit_note_rounded),
-                            ),
-                            maxLines: 3,
-                            maxLength: 500,
-                            validator: (value) => FormValidators.bio(value),
-                          ),
-                          SizedBox(height: 16.h),
                           AddressAutocompleteField(
                             key: _cityKey,
                             label: 'City',
@@ -387,14 +357,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                   )
                                   .setCityResult(result);
                             },
-                          ),
-                          SizedBox(height: 16.h),
-                          FormBuilderTextField(
-                            name: 'country',
-                            decoration: const InputDecoration(
-                              labelText: 'Country',
-                              prefixIcon: Icon(Icons.public_rounded),
-                            ),
                           ),
                         ],
                       ),
@@ -418,92 +380,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         icon: Icons.cake_rounded,
                         onTap: _selectDateOfBirth,
                       ),
-
                       SizedBox(height: 24.h),
-
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _buildSectionLabel(
-                            AppLocalizations.of(context).sportsInterests,
-                          ),
-                          GestureDetector(
-                            onTap: _showInterestsDialog,
-                            child: Padding(
-                              padding: EdgeInsets.only(bottom: 12.h),
-                              child: Text(
-                                AppLocalizations.of(context).add,
-                                style: TextStyle(
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.primary,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      // Interests Wrap
-                      Container(
-                        width: double.infinity,
-                        padding: EdgeInsets.all(16.w),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(16.r),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: editState.interests.isEmpty
-                            ? Center(
-                                child: Text(
-                                  AppLocalizations.of(
-                                    context,
-                                  ).noInterestsSelected,
-                                  style: TextStyle(
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                              )
-                            : Wrap(
-                                spacing: 8.w,
-                                runSpacing: 8.h,
-                                children: editState.interests.map((interest) {
-                                  return Chip(
-                                    label: Text(
-                                      interest,
-                                      style: TextStyle(
-                                        fontSize: 12.sp,
-                                        color: AppColors.primary,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    backgroundColor: AppColors.primary
-                                        .withValues(alpha: 0.1),
-                                    side: BorderSide.none,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8.r),
-                                    ),
-                                    padding: EdgeInsets.zero,
-                                    labelPadding: EdgeInsets.symmetric(
-                                      horizontal: 8.w,
-                                    ),
-                                    deleteIcon: Icon(
-                                      Icons.close_rounded,
-                                      size: 14.sp,
-                                      color: AppColors.primary,
-                                    ),
-                                    onDeleted: () => ref
-                                        .read(
-                                          profileEditViewModelProvider(
-                                            _currentUser!.uid,
-                                          ).notifier,
-                                        )
-                                        .removeInterest(interest),
-                                  );
-                                }).toList(),
-                              ),
-                      ),
-                      SizedBox(height: 40.h),
                     ],
                   ),
                 ),
@@ -651,7 +528,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         'name': user.displayName,
         'email': user.email,
         'phone': user.phoneNumber ?? '',
-        'bio': user.bio ?? '',
         'city': user.city ?? '',
         'country': user.country ?? '',
       });
@@ -693,23 +569,19 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         rider: (rider) => rider.copyWith(
           displayName: formValues['name'] as String? ?? '',
           phoneNumber: phoneStr,
-          bio: formValues['bio'] as String? ?? '',
           city: cityStr,
           country: countryStr,
           gender: editState.gender,
           dateOfBirth: editState.dateOfBirth,
-          interests: editState.interests,
           photoUrl: _currentUser!.photoUrl,
         ),
         driver: (driver) => driver.copyWith(
           displayName: formValues['name'] as String? ?? '',
           phoneNumber: phoneStr,
-          bio: formValues['bio'] as String? ?? '',
           city: cityStr,
           country: countryStr,
           gender: editState.gender,
           dateOfBirth: editState.dateOfBirth,
-          interests: editState.interests,
           photoUrl: _currentUser!.photoUrl,
         ),
       );
@@ -732,7 +604,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     }
   }
 
-  // ... [Keep _changeProfilePicture, _showGenderPicker, _selectDateOfBirth, _showInterestsDialog, _showDiscardChangesDialog] ...
+  // ... [Keep _changeProfilePicture, _showGenderPicker, _selectDateOfBirth, _showDiscardChangesDialog] ...
   // (These methods are identical to the previous version, omitted for brevity but required in the final file)
 
   void _changeProfilePicture() {
@@ -965,115 +837,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     if (picked != null && picked != currentDate) {
       editNotifier.setDateOfBirth(picked);
     }
-  }
-
-  void _showInterestsDialog() {
-    final editNotifier = ref.read(
-      profileEditViewModelProvider(_currentUser!.uid).notifier,
-    );
-    final selectedInterests = [
-      ...ref.read(profileEditViewModelProvider(_currentUser!.uid)).interests,
-    ];
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-      ),
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => SafeArea(
-          child: DraggableScrollableSheet(
-            initialChildSize: 0.6,
-            maxChildSize: 0.9,
-            minChildSize: 0.4,
-            expand: false,
-            builder: (context, scrollController) => Padding(
-              padding: EdgeInsets.all(20.w),
-              child: Column(
-                children: [
-                  Container(
-                    width: 40.w,
-                    height: 4.h,
-                    decoration: BoxDecoration(
-                      color: AppColors.border,
-                      borderRadius: BorderRadius.circular(2.r),
-                    ),
-                  ),
-                  SizedBox(height: 20.h),
-                  Text(
-                    AppLocalizations.of(context).selectSportsInterests,
-                    style: TextStyle(
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  SizedBox(height: 16.h),
-                  Expanded(
-                    child: ListView.builder(
-                      controller: scrollController,
-                      itemCount: _availableInterests.length,
-                      itemBuilder: (context, index) {
-                        final interest = _availableInterests[index];
-                        final isSelected = selectedInterests.contains(interest);
-                        return CheckboxListTile(
-                          value: isSelected,
-                          activeColor: AppColors.primary,
-                          title: Text(
-                            interest,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          onChanged: (value) {
-                            setModalState(() {
-                              if (value == true) {
-                                if (!selectedInterests.contains(interest)) {
-                                  selectedInterests.add(interest);
-                                }
-                              } else {
-                                selectedInterests.remove(interest);
-                              }
-                            });
-                            editNotifier.setInterests(
-                              List<String>.from(selectedInterests),
-                            );
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                  SizedBox(height: 16.h),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(vertical: 16.h),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                      ),
-                      child: Text(
-                        AppLocalizations.of(context).actionDone,
-                        style: TextStyle(
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
   }
 
   Future<bool?> _showDiscardChangesDialog() async {

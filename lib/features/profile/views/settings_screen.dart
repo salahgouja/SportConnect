@@ -742,8 +742,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final Map<String, String> languageOptions = {
       'en': l10n.languageEnglish,
       'fr': l10n.languageFrench,
-      'de': l10n.languageGerman,
-      'es': l10n.languageSpanish,
     };
 
     final currentLanguageCode = currentLocale.languageCode;

@@ -87,8 +87,6 @@ class AuthRepository implements IAuthRepository {
     required String displayName,
     required UserRole role,
     String? phone,
-    String? bio,
-    List<String> interests = const [],
     File? profileImage,
   }) async {
     UserCredential? credential;
@@ -115,8 +113,6 @@ class AuthRepository implements IAuthRepository {
             email: email.trim(),
             displayName: displayName.trim(),
             phoneNumber: phone?.trim(),
-            bio: bio?.trim(),
-            interests: interests,
             photoUrl: photoUrl,
             rating: const RatingBreakdown(),
             gamification: const GamificationStats.driver(),
@@ -130,8 +126,6 @@ class AuthRepository implements IAuthRepository {
             email: email.trim(),
             displayName: displayName.trim(),
             phoneNumber: phone?.trim(),
-            bio: bio?.trim(),
-            interests: interests,
             photoUrl: photoUrl,
             rating: const RatingBreakdown(),
             gamification: const GamificationStats.rider(),

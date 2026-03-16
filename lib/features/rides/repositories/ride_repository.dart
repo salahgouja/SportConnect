@@ -724,8 +724,20 @@ class RideRepository implements IRideRepository {
     String rideId,
     Map<String, dynamic> waypoint,
   ) async {
+    final ride = await getRideById(rideId);
+    if (ride == null) return;
+
+    final waypoints = List<Map<String, dynamic>>.from(
+      ride.route.waypoints.map((w) => w.toJson()),
+    );
+    waypoints.add(waypoint);
+
+    for (int i = 0; i < waypoints.length; i++) {
+      waypoints[i]['order'] = i;
+    }
+
     await _ridesCollection.doc(rideId).update({
-      'route.waypoints': FieldValue.arrayUnion([waypoint]),
+      'route.waypoints': waypoints,
       'updatedAt': DateTime.now(),
     });
   }
@@ -739,6 +751,11 @@ class RideRepository implements IRideRepository {
     );
     if (waypointIndex < 0 || waypointIndex >= waypoints.length) return;
     waypoints.removeAt(waypointIndex);
+
+    for (int i = 0; i < waypoints.length; i++) {
+      waypoints[i]['order'] = i;
+    }
+
     await _ridesCollection.doc(rideId).update({
       'route.waypoints': waypoints,
       'updatedAt': DateTime.now(),

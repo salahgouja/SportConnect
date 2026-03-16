@@ -1009,14 +1009,6 @@ class _NewChatBottomSheet extends ConsumerWidget {
           color: AppColors.textPrimary,
         ),
       ),
-      subtitle: user.bio != null && user.bio!.isNotEmpty
-          ? Text(
-              user.bio!,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
-            )
-          : null,
       trailing: Icon(
         Icons.chevron_right_rounded,
         color: AppColors.textSecondary,

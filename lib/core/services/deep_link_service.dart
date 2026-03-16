@@ -26,14 +26,14 @@ class _RouteHandler {
 ///
 /// Supports:
 /// - Custom URL schemes: `sportconnect://ride/abc123`, `sc://ride/abc123`
-/// - App Links (HTTPS): `https://marathon-connect.web.app/ride/abc123`
+/// - App Links (HTTPS): `https://sportaxitrip.com/ride/abc123`
 ///
 /// Format: scheme://host/path
 /// Examples:
 /// - sportconnect://ride/abc123
 /// - sportconnect://open/ride/abc123
 /// - sc://ride/abc123
-/// - https://marathon-connect.web.app/ride/abc123
+/// - https://sportaxitrip.com/ride/abc123
 class DeepLinkService {
   DeepLinkService() : _appLinks = AppLinks();
 
@@ -52,7 +52,7 @@ class DeepLinkService {
   /// Firebase Hosting domain for HTTPS deep links.
   ///
   /// HTTPS links work in WhatsApp, Messenger, and other messaging platforms.
-  static const String hostingDomain = 'marathon-connect.web.app';
+  static const String hostingDomain = 'sportaxitrip.com';
 
   /// Supported schemes
   static const List<String> supportedSchemes = [primaryScheme, shortScheme];
@@ -60,7 +60,7 @@ class DeepLinkService {
   /// Generates a shareable deep link for a ride.
   ///
   /// Returns an HTTPS link using Firebase Hosting:
-  /// `https://marathon-connect.web.app/ride/{rideId}`.
+  /// `https://sportaxitrip.com/ride/{rideId}`.
   ///
   /// HTTPS links work correctly in WhatsApp, Messenger, and other
   /// messaging platforms, unlike custom URL schemes.
@@ -201,7 +201,7 @@ class DeepLinkService {
   ///
   /// Handles:
   /// - Custom URL schemes: sportconnect://ride/123, sc://ride/123
-  /// - HTTPS App Links: https://marathon-connect.web.app/ride/123
+  /// - HTTPS App Links: https://sportaxitrip.com/ride/123
   String? _extractPath(Uri uri) {
     final scheme = uri.scheme.toLowerCase();
     final host = uri.host.toLowerCase();

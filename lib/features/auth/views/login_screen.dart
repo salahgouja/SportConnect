@@ -372,14 +372,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     AsyncValue<void> loginState,
     SocialAuthState socialState,
   ) {
-    final isLoading = loginState.isLoading || socialState.isLoading;
+    final isEmailLoading = loginState.isLoading;
+    final isDisabled = loginState.isLoading || socialState.isLoading;
     final signInLabel = AppLocalizations.of(context).authSignIn;
 
     return SizedBox(
       height: 50.h,
       child: ElevatedButton(
-        onPressed: isLoading ? null : _handleLogin,
-        child: isLoading
+        onPressed: isDisabled ? null : _handleLogin,
+        child: isEmailLoading
             ? Semantics(
                 label: 'Signing in, please wait',
                 liveRegion: true,
@@ -408,13 +409,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       children: [
         Column(
           children: [
-            _buildGoogleButton().animate().fadeIn(
-              duration: 300.ms,
-              delay: 250.ms,
-            ),
+            _buildGoogleButton(
+              socialState,
+            ).animate().fadeIn(duration: 300.ms, delay: 250.ms),
             SizedBox(height: 12.h),
             SignInWithAppleButton(
-              onPressed: _handleAppleSignIn,
+              onPressed: socialState.isLoading ? () {} : _handleAppleSignIn,
               text: AppLocalizations.of(context).continueWithApple,
               height: 44.h,
               borderRadius: BorderRadius.circular(14.r),
@@ -425,14 +425,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         if (socialState.isLoading)
           Positioned.fill(
             child: Semantics(
-              // liveRegion announces this as soon as it appears without the
-              // user needing to navigate to it.
               label: 'Signing in, please wait',
               liveRegion: true,
-              // The overlay itself is not interactive. excludeSemantics here
-              // only applies to the overlay container's own node — the buttons
-              // beneath it in the Stack are not children of this widget so
-              // they are unaffected and remain fully accessible.
               excludeSemantics: true,
               child: Container(
                 decoration: BoxDecoration(
@@ -451,23 +445,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
   }
 
-  Widget _buildGoogleButton() {
+  Widget _buildGoogleButton(SocialAuthState socialState) {
     final double buttonHeight = 40.h;
     final double iconGap = 10.w;
     final label = AppLocalizations.of(context).continueWithGoogle;
 
-    // OutlinedButton is already announced as a button by the framework.
-    // The only fix needed is to silence the decorative SVG icon so it is
-    // not read alongside the button label. The Text inside will naturally
-    // form the button's accessible name — no extra Semantics wrapper needed.
     return SizedBox(
       height: buttonHeight,
       width: double.infinity,
       child: OutlinedButton(
-        onPressed: () {
-          HapticFeedback.lightImpact();
-          _handleGoogleSignIn();
-        },
+        onPressed: socialState.isLoading
+            ? null
+            : () {
+                HapticFeedback.lightImpact();
+                _handleGoogleSignIn();
+              },
         style: OutlinedButton.styleFrom(
           backgroundColor: Colors.white,
           padding: EdgeInsets.zero,

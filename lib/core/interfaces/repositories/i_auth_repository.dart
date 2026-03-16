@@ -23,8 +23,6 @@ abstract class IAuthRepository {
     required String displayName,
     required UserRole role,
     String? phone,
-    String? bio,
-    List<String> interests = const [],
     File? profileImage,
   });
 

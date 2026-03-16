@@ -330,7 +330,7 @@ final class ProfileEditViewModelProvider
 }
 
 String _$profileEditViewModelHash() =>
-    r'3880202e104fa7aee0cbcc16b2650cb1e265f533';
+    r'74404b8369879ca35da0c7bf991ed710f3aaedca';
 
 /// Profile Edit View Model
 

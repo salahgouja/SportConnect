@@ -457,7 +457,7 @@ class _DriverStripeOnboardingScreenState
                   url.contains('verify.stripe.com') ||
                   url.contains('uploads.stripe.com') ||
                   url.contains('hooks.stripe.com') ||
-                  url.contains('marathon-connect.web.app') ||
+                  url.contains('sportaxitrip.com') ||
                   url.contains('stripe-refresh')) {
                 return NavigationActionPolicy.ALLOW;
               }

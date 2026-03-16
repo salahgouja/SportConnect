@@ -337,6 +337,29 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
 
                   SizedBox(height: 16.h),
 
+                  Builder(
+                    builder: (ctx) {
+                      final uid = ref.read(currentUserProvider).value?.uid;
+                      final isDriver = uid == ride.driverId;
+
+                      if (isDriver) {
+                        return Padding(
+                          padding: EdgeInsets.only(bottom: 16.h),
+                          child: PremiumButton(
+                            text: 'Instant Payout',
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              context.push(AppRoutes.driverEarnings.path);
+                            },
+                            style: PremiumButtonStyle.primary,
+                            icon: Icons.attach_money_rounded,
+                          ),
+                        ).animate().fadeIn(delay: 720.ms);
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
+
                   TextButton(
                     onPressed: () => context.go(AppRoutes.home.path),
                     child: Text(

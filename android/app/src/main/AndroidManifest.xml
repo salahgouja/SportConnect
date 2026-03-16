@@ -69,14 +69,14 @@
                 <data android:scheme="sc"/>
             </intent-filter>
 
-            <!-- HTTPS App Links - marathon-connect.web.app -->
+            <!-- HTTPS App Links - sportaxitrip.com -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data
                     android:scheme="https"
-                    android:host="marathon-connect.web.app"
+                    android:host="sportaxitrip.com"
                     android:pathPrefix="/ride"/>
             </intent-filter>
         </activity>

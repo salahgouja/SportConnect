@@ -89,17 +89,4 @@ Map<String, dynamic> _$EventModelToJson(_EventModel instance) =>
       'updatedAt': const TimestampConverter().toJson(instance.updatedAt),
     };
 
-const _$EventTypeEnumMap = {
-  EventType.football: 'football',
-  EventType.basketball: 'basketball',
-  EventType.volleyball: 'volleyball',
-  EventType.tennis: 'tennis',
-  EventType.running: 'running',
-  EventType.gym: 'gym',
-  EventType.swimming: 'swimming',
-  EventType.cycling: 'cycling',
-  EventType.hiking: 'hiking',
-  EventType.yoga: 'yoga',
-  EventType.martialArts: 'martial_arts',
-  EventType.other: 'other',
-};
+const _$EventTypeEnumMap = {EventType.running: 'running'};
