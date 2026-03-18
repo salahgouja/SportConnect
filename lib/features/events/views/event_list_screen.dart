@@ -24,58 +24,68 @@ class EventListScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          // ── Header ──
-          _buildAppBar(context),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(eventListViewModelProvider);
+          await Future<void>.delayed(const Duration(milliseconds: 250));
+        },
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          slivers: [
+            // ── Header ──
+            _buildAppBar(context),
 
-          // ── Search bar ──
-          SliverToBoxAdapter(child: _buildSearchBar(context, ref, vm)),
+            // ── Search bar ──
+            SliverToBoxAdapter(child: _buildSearchBar(context, ref, vm)),
 
-          // ── Filter chips ──
-          SliverToBoxAdapter(child: _buildFilterChips(context, ref, vm)),
+            // ── Filter chips ──
+            SliverToBoxAdapter(child: _buildFilterChips(context, ref, vm)),
 
-          // ── Event list ──
-          if (vm.isLoading)
-            const SliverFillRemaining(
-              child: Center(child: CircularProgressIndicator()),
-            )
-          else if (vm.error != null)
-            SliverFillRemaining(
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.error_outline_rounded,
-                      size: 48.sp,
-                      color: AppColors.textSecondary,
-                    ),
-                    SizedBox(height: 12.h),
-                    Text(
-                      AppLocalizations.of(context).unableToLoadData,
-                      style: TextStyle(
-                        fontSize: 15.sp,
+            // ── Event list ──
+            if (vm.isLoading)
+              const SliverFillRemaining(
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (vm.error != null)
+              SliverFillRemaining(
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.error_outline_rounded,
+                        size: 48.sp,
                         color: AppColors.textSecondary,
                       ),
-                    ),
-                    SizedBox(height: 16.h),
-                    TextButton.icon(
-                      onPressed: () =>
-                          ref.invalidate(eventListViewModelProvider),
-                      icon: const Icon(Icons.refresh_rounded),
-                      label: Text(AppLocalizations.of(context).retry),
-                    ),
-                  ],
+                      SizedBox(height: 12.h),
+                      Text(
+                        AppLocalizations.of(context).unableToLoadData,
+                        style: TextStyle(
+                          fontSize: 15.sp,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      SizedBox(height: 16.h),
+                      TextButton.icon(
+                        onPressed: () =>
+                            ref.invalidate(eventListViewModelProvider),
+                        icon: const Icon(Icons.refresh_rounded),
+                        label: Text(AppLocalizations.of(context).retry),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            )
-          else if (vm.filteredEvents.isEmpty)
-            SliverFillRemaining(child: _buildEmptyState(context, vm.filterType))
-          else
-            _buildEventList(vm.filteredEvents),
-        ],
+              )
+            else if (vm.filteredEvents.isEmpty)
+              SliverFillRemaining(
+                child: _buildEmptyState(context, vm.filterType),
+              )
+            else
+              _buildEventList(vm.filteredEvents),
+          ],
+        ),
       ),
       floatingActionButton:
           FloatingActionButton.extended(

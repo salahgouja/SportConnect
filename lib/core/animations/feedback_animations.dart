@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Success/Error/Booking animation overlays (#84, #50)
 class FeedbackAnimations {
@@ -18,7 +19,7 @@ class FeedbackAnimations {
     return showGeneralDialog(
       context: context,
       barrierDismissible: true,
-      barrierLabel: 'Dismiss success',
+      barrierLabel: AppLocalizations.of(context).dismissSuccess,
       barrierColor: Colors.black54,
       transitionDuration: const Duration(milliseconds: 300),
       pageBuilder: (_, __, ___) => _FeedbackOverlay(
@@ -40,7 +41,7 @@ class FeedbackAnimations {
     return showGeneralDialog(
       context: context,
       barrierDismissible: true,
-      barrierLabel: 'Dismiss error',
+      barrierLabel: AppLocalizations.of(context).dismissError,
       barrierColor: Colors.black54,
       transitionDuration: const Duration(milliseconds: 300),
       pageBuilder: (_, __, ___) => _FeedbackOverlay(
@@ -63,7 +64,7 @@ class FeedbackAnimations {
     return showGeneralDialog(
       context: context,
       barrierDismissible: false,
-      barrierLabel: 'Booking confirmed',
+      barrierLabel: AppLocalizations.of(context).bookingConfirmed,
       barrierColor: Colors.black54,
       transitionDuration: const Duration(milliseconds: 300),
       pageBuilder: (_, __, ___) => _BookingConfirmationOverlay(
@@ -202,7 +203,7 @@ class _BookingConfirmationOverlayState
                 ),
                 SizedBox(height: 20.h),
                 Text(
-                  'Booking Confirmed!',
+                  AppLocalizations.of(context).bookingConfirmedTitle,
                   style: TextStyle(
                     fontSize: 22.sp,
                     fontWeight: FontWeight.w700,
@@ -235,7 +236,7 @@ class _BookingConfirmationOverlayState
                           Navigator.of(context).pop();
                           widget.onDismissed?.call();
                         },
-                        child: const Text('Great!'),
+                        child: Text(AppLocalizations.of(context).great),
                       ),
                     )
                     .animate()

@@ -1,10 +1,15 @@
 import 'dart:async';
 
 import 'package:app_links/app_links.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/constants/app_constants.dart';
+import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/features/messaging/models/message_model.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 
 part 'deep_link_service.g.dart';
@@ -42,6 +47,22 @@ class DeepLinkService {
 
   final AppLinks _appLinks;
   StreamSubscription<Uri>? _subscription;
+
+  CollectionReference<UserModel> get _usersCollection => FirebaseFirestore
+      .instance
+      .collection(AppConstants.usersCollection)
+      .withConverter<UserModel>(
+        fromFirestore: (snap, _) => UserModel.fromJson(snap.data()!),
+        toFirestore: (user, _) => user.toJson(),
+      );
+
+  CollectionReference<ChatModel> get _chatsCollection => FirebaseFirestore
+      .instance
+      .collection(AppConstants.chatsCollection)
+      .withConverter<ChatModel>(
+        fromFirestore: (snap, _) => ChatModel.fromJson(snap.data()!),
+        toFirestore: (chat, _) => chat.toJson(),
+      );
 
   /// Primary custom URL scheme
   static const String primaryScheme = 'sportconnect';
@@ -105,18 +126,20 @@ class DeepLinkService {
 
   /// Initialize standard App Links (sportconnect://, sc://)
   Future<void> _initializeAppLinks(BuildContext context) async {
+    final router = GoRouter.of(context);
+
     // Handle the initial link (app opened via link while closed)
     final initialUri = await _appLinks.getInitialLink();
     if (initialUri != null) {
       TalkerService.info('🔗 Initial App Link: $initialUri');
-      _handleDeepLink(context, initialUri);
+      await _handleDeepLink(router, initialUri);
     }
 
     // Listen for subsequent links (app already running)
     _subscription = _appLinks.uriLinkStream.listen(
       (uri) {
         TalkerService.info('🔗 Incoming App Link: $uri');
-        _handleDeepLink(context, uri);
+        unawaited(_handleDeepLink(router, uri));
       },
       onError: (error) {
         TalkerService.error('❌ App Link error', error);
@@ -125,9 +148,7 @@ class DeepLinkService {
   }
 
   /// Parses the URI and navigates to the appropriate screen.
-  void _handleDeepLink(BuildContext context, Uri uri) {
-    if (!context.mounted) return;
-
+  Future<void> _handleDeepLink(GoRouter router, Uri uri) async {
     final path = _extractPath(uri);
     if (path == null) {
       TalkerService.warning('⚠️ Unrecognized deep link: $uri');
@@ -183,18 +204,83 @@ class DeepLinkService {
       if (match != null) {
         TalkerService.info('🔗 Matching route: ${handler.routeName}');
         if (handler.paramKey != null) {
-          context.pushNamed(
-            handler.routeName,
-            pathParameters: {handler.paramKey!: match.group(1)!},
-          );
+          final routeId = match.group(1)!;
+          if (handler.routeName == AppRoutes.chatDetail.name ||
+              handler.routeName == AppRoutes.chatRide.name) {
+            final receiver = await _resolveReceiverForChat(chatId: routeId);
+            if (receiver == null) {
+              TalkerService.warning(
+                'Could not resolve receiver for deep-link chat $routeId; '
+                'redirecting to notifications.',
+              );
+              router.pushNamed(AppRoutes.notifications.name);
+              return;
+            }
+
+            router.pushNamed(
+              handler.routeName,
+              pathParameters: {handler.paramKey!: routeId},
+              extra: receiver,
+            );
+          } else {
+            router.pushNamed(
+              handler.routeName,
+              pathParameters: {handler.paramKey!: routeId},
+            );
+          }
         } else {
-          context.pushNamed(handler.routeName);
+          router.pushNamed(handler.routeName);
         }
         return;
       }
     }
 
     TalkerService.warning('⚠️ No route matched for deep link path: $path');
+  }
+
+  Future<UserModel?> _resolveReceiverForChat({required String chatId}) async {
+    try {
+      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+      final chat = await _chatsCollection
+          .doc(chatId)
+          .get()
+          .then((s) => s.data());
+      if (chat == null) return null;
+
+      if (chat.type != ChatType.private) {
+        final title = chat.groupName ?? chat.getChatTitle(currentUserId ?? '');
+        return UserModel.rider(
+          uid: chatId,
+          email: '',
+          displayName: title.isEmpty ? 'Group Chat' : title,
+          photoUrl: chat.groupPhotoUrl,
+        );
+      }
+
+      final otherParticipant = currentUserId == null
+          ? null
+          : chat.getOtherParticipant(currentUserId);
+      final participantId = otherParticipant?.odid;
+
+      if (participantId != null && participantId.isNotEmpty) {
+        final fullUser = await _usersCollection
+            .doc(participantId)
+            .get()
+            .then((s) => s.data());
+        if (fullUser != null) return fullUser;
+      }
+
+      if (otherParticipant == null) return null;
+      return UserModel.rider(
+        uid: participantId ?? chatId,
+        email: '',
+        displayName: otherParticipant.displayName,
+        photoUrl: otherParticipant.photoUrl,
+      );
+    } catch (e) {
+      TalkerService.error('Failed to resolve chat receiver from deep link', e);
+      return null;
+    }
   }
 
   /// Extracts the path from a deep link URI.

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Bottom sheet ride summary (#78)
 class RideSummarySheet extends StatelessWidget {
@@ -50,7 +51,7 @@ class RideSummarySheet extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      barrierLabel: 'Ride summary',
+      barrierLabel: AppLocalizations.of(context).rideSummary,
       builder: (_) => RideSummarySheet(
         origin: origin,
         destination: destination,
@@ -205,7 +206,7 @@ class RideSummarySheet extends StatelessWidget {
                       Navigator.of(context).pop();
                       onCancel!();
                     },
-                    child: const Text('Cancel'),
+                    child: Text(AppLocalizations.of(context).actionCancel),
                   ),
                 ),
               if (onCancel != null) SizedBox(width: 12.w),
@@ -216,7 +217,7 @@ class RideSummarySheet extends StatelessWidget {
                     Navigator.of(context).pop();
                     onConfirm?.call();
                   },
-                  child: const Text('Confirm Booking'),
+                  child: Text(AppLocalizations.of(context).confirmBooking),
                 ),
               ),
             ],
@@ -478,7 +479,7 @@ class ListViewToggle extends StatelessWidget {
             HapticFeedback.selectionClick();
             onToggle(false);
           },
-          tooltip: 'Expanded view',
+          tooltip: AppLocalizations.of(context).expandedView,
         ),
         SizedBox(width: 4.w),
         _ToggleButton(
@@ -488,7 +489,7 @@ class ListViewToggle extends StatelessWidget {
             HapticFeedback.selectionClick();
             onToggle(true);
           },
-          tooltip: 'Compact view',
+          tooltip: AppLocalizations.of(context).compactView,
         ),
       ],
     );

@@ -129,7 +129,7 @@ class ProfileScreen extends ConsumerWidget {
           leading: _isOwnProfile
               ? null
               : IconButton(
-                  tooltip: 'Back',
+                  tooltip: AppLocalizations.of(context).goBackTooltip,
                   onPressed: () => context.pop(),
                   icon: Icon(
                     Icons.arrow_back_ios_new_rounded,
@@ -150,7 +150,7 @@ class ProfileScreen extends ConsumerWidget {
           actions: [
             if (_isOwnProfile)
               IconButton(
-                tooltip: 'Settings',
+                tooltip: AppLocalizations.of(context).navSettings,
                 onPressed: () => context.push(AppRoutes.settings.path),
                 icon: Icon(
                   Icons.settings_outlined,
@@ -189,7 +189,7 @@ class ProfileScreen extends ConsumerWidget {
                           color: AppColors.warning,
                         ),
                         SizedBox(width: 12.w),
-                        const Text('Report User'),
+                        Text(AppLocalizations.of(context).reportUser),
                       ],
                     ),
                   ),
@@ -203,7 +203,7 @@ class ProfileScreen extends ConsumerWidget {
                           color: AppColors.error,
                         ),
                         SizedBox(width: 12.w),
-                        const Text('Block User'),
+                        Text(AppLocalizations.of(context).blockUser),
                       ],
                     ),
                   ),
@@ -460,7 +460,7 @@ class ProfileScreen extends ConsumerWidget {
             SizedBox(
               width: double.infinity,
               child: PremiumButton(
-                text: 'Edit Profile',
+                text: AppLocalizations.of(context).settingsEditProfile,
                 icon: Icons.edit_outlined,
                 onPressed: () => context.push(AppRoutes.editProfile.path),
                 style: PremiumButtonStyle.outline,
@@ -938,12 +938,11 @@ class ProfileScreen extends ConsumerWidget {
   void _showBlockUserDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      barrierLabel: 'Block user dialog',
+      barrierLabel: AppLocalizations.of(context).blockUserDialogTitle,
       builder: (ctx) => AlertDialog(
-        title: const Text('Block User'),
-        content: const Text(
-          'Are you sure you want to block this user? '
-          'You will no longer see their content or receive messages from them.',
+        title: Text(AppLocalizations.of(context).blockUserDialogTitle),
+        content: Text(
+          AppLocalizations.of(context).blockUserDialogMessageGeneric,
         ),
         actions: [
           TextButton(
@@ -970,8 +969,8 @@ class ProfileScreen extends ConsumerWidget {
                     .toggleBlock();
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('User has been blocked.'),
+                    SnackBar(
+                      content: Text(AppLocalizations.of(context).userBlocked),
                       backgroundColor: AppColors.primary,
                     ),
                   );
@@ -990,7 +989,7 @@ class ProfileScreen extends ConsumerWidget {
                 }
               }
             },
-            child: const Text('Block'),
+            child: Text(AppLocalizations.of(context).actionBlock),
           ),
         ],
       ),
@@ -1034,7 +1033,7 @@ class ProfileScreen extends ConsumerWidget {
             ),
             SizedBox(height: 32.h),
             PremiumButton(
-              text: 'Sync Profile',
+              text: AppLocalizations.of(context).syncProfile,
               icon: Icons.refresh_rounded,
               onPressed: () async {
                 final authActions = ref.read(authActionsViewModelProvider);

@@ -232,7 +232,8 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                               SizedBox(width: 6.w),
                               Flexible(
                                 child: Text(
-                                  ride.eventName ?? 'Event',
+                                  ride.eventName ??
+                                      AppLocalizations.of(context).eventLabel,
                                   style: TextStyle(
                                     fontSize: 13.sp,
                                     fontWeight: FontWeight.w600,
@@ -344,7 +345,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                       vertical: 4.h,
                     ),
                     child: WeatherAtDestination(
-                      condition: 'Partly Cloudy',
+                      condition: AppLocalizations.of(context).partlyCloudy,
                       tempCelsius: 22,
                       icon: Icons.wb_cloudy_outlined,
                       locationName: ride.destination.address,
@@ -439,7 +440,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
       pinned: true,
       backgroundColor: AppColors.primary,
       leading: IconButton(
-        tooltip: 'Back',
+        tooltip: AppLocalizations.of(context).goBackTooltip,
         onPressed: () => context.pop(),
         icon: Container(
           padding: EdgeInsets.all(8.w),
@@ -457,7 +458,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
       ),
       actions: [
         IconButton(
-          tooltip: 'Share ride',
+          tooltip: AppLocalizations.of(context).shareRide,
           onPressed: () async {
             try {
               // Generate shareable HTTPS link via app_links
@@ -471,34 +472,23 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                     departureTime: ride.departureTime,
                   );
 
-              final shareText =
-                  '🚗 Check out this ride on SportConnect!\n\n'
-                  '📍 ${ride.origin.city ?? ride.origin.address} → ${ride.destination.city ?? ride.destination.address}\n'
-                  '📅 ${DateFormat('MMM d, h:mm a').format(ride.departureTime)}\n'
-                  '💰 ${ride.pricePerSeat.toStringAsFixed(0)} € per seat\n'
-                  '🪑 ${ride.remainingSeats} seats available\n\n'
-                  'Join me for a comfortable ride! 🌱\n\n'
-                  '🔗 $dynamicLink';
+              final shareText = _buildRideShareText(ride, dynamicLink);
 
               await SharePlus.instance.share(
                 ShareParams(
                   text: shareText,
-                  subject: 'Carpool ride on SportConnect',
+                  subject: AppLocalizations.of(context).rideShareSubject,
                 ),
               );
             } catch (e) {
               // Fallback
               await SharePlus.instance.share(
                 ShareParams(
-                  text:
-                      '🚗 Check out this ride on SportConnect!\n\n'
-                      '📍 ${ride.origin.city ?? ride.origin.address} → ${ride.destination.city ?? ride.destination.address}\n'
-                      '📅 ${DateFormat('MMM d, h:mm a').format(ride.departureTime)}\n'
-                      '💰 ${ride.pricePerSeat.toStringAsFixed(0)} € per seat\n'
-                      '🪑 ${ride.remainingSeats} seats available\n\n'
-                      'Join me for a comfortable ride! 🌱\n\n'
-                      '🔗 https://${DeepLinkService.hostingDomain}/ride/${widget.rideId}',
-                  subject: 'Carpool ride on SportConnect',
+                  text: _buildRideShareText(
+                    ride,
+                    'https://${DeepLinkService.hostingDomain}/ride/${widget.rideId}',
+                  ),
+                  subject: AppLocalizations.of(context).rideShareSubject,
                 ),
               );
             }
@@ -770,7 +760,8 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          ride.origin.city ?? 'Origin',
+                          ride.origin.city ??
+                              AppLocalizations.of(context).origin,
                           style: TextStyle(
                             fontSize: 16.sp,
                             fontWeight: FontWeight.w600,
@@ -794,7 +785,8 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          ride.destination.city ?? 'Destination',
+                          ride.destination.city ??
+                              AppLocalizations.of(context).destination,
                           style: TextStyle(
                             fontSize: 16.sp,
                             fontWeight: FontWeight.w600,
@@ -826,7 +818,9 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
             children: [
               RideInfoChip(
                 icon: Icons.access_time_rounded,
-                value: '${ride.durationMinutes ?? 0} min',
+                value: AppLocalizations.of(
+                  context,
+                ).valueMin(ride.durationMinutes ?? 0),
                 label: AppLocalizations.of(context).duration,
               ),
               Container(width: 1, height: 40.h, color: AppColors.border),
@@ -834,7 +828,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                 icon: Icons.straighten_rounded,
                 value: ride.distanceKm != null
                     ? ref.watch(distanceFormatterProvider)(ride.distanceKm!)
-                    : '0 km',
+                    : ref.watch(distanceFormatterProvider)(0),
                 label: AppLocalizations.of(context).distance,
               ),
               Container(width: 1, height: 40.h, color: AppColors.border),
@@ -927,7 +921,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Chat with driver',
+                    tooltip: AppLocalizations.of(context).chatWithDriver,
                     onPressed: () => context.pushNamed(
                       AppRoutes.chat.path,
                       pathParameters: {'userId': ride.driverId},
@@ -987,7 +981,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
               SizedBox(height: 12.h),
               RideDetailInfoRow(
                 icon: Icons.flag_rounded,
-                label: 'Est. Arrival',
+                label: AppLocalizations.of(context).estimatedArrival,
                 value: DateFormat('h:mm a').format(arrivalTime),
               ),
             ],
@@ -995,7 +989,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
               SizedBox(height: 12.h),
               RideDetailInfoRow(
                 icon: Icons.straighten_rounded,
-                label: 'Distance',
+                label: AppLocalizations.of(context).distance,
                 value: ride.route.formattedDistance,
               ),
             ],
@@ -1003,7 +997,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
               SizedBox(height: 12.h),
               RideDetailInfoRow(
                 icon: Icons.timer_outlined,
-                label: 'Duration',
+                label: AppLocalizations.of(context).duration,
                 value: ride.route.formattedDuration,
               ),
             ],
@@ -1037,7 +1031,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    ride.vehicleInfo ?? 'Vehicle',
+                    ride.vehicleInfo ?? AppLocalizations.of(context).vehicle,
                     style: TextStyle(
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w600,
@@ -1127,13 +1121,13 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
     final String label;
     if (pct >= 80) {
       barColor = AppColors.success;
-      label = 'Great match';
+      label = AppLocalizations.of(context).greatMatch;
     } else if (pct >= 50) {
       barColor = AppColors.warning;
-      label = 'Good match';
+      label = AppLocalizations.of(context).goodMatch;
     } else {
       barColor = AppColors.error;
-      label = 'Fair match';
+      label = AppLocalizations.of(context).fairMatch;
     }
 
     return Container(
@@ -1147,7 +1141,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                 Icon(Icons.auto_awesome_rounded, size: 18.sp, color: barColor),
                 SizedBox(width: 8.w),
                 Text(
-                  'Ride Compatibility',
+                  AppLocalizations.of(context).rideCompatibility,
                   style: TextStyle(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w700,
@@ -1189,28 +1183,28 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
               children: [
                 _buildMatchChip(
                   Icons.luggage_rounded,
-                  'Luggage',
+                  AppLocalizations.of(context).luggage,
                   prefs.allowLuggage,
                 ),
                 _buildMatchChip(
                   Icons.chat_bubble_outline,
-                  'Chat',
+                  AppLocalizations.of(context).navChat,
                   prefs.allowChat,
                 ),
                 _buildMatchChip(
                   Icons.smoke_free_rounded,
-                  'Non-smoking',
+                  AppLocalizations.of(context).nonSmoking,
                   !prefs.allowSmoking,
                 ),
                 _buildMatchChip(
                   Icons.route_rounded,
-                  'Direct route',
+                  AppLocalizations.of(context).directRoute,
                   prefs.maxDetourMinutes == null ||
                       prefs.maxDetourMinutes! <= 15,
                 ),
                 _buildMatchChip(
                   Icons.event_seat_rounded,
-                  'Spacious',
+                  AppLocalizations.of(context).spacious,
                   ride.remainingSeats > 1,
                 ),
               ],
@@ -1339,9 +1333,9 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                   Expanded(
                     child: Text(
                       acceptedBookings.length == 1
-                          ? AppLocalizations.of(
-                              context,
-                            ).valueHasBookedThisRide('A passenger')
+                          ? AppLocalizations.of(context).valueHasBookedThisRide(
+                              AppLocalizations.of(context).aPassenger,
+                            )
                           : AppLocalizations.of(
                               context,
                             ).valuePassengersHaveBooked(
@@ -1401,7 +1395,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
           ),
           // Chat button
           IconButton(
-            tooltip: 'Chat with passenger',
+            tooltip: AppLocalizations.of(context).chatWithPassenger,
             onPressed: () => context.pushNamed(
               AppRoutes.chat.path,
               pathParameters: {'userId': booking.passengerId},
@@ -1554,7 +1548,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
             children: [
               Expanded(
                 child: PremiumButton(
-                  text: 'Decline',
+                  text: AppLocalizations.of(context).decline,
                   onPressed: () => _handleDeclineRequest(rideId, booking.id),
                   style: PremiumButtonStyle.secondary,
                 ),
@@ -1562,7 +1556,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
               SizedBox(width: 12.w),
               Expanded(
                 child: PremiumButton(
-                  text: 'Accept',
+                  text: AppLocalizations.of(context).accept,
                   onPressed: () => _handleAcceptRequest(rideId, booking.id),
                   style: PremiumButtonStyle.primary,
                 ),
@@ -1788,7 +1782,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                       );
                     },
                     icon: Icon(Icons.edit_rounded, size: 20.sp),
-                    label: Text('Edit Ride'),
+                    label: Text(AppLocalizations.of(context).editRide),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.primary,
                       side: BorderSide(color: AppColors.primary, width: 1.5),
@@ -1805,8 +1799,8 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
               Expanded(
                 child: PremiumButton(
                   text: ride.status == RideStatus.inProgress
-                      ? 'View Active Ride'
-                      : 'Start Ride',
+                      ? AppLocalizations.of(context).viewActiveRide
+                      : AppLocalizations.of(context).startRide,
                   onPressed:
                       ride.status == RideStatus.inProgress || acceptedCount > 0
                       ? () => context.pushNamed(
@@ -2075,7 +2069,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
             onDropPin: () async {
               final result = await MapLocationPicker.show(
                 context,
-                title: 'Drop a pin for pickup',
+                title: AppLocalizations.of(context).dropPinForPickup,
                 initialLocation: uiState.pickupLocation != null
                     ? LatLng(
                         uiState.pickupLocation!.latitude,
@@ -2244,7 +2238,11 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                   onAdd: () {
                     HapticFeedback.lightImpact();
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Added to calendar')),
+                      SnackBar(
+                        content: Text(
+                          AppLocalizations.of(context).addedToCalendar,
+                        ),
+                      ),
                     );
                   },
                 ),
@@ -2296,7 +2294,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
       onTap: () async {
         final result = await MapLocationPicker.show(
           context,
-          title: 'Set pickup location',
+          title: AppLocalizations.of(context).setPickupLocation,
           initialLocation: uiState.pickupLocation != null
               ? LatLng(
                   uiState.pickupLocation!.latitude,
@@ -2341,7 +2339,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Pickup location',
+                    AppLocalizations.of(context).pickupLocation,
                     style: TextStyle(
                       fontSize: 12.sp,
                       color: AppColors.textTertiary,
@@ -2350,7 +2348,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                   SizedBox(height: 2.h),
                   Text(
                     uiState.pickupLocation?.address ??
-                        'Optional – set your pickup point',
+                        AppLocalizations.of(context).optionalSetYourPickupPoint,
                     style: TextStyle(
                       fontSize: 14.sp,
                       color: uiState.pickupLocation != null
@@ -2419,6 +2417,17 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
     return symbolMap[currency.toLowerCase()] ?? '€';
   }
 
+  String _buildRideShareText(RideModel ride, String link) {
+    return AppLocalizations.of(context).rideShareText(
+      ride.origin.city ?? ride.origin.address,
+      ride.destination.city ?? ride.destination.address,
+      DateFormat('MMM d, h:mm a').format(ride.departureTime),
+      ride.pricePerSeat.toStringAsFixed(0),
+      ride.remainingSeats,
+      link,
+    );
+  }
+
   /// Book ride – creates a pending booking and navigates to the pending screen.
   /// Payment (if applicable) is collected after the driver accepts.
   void _bookRide(RideModel ride) async {
@@ -2457,7 +2466,8 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
           context,
           origin: ride.origin.city ?? ride.origin.address,
           destination: ride.destination.city ?? ride.destination.address,
-          driverName: driverProfile?.displayName ?? 'Driver',
+          driverName:
+              driverProfile?.displayName ?? AppLocalizations.of(context).driver,
           driverRating: driverProfile?.rating.average ?? 0,
           departureTime: DateFormat('MMM d, HH:mm').format(ride.departureTime),
           estimatedArrival: DateFormat('HH:mm').format(arrivalTime),

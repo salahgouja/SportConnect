@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Clone previous ride (#34)
 class CloneRideButton extends StatelessWidget {
@@ -17,7 +18,7 @@ class CloneRideButton extends StatelessWidget {
         onClone();
       },
       icon: Icon(Icons.copy_rounded, size: 18.sp),
-      label: const Text('Clone This Ride'),
+      label: Text(AppLocalizations.of(context).cloneThisRide),
       style: OutlinedButton.styleFrom(
         foregroundColor: AppColors.primary,
         side: BorderSide(color: AppColors.primary.withValues(alpha: 0.4)),
@@ -53,7 +54,7 @@ class PostRideReviewPrompt extends StatelessWidget {
   }) {
     return showDialog(
       context: context,
-      barrierLabel: 'Rate your ride',
+      barrierLabel: AppLocalizations.of(context).rateYourRide,
       builder: (_) => PostRideReviewPrompt(
         driverName: driverName,
         driverPhotoUrl: driverPhotoUrl,
@@ -84,7 +85,7 @@ class PostRideReviewPrompt extends StatelessWidget {
             ),
             SizedBox(height: 12.h),
             Text(
-              'How was your ride?',
+              AppLocalizations.of(context).howWasYourRide,
               style: TextStyle(
                 fontSize: 18.sp,
                 fontWeight: FontWeight.w700,
@@ -93,7 +94,7 @@ class PostRideReviewPrompt extends StatelessWidget {
             ),
             SizedBox(height: 4.h),
             Text(
-              'Rate your experience with $driverName',
+              AppLocalizations.of(context).rateYourExperienceWith(driverName),
               style: TextStyle(
                 fontSize: 13.sp,
                 color: theme.textTheme.bodySmall?.color,
@@ -128,7 +129,7 @@ class PostRideReviewPrompt extends StatelessWidget {
                 Navigator.pop(context);
               },
               child: Text(
-                'Skip for now',
+                AppLocalizations.of(context).skipForNow,
                 style: TextStyle(
                   fontSize: 13.sp,
                   color: theme.textTheme.bodySmall?.color,
@@ -165,7 +166,7 @@ class AddToCalendarButton extends StatelessWidget {
         onAdd();
       },
       icon: Icon(Icons.calendar_today_rounded, size: 16.sp),
-      label: const Text('Add to Calendar'),
+      label: Text(AppLocalizations.of(context).addToCalendar),
       style: OutlinedButton.styleFrom(
         foregroundColor: AppColors.info,
         side: BorderSide(color: AppColors.info.withValues(alpha: 0.3)),

@@ -3382,6 +3382,10 @@
   "@orSignInWithEmail": {
     "description": "Divider text between social login and email login"
   },
+  "orContinueWith": "Or continue with",
+  "@orContinueWith": {
+    "description": "Divider text before social sign-in options"
+  },
   "continueWithGoogle": "Continue with Google",
   "@continueWithGoogle": {
     "description": "Label for Google sign-in button"
@@ -3860,7 +3864,6 @@
   "eventNotJoinedYet": "You haven't joined yet",
   "eventHasEnded": "This event has ended",
   "eventRidesToEvent": "Rides to This Event",
-  "eventParkingInfo": "Parking Info",
   "eventRecurringTitle": "Recurring Event",
   "eventEvery": "Every",
   "eventUntilDate": "until {date}",
@@ -4404,5 +4407,403 @@
   "challengeStreakBuilder": "Streak Builder",
   "challengeStreakBuilderDesc": "Maintain a 7-day ride streak",
   "challengeCenturyRider": "Century Rider",
-  "challengeCenturyRiderDesc": "Complete 100 rides"
+  "challengeCenturyRiderDesc": "Complete 100 rides",
+  "chatMuted": "Chat muted",
+  "chatUnmuted": "Chat unmuted",
+  "deleteConversationTitle": "Delete conversation?",
+  "deleteConversationMessage": "This will remove the conversation from your list.",
+  "conversationRemoved": "Conversation removed",
+  "timeNow": "now",
+  "creatingChatLabel": "Creating chat",
+  "failedToCreateChatTryAgain": "Failed to create chat. Please try again.",
+  "reportUser": "Report User",
+  "blockUser": "Block User",
+  "blockUserDialogTitle": "Block User",
+  "blockUserDialogMessage": "Block {name}? You will no longer receive messages from this user.",
+  "@blockUserDialogMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "blockUserDialogMessageGeneric": "Are you sure you want to block this user? You will no longer see their content or receive messages from them.",
+  "blockedUserSuccess": "{name} has been blocked.",
+  "@blockedUserSuccess": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "userBlocked": "User has been blocked.",
+  "couldNotBlockUserTryAgain": "Could not block user. Please try again.",
+  "actionBlock": "Block",
+  "downloadReceipt": "Download Receipt",
+  "notificationsAlreadyEnabled": "Notifications are already enabled.",
+  "notificationPermissionRequested": "Notification permission requested.",
+  "pauseDriverAccountQuestion": "Pause Driver Account?",
+  "pauseDriverAccountMessage": "You will stop receiving ride requests until you resume. Your profile and reviews will remain visible.",
+  "driverAccountPaused": "Driver account paused",
+  "pauseAccountAction": "Pause Account",
+  "syncProfile": "Sync Profile",
+  "eventUnableToLoadOriginal": "Unable to load the original event.",
+  "eventUnableToUpdate": "Unable to update event. Please try again.",
+  "eventSignInRequired": "Please sign in to continue."
+  ,"supportCategoryOther": "Other"
+  ,"averageResponseTime": "Average response time"
+  ,"backToSettings": "Back to Settings"
+  ,"couldNotClearChatTryAgain": "Could not clear chat. Please try again."
+  ,"recording": "Recording"
+  ,"sendEmoji": "Send Emoji"
+  ,"sendPhoto": "Send Photo"
+  ,"moreOptions": "More options"
+  ,"clearReply": "Clear reply"
+  ,"messageFromLongPressOptions": "Message from {name}. Long press for options"
+  ,"@messageFromLongPressOptions": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
+  ,"attachFile": "Attach file"
+  ,"showKeyboard": "Show keyboard"
+  ,"showEmojiPicker": "Show emoji picker"
+  ,"stopRecording": "Stop recording"
+  ,"sendMessage": "Send message"
+  ,"recordVoiceMessage": "Record voice message"
+  ,"rejected": "Rejected"
+  ,"pleaseEnterValue": "Please enter {value}"
+  ,"@pleaseEnterValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  }
+  ,"uploadVehiclePhotoPermission": "Access to your photo library is needed to upload a photo of your vehicle."
+  ,"driverVehicleStepSubtitle": "Tell us about your car so riders know what to expect."
+  ,"vehicleMakeHint": "e.g., Toyota, Honda, BMW"
+  ,"pleaseEnterVehicleMake": "Please enter vehicle make"
+  ,"vehicleModelHint": "e.g., Corolla, Civic, 3 Series"
+  ,"pleaseEnterVehicleModel": "Please enter vehicle model"
+  ,"vehicleYearHint": "e.g., 2020"
+  ,"requiredField": "Required"
+  ,"vehicleColorHint": "e.g., White"
+  ,"licensePlateHint": "e.g., ABC 123"
+  ,"licensePlateHelperText": "2-12 characters, letters & numbers"
+  ,"pleaseEnterLicensePlate": "Please enter license plate"
+  ,"pleaseEnterNumberOfSeats": "Please enter number of seats"
+  ,"mustBeWholeNumber": "Must be a whole number"
+  ,"enter1To8Seats": "Enter 1-8 seats"
+  ,"driverStripeStepSubtitle": "Connect your bank account to receive payments from your rides."
+  ,"stripePoweredByMillions": "Powered by Stripe, trusted by millions"
+  ,"stripeFastTransfersDesc": "Get paid within 2-3 business days"
+  ,"stripeEarningsDesc": "View all your earnings in one place"
+  ,"connectWithStripe": "Connect with Stripe"
+  ,"legalConsentPrefix": "By continuing, you agree to our "
+  ,"iAgreeToThe": "I agree to the "
+  ,"andConnector": " and "
+  ,"termsLinkSemantics": "Terms of Service, link"
+  ,"privacyLinkSemantics": "Privacy Policy, link"
+  ,"leaderboard": "Leaderboard"
+  ,"stats": "Stats"
+  ,"searchHelpArticles": "Search help articles..."
+  ,"frequentlyAskedQuestions": "Frequently Asked Questions"
+  ,"closeRouteInfo": "Close route info"
+  ,"requestDataExport": "Request Data Export"
+  ,"withdrawConsent": "Withdraw Consent"
+  ,"downloadMyData": "Download My Data"
+  ,"downloadMyDataDescription": "We will prepare a copy of your personal data including your profile, ride history, and reviews. You will receive an email with a download link within 48 hours."
+  ,"dataProcessingNotice": "Data Processing Notice"
+  ,"withdrawConsentDescription": "You can withdraw your consent for data processing in the following ways:"
+  ,"dataExportRequestSubmitted": "Data export request submitted."
+  ,"deleteKeyword": "DELETE"
+  ,"submitReviewButton": "Submit Review"
+  ,"pleaseSelectRatingToSubmit": "Please select a rating to submit"
+  ,"unknownDriver": "Unknown Driver"
+  ,"errorLoadingDriver": "Error loading driver"
+  ,"passengerNotFound": "Passenger not found"
+  ,"errorLoadingPassenger": "Error loading passenger"
+  ,"unknown": "Unknown"
+  ,"noPhone": "No phone"
+  ,"notAvailableShort": "N/A"
+  ,"permissionLocationAccessTitle": "Location Access"
+  ,"permissionLocationAccessMessage": "SportConnect needs your location to show nearby rides, calculate distances, and provide accurate navigation during your trips."
+  ,"permissionShareLocationTitle": "Share Your Location"
+  ,"permissionShareLocationMessage": "Your current location will be shared with this chat so other participants can see where you are. Your location is only shared when you choose to send it."
+  ,"permissionRideNavigationTitle": "Ride Navigation"
+  ,"permissionRideNavigationMessage": "Location access is needed to track your ride in real-time, provide turn-by-turn navigation, and share your progress with fellow riders for safety."
+  ,"permissionCameraPhotosTitle": "Camera & Photos"
+  ,"permissionCameraPhotosMessage": "Access to your camera and photo library is needed to attach images. Your photos are only uploaded when you explicitly choose to share them."
+  ,"permissionMicrophoneTitle": "Microphone Access"
+  ,"permissionMicrophoneMessage": "Microphone access is needed to record voice messages. Audio is only recorded when you press and hold the record button."
+  ,"permissionStayUpdatedTitle": "Stay Updated"
+  ,"permissionStayUpdatedMessage": "Enable notifications to receive ride updates, messages from other riders, booking confirmations, and important safety alerts."
+  ,"notNow": "Not Now"
+  ,"actionContinue": "Continue"
+  ,"rideOptions": "Ride options"
+  ,"messagePassenger": "Message passenger"
+  ,"passengerOptions": "Passenger options"
+  ,"markNoShow": "Mark no-show"
+  ,"messageDriver": "Message driver"
+  ,"chatWithDriver": "Chat with driver"
+  ,"chatWithPassenger": "Chat with passenger"
+  ,"callDriver": "Call driver"
+  ,"closePassengerDetails": "Close passenger details"
+  ,"rideRequestDetails": "Ride request details"
+  ,"directions": "Directions"
+  ,"driverArrivingIn": "Driver arriving in ~{minutes} min"
+  ,"@driverArrivingIn": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  }
+  ,"estimatedWait": "Est. wait: ~{minutes} min"
+  ,"@estimatedWait": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  }
+  ,"customPickupPoint": "Custom pickup point"
+  ,"dropPinForPickup": "Drop a pin for pickup"
+  ,"clearPin": "Clear pin"
+  ,"setPin": "Set Pin"
+  ,"markNoShowPrompt": "Mark {name} as a no-show? This will be recorded and may affect their rating."
+  ,"@markNoShowPrompt": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
+  ,"switchVehicle": "Switch vehicle"
+  ,"copyLink": "Copy link"
+  ,"cloneThisRide": "Clone This Ride"
+  ,"rateYourRide": "Rate your ride"
+  ,"howWasYourRide": "How was your ride?"
+  ,"rateYourExperienceWith": "Rate your experience with {name}"
+  ,"@rateYourExperienceWith": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
+  ,"addToCalendar": "Add to Calendar"
+  ,"reportIncident": "Report incident"
+  ,"incidentType": "Type of incident"
+  ,"describeWhatHappened": "Describe what happened..."
+  ,"submitReport": "Submit Report"
+  ,"requestRefund": "Request Refund"
+  ,"amountPaid": "Amount paid: {amount}"
+  ,"@amountPaid": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  }
+  ,"reasonForRefund": "Reason for refund"
+  ,"additionalDetailsOptional": "Additional details (optional)"
+  ,"submitRefundRequest": "Submit Refund Request"
+  ,"rideSummary": "Ride summary"
+  ,"expandedView": "Expanded view"
+  ,"compactView": "Compact view"
+  ,"pickOnMap": "Pick on map"
+  ,"searchCountryOrCode": "Search country or code..."
+  ,"severity": "Severity"
+  ,"safetyCheckInConfirmed": "Safety check-in confirmed!"
+  ,"markAsNoShowQuestion": "Mark as No-Show?"
+  ,"markNoShowDialogMessage": "This will cancel {passengerId}'s booking and notify them. You will have 30 seconds to undo."
+  ,"@markNoShowDialogMessage": {
+    "placeholders": {
+      "passengerId": {
+        "type": "String"
+      }
+    }
+  }
+  ,"passengerMarkedNoShow": "Passenger marked as no-show"
+  ,"undo": "UNDO"
+  ,"locationUnavailable": "Location unavailable"
+  ,"requestedStop": "Requested stop"
+  ,"createReturnRideQuestion": "Create Return Ride?"
+  ,"createReturnRideMessage": "Would you like to create a return ride from {destination} back to {origin}?"
+  ,"@createReturnRideMessage": {
+    "placeholders": {
+      "destination": {
+        "type": "String"
+      },
+      "origin": {
+        "type": "String"
+      }
+    }
+  }
+  ,"noThanks": "No, thanks"
+  ,"returnRideCreated": "Return ride created!"
+  ,"createReturnRide": "Create Return Ride"
+  ,"confirmDeparture": "Confirm Departure"
+  ,"allPassengersPickedUpConfirm": "All passengers picked up? You will begin driving to the destination."
+  ,"departNow": "Depart Now"
+  ,"passengerProfileNotFound": "Passenger profile not found"
+  ,"failedToOpenChatTryAgain": "Failed to open chat. Please try again."
+  ,"emergencySos": "Emergency SOS"
+  ,"sosShareConfirmationMessage": "This will share your ride details and current location with your contacts. Continue?"
+  ,"shareSos": "Share SOS"
+  ,"requestAStop": "Request a Stop"
+  ,"requestStopDescription": "Describe where you'd like the driver to stop. The driver can accept or decline."
+  ,"requestStopHint": "e.g. Gas station, pharmacy..."
+  ,"stopRequestSentToDriver": "Stop request sent to driver"
+  ,"requestStop": "Request Stop"
+  ,"sos": "SOS"
+  ,"bookingNotFoundTryAgain": "Booking not found. Please try again."
+  ,"noShowReported": "No-show reported"
+  ,"incidentReportSubmitted": "Incident report submitted"
+  ,"ratingSubmittedThankYou": "Rating submitted - thank you!"
+  ,"ratePassenger": "Rate Passenger"
+  ,"ratePassengerCommentHint": "What made this passenger great (or not)?"
+  ,"failedToSubmitValue": "Failed to submit: {value}"
+  ,"@failedToSubmitValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  }
+  ,"sentMessage": "Sent: {message}"
+  ,"@sentMessage": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  }
+  ,"decline": "Decline"
+  ,"acceptStop": "Accept Stop"
+  ,"dismiss": "Dismiss"
+  ,"cancellationReasonHint": "Tell us more about why you're cancelling..."
+  ,"failedToLoadBookingValue": "Failed to load booking: {value}"
+  ,"@failedToLoadBookingValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  }
+  ,"bookingNotFoundMayBeCancelled": "Booking not found. It may have been cancelled."
+  ,"rideHasBeenCancelled": "This ride has been cancelled."
+  ,"yourRide": "Your Ride"
+  ,"bookingRefCopied": "Booking ref {code} copied!"
+  ,"@bookingRefCopied": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  }
+  ,"bookingFailedTryAgain": "Booking failed. Please try again."
+  ,"editRide": "Edit Ride"
+  ,"addedToCalendar": "Added to calendar"
+  ,"dismissSuccess": "Dismiss success"
+  ,"dismissError": "Dismiss error"
+  ,"bookingConfirmedTitle": "Booking Confirmed!"
+  ,"great": "Great!"
+  ,"lastCheckedInMinutesAgo": "Last checked in {minutes} min ago"
+  ,"@lastCheckedInMinutesAgo": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  }
+  ,"letContactsKnowSafe": "Let your contacts know you're safe"
+  ,"imOk": "I'm OK"
+  ,"incidentTypeUnsafeDriving": "Unsafe Driving"
+  ,"incidentTypeHarassment": "Harassment"
+  ,"incidentTypeRouteDeviation": "Route Deviation"
+  ,"incidentTypeVehicleIssue": "Vehicle Issue"
+  ,"incidentTypeNoShow": "No-Show"
+  ,"incidentTypeOther": "Other"
+  ,"refundReasonDriverNoShow": "Driver did not show up"
+  ,"refundReasonRideNotAsDescribed": "Ride was not as described"
+  ,"refundReasonUnsafeExperience": "Felt unsafe during ride"
+  ,"refundReasonOvercharged": "Was overcharged"
+  ,"refundReasonCancelledByDriver": "Driver cancelled last minute"
+  ,"refundReasonOther": "Other reason"
+  ,"origin": "Origin"
+  ,"estimatedArrival": "Est. Arrival"
+  ,"partlyCloudy": "Partly Cloudy"
+  ,"rideShareSubject": "Carpool ride on SportConnect"
+  ,"rideShareText": "🚗 Check out this ride on SportConnect!\n\n📍 {from} → {to}\n📅 {departure}\n💰 {price} € per seat\n🪑 {seats} seats available\n\nJoin me for a comfortable ride! 🌱\n\n🔗 {link}"
+  ,"@rideShareText": {
+    "placeholders": {
+      "from": {"type": "String"},
+      "to": {"type": "String"},
+      "departure": {"type": "String"},
+      "price": {"type": "String"},
+      "seats": {"type": "int"},
+      "link": {"type": "String"}
+    }
+  }
+  ,"tripShareSubject": "Trip on SportConnect"
+  ,"tripShareMessage": "{userName} is {status} with SportConnect.\n\nFrom: {origin}\nTo: {destination}\nRide ID: {rideId}\n\nDeparture: {departure}"
+  ,"@tripShareMessage": {
+    "placeholders": {
+      "userName": {"type": "String"},
+      "status": {"type": "String"},
+      "origin": {"type": "String"},
+      "destination": {"type": "String"},
+      "rideId": {"type": "String"},
+      "departure": {"type": "String"}
+    }
+  }
+  ,"tripStatusInProgress": "currently on a ride"
+  ,"tripStatusScheduled": "about to ride"
+  ,"rideCompatibility": "Ride Compatibility"
+  ,"greatMatch": "Great match"
+  ,"goodMatch": "Good match"
+  ,"fairMatch": "Fair match"
+  ,"nonSmoking": "Non-smoking"
+  ,"directRoute": "Direct route"
+  ,"spacious": "Spacious"
+  ,"viewActiveRide": "View Active Ride"
+  ,"setPickupLocation": "Set pickup location"
+  ,"optionalSetYourPickupPoint": "Optional - set your pickup point"
+  ,"eventLabel": "Event"
+  ,"aPassenger": "A passenger"
+  ,"rateAndReview": "Rate & Review"
+  ,"shareReceipt": "Share Receipt"
+  ,"reportIssue": "Report Issue"
+  ,"bookThisRouteAgain": "Book This Route Again"
+  ,"waitingForDriverApproval": "Waiting for driver approval"
+  ,"eta": "ETA"
+  ,"speed": "Speed"
+  ,"addAsStop": "Add as Stop"
+  ,"signInToSeeYourRides": "Sign in to see your rides"
+  ,"logIn": "Log In"
+  ,"accepted": "Accepted"
+  ,"declined": "Declined"
+  ,"dateAtTime": "{date} at {time}"
+  ,"@dateAtTime": {
+    "placeholders": {
+      "date": {"type": "String"},
+      "time": {"type": "String"}
+    }
+  }
+  ,"applyFilters": "Apply Filters"
+  ,"searchFailed": "Search failed"
+  ,"unableToLoadRidesTryAgain": "Unable to load rides. Please try again."
+  ,"clearFilters": "Clear Filters"
+  ,"tryAdjustingFiltersOrDifferentDate": "Try adjusting your filters or search for a different date"
+  ,"bestMatchForYourSearch": "Best match for your search"
+  ,"showCheapestRidesFirst": "Show cheapest rides first"
+  ,"showRidesLeavingSoonest": "Show rides leaving soonest"
+  ,"showBestRatedDriversFirst": "Show best-rated drivers first"
+  ,"showFastestRoutesFirst": "Show fastest routes first"
+  ,"submitRating": "Submit Rating"
 }

@@ -184,7 +184,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
               ),
               SizedBox(height: 24.h),
               PremiumButton(
-                text: 'Go Back',
+                text: AppLocalizations.of(context).goBack,
                 onPressed: () => context.pop(),
                 style: PremiumButtonStyle.secondary,
               ),
@@ -238,7 +238,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
       pinned: true,
       backgroundColor: AppColors.primary,
       leading: IconButton(
-        tooltip: 'Go back',
+        tooltip: AppLocalizations.of(context).goBackTooltip,
         onPressed: () => context.pop(),
         icon: Container(
           padding: EdgeInsets.all(8.w),
@@ -255,7 +255,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
       ),
       actions: [
         IconButton(
-          tooltip: 'Share ride',
+          tooltip: AppLocalizations.of(context).shareRide,
           onPressed: () => _shareRide(ride),
           icon: Container(
             padding: EdgeInsets.all(8.w),
@@ -485,7 +485,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
               ),
               // Message button
               IconButton(
-                tooltip: 'Message driver',
+                tooltip: AppLocalizations.of(context).messageDriver,
                 onPressed: () => _openChat(ride),
                 style: IconButton.styleFrom(
                   backgroundColor: AppColors.primarySurface,
@@ -1300,14 +1300,14 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
         ride.acceptsOnlinePayment) {
       if (existingBooking.paidAt != null) {
         return _buildExistingBookingBar(
-          label: 'Booking Confirmed',
+          label: AppLocalizations.of(context).bookingConfirmed,
           icon: Icons.check_circle_rounded,
           onPressed: null,
           style: PremiumButtonStyle.secondary,
         );
       }
       return _buildExistingBookingBar(
-        label: 'Complete Payment',
+        label: AppLocalizations.of(context).completePayment,
         icon: Icons.payment_rounded,
         onPressed: () => context.push(
           AppRoutes.rideBookingPending.path.replaceFirst(':rideId', ride.id),
@@ -1319,7 +1319,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
     if (existingBooking != null &&
         existingBooking.status == BookingStatus.pending) {
       return _buildExistingBookingBar(
-        label: 'Waiting for driver approval',
+        label: AppLocalizations.of(context).waitingForDriverApproval,
         icon: Icons.hourglass_top_rounded,
         onPressed: () => context.push(
           AppRoutes.rideBookingPending.path.replaceFirst(':rideId', ride.id),
@@ -1331,7 +1331,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
     if (existingBooking != null &&
         existingBooking.status == BookingStatus.accepted) {
       return _buildExistingBookingBar(
-        label: 'Booking Confirmed',
+        label: AppLocalizations.of(context).bookingConfirmed,
         icon: Icons.check_circle_rounded,
         onPressed: null,
         style: PremiumButtonStyle.secondary,
@@ -1499,31 +1499,34 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
         departureTime: ride.departureTime,
       );
 
-      final shareText =
-          '🚗 Check out this ride on SportConnect!\n\n'
-          '📍 ${ride.origin.city ?? ride.origin.address} → ${ride.destination.city ?? ride.destination.address}\n'
-          '📅 ${DateFormat('MMM d, h:mm a').format(ride.departureTime)}\n'
-          '💰 ${ride.pricePerSeat.toStringAsFixed(0)} € per seat\n'
-          '🪑 ${ride.remainingSeats} seats available\n\n'
-          'Join me for a comfortable ride! 🌱\n\n'
-          '🔗 $dynamicLink';
+      final shareText = AppLocalizations.of(context).rideShareText(
+        ride.origin.city ?? ride.origin.address,
+        ride.destination.city ?? ride.destination.address,
+        DateFormat('MMM d, h:mm a').format(ride.departureTime),
+        ride.pricePerSeat.toStringAsFixed(0),
+        ride.remainingSeats,
+        dynamicLink,
+      );
 
       await SharePlus.instance.share(
-        ShareParams(text: shareText, subject: 'Carpool ride on SportConnect'),
+        ShareParams(
+          text: shareText,
+          subject: AppLocalizations.of(context).rideShareSubject,
+        ),
       );
     } catch (e) {
       // Fallback to basic share with HTTPS link
       await SharePlus.instance.share(
         ShareParams(
-          text:
-              '🚗 Check out this ride on SportConnect!\n\n'
-              '📍 ${ride.origin.city ?? ride.origin.address} → ${ride.destination.city ?? ride.destination.address}\n'
-              '📅 ${DateFormat('MMM d, h:mm a').format(ride.departureTime)}\n'
-              '💰 ${ride.pricePerSeat.toStringAsFixed(0)} € per seat\n'
-              '🪑 ${ride.remainingSeats} seats available\n\n'
-              'Join me for a comfortable ride! 🌱\n\n'
-              '🔗 https://${DeepLinkService.hostingDomain}/ride/${widget.rideId}',
-          subject: 'Carpool ride on SportConnect',
+          text: AppLocalizations.of(context).rideShareText(
+            ride.origin.city ?? ride.origin.address,
+            ride.destination.city ?? ride.destination.address,
+            DateFormat('MMM d, h:mm a').format(ride.departureTime),
+            ride.pricePerSeat.toStringAsFixed(0),
+            ride.remainingSeats,
+            'https://${DeepLinkService.hostingDomain}/ride/${widget.rideId}',
+          ),
+          subject: AppLocalizations.of(context).rideShareSubject,
         ),
       );
     }
@@ -1567,7 +1570,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Failed to open chat. Please try again.'),
+          content: Text(AppLocalizations.of(context).failedToOpenChatTryAgain),
           backgroundColor: AppColors.error,
         ),
       );
@@ -1639,7 +1642,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Booking failed. Please try again.'),
+            content: Text(AppLocalizations.of(context).bookingFailedTryAgain),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),
@@ -1774,7 +1777,7 @@ class _BookingConfirmationSheetState extends State<_BookingConfirmationSheet> {
             children: [
               Expanded(
                 child: PremiumButton(
-                  text: 'Cancel',
+                  text: AppLocalizations.of(context).actionCancel,
                   onPressed: () => Navigator.pop(context),
                   style: PremiumButtonStyle.secondary,
                 ),
@@ -1783,7 +1786,7 @@ class _BookingConfirmationSheetState extends State<_BookingConfirmationSheet> {
               Expanded(
                 flex: 2,
                 child: PremiumButton(
-                  text: 'Confirm Booking',
+                  text: AppLocalizations.of(context).confirmBooking,
                   onPressed: () {
                     final note = _noteText;
                     Navigator.pop(context);

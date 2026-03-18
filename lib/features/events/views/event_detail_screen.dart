@@ -14,6 +14,7 @@ import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/premium_card.dart';
+import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
 import 'package:sport_connect/features/events/view_models/event_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
@@ -274,15 +275,6 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                   ).animate().fadeIn(delay: 430.ms, duration: 350.ms),
                 ],
 
-                // ── #31: Parking Info ──
-                if (event.parkingInfo != null &&
-                    event.parkingInfo!.isNotEmpty) ...[
-                  SizedBox(height: 16.h),
-                  _ParkingInfoCard(
-                    info: event.parkingInfo!,
-                  ).animate().fadeIn(delay: 440.ms, duration: 350.ms),
-                ],
-
                 // ── #28: Recurring Event Info ──
                 if (event.isRecurring) ...[
                   SizedBox(height: 16.h),
@@ -528,7 +520,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     final l10n = AppLocalizations.of(context);
     return await showDialog<bool>(
           context: context,
-          barrierLabel: 'Delete event dialog',
+          barrierLabel: l10n.eventDeleteConfirmTitle,
           builder: (ctx) => AlertDialog(
             title: Text(l10n.eventDeleteConfirmTitle),
             content: Text(l10n.eventDeleteWarning),
@@ -1372,54 +1364,6 @@ class _EventRideTile extends StatelessWidget {
   }
 }
 
-// ── #31: Parking Info Card ──
-class _ParkingInfoCard extends StatelessWidget {
-  const _ParkingInfoCard({required this.info});
-
-  final String info;
-
-  @override
-  Widget build(BuildContext context) {
-    return PremiumCard(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.local_parking_rounded,
-            size: 20.sp,
-            color: AppColors.primary,
-          ),
-          SizedBox(width: 10.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  AppLocalizations.of(context).eventParkingInfo,
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                SizedBox(height: 4.h),
-                Text(
-                  info,
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    color: AppColors.textSecondary,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 // ── #28: Recurring Event Badge ──
 class _RecurringEventBadge extends StatelessWidget {
   const _RecurringEventBadge({required this.event});
@@ -1589,7 +1533,17 @@ class _EventChatButton extends StatelessWidget {
       onPressed: () {
         HapticFeedback.lightImpact();
         final chatId = event.chatGroupId ?? event.id;
-        context.push(AppRoutes.chatGroup.path.replaceFirst(':id', chatId));
+        final receiver = UserModel.rider(
+          uid: chatId,
+          email: '',
+          displayName: event.title,
+          photoUrl: event.imageUrl,
+        );
+        context.pushNamed(
+          AppRoutes.chatGroup.name,
+          pathParameters: {'id': chatId},
+          extra: receiver,
+        );
       },
     );
   }

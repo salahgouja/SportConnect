@@ -37,7 +37,6 @@ _EventModel _$EventModelFromJson(Map json) => _EventModel(
         (k, e) => MapEntry(k as String, e as String),
       ) ??
       const {},
-  parkingInfo: json['parkingInfo'] as String?,
   meetupPinLocation: json['meetupPinLocation'] == null
       ? null
       : LocationPoint.fromJson(
@@ -76,7 +75,6 @@ Map<String, dynamic> _$EventModelToJson(_EventModel instance) =>
       'isActive': instance.isActive,
       'linkedRideIds': instance.linkedRideIds,
       'rideStatuses': instance.rideStatuses,
-      'parkingInfo': instance.parkingInfo,
       'meetupPinLocation': instance.meetupPinLocation?.toJson(),
       'chatGroupId': instance.chatGroupId,
       'isRecurring': instance.isRecurring,

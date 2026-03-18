@@ -68,9 +68,9 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
       if (next.error != null &&
           next.error != previous?.error &&
           context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(next.error!)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_localizedEventError(next.error!))),
+        );
       }
     });
 
@@ -81,9 +81,9 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
       if (next.error != null &&
           next.error != previous?.error &&
           context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(next.error!)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_localizedEventError(next.error!))),
+        );
       }
       if (next.isSaved && previous?.isSaved != true && context.mounted) {
         final updated = widget.event.copyWith(
@@ -100,9 +100,6 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
               : next.venueName.trim(),
           imageUrl: next.removeExistingImage ? null : next.existingImageUrl,
           maxParticipants: next.maxParticipants,
-          parkingInfo: next.parkingInfo.trim().isEmpty
-              ? null
-              : next.parkingInfo.trim(),
           isRecurring: next.isRecurring,
           recurringDays: [...next.recurringDays]..sort(),
           recurringEndDate: next.recurringEndDate,
@@ -156,8 +153,6 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
             _buildWhenSection(),
             SizedBox(height: 20.h),
             _buildParticipantSlider(),
-            SizedBox(height: 20.h),
-            _buildParkingInfoField(),
             SizedBox(height: 20.h),
             _buildRecurringToggle(),
             SizedBox(height: 20.h),
@@ -558,23 +553,6 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
     ).animate().fadeIn(duration: 250.ms, delay: 260.ms);
   }
 
-  // ── Parking Info ───────────────────────────────────────────
-  Widget _buildParkingInfoField() {
-    return FormBuilderTextField(
-      name: 'parkingInfo',
-      initialValue: _formState.parkingInfo,
-      maxLines: 2,
-      minLines: 1,
-      maxLength: 300,
-      textCapitalization: TextCapitalization.sentences,
-      onChanged: (value) => _formNotifier.setParkingInfo(value ?? ''),
-      decoration: _deco(
-        AppLocalizations.of(context).eventParkingInstructions,
-        Icons.local_parking_rounded,
-      ),
-    ).animate().fadeIn(duration: 250.ms, delay: 270.ms);
-  }
-
   // ── Recurring Toggle + Day Selector ──────────────────────────
   Widget _buildRecurringToggle() {
     const dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -860,6 +838,20 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
         color: AppColors.textPrimary,
       ),
     );
+  }
+
+  String _localizedEventError(String error) {
+    final l10n = AppLocalizations.of(context);
+    switch (error) {
+      case 'Unable to load the original event.':
+        return l10n.eventUnableToLoadOriginal;
+      case 'Unable to update event. Please try again.':
+        return l10n.eventUnableToUpdate;
+      case 'Please sign in to create an event.':
+        return l10n.eventSignInRequired;
+      default:
+        return error;
+    }
   }
 }
 

@@ -88,18 +88,25 @@ class _PassengerActiveRideScreenState
   Future<void> _shareTrip(RideModel ride) async {
     HapticFeedback.mediumImpact();
     final currentUser = ref.read(currentUserProvider).value;
+    final l10n = AppLocalizations.of(context)!;
+
     final userName = currentUser?.displayName ?? 'A passenger';
     final origin = ride.origin.address;
     final destination = ride.destination.address;
     final status = ride.status == RideStatus.inProgress
-        ? 'currently on a ride'
-        : 'about to ride';
-    final msg =
-        '$userName is $status with SportConnect.\n\n'
-        'From: $origin\n'
-        'To: $destination\n'
-        'Ride ID: ${ride.id.substring(0, 8).toUpperCase()}\n\n'
-        'Departure: ${_formatDateTime(ride.departureTime)}';
+        ? l10n.tripStatusInProgress
+        : l10n.tripStatusScheduled;
+    final rideId = ride.id.substring(0, 8).toUpperCase();
+    final departure = _formatDateTime(ride.departureTime);
+
+    final msg = l10n.tripShareMessage(
+      userName,
+      status,
+      origin,
+      destination,
+      rideId,
+      departure,
+    );
 
     await SharePlus.instance.share(ShareParams(text: msg));
   }
@@ -116,17 +123,14 @@ class _PassengerActiveRideScreenState
           children: [
             Icon(Icons.sos, color: AppColors.error),
             SizedBox(width: 8.w),
-            const Text('Emergency SOS'),
+            Text(AppLocalizations.of(context).emergencySos),
           ],
         ),
-        content: const Text(
-          'This will share your ride details and current location '
-          'with your contacts. Continue?',
-        ),
+        content: Text(AppLocalizations.of(context).sosShareConfirmationMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -141,7 +145,7 @@ class _PassengerActiveRideScreenState
               backgroundColor: AppColors.error,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Share SOS'),
+            child: Text(AppLocalizations.of(context).shareSos),
           ),
         ],
       ),
@@ -158,21 +162,18 @@ class _PassengerActiveRideScreenState
           children: [
             Icon(Icons.add_location_alt, color: AppColors.warning),
             SizedBox(width: 8.w),
-            const Text('Request a Stop'),
+            Text(AppLocalizations.of(context).requestAStop),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'Describe where you\'d like the driver to stop. '
-              'The driver can accept or decline.',
-            ),
+            Text(AppLocalizations.of(context).requestStopDescription),
             SizedBox(height: 12.h),
             TextField(
               controller: controller,
-              decoration: const InputDecoration(
-                hintText: 'e.g. Gas station, pharmacy...',
+              decoration: InputDecoration(
+                hintText: AppLocalizations.of(context).requestStopHint,
                 border: OutlineInputBorder(),
               ),
               maxLength: 100,
@@ -183,7 +184,7 @@ class _PassengerActiveRideScreenState
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           ElevatedButton(
             onPressed: () {
@@ -196,7 +197,9 @@ class _PassengerActiveRideScreenState
               HapticFeedback.lightImpact();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: const Text('Stop request sent to driver'),
+                  content: Text(
+                    AppLocalizations.of(context).stopRequestSentToDriver,
+                  ),
                   backgroundColor: AppColors.success,
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(
@@ -209,7 +212,7 @@ class _PassengerActiveRideScreenState
               backgroundColor: AppColors.warning,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Request Stop'),
+            child: Text(AppLocalizations.of(context).requestStop),
           ),
         ],
       ),
@@ -286,7 +289,11 @@ class _PassengerActiveRideScreenState
                     HapticFeedback.lightImpact();
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Sent: ${messages[index]}'),
+                        content: Text(
+                          AppLocalizations.of(
+                            context,
+                          ).sentMessage(messages[index]),
+                        ),
                         duration: const Duration(seconds: 1),
                         behavior: SnackBarBehavior.floating,
                       ),
@@ -374,7 +381,7 @@ class _PassengerActiveRideScreenState
           ),
           SizedBox(height: 24.h),
           PremiumButton(
-            text: 'Go Home',
+            text: AppLocalizations.of(context).goHome,
             onPressed: () => context.go(AppRoutes.splash.path),
           ),
         ],
@@ -412,7 +419,9 @@ class _PassengerActiveRideScreenState
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('This ride has been cancelled.')),
+            SnackBar(
+              content: Text(AppLocalizations.of(context).rideHasBeenCancelled),
+            ),
           );
           context.goNamed(AppRoutes.riderMyRides.name);
         }
@@ -1198,28 +1207,32 @@ class _PassengerActiveRideScreenState
               children: [
                 _buildInfoTile(
                   icon: Icons.access_time_rounded,
-                  label: 'ETA',
-                  value: etaMinutes < 1 ? 'Arriving' : l10n.valueMin(etaMinutes),
+                  label: AppLocalizations.of(context).eta,
+                  value: etaMinutes < 1
+                      ? 'Arriving'
+                      : l10n.valueMin(etaMinutes),
                   color: AppColors.primary,
                 ),
                 SizedBox(width: 12.w),
                 _buildInfoTile(
                   icon: Icons.straighten_rounded,
-                  label: 'Distance',
-                  value: distToDest < 1 ? '${(distToDest * 1000).toInt()} m' : '${distToDest.toStringAsFixed(1)} km',
+                  label: AppLocalizations.of(context).distance,
+                  value: distToDest < 1
+                      ? '${(distToDest * 1000).toInt()} m'
+                      : '${distToDest.toStringAsFixed(1)} km',
                   color: AppColors.warning,
                 ),
                 SizedBox(width: 12.w),
                 _buildInfoTile(
                   icon: Icons.speed_rounded,
-                  label: 'Speed',
+                  label: AppLocalizations.of(context).speed,
                   value: '${rideState.currentSpeedKmh.toStringAsFixed(0)} km/h',
                   color: AppColors.success,
                 ),
               ],
             ),
           ),
-          
+
           // Pickup queue position badge (7A)
           if (rideState.phase == ActiveRidePhase.pickingUp &&
               rideState.pickupOrder.isNotEmpty) ...[
@@ -1248,7 +1261,11 @@ class _PassengerActiveRideScreenState
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.people_alt, color: AppColors.info, size: 18.sp),
+                        Icon(
+                          Icons.people_alt,
+                          color: AppColors.info,
+                          size: 18.sp,
+                        ),
                         SizedBox(width: 8.w),
                         Text(
                           'You are #$pos in the pickup queue',
@@ -1265,7 +1282,7 @@ class _PassengerActiveRideScreenState
               },
             ),
           ],
-          
+
           SizedBox(height: 16.h),
 
           // Driver info row
@@ -1365,7 +1382,7 @@ class _PassengerActiveRideScreenState
               child: OutlinedButton.icon(
                 onPressed: () => _showRequestStopDialog(ride),
                 icon: Icon(Icons.add_location_alt, size: 18.sp),
-                label: const Text('Request a Stop'),
+                label: Text(AppLocalizations.of(context).requestAStop),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.warning,
                   side: BorderSide(
@@ -1448,7 +1465,7 @@ class _PassengerActiveRideScreenState
                   child: ElevatedButton.icon(
                     onPressed: () => _triggerSOS(ride, rideState),
                     icon: Icon(Icons.sos, size: 18.sp),
-                    label: const Text('SOS'),
+                    label: Text(AppLocalizations.of(context).sos),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.error,
                       foregroundColor: Colors.white,
@@ -2136,7 +2153,7 @@ class _PassengerActiveRideScreenState
               Row(
                 children: [
                   IconButton(
-                    tooltip: 'Go back',
+                    tooltip: AppLocalizations.of(context).goBackTooltip,
                     onPressed: () => context.pop(),
                     icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
                   ),
@@ -2438,7 +2455,7 @@ class _PassengerActiveRideScreenState
           Row(
             children: [
               IconButton(
-                tooltip: 'Message driver',
+                tooltip: AppLocalizations.of(context).messageDriver,
                 onPressed: () => _sendMessage(driver.uid),
                 icon: Container(
                   padding: EdgeInsets.all(10.w),
@@ -2454,7 +2471,7 @@ class _PassengerActiveRideScreenState
                 ),
               ),
               IconButton(
-                tooltip: 'Call driver',
+                tooltip: AppLocalizations.of(context).callDriver,
                 onPressed: driver.phoneNumber != null
                     ? () => _callDriver(driver.phoneNumber)
                     : null,
@@ -2894,7 +2911,7 @@ class _PassengerActiveRideScreenState
                 ),
               ),
               IconButton(
-                tooltip: 'Message passenger',
+                tooltip: AppLocalizations.of(context).messagePassenger,
                 onPressed: () => _sendMessage(passenger.uid),
                 icon: Icon(
                   Icons.chat_bubble_outline,
@@ -3052,14 +3069,14 @@ class _PassengerActiveRideScreenState
           if (ride.status == RideStatus.draft ||
               ride.status == RideStatus.active)
             PremiumButton(
-              text: 'Cancel Ride',
+              text: AppLocalizations.of(context).cancelRide2,
               icon: Icons.cancel_outlined,
               onPressed: () => _showCancelDialog(context, ride),
               style: PremiumButtonStyle.outline,
             ),
           if (ride.status == RideStatus.completed)
             PremiumButton(
-              text: 'Rate & Review',
+              text: AppLocalizations.of(context).rateAndReview,
               icon: Icons.star_outline,
               onPressed: () => _showRatingDialog(context, ride),
               style: PremiumButtonStyle.primary,
@@ -3111,7 +3128,7 @@ class _PassengerActiveRideScreenState
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Failed to open chat. Please try again.'),
+          content: Text(AppLocalizations.of(context).failedToOpenChatTryAgain),
           backgroundColor: AppColors.error,
         ),
       );
@@ -3155,7 +3172,7 @@ class _PassengerActiveRideScreenState
   void _showCancelDialog(BuildContext context, RideModel ride) {
     showDialog(
       context: context,
-      barrierLabel: 'Cancel ride dialog',
+      barrierLabel: AppLocalizations.of(context).cancelRide,
       builder: (ctx) => AlertDialog(
         title: Text(AppLocalizations.of(context).cancelRide2),
         content: Text(AppLocalizations.of(context).areYouSureYouWant9),
@@ -3194,7 +3211,9 @@ class _PassengerActiveRideScreenState
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Booking not found. Please try again.'),
+              content: Text(
+                AppLocalizations.of(context).bookingNotFoundTryAgain,
+              ),
               backgroundColor: AppColors.error,
             ),
           );
@@ -3284,7 +3303,10 @@ class _PassengerActiveRideScreenState
     double progress = 0.0;
     if (ride.distanceKm != null && ride.distanceKm! > 0) {
       final remaining = rideState.remainingDistanceKm ?? ride.distanceKm!;
-      progress = ((ride.distanceKm! - remaining) / ride.distanceKm!).clamp(0.0, 1.0);
+      progress = ((ride.distanceKm! - remaining) / ride.distanceKm!).clamp(
+        0.0,
+        1.0,
+      );
     }
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w),
@@ -3318,7 +3340,9 @@ class _PassengerActiveRideScreenState
             child: LinearProgressIndicator(
               value: progress,
               backgroundColor: AppColors.border,
-              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                AppColors.primary,
+              ),
               minHeight: 6.h,
             ),
           ),
@@ -3417,4 +3441,3 @@ class InfoItem extends StatelessWidget {
     );
   }
 }
-

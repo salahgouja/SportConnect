@@ -35,7 +35,7 @@ class LegalScreen extends ConsumerWidget {
           elevation: 0,
           backgroundColor: AppColors.background,
           leading: IconButton(
-            tooltip: 'Back',
+            tooltip: l10n.goBackTooltip,
             icon: Container(
               padding: EdgeInsets.all(8.w),
               decoration: BoxDecoration(

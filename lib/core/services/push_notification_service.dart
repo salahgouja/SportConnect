@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -10,6 +12,8 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/models/models.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
+import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/features/messaging/models/message_model.dart';
 
 part 'push_notification_service.g.dart';
 
@@ -59,6 +63,14 @@ class PushNotificationService {
         toFirestore: (user, _) => user.toJson(),
       );
 
+  CollectionReference<ChatModel> get _chatsCollection => FirebaseFirestore
+      .instance
+      .collection(AppConstants.chatsCollection)
+      .withConverter<ChatModel>(
+        fromFirestore: (snap, _) => ChatModel.fromJson(snap.data()!),
+        toFirestore: (chat, _) => chat.toJson(),
+      );
+
   bool _isInitialized = false;
 
   /// Initialize the service — call once from main.
@@ -101,7 +113,7 @@ class PushNotificationService {
   /// Call this once the router is mounted to handle the initial message.
   void handlePendingInitialMessage(BuildContext context) {
     if (_pendingInitialMessage != null) {
-      _navigateFromPayload(context, _pendingInitialMessage!.data);
+      unawaited(_navigateFromPayload(context, _pendingInitialMessage!.data));
       _pendingInitialMessage = null;
     }
   }
@@ -269,10 +281,13 @@ class PushNotificationService {
   void _navigateFromData(Map<String, dynamic> data) {
     final context = navigatorKey?.currentContext;
     if (context == null) return;
-    _navigateFromPayload(context, data);
+    unawaited(_navigateFromPayload(context, data));
   }
 
-  void _navigateFromPayload(BuildContext context, Map<String, dynamic> data) {
+  Future<void> _navigateFromPayload(
+    BuildContext context,
+    Map<String, dynamic> data,
+  ) async {
     final type = data['type'] as String?;
     final referenceId = data['referenceId'] as String?;
 
@@ -280,9 +295,35 @@ class PushNotificationService {
 
     switch (type) {
       case 'message':
-        context.push(
-          AppRoutes.chatDetail.path.replaceFirst(':id', referenceId),
+        final receiver = await _resolveReceiverForChat(
+          chatId: referenceId,
+          hintUserId:
+              (data['senderId'] as String?) ?? (data['userId'] as String?),
+          hintDisplayName:
+              (data['senderName'] as String?) ?? (data['userName'] as String?),
+          hintPhotoUrl:
+              (data['senderPhotoUrl'] as String?) ??
+              (data['userPhotoUrl'] as String?),
         );
+
+        if (receiver == null) {
+          TalkerService.warning(
+            'Could not resolve chat receiver for notification; '
+            'redirecting to notifications.',
+          );
+          if (context.mounted) {
+            context.pushNamed(AppRoutes.notifications.name);
+          }
+          return;
+        }
+
+        if (context.mounted) {
+          context.pushNamed(
+            AppRoutes.chatDetail.name,
+            pathParameters: {'id': referenceId},
+            extra: receiver,
+          );
+        }
       case 'ride_request':
       case 'ride_booking_request':
         context.push(AppRoutes.driverRequests.path);
@@ -306,6 +347,74 @@ class PushNotificationService {
         );
       default:
         context.push(AppRoutes.notifications.path);
+    }
+  }
+
+  Future<UserModel?> _resolveReceiverForChat({
+    required String chatId,
+    String? hintUserId,
+    String? hintDisplayName,
+    String? hintPhotoUrl,
+  }) async {
+    try {
+      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+      final chat = await _chatsCollection
+          .doc(chatId)
+          .get()
+          .then((s) => s.data());
+
+      if (chat == null) {
+        if (hintUserId == null && hintDisplayName == null) return null;
+        return UserModel.rider(
+          uid: hintUserId ?? chatId,
+          email: '',
+          displayName: hintDisplayName ?? 'User',
+          photoUrl: hintPhotoUrl,
+        );
+      }
+
+      if (chat.type != ChatType.private) {
+        final title =
+            hintDisplayName ??
+            chat.groupName ??
+            chat.getChatTitle(currentUserId ?? '');
+        return UserModel.rider(
+          uid: chatId,
+          email: '',
+          displayName: title.isEmpty ? 'Group Chat' : title,
+          photoUrl: hintPhotoUrl ?? chat.groupPhotoUrl,
+        );
+      }
+
+      final otherParticipant = currentUserId == null
+          ? null
+          : chat.getOtherParticipant(currentUserId);
+      final participantId = hintUserId ?? otherParticipant?.odid;
+
+      if (participantId != null && participantId.isNotEmpty) {
+        final fullUser = await _usersCollection
+            .doc(participantId)
+            .get()
+            .then((s) => s.data());
+        if (fullUser != null) return fullUser;
+      }
+
+      final displayName =
+          hintDisplayName ??
+          otherParticipant?.displayName ??
+          chat.getChatTitle(currentUserId ?? '');
+      return UserModel.rider(
+        uid: participantId ?? chatId,
+        email: '',
+        displayName: displayName.isEmpty ? 'User' : displayName,
+        photoUrl: hintPhotoUrl ?? otherParticipant?.photoUrl,
+      );
+    } catch (e) {
+      TalkerService.error(
+        'Failed to resolve chat receiver from notification',
+        e,
+      );
+      return null;
     }
   }
 

@@ -46,7 +46,9 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
     final currentUser = ref.read(currentUserProvider).value;
     if (currentUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please wait, loading your profile...')),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).loadingProfileMessage),
+        ),
       );
       return;
     }
@@ -189,7 +191,7 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
                       ),
                       FormBuilderValidators.minLength(
                         2,
-                        errorText: "Name Must be at least 2 characters",
+                        errorText: l10n.nameMinLengthError,
                       ),
                       FormBuilderValidators.maxLength(60),
                       (value) => FormValidators.name(value),
@@ -244,9 +246,15 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
                   FormBuilderDropdown<String>(
                     name: 'gender',
                     decoration: InputDecoration(labelText: l10n.gender),
-                    items: const [
-                      DropdownMenuItem(value: 'Male', child: Text('Male')),
-                      DropdownMenuItem(value: 'Female', child: Text('Female')),
+                    items: [
+                      DropdownMenuItem(
+                        value: 'Male',
+                        child: Text(l10n.genderMale),
+                      ),
+                      DropdownMenuItem(
+                        value: 'Female',
+                        child: Text(l10n.genderFemale),
+                      ),
                     ],
                     validator: FormBuilderValidators.required(
                       errorText: l10n.driverGenderRequired,

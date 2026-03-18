@@ -98,6 +98,31 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
     );
   }
 
+  Future<void> _refreshChatsForUser(String userId) async {
+    ref.invalidate(userChatsProvider(userId));
+    await Future<void>.delayed(const Duration(milliseconds: 250));
+  }
+
+  Widget _withChatPullToRefresh({
+    required String userId,
+    required Widget child,
+  }) {
+    final refreshableChild = child is ScrollView
+        ? child
+        : ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              SizedBox(height: 120.h),
+              child,
+            ],
+          );
+
+    return RefreshIndicator(
+      onRefresh: () => _refreshChatsForUser(userId),
+      child: refreshableChild,
+    );
+  }
+
   Widget _buildHeader() {
     return Padding(
       padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 0),
@@ -115,7 +140,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
           Row(
             children: [
               IconButton(
-                tooltip: 'Search users',
+                tooltip: AppLocalizations.of(context).searchUsersTooltip,
                 onPressed: () {
                   context.push(AppRoutes.profileSearch.path);
                 },
@@ -216,31 +241,38 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
                 .toList();
 
             if (directChats.isEmpty) {
-              return _buildEmptyState(
-                icon: Icons.chat_bubble_outline_rounded,
-                title: AppLocalizations.of(context).noConversationsYet,
-                subtitle: AppLocalizations.of(context).startAConversationWith,
+              return _withChatPullToRefresh(
+                userId: currentUser.uid,
+                child: _buildEmptyState(
+                  icon: Icons.chat_bubble_outline_rounded,
+                  title: AppLocalizations.of(context).noConversationsYet,
+                  subtitle: AppLocalizations.of(context).startAConversationWith,
+                ),
               );
             }
 
-            return ListView.separated(
-              padding: EdgeInsets.symmetric(vertical: 16.h),
-              itemCount: directChats.length,
-              separatorBuilder: (context, index) => Divider(
-                height: 1,
-                indent: 88.w,
-                color: AppColors.border.withValues(alpha: 0.5),
+            return _withChatPullToRefresh(
+              userId: currentUser.uid,
+              child: ListView.separated(
+                padding: EdgeInsets.symmetric(vertical: 16.h),
+                physics: const AlwaysScrollableScrollPhysics(),
+                itemCount: directChats.length,
+                separatorBuilder: (context, index) => Divider(
+                  height: 1,
+                  indent: 88.w,
+                  color: AppColors.border.withValues(alpha: 0.5),
+                ),
+                itemBuilder: (context, index) {
+                  final chat = directChats[index];
+                  return _buildSwipeableChatTile(chat, currentUser.uid)
+                      .animate()
+                      .fadeIn(
+                        duration: 300.ms,
+                        delay: Duration(milliseconds: 50 + (index * 60)),
+                      )
+                      .slideX(begin: 0.1, curve: Curves.easeOutCubic);
+                },
               ),
-              itemBuilder: (context, index) {
-                final chat = directChats[index];
-                return _buildSwipeableChatTile(chat, currentUser.uid)
-                    .animate()
-                    .fadeIn(
-                      duration: 300.ms,
-                      delay: Duration(milliseconds: 50 + (index * 60)),
-                    )
-                    .slideX(begin: 0.1, curve: Curves.easeOutCubic);
-              },
             );
           },
         );
@@ -283,25 +315,32 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
                 .toList();
 
             if (groupChats.isEmpty) {
-              return _buildEmptyState(
-                icon: Icons.group_outlined,
-                title: AppLocalizations.of(context).noGroupChats,
-                subtitle: AppLocalizations.of(context).joinOrCreateAGroup,
+              return _withChatPullToRefresh(
+                userId: currentUser.uid,
+                child: _buildEmptyState(
+                  icon: Icons.group_outlined,
+                  title: AppLocalizations.of(context).noGroupChats,
+                  subtitle: AppLocalizations.of(context).joinOrCreateAGroup,
+                ),
               );
             }
 
-            return ListView.separated(
-              padding: EdgeInsets.symmetric(vertical: 16.h),
-              itemCount: groupChats.length,
-              separatorBuilder: (context, index) => Divider(
-                height: 1,
-                indent: 88.w,
-                color: AppColors.border.withValues(alpha: 0.5),
+            return _withChatPullToRefresh(
+              userId: currentUser.uid,
+              child: ListView.separated(
+                padding: EdgeInsets.symmetric(vertical: 16.h),
+                physics: const AlwaysScrollableScrollPhysics(),
+                itemCount: groupChats.length,
+                separatorBuilder: (context, index) => Divider(
+                  height: 1,
+                  indent: 88.w,
+                  color: AppColors.border.withValues(alpha: 0.5),
+                ),
+                itemBuilder: (context, index) {
+                  final chat = groupChats[index];
+                  return _buildSwipeableChatTile(chat, currentUser.uid);
+                },
               ),
-              itemBuilder: (context, index) {
-                final chat = groupChats[index];
-                return _buildSwipeableChatTile(chat, currentUser.uid);
-              },
             );
           },
         );
@@ -343,25 +382,32 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
                 .toList();
 
             if (rideChats.isEmpty) {
-              return _buildEmptyState(
-                icon: Icons.directions_car_outlined,
-                title: AppLocalizations.of(context).noRideChats,
-                subtitle: AppLocalizations.of(context).joinARideToChat,
+              return _withChatPullToRefresh(
+                userId: currentUser.uid,
+                child: _buildEmptyState(
+                  icon: Icons.directions_car_outlined,
+                  title: AppLocalizations.of(context).noRideChats,
+                  subtitle: AppLocalizations.of(context).joinARideToChat,
+                ),
               );
             }
 
-            return ListView.separated(
-              padding: EdgeInsets.symmetric(vertical: 16.h),
-              itemCount: rideChats.length,
-              separatorBuilder: (context, index) => Divider(
-                height: 1,
-                indent: 88.w,
-                color: AppColors.border.withValues(alpha: 0.5),
+            return _withChatPullToRefresh(
+              userId: currentUser.uid,
+              child: ListView.separated(
+                padding: EdgeInsets.symmetric(vertical: 16.h),
+                physics: const AlwaysScrollableScrollPhysics(),
+                itemCount: rideChats.length,
+                separatorBuilder: (context, index) => Divider(
+                  height: 1,
+                  indent: 88.w,
+                  color: AppColors.border.withValues(alpha: 0.5),
+                ),
+                itemBuilder: (context, index) {
+                  final chat = rideChats[index];
+                  return _buildSwipeableChatTile(chat, currentUser.uid);
+                },
               ),
-              itemBuilder: (context, index) {
-                final chat = rideChats[index];
-                return _buildSwipeableChatTile(chat, currentUser.uid);
-              },
             );
           },
         );
@@ -464,7 +510,9 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
             ),
             SizedBox(height: 4.h),
             Text(
-              isMuted ? 'Unmute' : 'Mute',
+              isMuted
+                  ? AppLocalizations.of(context).unmuteChat
+                  : AppLocalizations.of(context).muteChat,
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 11.sp,
@@ -493,7 +541,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
             ),
             SizedBox(height: 4.h),
             Text(
-              'Delete',
+              AppLocalizations.of(context).deleteChat,
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 11.sp,
@@ -518,7 +566,9 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
             messenger.showSnackBar(
               SnackBar(
                 content: Text(
-                  isMuted ? 'Chat unmuted' : 'Chat muted',
+                  isMuted
+                      ? AppLocalizations.of(context).chatUnmuted
+                      : AppLocalizations.of(context).chatMuted,
                   style: const TextStyle(color: Colors.white),
                 ),
                 backgroundColor: isMuted
@@ -537,11 +587,11 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
           // Confirm before deleting
           final confirmed = await showDialog<bool>(
             context: context,
-            barrierLabel: 'Delete conversation dialog',
+            barrierLabel: AppLocalizations.of(context).deleteConversationTitle,
             builder: (ctx) => AlertDialog(
-              title: const Text('Delete conversation?'),
-              content: const Text(
-                'This will remove the conversation from your list.',
+              title: Text(AppLocalizations.of(context).deleteConversationTitle),
+              content: Text(
+                AppLocalizations.of(context).deleteConversationMessage,
               ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16.r),
@@ -549,12 +599,12 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(ctx).pop(false),
-                  child: const Text('Cancel'),
+                  child: Text(AppLocalizations.of(context).actionCancel),
                 ),
                 TextButton(
                   onPressed: () => Navigator.of(ctx).pop(true),
                   style: TextButton.styleFrom(foregroundColor: AppColors.error),
-                  child: const Text('Delete'),
+                  child: Text(AppLocalizations.of(context).actionDelete),
                 ),
               ],
             ),
@@ -562,7 +612,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
           if (confirmed == true) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: const Text('Conversation removed'),
+                content: Text(AppLocalizations.of(context).conversationRemoved),
                 behavior: SnackBarBehavior.floating,
                 backgroundColor: AppColors.error,
                 shape: RoundedRectangleBorder(
@@ -584,7 +634,8 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
     final photoUrl = chat.getChatPhoto(currentUserId);
     final unreadCount = chat.getUnreadCount(currentUserId);
     final isOnline = chat.isOtherOnline(currentUserId);
-    final lastMessage = chat.lastMessageContent ?? 'No messages yet';
+    final lastMessage =
+        chat.lastMessageContent ?? AppLocalizations.of(context).noMessagesYet;
     final lastMessageTime = _formatTime(chat.lastMessageAt);
     final otherParticipant = chat.getOtherParticipant(currentUserId);
 
@@ -734,7 +785,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
     final difference = now.difference(dateTime);
 
     if (difference.inMinutes < 1) {
-      return 'now';
+      return AppLocalizations.of(context).timeNow;
     } else if (difference.inMinutes < 60) {
       return '${difference.inMinutes}m';
     } else if (difference.inHours < 24) {
@@ -772,7 +823,7 @@ class _NewChatBottomSheet extends ConsumerWidget {
       showDialog(
         context: context,
         barrierDismissible: false,
-        barrierLabel: 'Creating chat',
+        barrierLabel: AppLocalizations.of(context).creatingChatLabel,
         builder: (context) => const Center(child: CircularProgressIndicator()),
       );
 
@@ -808,7 +859,9 @@ class _NewChatBottomSheet extends ConsumerWidget {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Failed to create chat. Please try again.'),
+            content: Text(
+              AppLocalizations.of(context).failedToCreateChatTryAgain,
+            ),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -853,7 +906,7 @@ class _NewChatBottomSheet extends ConsumerWidget {
                 ),
                 const Spacer(),
                 IconButton(
-                  tooltip: 'Close',
+                  tooltip: AppLocalizations.of(context).actionClose,
                   onPressed: () => context.pop(),
                   icon: Icon(Icons.close, color: AppColors.textSecondary),
                 ),
@@ -874,7 +927,9 @@ class _NewChatBottomSheet extends ConsumerWidget {
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: searchState.searchQuery.isNotEmpty
                     ? IconButton(
-                        tooltip: 'Clear search',
+                        tooltip: AppLocalizations.of(
+                          context,
+                        ).clearSearchTooltip,
                         icon: const Icon(Icons.clear),
                         onPressed: () => ref
                             .read(newChatSearchViewModelProvider.notifier)
@@ -977,15 +1032,24 @@ class _NewChatBottomSheet extends ConsumerWidget {
       );
     }
 
-    return ListView.separated(
-      padding: EdgeInsets.symmetric(horizontal: 20.w),
-      itemCount: searchState.searchResults.length,
-      separatorBuilder: (context, index) =>
-          Divider(height: 1, color: AppColors.border.withValues(alpha: 0.5)),
-      itemBuilder: (context, index) {
-        final user = searchState.searchResults[index];
-        return _buildUserTile(user, navigateToChat);
+    return RefreshIndicator(
+      onRefresh: () async {
+        ref
+            .read(newChatSearchViewModelProvider.notifier)
+            .scheduleSearch(searchState.searchQuery);
+        await Future<void>.delayed(const Duration(milliseconds: 250));
       },
+      child: ListView.separated(
+        padding: EdgeInsets.symmetric(horizontal: 20.w),
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: searchState.searchResults.length,
+        separatorBuilder: (context, index) =>
+            Divider(height: 1, color: AppColors.border.withValues(alpha: 0.5)),
+        itemBuilder: (context, index) {
+          final user = searchState.searchResults[index];
+          return _buildUserTile(user, navigateToChat);
+        },
+      ),
     );
   }
 

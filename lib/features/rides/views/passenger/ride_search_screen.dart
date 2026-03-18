@@ -85,42 +85,60 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: CustomScrollView(
-        controller: _scrollController,
-        slivers: [
-          // Compact App Bar
-          _buildSliverAppBar(),
+      body: RefreshIndicator(
+        onRefresh: _handlePullToRefresh,
+        child: CustomScrollView(
+          controller: _scrollController,
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          slivers: [
+            // Compact App Bar
+            _buildSliverAppBar(),
 
-          // Search Card
-          SliverToBoxAdapter(child: _buildSearchCard()),
+            // Search Card
+            SliverToBoxAdapter(child: _buildSearchCard()),
 
-          // Quick Date Selection
-          SliverToBoxAdapter(child: _buildQuickDateSelection()),
+            // Quick Date Selection
+            SliverToBoxAdapter(child: _buildQuickDateSelection()),
 
-          // Active Filters
-          if (_hasActiveFilters)
-            SliverToBoxAdapter(child: _buildActiveFilters()),
+            // Active Filters
+            if (_hasActiveFilters)
+              SliverToBoxAdapter(child: _buildActiveFilters()),
 
-          // Pre-search discovery or search results
-          if (!_resultsState.hasSearched &&
-              !_resultsState.isLoading &&
-              _resultsState.visibleResults.isEmpty)
-            ..._buildDiscoverySection()
-          else ...[
-            // Results Header
-            SliverToBoxAdapter(child: _buildResultsHeader()),
+            // Pre-search discovery or search results
+            if (!_resultsState.hasSearched &&
+                !_resultsState.isLoading &&
+                _resultsState.visibleResults.isEmpty)
+              ..._buildDiscoverySection()
+            else ...[
+              // Results Header
+              SliverToBoxAdapter(child: _buildResultsHeader()),
 
-            // Ride Results
-            _buildResultsList(),
+              // Ride Results
+              _buildResultsList(),
+            ],
+
+            // Bottom Padding
+            SliverToBoxAdapter(child: SizedBox(height: 100.h)),
           ],
-
-          // Bottom Padding
-          SliverToBoxAdapter(child: SizedBox(height: 100.h)),
-        ],
+        ),
       ),
       // Floating Filter Button
       floatingActionButton: _buildFloatingFilterButton(),
     );
+  }
+
+  Future<void> _handlePullToRefresh() async {
+    if (_resultsState.hasSearched) {
+      await ref
+          .read(rideSearchViewModelProvider.notifier)
+          .searchRides(forceRefresh: true);
+      return;
+    }
+
+    ref.invalidate(activeRidesProvider);
+    await Future<void>.delayed(const Duration(milliseconds: 250));
   }
 
   bool get _hasActiveFilters => _searchState.hasActiveFilters;
@@ -133,7 +151,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
       elevation: 0,
       backgroundColor: AppColors.primary,
       leading: IconButton(
-        tooltip: 'Go back',
+        tooltip: AppLocalizations.of(context).goBackTooltip,
         onPressed: () =>
             context.canPop() ? context.pop() : context.go(AppRoutes.home.path),
         icon: Icon(
@@ -153,7 +171,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
       centerTitle: true,
       actions: [
         IconButton(
-          tooltip: 'Filters',
+          tooltip: AppLocalizations.of(context).filters,
           onPressed: () => _showAdvancedFilters(),
           icon: Badge(
             isLabelVisible: _hasActiveFilters,
@@ -1405,7 +1423,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                   ),
                   child: SafeArea(
                     child: PremiumButton(
-                      text: 'Apply Filters',
+                      text: AppLocalizations.of(context).applyFilters,
                       onPressed: () {
                         context.pop();
                         HapticFeedback.mediumImpact();
@@ -1610,12 +1628,12 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
         child: EmptyState(
           icon: Icons.error_outline,
           title: _resultsState.hasSearched
-              ? 'Search failed'
-              : 'Something went wrong',
+              ? AppLocalizations.of(context).searchFailed
+              : AppLocalizations.of(context).somethingWentWrong,
           subtitle: _resultsState.hasSearched
               ? _resultsState.error!
-              : 'Unable to load rides. Please try again.',
-          actionText: 'Retry',
+              : AppLocalizations.of(context).unableToLoadRidesTryAgain,
+          actionText: AppLocalizations.of(context).retry,
           onActionPressed: () {
             if (_resultsState.hasSearched) {
               _performSearch();
@@ -1632,9 +1650,11 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
       return SliverFillRemaining(
         child: EmptyState(
           icon: Icons.search_off_rounded,
-          title: 'No rides found',
-          subtitle: 'Try adjusting your filters or search for a different date',
-          actionText: 'Clear Filters',
+          title: AppLocalizations.of(context).noRidesFound,
+          subtitle: AppLocalizations.of(
+            context,
+          ).tryAdjustingFiltersOrDifferentDate,
+          actionText: AppLocalizations.of(context).clearFilters,
           onActionPressed: () {
             ref.read(rideSearchViewModelProvider.notifier).resetFilters();
           },
@@ -2059,31 +2079,41 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                   _buildSortOption(
                     icon: Icons.recommend_rounded,
                     title: AppLocalizations.of(context).recommended,
-                    subtitle: 'Best match for your search',
+                    subtitle: AppLocalizations.of(
+                      context,
+                    ).bestMatchForYourSearch,
                     value: 'recommended',
                   ),
                   _buildSortOption(
                     icon: Icons.arrow_downward_rounded,
                     title: AppLocalizations.of(context).lowestPrice2,
-                    subtitle: 'Show cheapest rides first',
+                    subtitle: AppLocalizations.of(
+                      context,
+                    ).showCheapestRidesFirst,
                     value: 'price_low',
                   ),
                   _buildSortOption(
                     icon: Icons.access_time_rounded,
                     title: AppLocalizations.of(context).earliestDeparture2,
-                    subtitle: 'Show rides leaving soonest',
+                    subtitle: AppLocalizations.of(
+                      context,
+                    ).showRidesLeavingSoonest,
                     value: 'departure',
                   ),
                   _buildSortOption(
                     icon: Icons.star_rounded,
                     title: AppLocalizations.of(context).highestRated2,
-                    subtitle: 'Show best-rated drivers first',
+                    subtitle: AppLocalizations.of(
+                      context,
+                    ).showBestRatedDriversFirst,
                     value: 'rating',
                   ),
                   _buildSortOption(
                     icon: Icons.timer_rounded,
                     title: AppLocalizations.of(context).shortestDuration,
-                    subtitle: 'Show fastest routes first',
+                    subtitle: AppLocalizations.of(
+                      context,
+                    ).showFastestRoutesFirst,
                     value: 'duration',
                   ),
                 ],

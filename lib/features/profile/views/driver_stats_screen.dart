@@ -56,7 +56,7 @@ class _DriverStatsScreenState extends ConsumerState<DriverStatsScreen>
             pinned: true,
             backgroundColor: AppColors.primary,
             leading: IconButton(
-              tooltip: 'Go back',
+              tooltip: AppLocalizations.of(context).goBackTooltip,
               icon: Container(
                 padding: EdgeInsets.all(8.w),
                 decoration: BoxDecoration(
@@ -69,7 +69,7 @@ class _DriverStatsScreenState extends ConsumerState<DriverStatsScreen>
             ),
             actions: [
               IconButton(
-                tooltip: 'Edit profile',
+                tooltip: AppLocalizations.of(context).settingsEditProfile,
                 icon: Container(
                   padding: EdgeInsets.all(8.w),
                   decoration: BoxDecoration(
@@ -243,10 +243,10 @@ class _DriverStatsScreenState extends ConsumerState<DriverStatsScreen>
                 unselectedLabelColor: AppColors.textSecondary,
                 indicatorColor: AppColors.primary,
                 indicatorWeight: 3,
-                tabs: const [
-                  Tab(text: 'Stats'),
-                  Tab(text: 'Reviews'),
-                  Tab(text: 'Badges'),
+                tabs: [
+                  Tab(text: AppLocalizations.of(context).stats),
+                  Tab(text: AppLocalizations.of(context).reviews),
+                  Tab(text: AppLocalizations.of(context).badges),
                 ],
               ),
             ),
@@ -337,7 +337,7 @@ class _DriverStatsScreenState extends ConsumerState<DriverStatsScreen>
               Expanded(
                 child: _QuickActionButton(
                   icon: Icons.directions_car,
-                  label: 'My Vehicles',
+                  label: AppLocalizations.of(context).myVehicles,
                   onTap: () => context.push(AppRoutes.driverVehicles.path),
                 ),
               ),
@@ -345,7 +345,7 @@ class _DriverStatsScreenState extends ConsumerState<DriverStatsScreen>
               Expanded(
                 child: _QuickActionButton(
                   icon: Icons.settings,
-                  label: 'Settings',
+                  label: AppLocalizations.of(context).navSettings,
                   onTap: () => context.push(AppRoutes.driverSettings.path),
                 ),
               ),
@@ -353,7 +353,7 @@ class _DriverStatsScreenState extends ConsumerState<DriverStatsScreen>
               Expanded(
                 child: _QuickActionButton(
                   icon: Icons.account_balance_wallet,
-                  label: 'Earnings',
+                  label: AppLocalizations.of(context).earnings,
                   onTap: () => context.go(AppRoutes.driverEarnings.path),
                 ),
               ),

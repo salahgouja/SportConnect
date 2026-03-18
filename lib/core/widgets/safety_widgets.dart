@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Auto safety check-in widget (#69)
 class SafetyCheckInBanner extends StatelessWidget {
@@ -53,8 +54,10 @@ class SafetyCheckInBanner extends StatelessWidget {
                 ),
                 Text(
                   isOverdue
-                      ? 'Last checked in $minutesSinceLastCheckIn min ago'
-                      : 'Let your contacts know you\'re safe',
+                      ? AppLocalizations.of(
+                          context,
+                        ).lastCheckedInMinutesAgo(minutesSinceLastCheckIn)
+                      : AppLocalizations.of(context).letContactsKnowSafe,
                   style: TextStyle(
                     fontSize: 12.sp,
                     color: theme.textTheme.bodySmall?.color,
@@ -68,7 +71,7 @@ class SafetyCheckInBanner extends StatelessWidget {
               HapticFeedback.mediumImpact();
               onCheckIn();
             },
-            child: const Text('I\'m OK'),
+            child: Text(AppLocalizations.of(context).imOk),
           ),
         ],
       ),
@@ -95,7 +98,7 @@ class IncidentReportSheet extends StatefulWidget {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      barrierLabel: 'Report incident',
+      barrierLabel: AppLocalizations.of(context).reportIncident,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
       ),
@@ -144,7 +147,7 @@ class _IncidentReportSheetState extends State<IncidentReportSheet> {
           ),
           SizedBox(height: 16.h),
           Text(
-            'Report an Incident',
+            AppLocalizations.of(context).reportIncident,
             style: TextStyle(
               fontSize: 20.sp,
               fontWeight: FontWeight.w700,
@@ -154,7 +157,7 @@ class _IncidentReportSheetState extends State<IncidentReportSheet> {
           SizedBox(height: 16.h),
           // Type selection
           Text(
-            'Type of incident',
+            AppLocalizations.of(context).incidentType,
             style: TextStyle(
               fontSize: 14.sp,
               fontWeight: FontWeight.w600,
@@ -168,7 +171,7 @@ class _IncidentReportSheetState extends State<IncidentReportSheet> {
             children: IncidentType.values.map((type) {
               final selected = type == _selectedType;
               return ChoiceChip(
-                label: Text(type.label),
+                label: Text(type.localizedLabel(context)),
                 selected: selected,
                 onSelected: (v) => setState(() => _selectedType = type),
                 avatar: Icon(type.icon, size: 16.sp),
@@ -178,7 +181,7 @@ class _IncidentReportSheetState extends State<IncidentReportSheet> {
           SizedBox(height: 16.h),
           // Severity
           Text(
-            'Severity',
+            AppLocalizations.of(context).severity,
             style: TextStyle(
               fontSize: 14.sp,
               fontWeight: FontWeight.w600,
@@ -188,7 +191,12 @@ class _IncidentReportSheetState extends State<IncidentReportSheet> {
           SizedBox(height: 8.h),
           SegmentedButton<IncidentSeverity>(
             segments: IncidentSeverity.values
-                .map((s) => ButtonSegment(value: s, label: Text(s.label)))
+                .map(
+                  (s) => ButtonSegment(
+                    value: s,
+                    label: Text(s.localizedLabel(context)),
+                  ),
+                )
                 .toList(),
             selected: {_severity},
             onSelectionChanged: (s) => setState(() => _severity = s.first),
@@ -199,8 +207,8 @@ class _IncidentReportSheetState extends State<IncidentReportSheet> {
             controller: _descriptionController,
             maxLines: 3,
             textCapitalization: TextCapitalization.sentences,
-            decoration: const InputDecoration(
-              hintText: 'Describe what happened...',
+            decoration: InputDecoration(
+              hintText: AppLocalizations.of(context).describeWhatHappened,
               alignLabelWithHint: true,
             ),
           ),
@@ -223,7 +231,7 @@ class _IncidentReportSheetState extends State<IncidentReportSheet> {
                       );
                       Navigator.pop(context);
                     },
-              child: const Text('Submit Report'),
+              child: Text(AppLocalizations.of(context).submitReport),
             ),
           ),
         ],
@@ -233,25 +241,53 @@ class _IncidentReportSheetState extends State<IncidentReportSheet> {
 }
 
 enum IncidentType {
-  unsafeDriving('Unsafe Driving', Icons.speed_rounded),
-  harassment('Harassment', Icons.report_gmailerrorred_rounded),
-  routeDeviation('Route Deviation', Icons.wrong_location_rounded),
-  vehicleIssue('Vehicle Issue', Icons.car_crash_rounded),
-  noShow('No-Show', Icons.person_off_rounded),
-  other('Other', Icons.more_horiz_rounded);
+  unsafeDriving(Icons.speed_rounded),
+  harassment(Icons.report_gmailerrorred_rounded),
+  routeDeviation(Icons.wrong_location_rounded),
+  vehicleIssue(Icons.car_crash_rounded),
+  noShow(Icons.person_off_rounded),
+  other(Icons.more_horiz_rounded);
 
-  final String label;
   final IconData icon;
-  const IncidentType(this.label, this.icon);
+  const IncidentType(this.icon);
 }
 
 enum IncidentSeverity {
-  low('Low'),
-  medium('Medium'),
-  high('High');
+  low,
+  medium,
+  high;
 
-  final String label;
-  const IncidentSeverity(this.label);
+  String localizedLabel(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    switch (this) {
+      case IncidentSeverity.low:
+        return l10n.severityLow;
+      case IncidentSeverity.medium:
+        return l10n.severityMedium;
+      case IncidentSeverity.high:
+        return l10n.severityHigh;
+    }
+  }
+}
+
+extension IncidentTypeL10n on IncidentType {
+  String localizedLabel(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    switch (this) {
+      case IncidentType.unsafeDriving:
+        return l10n.incidentTypeUnsafeDriving;
+      case IncidentType.harassment:
+        return l10n.incidentTypeHarassment;
+      case IncidentType.routeDeviation:
+        return l10n.incidentTypeRouteDeviation;
+      case IncidentType.vehicleIssue:
+        return l10n.incidentTypeVehicleIssue;
+      case IncidentType.noShow:
+        return l10n.incidentTypeNoShow;
+      case IncidentType.other:
+        return l10n.incidentTypeOther;
+    }
+  }
 }
 
 class IncidentReport {

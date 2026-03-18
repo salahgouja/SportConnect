@@ -33,7 +33,7 @@ class UserSearchScreen extends ConsumerWidget {
                   : searchResults.when(
                       data: (users) => users.isEmpty
                           ? _buildNoResults(context, uiState.query)
-                          : _buildResults(context, users),
+                          : _buildResults(context, ref, users, uiState.query),
                       loading: () => _buildLoadingState(context),
                       error: (error, _) =>
                           _buildErrorState(context, error.toString()),
@@ -134,7 +134,7 @@ class UserSearchScreen extends ConsumerWidget {
             ),
             suffixIcon: uiState.query.isNotEmpty
                 ? IconButton(
-                    tooltip: 'Clear search',
+                    tooltip: AppLocalizations.of(context).clearSearchTooltip,
                     onPressed: () {
                       ref.read(userSearchUiViewModelProvider.notifier).clear();
                       HapticFeedback.lightImpact();
@@ -205,34 +205,40 @@ class UserSearchScreen extends ConsumerWidget {
             spacing: 8.w,
             runSpacing: 8.h,
             alignment: WrapAlignment.center,
-            children: ['Drivers', 'Riders', 'Sports', 'Events'].map((tag) {
-              return GestureDetector(
-                onTap: () {
-                  ref
-                      .read(userSearchUiViewModelProvider.notifier)
-                      .applySuggestion(tag);
-                  HapticFeedback.selectionClick();
-                },
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 8.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.cardBg,
-                    borderRadius: BorderRadius.circular(20.r),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Text(
-                    tag,
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      color: AppColors.textPrimary,
+            children:
+                [
+                  AppLocalizations.of(context).driversLabel,
+                  AppLocalizations.of(context).ridersLabel,
+                  AppLocalizations.of(context).sportsLabel,
+                  AppLocalizations.of(context).events,
+                ].map((tag) {
+                  return GestureDetector(
+                    onTap: () {
+                      ref
+                          .read(userSearchUiViewModelProvider.notifier)
+                          .applySuggestion(tag);
+                      HapticFeedback.selectionClick();
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 8.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.cardBg,
+                        borderRadius: BorderRadius.circular(20.r),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Text(
+                        tag,
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              );
-            }).toList(),
+                  );
+                }).toList(),
           ),
         ],
       ),
@@ -341,70 +347,82 @@ class UserSearchScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildResults(BuildContext context, List<UserModel> users) {
-    return ListView.builder(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
-      itemCount: users.length,
-      itemBuilder: (context, index) {
-        final user = users[index];
-
-        void navigateToProfile() {
-          HapticFeedback.lightImpact();
-          if (user.role == UserRole.driver) {
-            context.pushNamed(
-              AppRoutes.driverProfile.path,
-              pathParameters: {'userId': user.uid},
-            );
-          } else {
-            context.pushNamed(
-              AppRoutes.profile.path,
-              pathParameters: {'userId': user.uid},
-            );
-          }
-        }
-
-        return Dismissible(
-          key: ValueKey('user_search_${user.uid}'),
-          direction: DismissDirection.endToStart,
-          confirmDismiss: (_) async {
-            HapticFeedback.mediumImpact();
-            navigateToProfile();
-            return false;
-          },
-          background: Container(
-            margin: EdgeInsets.only(bottom: 12.h),
-            decoration: BoxDecoration(
-              gradient: AppColors.primaryGradient,
-              borderRadius: BorderRadius.circular(16.r),
-            ),
-            alignment: Alignment.centerRight,
-            padding: EdgeInsets.only(right: 24.w),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.person_outline_rounded,
-                  color: Colors.white,
-                  size: 28.sp,
-                ),
-                SizedBox(height: 4.h),
-                Text(
-                  'Profile',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          child: _UserCard(user: user, onTap: navigateToProfile)
-              .animate(delay: Duration(milliseconds: 50 * index))
-              .fadeIn()
-              .slideX(begin: 0.05),
-        );
+  Widget _buildResults(
+    BuildContext context,
+    WidgetRef ref,
+    List<UserModel> users,
+    String query,
+  ) {
+    return RefreshIndicator(
+      onRefresh: () async {
+        ref.invalidate(searchResultsProvider(query));
+        await Future<void>.delayed(const Duration(milliseconds: 250));
       },
+      child: ListView.builder(
+        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: users.length,
+        itemBuilder: (context, index) {
+          final user = users[index];
+
+          void navigateToProfile() {
+            HapticFeedback.lightImpact();
+            if (user.role == UserRole.driver) {
+              context.pushNamed(
+                AppRoutes.driverProfile.path,
+                pathParameters: {'userId': user.uid},
+              );
+            } else {
+              context.pushNamed(
+                AppRoutes.profile.path,
+                pathParameters: {'userId': user.uid},
+              );
+            }
+          }
+
+          return Dismissible(
+            key: ValueKey('user_search_${user.uid}'),
+            direction: DismissDirection.endToStart,
+            confirmDismiss: (_) async {
+              HapticFeedback.mediumImpact();
+              navigateToProfile();
+              return false;
+            },
+            background: Container(
+              margin: EdgeInsets.only(bottom: 12.h),
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(16.r),
+              ),
+              alignment: Alignment.centerRight,
+              padding: EdgeInsets.only(right: 24.w),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.person_outline_rounded,
+                    color: Colors.white,
+                    size: 28.sp,
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    'Profile',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            child: _UserCard(user: user, onTap: navigateToProfile)
+                .animate(delay: Duration(milliseconds: 50 * index))
+                .fadeIn()
+                .slideX(begin: 0.05),
+          );
+        },
+      ),
     );
   }
 }

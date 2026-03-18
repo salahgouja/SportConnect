@@ -3362,6 +3362,10 @@
   "@orSignInWithEmail": {
     "description": "Divider text between social login and email login"
   },
+  "orContinueWith": "Ou continuer avec",
+  "@orContinueWith": {
+    "description": "Divider text before social sign-in options"
+  },
   "continueWithGoogle": "Continuer avec Google",
   "@continueWithGoogle": {
     "description": "Label for Google sign-in button"
@@ -3638,7 +3642,6 @@
   "eventNotJoinedYet": "Vous n'avez pas encore rejoint",
   "eventHasEnded": "Cet événement est terminé",
   "eventRidesToEvent": "Trajets vers cet événement",
-  "eventParkingInfo": "Info stationnement",
   "eventRecurringTitle": "Événement récurrent",
   "eventEvery": "Chaque",
   "eventUntilDate": "jusqu'au {date}",
@@ -4240,5 +4243,403 @@
   "challengeStreakBuilder": "Série en cours",
   "challengeStreakBuilderDesc": "Maintenez une série de 7 jours",
   "challengeCenturyRider": "Centurion",
-  "challengeCenturyRiderDesc": "Complétez 100 trajets"
+  "challengeCenturyRiderDesc": "Complétez 100 trajets",
+  "chatMuted": "Discussion désactivée",
+  "chatUnmuted": "Discussion réactivée",
+  "deleteConversationTitle": "Supprimer la conversation ?",
+  "deleteConversationMessage": "Cette action supprimera la conversation de votre liste.",
+  "conversationRemoved": "Conversation supprimée",
+  "timeNow": "maintenant",
+  "creatingChatLabel": "Création de la discussion",
+  "failedToCreateChatTryAgain": "Impossible de créer la discussion. Veuillez réessayer.",
+  "reportUser": "Signaler l'utilisateur",
+  "blockUser": "Bloquer l'utilisateur",
+  "blockUserDialogTitle": "Bloquer l'utilisateur",
+  "blockUserDialogMessage": "Bloquer {name} ? Vous ne recevrez plus de messages de cet utilisateur.",
+  "@blockUserDialogMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "blockUserDialogMessageGeneric": "Êtes-vous sûr de vouloir bloquer cet utilisateur ? Vous ne verrez plus son contenu et ne recevrez plus de messages de sa part.",
+  "blockedUserSuccess": "{name} a été bloqué.",
+  "@blockedUserSuccess": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "userBlocked": "L'utilisateur a été bloqué.",
+  "couldNotBlockUserTryAgain": "Impossible de bloquer l'utilisateur. Veuillez réessayer.",
+  "actionBlock": "Bloquer",
+  "downloadReceipt": "Télécharger le reçu",
+  "notificationsAlreadyEnabled": "Les notifications sont déjà activées.",
+  "notificationPermissionRequested": "Demande d'autorisation de notification envoyée.",
+  "pauseDriverAccountQuestion": "Mettre en pause le compte conducteur ?",
+  "pauseDriverAccountMessage": "Vous ne recevrez plus de demandes de trajet jusqu'à la reprise. Votre profil et vos avis resteront visibles.",
+  "driverAccountPaused": "Compte conducteur mis en pause",
+  "pauseAccountAction": "Mettre en pause le compte",
+  "syncProfile": "Synchroniser le profil",
+  "eventUnableToLoadOriginal": "Impossible de charger l'événement d'origine.",
+  "eventUnableToUpdate": "Impossible de mettre à jour l'événement. Veuillez réessayer.",
+  "eventSignInRequired": "Veuillez vous connecter pour continuer."
+  ,"supportCategoryOther": "Autre"
+  ,"averageResponseTime": "Temps de réponse moyen"
+  ,"backToSettings": "Retour aux paramètres"
+  ,"couldNotClearChatTryAgain": "Impossible d'effacer la discussion. Veuillez réessayer."
+  ,"recording": "Enregistrement"
+  ,"sendEmoji": "Envoyer un emoji"
+  ,"sendPhoto": "Envoyer une photo"
+  ,"moreOptions": "Plus d'options"
+  ,"clearReply": "Effacer la réponse"
+  ,"messageFromLongPressOptions": "Message de {name}. Appui long pour les options"
+  ,"@messageFromLongPressOptions": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
+  ,"attachFile": "Joindre un fichier"
+  ,"showKeyboard": "Afficher le clavier"
+  ,"showEmojiPicker": "Afficher le sélecteur d'emojis"
+  ,"stopRecording": "Arrêter l'enregistrement"
+  ,"sendMessage": "Envoyer le message"
+  ,"recordVoiceMessage": "Enregistrer un message vocal"
+  ,"rejected": "Rejeté"
+  ,"pleaseEnterValue": "Veuillez saisir {value}"
+  ,"@pleaseEnterValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  }
+  ,"uploadVehiclePhotoPermission": "L'accès à votre galerie photo est nécessaire pour téléverser une photo de votre véhicule."
+  ,"driverVehicleStepSubtitle": "Parlez-nous de votre voiture pour que les passagers sachent à quoi s'attendre."
+  ,"vehicleMakeHint": "ex. : Toyota, Honda, BMW"
+  ,"pleaseEnterVehicleMake": "Veuillez saisir la marque du véhicule"
+  ,"vehicleModelHint": "ex. : Corolla, Civic, Série 3"
+  ,"pleaseEnterVehicleModel": "Veuillez saisir le modèle du véhicule"
+  ,"vehicleYearHint": "ex. : 2020"
+  ,"requiredField": "Champ requis"
+  ,"vehicleColorHint": "ex. : Blanc"
+  ,"licensePlateHint": "ex. : ABC 123"
+  ,"licensePlateHelperText": "2-12 caractères, lettres et chiffres"
+  ,"pleaseEnterLicensePlate": "Veuillez saisir la plaque d'immatriculation"
+  ,"pleaseEnterNumberOfSeats": "Veuillez saisir le nombre de places"
+  ,"mustBeWholeNumber": "Doit être un nombre entier"
+  ,"enter1To8Seats": "Saisissez 1-8 places"
+  ,"driverStripeStepSubtitle": "Connectez votre compte bancaire pour recevoir les paiements de vos trajets."
+  ,"stripePoweredByMillions": "Propulsé par Stripe, utilisé par des millions de personnes"
+  ,"stripeFastTransfersDesc": "Soyez payé sous 2 à 3 jours ouvrables"
+  ,"stripeEarningsDesc": "Consultez tous vos revenus au même endroit"
+  ,"connectWithStripe": "Se connecter avec Stripe"
+  ,"legalConsentPrefix": "En continuant, vous acceptez nos "
+  ,"iAgreeToThe": "J'accepte les "
+  ,"andConnector": " et la "
+  ,"termsLinkSemantics": "Conditions d'utilisation, lien"
+  ,"privacyLinkSemantics": "Politique de confidentialité, lien"
+  ,"leaderboard": "Classement"
+  ,"stats": "Statistiques"
+  ,"searchHelpArticles": "Rechercher des articles d'aide..."
+  ,"frequentlyAskedQuestions": "Questions fréquemment posées"
+  ,"closeRouteInfo": "Fermer les infos de l'itinéraire"
+  ,"requestDataExport": "Demander l'exportation des données"
+  ,"withdrawConsent": "Retirer le consentement"
+  ,"downloadMyData": "Télécharger mes données"
+  ,"downloadMyDataDescription": "Nous préparerons une copie de vos données personnelles, y compris votre profil, votre historique de trajets et vos avis. Vous recevrez un e-mail avec un lien de téléchargement sous 48 heures."
+  ,"dataProcessingNotice": "Avis sur le traitement des données"
+  ,"withdrawConsentDescription": "Vous pouvez retirer votre consentement au traitement des données des façons suivantes :"
+  ,"dataExportRequestSubmitted": "Demande d'exportation des données envoyée."
+  ,"deleteKeyword": "SUPPRIMER"
+  ,"submitReviewButton": "Soumettre l'avis"
+  ,"pleaseSelectRatingToSubmit": "Veuillez sélectionner une note pour soumettre"
+  ,"unknownDriver": "Conducteur inconnu"
+  ,"errorLoadingDriver": "Erreur de chargement du conducteur"
+  ,"passengerNotFound": "Passager introuvable"
+  ,"errorLoadingPassenger": "Erreur de chargement du passager"
+  ,"unknown": "Inconnu"
+  ,"noPhone": "Aucun téléphone"
+  ,"notAvailableShort": "N/D"
+  ,"permissionLocationAccessTitle": "Accès à la localisation"
+  ,"permissionLocationAccessMessage": "SportConnect a besoin de votre localisation pour afficher les trajets à proximité, calculer les distances et fournir une navigation précise pendant vos trajets."
+  ,"permissionShareLocationTitle": "Partager votre localisation"
+  ,"permissionShareLocationMessage": "Votre position actuelle sera partagée dans cette discussion pour que les autres participants puissent vous localiser. Votre position n'est partagée que lorsque vous choisissez de l'envoyer."
+  ,"permissionRideNavigationTitle": "Navigation du trajet"
+  ,"permissionRideNavigationMessage": "L'accès à la localisation est nécessaire pour suivre votre trajet en temps réel, fournir la navigation détaillée et partager votre progression avec les autres passagers pour plus de sécurité."
+  ,"permissionCameraPhotosTitle": "Caméra et photos"
+  ,"permissionCameraPhotosMessage": "L'accès à votre caméra et à votre galerie photo est nécessaire pour joindre des images. Vos photos ne sont envoyées que lorsque vous choisissez explicitement de les partager."
+  ,"permissionMicrophoneTitle": "Accès au microphone"
+  ,"permissionMicrophoneMessage": "L'accès au microphone est nécessaire pour enregistrer des messages vocaux. L'audio est enregistré uniquement lorsque vous maintenez le bouton d'enregistrement enfoncé."
+  ,"permissionStayUpdatedTitle": "Restez informé"
+  ,"permissionStayUpdatedMessage": "Activez les notifications pour recevoir les mises à jour de trajet, les messages des autres passagers, les confirmations de réservation et les alertes de sécurité importantes."
+  ,"notNow": "Pas maintenant"
+  ,"actionContinue": "Continuer"
+  ,"rideOptions": "Options du trajet"
+  ,"messagePassenger": "Message au passager"
+  ,"passengerOptions": "Options du passager"
+  ,"markNoShow": "Marquer comme absent"
+  ,"messageDriver": "Message au conducteur"
+  ,"chatWithDriver": "Discuter avec le conducteur"
+  ,"chatWithPassenger": "Discuter avec le passager"
+  ,"callDriver": "Appeler le conducteur"
+  ,"closePassengerDetails": "Fermer les détails du passager"
+  ,"rideRequestDetails": "Détails de la demande de trajet"
+  ,"directions": "Itinéraire"
+  ,"driverArrivingIn": "Le conducteur arrive dans ~{minutes} min"
+  ,"@driverArrivingIn": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  }
+  ,"estimatedWait": "Attente estimée : ~{minutes} min"
+  ,"@estimatedWait": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  }
+  ,"customPickupPoint": "Point de prise en charge personnalisé"
+  ,"dropPinForPickup": "Déposez une épingle pour la prise en charge"
+  ,"clearPin": "Effacer l'épingle"
+  ,"setPin": "Définir l'épingle"
+  ,"markNoShowPrompt": "Marquer {name} comme absent ? Cela sera enregistré et peut affecter sa note."
+  ,"@markNoShowPrompt": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
+  ,"switchVehicle": "Changer de véhicule"
+  ,"copyLink": "Copier le lien"
+  ,"cloneThisRide": "Dupliquer ce trajet"
+  ,"rateYourRide": "Évaluez votre trajet"
+  ,"howWasYourRide": "Comment s'est passé votre trajet ?"
+  ,"rateYourExperienceWith": "Évaluez votre expérience avec {name}"
+  ,"@rateYourExperienceWith": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
+  ,"addToCalendar": "Ajouter au calendrier"
+  ,"reportIncident": "Signaler un incident"
+  ,"incidentType": "Type d'incident"
+  ,"describeWhatHappened": "Décrivez ce qui s'est passé..."
+  ,"submitReport": "Soumettre le signalement"
+  ,"requestRefund": "Demander un remboursement"
+  ,"amountPaid": "Montant payé : {amount}"
+  ,"@amountPaid": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  }
+  ,"reasonForRefund": "Raison du remboursement"
+  ,"additionalDetailsOptional": "Détails supplémentaires (optionnel)"
+  ,"submitRefundRequest": "Soumettre la demande de remboursement"
+  ,"rideSummary": "Résumé du trajet"
+  ,"expandedView": "Vue étendue"
+  ,"compactView": "Vue compacte"
+  ,"pickOnMap": "Choisir sur la carte"
+  ,"searchCountryOrCode": "Rechercher un pays ou un indicatif..."
+  ,"severity": "Gravité"
+  ,"safetyCheckInConfirmed": "Contrôle de sécurité confirmé !"
+  ,"markAsNoShowQuestion": "Marquer comme absent ?"
+  ,"markNoShowDialogMessage": "Cela annulera la réservation de {passengerId} et l'en informera. Vous aurez 30 secondes pour annuler."
+  ,"@markNoShowDialogMessage": {
+    "placeholders": {
+      "passengerId": {
+        "type": "String"
+      }
+    }
+  }
+  ,"passengerMarkedNoShow": "Passager marqué comme absent"
+  ,"undo": "ANNULER"
+  ,"locationUnavailable": "Localisation indisponible"
+  ,"requestedStop": "Arrêt demandé"
+  ,"createReturnRideQuestion": "Créer un trajet retour ?"
+  ,"createReturnRideMessage": "Voulez-vous créer un trajet retour de {destination} vers {origin} ?"
+  ,"@createReturnRideMessage": {
+    "placeholders": {
+      "destination": {
+        "type": "String"
+      },
+      "origin": {
+        "type": "String"
+      }
+    }
+  }
+  ,"noThanks": "Non, merci"
+  ,"returnRideCreated": "Trajet retour créé !"
+  ,"createReturnRide": "Créer un trajet retour"
+  ,"confirmDeparture": "Confirmer le départ"
+  ,"allPassengersPickedUpConfirm": "Tous les passagers sont montés ? Vous allez commencer à rouler vers la destination."
+  ,"departNow": "Partir maintenant"
+  ,"passengerProfileNotFound": "Profil passager introuvable"
+  ,"failedToOpenChatTryAgain": "Impossible d'ouvrir la discussion. Veuillez réessayer."
+  ,"emergencySos": "SOS d'urgence"
+  ,"sosShareConfirmationMessage": "Cela partagera les détails de votre trajet et votre position actuelle avec vos contacts. Continuer ?"
+  ,"shareSos": "Partager SOS"
+  ,"requestAStop": "Demander un arrêt"
+  ,"requestStopDescription": "Décrivez où vous souhaitez que le conducteur s'arrête. Le conducteur peut accepter ou refuser."
+  ,"requestStopHint": "ex. station-service, pharmacie..."
+  ,"stopRequestSentToDriver": "Demande d'arrêt envoyée au conducteur"
+  ,"requestStop": "Demander l'arrêt"
+  ,"sos": "SOS"
+  ,"bookingNotFoundTryAgain": "Réservation introuvable. Veuillez réessayer."
+  ,"noShowReported": "Absence signalée"
+  ,"incidentReportSubmitted": "Signalement d'incident envoyé"
+  ,"ratingSubmittedThankYou": "Évaluation envoyée - merci !"
+  ,"ratePassenger": "Évaluer le passager"
+  ,"ratePassengerCommentHint": "Qu'est-ce qui a rendu ce passager excellent (ou non) ?"
+  ,"failedToSubmitValue": "Échec de l'envoi : {value}"
+  ,"@failedToSubmitValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  }
+  ,"sentMessage": "Envoyé : {message}"
+  ,"@sentMessage": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  }
+  ,"decline": "Refuser"
+  ,"acceptStop": "Accepter l'arrêt"
+  ,"dismiss": "Ignorer"
+  ,"cancellationReasonHint": "Dites-nous-en plus sur la raison de votre annulation..."
+  ,"failedToLoadBookingValue": "Échec du chargement de la réservation : {value}"
+  ,"@failedToLoadBookingValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  }
+  ,"bookingNotFoundMayBeCancelled": "Réservation introuvable. Elle a peut-être été annulée."
+  ,"rideHasBeenCancelled": "Ce trajet a été annulé."
+  ,"yourRide": "Votre trajet"
+  ,"bookingRefCopied": "Réf. de réservation {code} copiée !"
+  ,"@bookingRefCopied": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  }
+  ,"bookingFailedTryAgain": "Échec de la réservation. Veuillez réessayer."
+  ,"editRide": "Modifier le trajet"
+  ,"addedToCalendar": "Ajouté au calendrier"
+  ,"dismissSuccess": "Fermer le succès"
+  ,"dismissError": "Fermer l'erreur"
+  ,"bookingConfirmedTitle": "Réservation confirmée !"
+  ,"great": "Super !"
+  ,"lastCheckedInMinutesAgo": "Dernier contrôle il y a {minutes} min"
+  ,"@lastCheckedInMinutesAgo": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  }
+  ,"letContactsKnowSafe": "Informez vos contacts que vous êtes en sécurité"
+  ,"imOk": "Je vais bien"
+  ,"incidentTypeUnsafeDriving": "Conduite dangereuse"
+  ,"incidentTypeHarassment": "Harcèlement"
+  ,"incidentTypeRouteDeviation": "Déviation d'itinéraire"
+  ,"incidentTypeVehicleIssue": "Problème de véhicule"
+  ,"incidentTypeNoShow": "Absent"
+  ,"incidentTypeOther": "Autre"
+  ,"refundReasonDriverNoShow": "Le conducteur ne s'est pas présenté"
+  ,"refundReasonRideNotAsDescribed": "Le trajet ne correspondait pas à la description"
+  ,"refundReasonUnsafeExperience": "Sentiment d'insécurité pendant le trajet"
+  ,"refundReasonOvercharged": "Montant surfacturé"
+  ,"refundReasonCancelledByDriver": "Le conducteur a annulé à la dernière minute"
+  ,"refundReasonOther": "Autre raison"
+  ,"origin": "Origine"
+  ,"estimatedArrival": "Arrivée estimée"
+  ,"partlyCloudy": "Partiellement nuageux"
+  ,"rideShareSubject": "Trajet de covoiturage sur SportConnect"
+  ,"rideShareText": "🚗 Découvrez ce trajet sur SportConnect !\n\n📍 {from} → {to}\n📅 {departure}\n💰 {price} € par place\n🪑 {seats} places disponibles\n\nRejoignez-moi pour un trajet confortable ! 🌱\n\n🔗 {link}"
+  ,"@rideShareText": {
+    "placeholders": {
+      "from": {"type": "String"},
+      "to": {"type": "String"},
+      "departure": {"type": "String"},
+      "price": {"type": "String"},
+      "seats": {"type": "int"},
+      "link": {"type": "String"}
+    }
+  }
+  ,"tripShareSubject": "Trajet sur SportConnect"
+  ,"tripShareMessage": "{userName} est {status} sur SportConnect.\n\nDe : {origin}\nVers : {destination}\nID du trajet : {rideId}\n\nDépart : {departure}"
+  ,"@tripShareMessage": {
+    "placeholders": {
+      "userName": {"type": "String"},
+      "status": {"type": "String"},
+      "origin": {"type": "String"},
+      "destination": {"type": "String"},
+      "rideId": {"type": "String"},
+      "departure": {"type": "String"}
+    }
+  }
+  ,"tripStatusInProgress": "actuellement en trajet"
+  ,"tripStatusScheduled": "sur le point de voyager"
+  ,"rideCompatibility": "Compatibilité du trajet"
+  ,"greatMatch": "Très bonne compatibilité"
+  ,"goodMatch": "Bonne compatibilité"
+  ,"fairMatch": "Compatibilité moyenne"
+  ,"nonSmoking": "Non-fumeur"
+  ,"directRoute": "Trajet direct"
+  ,"spacious": "Spacieux"
+  ,"viewActiveRide": "Voir le trajet en cours"
+  ,"setPickupLocation": "Définir le lieu de prise en charge"
+  ,"optionalSetYourPickupPoint": "Optionnel - définissez votre point de prise en charge"
+  ,"eventLabel": "Événement"
+  ,"aPassenger": "Un passager"
+  ,"rateAndReview": "Noter et commenter"
+  ,"shareReceipt": "Partager le reçu"
+  ,"reportIssue": "Signaler un problème"
+  ,"bookThisRouteAgain": "Réserver à nouveau cet itinéraire"
+  ,"waitingForDriverApproval": "En attente de l'approbation du conducteur"
+  ,"eta": "Arrivée estimée"
+  ,"speed": "Vitesse"
+  ,"addAsStop": "Ajouter comme arrêt"
+  ,"signInToSeeYourRides": "Connectez-vous pour voir vos trajets"
+  ,"logIn": "Se connecter"
+  ,"accepted": "Accepté"
+  ,"declined": "Refusé"
+  ,"dateAtTime": "{date} à {time}"
+  ,"@dateAtTime": {
+    "placeholders": {
+      "date": {"type": "String"},
+      "time": {"type": "String"}
+    }
+  }
+  ,"applyFilters": "Appliquer les filtres"
+  ,"searchFailed": "Recherche échouée"
+  ,"unableToLoadRidesTryAgain": "Impossible de charger les trajets. Veuillez réessayer."
+  ,"clearFilters": "Effacer les filtres"
+  ,"tryAdjustingFiltersOrDifferentDate": "Essayez d'ajuster vos filtres ou de rechercher une autre date"
+  ,"bestMatchForYourSearch": "Meilleure correspondance pour votre recherche"
+  ,"showCheapestRidesFirst": "Afficher d'abord les trajets les moins chers"
+  ,"showRidesLeavingSoonest": "Afficher d'abord les trajets qui partent le plus tôt"
+  ,"showBestRatedDriversFirst": "Afficher d'abord les conducteurs les mieux notés"
+  ,"showFastestRoutesFirst": "Afficher d'abord les itinéraires les plus rapides"
+  ,"submitRating": "Soumettre la note"
 }

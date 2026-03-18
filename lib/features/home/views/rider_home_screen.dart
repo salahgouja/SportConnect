@@ -1737,7 +1737,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
               ),
             ),
             IconButton(
-              tooltip: 'Close route info',
+              tooltip: AppLocalizations.of(context).closeRouteInfo,
               onPressed: () {
                 ref.read(riderHomeViewModelProvider.notifier).clearRoutes();
               },

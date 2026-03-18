@@ -42,7 +42,7 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
-          tooltip: 'Go back',
+          tooltip: AppLocalizations.of(context).goBackTooltip,
           icon: Container(
             padding: EdgeInsets.all(8.w),
             decoration: BoxDecoration(
@@ -688,7 +688,7 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
   void _showSignOutDialog() {
     showDialog(
       context: context,
-      barrierLabel: 'Sign out dialog',
+      barrierLabel: AppLocalizations.of(context).signOut,
       builder: (ctx) => AlertDialog(
         title: Row(
           children: [
@@ -724,7 +724,7 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
   void _showDeleteAccountDialog() {
     showDialog(
       context: context,
-      barrierLabel: 'Delete account dialog',
+      barrierLabel: AppLocalizations.of(context).settingsDeleteAccount,
       builder: (context) => AlertDialog(
         title: Row(
           children: [
@@ -780,7 +780,7 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
   void _showPauseAccountDialog() {
     showDialog(
       context: context,
-      barrierLabel: 'Pause account dialog',
+      barrierLabel: AppLocalizations.of(context).pauseDriverAccount,
       builder: (ctx) => AlertDialog(
         title: Row(
           children: [
@@ -788,16 +788,13 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
             SizedBox(width: 8.w),
             Expanded(
               child: Text(
-                'Pause Driver Account?',
+                AppLocalizations.of(context).pauseDriverAccountQuestion,
                 style: TextStyle(fontSize: 17.sp),
               ),
             ),
           ],
         ),
-        content: const Text(
-          'You will stop receiving ride requests until you resume. '
-          'Your profile and reviews will remain visible.',
-        ),
+        content: Text(AppLocalizations.of(context).pauseDriverAccountMessage),
         actions: [
           TextButton(
             onPressed: () => ctx.pop(),
@@ -809,7 +806,9 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
               HapticFeedback.mediumImpact();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: const Text('Driver account paused'),
+                  content: Text(
+                    AppLocalizations.of(context).driverAccountPaused,
+                  ),
                   backgroundColor: AppColors.warning,
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(
@@ -819,7 +818,7 @@ class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
               );
             },
             child: Text(
-              'Pause Account',
+              AppLocalizations.of(context).pauseAccountAction,
               style: TextStyle(color: AppColors.warning),
             ),
           ),

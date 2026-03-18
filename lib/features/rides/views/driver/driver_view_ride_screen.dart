@@ -146,7 +146,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
               ),
               SizedBox(height: 24.h),
               PremiumButton(
-                text: 'Go Back',
+                text: AppLocalizations.of(context).goBack,
                 onPressed: () => context.pop(),
                 style: PremiumButtonStyle.secondary,
               ),
@@ -223,7 +223,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                   unselectedLabelColor: AppColors.textSecondary,
                   indicatorSize: TabBarIndicatorSize.label,
                   tabs: [
-                    Tab(text: 'Details'),
+                    Tab(text: AppLocalizations.of(context).details),
                     Tab(
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -316,7 +316,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       pinned: true,
       backgroundColor: AppColors.primary,
       leading: IconButton(
-        tooltip: 'Go back',
+        tooltip: AppLocalizations.of(context).goBackTooltip,
         onPressed: () => context.pop(),
         icon: Container(
           padding: EdgeInsets.all(8.w),
@@ -333,7 +333,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       ),
       actions: [
         IconButton(
-          tooltip: 'Ride options',
+          tooltip: AppLocalizations.of(context).rideOptions,
           onPressed: () => _showRideOptions(ride),
           icon: Container(
             padding: EdgeInsets.all(8.w),
@@ -1423,7 +1423,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton(
-                tooltip: 'Message passenger',
+                tooltip: AppLocalizations.of(context).messagePassenger,
                 onPressed: () => _openPassengerChat(booking),
                 style: IconButton.styleFrom(
                   backgroundColor: AppColors.primarySurface,
@@ -1436,7 +1436,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
               ),
               SizedBox(width: 4.w),
               IconButton(
-                tooltip: 'Passenger options',
+                tooltip: AppLocalizations.of(context).passengerOptions,
                 onPressed: () => _showPassengerOptions(ride, booking),
                 icon: Icon(
                   Icons.more_vert_rounded,
@@ -1446,7 +1446,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
               ),
               if (ride.status == RideStatus.inProgress)
                 IconButton(
-                  tooltip: 'Mark no-show',
+                  tooltip: AppLocalizations.of(context).markNoShow,
                   onPressed: () async {
                     final confirmed = await NoShowDialog.show(
                       context,
@@ -1454,7 +1454,11 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                     );
                     if (confirmed == true && context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('No-show reported')),
+                        SnackBar(
+                          content: Text(
+                            AppLocalizations.of(context).noShowReported,
+                          ),
+                        ),
                       );
                     }
                   },
@@ -1494,7 +1498,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
             Expanded(
               child: ride.status == RideStatus.inProgress
                   ? PremiumButton(
-                      text: 'Active Ride',
+                      text: AppLocalizations.of(context).activeRide,
                       onPressed: () => context.push(
                         '${AppRoutes.driverActiveRide.path}?rideId=${ride.id}',
                       ),
@@ -1502,7 +1506,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                       icon: Icons.navigation_rounded,
                     )
                   : PremiumButton(
-                      text: 'Edit Ride',
+                      text: AppLocalizations.of(context).editRide,
                       onPressed: () => _editRide(ride),
                       style: PremiumButtonStyle.secondary,
                       icon: Icons.edit_rounded,
@@ -1513,7 +1517,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
               Expanded(
                 flex: 2,
                 child: PremiumButton(
-                  text: 'Start Ride',
+                  text: AppLocalizations.of(context).startRide,
                   onPressed: () => _startRide(ride),
                   style: PremiumButtonStyle.primary,
                   icon: Icons.play_arrow_rounded,
@@ -1523,7 +1527,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
               Expanded(
                 flex: 2,
                 child: PremiumButton(
-                  text: 'Complete Ride',
+                  text: AppLocalizations.of(context).completeRide,
                   onPressed: () => _completeRide(ride),
                   style: PremiumButtonStyle.success,
                   icon: Icons.check_circle_rounded,
@@ -1594,7 +1598,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                   Icons.report_problem_rounded,
                   color: AppColors.warning,
                 ),
-                title: const Text('Report Incident'),
+                title: Text(AppLocalizations.of(context).reportIncident),
                 onTap: () {
                   Navigator.pop(context);
                   IncidentReportSheet.show(
@@ -1602,8 +1606,12 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                     rideId: ride.id,
                     onSubmit: (report) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Incident report submitted'),
+                        SnackBar(
+                          content: Text(
+                            AppLocalizations.of(
+                              context,
+                            ).incidentReportSubmitted,
+                          ),
                         ),
                       );
                     },
@@ -1885,8 +1893,10 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       // If profile doesn't exist, show error and return
       if (passengerProfile == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Passenger profile not found'),
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context).passengerProfileNotFound,
+            ),
             backgroundColor: AppColors.error,
           ),
         );
@@ -1942,31 +1952,34 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
         departureTime: ride.departureTime,
       );
 
-      final shareText =
-          '🚗 Check out this ride on SportConnect!\n\n'
-          '📍 ${ride.origin.city ?? ride.origin.address} → ${ride.destination.city ?? ride.destination.address}\n'
-          '📅 ${DateFormat('MMM d, h:mm a').format(ride.departureTime)}\n'
-          '💰 ${ride.pricePerSeat.toStringAsFixed(0)} € per seat\n'
-          '🪑 ${ride.remainingSeats} seats available\n\n'
-          'Join me for a comfortable ride! 🌱\n\n'
-          '🔗 $dynamicLink';
+      final shareText = AppLocalizations.of(context).rideShareText(
+        ride.origin.city ?? ride.origin.address,
+        ride.destination.city ?? ride.destination.address,
+        DateFormat('MMM d, h:mm a').format(ride.departureTime),
+        ride.pricePerSeat.toStringAsFixed(0),
+        ride.remainingSeats,
+        dynamicLink,
+      );
 
       await SharePlus.instance.share(
-        ShareParams(text: shareText, subject: 'Carpool ride on SportConnect'),
+        ShareParams(
+          text: shareText,
+          subject: AppLocalizations.of(context).rideShareSubject,
+        ),
       );
     } catch (e) {
       // Fallback to basic share with HTTPS link
       await SharePlus.instance.share(
         ShareParams(
-          text:
-              '🚗 Check out this ride on SportConnect!\n\n'
-              '📍 ${ride.origin.city ?? ride.origin.address} → ${ride.destination.city ?? ride.destination.address}\n'
-              '📅 ${DateFormat('MMM d, h:mm a').format(ride.departureTime)}\n'
-              '💰 ${ride.pricePerSeat.toStringAsFixed(0)} € per seat\n'
-              '🪑 ${ride.remainingSeats} seats available\n\n'
-              'Join me for a comfortable ride! 🌱\n\n'
-              '🔗 https://${DeepLinkService.hostingDomain}/ride/${ride.id}',
-          subject: 'Carpool ride on SportConnect',
+          text: AppLocalizations.of(context).rideShareText(
+            ride.origin.city ?? ride.origin.address,
+            ride.destination.city ?? ride.destination.address,
+            DateFormat('MMM d, h:mm a').format(ride.departureTime),
+            ride.pricePerSeat.toStringAsFixed(0),
+            ride.remainingSeats,
+            'https://${DeepLinkService.hostingDomain}/ride/${ride.id}',
+          ),
+          subject: AppLocalizations.of(context).rideShareSubject,
         ),
       );
     }

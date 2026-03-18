@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 // ─── Data Models ──────────────────────────────────────────────────────────────
 
@@ -382,7 +383,9 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
                         onChanged: (v) => setState(() => _search = v),
                         style: TextStyle(fontSize: 15.sp),
                         decoration: InputDecoration(
-                          hintText: 'Search country or code...',
+                          hintText: AppLocalizations.of(
+                            context,
+                          ).searchCountryOrCode,
                           hintStyle: TextStyle(
                             fontSize: 14.sp,
                             color: AppColors.textTertiary,

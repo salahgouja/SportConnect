@@ -1548,9 +1548,9 @@ class _TermsCard extends StatelessWidget {
                     color: accent.withOpacity(0.8),
                   ),
                   children: [
-                    const TextSpan(text: 'I agree to the '),
+                    TextSpan(text: AppLocalizations.of(context).iAgreeToThe),
                     TextSpan(
-                      text: 'Terms of Service',
+                      text: AppLocalizations.of(context).termsOfServiceTitle,
                       style: TextStyle(
                         color: accent,
                         fontWeight: FontWeight.w700,
@@ -1558,9 +1558,9 @@ class _TermsCard extends StatelessWidget {
                       ),
                       recognizer: TapGestureRecognizer()..onTap = onTermsTap,
                     ),
-                    const TextSpan(text: ' and '),
+                    TextSpan(text: AppLocalizations.of(context).andConnector),
                     TextSpan(
-                      text: 'Privacy Policy',
+                      text: AppLocalizations.of(context).privacyPolicyTitle,
                       style: TextStyle(
                         color: accent,
                         fontWeight: FontWeight.w700,

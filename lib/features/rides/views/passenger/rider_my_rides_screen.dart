@@ -609,12 +609,12 @@ class RiderMyRidesScreen extends ConsumerWidget {
             ),
             SizedBox(height: 24.h),
             Text(
-              'Sign in to see your rides',
+              AppLocalizations.of(context).signInToSeeYourRides,
               style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.w700),
             ),
             SizedBox(height: 24.h),
             PremiumButton(
-              text: 'Log In',
+              text: AppLocalizations.of(context).logIn,
               onPressed: () => context.go(AppRoutes.login.path),
               style: PremiumButtonStyle.primary,
             ),

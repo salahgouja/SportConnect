@@ -354,7 +354,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Failed to start recording. Please try again.'),
+          content: Text(AppLocalizations.of(context).recordingFailedError),
           backgroundColor: AppColors.error,
         ),
       );
@@ -396,7 +396,11 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
           children: [
             const Icon(Icons.error_outline, color: Colors.white),
             SizedBox(width: 12.w),
-            const Expanded(child: Text('Failed to stop recording')),
+            Expanded(
+              child: Text(
+                AppLocalizations.of(context).stopRecordingFailedError,
+              ),
+            ),
           ],
         ),
         backgroundColor: AppColors.error,
@@ -441,7 +445,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   /// Send audio message
   Future<void> _sendAudioMessage(String audioPath) async {
     HapticFeedback.lightImpact();
-    _showSendingSnackBar('Sending voice message...');
+    _showSendingSnackBar(AppLocalizations.of(context).sendingVoiceMessage);
 
     try {
       final file = File(audioPath);
@@ -582,14 +586,23 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                 _muteChat();
               },
             ),
-            _buildOptionItem(Icons.flag_outlined, 'Report User', () {
-              context.pop();
-              _reportUser();
-            }),
-            _buildOptionItem(Icons.block_rounded, 'Block User', () {
-              context.pop();
-              _confirmBlockUser();
-            }, isDestructive: true),
+            _buildOptionItem(
+              Icons.flag_outlined,
+              AppLocalizations.of(context).reportUser,
+              () {
+                context.pop();
+                _reportUser();
+              },
+            ),
+            _buildOptionItem(
+              Icons.block_rounded,
+              AppLocalizations.of(context).blockUser,
+              () {
+                context.pop();
+                _confirmBlockUser();
+              },
+              isDestructive: true,
+            ),
             _buildOptionItem(
               Icons.delete_outline_rounded,
               AppLocalizations.of(context).clearChat,
@@ -621,15 +634,16 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   void _confirmBlockUser() {
     showDialog(
       context: context,
-      barrierLabel: 'Block user dialog',
+      barrierLabel: AppLocalizations.of(context).blockUserDialogTitle,
       builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
-        title: const Text('Block User'),
+        title: Text(AppLocalizations.of(context).blockUserDialogTitle),
         content: Text(
-          'Block ${widget.receiver.displayName}? You will no longer '
-          'receive messages from this user.',
+          AppLocalizations.of(
+            context,
+          ).blockUserDialogMessage(widget.receiver.displayName),
         ),
         actions: [
           TextButton(
@@ -650,7 +664,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        '${widget.receiver.displayName} has been blocked.',
+                        AppLocalizations.of(
+                          context,
+                        ).blockedUserSuccess(widget.receiver.displayName),
                       ),
                       backgroundColor: AppColors.success,
                       behavior: SnackBarBehavior.floating,
@@ -662,8 +678,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: const Text(
-                        'Could not block user. Please try again.',
+                      content: Text(
+                        AppLocalizations.of(context).couldNotBlockUserTryAgain,
                       ),
                       backgroundColor: AppColors.error,
                       behavior: SnackBarBehavior.floating,
@@ -673,7 +689,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('Block', style: TextStyle(color: Colors.white)),
+            child: Text(
+              AppLocalizations.of(context).actionBlock,
+              style: const TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -701,7 +720,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   void _confirmClearChat() {
     showDialog(
       context: context,
-      barrierLabel: 'Clear chat dialog',
+      barrierLabel: AppLocalizations.of(context).clearChat,
       builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
@@ -735,8 +754,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: const Text(
-                        'Could not clear chat. Please try again.',
+                      content: Text(
+                        AppLocalizations.of(context).couldNotClearChatTryAgain,
                       ),
                       backgroundColor: AppColors.error,
                       behavior: SnackBarBehavior.floating,
@@ -944,7 +963,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                     Icon(Icons.mic, color: Colors.white, size: 20.sp),
                     SizedBox(width: 8.w),
                     Text(
-                      'Recording',
+                      AppLocalizations.of(context).recording,
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 15.sp,
@@ -1086,13 +1105,13 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                       children: [
                         _buildQuickActionChip(
                           Icons.emoji_emotions_rounded,
-                          'Send Emoji',
+                          AppLocalizations.of(context).sendEmoji,
                           AppColors.warning,
                         ),
                         SizedBox(width: 12.w),
                         _buildQuickActionChip(
                           Icons.image_rounded,
-                          'Send Photo',
+                          AppLocalizations.of(context).sendPhoto,
                           AppColors.info,
                         ),
                       ],
@@ -1183,7 +1202,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       leading: Container(
         margin: EdgeInsets.only(left: 8.w),
         child: IconButton(
-          tooltip: 'Back',
+          tooltip: AppLocalizations.of(context).goBackTooltip,
           onPressed: () => context.pop(),
           icon: Container(
             padding: EdgeInsets.all(6.w),
@@ -1318,7 +1337,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
             borderRadius: BorderRadius.circular(12.r),
           ),
           child: IconButton(
-            tooltip: 'More options',
+            tooltip: AppLocalizations.of(context).moreOptions,
             onPressed: _showOptionsSheet,
             icon: Icon(
               Icons.more_vert_rounded,
@@ -1421,7 +1440,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
             ),
           ),
           IconButton(
-            tooltip: 'Clear reply',
+            tooltip: AppLocalizations.of(context).clearReply,
             onPressed: () => viewModel.clearReply(),
             icon: Icon(
               Icons.close_rounded,
@@ -1441,7 +1460,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     int index,
   ) {
     return Semantics(
-          label: 'Message from ${message.senderName}. Long press for options',
+          label: AppLocalizations.of(
+            context,
+          ).messageFromLongPressOptions(message.senderName),
           child: GestureDetector(
             onLongPress: () => _showMessageOptions(message),
             child: Padding(
@@ -1912,7 +1933,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
 
     showDialog(
       context: context,
-      barrierLabel: 'Edit message dialog',
+      barrierLabel: AppLocalizations.of(context).editMessage,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
@@ -1988,7 +2009,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
             children: [
               // Attachment
               IconButton(
-                tooltip: 'Attach file',
+                tooltip: AppLocalizations.of(context).attachFile,
                 onPressed: () {
                   HapticFeedback.lightImpact();
                   _showAttachmentOptions();
@@ -2084,8 +2105,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                       // Emoji / keyboard toggle
                       IconButton(
                         tooltip: chatState.showEmojiPicker
-                            ? 'Show keyboard'
-                            : 'Show emoji picker',
+                            ? AppLocalizations.of(context).showKeyboard
+                            : AppLocalizations.of(context).showEmojiPicker,
                         onPressed: _toggleEmojiPicker,
                         icon: Icon(
                           chatState.showEmojiPicker
@@ -2112,10 +2133,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                   return Semantics(
                     button: true,
                     label: chatState.isRecording
-                        ? 'Stop recording'
+                        ? AppLocalizations.of(context).stopRecording
                         : hasText
-                        ? 'Send message'
-                        : 'Record voice message',
+                        ? AppLocalizations.of(context).sendMessage
+                        : AppLocalizations.of(context).recordVoiceMessage,
                     child: GestureDetector(
                       onTap: () {
                         // Recording takes priority over send so tapping while

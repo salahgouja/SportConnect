@@ -118,8 +118,8 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
                     ],
                   ),
                 ),
-                const Tab(text: 'Accepted'),
-                const Tab(text: 'Declined'),
+                Tab(text: AppLocalizations.of(context).accepted),
+                Tab(text: AppLocalizations.of(context).declined),
               ],
             ),
           ),
@@ -448,7 +448,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
     ).format(request.requestedDate);
     showDialog(
       context: context,
-      barrierLabel: 'Ride request details',
+      barrierLabel: AppLocalizations.of(context).rideRequestDetails,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
@@ -865,7 +865,9 @@ class _PendingRequestCard extends StatelessWidget {
                   children: [
                     _InfoChip(
                       icon: Icons.calendar_today_rounded,
-                      label: '$formattedDate at ${request.requestedTime}',
+                      label: AppLocalizations.of(
+                        context,
+                      ).dateAtTime(formattedDate, request.requestedTime),
                     ),
                     SizedBox(width: 8.w),
                     _InfoChip(

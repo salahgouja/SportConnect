@@ -400,7 +400,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   Widget _buildDivider() {
     return TextDivider(
-      text: "Or continue with",
+      text: AppLocalizations.of(context).orContinueWith,
     ).animate().fadeIn(duration: 400.ms, delay: 300.ms);
   }
 
@@ -552,10 +552,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         TextSpan(
           style: TextStyle(fontSize: 12.sp, color: AppColors.textTertiary),
           children: [
-            const TextSpan(text: 'By continuing, you agree to our '),
+            TextSpan(text: AppLocalizations.of(context).legalConsentPrefix),
             TextSpan(
-              text: 'Terms of Service',
-              semanticsLabel: 'Terms of Service, link',
+              text: AppLocalizations.of(context).termsOfServiceTitle,
+              semanticsLabel: AppLocalizations.of(context).termsLinkSemantics,
               style: TextStyle(
                 color: AppColors.primary,
                 fontWeight: FontWeight.w600,
@@ -564,10 +564,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               recognizer: TapGestureRecognizer()
                 ..onTap = () => context.push(AppRoutes.terms.path),
             ),
-            const TextSpan(text: ' and '),
+            TextSpan(text: AppLocalizations.of(context).andConnector),
             TextSpan(
-              text: 'Privacy Policy',
-              semanticsLabel: 'Privacy Policy, link',
+              text: AppLocalizations.of(context).privacyPolicyTitle,
+              semanticsLabel: AppLocalizations.of(context).privacyLinkSemantics,
               style: TextStyle(
                 color: AppColors.primary,
                 fontWeight: FontWeight.w600,

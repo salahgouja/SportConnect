@@ -127,7 +127,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
               borderRadius: BorderRadius.circular(10),
             ),
             action: SnackBarAction(
-              label: 'Add as Stop',
+              label: AppLocalizations.of(context).addAsStop,
               textColor: Colors.white,
               onPressed: () {
                 ref
@@ -1104,7 +1104,9 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                 HapticFeedback.lightImpact();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: const Text('Safety check-in confirmed!'),
+                    content: Text(
+                      AppLocalizations.of(context).safetyCheckInConfirmed,
+                    ),
                     backgroundColor: AppColors.success,
                     behavior: SnackBarBehavior.floating,
                   ),
@@ -1644,7 +1646,9 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                           ),
                         ),
                         IconButton(
-                          tooltip: 'Close passenger details',
+                          tooltip: AppLocalizations.of(
+                            context,
+                          ).closePassengerDetails,
                           icon: Icon(Icons.close),
                           onPressed: () => ref
                               .read(
@@ -1998,7 +2002,11 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                     HapticFeedback.lightImpact();
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Sent: ${messages[index]}'),
+                        content: Text(
+                          AppLocalizations.of(
+                            context,
+                          ).sentMessage(messages[index]),
+                        ),
                         duration: const Duration(seconds: 1),
                         behavior: SnackBarBehavior.floating,
                       ),
@@ -2067,7 +2075,10 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                       borderRadius: BorderRadius.circular(8.r),
                     ),
                   ),
-                  child: Text('Decline', style: TextStyle(fontSize: 12.sp)),
+                  child: Text(
+                    AppLocalizations.of(context).decline,
+                    style: TextStyle(fontSize: 12.sp),
+                  ),
                 ),
               ),
               SizedBox(width: 8.w),
@@ -2083,7 +2094,10 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                     ),
                     elevation: 0,
                   ),
-                  child: Text('Accept Stop', style: TextStyle(fontSize: 12.sp)),
+                  child: Text(
+                    AppLocalizations.of(context).acceptStop,
+                    style: TextStyle(fontSize: 12.sp),
+                  ),
                 ),
               ),
             ],
@@ -2141,7 +2155,10 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                       borderRadius: BorderRadius.circular(8.r),
                     ),
                   ),
-                  child: Text('Dismiss', style: TextStyle(fontSize: 12.sp)),
+                  child: Text(
+                    AppLocalizations.of(context).dismiss,
+                    style: TextStyle(fontSize: 12.sp),
+                  ),
                 ),
               ),
               SizedBox(width: 8.w),
@@ -2177,15 +2194,16 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Mark as No-Show?'),
+        title: Text(AppLocalizations.of(context).markAsNoShowQuestion),
         content: Text(
-          'This will cancel ${booking.passengerId}\'s booking and notify them. '
-          'You will have 30 seconds to undo.',
+          AppLocalizations.of(
+            context,
+          ).markNoShowDialogMessage(booking.passengerId),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           ElevatedButton(
             onPressed: () {
@@ -2201,10 +2219,12 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
               ScaffoldMessenger.of(context)
                   .showSnackBar(
                     SnackBar(
-                      content: const Text('Passenger marked as no-show'),
+                      content: Text(
+                        AppLocalizations.of(context).passengerMarkedNoShow,
+                      ),
                       duration: const Duration(seconds: 30),
                       action: SnackBarAction(
-                        label: 'UNDO',
+                        label: AppLocalizations.of(context).undo,
                         textColor: Colors.white,
                         onPressed: () {
                           ref
@@ -2243,7 +2263,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
               backgroundColor: AppColors.error,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Mark No-Show'),
+            child: Text(AppLocalizations.of(context).markNoShow),
           ),
         ],
       ),
@@ -2255,9 +2275,11 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
     final rideState = ref.read(activeRideViewModelProvider(widget.rideId!));
     final loc = rideState.currentLocation;
     if (loc == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Location unavailable')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context).locationUnavailable),
+        ),
+      );
       return;
     }
     ref
@@ -2265,7 +2287,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
         .acceptStopRequest(
           latitude: loc.latitude,
           longitude: loc.longitude,
-          address: 'Requested stop',
+          address: AppLocalizations.of(context).requestedStop,
         );
   }
 
@@ -2274,15 +2296,17 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Create Return Ride?'),
+        title: Text(AppLocalizations.of(context).createReturnRideQuestion),
         content: Text(
-          'Would you like to create a return ride from '
-          '${ride.destination.address} back to ${ride.origin.address}?',
+          AppLocalizations.of(context).createReturnRideMessage(
+            ride.destination.address,
+            ride.origin.address,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('No, thanks'),
+            child: Text(AppLocalizations.of(context).noThanks),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -2293,11 +2317,15 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
               if (!mounted) return;
               if (returnId != null) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Return ride created!')),
+                  SnackBar(
+                    content: Text(
+                      AppLocalizations.of(context).returnRideCreated,
+                    ),
+                  ),
                 );
               }
             },
-            child: const Text('Create Return Ride'),
+            child: Text(AppLocalizations.of(context).createReturnRide),
           ),
         ],
       ),
@@ -2554,11 +2582,13 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
           children: [
             Icon(Icons.directions_car, color: AppColors.primary),
             SizedBox(width: 8.w),
-            Expanded(child: Text('Confirm Departure')),
+            Expanded(
+              child: Text(AppLocalizations.of(context).confirmDeparture),
+            ),
           ],
         ),
         content: Text(
-          'All passengers picked up? You will begin driving to the destination.',
+          AppLocalizations.of(context).allPassengersPickedUpConfirm,
         ),
         actions: [
           TextButton(
@@ -2574,7 +2604,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                 borderRadius: BorderRadius.circular(12.r),
               ),
             ),
-            child: const Text('Depart Now'),
+            child: Text(AppLocalizations.of(context).departNow),
           ),
         ],
       ),
@@ -2936,8 +2966,10 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
 
       if (passengerProfile == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Passenger profile not found'),
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context).passengerProfileNotFound,
+            ),
             backgroundColor: AppColors.error,
           ),
         );
@@ -2973,7 +3005,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Failed to open chat. Please try again.'),
+          content: Text(AppLocalizations.of(context).failedToOpenChatTryAgain),
           backgroundColor: AppColors.error,
         ),
       );
@@ -3098,7 +3130,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
 
     showDialog(
       context: context,
-      barrierLabel: 'Cancel ride dialog',
+      barrierLabel: AppLocalizations.of(context).cancelRide,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),

@@ -2591,7 +2591,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get rateYourRide => 'Rate Your Ride';
+  String get rateYourRide => 'Rate your ride';
 
   @override
   String get ratingFeatureComingSoonThank =>
@@ -3008,6 +3008,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get orSignInWithEmail => 'or sign in with email';
+
+  @override
+  String get orContinueWith => 'Or continue with';
 
   @override
   String get continueWithGoogle => 'Continue with Google';
@@ -4030,9 +4033,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get eventRidesToEvent => 'Rides to This Event';
-
-  @override
-  String get eventParkingInfo => 'Parking Info';
 
   @override
   String get eventRecurringTitle => 'Recurring Event';
@@ -5112,7 +5112,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cancellationReasonHint =>
-      'Tell us why you\'re cancelling this ride...';
+      'Tell us more about why you\'re cancelling...';
 
   @override
   String get confirmCancellationButton => 'Confirm Cancellation';
@@ -5278,4 +5278,837 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get challengeCenturyRiderDesc => 'Complete 100 rides';
+
+  @override
+  String get chatMuted => 'Chat muted';
+
+  @override
+  String get chatUnmuted => 'Chat unmuted';
+
+  @override
+  String get deleteConversationTitle => 'Delete conversation?';
+
+  @override
+  String get deleteConversationMessage =>
+      'This will remove the conversation from your list.';
+
+  @override
+  String get conversationRemoved => 'Conversation removed';
+
+  @override
+  String get timeNow => 'now';
+
+  @override
+  String get creatingChatLabel => 'Creating chat';
+
+  @override
+  String get failedToCreateChatTryAgain =>
+      'Failed to create chat. Please try again.';
+
+  @override
+  String get reportUser => 'Report User';
+
+  @override
+  String get blockUser => 'Block User';
+
+  @override
+  String get blockUserDialogTitle => 'Block User';
+
+  @override
+  String blockUserDialogMessage(String name) {
+    return 'Block $name? You will no longer receive messages from this user.';
+  }
+
+  @override
+  String get blockUserDialogMessageGeneric =>
+      'Are you sure you want to block this user? You will no longer see their content or receive messages from them.';
+
+  @override
+  String blockedUserSuccess(String name) {
+    return '$name has been blocked.';
+  }
+
+  @override
+  String get userBlocked => 'User has been blocked.';
+
+  @override
+  String get couldNotBlockUserTryAgain =>
+      'Could not block user. Please try again.';
+
+  @override
+  String get actionBlock => 'Block';
+
+  @override
+  String get downloadReceipt => 'Download Receipt';
+
+  @override
+  String get notificationsAlreadyEnabled =>
+      'Notifications are already enabled.';
+
+  @override
+  String get notificationPermissionRequested =>
+      'Notification permission requested.';
+
+  @override
+  String get pauseDriverAccountQuestion => 'Pause Driver Account?';
+
+  @override
+  String get pauseDriverAccountMessage =>
+      'You will stop receiving ride requests until you resume. Your profile and reviews will remain visible.';
+
+  @override
+  String get driverAccountPaused => 'Driver account paused';
+
+  @override
+  String get pauseAccountAction => 'Pause Account';
+
+  @override
+  String get syncProfile => 'Sync Profile';
+
+  @override
+  String get eventUnableToLoadOriginal => 'Unable to load the original event.';
+
+  @override
+  String get eventUnableToUpdate => 'Unable to update event. Please try again.';
+
+  @override
+  String get eventSignInRequired => 'Please sign in to continue.';
+
+  @override
+  String get supportCategoryOther => 'Other';
+
+  @override
+  String get averageResponseTime => 'Average response time';
+
+  @override
+  String get backToSettings => 'Back to Settings';
+
+  @override
+  String get couldNotClearChatTryAgain =>
+      'Could not clear chat. Please try again.';
+
+  @override
+  String get recording => 'Recording';
+
+  @override
+  String get sendEmoji => 'Send Emoji';
+
+  @override
+  String get sendPhoto => 'Send Photo';
+
+  @override
+  String get moreOptions => 'More options';
+
+  @override
+  String get clearReply => 'Clear reply';
+
+  @override
+  String messageFromLongPressOptions(String name) {
+    return 'Message from $name. Long press for options';
+  }
+
+  @override
+  String get attachFile => 'Attach file';
+
+  @override
+  String get showKeyboard => 'Show keyboard';
+
+  @override
+  String get showEmojiPicker => 'Show emoji picker';
+
+  @override
+  String get stopRecording => 'Stop recording';
+
+  @override
+  String get sendMessage => 'Send message';
+
+  @override
+  String get recordVoiceMessage => 'Record voice message';
+
+  @override
+  String get rejected => 'Rejected';
+
+  @override
+  String pleaseEnterValue(String value) {
+    return 'Please enter $value';
+  }
+
+  @override
+  String get uploadVehiclePhotoPermission =>
+      'Access to your photo library is needed to upload a photo of your vehicle.';
+
+  @override
+  String get driverVehicleStepSubtitle =>
+      'Tell us about your car so riders know what to expect.';
+
+  @override
+  String get vehicleMakeHint => 'e.g., Toyota, Honda, BMW';
+
+  @override
+  String get pleaseEnterVehicleMake => 'Please enter vehicle make';
+
+  @override
+  String get vehicleModelHint => 'e.g., Corolla, Civic, 3 Series';
+
+  @override
+  String get pleaseEnterVehicleModel => 'Please enter vehicle model';
+
+  @override
+  String get vehicleYearHint => 'e.g., 2020';
+
+  @override
+  String get requiredField => 'Required';
+
+  @override
+  String get vehicleColorHint => 'e.g., White';
+
+  @override
+  String get licensePlateHint => 'e.g., ABC 123';
+
+  @override
+  String get licensePlateHelperText => '2-12 characters, letters & numbers';
+
+  @override
+  String get pleaseEnterLicensePlate => 'Please enter license plate';
+
+  @override
+  String get pleaseEnterNumberOfSeats => 'Please enter number of seats';
+
+  @override
+  String get mustBeWholeNumber => 'Must be a whole number';
+
+  @override
+  String get enter1To8Seats => 'Enter 1-8 seats';
+
+  @override
+  String get driverStripeStepSubtitle =>
+      'Connect your bank account to receive payments from your rides.';
+
+  @override
+  String get stripePoweredByMillions =>
+      'Powered by Stripe, trusted by millions';
+
+  @override
+  String get stripeFastTransfersDesc => 'Get paid within 2-3 business days';
+
+  @override
+  String get stripeEarningsDesc => 'View all your earnings in one place';
+
+  @override
+  String get connectWithStripe => 'Connect with Stripe';
+
+  @override
+  String get legalConsentPrefix => 'By continuing, you agree to our ';
+
+  @override
+  String get iAgreeToThe => 'I agree to the ';
+
+  @override
+  String get andConnector => ' and ';
+
+  @override
+  String get termsLinkSemantics => 'Terms of Service, link';
+
+  @override
+  String get privacyLinkSemantics => 'Privacy Policy, link';
+
+  @override
+  String get leaderboard => 'Leaderboard';
+
+  @override
+  String get stats => 'Stats';
+
+  @override
+  String get searchHelpArticles => 'Search help articles...';
+
+  @override
+  String get frequentlyAskedQuestions => 'Frequently Asked Questions';
+
+  @override
+  String get closeRouteInfo => 'Close route info';
+
+  @override
+  String get requestDataExport => 'Request Data Export';
+
+  @override
+  String get withdrawConsent => 'Withdraw Consent';
+
+  @override
+  String get downloadMyData => 'Download My Data';
+
+  @override
+  String get downloadMyDataDescription =>
+      'We will prepare a copy of your personal data including your profile, ride history, and reviews. You will receive an email with a download link within 48 hours.';
+
+  @override
+  String get dataProcessingNotice => 'Data Processing Notice';
+
+  @override
+  String get withdrawConsentDescription =>
+      'You can withdraw your consent for data processing in the following ways:';
+
+  @override
+  String get dataExportRequestSubmitted => 'Data export request submitted.';
+
+  @override
+  String get deleteKeyword => 'DELETE';
+
+  @override
+  String get submitReviewButton => 'Submit Review';
+
+  @override
+  String get pleaseSelectRatingToSubmit => 'Please select a rating to submit';
+
+  @override
+  String get unknownDriver => 'Unknown Driver';
+
+  @override
+  String get errorLoadingDriver => 'Error loading driver';
+
+  @override
+  String get passengerNotFound => 'Passenger not found';
+
+  @override
+  String get errorLoadingPassenger => 'Error loading passenger';
+
+  @override
+  String get unknown => 'Unknown';
+
+  @override
+  String get noPhone => 'No phone';
+
+  @override
+  String get notAvailableShort => 'N/A';
+
+  @override
+  String get permissionLocationAccessTitle => 'Location Access';
+
+  @override
+  String get permissionLocationAccessMessage =>
+      'SportConnect needs your location to show nearby rides, calculate distances, and provide accurate navigation during your trips.';
+
+  @override
+  String get permissionShareLocationTitle => 'Share Your Location';
+
+  @override
+  String get permissionShareLocationMessage =>
+      'Your current location will be shared with this chat so other participants can see where you are. Your location is only shared when you choose to send it.';
+
+  @override
+  String get permissionRideNavigationTitle => 'Ride Navigation';
+
+  @override
+  String get permissionRideNavigationMessage =>
+      'Location access is needed to track your ride in real-time, provide turn-by-turn navigation, and share your progress with fellow riders for safety.';
+
+  @override
+  String get permissionCameraPhotosTitle => 'Camera & Photos';
+
+  @override
+  String get permissionCameraPhotosMessage =>
+      'Access to your camera and photo library is needed to attach images. Your photos are only uploaded when you explicitly choose to share them.';
+
+  @override
+  String get permissionMicrophoneTitle => 'Microphone Access';
+
+  @override
+  String get permissionMicrophoneMessage =>
+      'Microphone access is needed to record voice messages. Audio is only recorded when you press and hold the record button.';
+
+  @override
+  String get permissionStayUpdatedTitle => 'Stay Updated';
+
+  @override
+  String get permissionStayUpdatedMessage =>
+      'Enable notifications to receive ride updates, messages from other riders, booking confirmations, and important safety alerts.';
+
+  @override
+  String get notNow => 'Not Now';
+
+  @override
+  String get actionContinue => 'Continue';
+
+  @override
+  String get rideOptions => 'Ride options';
+
+  @override
+  String get messagePassenger => 'Message passenger';
+
+  @override
+  String get passengerOptions => 'Passenger options';
+
+  @override
+  String get markNoShow => 'Mark no-show';
+
+  @override
+  String get messageDriver => 'Message driver';
+
+  @override
+  String get chatWithDriver => 'Chat with driver';
+
+  @override
+  String get chatWithPassenger => 'Chat with passenger';
+
+  @override
+  String get callDriver => 'Call driver';
+
+  @override
+  String get closePassengerDetails => 'Close passenger details';
+
+  @override
+  String get rideRequestDetails => 'Ride request details';
+
+  @override
+  String get directions => 'Directions';
+
+  @override
+  String driverArrivingIn(int minutes) {
+    return 'Driver arriving in ~$minutes min';
+  }
+
+  @override
+  String estimatedWait(int minutes) {
+    return 'Est. wait: ~$minutes min';
+  }
+
+  @override
+  String get customPickupPoint => 'Custom pickup point';
+
+  @override
+  String get dropPinForPickup => 'Drop a pin for pickup';
+
+  @override
+  String get clearPin => 'Clear pin';
+
+  @override
+  String get setPin => 'Set Pin';
+
+  @override
+  String markNoShowPrompt(String name) {
+    return 'Mark $name as a no-show? This will be recorded and may affect their rating.';
+  }
+
+  @override
+  String get switchVehicle => 'Switch vehicle';
+
+  @override
+  String get copyLink => 'Copy link';
+
+  @override
+  String get cloneThisRide => 'Clone This Ride';
+
+  @override
+  String get howWasYourRide => 'How was your ride?';
+
+  @override
+  String rateYourExperienceWith(String name) {
+    return 'Rate your experience with $name';
+  }
+
+  @override
+  String get addToCalendar => 'Add to Calendar';
+
+  @override
+  String get reportIncident => 'Report incident';
+
+  @override
+  String get incidentType => 'Type of incident';
+
+  @override
+  String get describeWhatHappened => 'Describe what happened...';
+
+  @override
+  String get submitReport => 'Submit Report';
+
+  @override
+  String amountPaid(String amount) {
+    return 'Amount paid: $amount';
+  }
+
+  @override
+  String get reasonForRefund => 'Reason for refund';
+
+  @override
+  String get additionalDetailsOptional => 'Additional details (optional)';
+
+  @override
+  String get submitRefundRequest => 'Submit Refund Request';
+
+  @override
+  String get rideSummary => 'Ride summary';
+
+  @override
+  String get expandedView => 'Expanded view';
+
+  @override
+  String get compactView => 'Compact view';
+
+  @override
+  String get pickOnMap => 'Pick on map';
+
+  @override
+  String get searchCountryOrCode => 'Search country or code...';
+
+  @override
+  String get severity => 'Severity';
+
+  @override
+  String get safetyCheckInConfirmed => 'Safety check-in confirmed!';
+
+  @override
+  String get markAsNoShowQuestion => 'Mark as No-Show?';
+
+  @override
+  String markNoShowDialogMessage(String passengerId) {
+    return 'This will cancel $passengerId\'s booking and notify them. You will have 30 seconds to undo.';
+  }
+
+  @override
+  String get passengerMarkedNoShow => 'Passenger marked as no-show';
+
+  @override
+  String get undo => 'UNDO';
+
+  @override
+  String get locationUnavailable => 'Location unavailable';
+
+  @override
+  String get requestedStop => 'Requested stop';
+
+  @override
+  String get createReturnRideQuestion => 'Create Return Ride?';
+
+  @override
+  String createReturnRideMessage(String destination, String origin) {
+    return 'Would you like to create a return ride from $destination back to $origin?';
+  }
+
+  @override
+  String get noThanks => 'No, thanks';
+
+  @override
+  String get returnRideCreated => 'Return ride created!';
+
+  @override
+  String get createReturnRide => 'Create Return Ride';
+
+  @override
+  String get confirmDeparture => 'Confirm Departure';
+
+  @override
+  String get allPassengersPickedUpConfirm =>
+      'All passengers picked up? You will begin driving to the destination.';
+
+  @override
+  String get departNow => 'Depart Now';
+
+  @override
+  String get passengerProfileNotFound => 'Passenger profile not found';
+
+  @override
+  String get failedToOpenChatTryAgain =>
+      'Failed to open chat. Please try again.';
+
+  @override
+  String get emergencySos => 'Emergency SOS';
+
+  @override
+  String get sosShareConfirmationMessage =>
+      'This will share your ride details and current location with your contacts. Continue?';
+
+  @override
+  String get shareSos => 'Share SOS';
+
+  @override
+  String get requestAStop => 'Request a Stop';
+
+  @override
+  String get requestStopDescription =>
+      'Describe where you\'d like the driver to stop. The driver can accept or decline.';
+
+  @override
+  String get requestStopHint => 'e.g. Gas station, pharmacy...';
+
+  @override
+  String get stopRequestSentToDriver => 'Stop request sent to driver';
+
+  @override
+  String get requestStop => 'Request Stop';
+
+  @override
+  String get sos => 'SOS';
+
+  @override
+  String get bookingNotFoundTryAgain => 'Booking not found. Please try again.';
+
+  @override
+  String get noShowReported => 'No-show reported';
+
+  @override
+  String get incidentReportSubmitted => 'Incident report submitted';
+
+  @override
+  String get ratingSubmittedThankYou => 'Rating submitted - thank you!';
+
+  @override
+  String get ratePassenger => 'Rate Passenger';
+
+  @override
+  String get ratePassengerCommentHint =>
+      'What made this passenger great (or not)?';
+
+  @override
+  String failedToSubmitValue(String value) {
+    return 'Failed to submit: $value';
+  }
+
+  @override
+  String sentMessage(String message) {
+    return 'Sent: $message';
+  }
+
+  @override
+  String get acceptStop => 'Accept Stop';
+
+  @override
+  String get dismiss => 'Dismiss';
+
+  @override
+  String failedToLoadBookingValue(String value) {
+    return 'Failed to load booking: $value';
+  }
+
+  @override
+  String get bookingNotFoundMayBeCancelled =>
+      'Booking not found. It may have been cancelled.';
+
+  @override
+  String get rideHasBeenCancelled => 'This ride has been cancelled.';
+
+  @override
+  String bookingRefCopied(String code) {
+    return 'Booking ref $code copied!';
+  }
+
+  @override
+  String get bookingFailedTryAgain => 'Booking failed. Please try again.';
+
+  @override
+  String get addedToCalendar => 'Added to calendar';
+
+  @override
+  String get dismissSuccess => 'Dismiss success';
+
+  @override
+  String get dismissError => 'Dismiss error';
+
+  @override
+  String get bookingConfirmedTitle => 'Booking Confirmed!';
+
+  @override
+  String get great => 'Great!';
+
+  @override
+  String lastCheckedInMinutesAgo(int minutes) {
+    return 'Last checked in $minutes min ago';
+  }
+
+  @override
+  String get letContactsKnowSafe => 'Let your contacts know you\'re safe';
+
+  @override
+  String get imOk => 'I\'m OK';
+
+  @override
+  String get incidentTypeUnsafeDriving => 'Unsafe Driving';
+
+  @override
+  String get incidentTypeHarassment => 'Harassment';
+
+  @override
+  String get incidentTypeRouteDeviation => 'Route Deviation';
+
+  @override
+  String get incidentTypeVehicleIssue => 'Vehicle Issue';
+
+  @override
+  String get incidentTypeNoShow => 'No-Show';
+
+  @override
+  String get incidentTypeOther => 'Other';
+
+  @override
+  String get refundReasonDriverNoShow => 'Driver did not show up';
+
+  @override
+  String get refundReasonRideNotAsDescribed => 'Ride was not as described';
+
+  @override
+  String get refundReasonUnsafeExperience => 'Felt unsafe during ride';
+
+  @override
+  String get refundReasonOvercharged => 'Was overcharged';
+
+  @override
+  String get refundReasonCancelledByDriver => 'Driver cancelled last minute';
+
+  @override
+  String get refundReasonOther => 'Other reason';
+
+  @override
+  String get origin => 'Origin';
+
+  @override
+  String get estimatedArrival => 'Est. Arrival';
+
+  @override
+  String get partlyCloudy => 'Partly Cloudy';
+
+  @override
+  String get rideShareSubject => 'Carpool ride on SportConnect';
+
+  @override
+  String rideShareText(
+    String from,
+    String to,
+    String departure,
+    String price,
+    int seats,
+    String link,
+  ) {
+    return '🚗 Check out this ride on SportConnect!\n\n📍 $from → $to\n📅 $departure\n💰 $price € per seat\n🪑 $seats seats available\n\nJoin me for a comfortable ride! 🌱\n\n🔗 $link';
+  }
+
+  @override
+  String get tripShareSubject => 'Trip on SportConnect';
+
+  @override
+  String tripShareMessage(
+    String userName,
+    String status,
+    String origin,
+    String destination,
+    String rideId,
+    String departure,
+  ) {
+    return '$userName is $status with SportConnect.\n\nFrom: $origin\nTo: $destination\nRide ID: $rideId\n\nDeparture: $departure';
+  }
+
+  @override
+  String get tripStatusInProgress => 'currently on a ride';
+
+  @override
+  String get tripStatusScheduled => 'about to ride';
+
+  @override
+  String get rideCompatibility => 'Ride Compatibility';
+
+  @override
+  String get greatMatch => 'Great match';
+
+  @override
+  String get goodMatch => 'Good match';
+
+  @override
+  String get fairMatch => 'Fair match';
+
+  @override
+  String get nonSmoking => 'Non-smoking';
+
+  @override
+  String get directRoute => 'Direct route';
+
+  @override
+  String get spacious => 'Spacious';
+
+  @override
+  String get viewActiveRide => 'View Active Ride';
+
+  @override
+  String get setPickupLocation => 'Set pickup location';
+
+  @override
+  String get optionalSetYourPickupPoint => 'Optional - set your pickup point';
+
+  @override
+  String get eventLabel => 'Event';
+
+  @override
+  String get aPassenger => 'A passenger';
+
+  @override
+  String get rateAndReview => 'Rate & Review';
+
+  @override
+  String get shareReceipt => 'Share Receipt';
+
+  @override
+  String get reportIssue => 'Report Issue';
+
+  @override
+  String get bookThisRouteAgain => 'Book This Route Again';
+
+  @override
+  String get waitingForDriverApproval => 'Waiting for driver approval';
+
+  @override
+  String get eta => 'ETA';
+
+  @override
+  String get speed => 'Speed';
+
+  @override
+  String get addAsStop => 'Add as Stop';
+
+  @override
+  String get signInToSeeYourRides => 'Sign in to see your rides';
+
+  @override
+  String get logIn => 'Log In';
+
+  @override
+  String get accepted => 'Accepted';
+
+  @override
+  String get declined => 'Declined';
+
+  @override
+  String dateAtTime(String date, String time) {
+    return '$date at $time';
+  }
+
+  @override
+  String get applyFilters => 'Apply Filters';
+
+  @override
+  String get searchFailed => 'Search failed';
+
+  @override
+  String get unableToLoadRidesTryAgain =>
+      'Unable to load rides. Please try again.';
+
+  @override
+  String get clearFilters => 'Clear Filters';
+
+  @override
+  String get tryAdjustingFiltersOrDifferentDate =>
+      'Try adjusting your filters or search for a different date';
+
+  @override
+  String get bestMatchForYourSearch => 'Best match for your search';
+
+  @override
+  String get showCheapestRidesFirst => 'Show cheapest rides first';
+
+  @override
+  String get showRidesLeavingSoonest => 'Show rides leaving soonest';
+
+  @override
+  String get showBestRatedDriversFirst => 'Show best-rated drivers first';
+
+  @override
+  String get showFastestRoutesFirst => 'Show fastest routes first';
+
+  @override
+  String get submitRating => 'Submit Rating';
 }

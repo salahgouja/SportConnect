@@ -155,7 +155,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
           ),
         ),
         leading: IconButton(
-          tooltip: 'Go back',
+          tooltip: AppLocalizations.of(context).goBackTooltip,
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => context.pop(),
         ),

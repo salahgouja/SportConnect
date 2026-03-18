@@ -202,7 +202,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
-          tooltip: 'Back',
+          tooltip: AppLocalizations.of(context).goBackTooltip,
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
           onPressed: () => context.pop(),
         ),
@@ -272,7 +272,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
-          tooltip: 'Back',
+          tooltip: AppLocalizations.of(context).goBackTooltip,
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
           onPressed: () => context.pop(),
         ),

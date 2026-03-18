@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/services/map_service.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Address/City autocomplete input with Nominatim search + map picker.
 ///
@@ -336,7 +337,7 @@ class AddressAutocompleteFieldState extends State<AddressAutocompleteField> {
                 if (widget.showMapPicker && !_isSearching)
                   IconButton(
                     icon: Icon(Icons.map_rounded, color: accent, size: 22.sp),
-                    tooltip: 'Pick on map',
+                    tooltip: AppLocalizations.of(context).pickOnMap,
                     onPressed: widget.enabled ? _openMapPicker : null,
                     constraints: BoxConstraints(
                       minWidth: 44.w,

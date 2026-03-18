@@ -71,18 +71,22 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
 
     if (bookingAsync.isLoading) {
       return _buildScaffold(
-        title: 'Your Ride',
+        title: AppLocalizations.of(context).yourRide,
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     if (bookingAsync.hasError) {
       return _buildScaffold(
-        title: 'Your Ride',
+        title: AppLocalizations.of(context).yourRide,
         body: Center(
           child: Padding(
             padding: EdgeInsets.all(24.w),
-            child: Text('Failed to load booking: ${bookingAsync.error}'),
+            child: Text(
+              AppLocalizations.of(
+                context,
+              ).failedToLoadBookingValue(bookingAsync.error.toString()),
+            ),
           ),
         ),
       );
@@ -90,11 +94,13 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
 
     if (booking == null) {
       return _buildScaffold(
-        title: 'Your Ride',
+        title: AppLocalizations.of(context).yourRide,
         body: Center(
           child: Padding(
             padding: EdgeInsets.all(24.w),
-            child: const Text('Booking not found. It may have been cancelled.'),
+            child: Text(
+              AppLocalizations.of(context).bookingNotFoundMayBeCancelled,
+            ),
           ),
         ),
       );
@@ -102,7 +108,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
 
     if (vmState == null) {
       return _buildScaffold(
-        title: 'Your Ride',
+        title: AppLocalizations.of(context).yourRide,
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -110,17 +116,19 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
     return vmState.ride.when(
       data: (ride) => ride == null
           ? _buildScaffold(
-              title: 'Your Ride',
-              body: const Center(child: Text('Ride not found')),
+              title: AppLocalizations.of(context).yourRide,
+              body: Center(
+                child: Text(AppLocalizations.of(context).rideNotFound),
+              ),
             )
           : _buildContent(ride, booking, uiState),
       loading: () => _buildScaffold(
-        title: 'Your Ride',
+        title: AppLocalizations.of(context).yourRide,
         body: const Center(child: CircularProgressIndicator()),
       ),
       error: (e, _) => _buildScaffold(
-        title: 'Your Ride',
-        body: Center(child: Text('Error: $e')),
+        title: AppLocalizations.of(context).yourRide,
+        body: Center(child: Text(AppLocalizations.of(context).errorValue(e))),
       ),
     );
   }
@@ -185,7 +193,9 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
 
         if (ride.status == RideStatus.cancelled) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('This ride has been cancelled.')),
+            SnackBar(
+              content: Text(AppLocalizations.of(context).rideHasBeenCancelled),
+            ),
           );
           context.goNamed(AppRoutes.riderMyRides.name);
           return;
@@ -206,7 +216,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.primary,
-        title: const Text('Your Ride'),
+        title: Text(AppLocalizations.of(context).yourRide),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -850,7 +860,9 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
                   HapticFeedback.lightImpact();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Booking ref $refCode copied!'),
+                      content: Text(
+                        AppLocalizations.of(context).bookingRefCopied(refCode),
+                      ),
                       duration: const Duration(seconds: 2),
                       behavior: SnackBarBehavior.floating,
                     ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Walking distance and directions to pickup point (#19, #45)
 class WalkingDistanceCard extends StatelessWidget {
@@ -93,7 +94,10 @@ class WalkingDistanceCard extends StatelessWidget {
                 onGetDirections!();
               },
               icon: Icon(Icons.navigation_rounded, size: 16.sp),
-              label: Text('Directions', style: TextStyle(fontSize: 12.sp)),
+              label: Text(
+                AppLocalizations.of(context).directions,
+                style: TextStyle(fontSize: 12.sp),
+              ),
             ),
         ],
       ),
@@ -140,8 +144,8 @@ class EstimatedWaitTime extends StatelessWidget {
           SizedBox(width: 6.w),
           Text(
             isDriverEnRoute
-                ? 'Driver arriving in ~$waitMinutes min'
-                : 'Est. wait: ~$waitMinutes min',
+                ? AppLocalizations.of(context).driverArrivingIn(waitMinutes)
+                : AppLocalizations.of(context).estimatedWait(waitMinutes),
             style: TextStyle(
               fontSize: 13.sp,
               fontWeight: FontWeight.w600,
@@ -197,7 +201,9 @@ class PickupPinDropCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  hasPin ? 'Custom pickup point' : 'Drop a pin for pickup',
+                  hasPin
+                      ? AppLocalizations.of(context).customPickupPoint
+                      : AppLocalizations.of(context).dropPinForPickup,
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
@@ -225,7 +231,7 @@ class PickupPinDropCard extends StatelessWidget {
                 size: 18.sp,
                 color: AppColors.textTertiary,
               ),
-              tooltip: 'Clear pin',
+              tooltip: AppLocalizations.of(context).clearPin,
             ),
           if (!hasPin)
             TextButton(
@@ -233,7 +239,7 @@ class PickupPinDropCard extends StatelessWidget {
                 HapticFeedback.lightImpact();
                 onDropPin();
               },
-              child: const Text('Set Pin'),
+              child: Text(AppLocalizations.of(context).setPin),
             ),
         ],
       ),
@@ -249,17 +255,16 @@ class NoShowDialog {
   }) {
     return showDialog<bool>(
       context: context,
-      barrierLabel: 'Mark no-show',
+      barrierLabel: AppLocalizations.of(context).markNoShow,
       builder: (context) => AlertDialog(
-        title: const Text('Mark No-Show'),
+        title: Text(AppLocalizations.of(context).markNoShow),
         content: Text(
-          'Mark $passengerName as a no-show? This will be recorded and '
-          'may affect their rating.',
+          AppLocalizations.of(context).markNoShowPrompt(passengerName),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           ElevatedButton(
             onPressed: () {
@@ -267,7 +272,7 @@ class NoShowDialog {
               Navigator.pop(context, true);
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.warning),
-            child: const Text('Mark No-Show'),
+            child: Text(AppLocalizations.of(context).markNoShow),
           ),
         ],
       ),
@@ -296,7 +301,7 @@ class VehicleQuickSwitchSheet extends StatelessWidget {
   }) {
     return showModalBottomSheet(
       context: context,
-      barrierLabel: 'Switch vehicle',
+      barrierLabel: AppLocalizations.of(context).switchVehicle,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
       ),
@@ -460,7 +465,7 @@ class RideSharingLink extends StatelessWidget {
               onShare();
             },
             icon: Icon(Icons.share_rounded, size: 18.sp),
-            label: const Text('Share Ride'),
+            label: Text(AppLocalizations.of(context).shareRide),
           ),
         ),
         if (onCopyLink != null) ...[
@@ -471,7 +476,7 @@ class RideSharingLink extends StatelessWidget {
               onCopyLink!();
             },
             icon: Icon(Icons.copy_rounded, size: 20.sp),
-            tooltip: 'Copy link',
+            tooltip: AppLocalizations.of(context).copyLink,
             style: IconButton.styleFrom(
               backgroundColor: AppColors.primary.withValues(alpha: 0.08),
             ),

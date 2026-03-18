@@ -180,7 +180,7 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
           ),
         ),
         leading: IconButton(
-          tooltip: 'Go back',
+          tooltip: AppLocalizations.of(context).goBackTooltip,
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => context.pop(),
         ),

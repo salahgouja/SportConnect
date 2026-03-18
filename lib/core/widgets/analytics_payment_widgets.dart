@@ -9,6 +9,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Monthly ride summary card (#92)
 class MonthlyRideSummary extends StatelessWidget {
@@ -441,7 +442,7 @@ class RefundRequestSheet extends StatefulWidget {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      barrierLabel: 'Request refund',
+      barrierLabel: AppLocalizations.of(context).requestRefund,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
       ),
@@ -493,7 +494,7 @@ class _RefundRequestSheetState extends State<RefundRequestSheet> {
           ),
           SizedBox(height: 16.h),
           Text(
-            'Request Refund',
+            AppLocalizations.of(context).requestRefund,
             style: TextStyle(
               fontSize: 20.sp,
               fontWeight: FontWeight.w700,
@@ -502,7 +503,9 @@ class _RefundRequestSheetState extends State<RefundRequestSheet> {
           ),
           SizedBox(height: 4.h),
           Text(
-            'Amount paid: \$${widget.paidAmount.toStringAsFixed(2)}',
+            AppLocalizations.of(
+              context,
+            ).amountPaid(widget.paidAmount.toStringAsFixed(2)),
             style: TextStyle(
               fontSize: 14.sp,
               color: theme.textTheme.bodySmall?.color,
@@ -510,7 +513,7 @@ class _RefundRequestSheetState extends State<RefundRequestSheet> {
           ),
           SizedBox(height: 16.h),
           Text(
-            'Reason for refund',
+            AppLocalizations.of(context).reasonForRefund,
             style: TextStyle(
               fontSize: 14.sp,
               fontWeight: FontWeight.w600,
@@ -523,7 +526,10 @@ class _RefundRequestSheetState extends State<RefundRequestSheet> {
               value: reason,
               groupValue: _reason,
               onChanged: (v) => setState(() => _reason = v),
-              title: Text(reason.label, style: TextStyle(fontSize: 14.sp)),
+              title: Text(
+                reason.localizedLabel(context),
+                style: TextStyle(fontSize: 14.sp),
+              ),
               dense: true,
               contentPadding: EdgeInsets.zero,
             ),
@@ -533,8 +539,8 @@ class _RefundRequestSheetState extends State<RefundRequestSheet> {
             controller: _detailsController,
             maxLines: 3,
             textCapitalization: TextCapitalization.sentences,
-            decoration: const InputDecoration(
-              hintText: 'Additional details (optional)',
+            decoration: InputDecoration(
+              hintText: AppLocalizations.of(context).additionalDetailsOptional,
               alignLabelWithHint: true,
             ),
           ),
@@ -556,7 +562,7 @@ class _RefundRequestSheetState extends State<RefundRequestSheet> {
                       );
                       Navigator.pop(context);
                     },
-              child: const Text('Submit Refund Request'),
+              child: Text(AppLocalizations.of(context).submitRefundRequest),
             ),
           ),
         ],
@@ -566,15 +572,32 @@ class _RefundRequestSheetState extends State<RefundRequestSheet> {
 }
 
 enum RefundReason {
-  driverNoShow('Driver did not show up'),
-  rideNotAsDescribed('Ride was not as described'),
-  unsafeExperience('Felt unsafe during ride'),
-  overcharged('Was overcharged'),
-  cancelledByDriver('Driver cancelled last minute'),
-  other('Other reason');
+  driverNoShow,
+  rideNotAsDescribed,
+  unsafeExperience,
+  overcharged,
+  cancelledByDriver,
+  other,
+}
 
-  final String label;
-  const RefundReason(this.label);
+extension RefundReasonL10n on RefundReason {
+  String localizedLabel(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    switch (this) {
+      case RefundReason.driverNoShow:
+        return l10n.refundReasonDriverNoShow;
+      case RefundReason.rideNotAsDescribed:
+        return l10n.refundReasonRideNotAsDescribed;
+      case RefundReason.unsafeExperience:
+        return l10n.refundReasonUnsafeExperience;
+      case RefundReason.overcharged:
+        return l10n.refundReasonOvercharged;
+      case RefundReason.cancelledByDriver:
+        return l10n.refundReasonCancelledByDriver;
+      case RefundReason.other:
+        return l10n.refundReasonOther;
+    }
+  }
 }
 
 class RefundRequest {

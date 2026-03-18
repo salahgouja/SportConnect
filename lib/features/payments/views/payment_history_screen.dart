@@ -640,7 +640,9 @@ class PaymentHistoryScreen extends ConsumerWidget {
                           );
                         },
                         icon: const Icon(Icons.receipt_long_rounded),
-                        label: const Text('Download Receipt'),
+                        label: Text(
+                          AppLocalizations.of(context).downloadReceipt,
+                        ),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.primary,
                           side: BorderSide(color: AppColors.primary),

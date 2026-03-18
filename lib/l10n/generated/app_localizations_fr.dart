@@ -3071,6 +3071,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get orSignInWithEmail => 'ou se connecter avec l\'email';
 
   @override
+  String get orContinueWith => 'Ou continuer avec';
+
+  @override
   String get continueWithGoogle => 'Continuer avec Google';
 
   @override
@@ -4124,9 +4127,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get eventRidesToEvent => 'Trajets vers cet événement';
-
-  @override
-  String get eventParkingInfo => 'Info stationnement';
 
   @override
   String get eventRecurringTitle => 'Événement récurrent';
@@ -5224,7 +5224,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get cancellationReasonHint =>
-      'Dites-nous pourquoi vous annulez ce trajet...';
+      'Dites-nous-en plus sur la raison de votre annulation...';
 
   @override
   String get confirmCancellationButton => 'Confirmer l\'annulation';
@@ -5391,4 +5391,857 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get challengeCenturyRiderDesc => 'Complétez 100 trajets';
+
+  @override
+  String get chatMuted => 'Discussion désactivée';
+
+  @override
+  String get chatUnmuted => 'Discussion réactivée';
+
+  @override
+  String get deleteConversationTitle => 'Supprimer la conversation ?';
+
+  @override
+  String get deleteConversationMessage =>
+      'Cette action supprimera la conversation de votre liste.';
+
+  @override
+  String get conversationRemoved => 'Conversation supprimée';
+
+  @override
+  String get timeNow => 'maintenant';
+
+  @override
+  String get creatingChatLabel => 'Création de la discussion';
+
+  @override
+  String get failedToCreateChatTryAgain =>
+      'Impossible de créer la discussion. Veuillez réessayer.';
+
+  @override
+  String get reportUser => 'Signaler l\'utilisateur';
+
+  @override
+  String get blockUser => 'Bloquer l\'utilisateur';
+
+  @override
+  String get blockUserDialogTitle => 'Bloquer l\'utilisateur';
+
+  @override
+  String blockUserDialogMessage(String name) {
+    return 'Bloquer $name ? Vous ne recevrez plus de messages de cet utilisateur.';
+  }
+
+  @override
+  String get blockUserDialogMessageGeneric =>
+      'Êtes-vous sûr de vouloir bloquer cet utilisateur ? Vous ne verrez plus son contenu et ne recevrez plus de messages de sa part.';
+
+  @override
+  String blockedUserSuccess(String name) {
+    return '$name a été bloqué.';
+  }
+
+  @override
+  String get userBlocked => 'L\'utilisateur a été bloqué.';
+
+  @override
+  String get couldNotBlockUserTryAgain =>
+      'Impossible de bloquer l\'utilisateur. Veuillez réessayer.';
+
+  @override
+  String get actionBlock => 'Bloquer';
+
+  @override
+  String get downloadReceipt => 'Télécharger le reçu';
+
+  @override
+  String get notificationsAlreadyEnabled =>
+      'Les notifications sont déjà activées.';
+
+  @override
+  String get notificationPermissionRequested =>
+      'Demande d\'autorisation de notification envoyée.';
+
+  @override
+  String get pauseDriverAccountQuestion =>
+      'Mettre en pause le compte conducteur ?';
+
+  @override
+  String get pauseDriverAccountMessage =>
+      'Vous ne recevrez plus de demandes de trajet jusqu\'à la reprise. Votre profil et vos avis resteront visibles.';
+
+  @override
+  String get driverAccountPaused => 'Compte conducteur mis en pause';
+
+  @override
+  String get pauseAccountAction => 'Mettre en pause le compte';
+
+  @override
+  String get syncProfile => 'Synchroniser le profil';
+
+  @override
+  String get eventUnableToLoadOriginal =>
+      'Impossible de charger l\'événement d\'origine.';
+
+  @override
+  String get eventUnableToUpdate =>
+      'Impossible de mettre à jour l\'événement. Veuillez réessayer.';
+
+  @override
+  String get eventSignInRequired => 'Veuillez vous connecter pour continuer.';
+
+  @override
+  String get supportCategoryOther => 'Autre';
+
+  @override
+  String get averageResponseTime => 'Temps de réponse moyen';
+
+  @override
+  String get backToSettings => 'Retour aux paramètres';
+
+  @override
+  String get couldNotClearChatTryAgain =>
+      'Impossible d\'effacer la discussion. Veuillez réessayer.';
+
+  @override
+  String get recording => 'Enregistrement';
+
+  @override
+  String get sendEmoji => 'Envoyer un emoji';
+
+  @override
+  String get sendPhoto => 'Envoyer une photo';
+
+  @override
+  String get moreOptions => 'Plus d\'options';
+
+  @override
+  String get clearReply => 'Effacer la réponse';
+
+  @override
+  String messageFromLongPressOptions(String name) {
+    return 'Message de $name. Appui long pour les options';
+  }
+
+  @override
+  String get attachFile => 'Joindre un fichier';
+
+  @override
+  String get showKeyboard => 'Afficher le clavier';
+
+  @override
+  String get showEmojiPicker => 'Afficher le sélecteur d\'emojis';
+
+  @override
+  String get stopRecording => 'Arrêter l\'enregistrement';
+
+  @override
+  String get sendMessage => 'Envoyer le message';
+
+  @override
+  String get recordVoiceMessage => 'Enregistrer un message vocal';
+
+  @override
+  String get rejected => 'Rejeté';
+
+  @override
+  String pleaseEnterValue(String value) {
+    return 'Veuillez saisir $value';
+  }
+
+  @override
+  String get uploadVehiclePhotoPermission =>
+      'L\'accès à votre galerie photo est nécessaire pour téléverser une photo de votre véhicule.';
+
+  @override
+  String get driverVehicleStepSubtitle =>
+      'Parlez-nous de votre voiture pour que les passagers sachent à quoi s\'attendre.';
+
+  @override
+  String get vehicleMakeHint => 'ex. : Toyota, Honda, BMW';
+
+  @override
+  String get pleaseEnterVehicleMake => 'Veuillez saisir la marque du véhicule';
+
+  @override
+  String get vehicleModelHint => 'ex. : Corolla, Civic, Série 3';
+
+  @override
+  String get pleaseEnterVehicleModel => 'Veuillez saisir le modèle du véhicule';
+
+  @override
+  String get vehicleYearHint => 'ex. : 2020';
+
+  @override
+  String get requiredField => 'Champ requis';
+
+  @override
+  String get vehicleColorHint => 'ex. : Blanc';
+
+  @override
+  String get licensePlateHint => 'ex. : ABC 123';
+
+  @override
+  String get licensePlateHelperText => '2-12 caractères, lettres et chiffres';
+
+  @override
+  String get pleaseEnterLicensePlate =>
+      'Veuillez saisir la plaque d\'immatriculation';
+
+  @override
+  String get pleaseEnterNumberOfSeats => 'Veuillez saisir le nombre de places';
+
+  @override
+  String get mustBeWholeNumber => 'Doit être un nombre entier';
+
+  @override
+  String get enter1To8Seats => 'Saisissez 1-8 places';
+
+  @override
+  String get driverStripeStepSubtitle =>
+      'Connectez votre compte bancaire pour recevoir les paiements de vos trajets.';
+
+  @override
+  String get stripePoweredByMillions =>
+      'Propulsé par Stripe, utilisé par des millions de personnes';
+
+  @override
+  String get stripeFastTransfersDesc => 'Soyez payé sous 2 à 3 jours ouvrables';
+
+  @override
+  String get stripeEarningsDesc => 'Consultez tous vos revenus au même endroit';
+
+  @override
+  String get connectWithStripe => 'Se connecter avec Stripe';
+
+  @override
+  String get legalConsentPrefix => 'En continuant, vous acceptez nos ';
+
+  @override
+  String get iAgreeToThe => 'J\'accepte les ';
+
+  @override
+  String get andConnector => ' et la ';
+
+  @override
+  String get termsLinkSemantics => 'Conditions d\'utilisation, lien';
+
+  @override
+  String get privacyLinkSemantics => 'Politique de confidentialité, lien';
+
+  @override
+  String get leaderboard => 'Classement';
+
+  @override
+  String get stats => 'Statistiques';
+
+  @override
+  String get searchHelpArticles => 'Rechercher des articles d\'aide...';
+
+  @override
+  String get frequentlyAskedQuestions => 'Questions fréquemment posées';
+
+  @override
+  String get closeRouteInfo => 'Fermer les infos de l\'itinéraire';
+
+  @override
+  String get requestDataExport => 'Demander l\'exportation des données';
+
+  @override
+  String get withdrawConsent => 'Retirer le consentement';
+
+  @override
+  String get downloadMyData => 'Télécharger mes données';
+
+  @override
+  String get downloadMyDataDescription =>
+      'Nous préparerons une copie de vos données personnelles, y compris votre profil, votre historique de trajets et vos avis. Vous recevrez un e-mail avec un lien de téléchargement sous 48 heures.';
+
+  @override
+  String get dataProcessingNotice => 'Avis sur le traitement des données';
+
+  @override
+  String get withdrawConsentDescription =>
+      'Vous pouvez retirer votre consentement au traitement des données des façons suivantes :';
+
+  @override
+  String get dataExportRequestSubmitted =>
+      'Demande d\'exportation des données envoyée.';
+
+  @override
+  String get deleteKeyword => 'SUPPRIMER';
+
+  @override
+  String get submitReviewButton => 'Soumettre l\'avis';
+
+  @override
+  String get pleaseSelectRatingToSubmit =>
+      'Veuillez sélectionner une note pour soumettre';
+
+  @override
+  String get unknownDriver => 'Conducteur inconnu';
+
+  @override
+  String get errorLoadingDriver => 'Erreur de chargement du conducteur';
+
+  @override
+  String get passengerNotFound => 'Passager introuvable';
+
+  @override
+  String get errorLoadingPassenger => 'Erreur de chargement du passager';
+
+  @override
+  String get unknown => 'Inconnu';
+
+  @override
+  String get noPhone => 'Aucun téléphone';
+
+  @override
+  String get notAvailableShort => 'N/D';
+
+  @override
+  String get permissionLocationAccessTitle => 'Accès à la localisation';
+
+  @override
+  String get permissionLocationAccessMessage =>
+      'SportConnect a besoin de votre localisation pour afficher les trajets à proximité, calculer les distances et fournir une navigation précise pendant vos trajets.';
+
+  @override
+  String get permissionShareLocationTitle => 'Partager votre localisation';
+
+  @override
+  String get permissionShareLocationMessage =>
+      'Votre position actuelle sera partagée dans cette discussion pour que les autres participants puissent vous localiser. Votre position n\'est partagée que lorsque vous choisissez de l\'envoyer.';
+
+  @override
+  String get permissionRideNavigationTitle => 'Navigation du trajet';
+
+  @override
+  String get permissionRideNavigationMessage =>
+      'L\'accès à la localisation est nécessaire pour suivre votre trajet en temps réel, fournir la navigation détaillée et partager votre progression avec les autres passagers pour plus de sécurité.';
+
+  @override
+  String get permissionCameraPhotosTitle => 'Caméra et photos';
+
+  @override
+  String get permissionCameraPhotosMessage =>
+      'L\'accès à votre caméra et à votre galerie photo est nécessaire pour joindre des images. Vos photos ne sont envoyées que lorsque vous choisissez explicitement de les partager.';
+
+  @override
+  String get permissionMicrophoneTitle => 'Accès au microphone';
+
+  @override
+  String get permissionMicrophoneMessage =>
+      'L\'accès au microphone est nécessaire pour enregistrer des messages vocaux. L\'audio est enregistré uniquement lorsque vous maintenez le bouton d\'enregistrement enfoncé.';
+
+  @override
+  String get permissionStayUpdatedTitle => 'Restez informé';
+
+  @override
+  String get permissionStayUpdatedMessage =>
+      'Activez les notifications pour recevoir les mises à jour de trajet, les messages des autres passagers, les confirmations de réservation et les alertes de sécurité importantes.';
+
+  @override
+  String get notNow => 'Pas maintenant';
+
+  @override
+  String get actionContinue => 'Continuer';
+
+  @override
+  String get rideOptions => 'Options du trajet';
+
+  @override
+  String get messagePassenger => 'Message au passager';
+
+  @override
+  String get passengerOptions => 'Options du passager';
+
+  @override
+  String get markNoShow => 'Marquer comme absent';
+
+  @override
+  String get messageDriver => 'Message au conducteur';
+
+  @override
+  String get chatWithDriver => 'Discuter avec le conducteur';
+
+  @override
+  String get chatWithPassenger => 'Discuter avec le passager';
+
+  @override
+  String get callDriver => 'Appeler le conducteur';
+
+  @override
+  String get closePassengerDetails => 'Fermer les détails du passager';
+
+  @override
+  String get rideRequestDetails => 'Détails de la demande de trajet';
+
+  @override
+  String get directions => 'Itinéraire';
+
+  @override
+  String driverArrivingIn(int minutes) {
+    return 'Le conducteur arrive dans ~$minutes min';
+  }
+
+  @override
+  String estimatedWait(int minutes) {
+    return 'Attente estimée : ~$minutes min';
+  }
+
+  @override
+  String get customPickupPoint => 'Point de prise en charge personnalisé';
+
+  @override
+  String get dropPinForPickup => 'Déposez une épingle pour la prise en charge';
+
+  @override
+  String get clearPin => 'Effacer l\'épingle';
+
+  @override
+  String get setPin => 'Définir l\'épingle';
+
+  @override
+  String markNoShowPrompt(String name) {
+    return 'Marquer $name comme absent ? Cela sera enregistré et peut affecter sa note.';
+  }
+
+  @override
+  String get switchVehicle => 'Changer de véhicule';
+
+  @override
+  String get copyLink => 'Copier le lien';
+
+  @override
+  String get cloneThisRide => 'Dupliquer ce trajet';
+
+  @override
+  String get howWasYourRide => 'Comment s\'est passé votre trajet ?';
+
+  @override
+  String rateYourExperienceWith(String name) {
+    return 'Évaluez votre expérience avec $name';
+  }
+
+  @override
+  String get addToCalendar => 'Ajouter au calendrier';
+
+  @override
+  String get reportIncident => 'Signaler un incident';
+
+  @override
+  String get incidentType => 'Type d\'incident';
+
+  @override
+  String get describeWhatHappened => 'Décrivez ce qui s\'est passé...';
+
+  @override
+  String get submitReport => 'Soumettre le signalement';
+
+  @override
+  String amountPaid(String amount) {
+    return 'Montant payé : $amount';
+  }
+
+  @override
+  String get reasonForRefund => 'Raison du remboursement';
+
+  @override
+  String get additionalDetailsOptional => 'Détails supplémentaires (optionnel)';
+
+  @override
+  String get submitRefundRequest => 'Soumettre la demande de remboursement';
+
+  @override
+  String get rideSummary => 'Résumé du trajet';
+
+  @override
+  String get expandedView => 'Vue étendue';
+
+  @override
+  String get compactView => 'Vue compacte';
+
+  @override
+  String get pickOnMap => 'Choisir sur la carte';
+
+  @override
+  String get searchCountryOrCode => 'Rechercher un pays ou un indicatif...';
+
+  @override
+  String get severity => 'Gravité';
+
+  @override
+  String get safetyCheckInConfirmed => 'Contrôle de sécurité confirmé !';
+
+  @override
+  String get markAsNoShowQuestion => 'Marquer comme absent ?';
+
+  @override
+  String markNoShowDialogMessage(String passengerId) {
+    return 'Cela annulera la réservation de $passengerId et l\'en informera. Vous aurez 30 secondes pour annuler.';
+  }
+
+  @override
+  String get passengerMarkedNoShow => 'Passager marqué comme absent';
+
+  @override
+  String get undo => 'ANNULER';
+
+  @override
+  String get locationUnavailable => 'Localisation indisponible';
+
+  @override
+  String get requestedStop => 'Arrêt demandé';
+
+  @override
+  String get createReturnRideQuestion => 'Créer un trajet retour ?';
+
+  @override
+  String createReturnRideMessage(String destination, String origin) {
+    return 'Voulez-vous créer un trajet retour de $destination vers $origin ?';
+  }
+
+  @override
+  String get noThanks => 'Non, merci';
+
+  @override
+  String get returnRideCreated => 'Trajet retour créé !';
+
+  @override
+  String get createReturnRide => 'Créer un trajet retour';
+
+  @override
+  String get confirmDeparture => 'Confirmer le départ';
+
+  @override
+  String get allPassengersPickedUpConfirm =>
+      'Tous les passagers sont montés ? Vous allez commencer à rouler vers la destination.';
+
+  @override
+  String get departNow => 'Partir maintenant';
+
+  @override
+  String get passengerProfileNotFound => 'Profil passager introuvable';
+
+  @override
+  String get failedToOpenChatTryAgain =>
+      'Impossible d\'ouvrir la discussion. Veuillez réessayer.';
+
+  @override
+  String get emergencySos => 'SOS d\'urgence';
+
+  @override
+  String get sosShareConfirmationMessage =>
+      'Cela partagera les détails de votre trajet et votre position actuelle avec vos contacts. Continuer ?';
+
+  @override
+  String get shareSos => 'Partager SOS';
+
+  @override
+  String get requestAStop => 'Demander un arrêt';
+
+  @override
+  String get requestStopDescription =>
+      'Décrivez où vous souhaitez que le conducteur s\'arrête. Le conducteur peut accepter ou refuser.';
+
+  @override
+  String get requestStopHint => 'ex. station-service, pharmacie...';
+
+  @override
+  String get stopRequestSentToDriver =>
+      'Demande d\'arrêt envoyée au conducteur';
+
+  @override
+  String get requestStop => 'Demander l\'arrêt';
+
+  @override
+  String get sos => 'SOS';
+
+  @override
+  String get bookingNotFoundTryAgain =>
+      'Réservation introuvable. Veuillez réessayer.';
+
+  @override
+  String get noShowReported => 'Absence signalée';
+
+  @override
+  String get incidentReportSubmitted => 'Signalement d\'incident envoyé';
+
+  @override
+  String get ratingSubmittedThankYou => 'Évaluation envoyée - merci !';
+
+  @override
+  String get ratePassenger => 'Évaluer le passager';
+
+  @override
+  String get ratePassengerCommentHint =>
+      'Qu\'est-ce qui a rendu ce passager excellent (ou non) ?';
+
+  @override
+  String failedToSubmitValue(String value) {
+    return 'Échec de l\'envoi : $value';
+  }
+
+  @override
+  String sentMessage(String message) {
+    return 'Envoyé : $message';
+  }
+
+  @override
+  String get acceptStop => 'Accepter l\'arrêt';
+
+  @override
+  String get dismiss => 'Ignorer';
+
+  @override
+  String failedToLoadBookingValue(String value) {
+    return 'Échec du chargement de la réservation : $value';
+  }
+
+  @override
+  String get bookingNotFoundMayBeCancelled =>
+      'Réservation introuvable. Elle a peut-être été annulée.';
+
+  @override
+  String get rideHasBeenCancelled => 'Ce trajet a été annulé.';
+
+  @override
+  String bookingRefCopied(String code) {
+    return 'Réf. de réservation $code copiée !';
+  }
+
+  @override
+  String get bookingFailedTryAgain =>
+      'Échec de la réservation. Veuillez réessayer.';
+
+  @override
+  String get addedToCalendar => 'Ajouté au calendrier';
+
+  @override
+  String get dismissSuccess => 'Fermer le succès';
+
+  @override
+  String get dismissError => 'Fermer l\'erreur';
+
+  @override
+  String get bookingConfirmedTitle => 'Réservation confirmée !';
+
+  @override
+  String get great => 'Super !';
+
+  @override
+  String lastCheckedInMinutesAgo(int minutes) {
+    return 'Dernier contrôle il y a $minutes min';
+  }
+
+  @override
+  String get letContactsKnowSafe =>
+      'Informez vos contacts que vous êtes en sécurité';
+
+  @override
+  String get imOk => 'Je vais bien';
+
+  @override
+  String get incidentTypeUnsafeDriving => 'Conduite dangereuse';
+
+  @override
+  String get incidentTypeHarassment => 'Harcèlement';
+
+  @override
+  String get incidentTypeRouteDeviation => 'Déviation d\'itinéraire';
+
+  @override
+  String get incidentTypeVehicleIssue => 'Problème de véhicule';
+
+  @override
+  String get incidentTypeNoShow => 'Absent';
+
+  @override
+  String get incidentTypeOther => 'Autre';
+
+  @override
+  String get refundReasonDriverNoShow => 'Le conducteur ne s\'est pas présenté';
+
+  @override
+  String get refundReasonRideNotAsDescribed =>
+      'Le trajet ne correspondait pas à la description';
+
+  @override
+  String get refundReasonUnsafeExperience =>
+      'Sentiment d\'insécurité pendant le trajet';
+
+  @override
+  String get refundReasonOvercharged => 'Montant surfacturé';
+
+  @override
+  String get refundReasonCancelledByDriver =>
+      'Le conducteur a annulé à la dernière minute';
+
+  @override
+  String get refundReasonOther => 'Autre raison';
+
+  @override
+  String get origin => 'Origine';
+
+  @override
+  String get estimatedArrival => 'Arrivée estimée';
+
+  @override
+  String get partlyCloudy => 'Partiellement nuageux';
+
+  @override
+  String get rideShareSubject => 'Trajet de covoiturage sur SportConnect';
+
+  @override
+  String rideShareText(
+    String from,
+    String to,
+    String departure,
+    String price,
+    int seats,
+    String link,
+  ) {
+    return '🚗 Découvrez ce trajet sur SportConnect !\n\n📍 $from → $to\n📅 $departure\n💰 $price € par place\n🪑 $seats places disponibles\n\nRejoignez-moi pour un trajet confortable ! 🌱\n\n🔗 $link';
+  }
+
+  @override
+  String get tripShareSubject => 'Trajet sur SportConnect';
+
+  @override
+  String tripShareMessage(
+    String userName,
+    String status,
+    String origin,
+    String destination,
+    String rideId,
+    String departure,
+  ) {
+    return '$userName est $status sur SportConnect.\n\nDe : $origin\nVers : $destination\nID du trajet : $rideId\n\nDépart : $departure';
+  }
+
+  @override
+  String get tripStatusInProgress => 'actuellement en trajet';
+
+  @override
+  String get tripStatusScheduled => 'sur le point de voyager';
+
+  @override
+  String get rideCompatibility => 'Compatibilité du trajet';
+
+  @override
+  String get greatMatch => 'Très bonne compatibilité';
+
+  @override
+  String get goodMatch => 'Bonne compatibilité';
+
+  @override
+  String get fairMatch => 'Compatibilité moyenne';
+
+  @override
+  String get nonSmoking => 'Non-fumeur';
+
+  @override
+  String get directRoute => 'Trajet direct';
+
+  @override
+  String get spacious => 'Spacieux';
+
+  @override
+  String get viewActiveRide => 'Voir le trajet en cours';
+
+  @override
+  String get setPickupLocation => 'Définir le lieu de prise en charge';
+
+  @override
+  String get optionalSetYourPickupPoint =>
+      'Optionnel - définissez votre point de prise en charge';
+
+  @override
+  String get eventLabel => 'Événement';
+
+  @override
+  String get aPassenger => 'Un passager';
+
+  @override
+  String get rateAndReview => 'Noter et commenter';
+
+  @override
+  String get shareReceipt => 'Partager le reçu';
+
+  @override
+  String get reportIssue => 'Signaler un problème';
+
+  @override
+  String get bookThisRouteAgain => 'Réserver à nouveau cet itinéraire';
+
+  @override
+  String get waitingForDriverApproval =>
+      'En attente de l\'approbation du conducteur';
+
+  @override
+  String get eta => 'Arrivée estimée';
+
+  @override
+  String get speed => 'Vitesse';
+
+  @override
+  String get addAsStop => 'Ajouter comme arrêt';
+
+  @override
+  String get signInToSeeYourRides => 'Connectez-vous pour voir vos trajets';
+
+  @override
+  String get logIn => 'Se connecter';
+
+  @override
+  String get accepted => 'Accepté';
+
+  @override
+  String get declined => 'Refusé';
+
+  @override
+  String dateAtTime(String date, String time) {
+    return '$date à $time';
+  }
+
+  @override
+  String get applyFilters => 'Appliquer les filtres';
+
+  @override
+  String get searchFailed => 'Recherche échouée';
+
+  @override
+  String get unableToLoadRidesTryAgain =>
+      'Impossible de charger les trajets. Veuillez réessayer.';
+
+  @override
+  String get clearFilters => 'Effacer les filtres';
+
+  @override
+  String get tryAdjustingFiltersOrDifferentDate =>
+      'Essayez d\'ajuster vos filtres ou de rechercher une autre date';
+
+  @override
+  String get bestMatchForYourSearch =>
+      'Meilleure correspondance pour votre recherche';
+
+  @override
+  String get showCheapestRidesFirst =>
+      'Afficher d\'abord les trajets les moins chers';
+
+  @override
+  String get showRidesLeavingSoonest =>
+      'Afficher d\'abord les trajets qui partent le plus tôt';
+
+  @override
+  String get showBestRatedDriversFirst =>
+      'Afficher d\'abord les conducteurs les mieux notés';
+
+  @override
+  String get showFastestRoutesFirst =>
+      'Afficher d\'abord les itinéraires les plus rapides';
+
+  @override
+  String get submitRating => 'Soumettre la note';
 }

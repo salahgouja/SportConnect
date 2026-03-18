@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sport_connect/core/models/models.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 
 /// Reusable widget that fetches and displays driver information by ID
@@ -27,11 +28,11 @@ class DriverInfoWidget extends ConsumerWidget {
           // Fallback for deleted/missing users
           return builder?.call(
                 context,
-                'Unknown Driver',
+                AppLocalizations.of(context).unknownDriver,
                 null,
                 RatingBreakdown(),
               ) ??
-              const Text('Unknown Driver');
+              Text(AppLocalizations.of(context).unknownDriver);
         }
 
         final displayName = user.displayName;
@@ -50,7 +51,7 @@ class DriverInfoWidget extends ConsumerWidget {
         height: 16,
         child: CircularProgressIndicator(strokeWidth: 2),
       ),
-      error: (_, _) => const Text('Error loading driver'),
+      error: (_, _) => Text(AppLocalizations.of(context).errorLoadingDriver),
     );
   }
 }

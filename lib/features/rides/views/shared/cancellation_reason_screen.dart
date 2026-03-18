@@ -186,7 +186,7 @@ class CancellationReasonScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('Keep Ride'),
+            child: Text(AppLocalizations.of(context).keepRide),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -267,7 +267,7 @@ class CancellationReasonScreen extends ConsumerWidget {
           ),
         ),
         leading: IconButton(
-          tooltip: 'Go back',
+          tooltip: AppLocalizations.of(context).goBackTooltip,
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => context.pop(),
         ),
@@ -365,7 +365,7 @@ class CancellationReasonScreen extends ConsumerWidget {
               maxLength: 500,
               textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(
-                hintText: 'Tell us more about why you\'re cancelling...',
+                hintText: AppLocalizations.of(context).cancellationReasonHint,
                 hintStyle: TextStyle(
                   fontSize: 14.sp,
                   color: AppColors.textTertiary,
@@ -397,7 +397,7 @@ class CancellationReasonScreen extends ConsumerWidget {
             SizedBox(
               width: double.infinity,
               child: PremiumButton(
-                text: 'Cancel Ride',
+                text: AppLocalizations.of(context).cancelRide2,
                 onPressed: formState.isSubmitting
                     ? null
                     : () => _submitCancellation(context, ref),
@@ -412,7 +412,7 @@ class CancellationReasonScreen extends ConsumerWidget {
             SizedBox(
               width: double.infinity,
               child: PremiumButton(
-                text: 'Keep My Ride',
+                text: AppLocalizations.of(context).keepRide,
                 onPressed: () => context.pop(false),
                 style: PremiumButtonStyle.ghost,
                 icon: Icons.arrow_back_rounded,

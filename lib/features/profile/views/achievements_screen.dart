@@ -68,7 +68,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
             pinned: true,
             backgroundColor: AppColors.primary,
             leading: IconButton(
-              tooltip: 'Go back',
+              tooltip: AppLocalizations.of(context).goBackTooltip,
               onPressed: () => context.pop(),
               icon: Container(
                 padding: EdgeInsets.all(8.w),
@@ -128,10 +128,10 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
                   ),
-                  tabs: const [
-                    Tab(text: 'Badges'),
-                    Tab(text: 'Challenges'),
-                    Tab(text: 'Leaderboard'),
+                  tabs: [
+                    Tab(text: AppLocalizations.of(context).badges),
+                    Tab(text: AppLocalizations.of(context).challenges),
+                    Tab(text: AppLocalizations.of(context).leaderboard),
                   ],
                 ),
               ),

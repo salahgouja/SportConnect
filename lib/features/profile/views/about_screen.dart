@@ -30,7 +30,7 @@ class AboutScreen extends ConsumerWidget {
           ),
         ),
         leading: IconButton(
-          tooltip: 'Go back',
+          tooltip: l10n.goBackTooltip,
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => context.pop(),
         ),

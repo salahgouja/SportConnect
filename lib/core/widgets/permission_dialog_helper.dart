@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Provides pre-permission rationale dialogs before requesting runtime
 /// permissions.
@@ -22,12 +23,10 @@ class PermissionDialogHelper {
       context,
       icon: Icons.location_on_outlined,
       iconColor: AppColors.primary,
-      title: 'Location Access',
+      title: AppLocalizations.of(context).permissionLocationAccessTitle,
       message:
           customMessage ??
-          'SportConnect needs your location to show nearby rides, '
-              'calculate distances, and provide accurate navigation '
-              'during your trips.',
+          AppLocalizations.of(context).permissionLocationAccessMessage,
     );
   }
 
@@ -37,11 +36,8 @@ class PermissionDialogHelper {
       context,
       icon: Icons.share_location_outlined,
       iconColor: AppColors.primary,
-      title: 'Share Your Location',
-      message:
-          'Your current location will be shared with this chat '
-          'so other participants can see where you are. Your location '
-          'is only shared when you choose to send it.',
+      title: AppLocalizations.of(context).permissionShareLocationTitle,
+      message: AppLocalizations.of(context).permissionShareLocationMessage,
     );
   }
 
@@ -51,11 +47,8 @@ class PermissionDialogHelper {
       context,
       icon: Icons.navigation_outlined,
       iconColor: AppColors.primary,
-      title: 'Ride Navigation',
-      message:
-          'Location access is needed to track your ride in real-time, '
-          'provide turn-by-turn navigation, and share your progress '
-          'with fellow riders for safety.',
+      title: AppLocalizations.of(context).permissionRideNavigationTitle,
+      message: AppLocalizations.of(context).permissionRideNavigationMessage,
     );
   }
 
@@ -68,12 +61,10 @@ class PermissionDialogHelper {
       context,
       icon: Icons.camera_alt_outlined,
       iconColor: AppColors.secondary,
-      title: 'Camera & Photos',
+      title: AppLocalizations.of(context).permissionCameraPhotosTitle,
       message:
           customMessage ??
-          'Access to your camera and photo library is needed to '
-              'attach images. Your photos are only uploaded when you '
-              'explicitly choose to share them.',
+          AppLocalizations.of(context).permissionCameraPhotosMessage,
     );
   }
 
@@ -83,11 +74,8 @@ class PermissionDialogHelper {
       context,
       icon: Icons.mic_outlined,
       iconColor: AppColors.accent,
-      title: 'Microphone Access',
-      message:
-          'Microphone access is needed to record voice messages. '
-          'Audio is only recorded when you press and hold the '
-          'record button.',
+      title: AppLocalizations.of(context).permissionMicrophoneTitle,
+      message: AppLocalizations.of(context).permissionMicrophoneMessage,
     );
   }
 
@@ -97,11 +85,8 @@ class PermissionDialogHelper {
       context,
       icon: Icons.notifications_outlined,
       iconColor: AppColors.primary,
-      title: 'Stay Updated',
-      message:
-          'Enable notifications to receive ride updates, messages '
-          'from other riders, booking confirmations, and important '
-          'safety alerts.',
+      title: AppLocalizations.of(context).permissionStayUpdatedTitle,
+      message: AppLocalizations.of(context).permissionStayUpdatedMessage,
     );
   }
 
@@ -171,7 +156,7 @@ class PermissionDialogHelper {
               ),
             ),
             child: Text(
-              'Not Now',
+              AppLocalizations.of(context).notNow,
               style: TextStyle(color: AppColors.textSecondary, fontSize: 14.sp),
             ),
           ),
@@ -185,7 +170,10 @@ class PermissionDialogHelper {
                 ),
               ),
             ),
-            child: Text('Continue', style: TextStyle(fontSize: 14.sp)),
+            child: Text(
+              AppLocalizations.of(context).actionContinue,
+              style: TextStyle(fontSize: 14.sp),
+            ),
           ),
         ],
       ),

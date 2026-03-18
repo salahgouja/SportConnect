@@ -424,7 +424,7 @@ class _DriverDashboard extends ConsumerWidget {
 
           // Actions
           IconButton(
-            tooltip: 'Notifications',
+            tooltip: l10n.notificationsTooltip,
             onPressed: () => context.push(AppRoutes.notifications.path),
             icon: Badge(
               smallSize: 8.w,
@@ -437,7 +437,7 @@ class _DriverDashboard extends ConsumerWidget {
             ),
           ),
           IconButton(
-            tooltip: 'Messages',
+            tooltip: l10n.messages,
             onPressed: () => context.go(AppRoutes.chat.path),
             icon: Icon(
               Icons.chat_bubble_outline_rounded,

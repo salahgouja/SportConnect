@@ -101,8 +101,6 @@ class CreateEventScreen extends ConsumerWidget {
           SizedBox(height: 20.h),
           _buildParticipantSlider(ref, createState, l10n),
           SizedBox(height: 20.h),
-          _buildParkingInfoField(ref, createState, l10n),
-          SizedBox(height: 20.h),
           _buildRecurringToggle(context, ref, createState, l10n),
           SizedBox(height: 20.h),
           _buildCostSplitToggle(ref, createState, l10n),
@@ -548,28 +546,6 @@ class CreateEventScreen extends ConsumerWidget {
         ),
       ],
     ).animate().fadeIn(duration: 250.ms, delay: 260.ms);
-  }
-
-  // ── Parking Info ───────────────────────────────────────────
-  Widget _buildParkingInfoField(
-    WidgetRef ref,
-    CreateEventFormState createState,
-    AppLocalizations l10n,
-  ) {
-    return TextFormField(
-      initialValue: createState.parkingInfo,
-      maxLines: 2,
-      minLines: 1,
-      maxLength: 300,
-      textCapitalization: TextCapitalization.sentences,
-      onChanged: ref
-          .read(createEventFormViewModelProvider.notifier)
-          .setParkingInfo,
-      decoration: _deco(
-        l10n.eventParkingInstructions,
-        Icons.local_parking_rounded,
-      ),
-    ).animate().fadeIn(duration: 250.ms, delay: 270.ms);
   }
 
   // ── Recurring Toggle + Day Selector ──────────────────────────

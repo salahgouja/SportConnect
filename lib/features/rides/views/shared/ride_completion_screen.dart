@@ -225,7 +225,9 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                         width: double.infinity,
                         child: isDriver
                             ? PremiumButton(
-                                text: 'Rate Passenger',
+                                text: AppLocalizations.of(
+                                  context,
+                                ).ratePassenger,
                                 onPressed: () {
                                   HapticFeedback.mediumImpact();
                                   context.push(
@@ -236,7 +238,9 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                                 icon: Icons.star_rounded,
                               )
                             : PremiumButton(
-                                text: 'Rate & Review',
+                                text: AppLocalizations.of(
+                                  context,
+                                ).rateAndReview,
                                 onPressed: () async {
                                   HapticFeedback.mediumImpact();
 
@@ -280,7 +284,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                                 ),
                               )
                             : PremiumButton(
-                                text: 'Share Receipt',
+                                text: AppLocalizations.of(context).shareReceipt,
                                 onPressed: () async {
                                   HapticFeedback.lightImpact();
                                   await ref
@@ -298,7 +302,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                       SizedBox(width: 12.w),
                       Expanded(
                         child: PremiumButton(
-                          text: 'Report Issue',
+                          text: AppLocalizations.of(context).reportIssue,
                           onPressed: () {
                             context.pushNamed(
                               AppRoutes.dispute.name,
@@ -318,7 +322,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: PremiumButton(
-                      text: 'Book This Route Again',
+                      text: AppLocalizations.of(context).bookThisRouteAgain,
                       onPressed: () {
                         HapticFeedback.lightImpact();
                         context.pushNamed(
@@ -346,7 +350,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                         return Padding(
                           padding: EdgeInsets.only(bottom: 16.h),
                           child: PremiumButton(
-                            text: 'Instant Payout',
+                            text: AppLocalizations.of(context).instantPayout,
                             onPressed: () {
                               HapticFeedback.lightImpact();
                               context.push(AppRoutes.driverEarnings.path);
@@ -1018,7 +1022,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                 ),
               ),
               IconButton(
-                tooltip: 'Message driver',
+                tooltip: AppLocalizations.of(context).messageDriver,
                 onPressed: () async {
                   HapticFeedback.lightImpact();
                   final currentUser = ref.read(currentUserProvider).value;

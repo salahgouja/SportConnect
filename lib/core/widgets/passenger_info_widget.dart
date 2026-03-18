@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sport_connect/core/models/user/user_model.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 
 /// Base widget that fetches passenger data and provides it to a builder
@@ -23,12 +24,12 @@ class PassengerInfoWidget extends ConsumerWidget {
     return passengerAsync.when(
       data: (passenger) {
         if (passenger == null) {
-          return const Text('Passenger not found');
+          return Text(AppLocalizations.of(context).passengerNotFound);
         }
         return builder(context, passenger);
       },
       loading: () => const CircularProgressIndicator.adaptive(),
-      error: (_, _) => const Text('Error loading passenger'),
+      error: (_, _) => Text(AppLocalizations.of(context).errorLoadingPassenger),
     );
   }
 }
@@ -54,19 +55,19 @@ class PassengerNameWidget extends ConsumerWidget {
 
     return passengerAsync.when(
       data: (passenger) => Text(
-        passenger?.displayName ?? 'Unknown',
+        passenger?.displayName ?? AppLocalizations.of(context).unknown,
         style: style,
         maxLines: maxLines,
         overflow: overflow,
       ),
       loading: () => Text(
-        'Loading...',
+        AppLocalizations.of(context).loading,
         style: style?.copyWith(color: AppColors.textTertiary),
         maxLines: maxLines,
         overflow: overflow,
       ),
       error: (_, _) => Text(
-        'Unknown',
+        AppLocalizations.of(context).unknown,
         style: style?.copyWith(color: AppColors.error),
         maxLines: maxLines,
         overflow: overflow,
@@ -93,7 +94,8 @@ class PassengerAvatarWidget extends ConsumerWidget {
     return passengerAsync.when(
       data: (passenger) {
         final photoUrl = passenger?.photoUrl;
-        final displayName = passenger?.displayName ?? 'Unknown';
+        final displayName =
+            passenger?.displayName ?? AppLocalizations.of(context).unknown;
 
         return CircleAvatar(
           radius: radius,
@@ -144,14 +146,18 @@ class PassengerPhoneWidget extends ConsumerWidget {
     final passengerAsync = ref.watch(userProfileProvider(passengerId));
 
     return passengerAsync.when(
-      data: (passenger) =>
-          Text(passenger?.phoneNumber ?? 'No phone', style: style),
+      data: (passenger) => Text(
+        passenger?.phoneNumber ?? AppLocalizations.of(context).noPhone,
+        style: style,
+      ),
       loading: () => Text(
-        'Loading...',
+        AppLocalizations.of(context).loading,
         style: style?.copyWith(color: AppColors.textTertiary),
       ),
-      error: (_, _) =>
-          Text('N/A', style: style?.copyWith(color: AppColors.error)),
+      error: (_, _) => Text(
+        AppLocalizations.of(context).notAvailableShort,
+        style: style?.copyWith(color: AppColors.error),
+      ),
     );
   }
 }

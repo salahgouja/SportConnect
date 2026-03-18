@@ -154,7 +154,7 @@ class _SubmitReviewScreenState extends ConsumerState<SubmitReviewScreen> {
                     Padding(
                       padding: EdgeInsets.only(bottom: 8.h),
                       child: Text(
-                        'Please select a rating to submit',
+                        AppLocalizations.of(context).pleaseSelectRatingToSubmit,
                         style: TextStyle(
                           fontSize: 12.sp,
                           color: AppColors.textTertiary,
@@ -162,7 +162,7 @@ class _SubmitReviewScreenState extends ConsumerState<SubmitReviewScreen> {
                       ),
                     ),
                   PremiumButton(
-                    text: 'Submit Review',
+                    text: AppLocalizations.of(context).submitReviewButton,
                     onPressed: state.isValid && !state.isSubmitting
                         ? () => _submitReview(viewModel)
                         : null,
@@ -349,7 +349,7 @@ class _SubmitReviewScreenState extends ConsumerState<SubmitReviewScreen> {
       decoration: InputDecoration(
         hintText: AppLocalizations.of(context).shareYourExperience,
         hintStyle: TextStyle(color: AppColors.textTertiary),
-        helperText: 'Specific feedback helps the community',
+        helperText: AppLocalizations.of(context).specificFeedbackHelps,
         helperStyle: TextStyle(color: AppColors.textTertiary, fontSize: 11.sp),
         filled: true,
         fillColor: AppColors.surfaceVariant,

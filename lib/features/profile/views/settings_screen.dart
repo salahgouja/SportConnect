@@ -65,7 +65,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             pinned: true,
             backgroundColor: AppColors.surface,
             leading: IconButton(
-              tooltip: 'Back',
+              tooltip: AppLocalizations.of(context).goBackTooltip,
               onPressed: () => context.pop(),
               icon: Container(
                 padding: EdgeInsets.all(8.w),
@@ -473,7 +473,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Notifications are already enabled.'),
+          content: Text(
+            AppLocalizations.of(context).notificationsAlreadyEnabled,
+          ),
           backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -531,7 +533,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Notification permission requested.'),
+        content: Text(
+          AppLocalizations.of(context).notificationPermissionRequested,
+        ),
         backgroundColor: AppColors.primary,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
@@ -1121,7 +1125,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             SizedBox(height: 16.h),
             Text(
-              'Download My Data',
+              AppLocalizations.of(context).downloadMyData,
               style: TextStyle(
                 fontSize: 18.sp,
                 fontWeight: FontWeight.w600,
@@ -1130,22 +1134,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             SizedBox(height: 8.h),
             Text(
-              'We will prepare a copy of your personal data including '
-              'your profile, ride history, and reviews. You will receive '
-              'an email with a download link within 48 hours.',
+              AppLocalizations.of(context).downloadMyDataDescription,
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
             ),
             SizedBox(height: 24.h),
             PremiumButton(
-              text: 'Request Data Export',
+              text: AppLocalizations.of(context).requestDataExport,
               onPressed: () {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
+                  SnackBar(
                     content: Text(
-                      'Data export request submitted. '
-                      'You will receive an email shortly.',
+                      AppLocalizations.of(context).dataExportRequestSubmitted,
                     ),
                   ),
                 );
@@ -1195,7 +1196,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               SizedBox(height: 16.h),
               Text(
-                'Data Processing Notice',
+                AppLocalizations.of(context).dataProcessingNotice,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 18.sp,
@@ -1305,7 +1306,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   void _showWithdrawConsentDialog() {
     showDialog(
       context: context,
-      barrierLabel: 'Withdraw consent dialog',
+      barrierLabel: AppLocalizations.of(context).withdrawConsent,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surface.withValues(
           alpha: PlatformAdaptive.dialogAlpha,
@@ -1314,7 +1315,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
         title: Text(
-          'Withdraw Consent',
+          AppLocalizations.of(context).withdrawConsent,
           style: TextStyle(
             fontSize: 18.sp,
             fontWeight: FontWeight.w600,
@@ -1326,8 +1327,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'You can withdraw your consent for data processing in '
-              'the following ways:',
+              AppLocalizations.of(context).withdrawConsentDescription,
               style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
             ),
             SizedBox(height: 16.h),
@@ -1367,7 +1367,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Close', style: TextStyle(color: AppColors.primary)),
+            child: Text(
+              AppLocalizations.of(context).actionClose,
+              style: TextStyle(color: AppColors.primary),
+            ),
           ),
         ],
       ),
@@ -1411,7 +1414,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   void _showLogoutDialog() {
     showDialog(
       context: context,
-      barrierLabel: 'Logout dialog',
+      barrierLabel: AppLocalizations.of(context).settingsLogout,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
@@ -1447,7 +1450,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     showDialog(
       context: context,
-      barrierLabel: 'Delete account dialog',
+      barrierLabel: AppLocalizations.of(context).settingsDeleteAccount,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           shape: RoundedRectangleBorder(
@@ -1503,7 +1506,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               SizedBox(height: 8.h),
               TextField(
                 decoration: InputDecoration(
-                  hintText: 'DELETE',
+                  hintText: AppLocalizations.of(context).deleteKeyword,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.r),
                   ),
@@ -1522,7 +1525,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               child: Text(AppLocalizations.of(context).actionCancel),
             ),
             ElevatedButton(
-              onPressed: confirmText == 'DELETE'
+              onPressed:
+                  confirmText == AppLocalizations.of(context).deleteKeyword
                   ? () async {
                       dialogContext.pop();
 

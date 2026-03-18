@@ -113,7 +113,7 @@ class _VehicleManagementScreenState
       backgroundColor: AppColors.background,
       elevation: 0,
       leading: IconButton(
-        tooltip: 'Go back',
+        tooltip: AppLocalizations.of(context).goBackTooltip,
         icon: Container(
           padding: EdgeInsets.all(8.w),
           decoration: BoxDecoration(
@@ -140,7 +140,7 @@ class _VehicleManagementScreenState
       centerTitle: true,
       actions: [
         IconButton(
-          tooltip: 'Add vehicle',
+          tooltip: AppLocalizations.of(context).addVehicle,
           icon: Container(
             padding: EdgeInsets.all(8.w),
             decoration: BoxDecoration(
@@ -295,7 +295,7 @@ class _VehicleManagementScreenState
   void _confirmDeleteVehicle(VehicleModel vehicle) {
     showDialog(
       context: context,
-      barrierLabel: 'Delete vehicle dialog',
+      barrierLabel: AppLocalizations.of(context).deleteVehicle,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
@@ -495,7 +495,7 @@ class _VehicleCard extends StatelessWidget {
                           ),
                           SizedBox(width: 4.w),
                           Text(
-                            _getVerificationText(),
+                            _getVerificationText(context),
                             style: TextStyle(
                               fontSize: 12.sp,
                               fontWeight: FontWeight.w500,
@@ -516,7 +516,7 @@ class _VehicleCard extends StatelessWidget {
                         ),
                       ),
                     IconButton(
-                      tooltip: 'Edit vehicle',
+                      tooltip: AppLocalizations.of(context).editVehicle,
                       onPressed: onEdit,
                       icon: Icon(
                         Icons.edit_outlined,
@@ -525,7 +525,7 @@ class _VehicleCard extends StatelessWidget {
                       ),
                     ),
                     IconButton(
-                      tooltip: 'Delete vehicle',
+                      tooltip: AppLocalizations.of(context).deleteVehicle,
                       onPressed: onDelete,
                       icon: Icon(
                         Icons.delete_outline,
@@ -565,14 +565,14 @@ class _VehicleCard extends StatelessWidget {
     }
   }
 
-  String _getVerificationText() {
+  String _getVerificationText(BuildContext context) {
     switch (vehicle.verificationStatus) {
       case VehicleVerificationStatus.verified:
-        return 'Verified';
+        return AppLocalizations.of(context).verified;
       case VehicleVerificationStatus.pending:
-        return 'Pending';
+        return AppLocalizations.of(context).pending;
       case VehicleVerificationStatus.rejected:
-        return 'Rejected';
+        return AppLocalizations.of(context).rejected;
     }
   }
 }
@@ -636,9 +636,7 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
   Future<void> _pickImage() async {
     final accepted = await PermissionDialogHelper.showCameraRationale(
       context,
-      customMessage:
-          'Access to your photo library is needed to '
-          'upload a photo of your vehicle.',
+      customMessage: AppLocalizations.of(context).uploadVehiclePhotoPermission,
     );
     if (!accepted) return;
     final picker = ImagePicker();
@@ -734,7 +732,7 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
                 ),
                 const Spacer(),
                 IconButton(
-                  tooltip: 'Close',
+                  tooltip: AppLocalizations.of(context).actionClose,
                   onPressed: () => context.pop(),
                   icon: Icon(Icons.close, color: AppColors.textSecondary),
                 ),
@@ -1070,7 +1068,9 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
       ),
       validator:
           customValidator ??
-          FormBuilderValidators.required(errorText: 'Please enter $label'),
+          FormBuilderValidators.required(
+            errorText: AppLocalizations.of(context).pleaseEnterValue(label),
+          ),
     );
   }
 }

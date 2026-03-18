@@ -46,7 +46,7 @@ class _DriverOnboardingScreenState
     FuelType.hybrid,
     FuelType.pluginHybrid,
     FuelType.hydrogen,
-    FuelType.other
+    FuelType.other,
   ];
 
   bool _didScheduleProfilePrefill = false;
@@ -472,10 +472,12 @@ class _DriverOnboardingScreenState
               ),
               textInputAction: TextInputAction.next,
               validator: FormBuilderValidators.compose([
-                FormBuilderValidators.required(errorText: "Name is required"),
+                FormBuilderValidators.required(
+                  errorText: AppLocalizations.of(context).nameRequiredError,
+                ),
                 FormBuilderValidators.minLength(
                   2,
-                  errorText: "Name Must be at least 2 characters",
+                  errorText: AppLocalizations.of(context).nameMinLengthError,
                 ),
                 FormBuilderValidators.maxLength(60),
                 (value) => FormValidators.name(value),
@@ -608,7 +610,7 @@ class _DriverOnboardingScreenState
             _buildStepHeader(
               icon: Icons.directions_car_rounded,
               title: AppLocalizations.of(context).addYourVehicle,
-              subtitle: 'Tell us about your car so riders know what to expect.',
+              subtitle: AppLocalizations.of(context).driverVehicleStepSubtitle,
             ).animate().fadeIn(duration: 400.ms),
 
             SizedBox(height: 24.h),
@@ -617,12 +619,12 @@ class _DriverOnboardingScreenState
             FormBuilderTextField(
               name: "make",
               decoration: InputDecoration(
-                labelText: 'Make',
-                hintText: 'e.g., Toyota, Honda, BMW',
+                labelText: AppLocalizations.of(context).make,
+                hintText: AppLocalizations.of(context).vehicleMakeHint,
                 prefixIcon: Icon(Icons.business_rounded),
               ),
               validator: FormBuilderValidators.required(
-                errorText: 'Please enter vehicle make',
+                errorText: AppLocalizations.of(context).pleaseEnterVehicleMake,
               ),
             ).animate().fadeIn(duration: 400.ms, delay: 100.ms),
 
@@ -632,12 +634,12 @@ class _DriverOnboardingScreenState
             FormBuilderTextField(
               name: "model",
               decoration: InputDecoration(
-                labelText: 'Model',
-                hintText: 'e.g., Corolla, Civic, 3 Series',
+                labelText: AppLocalizations.of(context).model,
+                hintText: AppLocalizations.of(context).vehicleModelHint,
                 prefixIcon: Icon(Icons.directions_car_outlined),
               ),
               validator: FormBuilderValidators.required(
-                errorText: 'Please enter vehicle model',
+                errorText: AppLocalizations.of(context).pleaseEnterVehicleModel,
               ),
             ).animate().fadeIn(duration: 400.ms, delay: 150.ms),
 
@@ -650,14 +652,16 @@ class _DriverOnboardingScreenState
                   child: FormBuilderTextField(
                     name: "year",
                     decoration: InputDecoration(
-                      labelText: 'Year',
-                      hintText: 'e.g., 2020',
+                      labelText: AppLocalizations.of(context).year,
+                      hintText: AppLocalizations.of(context).vehicleYearHint,
                       prefixIcon: Icon(Icons.calendar_today_outlined),
                     ),
                     keyboardType: TextInputType.number,
                     textInputAction: TextInputAction.next,
                     validator: FormBuilderValidators.compose([
-                      FormBuilderValidators.required(errorText: 'Required'),
+                      FormBuilderValidators.required(
+                        errorText: AppLocalizations.of(context).requiredField,
+                      ),
                       (value) => FormValidators.vehicleYear(value),
                     ]),
                   ),
@@ -667,12 +671,12 @@ class _DriverOnboardingScreenState
                   child: FormBuilderTextField(
                     name: "color",
                     decoration: InputDecoration(
-                      labelText: 'Color',
-                      hintText: 'e.g., White',
+                      labelText: AppLocalizations.of(context).color,
+                      hintText: AppLocalizations.of(context).vehicleColorHint,
                       prefixIcon: Icon(Icons.palette_outlined),
                     ),
                     validator: FormBuilderValidators.required(
-                      errorText: 'Required',
+                      errorText: AppLocalizations.of(context).requiredField,
                     ),
                   ),
                 ),
@@ -685,15 +689,17 @@ class _DriverOnboardingScreenState
             FormBuilderTextField(
               name: "license_plate",
               decoration: InputDecoration(
-                labelText: 'License Plate',
-                hintText: 'e.g., ABC 123',
+                labelText: AppLocalizations.of(context).licensePlate,
+                hintText: AppLocalizations.of(context).licensePlateHint,
                 prefixIcon: Icon(Icons.credit_card_rounded),
-                helperText: '2-12 characters, letters & numbers',
+                helperText: AppLocalizations.of(context).licensePlateHelperText,
               ),
               textCapitalization: TextCapitalization.characters,
               validator: FormBuilderValidators.compose([
                 FormBuilderValidators.required(
-                  errorText: 'Please enter license plate',
+                  errorText: AppLocalizations.of(
+                    context,
+                  ).pleaseEnterLicensePlate,
                 ),
                 (value) => FormValidators.licensePlate(value),
               ]),
@@ -705,22 +711,24 @@ class _DriverOnboardingScreenState
             FormBuilderTextField(
               name: "seats",
               decoration: InputDecoration(
-                labelText: 'Available Seats',
+                labelText: AppLocalizations.of(context).availableSeats,
                 hintText: '4',
                 prefixIcon: Icon(Icons.event_seat_rounded),
               ),
               keyboardType: TextInputType.number,
               validator: FormBuilderValidators.compose([
                 FormBuilderValidators.required(
-                  errorText: 'Please enter number of seats',
+                  errorText: AppLocalizations.of(
+                    context,
+                  ).pleaseEnterNumberOfSeats,
                 ),
                 FormBuilderValidators.integer(
-                  errorText: 'Must be a whole number',
+                  errorText: AppLocalizations.of(context).mustBeWholeNumber,
                 ),
                 FormBuilderValidators.between(
                   1,
                   8,
-                  errorText: 'Enter 1–8 seats',
+                  errorText: AppLocalizations.of(context).enter1To8Seats,
                 ),
               ]),
             ).animate().fadeIn(duration: 400.ms, delay: 300.ms),
@@ -747,7 +755,7 @@ class _DriverOnboardingScreenState
             SizedBox(
               width: double.infinity,
               child: PremiumButton(
-                text: 'Save & Continue',
+                text: AppLocalizations.of(context).driverSaveAndContinue,
                 onPressed: vmState.isLoading ? null : _saveVehicleAndContinue,
                 isLoading: vmState.isLoading,
                 style: PremiumButtonStyle.primary,
@@ -773,8 +781,7 @@ class _DriverOnboardingScreenState
           _buildStepHeader(
             icon: Icons.account_balance_rounded,
             title: AppLocalizations.of(context).setupPayouts,
-            subtitle:
-                'Connect your bank account to receive payments from your rides.',
+            subtitle: AppLocalizations.of(context).driverStripeStepSubtitle,
           ).animate().fadeIn(duration: 400.ms),
 
           SizedBox(height: 32.h),
@@ -799,19 +806,23 @@ class _DriverOnboardingScreenState
                 _buildBenefitItem(
                   icon: Icons.security_rounded,
                   title: AppLocalizations.of(context).securePayments,
-                  description: 'Powered by Stripe, trusted by millions',
+                  description: AppLocalizations.of(
+                    context,
+                  ).stripePoweredByMillions,
                 ),
                 SizedBox(height: 16.h),
                 _buildBenefitItem(
                   icon: Icons.flash_on_rounded,
                   title: AppLocalizations.of(context).fastTransfers,
-                  description: 'Get paid within 2-3 business days',
+                  description: AppLocalizations.of(
+                    context,
+                  ).stripeFastTransfersDesc,
                 ),
                 SizedBox(height: 16.h),
                 _buildBenefitItem(
                   icon: Icons.receipt_long_rounded,
                   title: AppLocalizations.of(context).easyTracking,
-                  description: 'View all your earnings in one place',
+                  description: AppLocalizations.of(context).stripeEarningsDesc,
                 ),
               ],
             ),
@@ -823,7 +834,7 @@ class _DriverOnboardingScreenState
           SizedBox(
             width: double.infinity,
             child: PremiumButton(
-              text: 'Connect with Stripe',
+              text: AppLocalizations.of(context).connectWithStripe,
               onPressed: _setupStripe,
               style: PremiumButtonStyle.primary,
               size: PremiumButtonSize.large,

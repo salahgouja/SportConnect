@@ -184,7 +184,7 @@ class HelpCenterScreen extends ConsumerWidget {
           ),
         ),
         leading: IconButton(
-          tooltip: 'Go back',
+          tooltip: l10n.goBackTooltip,
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => context.pop(),
         ),
@@ -197,7 +197,11 @@ class HelpCenterScreen extends ConsumerWidget {
             SizedBox(height: 8.h),
 
             // Search bar
-            _buildSearchBar(ref, uiState).animate().fadeIn(duration: 300.ms),
+            _buildSearchBar(
+              context,
+              ref,
+              uiState,
+            ).animate().fadeIn(duration: 300.ms),
 
             SizedBox(height: 20.h),
 
@@ -211,7 +215,7 @@ class HelpCenterScreen extends ConsumerWidget {
 
             // FAQ sections
             Text(
-              'Frequently Asked Questions',
+              l10n.frequentlyAskedQuestions,
               style: TextStyle(
                 fontSize: 18.sp,
                 fontWeight: FontWeight.w700,
@@ -240,7 +244,11 @@ class HelpCenterScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSearchBar(WidgetRef ref, HelpCenterUiState uiState) {
+  Widget _buildSearchBar(
+    BuildContext context,
+    WidgetRef ref,
+    HelpCenterUiState uiState,
+  ) {
     return TextField(
       key: ValueKey(uiState.searchFieldKey),
       onChanged: ref
@@ -248,12 +256,12 @@ class HelpCenterScreen extends ConsumerWidget {
           .setSearchQuery,
       textInputAction: TextInputAction.search,
       decoration: InputDecoration(
-        hintText: 'Search help articles...',
+        hintText: AppLocalizations.of(context).searchHelpArticles,
         hintStyle: TextStyle(fontSize: 14.sp, color: AppColors.textTertiary),
         prefixIcon: Icon(Icons.search_rounded, color: AppColors.textSecondary),
         suffixIcon: uiState.searchQuery.isNotEmpty
             ? IconButton(
-                tooltip: 'Clear search',
+                tooltip: AppLocalizations.of(context).clearSearchTooltip,
                 icon: const Icon(Icons.clear_rounded),
                 onPressed: ref
                     .read(helpCenterUiViewModelProvider.notifier)

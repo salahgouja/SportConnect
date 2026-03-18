@@ -169,9 +169,6 @@ abstract class EventModel with _$EventModel {
     /// RSVP ride status per participant: { uid: 'driving' | 'need_ride' | 'self_arranged' }.
     @Default({}) Map<String, String> rideStatuses,
 
-    /// Parking info / instructions for attendees.
-    String? parkingInfo,
-
     /// Post-event meetup pin location for coordinating departure.
     LocationPoint? meetupPinLocation,
 

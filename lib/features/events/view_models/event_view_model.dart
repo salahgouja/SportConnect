@@ -27,7 +27,6 @@ class CreateEventFormState {
     this.title = '',
     this.venueName = '',
     this.description = '',
-    this.parkingInfo = '',
     this.type = EventType.running,
     DateTime? startsAt,
     this.endsAt,
@@ -52,7 +51,6 @@ class CreateEventFormState {
   final String title;
   final String venueName;
   final String description;
-  final String parkingInfo;
   final EventType type;
   final DateTime startsAt;
   final DateTime? endsAt;
@@ -73,7 +71,6 @@ class CreateEventFormState {
     String? title,
     String? venueName,
     String? description,
-    String? parkingInfo,
     EventType? type,
     DateTime? startsAt,
     DateTime? endsAt,
@@ -100,7 +97,6 @@ class CreateEventFormState {
       title: title ?? this.title,
       venueName: venueName ?? this.venueName,
       description: description ?? this.description,
-      parkingInfo: parkingInfo ?? this.parkingInfo,
       type: type ?? this.type,
       startsAt: startsAt ?? this.startsAt,
       endsAt: clearEndsAt ? null : (endsAt ?? this.endsAt),
@@ -207,10 +203,6 @@ class CreateEventFormViewModel extends _$CreateEventFormViewModel {
 
   void setDescription(String value) {
     state = state.copyWith(description: value, clearError: true);
-  }
-
-  void setParkingInfo(String value) {
-    state = state.copyWith(parkingInfo: value, clearError: true);
   }
 
   void setType(EventType type) {
@@ -348,9 +340,6 @@ class CreateEventFormViewModel extends _$CreateEventFormViewModel {
       organizerName: authUser.displayName,
       maxParticipants: state.maxParticipants,
       participantIds: [authUser.uid],
-      parkingInfo: state.parkingInfo.trim().isEmpty
-          ? null
-          : state.parkingInfo.trim(),
       isRecurring: state.isRecurring,
       recurringDays: state.sortedRecurringDays,
       recurringEndDate: state.recurringEndDate,
@@ -414,7 +403,6 @@ class EditEventFormState {
     this.title = '',
     this.venueName = '',
     this.description = '',
-    this.parkingInfo = '',
     this.type = EventType.running,
     this.startsAt,
     this.endsAt,
@@ -437,7 +425,6 @@ class EditEventFormState {
     title: event.title,
     venueName: event.venueName ?? '',
     description: event.description ?? '',
-    parkingInfo: event.parkingInfo ?? '',
     type: event.type,
     startsAt: event.startsAt,
     endsAt: event.endsAt,
@@ -453,7 +440,6 @@ class EditEventFormState {
   final String title;
   final String venueName;
   final String description;
-  final String parkingInfo;
   final EventType type;
   final DateTime? startsAt;
   final DateTime? endsAt;
@@ -475,7 +461,6 @@ class EditEventFormState {
     String? title,
     String? venueName,
     String? description,
-    String? parkingInfo,
     EventType? type,
     DateTime? startsAt,
     Object? endsAt = _sentinel,
@@ -499,7 +484,6 @@ class EditEventFormState {
       title: title ?? this.title,
       venueName: venueName ?? this.venueName,
       description: description ?? this.description,
-      parkingInfo: parkingInfo ?? this.parkingInfo,
       type: type ?? this.type,
       startsAt: startsAt ?? this.startsAt,
       endsAt: identical(endsAt, _sentinel) ? this.endsAt : endsAt as DateTime?,
@@ -613,12 +597,6 @@ class EditEventFormViewModel extends _$EditEventFormViewModel {
 
   void setDescription(String value) => state = state.copyWith(
     description: value,
-    isSaved: false,
-    clearError: true,
-  );
-
-  void setParkingInfo(String value) => state = state.copyWith(
-    parkingInfo: value,
     isSaved: false,
     clearError: true,
   );
@@ -757,9 +735,6 @@ class EditEventFormViewModel extends _$EditEventFormViewModel {
             : state.venueName.trim(),
         imageUrl: imageUrl,
         maxParticipants: state.maxParticipants,
-        parkingInfo: state.parkingInfo.trim().isEmpty
-            ? null
-            : state.parkingInfo.trim(),
         isRecurring: state.isRecurring,
         recurringDays: [...state.recurringDays]..sort(),
         recurringEndDate: state.recurringEndDate,
@@ -870,7 +845,6 @@ class EventSelectionViewModel extends _$EventSelectionViewModel {
     String? venueName,
     String? organizerName,
     int maxParticipants = 0,
-    String? parkingInfo,
     bool isRecurring = false,
     List<int> recurringDays = const [],
     DateTime? recurringEndDate,
@@ -896,9 +870,6 @@ class EventSelectionViewModel extends _$EventSelectionViewModel {
             : organizerName!.trim(),
         maxParticipants: maxParticipants,
         participantIds: [creatorId],
-        parkingInfo: parkingInfo?.trim().isEmpty ?? true
-            ? null
-            : parkingInfo!.trim(),
         isRecurring: isRecurring,
         recurringDays: recurringDays,
         recurringEndDate: recurringEndDate,

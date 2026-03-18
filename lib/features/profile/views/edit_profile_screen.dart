@@ -143,7 +143,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             ],
           ),
           child: PremiumButton(
-            text: 'Save Changes',
+            text: AppLocalizations.of(context).saveChanges,
             onPressed: editState.hasChanges ? _saveProfile : null,
             isLoading: editState.isLoading,
             icon: Icons.check_rounded,
@@ -158,7 +158,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               elevation: 0,
               pinned: true,
               leading: IconButton(
-                tooltip: 'Back',
+                tooltip: AppLocalizations.of(context).goBackTooltip,
                 onPressed: () => context.pop(),
                 icon: Icon(
                   Icons.arrow_back_ios_new_rounded,
@@ -266,14 +266,18 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           FormBuilderTextField(
                             name: 'name',
                             decoration: InputDecoration(
-                              labelText: 'Full Name',
+                              labelText: AppLocalizations.of(
+                                context,
+                              ).authFullName,
                               prefixIcon: const Icon(
                                 Icons.person_outline_rounded,
                               ),
                             ),
                             validator: FormBuilderValidators.compose([
                               FormBuilderValidators.required(
-                                errorText: 'Required',
+                                errorText: AppLocalizations.of(
+                                  context,
+                                ).requiredField,
                               ),
                               FormBuilderValidators.minLength(2),
                               FormBuilderValidators.maxLength(60),
@@ -284,7 +288,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           FormBuilderTextField(
                             name: 'email',
                             decoration: InputDecoration(
-                              labelText: 'Email',
+                              labelText: AppLocalizations.of(context).authEmail,
                               prefixIcon: const Icon(Icons.email_outlined),
                               filled: true,
                               fillColor: AppColors.background,

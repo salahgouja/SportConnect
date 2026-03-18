@@ -54,12 +54,12 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.photo_library_rounded),
-              title: const Text('Choose from Gallery'),
+              title: Text(AppLocalizations.of(context).chooseFromGallery),
               onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
             ListTile(
               leading: const Icon(Icons.camera_alt_rounded),
-              title: const Text('Take a Photo'),
+              title: Text(AppLocalizations.of(context).takePhoto),
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
           ],
@@ -130,7 +130,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
           ),
         ),
         leading: IconButton(
-          tooltip: 'Go back',
+          tooltip: l10n.goBackTooltip,
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => context.pop(),
         ),
@@ -175,7 +175,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'How can we help?',
+                      l10n.howCanWeHelp,
                       style: TextStyle(
                         fontSize: 15.sp,
                         fontWeight: FontWeight.w700,
@@ -184,7 +184,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
                     ),
                     SizedBox(height: 4.h),
                     Text(
-                      'We typically respond within 24 hours.',
+                      l10n.responseTimeMessage,
                       style: TextStyle(
                         fontSize: 12.sp,
                         color: AppColors.textSecondary,
@@ -201,7 +201,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
 
         // Category selector
         Text(
-          'Category',
+          l10n.categoryLabel,
           style: TextStyle(
             fontSize: 14.sp,
             fontWeight: FontWeight.w600,
@@ -221,7 +221,10 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
               value: supportState.selectedCategory,
               isExpanded: true,
               items: _categories.map((cat) {
-                return DropdownMenuItem(value: cat, child: Text(cat));
+                return DropdownMenuItem(
+                  value: cat,
+                  child: Text(_localizedCategoryLabel(l10n, cat)),
+                );
               }).toList(),
               onChanged: (value) {
                 if (value == null) return;
@@ -243,8 +246,8 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
               .setSubject,
           textCapitalization: TextCapitalization.sentences,
           decoration: InputDecoration(
-            labelText: 'Subject',
-            hintText: 'Brief description of your issue',
+            labelText: l10n.subjectLabel,
+            hintText: l10n.subjectHint,
             prefixIcon: const Icon(Icons.subject_rounded),
             errorText: supportState.subjectError,
           ),
@@ -254,7 +257,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
 
         // Message
         Text(
-          'Message',
+          l10n.messageFieldLabel,
           style: TextStyle(
             fontSize: 14.sp,
             fontWeight: FontWeight.w600,
@@ -270,7 +273,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
               .setMessage,
           textCapitalization: TextCapitalization.sentences,
           decoration: InputDecoration(
-            hintText: 'Describe your issue in detail...',
+            hintText: l10n.messageFieldHint,
             errorText: supportState.messageError,
             hintStyle: TextStyle(
               fontSize: 14.sp,
@@ -323,8 +326,11 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
                 Expanded(
                   child: Text(
                     supportState.attachedFiles.isEmpty
-                        ? 'Attach screenshots or files (optional)'
-                        : '${supportState.attachedFiles.length}/${ContactSupportViewModel.maxAttachments} files attached',
+                        ? l10n.attachFilesHint
+                        : l10n.filesAttachedCount(
+                            supportState.attachedFiles.length,
+                            ContactSupportViewModel.maxAttachments,
+                          ),
                     style: TextStyle(
                       fontSize: 13.sp,
                       color: supportState.attachedFiles.isEmpty
@@ -396,7 +402,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
         SizedBox(
           width: double.infinity,
           child: PremiumButton(
-            text: 'Submit Ticket',
+            text: l10n.submitTicketButton,
             onPressed: supportState.isSubmitting ? null : _submitTicket,
             isLoading: supportState.isSubmitting,
             icon: Icons.send_rounded,
@@ -425,7 +431,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Average response time',
+                      l10n.averageResponseTime,
                       style: TextStyle(
                         fontSize: 12.sp,
                         fontWeight: FontWeight.w600,
@@ -433,7 +439,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
                       ),
                     ),
                     Text(
-                      'Most inquiries are answered within 12-24 hours',
+                      l10n.responseTimeInfo,
                       style: TextStyle(
                         fontSize: 11.sp,
                         color: AppColors.textTertiary,
@@ -475,7 +481,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
         SizedBox(height: 24.h),
 
         Text(
-          'Ticket Submitted!',
+          AppLocalizations.of(context).ticketSubmittedTitle,
           style: TextStyle(
             fontSize: 24.sp,
             fontWeight: FontWeight.w800,
@@ -486,8 +492,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
         SizedBox(height: 12.h),
 
         Text(
-          'We\'ve received your message and will get back to you '
-          'within 24 hours. Check your email for updates.',
+          AppLocalizations.of(context).ticketSubmittedMessage,
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 14.sp,
@@ -501,12 +506,35 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
         SizedBox(
           width: double.infinity,
           child: PremiumButton(
-            text: 'Back to Settings',
+            text: AppLocalizations.of(context).backToSettings,
             onPressed: () => context.pop(),
             icon: Icons.arrow_back_rounded,
           ),
         ).animate().fadeIn(delay: 400.ms),
       ],
     );
+  }
+}
+
+String _localizedCategoryLabel(AppLocalizations l10n, String category) {
+  switch (category) {
+    case 'General':
+      return l10n.supportCategoryGeneral;
+    case 'Account Issue':
+      return l10n.supportCategoryAccountIssue;
+    case 'Payment Problem':
+      return l10n.supportCategoryPaymentProblem;
+    case 'Ride Issue':
+      return l10n.supportCategoryRideIssue;
+    case 'Safety Concern':
+      return l10n.supportCategorySafetyReport;
+    case 'Bug Report':
+      return l10n.supportCategoryTechnicalBug;
+    case 'Feature Request':
+      return l10n.supportCategoryFeatureRequest;
+    case 'Other':
+      return l10n.supportCategoryOther;
+    default:
+      return category;
   }
 }

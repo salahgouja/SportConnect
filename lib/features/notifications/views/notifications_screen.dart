@@ -27,6 +27,8 @@ class NotificationsScreen extends ConsumerStatefulWidget {
 class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   void _showStatusSnackBar(String message, {required Color backgroundColor}) {
     if (!context.mounted) return;
@@ -50,6 +52,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
 
   @override
   void dispose() {
+    _searchController.dispose();
     _tabController.dispose();
     super.dispose();
   }
@@ -71,7 +74,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
 
     showDialog(
       context: scaffoldContext,
-      barrierLabel: 'Clear notifications dialog',
+      barrierLabel: AppLocalizations.of(context).clearAllNotifications,
       builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
@@ -285,9 +288,21 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
   }
 
   Widget _buildContent(List<NotificationModel> notifications, String userId) {
+    final normalizedQuery = _searchQuery.trim().toLowerCase();
+    final filteredAllNotifications = normalizedQuery.isEmpty
+        ? notifications
+        : notifications.where((n) {
+            final sender = n.senderName?.toLowerCase() ?? '';
+            return n.title.toLowerCase().contains(normalizedQuery) ||
+                n.body.toLowerCase().contains(normalizedQuery) ||
+                sender.contains(normalizedQuery);
+          }).toList();
+
+    final unreadNotifications = filteredAllNotifications
+        .where((n) => !n.isRead)
+        .toList();
+    final allNotifications = filteredAllNotifications;
     final unreadCount = notifications.where((n) => !n.isRead).length;
-    final unreadNotifications = notifications.where((n) => !n.isRead).toList();
-    final allNotifications = notifications;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -353,6 +368,45 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                 ),
                 Tab(text: AppLocalizations.of(context).all),
               ],
+            ),
+          ),
+
+          // Search
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              0,
+              AppSpacing.md,
+              AppSpacing.sm,
+            ),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
+              },
+              decoration: InputDecoration(
+                hintText: AppLocalizations.of(context).searchConversations,
+                prefixIcon: const Icon(Icons.search_rounded),
+                suffixIcon: _searchQuery.isEmpty
+                    ? null
+                    : IconButton(
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {
+                            _searchQuery = '';
+                          });
+                        },
+                      ),
+                filled: true,
+                fillColor: AppColors.surface,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                  borderSide: BorderSide.none,
+                ),
+              ),
             ),
           ),
 
@@ -469,48 +523,70 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     String userId,
   ) {
     if (notifications.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+      return RefreshIndicator(
+        onRefresh: () async {
+          ref.read(notificationViewModelProvider.notifier).refresh();
+          await Future<void>.delayed(const Duration(milliseconds: 250));
+        },
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
           children: [
-            Icon(
-              Icons.notifications_off_outlined,
-              size: 80.sp,
-              color: AppColors.textSecondary.withValues(alpha: 0.5),
-            ),
-            SizedBox(height: 16.h),
-            Text(
-              AppLocalizations.of(context).noNotifications,
-              style: TextStyle(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary,
+            SizedBox(height: 120.h),
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.notifications_off_outlined,
+                    size: 80.sp,
+                    color: AppColors.textSecondary.withValues(alpha: 0.5),
+                  ),
+                  SizedBox(height: 16.h),
+                  Text(
+                    AppLocalizations.of(context).noNotifications,
+                    style: TextStyle(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+                  Text(
+                    AppLocalizations.of(context).youReAllCaughtUp,
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
               ),
-            ),
-            SizedBox(height: 8.h),
-            Text(
-              AppLocalizations.of(context).youReAllCaughtUp,
-              style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
             ),
           ],
         ),
       );
     }
 
-    return ListView.builder(
-      padding: EdgeInsets.all(AppSpacing.md),
-      itemCount: notifications.length,
-      itemBuilder: (context, index) {
-        final notification = notifications[index];
-        return _NotificationTile(
-              notification: notification,
-              onTap: () => _handleNotificationTap(notification),
-              onDismiss: () => _dismissNotification(notification.id),
-            )
-            .animate()
-            .fadeIn(delay: Duration(milliseconds: 50 * index))
-            .slideX(begin: 0.1, delay: Duration(milliseconds: 50 * index));
+    return RefreshIndicator(
+      onRefresh: () async {
+        ref.read(notificationViewModelProvider.notifier).refresh();
+        await Future<void>.delayed(const Duration(milliseconds: 250));
       },
+      child: ListView.builder(
+        padding: EdgeInsets.all(AppSpacing.md),
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: notifications.length,
+        itemBuilder: (context, index) {
+          final notification = notifications[index];
+          return _NotificationTile(
+                notification: notification,
+                onTap: () => _handleNotificationTap(notification),
+                onDismiss: () => _dismissNotification(notification.id),
+              )
+              .animate()
+              .fadeIn(delay: Duration(milliseconds: 50 * index))
+              .slideX(begin: 0.1, delay: Duration(milliseconds: 50 * index));
+        },
+      ),
     );
   }
 

@@ -89,11 +89,11 @@ class _DriverRatePassengerScreenState
           context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Row(
+            content: Row(
               children: [
                 Icon(Icons.check_circle_rounded, color: Colors.white),
                 SizedBox(width: 8),
-                Text('Rating submitted — thank you!'),
+                Text(AppLocalizations.of(context).ratingSubmittedThankYou),
               ],
             ),
             backgroundColor: AppColors.success,
@@ -111,7 +111,9 @@ class _DriverRatePassengerScreenState
       data: (ride) {
         if (ride == null) {
           return _buildScaffold(
-            body: const Center(child: Text('Ride not found.')),
+            body: Center(
+              child: Text(AppLocalizations.of(context).rideNotFound),
+            ),
           );
         }
         return _buildContent(ride, bookings, formState);
@@ -119,7 +121,9 @@ class _DriverRatePassengerScreenState
       loading: () => _buildScaffold(
         body: const Center(child: CircularProgressIndicator()),
       ),
-      error: (e, _) => _buildScaffold(body: Center(child: Text('Error: $e'))),
+      error: (e, _) => _buildScaffold(
+        body: Center(child: Text(AppLocalizations.of(context).errorValue(e))),
+      ),
     );
   }
 
@@ -128,7 +132,7 @@ class _DriverRatePassengerScreenState
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.primary,
-        title: const Text('Rate Passenger'),
+        title: Text(AppLocalizations.of(context).ratePassenger),
         centerTitle: true,
       ),
       body: body,
@@ -144,7 +148,7 @@ class _DriverRatePassengerScreenState
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.primary,
-        title: const Text('Rate Passenger'),
+        title: Text(AppLocalizations.of(context).ratePassenger),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -305,7 +309,9 @@ class _DriverRatePassengerScreenState
                 maxLength: 300,
                 style: TextStyle(fontSize: 14.sp, color: AppColors.textPrimary),
                 decoration: InputDecoration(
-                  hintText: 'What made this passenger great (or not)?',
+                  hintText: AppLocalizations.of(
+                    context,
+                  ).ratePassengerCommentHint,
                   hintStyle: TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 14.sp,
@@ -338,7 +344,7 @@ class _DriverRatePassengerScreenState
 
               // Submit button
               PremiumButton(
-                text: 'Submit Rating',
+                text: AppLocalizations.of(context).submitRating,
                 isLoading: formState.isSubmitting,
                 isDisabled: !formState.canSubmit,
                 onPressed: formState.canSubmit ? () => _submitRating() : null,
@@ -514,7 +520,9 @@ class _DriverRatePassengerScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to submit: $e'),
+            content: Text(
+              AppLocalizations.of(context).failedToSubmitValue(e.toString()),
+            ),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
