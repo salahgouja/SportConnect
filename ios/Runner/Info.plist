@@ -55,8 +55,6 @@
 		<!-- Location permissions -->
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>SportConnect needs your location to find nearby rides and events</string>
-		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-		<string>SportConnect needs your location to provide carpool directions</string>
 		<key>UILaunchStoryboardName</key>
 		<string>LaunchScreen</string>
 		<key>UIMainStoryboardFile</key>

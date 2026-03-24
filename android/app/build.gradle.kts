@@ -33,7 +33,6 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.sportconnect.sport_connect"
         // Stripe requires minSdk 21+
         minSdk = flutter.minSdkVersion
