@@ -7,7 +7,6 @@ import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/driver_stats.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
-import 'package:sport_connect/features/rides/models/ride_request_model.dart';
 
 part 'driver_stats_repository.g.dart';
 
@@ -41,15 +40,6 @@ class DriverStatsRepository implements IDriverStatsRepository {
             toFirestore: (tx, _) => tx.toJson(),
           );
 
-  CollectionReference<RideRequestModel> get _rideRequestsCollection =>
-      _firestore
-          .collection(AppConstants.rideRequestsCollection)
-          .withConverter<RideRequestModel>(
-            fromFirestore: (snap, _) =>
-                RideRequestModel.fromJson({...snap.data()!, 'id': snap.id}),
-            toFirestore: (req, _) => req.toJson(),
-          );
-
   CollectionReference<RideBooking> get _rideBookingsCollection => _firestore
       .collection(AppConstants.bookingsCollection)
       .withConverter<RideBooking>(
@@ -79,57 +69,38 @@ class DriverStatsRepository implements IDriverStatsRepository {
     });
   }
 
-  /// Update driver online status
+  /// Streams pending bookings for a driver (replaces old rideRequests flow).
   @override
-  Future<void> setOnlineStatus(String driverId, bool isOnline) async {
-    DriverStats? currentStats = await getDriverStats(driverId);
-    final updatedStats = currentStats.copyWith(isOnline: isOnline);
-    await _driverStatsCollection
-        .doc(driverId)
-        .set(updatedStats, SetOptions(merge: true));
-  }
-
-  /// Streams pending ride requests for a driver.
-  ///
-  /// Queries the `rideRequests` collection directly for pending requests
-  /// addressed to this driver.
-  @override
-  Stream<List<RideRequestModel>> streamPendingRequests(String driverId) {
-    return _rideRequestsCollection
+  Stream<List<RideBooking>> streamPendingRequests(String driverId) {
+    return _rideBookingsCollection
         .where('driverId', isEqualTo: driverId)
-        .where('status', isEqualTo: RideRequestStatus.pending.name)
+        .where('status', isEqualTo: BookingStatus.pending.name)
         .orderBy('createdAt', descending: true)
         .limit(50)
         .snapshots()
-        .map((snapshot) {
-          return snapshot.docs.map((doc) => doc.data()).toList();
-        });
+        .map((s) => s.docs.map((d) => d.data()).toList());
   }
 
-  /// Streams accepted ride requests for a driver.
-  Stream<List<RideRequestModel>> streamAcceptedRequests(String driverId) {
-    return _rideRequestsCollection
+  /// Streams accepted bookings for a driver.
+  Stream<List<RideBooking>> streamAcceptedRequests(String driverId) {
+    return _rideBookingsCollection
         .where('driverId', isEqualTo: driverId)
-        .where('status', isEqualTo: RideRequestStatus.accepted.name)
+        .where('status', isEqualTo: BookingStatus.accepted.name)
         .orderBy('createdAt', descending: true)
         .limit(50)
         .snapshots()
-        .map((snapshot) {
-          return snapshot.docs.map((doc) => doc.data()).toList();
-        });
+        .map((s) => s.docs.map((d) => d.data()).toList());
   }
 
-  /// Streams rejected ride requests for a driver.
-  Stream<List<RideRequestModel>> streamRejectedRequests(String driverId) {
-    return _rideRequestsCollection
+  /// Streams rejected/cancelled bookings for a driver.
+  Stream<List<RideBooking>> streamRejectedRequests(String driverId) {
+    return _rideBookingsCollection
         .where('driverId', isEqualTo: driverId)
-        .where('status', isEqualTo: RideRequestStatus.rejected.name)
+        .where('status', whereIn: [BookingStatus.rejected.name, BookingStatus.cancelled.name])
         .orderBy('createdAt', descending: true)
         .limit(50)
         .snapshots()
-        .map((snapshot) {
-          return snapshot.docs.map((doc) => doc.data()).toList();
-        });
+        .map((s) => s.docs.map((d) => d.data()).toList());
   }
 
   /// Get upcoming rides for driver - returns proper RideModel
@@ -175,13 +146,13 @@ class DriverStatsRepository implements IDriverStatsRepository {
     // Update booking status
     await _rideBookingsCollection.doc(bookingId).update({
       'status': 'accepted',
-      'respondedAt': DateTime.now(),
+      'respondedAt': FieldValue.serverTimestamp(),
     });
 
     // Update ride capacity
     await _ridesCollection.doc(rideId).update({
       'capacity.booked': FieldValue.increment(seatsBooked),
-      'updatedAt': DateTime.now(),
+      'updatedAt': FieldValue.serverTimestamp(),
     });
   }
 
@@ -195,7 +166,7 @@ class DriverStatsRepository implements IDriverStatsRepository {
 
     await _rideBookingsCollection.doc(bookingId).update({
       'status': 'rejected',
-      'respondedAt': DateTime.now(),
+      'respondedAt': FieldValue.serverTimestamp(),
     });
   }
 
@@ -209,16 +180,16 @@ class DriverStatsRepository implements IDriverStatsRepository {
     DriverStats? currentStats = await getDriverStats(driverId);
     final updatedStats = currentStats.copyWith(
       totalRides: currentStats.totalRides + 1,
-      ridesCompleted: currentStats.ridesCompleted + 1,
+      ridesToday: currentStats.ridesToday + 1, // new
       ridesThisWeek: currentStats.ridesThisWeek + 1,
       ridesThisMonth: currentStats.ridesThisMonth + 1,
       totalEarnings: currentStats.totalEarnings + earnings,
+      earningsToday: currentStats.earningsToday + earnings,
       earningsThisWeek: currentStats.earningsThisWeek + earnings,
       earningsThisMonth: currentStats.earningsThisMonth + earnings,
-      earningsToday: currentStats.earningsToday + earnings,
       totalDistance: currentStats.totalDistance + distanceKm,
       lastRideAt: DateTime.now(),
-    );
+    );  
     await _driverStatsCollection
         .doc(driverId)
         .set(updatedStats, SetOptions(merge: true));
@@ -235,36 +206,24 @@ Stream<DriverStats> driverStats(Ref ref) {
 }
 
 @riverpod
-Stream<List<RideRequestModel>> pendingRideRequests(Ref ref) {
+Stream<List<RideBooking>> pendingRideRequests(Ref ref) {
   final user = ref.watch(authStateProvider).value;
-  if (user == null) {
-    return Stream.value([]);
-  }
-  return ref
-      .watch(driverStatsRepositoryProvider)
-      .streamPendingRequests(user.uid);
+  if (user == null) return Stream.value([]);
+  return ref.watch(driverStatsRepositoryProvider).streamPendingRequests(user.uid);
 }
 
 @riverpod
-Stream<List<RideRequestModel>> acceptedRideRequests(Ref ref) {
+Stream<List<RideBooking>> acceptedRideRequests(Ref ref) {
   final user = ref.watch(authStateProvider).value;
-  if (user == null) {
-    return Stream.value([]);
-  }
-  return ref
-      .watch(driverStatsRepositoryProvider)
-      .streamAcceptedRequests(user.uid);
+  if (user == null) return Stream.value([]);
+  return ref.watch(driverStatsRepositoryProvider).streamAcceptedRequests(user.uid);
 }
 
 @riverpod
-Stream<List<RideRequestModel>> rejectedRideRequests(Ref ref) {
+Stream<List<RideBooking>> rejectedRideRequests(Ref ref) {
   final user = ref.watch(authStateProvider).value;
-  if (user == null) {
-    return Stream.value([]);
-  }
-  return ref
-      .watch(driverStatsRepositoryProvider)
-      .streamRejectedRequests(user.uid);
+  if (user == null) return Stream.value([]);
+  return ref.watch(driverStatsRepositoryProvider).streamRejectedRequests(user.uid);
 }
 
 @riverpod

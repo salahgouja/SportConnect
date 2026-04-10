@@ -5,13 +5,11 @@ import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
-/// Premium Avatar with border, badge, and online indicator
+/// Premium Avatar with border and badge
 class PremiumAvatar extends StatelessWidget {
   final String? imageUrl;
   final String? name;
   final double size;
-  final bool showOnlineIndicator;
-  final bool isOnline;
   final bool hasBorder;
   final Color? borderColor;
   final Widget? badge;
@@ -23,8 +21,6 @@ class PremiumAvatar extends StatelessWidget {
     this.imageUrl,
     this.name,
     this.size = 48,
-    this.showOnlineIndicator = false,
-    this.isOnline = false,
     this.hasBorder = false,
     this.borderColor,
     this.badge,
@@ -71,21 +67,6 @@ class PremiumAvatar extends StatelessWidget {
               ),
             ),
           ),
-          // Online indicator
-          if (showOnlineIndicator)
-            Positioned(
-              right: 0,
-              bottom: 0,
-              child: Container(
-                width: (size * 0.28).w,
-                height: (size * 0.28).w,
-                decoration: BoxDecoration(
-                  color: isOnline ? AppColors.success : AppColors.textTertiary,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.cardBg, width: 2),
-                ),
-              ),
-            ),
           // Badge
           if (badge != null) Positioned(right: 0, top: 0, child: badge!),
         ],
@@ -298,8 +279,8 @@ class EditableAvatar extends StatelessWidget {
                 color: Colors.black38,
               ),
               child: Center(
-                child: CircularProgressIndicator(
-                  color: Colors.white,
+                child: CircularProgressIndicator.adaptive(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   strokeWidth: 2,
                 ),
               ),

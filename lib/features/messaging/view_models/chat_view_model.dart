@@ -8,6 +8,15 @@ import 'package:sport_connect/core/providers/repository_providers.dart';
 
 part 'chat_view_model.g.dart';
 
+const String kDraftChatPrefix = 'draft-';
+
+String buildDraftChatId(String userId1, String userId2) {
+  final sorted = [userId1, userId2]..sort();
+  return '$kDraftChatPrefix${sorted[0]}__${sorted[1]}';
+}
+
+bool isDraftChatId(String chatId) => chatId.startsWith(kDraftChatPrefix);
+
 /// State for chat list
 class ChatListState {
   final List<ChatModel> chats;
@@ -93,6 +102,26 @@ class ChatActionsViewModel {
     return _ref.read(chatRepositoryProvider).getChatById(chatId);
   }
 
+  Future<ChatModel> getOrCreatePrivateChat({
+    required String userId1,
+    required String userId2,
+    required String userName1,
+    required String userName2,
+    String? userPhoto1,
+    String? userPhoto2,
+  }) {
+    return _ref
+        .read(chatRepositoryProvider)
+        .getOrCreatePrivateChat(
+          userId1: userId1,
+          userId2: userId2,
+          userName1: userName1,
+          userName2: userName2,
+          userPhoto1: userPhoto1,
+          userPhoto2: userPhoto2,
+        );
+  }
+
   Future<void> clearChat({required String chatId, required String userId}) {
     return _ref
         .read(chatRepositoryProvider)
@@ -100,17 +129,33 @@ class ChatActionsViewModel {
   }
 
   Future<void> blockUser({
-    required String chatId,
+    String? chatId,
     required String userId,
     required String blockedUserId,
-  }) {
-    return _ref
-        .read(chatRepositoryProvider)
-        .blockUser(
-          chatId: chatId,
-          userId: userId,
-          blockedUserId: blockedUserId,
-        );
+  }) async {
+    await _ref.read(profileRepositoryProvider).blockUser(userId, blockedUserId);
+
+    if (chatId != null && chatId.isNotEmpty) {
+      await _ref
+          .read(chatRepositoryProvider)
+          .toggleMute(chatId: chatId, odid: userId, mute: true);
+    }
+  }
+
+  Future<void> unblockUser({
+    String? chatId,
+    required String userId,
+    required String blockedUserId,
+  }) async {
+    await _ref
+        .read(profileRepositoryProvider)
+        .unblockUser(userId, blockedUserId);
+
+    if (chatId != null && chatId.isNotEmpty) {
+      await _ref
+          .read(chatRepositoryProvider)
+          .toggleMute(chatId: chatId, odid: userId, mute: false);
+    }
   }
 }
 
@@ -120,6 +165,14 @@ Stream<List<ChatModel>> userChats(Ref ref, String userId) {
   final repository = ref.watch(chatRepositoryProvider);
   return repository.streamUserChats(userId);
 }
+
+final blockedUserIdsProvider = StreamProvider.family<List<String>, String>((
+  ref,
+  userId,
+) {
+  final repository = ref.watch(profileRepositoryProvider);
+  return repository.streamBlockedUserIds(userId);
+});
 
 /// Chat Detail View Model
 @riverpod
@@ -137,6 +190,10 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
       _typingTimer?.cancel();
     });
 
+    if (isDraftChatId(chatId)) {
+      return const ChatDetailState(isLoading: false);
+    }
+
     // Start listening to messages
     _listenToMessages();
     _listenToTyping();
@@ -150,9 +207,11 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
         .streamMessages(chatId)
         .listen(
           (messages) {
+            if (!ref.mounted) return;
             state = state.copyWith(messages: messages, isLoading: false);
           },
           onError: (e) {
+            if (!ref.mounted) return;
             state = state.copyWith(error: e.toString(), isLoading: false);
           },
         );
@@ -164,6 +223,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
   /// automatically during provider initialization to avoid write side effects
   /// in `build()`.
   Future<void> markVisibleMessagesAsRead() async {
+    if (isDraftChatId(chatId)) return;
     await _markMessagesAsRead(state.messages);
   }
 
@@ -172,6 +232,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
     _typingSubscription = repository.streamTypingIndicators(chatId).listen((
       indicators,
     ) {
+      if (!ref.mounted) return;
       // Filter out current user
       final others = indicators.where((t) => t.odid != currentUserId).toList();
       state = state.copyWith(typingUsers: others);
@@ -222,15 +283,18 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
       );
 
       await repository.sendMessage(message);
+      if (!ref.mounted) return false;
       state = state.copyWith(isSending: false);
 
       // Stop typing indicator
       await setTyping(false, senderName);
+      if (!ref.mounted) return false;
 
       // Write an in-app notification for every other chat participant.
       // Fire-and-forget: a notification failure must never break messaging.
       try {
         final chat = await ref.read(chatRepositoryProvider).getChatById(chatId);
+        if (!ref.mounted) return true;
         if (chat != null) {
           final notificationRepo = ref.read(notificationRepositoryProvider);
           final preview = type == MessageType.text
@@ -254,6 +318,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
 
       return true;
     } catch (e) {
+      if (!ref.mounted) return false;
       state = state.copyWith(isSending: false, error: e.toString());
       return false;
     }
@@ -265,6 +330,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
     required String senderName,
     String? senderPhotoUrl,
   }) async {
+    if (!ref.mounted) return false;
     state = state.copyWith(isSending: true, error: null);
     try {
       final imageUrl = await ref
@@ -274,6 +340,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
             imageFile: imageFile,
             fileName: fileName,
           );
+      if (!ref.mounted) return false;
 
       return await sendMessage(
         content: 'Photo',
@@ -285,6 +352,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
         replyToContent: state.replyToMessage?.content,
       );
     } catch (e) {
+      if (!ref.mounted) return false;
       state = state.copyWith(isSending: false, error: e.toString());
       return false;
     }
@@ -297,6 +365,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
     required String senderName,
     String? senderPhotoUrl,
   }) async {
+    if (!ref.mounted) return false;
     state = state.copyWith(isSending: true, error: null);
     try {
       final audioUrl = await ref
@@ -306,6 +375,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
             audioFile: audioFile,
             fileName: fileName,
           );
+      if (!ref.mounted) return false;
 
       return await sendMessage(
         content: 'Voice message ($durationText)',
@@ -317,6 +387,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
         replyToContent: state.replyToMessage?.content,
       );
     } catch (e) {
+      if (!ref.mounted) return false;
       state = state.copyWith(isSending: false, error: e.toString());
       return false;
     }
@@ -355,17 +426,22 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
         beforeTimestamp: oldestMessage.createdAt ?? DateTime.now(),
       );
 
+      if (!ref.mounted) return;
+
       state = state.copyWith(
         messages: [...state.messages, ...olderMessages],
         isLoadingMore: false,
         hasMoreMessages: olderMessages.length >= 20,
       );
     } catch (e) {
+      if (!ref.mounted) return;
       state = state.copyWith(isLoadingMore: false, error: e.toString());
     }
   }
 
   Future<void> setTyping(bool isTyping, String displayName) async {
+    if (isDraftChatId(chatId)) return;
+
     // Debounce typing indicator
     _typingTimer?.cancel();
 
@@ -576,12 +652,36 @@ Future<ChatModel> getOrCreateChat(
   String? userPhoto2,
 }) async {
   final repository = ref.read(chatRepositoryProvider);
-  return repository.getOrCreatePrivateChat(
-    userId1: userId1,
-    userId2: userId2,
-    userName1: userName1,
-    userName2: userName2,
-    userPhoto1: userPhoto1,
-    userPhoto2: userPhoto2,
+  final existing = await repository.getOrCreateDirectChat(userId1, userId2);
+  if (existing != null) {
+    return existing;
+  }
+
+  // Return a local draft chat. The first sent message will persist it.
+  return ChatModel(
+    id: buildDraftChatId(userId1, userId2),
+    type: ChatType.private,
+    participantIds: [userId1, userId2],
+    participants: [
+      ChatParticipant(
+        odid: userId1,
+        displayName: userName1,
+        photoUrl: userPhoto1,
+      ),
+      ChatParticipant(
+        odid: userId2,
+        displayName: userName2,
+        photoUrl: userPhoto2,
+      ),
+    ],
+    createdAt: DateTime.now(),
+    updatedAt: DateTime.now(),
   );
+}
+
+/// Fetch the ride group chat for a given ride ID, or null if none exists.
+@riverpod
+Future<ChatModel?> rideChatByRideId(Ref ref, {required String rideId}) async {
+  final repository = ref.read(chatRepositoryProvider);
+  return repository.getChatByRideId(rideId);
 }

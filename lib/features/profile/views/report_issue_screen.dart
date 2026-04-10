@@ -156,7 +156,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
         ),
         leading: IconButton(
           tooltip: AppLocalizations.of(context).goBackTooltip,
-          icon: const Icon(Icons.arrow_back_rounded),
+          icon: Icon(Icons.adaptive.arrow_back_rounded),
           onPressed: () => context.pop(),
         ),
       ),
@@ -581,22 +581,29 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
 }
 
 enum _ReportType {
-  safety('Safety', Icons.shield_rounded, Color(0xFFF44336)),
-  payment('Payment', Icons.payment_rounded, Color(0xFFFF9800)),
-  behavior('Behavior', Icons.person_off_rounded, Color(0xFF9C27B0)),
-  technical('Technical', Icons.bug_report_rounded, Color(0xFF2196F3)),
-  discrimination(
-    'Discrimination',
-    Icons.do_not_disturb_rounded,
-    Color(0xFFE91E63),
-  ),
-  other('Other', Icons.more_horiz_rounded, Color(0xFF607D8B));
+  safety('Safety', Color(0xFFF44336)),
+  payment('Payment', Color(0xFFFF9800)),
+  behavior('Behavior', Color(0xFF9C27B0)),
+  technical('Technical', Color(0xFF2196F3)),
+  discrimination('Discrimination', Color(0xFFE91E63)),
+  other('Other', Color(0xFF607D8B));
 
   final String label;
-  final IconData icon;
   final Color color;
 
-  const _ReportType(this.label, this.icon, this.color);
+  // Constructor no longer takes the IconData directly
+  const _ReportType(this.label, this.color);
+
+  // Getter to handle Icon selection at runtime
+  IconData get icon => switch (this) {
+    safety => Icons.shield_rounded,
+    payment => Icons.payment_rounded,
+    behavior => Icons.person_off_rounded,
+    technical => Icons.bug_report_rounded,
+    discrimination => Icons.do_not_disturb_rounded,
+    // This is now safe because the getter is not 'const'
+    other => Icons.adaptive.more_rounded,
+  };
 
   String localizedLabel(AppLocalizations l10n) => switch (this) {
     safety => l10n.reportSafety,

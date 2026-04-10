@@ -256,7 +256,7 @@ class NoShowDialog {
     return showDialog<bool>(
       context: context,
       barrierLabel: AppLocalizations.of(context).markNoShow,
-      builder: (context) => AlertDialog(
+      builder: (context) => AlertDialog.adaptive(
         title: Text(AppLocalizations.of(context).markNoShow),
         content: Text(
           AppLocalizations.of(context).markNoShowPrompt(passengerName),
@@ -464,7 +464,7 @@ class RideSharingLink extends StatelessWidget {
               HapticFeedback.lightImpact();
               onShare();
             },
-            icon: Icon(Icons.share_rounded, size: 18.sp),
+            icon: Icon(Icons.adaptive.share_rounded, size: 18.sp),
             label: Text(AppLocalizations.of(context).shareRide),
           ),
         ),

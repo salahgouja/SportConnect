@@ -45,13 +45,14 @@ class ReviewsListScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: RefreshIndicator(
+      body: RefreshIndicator.adaptive(
         color: AppColors.primary,
         onRefresh: () async {
           ref.read(reviewsListViewModelProvider(userId).notifier).refresh();
         },
         child: asyncState.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () =>
+              const Center(child: CircularProgressIndicator.adaptive()),
           error: (error, _) => _buildErrorState(context, error.toString(), ref),
           data: (state) => state.error != null
               ? _buildErrorState(context, state.error!, ref)
@@ -460,7 +461,7 @@ class _ReviewCard extends StatelessWidget {
               // Report menu
               PopupMenuButton<String>(
                 icon: Icon(
-                  Icons.more_vert,
+                  Icons.adaptive.more,
                   size: 20.sp,
                   color: AppColors.textTertiary,
                 ),

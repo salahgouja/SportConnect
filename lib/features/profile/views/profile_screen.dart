@@ -46,7 +46,9 @@ class ProfileScreen extends ConsumerWidget {
       body: userAsync.when(
         data: (user) => _buildContent(context, ref, user),
         loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.primary),
+          child: CircularProgressIndicator.adaptive(
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+          ),
         ),
         error: (e, _) => _buildErrorState(context, ref),
       ),
@@ -132,7 +134,7 @@ class ProfileScreen extends ConsumerWidget {
                   tooltip: AppLocalizations.of(context).goBackTooltip,
                   onPressed: () => context.pop(),
                   icon: Icon(
-                    Icons.arrow_back_ios_new_rounded,
+                    Icons.adaptive.arrow_back_rounded,
                     color: AppColors.textPrimary,
                     size: 20.sp,
                   ),
@@ -161,7 +163,7 @@ class ProfileScreen extends ConsumerWidget {
             if (!_isOwnProfile)
               PopupMenuButton<String>(
                 icon: Icon(
-                  Icons.more_vert_rounded,
+                  Icons.adaptive.more_rounded,
                   color: AppColors.textPrimary,
                   size: 24.sp,
                 ),
@@ -250,14 +252,6 @@ class ProfileScreen extends ConsumerWidget {
           ),
 
         if (_isOwnProfile) SliverToBoxAdapter(child: SizedBox(height: 16.h)),
-
-        // Verification badges
-        SliverToBoxAdapter(
-          child: _buildVerificationSection(context, user)
-              .animate()
-              .fadeIn(duration: 400.ms, delay: 100.ms)
-              .slideY(begin: 0.1, curve: Curves.easeOutCubic),
-        ),
 
         SliverToBoxAdapter(child: SizedBox(height: 24.h)),
 
@@ -457,15 +451,31 @@ class ProfileScreen extends ConsumerWidget {
 
           // Edit profile button (for own profile)
           if (_isOwnProfile)
-            SizedBox(
-              width: double.infinity,
-              child: PremiumButton(
-                text: AppLocalizations.of(context).settingsEditProfile,
-                icon: Icons.edit_outlined,
-                onPressed: () => context.push(AppRoutes.editProfile.path),
-                style: PremiumButtonStyle.outline,
-                size: ButtonSize.medium,
-              ),
+            Column(
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  child: PremiumButton(
+                    text: AppLocalizations.of(context).settingsEditProfile,
+                    icon: Icons.edit_outlined,
+                    onPressed: () => context.push(AppRoutes.editProfile.path),
+                    style: PremiumButtonStyle.outline,
+                    size: ButtonSize.medium,
+                  ),
+                ),
+                SizedBox(height: 10.h),
+                SizedBox(
+                  width: double.infinity,
+                  child: PremiumButton(
+                    text: 'Upgrade to Premium',
+                    icon: Icons.workspace_premium_rounded,
+                    onPressed: () =>
+                        context.push(AppRoutes.premiumSubscribe.path),
+                    style: PremiumButtonStyle.gradient,
+                    size: ButtonSize.medium,
+                  ),
+                ),
+              ],
             ),
         ],
       ),
@@ -488,50 +498,6 @@ class ProfileScreen extends ConsumerWidget {
       'Dec',
     ];
     return '${months[date.month - 1]} ${date.year}';
-  }
-
-  /// Verification badges section
-  Widget _buildVerificationSection(BuildContext context, UserModel user) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20.w),
-      child: Container(
-        padding: EdgeInsets.all(16.w),
-        decoration: BoxDecoration(
-          color: AppColors.cardBg,
-          borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.verified_user_outlined,
-                  color: AppColors.primary,
-                  size: 20.sp,
-                ),
-                SizedBox(width: 8.w),
-                Text(
-                  AppLocalizations.of(context).verifiedInfo,
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 16.h),
-            VerificationBadges(
-              isIdVerified: user.isIdVerified,
-              isPhoneVerified: user.isPhoneVerified,
-              isEmailVerified: user.isEmailVerified,
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   /// Ride statistics section
@@ -939,7 +905,7 @@ class ProfileScreen extends ConsumerWidget {
     showDialog(
       context: context,
       barrierLabel: AppLocalizations.of(context).blockUserDialogTitle,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => AlertDialog.adaptive(
         title: Text(AppLocalizations.of(context).blockUserDialogTitle),
         content: Text(
           AppLocalizations.of(context).blockUserDialogMessageGeneric,

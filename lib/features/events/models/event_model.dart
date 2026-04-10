@@ -6,6 +6,128 @@ import 'package:sport_connect/core/models/location/location_point.dart';
 part 'event_model.freezed.dart';
 part 'event_model.g.dart';
 
+/// Recurrence pattern for recurring events.
+enum RecurrencePattern {
+  @JsonValue('daily')
+  daily,
+  @JsonValue('weekly')
+  weekly,
+  @JsonValue('biweekly')
+  biweekly,
+  @JsonValue('monthly')
+  monthly,
+  @JsonValue('yearly')
+  yearly,
+}
+
+/// Extension to provide display helpers for [RecurrencePattern].
+extension RecurrencePatternX on RecurrencePattern {
+  String get label {
+    switch (this) {
+      case RecurrencePattern.daily:
+        return 'Every day';
+      case RecurrencePattern.weekly:
+        return 'Every week';
+      case RecurrencePattern.biweekly:
+        return 'Every 2 weeks';
+      case RecurrencePattern.monthly:
+        return 'Every month';
+      case RecurrencePattern.yearly:
+        return 'Every year';
+    }
+  }
+
+  String get rruleFreq {
+    switch (this) {
+      case RecurrencePattern.daily:
+        return 'DAILY';
+      case RecurrencePattern.weekly:
+        return 'WEEKLY';
+      case RecurrencePattern.biweekly:
+        return 'WEEKLY;INTERVAL=2';
+      case RecurrencePattern.monthly:
+        return 'MONTHLY';
+      case RecurrencePattern.yearly:
+        return 'YEARLY';
+    }
+  }
+
+  /// Returns the immediate next occurrence start time for this pattern.
+  DateTime nextOccurrenceFrom(DateTime startsAt) {
+    return switch (this) {
+      RecurrencePattern.daily => startsAt.add(const Duration(days: 1)),
+      RecurrencePattern.weekly => startsAt.add(const Duration(days: 7)),
+      RecurrencePattern.biweekly => startsAt.add(const Duration(days: 14)),
+      RecurrencePattern.monthly => _addMonthsPreservingDay(startsAt, 1),
+      RecurrencePattern.yearly => _addYearsPreservingDay(startsAt, 1),
+    };
+  }
+
+  /// Get patterns that can repeat at least once between [startsAt] and [endsAt].
+  /// If [endsAt] is before [startsAt], returns all patterns to avoid locking the UI
+  /// while the user is still adjusting dates.
+  static List<RecurrencePattern> getPatternsByWindow(
+    DateTime startsAt,
+    DateTime endsAt,
+  ) {
+    if (endsAt.isBefore(startsAt)) {
+      return RecurrencePattern.values;
+    }
+
+    final patterns = <RecurrencePattern>[];
+    for (final pattern in RecurrencePattern.values) {
+      final nextOccurrence = pattern.nextOccurrenceFrom(startsAt);
+
+      if (!nextOccurrence.isAfter(endsAt)) {
+        patterns.add(pattern);
+      }
+    }
+
+    return patterns;
+  }
+}
+
+DateTime _addMonthsPreservingDay(DateTime value, int monthsToAdd) {
+  final totalMonths = value.month - 1 + monthsToAdd;
+  final nextYear = value.year + (totalMonths ~/ 12);
+  final nextMonth = (totalMonths % 12) + 1;
+  final maxDay = _daysInMonth(nextYear, nextMonth);
+  final nextDay = value.day <= maxDay ? value.day : maxDay;
+  return DateTime(
+    nextYear,
+    nextMonth,
+    nextDay,
+    value.hour,
+    value.minute,
+    value.second,
+    value.millisecond,
+    value.microsecond,
+  );
+}
+
+DateTime _addYearsPreservingDay(DateTime value, int yearsToAdd) {
+  final nextYear = value.year + yearsToAdd;
+  final maxDay = _daysInMonth(nextYear, value.month);
+  final nextDay = value.day <= maxDay ? value.day : maxDay;
+  return DateTime(
+    nextYear,
+    value.month,
+    nextDay,
+    value.hour,
+    value.minute,
+    value.second,
+    value.millisecond,
+    value.microsecond,
+  );
+}
+
+int _daysInMonth(int year, int month) {
+  if (month == 12) {
+    return DateTime(year + 1, 1, 0).day;
+  }
+  return DateTime(year, month + 1, 0).day;
+}
+
 /// Sport categories with display metadata.
 enum EventType {
   // @JsonValue('football')
@@ -36,11 +158,11 @@ enum EventType {
 
 /// Extension to provide display helpers for [EventType].
 extension EventTypeX on EventType {
-    // add this into the switch if you want to support it in the future, but comment out for now since it's not used:
-    // case EventType.martialArts:
-    //   return 'martial_arts';
+  // add this into the switch if you want to support it in the future, but comment out for now since it's not used:
+  // case EventType.martialArts:
+  //   return 'martial_arts';
 
-    String get jsonValue {
+  String get jsonValue {
     switch (this) {
       default:
         return name; // enum name matches @JsonValue for all others
@@ -149,9 +271,6 @@ abstract class EventModel with _$EventModel {
     @TimestampConverter() DateTime? endsAt,
     String? description,
 
-    /// Venue / facility name (e.g. "Downtown Sports Complex").
-    String? venueName,
-
     /// Display name of the organiser (denormalized for fast rendering).
     String? organizerName,
 
@@ -178,8 +297,8 @@ abstract class EventModel with _$EventModel {
     /// Whether this is a recurring event (e.g. weekly training).
     @Default(false) bool isRecurring,
 
-    /// Days of the week for recurring events (1=Mon … 7=Sun).
-    @Default([]) List<int> recurringDays,
+    /// Recurrence pattern for recurring events (daily, weekly, biweekly, monthly).
+    RecurrencePattern? recurringPattern,
 
     /// End date for the recurring series.
     @TimestampConverter() DateTime? recurringEndDate,

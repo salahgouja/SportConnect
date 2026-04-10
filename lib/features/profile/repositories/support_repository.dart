@@ -19,6 +19,7 @@ class SupportRepository implements ISupportRepository {
   /// Submits a user or ride report and optionally uploads [attachments].
   ///
   /// Returns the new document ID.
+  @override
   Future<String> submitReport({
     required String reporterId,
     required String reporterEmail,
@@ -30,28 +31,23 @@ class SupportRepository implements ISupportRepository {
     List<File> attachments = const [],
   }) async {
     try {
-      final docRef = await _firestore
-          .collection(AppConstants.reportsCollection)
-          .add({
-            'reporterId': reporterId,
-            'reporterEmail': reporterEmail,
-            'reportedUserId': reportedUserId,
-            'rideId': rideId,
-            'type': type,
-            'severity': severity,
-            'description': description,
-            'attachmentUrls': <String>[],
-            'status': 'pending',
-            'createdAt': Timestamp.now(),
-          });
+      final docRef = _firestore.collection(AppConstants.reportsCollection).doc();
+      final urls = attachments.isEmpty
+          ? <String>[]
+          : await _uploadFiles(attachments, 'report_attachments/${docRef.id}');
 
-      if (attachments.isNotEmpty) {
-        final urls = await _uploadFiles(
-          attachments,
-          'report_attachments/${docRef.id}',
-        );
-        await docRef.update({'attachmentUrls': urls});
-      }
+      await docRef.set({
+        'reporterId': reporterId,
+        'reporterEmail': reporterEmail,
+        'reportedUserId': reportedUserId,
+        'rideId': rideId,
+        'type': type,
+        'severity': severity,
+        'description': description,
+        'attachmentUrls': urls,
+        'status': 'pending',
+        'createdAt': Timestamp.now(),
+      });
 
       TalkerService.info('Report submitted: ${docRef.id}');
       return docRef.id;
@@ -66,6 +62,7 @@ class SupportRepository implements ISupportRepository {
   /// Submits a support ticket and optionally uploads [attachments].
   ///
   /// Returns the new document ID.
+  @override
   Future<String> submitSupportTicket({
     required String userId,
     required String userEmail,
@@ -76,27 +73,23 @@ class SupportRepository implements ISupportRepository {
     List<File> attachments = const [],
   }) async {
     try {
-      final docRef = await _firestore
-          .collection(AppConstants.supportTicketsCollection)
-          .add({
-            'userId': userId,
-            'userEmail': userEmail,
-            'userName': userName,
-            'category': category,
-            'subject': subject,
-            'message': message,
-            'attachmentUrls': <String>[],
-            'status': 'open',
-            'createdAt': Timestamp.now(),
-          });
+      final docRef =
+          _firestore.collection(AppConstants.supportTicketsCollection).doc();
+      final urls = attachments.isEmpty
+          ? <String>[]
+          : await _uploadFiles(attachments, 'support_attachments/${docRef.id}');
 
-      if (attachments.isNotEmpty) {
-        final urls = await _uploadFiles(
-          attachments,
-          'support_attachments/${docRef.id}',
-        );
-        await docRef.update({'attachmentUrls': urls});
-      }
+      await docRef.set({
+        'userId': userId,
+        'userEmail': userEmail,
+        'userName': userName,
+        'category': category,
+        'subject': subject,
+        'message': message,
+        'attachmentUrls': urls,
+        'status': 'open',
+        'createdAt': Timestamp.now(),
+      });
 
       TalkerService.info('Support ticket submitted: ${docRef.id}');
       return docRef.id;

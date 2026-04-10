@@ -38,7 +38,6 @@ sealed class UserModel with _$UserModel {
     @Default(false) bool isPhoneVerified,
     @Default(false) bool isIdVerified,
     @Default(true) bool isActive,
-    @Default(false) bool isOnline,
     @Default(false) bool isPremium,
 
     // Social
@@ -93,7 +92,6 @@ sealed class UserModel with _$UserModel {
     @Default(false) bool isPhoneVerified,
     @Default(false) bool isIdVerified,
     @Default(true) bool isActive,
-    @Default(false) bool isOnline,
     @Default(false) bool isPremium,
 
     // Social
@@ -199,8 +197,8 @@ extension UserModelLogic on UserModel {
 
 /// Helper getters for type checking
 extension UserTypeCheck on UserModel {
-  bool get isRider => this is RiderModel;
-  bool get isDriver => this is DriverModel;
+  bool get isRider => role == UserRole.rider;
+  bool get isDriver => role == UserRole.driver;
 
   RiderModel? get asRider => this is RiderModel ? this as RiderModel : null;
   DriverModel? get asDriver => this is DriverModel ? this as DriverModel : null;

@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 import 'package:sport_connect/core/providers/user_providers.dart';
@@ -20,18 +22,64 @@ import 'package:sport_connect/features/auth/models/models.dart';
 /// - Active tab management with proper branch indexing
 /// - Haptic feedback on tab changes
 /// - Role-based tab switching
-class MainWrapper extends ConsumerWidget {
+class MainWrapper extends ConsumerStatefulWidget {
   final StatefulNavigationShell navigationShell;
 
   const MainWrapper({super.key, required this.navigationShell});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MainWrapper> createState() => _MainWrapperState();
+}
+
+class _MainWrapperState extends ConsumerState<MainWrapper> {
+  bool _isPremiumPromptCheckRunning = false;
+  String? _premiumPromptHandledForUserId;
+
+  Future<void> _maybeShowPremiumPrompt(UserModel? user) async {
+    if (user == null) {
+      _premiumPromptHandledForUserId = null;
+      return;
+    }
+
+    if (user.isPremium ||
+        _isPremiumPromptCheckRunning ||
+        _premiumPromptHandledForUserId == user.uid) {
+      return;
+    }
+
+    _isPremiumPromptCheckRunning = true;
+    _premiumPromptHandledForUserId = user.uid;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final promptKey = 'premium_prompt_seen_${user.uid}';
+      final hasSeenPrompt = prefs.getBool(promptKey) ?? false;
+
+      if (hasSeenPrompt) return;
+
+      await prefs.setBool(promptKey, true);
+      if (!mounted) return;
+
+      await context.pushNamed(AppRoutes.premiumSubscribe.name);
+    } finally {
+      _isPremiumPromptCheckRunning = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final userAsync = ref.watch(currentUserProvider);
+
+    userAsync.whenData((user) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _maybeShowPremiumPrompt(user);
+      });
+    });
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: navigationShell,
+      body: SafeArea(bottom: false, child: widget.navigationShell),
       bottomNavigationBar: userAsync.when(
         loading: () => const SizedBox(height: kBottomNavigationBarHeight),
         error: (_, _) => const SizedBox(height: kBottomNavigationBarHeight),
@@ -44,7 +92,7 @@ class MainWrapper extends ConsumerWidget {
     if (user == null) return const SizedBox.shrink();
 
     final isDriver = user is DriverModel;
-    final currentIndex = navigationShell.currentIndex;
+    final currentIndex = widget.navigationShell.currentIndex;
 
     // Detect branch-set mismatch (driver on rider branches 0-4, or vice versa)
     final driverOnRiderBranch = isDriver && currentIndex < 5;
@@ -53,7 +101,10 @@ class MainWrapper extends ConsumerWidget {
       // Correct mismatch after the current frame to avoid calling goBranch
       // during a build phase.
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        navigationShell.goBranch(isDriver ? 5 : 0, initialLocation: true);
+        widget.navigationShell.goBranch(
+          isDriver ? 5 : 0,
+          initialLocation: true,
+        );
       });
     }
 
@@ -73,21 +124,21 @@ class MainWrapper extends ConsumerWidget {
   /// the post-frame correction in [_buildBottomNav] takes effect.
   int _calculateActiveIndex(bool isDriver) {
     if (isDriver) {
-      return (navigationShell.currentIndex >= 5)
-          ? navigationShell.currentIndex - 5
+      return (widget.navigationShell.currentIndex >= 5)
+          ? widget.navigationShell.currentIndex - 5
           : 0;
     }
-    return (navigationShell.currentIndex <= 4)
-        ? navigationShell.currentIndex
+    return (widget.navigationShell.currentIndex <= 4)
+        ? widget.navigationShell.currentIndex
         : 0;
   }
 
   void _navigateToBranch(int localIndex, bool isDriver) {
     HapticFeedback.lightImpact();
     final targetBranch = isDriver ? localIndex + 5 : localIndex;
-    navigationShell.goBranch(
+    widget.navigationShell.goBranch(
       targetBranch,
-      initialLocation: targetBranch == navigationShell.currentIndex,
+      initialLocation: targetBranch == widget.navigationShell.currentIndex,
     );
   }
 }

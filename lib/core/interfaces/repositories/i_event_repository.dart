@@ -47,6 +47,14 @@ abstract class IEventRepository {
   /// Sets the chat group ID for the event.
   Future<void> setChatGroupId(String eventId, String chatGroupId);
 
+  /// Ensures an event group chat document exists and includes [userId].
+  ///
+  /// Returns the chat document id that should be opened by the UI.
+  Future<String> ensureEventGroupChat({
+    required EventModel event,
+    required String userId,
+  });
+
   /// Streams rides linked to a specific event.
   Stream<List<EventModel>> streamEventsWithLinkedRides(String eventId);
 }

@@ -22,7 +22,6 @@ import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
 import 'package:sport_connect/features/rides/views/widgets/ride_shared_widgets.dart';
-import 'package:sport_connect/core/widgets/safety_widgets.dart';
 
 /// Active Ride Navigation Screen - Shows map and ride details for drivers during active rides
 class DriverActiveRideScreen extends ConsumerStatefulWidget {
@@ -35,20 +34,18 @@ class DriverActiveRideScreen extends ConsumerStatefulWidget {
       _DriverActiveRideScreenState();
 }
 
-class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
-    with TickerProviderStateMixin {
+class _DriverActiveRideScreenState
+    extends ConsumerState<DriverActiveRideScreen> {
   final MapController _mapController = MapController();
-  late AnimationController _pulseController;
   bool _hasCenteredInitialLocation = false;
+
+  // Controls the bottom sheet programmatically for auto-expansion
+  final DraggableScrollableController _sheetController =
+      DraggableScrollableController();
 
   @override
   void initState() {
     super.initState();
-    _pulseController = AnimationController(
-      duration: const Duration(seconds: 2),
-      vsync: this,
-    )..repeat();
-
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -83,7 +80,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
 
   @override
   void dispose() {
-    _pulseController.dispose();
+    _sheetController.dispose();
     super.dispose();
   }
 
@@ -129,15 +126,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
             action: SnackBarAction(
               label: AppLocalizations.of(context).addAsStop,
               textColor: Colors.white,
-              onPressed: () {
-                ref
-                    .read(activeRideViewModelProvider(widget.rideId!).notifier)
-                    .acceptStopRequest(
-                      latitude: poi.location.latitude,
-                      longitude: poi.location.longitude,
-                      address: poi.name ?? address ?? 'POI Stop',
-                    );
-              },
+              onPressed: () {},
             ),
           ),
         );
@@ -152,8 +141,14 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
       return _buildNoRideState();
     }
 
-    final rideState = ref.watch(activeRideViewModelProvider(widget.rideId!));
+    // PERF: Only watch the ride AsyncValue — GPS state changes won't trigger
+    // a full rebuild of this widget tree. Individual sections use Consumer
+    // widgets with their own targeted watches.
+    final rideAsync = ref.watch(
+      activeRideViewModelProvider(widget.rideId!).select((s) => s.ride),
+    );
 
+    // Center map on first GPS location fix
     ref.listen<LatLng?>(
       activeRideViewModelProvider(
         widget.rideId!,
@@ -168,16 +163,35 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
       },
     );
 
-    return rideState.ride.when(
+    // Auto-expand bottom sheet on key phase transitions (pickingUp for OTP,
+    // arriving for completion prompt) so the driver sees action buttons.
+    ref.listen<ActiveRidePhase>(
+      activeRideViewModelProvider(widget.rideId!).select((s) => s.phase),
+      (prev, next) {
+        if (prev == next) return;
+        if (next == ActiveRidePhase.pickingUp ||
+            next == ActiveRidePhase.arriving) {
+          if (_sheetController.isAttached) {
+            _sheetController.animateTo(
+              0.55,
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeOutCubic,
+            );
+          }
+        }
+      },
+    );
+
+    return rideAsync.when(
       data: (ride) {
         if (ride == null) {
           return _buildNoRideState();
         }
-        return _buildRideContent(ride, rideState);
+        return _buildRideContent(ride);
       },
       loading: () => const Scaffold(
         backgroundColor: AppColors.background,
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(child: CircularProgressIndicator.adaptive()),
       ),
       error: (e, _) => Scaffold(
         backgroundColor: AppColors.background,
@@ -240,7 +254,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
     );
   }
 
-  Widget _buildRideContent(RideModel ride, ActiveRideState rideState) {
+  Widget _buildRideContent(RideModel ride) {
     // Handle cancelled ride
     if (ride.status == RideStatus.cancelled) {
       return _buildCancelledState();
@@ -248,8 +262,9 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
 
     // Auto-redirect to completion screen if ride is already completed
     // (e.g. driver force-quit app and returned to a finished ride).
+    final currentState = ref.read(activeRideViewModelProvider(widget.rideId!));
     if (ride.status == RideStatus.completed &&
-        !rideState.hasAutoNavigatedToCompletion) {
+        !currentState.hasAutoNavigatedToCompletion) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         ref
@@ -261,6 +276,8 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
       });
     }
 
+    // Phase auto-expand is handled by ref.listen in build()
+
     // Get locations from the ride model
     final pickupLocation = LatLng(ride.origin.latitude, ride.origin.longitude);
     final dropoffLocation = LatLng(
@@ -268,90 +285,150 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
       ride.destination.longitude,
     );
 
+    final provider = activeRideViewModelProvider(widget.rideId!);
+
     return Scaffold(
       body: Stack(
         children: [
-          // Map
-          _buildMap(ride, pickupLocation, dropoffLocation, rideState),
+          // Map — PERF: isolated Consumer, rebuilds on GPS updates (expected)
+          Consumer(
+            builder: (context, ref, _) {
+              final rideState = ref.watch(provider);
+              return _buildMap(
+                ride,
+                pickupLocation,
+                dropoffLocation,
+                rideState,
+              );
+            },
+          ),
 
-          // Off-route banner for driver
-          if (rideState.isOffRoute && ride.status == RideStatus.inProgress)
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 56.h,
-              left: 20.w,
-              right: 20.w,
-              child: _buildDriverOffRouteBanner(rideState),
+          // Off-route banner — only rebuilds when isOffRoute changes
+          if (ride.status == RideStatus.inProgress)
+            Consumer(
+              builder: (context, ref, _) {
+                final isOffRoute = ref.watch(
+                  provider.select((s) => s.isOffRoute),
+                );
+                if (!isOffRoute) return const SizedBox.shrink();
+                final rideState = ref.read(provider);
+                return Positioned(
+                  top: MediaQuery.of(context).padding.top + 56.h,
+                  left: 20.w,
+                  right: 20.w,
+                  child: _buildDriverOffRouteBanner(rideState),
+                );
+              },
             ),
 
-          // Route loading indicator — shown while OSRM route is being fetched
-          if (rideState.osrmRoutePoints == null &&
-              ride.status == RideStatus.inProgress)
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 64.h,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 8.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20.r),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 8,
+          // Route loading indicator — only rebuilds when route availability changes
+          if (ride.status == RideStatus.inProgress)
+            Consumer(
+              builder: (context, ref, _) {
+                final hasRoute = ref.watch(
+                  provider.select((s) => s.osrmRoutePoints != null),
+                );
+                if (hasRoute) return const SizedBox.shrink();
+                return Positioned(
+                  top: MediaQuery.of(context).padding.top + 64.h,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 8.h,
                       ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        width: 16.w,
-                        height: 16.w,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.primary,
-                        ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20.r),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 8,
+                          ),
+                        ],
                       ),
-                      SizedBox(width: 8.w),
-                      Text(
-                        'Loading route...',
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: AppColors.textSecondary,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: 16.w,
+                            height: 16.w,
+                            child: CircularProgressIndicator.adaptive(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.primary,
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 8.w),
+                          Text(
+                            'Loading route...',
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
 
-          // Top Controls
-          _buildTopControls(rideState),
+          // Top Controls — isolated Consumer
+          Consumer(
+            builder: (context, ref, _) {
+              final rideState = ref.watch(provider);
+              return _buildTopControls(rideState);
+            },
+          ),
 
-          // Navigation Instructions (Collapsible)
-          if (rideState.isNavigationExpanded)
-            _buildNavigationPanel(ride, rideState),
+          // Navigation Instructions (Collapsible) — only mounts when expanded
+          Consumer(
+            builder: (context, ref, _) {
+              final isExpanded = ref.watch(
+                provider.select((s) => s.isNavigationExpanded),
+              );
+              if (!isExpanded) return const SizedBox.shrink();
+              final rideState = ref.watch(provider);
+              return _buildNavigationPanel(ride, rideState);
+            },
+          ),
 
-          // Bottom Panel with Ride Info
+          // Bottom Panel with Ride Info — DraggableScrollableSheet is NOT rebuilt,
+          // only its content (via Consumer inside builder)
           DraggableScrollableSheet(
+            controller: _sheetController,
             initialChildSize: 0.38,
             minChildSize: 0.15,
             maxChildSize: 0.80,
             snap: true,
             snapSizes: const [0.15, 0.38, 0.80],
-            builder: (context, scrollController) =>
-                _buildBottomSheet(scrollController, ride, rideState),
+            builder: (context, scrollController) {
+              // Consumer moved inside to watch updates WITHOUT rebuilding the sheet
+              return Consumer(
+                builder: (context, ref, _) {
+                  final rideState = ref.watch(provider);
+                  return _buildBottomSheet(scrollController, ride, rideState);
+                },
+              );
+            },
           ),
 
-          // Passenger Details Sheet
-          if (rideState.showPassengerDetails)
-            _buildPassengerSheet(ride, rideState),
+          // Passenger Details Sheet — only builds when shown
+          Consumer(
+            builder: (context, ref, _) {
+              final showDetails = ref.watch(
+                provider.select((s) => s.showPassengerDetails),
+              );
+              if (!showDetails) return const SizedBox.shrink();
+              final rideState = ref.read(provider);
+              return _buildPassengerSheet(ride, rideState);
+            },
+          ),
         ],
       ),
     );
@@ -377,8 +454,8 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
               SizedBox(
                 width: 48.w,
                 height: 48.w,
-                child: CircularProgressIndicator(
-                  color: AppColors.primary,
+                child: CircularProgressIndicator.adaptive(
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                   strokeWidth: 3,
                 ),
               ),
@@ -396,261 +473,213 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
       );
     }
 
-    return FlutterMap(
-      mapController: _mapController,
-      options: MapOptions(initialCenter: driverLocation, initialZoom: 15),
-      children: [
-        TileLayer(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          userAgentPackageName: 'com.sportconnect.app',
-        ),
+    // Cache polyline points to avoid recomputing the same list for both strokes
+    final polylinePoints =
+        rideState.remainingRoutePoints ??
+        rideState.osrmRoutePoints ??
+        [
+          pickupLocation,
+          ...(ride.route.waypoints.toList()
+                ..sort((a, b) => a.order.compareTo(b.order)))
+              .map((wp) => LatLng(wp.location.latitude, wp.location.longitude)),
+          dropoffLocation,
+        ];
 
-        // Route Line — remaining route from driver's current position, or full route as fallback
-        PolylineLayer(
-          polylines: [
-            Polyline(
-              points:
-                  rideState.remainingRoutePoints ??
-                  rideState.osrmRoutePoints ??
-                  [
-                    pickupLocation,
-                    ...(ride.route.waypoints.toList()
-                          ..sort((a, b) => a.order.compareTo(b.order)))
-                        .map(
-                          (wp) => LatLng(
-                            wp.location.latitude,
-                            wp.location.longitude,
-                          ),
-                        ),
-                    dropoffLocation,
-                  ],
-              color: Colors.white,
-              strokeWidth: 6,
-            ),
-            Polyline(
-              points:
-                  rideState.remainingRoutePoints ??
-                  rideState.osrmRoutePoints ??
-                  [
-                    pickupLocation,
-                    ...(ride.route.waypoints.toList()
-                          ..sort((a, b) => a.order.compareTo(b.order)))
-                        .map(
-                          (wp) => LatLng(
-                            wp.location.latitude,
-                            wp.location.longitude,
-                          ),
-                        ),
-                    dropoffLocation,
-                  ],
-              color: AppColors.primary,
-              strokeWidth: 4,
-            ),
-          ],
-        ),
+    return RepaintBoundary(
+      child: FlutterMap(
+        mapController: _mapController,
+        options: MapOptions(initialCenter: driverLocation, initialZoom: 15),
+        children: [
+          TileLayer(
+            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            userAgentPackageName: 'com.sportconnect.app',
+          ),
 
-        // Markers
-        MarkerLayer(
-          markers: [
-            // Current Location Marker (Driver's real GPS position)
-            Marker(
-              point: driverLocation,
-              width: 50.w,
-              height: 50.w,
-              child: Transform.rotate(
-                angle: rideState.userHeading * 3.14159 / 180,
-                child: AnimatedBuilder(
-                  animation: _pulseController,
-                  builder: (context, child) {
-                    return Stack(
-                      alignment: Alignment.center,
-                      children: [
+          // Route Line — remaining route from driver's current position, or full route as fallback
+          PolylineLayer(
+            polylines: [
+              Polyline(
+                points: polylinePoints,
+                color: Colors.white,
+                strokeWidth: 6,
+              ),
+              Polyline(
+                points: polylinePoints,
+                color: AppColors.primary,
+                strokeWidth: 4,
+              ),
+            ],
+          ),
+
+          // Markers
+          MarkerLayer(
+            markers: [
+              // Current Location Marker (Driver's real GPS position)
+              Marker(
+                point: driverLocation,
+                width: 50.w,
+                height: 50.w,
+                child: _PulsingLocationMarker(
+                  heading: rideState.userHeading,
+                  outerSize: 50.w,
+                  innerSize: 30.w,
+                  iconSize: 18.w,
+                ),
+              ),
+
+              // Pickup Marker
+              Marker(
+                point: pickupLocation,
+                width: 40.w,
+                height: 40.w,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.success,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 6,
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.person_pin,
+                    color: Colors.white,
+                    size: 22.w,
+                  ),
+                ),
+              ),
+
+              // Dropoff Marker
+              Marker(
+                point: dropoffLocation,
+                width: 40.w,
+                height: 40.w,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.error,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 6,
+                      ),
+                    ],
+                  ),
+                  child: Icon(Icons.flag, color: Colors.white, size: 20.w),
+                ),
+              ),
+
+              // Waypoint Markers
+              ...ride.route.waypoints.map((wp) {
+                final isPassed = rideState.passedWaypointIndices.contains(
+                  wp.order,
+                );
+                final etaMin = rideState.waypointEtaMinutes[wp.order];
+                return Marker(
+                  point: LatLng(wp.location.latitude, wp.location.longitude),
+                  width: 56.w,
+                  height: etaMin != null && !isPassed ? 52.h : 32.w,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (etaMin != null && !isPassed)
                         Container(
-                          width: 50.w * (1 + _pulseController.value * 0.3),
-                          height: 50.w * (1 + _pulseController.value * 0.3),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(
-                              alpha: 0.3 * (1 - _pulseController.value),
-                            ),
-                            shape: BoxShape.circle,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 4.w,
+                            vertical: 1.h,
                           ),
-                        ),
-                        Container(
-                          width: 30.w,
-                          height: 30.w,
+                          margin: EdgeInsets.only(bottom: 2.h),
                           decoration: BoxDecoration(
-                            color: AppColors.primary,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 3),
+                            color: AppColors.warning,
+                            borderRadius: BorderRadius.circular(4.r),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
+                                color: Colors.black.withValues(alpha: 0.2),
+                                blurRadius: 4,
                               ),
                             ],
                           ),
-                          child: Icon(
-                            Icons.navigation,
-                            color: Colors.white,
-                            size: 18.w,
+                          child: Text(
+                            '${etaMin}m',
+                            style: TextStyle(
+                              fontSize: 10.sp,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
-                      ],
-                    );
-                  },
-                ),
-              ),
-            ),
-
-            // Pickup Marker
-            Marker(
-              point: pickupLocation,
-              width: 40.w,
-              height: 40.w,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.success,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 6,
-                    ),
-                  ],
-                ),
-                child: Icon(Icons.person_pin, color: Colors.white, size: 22.w),
-              ),
-            ),
-
-            // Dropoff Marker
-            Marker(
-              point: dropoffLocation,
-              width: 40.w,
-              height: 40.w,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.error,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 6,
-                    ),
-                  ],
-                ),
-                child: Icon(Icons.flag, color: Colors.white, size: 20.w),
-              ),
-            ),
-
-            // Waypoint Markers
-            ...ride.route.waypoints.map((wp) {
-              final isPassed = rideState.passedWaypointIndices.contains(
-                wp.order,
-              );
-              final etaMin = rideState.waypointEtaMinutes[wp.order];
-              return Marker(
-                point: LatLng(wp.location.latitude, wp.location.longitude),
-                width: 56.w,
-                height: etaMin != null && !isPassed ? 52.h : 32.w,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (etaMin != null && !isPassed)
                       Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 4.w,
-                          vertical: 1.h,
-                        ),
-                        margin: EdgeInsets.only(bottom: 2.h),
+                        width: 32.w,
+                        height: 32.w,
                         decoration: BoxDecoration(
-                          color: AppColors.warning,
-                          borderRadius: BorderRadius.circular(4.r),
+                          color: isPassed
+                              ? AppColors.textTertiary
+                              : AppColors.warning,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withValues(alpha: 0.2),
-                              blurRadius: 4,
+                              blurRadius: 6,
                             ),
                           ],
                         ),
-                        child: Text(
-                          '${etaMin}m',
-                          style: TextStyle(
-                            fontSize: 10.sp,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                        child: Center(
+                          child: Text(
+                            '${wp.order + 1}',
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
-                    Container(
-                      width: 32.w,
-                      height: 32.w,
+                    ],
+                  ),
+                );
+              }),
+
+              // POI Markers (if any)
+              if (rideState.showPOIMarkers)
+                ...rideState.nearbyPOIs.map(
+                  (poi) => Marker(
+                    point: poi.location,
+                    width: 40.w,
+                    height: 40.w,
+                    child: Container(
                       decoration: BoxDecoration(
-                        color: isPassed
-                            ? AppColors.textTertiary
-                            : AppColors.warning,
+                        gradient: LinearGradient(
+                          colors: [AppColors.secondary, AppColors.primary],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white, width: 2),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.2),
-                            blurRadius: 6,
+                            color: AppColors.primary.withValues(alpha: 0.4),
+                            blurRadius: 8,
+                            spreadRadius: 1,
                           ),
                         ],
                       ),
-                      child: Center(
-                        child: Text(
-                          '${wp.order + 1}',
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
+                      child: Icon(
+                        Icons.place_rounded,
+                        color: Colors.white,
+                        size: 22.w,
                       ),
-                    ),
-                  ],
-                ),
-              );
-            }),
-
-            // POI Markers (if any)
-            if (rideState.showPOIMarkers)
-              ...rideState.nearbyPOIs.map(
-                (poi) => Marker(
-                  point: poi.location,
-                  width: 40.w,
-                  height: 40.w,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [AppColors.secondary, AppColors.primary],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.4),
-                          blurRadius: 8,
-                          spreadRadius: 1,
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      Icons.place_rounded,
-                      color: Colors.white,
-                      size: 22.w,
                     ),
                   ),
                 ),
-              ),
-          ],
-        ),
-      ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -659,128 +688,109 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
       top: 0,
       left: 0,
       right: 0,
-      child: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(16.w),
-          child: Row(
-            children: [
-              // Back Button
-              GestureDetector(
-                onTap: () => _showExitConfirmation(),
-                child: Container(
-                  padding: EdgeInsets.all(12.w),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12.r),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    Icons.close,
-                    color: AppColors.textPrimary,
-                    size: 22.w,
-                  ),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.black.withValues(alpha: 0.35), Colors.transparent],
+          ),
+        ),
+        child: SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+            child: Row(
+              children: [
+                // Back Button
+                _buildControlButton(
+                  icon: Icons.close,
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    _showExitConfirmation();
+                  },
                 ),
-              ),
 
-              const Spacer(),
+                const Spacer(),
 
-              // Recenter Button
-              GestureDetector(
-                onTap: rideState.currentLocation != null
-                    ? () => _mapController.move(rideState.currentLocation!, 15)
-                    : null,
-                child: Container(
-                  padding: EdgeInsets.all(12.w),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12.r),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    Icons.my_location,
-                    color: AppColors.primary,
-                    size: 22.w,
-                  ),
+                // Recenter Button
+                _buildControlButton(
+                  icon: Icons.my_location,
+                  iconColor: AppColors.primary,
+                  onTap: rideState.currentLocation != null
+                      ? () {
+                          HapticFeedback.lightImpact();
+                          _mapController.move(rideState.currentLocation!, 15);
+                        }
+                      : null,
                 ),
-              ),
 
-              SizedBox(width: 8.w),
+                SizedBox(width: 8.w),
 
-              // POI Search Button - Find nearby places
-              GestureDetector(
-                onTap: () => _openPOISearch(),
-                child: Container(
-                  padding: EdgeInsets.all(12.w),
-                  decoration: BoxDecoration(
-                    color: rideState.showPOIMarkers
-                        ? AppColors.success
-                        : Colors.white,
-                    borderRadius: BorderRadius.circular(12.r),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    Icons.explore_rounded,
-                    color: rideState.showPOIMarkers
-                        ? Colors.white
-                        : AppColors.success,
-                    size: 22.w,
-                  ),
+                // POI Search Button - Find nearby places
+                _buildControlButton(
+                  icon: Icons.explore_rounded,
+                  isActive: rideState.showPOIMarkers,
+                  activeColor: AppColors.success,
+                  iconColor: AppColors.success,
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    _openPOISearch();
+                  },
                 ),
-              ),
 
-              SizedBox(width: 8.w),
+                SizedBox(width: 8.w),
 
-              // Toggle Navigation
-              GestureDetector(
-                onTap: () => ref
-                    .read(activeRideViewModelProvider(widget.rideId!).notifier)
-                    .toggleNavigationExpanded(),
-                child: Container(
-                  padding: EdgeInsets.all(12.w),
-                  decoration: BoxDecoration(
-                    color: rideState.isNavigationExpanded
-                        ? AppColors.primary
-                        : Colors.white,
-                    borderRadius: BorderRadius.circular(12.r),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    Icons.directions,
-                    color: rideState.isNavigationExpanded
-                        ? Colors.white
-                        : AppColors.primary,
-                    size: 22.w,
-                  ),
+                // Toggle Navigation
+                _buildControlButton(
+                  icon: Icons.directions,
+                  isActive: rideState.isNavigationExpanded,
+                  activeColor: AppColors.primary,
+                  iconColor: AppColors.primary,
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    ref
+                        .read(
+                          activeRideViewModelProvider(widget.rideId!).notifier,
+                        )
+                        .toggleNavigationExpanded();
+                  },
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ).animate().fadeIn().slideY(begin: -0.3),
+    );
+  }
+
+  /// A reusable floating control button with Material splash feedback.
+  Widget _buildControlButton({
+    required IconData icon,
+    VoidCallback? onTap,
+    Color? iconColor,
+    bool isActive = false,
+    Color? activeColor,
+  }) {
+    final bgColor = isActive
+        ? (activeColor ?? AppColors.primary)
+        : Colors.white;
+    final fgColor = isActive
+        ? Colors.white
+        : (iconColor ?? AppColors.textPrimary);
+    return Material(
+      color: bgColor,
+      borderRadius: BorderRadius.circular(12.r),
+      elevation: 4,
+      shadowColor: Colors.black.withValues(alpha: 0.15),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12.r),
+        child: Padding(
+          padding: EdgeInsets.all(12.w),
+          child: Icon(icon, color: fgColor, size: 22.w),
+        ),
+      ),
     );
   }
 
@@ -793,8 +803,13 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
 
     if (rideState.phase == ActiveRidePhase.pickingUp) {
       nextStop = ride.origin.address;
-      nextStopIcon = Icons.person_pin_circle;
-      nextStopLabel = AppLocalizations.of(context).headingToPickup;
+      if (ride.status == RideStatus.inProgress) {
+        nextStopIcon = Icons.how_to_reg;
+        nextStopLabel = 'Verifying Passengers';
+      } else {
+        nextStopIcon = Icons.person_pin_circle;
+        nextStopLabel = AppLocalizations.of(context).headingToPickup;
+      }
     } else {
       // Find next unpassed waypoint
       final nextWaypoint =
@@ -922,7 +937,9 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                       Icon(Icons.speed, size: 14.sp, color: Colors.white),
                       SizedBox(width: 4.w),
                       Text(
-                        '${rideState.currentSpeedKmh.toInt()} km/h',
+                        rideState.currentSpeedKmh < 2
+                            ? 'Parked'
+                            : '${rideState.currentSpeedKmh.toInt()} km/h',
                         style: TextStyle(
                           fontSize: 12.sp,
                           fontWeight: FontWeight.w700,
@@ -1014,14 +1031,16 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
         controller: scrollController,
         padding: EdgeInsets.zero,
         children: [
-          // Handle
-          Container(
-            margin: EdgeInsets.symmetric(vertical: 10.h),
-            width: 40.w,
-            height: 4.h,
-            decoration: BoxDecoration(
-              color: AppColors.border,
-              borderRadius: BorderRadius.circular(2.r),
+          // Drag handle
+          Center(
+            child: Container(
+              margin: EdgeInsets.symmetric(vertical: 10.h),
+              width: 44.w,
+              height: 5.h,
+              decoration: BoxDecoration(
+                color: AppColors.textSecondary.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(3.r),
+              ),
             ),
           ),
 
@@ -1087,33 +1106,10 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
               ),
             ),
 
-          // Pending stop request from passenger
-          if (rideState.pendingStopRequest != null)
-            _buildPendingStopBanner(rideState.pendingStopRequest!),
-
           // Timeout warning
           if (rideState.rideTimeoutMinutes != null &&
               !rideState.hasShownTimeoutWarning)
             _buildTimeoutWarning(ride, rideState),
-
-          // Safety Check-In
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 4.h),
-            child: SafetyCheckInBanner(
-              onCheckIn: () {
-                HapticFeedback.lightImpact();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      AppLocalizations.of(context).safetyCheckInConfirmed,
-                    ),
-                    backgroundColor: AppColors.success,
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
-            ),
-          ),
 
           // Passenger Info
           _buildPassengerInfo(ride, rideState),
@@ -1149,7 +1145,13 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
             ),
           ),
 
-          SizedBox(height: 16.h),
+          SizedBox(height: 12.h),
+
+          // Per-ride earnings card — shows breakdown so driver knows
+          // exactly how much they'll receive from this trip.
+          _buildEarningsCard(ride, rideState),
+
+          SizedBox(height: 12.h),
 
           // Quick Message Chips
           if (ride.status == RideStatus.inProgress)
@@ -1164,6 +1166,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () {
+                      HapticFeedback.lightImpact();
                       if (bookings.isEmpty) return;
                       if (bookings.length == 1) {
                         _callPassenger(bookings.first.passengerId);
@@ -1191,6 +1194,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () {
+                      HapticFeedback.lightImpact();
                       if (bookings.isEmpty) return;
                       if (bookings.length == 1) {
                         _messagePassenger(bookings.first.passengerId);
@@ -1227,7 +1231,10 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
               child: ElevatedButton(
                 onPressed: rideState.isProcessing
                     ? null
-                    : () => _handleMainAction(ride),
+                    : () {
+                        HapticFeedback.mediumImpact();
+                        _handleMainAction(ride);
+                      },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _getActionButtonColor(rideState.phase),
                   disabledBackgroundColor: _getActionButtonColor(
@@ -1244,8 +1251,10 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                     ? SizedBox(
                         height: 22.w,
                         width: 22.w,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
+                        child: CircularProgressIndicator.adaptive(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
                           strokeWidth: 2.5,
                         ),
                       )
@@ -1292,8 +1301,14 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
     switch (rideState.phase) {
       case ActiveRidePhase.pickingUp:
         statusColor = AppColors.warning;
-        statusText = l10n.headingToPickup;
-        statusIcon = Icons.person_pin_circle;
+        // Show different text before/after driver has arrived at pickup
+        if (ride.status == RideStatus.inProgress) {
+          statusText = 'At Pickup — Verifying Passengers';
+          statusIcon = Icons.how_to_reg;
+        } else {
+          statusText = l10n.headingToPickup;
+          statusIcon = Icons.person_pin_circle;
+        }
         break;
       case ActiveRidePhase.enRoute:
         statusColor = AppColors.primary;
@@ -1500,7 +1515,49 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                         color: AppColors.textSecondary,
                       ),
                     ),
-                    SizedBox(width: 8.w),
+                    SizedBox(width: 6.w),
+                    // Payment status badge — always visible so driver knows
+                    // who has paid before confirming pickup via OTP.
+                    if (!isNoShow && !isPickedUp) ...[
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 5.w,
+                          vertical: 2.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: booking.paidAt != null
+                              ? AppColors.success.withValues(alpha: 0.12)
+                              : AppColors.warning.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(5.r),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              booking.paidAt != null
+                                  ? Icons.check_circle_outline
+                                  : Icons.pending_outlined,
+                              size: 10.sp,
+                              color: booking.paidAt != null
+                                  ? AppColors.success
+                                  : AppColors.warning,
+                            ),
+                            SizedBox(width: 2.w),
+                            Text(
+                              booking.paidAt != null ? 'Paid' : 'Unpaid',
+                              style: TextStyle(
+                                fontSize: 9.sp,
+                                fontWeight: FontWeight.w700,
+                                color: booking.paidAt != null
+                                    ? AppColors.success
+                                    : AppColors.warning,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(width: 4.w),
+                    ],
                     if (isNoShow)
                       Container(
                         padding: EdgeInsets.symmetric(
@@ -1526,34 +1583,81 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                         size: 16.sp,
                         color: AppColors.success,
                       )
-                    else ...[
-                      // No-show button (only during pickup phase)
-                      if (rideState.phase == ActiveRidePhase.pickingUp)
-                        GestureDetector(
-                          onTap: () => _confirmNoShow(booking),
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 6.w,
-                              vertical: 2.h,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.error.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(6.r),
-                              border: Border.all(
-                                color: AppColors.error.withValues(alpha: 0.3),
+                    else if (rideState.phase == ActiveRidePhase.pickingUp) ...[
+                      // OTP confirm — disabled (amber) when unpaid to warn driver.
+                      GestureDetector(
+                        onTap: () {
+                          if (booking.paidAt == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text(
+                                  'This passenger hasn\'t paid yet. Collect cash or wait for payment.',
+                                ),
+                                backgroundColor: AppColors.warning,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10.r),
+                                ),
                               ),
+                            );
+                            return;
+                          }
+                          _showOtpDialog(booking);
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 6.w,
+                            vertical: 2.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: booking.paidAt != null
+                                ? AppColors.primary.withValues(alpha: 0.1)
+                                : AppColors.warning.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(6.r),
+                            border: Border.all(
+                              color: booking.paidAt != null
+                                  ? AppColors.primary.withValues(alpha: 0.3)
+                                  : AppColors.warning.withValues(alpha: 0.4),
                             ),
-                            child: Text(
-                              'No-show',
-                              style: TextStyle(
-                                fontSize: 10.sp,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.error,
-                              ),
+                          ),
+                          child: Text(
+                            'OTP',
+                            style: TextStyle(
+                              fontSize: 10.sp,
+                              fontWeight: FontWeight.w700,
+                              color: booking.paidAt != null
+                                  ? AppColors.primary
+                                  : AppColors.warning,
                             ),
                           ),
                         ),
+                      ),
                       SizedBox(width: 4.w),
+                      GestureDetector(
+                        onTap: () => _confirmNoShow(booking),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 6.w,
+                            vertical: 2.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.error.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(6.r),
+                            border: Border.all(
+                              color: AppColors.error.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Text(
+                            'No-show',
+                            style: TextStyle(
+                              fontSize: 10.sp,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.error,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ] else ...[
                       Icon(
                         Icons.radio_button_unchecked,
                         size: 16.sp,
@@ -1723,8 +1827,8 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
 
                     SizedBox(height: 16.h),
 
-                    // Passenger pickup checklist
-                    if (bookings.length > 0) ...[
+                    // Passenger pickup checklist (OTP-verified)
+                    if (bookings.isNotEmpty) ...[
                       Container(
                         padding: EdgeInsets.all(16.w),
                         decoration: BoxDecoration(
@@ -1737,13 +1841,13 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                             Row(
                               children: [
                                 Icon(
-                                  Icons.checklist_rounded,
+                                  Icons.pin_rounded,
                                   size: 18.sp,
                                   color: AppColors.primary,
                                 ),
                                 SizedBox(width: 8.w),
                                 Text(
-                                  'Pickup Checklist',
+                                  'Confirm Pickups',
                                   style: TextStyle(
                                     fontSize: 14.sp,
                                     fontWeight: FontWeight.w700,
@@ -1761,65 +1865,83 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                                 ),
                               ],
                             ),
+                            SizedBox(height: 4.h),
+                            Text(
+                              'Ask each passenger for their 4-digit code',
+                              style: TextStyle(
+                                fontSize: 11.sp,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
                             SizedBox(height: 10.h),
                             ...bookings.map((b) {
-                              final isChecked = rideState.pickedUpPassengerIds
+                              final isPickedUp = rideState.pickedUpPassengerIds
                                   .contains(b.passengerId);
-                              return InkWell(
-                                onTap: () {
-                                  ref
-                                      .read(
-                                        activeRideViewModelProvider(
-                                          widget.rideId!,
-                                        ).notifier,
-                                      )
-                                      .togglePickedUpPassenger(b.passengerId);
-                                  HapticFeedback.selectionClick();
-                                },
-                                borderRadius: BorderRadius.circular(8.r),
-                                child: Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 6.h),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        isChecked
-                                            ? Icons.check_circle_rounded
-                                            : Icons.radio_button_unchecked,
-                                        color: isChecked
-                                            ? AppColors.success
-                                            : AppColors.textTertiary,
-                                        size: 22.sp,
-                                      ),
-                                      SizedBox(width: 10.w),
-                                      PassengerAvatarWidget(
+                              return Padding(
+                                padding: EdgeInsets.symmetric(vertical: 5.h),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      isPickedUp
+                                          ? Icons.check_circle_rounded
+                                          : Icons.radio_button_unchecked,
+                                      color: isPickedUp
+                                          ? AppColors.success
+                                          : AppColors.textTertiary,
+                                      size: 22.sp,
+                                    ),
+                                    SizedBox(width: 10.w),
+                                    PassengerAvatarWidget(
+                                      passengerId: b.passengerId,
+                                      radius: 16,
+                                    ),
+                                    SizedBox(width: 8.w),
+                                    Expanded(
+                                      child: PassengerNameWidget(
                                         passengerId: b.passengerId,
-                                        radius: 16,
+                                        style: TextStyle(
+                                          fontSize: 14.sp,
+                                          fontWeight: FontWeight.w500,
+                                          color: isPickedUp
+                                              ? AppColors.textSecondary
+                                              : AppColors.textPrimary,
+                                          decoration: isPickedUp
+                                              ? TextDecoration.lineThrough
+                                              : null,
+                                        ),
                                       ),
-                                      SizedBox(width: 8.w),
-                                      Expanded(
-                                        child: PassengerNameWidget(
-                                          passengerId: b.passengerId,
-                                          style: TextStyle(
-                                            fontSize: 14.sp,
-                                            fontWeight: FontWeight.w500,
-                                            color: isChecked
-                                                ? AppColors.textSecondary
-                                                : AppColors.textPrimary,
-                                            decoration: isChecked
-                                                ? TextDecoration.lineThrough
-                                                : null,
+                                    ),
+                                    if (!isPickedUp)
+                                      GestureDetector(
+                                        onTap: () => _showOtpDialog(b),
+                                        child: Container(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 10.w,
+                                            vertical: 5.h,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.primary,
+                                            borderRadius: BorderRadius.circular(
+                                              8.r,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            'Enter OTP',
+                                            style: TextStyle(
+                                              fontSize: 11.sp,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white,
+                                            ),
                                           ),
                                         ),
+                                      )
+                                    else
+                                      Icon(
+                                        Icons.verified_rounded,
+                                        size: 18.sp,
+                                        color: AppColors.success,
                                       ),
-                                      Text(
-                                        '${b.seatsBooked} seat${b.seatsBooked > 1 ? 's' : ''}',
-                                        style: TextStyle(
-                                          fontSize: 12.sp,
-                                          color: AppColors.textTertiary,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                  ],
                                 ),
                               );
                             }),
@@ -1932,6 +2054,115 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
 
   // ==================== SECTION 7 UI BUILDERS ====================
 
+  /// Per-ride earnings breakdown card shown in the bottom sheet.
+  /// Gives the driver a clear view of gross fare, platform fee, and net pay.
+  Widget _buildEarningsCard(RideModel ride, ActiveRideState rideState) {
+    final bookings = rideState.bookings;
+    final paidBookings = bookings.where((b) => b.paidAt != null).toList();
+    final unpaidCount = bookings.length - paidBookings.length;
+
+    // Gross = price × total seats booked across ALL accepted bookings
+    final totalSeats = bookings.fold<int>(0, (sum, b) => sum + b.seatsBooked);
+    final gross = ride.pricePerSeat * totalSeats;
+    const platformFeeRate = 0.15;
+    final platformFee = gross * platformFeeRate;
+    final net = gross - platformFee;
+
+    // Count how many paid seats
+    final paidSeats = paidBookings.fold<int>(
+      0,
+      (sum, b) => sum + b.seatsBooked,
+    );
+    final paidNet = ride.pricePerSeat * paidSeats * (1 - platformFeeRate);
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20.w),
+      child: Container(
+        padding: EdgeInsets.all(14.w),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AppColors.success.withValues(alpha: 0.08),
+              AppColors.primary.withValues(alpha: 0.06),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(14.r),
+          border: Border.all(color: AppColors.success.withValues(alpha: 0.25)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.account_balance_wallet_rounded,
+                  size: 16.sp,
+                  color: AppColors.success,
+                ),
+                SizedBox(width: 6.w),
+                Text(
+                  'Your Earnings',
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.success,
+                  ),
+                ),
+                const Spacer(),
+                if (unpaidCount > 0)
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 6.w,
+                      vertical: 2.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.warning.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(6.r),
+                    ),
+                    child: Text(
+                      '$unpaidCount unpaid',
+                      style: TextStyle(
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.warning,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            SizedBox(height: 10.h),
+            Row(
+              children: [
+                _EarningsStat(
+                  label: 'Gross fare',
+                  value:
+                      '${gross.toStringAsFixed(2)} ${ride.pricing.pricePerSeat.currency.toUpperCase()}',
+                  dimmed: true,
+                ),
+                _EarningsStat(
+                  label: 'Platform (15%)',
+                  value: '−${platformFee.toStringAsFixed(2)}',
+                  dimmed: true,
+                  isDeduction: true,
+                ),
+                _EarningsStat(
+                  label: paidSeats > 0 && paidSeats < totalSeats
+                      ? 'Paid so far'
+                      : 'You receive',
+                  value:
+                      '${(paidSeats > 0 && paidSeats < totalSeats ? paidNet : net).toStringAsFixed(2)} ${ride.pricing.pricePerSeat.currency.toUpperCase()}',
+                  highlight: true,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   /// Quick message chips for in-ride communication.
   Widget _buildQuickMessageChips(RideModel ride, ActiveRideState rideState) {
     final messages = [
@@ -1979,7 +2210,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: messages.length,
-              separatorBuilder: (_, __) => SizedBox(width: 8.w),
+              separatorBuilder: (_, _) => SizedBox(width: 8.w),
               itemBuilder: (context, index) {
                 return ActionChip(
                   label: Text(
@@ -1997,7 +2228,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                       chatId: ride.id,
                       message: messages[index],
                       senderId: user.uid,
-                      senderName: user.displayName ?? 'Driver',
+                      senderName: user.displayName,
                     );
                     HapticFeedback.lightImpact();
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -2021,87 +2252,6 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
             ),
           ),
           SizedBox(height: 12.h),
-        ],
-      ),
-    );
-  }
-
-  /// Banner for a pending stop request from a passenger.
-  Widget _buildPendingStopBanner(String description) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 4.h),
-      padding: EdgeInsets.all(12.w),
-      decoration: BoxDecoration(
-        color: AppColors.info.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.add_location_alt, size: 18.sp, color: AppColors.info),
-              SizedBox(width: 8.w),
-              Expanded(
-                child: Text(
-                  'Stop Requested: $description',
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.info,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 8.h),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () {
-                    ref
-                        .read(
-                          activeRideViewModelProvider(widget.rideId!).notifier,
-                        )
-                        .rejectStopRequest();
-                  },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.error,
-                    side: BorderSide(color: AppColors.error),
-                    padding: EdgeInsets.symmetric(vertical: 8.h),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.r),
-                    ),
-                  ),
-                  child: Text(
-                    AppLocalizations.of(context).decline,
-                    style: TextStyle(fontSize: 12.sp),
-                  ),
-                ),
-              ),
-              SizedBox(width: 8.w),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () => _handleAcceptStop(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.info,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: 8.h),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.r),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    AppLocalizations.of(context).acceptStop,
-                    style: TextStyle(fontSize: 12.sp),
-                  ),
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );
@@ -2189,11 +2339,153 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
 
   // ==================== SECTION 7 ACTIONS ====================
 
+  /// Shows OTP input dialog. Driver enters the 4-digit code the passenger
+  /// displays on their screen to confirm the pickup.
+  void _showOtpDialog(RideBooking booking) {
+    final otpController = TextEditingController();
+    String? errorText;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => AlertDialog.adaptive(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.r),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(8.w),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.pin_rounded,
+                  color: AppColors.primary,
+                  size: 20.sp,
+                ),
+              ),
+              SizedBox(width: 10.w),
+              Text(
+                'Confirm Pickup',
+                style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Ask the passenger for their 4-digit pickup code.',
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              SizedBox(height: 16.h),
+              TextField(
+                controller: otpController,
+                keyboardType: TextInputType.number,
+                maxLength: 4,
+                textAlign: TextAlign.center,
+                autofocus: true,
+                style: TextStyle(
+                  fontSize: 28.sp,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 12,
+                ),
+                decoration: InputDecoration(
+                  hintText: '- - - -',
+                  hintStyle: TextStyle(
+                    fontSize: 24.sp,
+                    letterSpacing: 8,
+                    color: AppColors.textTertiary,
+                  ),
+                  counterText: '',
+                  errorText: errorText,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                    borderSide: BorderSide(color: AppColors.primary, width: 2),
+                  ),
+                ),
+                onChanged: (_) {
+                  if (errorText != null) setState(() => errorText = null);
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                otpController.dispose();
+                Navigator.of(ctx).pop();
+              },
+              child: Text(AppLocalizations.of(context).actionCancel),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.r),
+                ),
+              ),
+              onPressed: () async {
+                final otp = otpController.text.trim();
+                if (otp.length != 4) {
+                  setState(() => errorText = 'Enter the 4-digit code');
+                  return;
+                }
+                final notifier = ref.read(
+                  activeRideViewModelProvider(widget.rideId!).notifier,
+                );
+                final ok = await notifier.confirmPickupWithOtp(
+                  passengerId: booking.passengerId,
+                  bookingId: booking.id,
+                  enteredOtp: otp,
+                );
+                if (!mounted) return;
+                if (ok) {
+                  otpController.dispose();
+                  Navigator.of(ctx).pop();
+                  HapticFeedback.mediumImpact();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Passenger confirmed!'),
+                      backgroundColor: AppColors.success,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                } else {
+                  setState(
+                    () => errorText = 'Wrong code — ask the passenger again',
+                  );
+                  HapticFeedback.heavyImpact();
+                }
+              },
+              child: Text('Confirm'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   /// Confirm no-show dialog for a passenger with 30-second undo window.
   void _confirmNoShow(RideBooking booking) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => AlertDialog.adaptive(
         title: Text(AppLocalizations.of(context).markAsNoShowQuestion),
         content: Text(
           AppLocalizations.of(
@@ -2270,32 +2562,11 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
     );
   }
 
-  /// Handle accept stop — uses current driver location as the stop.
-  void _handleAcceptStop() {
-    final rideState = ref.read(activeRideViewModelProvider(widget.rideId!));
-    final loc = rideState.currentLocation;
-    if (loc == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).locationUnavailable),
-        ),
-      );
-      return;
-    }
-    ref
-        .read(activeRideViewModelProvider(widget.rideId!).notifier)
-        .acceptStopRequest(
-          latitude: loc.latitude,
-          longitude: loc.longitude,
-          address: AppLocalizations.of(context).requestedStop,
-        );
-  }
-
   /// Show return ride prompt after ride completion.
   void _showReturnRidePrompt(RideModel ride) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => AlertDialog.adaptive(
         title: Text(AppLocalizations.of(context).createReturnRideQuestion),
         content: Text(
           AppLocalizations.of(context).createReturnRideMessage(
@@ -2427,14 +2698,13 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
     final l10n = AppLocalizations.of(context);
     switch (phase) {
       case ActiveRidePhase.pickingUp:
-        // Pre-start: "Start Ride" / Post-start: "Passengers Picked Up"
         return status == RideStatus.inProgress
-            ? 'Passengers Picked Up'
-            : l10n.startRide;
+            ? 'Start Driving'
+            : 'Arrived at Pickup';
       case ActiveRidePhase.enRoute:
-        return l10n.completeRide;
+        return 'Almost There';
       case ActiveRidePhase.arriving:
-        return 'Drop Off Passenger';
+        return l10n.completeRide;
       case ActiveRidePhase.completed:
         return l10n.rateYourRide;
     }
@@ -2445,11 +2715,11 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
       case ActiveRidePhase.pickingUp:
         return status == RideStatus.inProgress
             ? Icons.directions_car
-            : Icons.person_pin_circle;
+            : Icons.location_on;
       case ActiveRidePhase.enRoute:
-        return Icons.flag;
+        return Icons.near_me;
       case ActiveRidePhase.arriving:
-        return Icons.exit_to_app;
+        return Icons.check_circle;
       case ActiveRidePhase.completed:
         return Icons.star;
     }
@@ -2493,23 +2763,27 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
     }
   }
 
-  /// Step 1: Driver arrived at pickup → Confirms and starts ride in Firestore.
+  /// Step 1: Driver arrived at pickup → Confirms arrival and starts ride in Firestore.
   Future<void> _confirmArrivedAtPickup(RideModel ride) async {
     final l10n = AppLocalizations.of(context);
+    final passengerCount = ride.bookedSeats;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => AlertDialog.adaptive(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
         title: Row(
           children: [
-            Icon(Icons.person_pin_circle, color: AppColors.success),
+            Icon(Icons.location_on, color: AppColors.success),
             SizedBox(width: 8.w),
-            Expanded(child: Text(l10n.confirmPickup)),
+            Expanded(child: Text('Confirm Arrival')),
           ],
         ),
-        content: Text(l10n.confirmAllPassengersPickedUp),
+        content: Text(
+          'You\'ve arrived at the pickup location. '
+          '$passengerCount passenger${passengerCount != 1 ? 's' : ''} will be notified.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -2524,7 +2798,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                 borderRadius: BorderRadius.circular(12.r),
               ),
             ),
-            child: Text(l10n.passengersPickedUpStartTrip),
+            child: const Text('Yes, I\'ve Arrived'),
           ),
         ],
       ),
@@ -2572,9 +2846,19 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
   /// Step 1b: Driver confirms all passengers are picked up → departs.
   Future<void> _confirmDepartFromPickup(RideModel ride) async {
     final l10n = AppLocalizations.of(context);
+    final rideState = ref.read(activeRideViewModelProvider(widget.rideId!));
+    final unverifiedCount = rideState.bookings
+        .where(
+          (b) =>
+              b.status == BookingStatus.accepted &&
+              !rideState.pickedUpPassengerIds.contains(b.passengerId) &&
+              !rideState.noShowPassengerIds.contains(b.passengerId),
+        )
+        .length;
+
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => AlertDialog.adaptive(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
@@ -2582,13 +2866,52 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
           children: [
             Icon(Icons.directions_car, color: AppColors.primary),
             SizedBox(width: 8.w),
-            Expanded(
-              child: Text(AppLocalizations.of(context).confirmDeparture),
-            ),
+            Expanded(child: Text('Start Driving')),
           ],
         ),
-        content: Text(
-          AppLocalizations.of(context).allPassengersPickedUpConfirm,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (unverifiedCount > 0) ...[
+              Container(
+                padding: EdgeInsets.all(12.w),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10.r),
+                  border: Border.all(
+                    color: AppColors.warning.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      color: AppColors.warning,
+                      size: 20.sp,
+                    ),
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: Text(
+                        '$unverifiedCount passenger${unverifiedCount > 1 ? 's' : ''} not yet verified with OTP.',
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.warning,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 12.h),
+            ],
+            Text(
+              unverifiedCount > 0
+                  ? 'Are you sure you want to start driving without verifying all passengers?'
+                  : 'All passengers verified. Ready to go!',
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -2623,20 +2946,38 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
     }
   }
 
-  /// Step 2: Transition to arriving state (local UI change only).
+  /// Step 2: Transition to arriving state — driver signals they're approaching destination.
   void _confirmCompleteTrip() {
     HapticFeedback.lightImpact();
     ref
         .read(activeRideViewModelProvider(widget.rideId!).notifier)
         .transitionToArriving();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.near_me, color: Colors.white),
+            SizedBox(width: 8.w),
+            const Text('Approaching destination...'),
+          ],
+        ),
+        backgroundColor: AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.r),
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
-  /// Step 3: Drop off passenger → Completes ride in Firestore.
+  /// Step 3: Completes ride in Firestore — passengers dropped off.
   Future<void> _confirmDropOff(RideModel ride) async {
+    if (!mounted) return;
     final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => AlertDialog.adaptive(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
@@ -2668,14 +3009,14 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
       ),
     );
 
-    if (confirmed != true || !context.mounted) return;
+    if (confirmed != true || !mounted) return;
 
     try {
       final success = await ref
           .read(activeRideViewModelProvider(widget.rideId!).notifier)
           .completeRide();
 
-      if (!context.mounted) return;
+      if (!mounted) return;
 
       if (success) {
         HapticFeedback.heavyImpact();
@@ -2687,7 +3028,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
         );
       }
     } catch (e) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       _showErrorSnackBar('$e');
     }
   }
@@ -2744,6 +3085,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
 
   /// Shows a celebration bottom sheet when the ride is completed.
   void _showCompletionCelebration(RideModel ride) {
+    if (!mounted) return;
     final l10n = AppLocalizations.of(context);
     final fare =
         ride.pricePerSeat * (ride.bookedSeats > 0 ? ride.bookedSeats : 1);
@@ -2814,8 +3156,8 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
             // 7H — Return ride prompt
             TextButton.icon(
               onPressed: () {
-                Navigator.of(ctx).pop();
-                _showReturnRidePrompt(ride);
+                if (mounted) Navigator.of(ctx).pop();
+                if (mounted) _showReturnRidePrompt(ride);
               },
               icon: Icon(Icons.swap_horiz, size: 18.sp),
               label: Text(
@@ -2829,6 +3171,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () {
+                      if (!mounted) return;
                       Navigator.of(ctx).pop();
                       context.pop();
                     },
@@ -2848,6 +3191,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
                   flex: 2,
                   child: ElevatedButton.icon(
                     onPressed: () {
+                      if (!mounted) return;
                       Navigator.of(ctx).pop();
                       _navigateToRating(ride);
                     },
@@ -2874,6 +3218,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
 
   /// Shows an error snackbar with the given message.
   void _showErrorSnackBar(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -3113,11 +3458,17 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
     // Block exit during arriving phase — passengers are being dropped off.
     // Driver must complete the ride first.
     if (rideState.phase == ActiveRidePhase.arriving) {
+      final ride = rideState.currentRide;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text(
-            'You are arriving at the destination. Please complete the ride before leaving.',
-          ),
+          content: const Text('Complete the ride before leaving.'),
+          action: ride != null
+              ? SnackBarAction(
+                  label: 'Complete Now',
+                  textColor: Colors.white,
+                  onPressed: () => _handleMainAction(ride),
+                )
+              : null,
           backgroundColor: AppColors.warning,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -3131,7 +3482,7 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
     showDialog(
       context: context,
       barrierLabel: AppLocalizations.of(context).cancelRide,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => AlertDialog.adaptive(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
@@ -3168,6 +3519,145 @@ class _DriverActiveRideScreenState extends ConsumerState<DriverActiveRideScreen>
               ),
             ),
             child: Text(l10n.cancelRide2),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Self-contained pulsing marker that manages its own [AnimationController].
+///
+/// Extracting the animation into a separate [StatefulWidget] prevents the
+/// 60 fps animation rebuild from being coupled to the parent's state changes
+/// (GPS updates, ETA recalculations, etc.) and avoids animation stutter when
+/// the parent rebuilds.
+class _PulsingLocationMarker extends StatefulWidget {
+  const _PulsingLocationMarker({
+    required this.heading,
+    required this.outerSize,
+    required this.innerSize,
+    required this.iconSize,
+  });
+
+  final double heading;
+  final double outerSize;
+  final double innerSize;
+  final double iconSize;
+
+  @override
+  State<_PulsingLocationMarker> createState() => _PulsingLocationMarkerState();
+}
+
+class _PulsingLocationMarkerState extends State<_PulsingLocationMarker>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.rotate(
+      angle: widget.heading * 3.14159 / 180,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          return Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: widget.outerSize * (1 + _controller.value * 0.3),
+                height: widget.outerSize * (1 + _controller.value * 0.3),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(
+                    alpha: 0.3 * (1 - _controller.value),
+                  ),
+                  shape: BoxShape.circle,
+                ),
+              ),
+              Container(
+                width: widget.innerSize,
+                height: widget.innerSize,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 3),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.navigation,
+                  color: Colors.white,
+                  size: widget.iconSize,
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Compact stat column used inside the per-ride earnings card.
+class _EarningsStat extends StatelessWidget {
+  const _EarningsStat({
+    required this.label,
+    required this.value,
+    this.highlight = false,
+    this.dimmed = false,
+    this.isDeduction = false,
+  });
+
+  final String label;
+  final String value;
+  final bool highlight;
+  final bool dimmed;
+  final bool isDeduction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10.sp,
+              color: dimmed ? AppColors.textTertiary : AppColors.textSecondary,
+            ),
+          ),
+          SizedBox(height: 2.h),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: highlight ? 15.sp : 13.sp,
+              fontWeight: highlight ? FontWeight.w800 : FontWeight.w600,
+              color: highlight
+                  ? AppColors.success
+                  : isDeduction
+                  ? AppColors.error
+                  : AppColors.textSecondary,
+            ),
           ),
         ],
       ),

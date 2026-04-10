@@ -14,6 +14,15 @@ abstract class IBookingRepository {
     String rideId,
     String passengerId,
   );
+
+  /// Real-time stream of a passenger's own booking for a specific ride.
+  ///
+  /// Filters by both [rideId] and [passengerId] so Firestore security rules
+  /// can verify `resource.data.passengerId == request.auth.uid`.
+  Stream<List<RideBooking>> streamPassengerBookingForRide(
+    String rideId,
+    String passengerId,
+  );
   Future<List<RideBooking>> getBookingsByPassengerId(String passengerId);
   Stream<List<RideBooking>> streamBookingsByPassengerId(String passengerId);
 

@@ -9,8 +9,10 @@ import 'package:sport_connect/features/profile/views/settings_screen.dart';
 import 'package:sport_connect/features/profile/views/edit_profile_screen.dart';
 import 'package:sport_connect/features/profile/views/achievements_screen.dart';
 import 'package:sport_connect/features/vehicles/views/vehicle_management_screen.dart';
-import 'package:sport_connect/features/profile/views/driver_stats_screen.dart';
-import 'package:sport_connect/features/profile/views/driver_settings_screen.dart';
+import 'package:sport_connect/features/profile/views/driver_documents_screen.dart';
+import 'package:sport_connect/features/profile/views/tax_documents_screen.dart';
+import 'package:sport_connect/features/profile/views/background_check_screen.dart';
+import 'package:sport_connect/features/profile/views/two_factor_auth_screen.dart';
 import 'package:sport_connect/features/profile/views/help_center_screen.dart';
 import 'package:sport_connect/features/profile/views/contact_support_screen.dart';
 import 'package:sport_connect/features/profile/views/report_issue_screen.dart';
@@ -117,15 +119,6 @@ class ProfileRoutes implements RouteConfig {
         ),
       ),
 
-      GoRoute(
-        path: AppRoutes.driverSettings.path,
-        name: AppRoutes.driverSettings.name,
-        pageBuilder: (context, state) => SlideRightTransitionPage(
-          key: state.pageKey,
-          child: const DriverSettingsScreen(),
-        ),
-      ),
-
       // Deep-link to another driver's public profile (uses ProfileScreen with userId)
       GoRoute(
         path: AppRoutes.driverProfile.path,
@@ -139,13 +132,43 @@ class ProfileRoutes implements RouteConfig {
         },
       ),
 
-      // Driver Stats - current driver's own performance, ratings, and ride history
+      // Driver Documents
       GoRoute(
-        path: AppRoutes.driverStats.path,
-        name: AppRoutes.driverStats.name,
+        path: AppRoutes.driverDocuments.path,
+        name: AppRoutes.driverDocuments.name,
         pageBuilder: (context, state) => SlideRightTransitionPage(
           key: state.pageKey,
-          child: const DriverStatsScreen(),
+          child: const DriverDocumentsScreen(),
+        ),
+      ),
+
+      // Tax Documents
+      GoRoute(
+        path: AppRoutes.taxDocuments.path,
+        name: AppRoutes.taxDocuments.name,
+        pageBuilder: (context, state) => SlideRightTransitionPage(
+          key: state.pageKey,
+          child: const TaxDocumentsScreen(),
+        ),
+      ),
+
+      // Background Check
+      GoRoute(
+        path: AppRoutes.backgroundCheck.path,
+        name: AppRoutes.backgroundCheck.name,
+        pageBuilder: (context, state) => SlideRightTransitionPage(
+          key: state.pageKey,
+          child: const BackgroundCheckScreen(),
+        ),
+      ),
+
+      // Two-Factor Authentication
+      GoRoute(
+        path: AppRoutes.twoFactorAuth.path,
+        name: AppRoutes.twoFactorAuth.name,
+        pageBuilder: (context, state) => SlideRightTransitionPage(
+          key: state.pageKey,
+          child: const TwoFactorAuthScreen(),
         ),
       ),
 

@@ -126,6 +126,33 @@ class ReviewRepository implements IReviewRepository {
       throw Exception('User not authenticated');
     }
 
+    // FIX V-1: Prevent self-reviews.
+    if (currentUser.uid == request.revieweeId) {
+      throw Exception('You cannot review yourself');
+    }
+
+    // V-2: Enforce comment length (1–500 characters).
+    final comment = request.comment;
+    if (comment != null && comment.isNotEmpty && comment.length > 500) {
+      throw ArgumentError(
+        'Review comment must not exceed 500 characters (got ${comment.length}).',
+      );
+    }
+
+    // V-3: Only allow reviews for completed rides.
+    final ride = await _ridesCollection
+        .doc(request.rideId)
+        .get()
+        .then((s) => s.data());
+    if (ride == null) {
+      throw Exception('Ride not found');
+    }
+    if (ride.status != RideStatus.completed) {
+      throw StateError(
+        'Reviews can only be submitted for completed rides (current status: ${ride.status.name}).',
+      );
+    }
+
     // Check if user already reviewed this person for this ride
     final existingReview = await _reviewsCollection
         .where('rideId', isEqualTo: request.rideId)

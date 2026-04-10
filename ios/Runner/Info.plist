@@ -76,6 +76,9 @@
 		<true/>
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true/>
+		<!-- Export compliance: app uses standard HTTPS/TLS only (no custom crypto) -->
+		<key>ITSAppUsesNonExemptEncryption</key>
+		<false/>
 		<key>UIStatusBarHidden</key>
 		<true/>
 		<key>UIViewControllerBasedStatusBarAppearance</key>

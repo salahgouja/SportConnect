@@ -61,16 +61,13 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyBXBm2gyNkEWVoyZ4VSAEI3Twj9BJpWYw0',
-    appId: '1:950804897667:ios:f00be9b758b88a6480e0b6',
+    appId: '1:950804897667:ios:ee25c791f879565e80e0b6',
     messagingSenderId: '950804897667',
     projectId: 'marathon-connect',
-    databaseURL:
-        'https://marathon-connect-default-rtdb.europe-west1.firebasedatabase.app',
+    databaseURL: 'https://marathon-connect-default-rtdb.europe-west1.firebasedatabase.app',
     storageBucket: 'marathon-connect.firebasestorage.app',
-    androidClientId:
-        '950804897667-9b5maiqh6qla3t0qk2j28jtfd2ieoh9g.apps.googleusercontent.com',
-    iosClientId:
-        '950804897667-92ufpn1kmot4pdplnmqat89ir7kbeg9i.apps.googleusercontent.com',
-    iosBundleId: 'com.sportconnect.sportConnect',
+    androidClientId: '950804897667-9b5maiqh6qla3t0qk2j28jtfd2ieoh9g.apps.googleusercontent.com',
+    iosClientId: '950804897667-6n80c99rgha62msa59b5mcdos8p8pm67.apps.googleusercontent.com',
+    iosBundleId: 'com.sportconnect.SportConnectApplication',
   );
 }

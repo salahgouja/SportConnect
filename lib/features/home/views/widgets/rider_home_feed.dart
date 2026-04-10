@@ -272,7 +272,7 @@ class _NextRideSection extends ConsumerWidget {
       loading: () => const SizedBox.shrink(),
       error: (_, _) => const SizedBox.shrink(),
       data: (bookings) {
-        // Find upcoming accepted bookings
+        // Find upcoming accepted and pending bookings (exclude rejected/cancelled)
         final upcoming = bookings
             .where(
               (b) =>
@@ -325,7 +325,25 @@ class _NextRideCard extends ConsumerWidget {
                 context.push(
                   '${AppRoutes.riderActiveRide.path}?rideId=${ride.id}',
                 );
+              } else if (booking.status == BookingStatus.pending) {
+                // Pending booking → show pending/waiting screen
+                context.push(
+                  AppRoutes.rideBookingPending.path.replaceFirst(
+                    ':rideId',
+                    ride.id,
+                  ),
+                );
+              } else if (booking.status == BookingStatus.accepted &&
+                  booking.paidAt == null) {
+                // Accepted but payment required → go to payment screen
+                context.push(
+                  AppRoutes.rideBookingPending.path.replaceFirst(
+                    ':rideId',
+                    ride.id,
+                  ),
+                );
               } else {
+                // Accepted and paid (or no payment required) → go to countdown
                 context.push(
                   AppRoutes.rideCountdown.path.replaceFirst(
                     ':bookingId',
@@ -363,14 +381,45 @@ class _NextRideCard extends ConsumerWidget {
                         size: 16.sp,
                       ),
                       SizedBox(width: 6.w),
-                      Text(
-                        l10n.upcomingRidesTitle.toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 11.sp,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white.withValues(alpha: 0.8),
-                          letterSpacing: 1.2,
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.upcomingRidesTitle.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white.withValues(alpha: 0.8),
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                          SizedBox(height: 2.h),
+                          // Show booking status badge
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8.w,
+                              vertical: 2.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color: booking.status == BookingStatus.accepted
+                                  ? Colors.green.withValues(alpha: 0.3)
+                                  : Colors.orange.withValues(alpha: 0.3),
+                              borderRadius: BorderRadius.circular(6.r),
+                            ),
+                            child: Text(
+                              booking.status == BookingStatus.accepted
+                                  ? l10n.bookingConfirmed
+                                  : l10n.waitingForDriverApproval,
+                              style: TextStyle(
+                                fontSize: 10.sp,
+                                fontWeight: FontWeight.w600,
+                                color: booking.status == BookingStatus.accepted
+                                    ? Colors.green.withValues(alpha: 0.9)
+                                    : Colors.orange.withValues(alpha: 0.9),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       const Spacer(),
                       if (ride.status == RideStatus.inProgress)
@@ -813,9 +862,9 @@ class _NearbyRidesSection extends ConsumerWidget {
               child: SizedBox(
                 width: 24.w,
                 height: 24.w,
-                child: CircularProgressIndicator(
+                child: CircularProgressIndicator.adaptive(
                   strokeWidth: 2,
-                  color: AppColors.primary,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                 ),
               ),
             ),
@@ -1171,7 +1220,7 @@ class _MapToggleCard extends StatelessWidget {
                 ),
               ),
               Icon(
-                Icons.arrow_forward_ios_rounded,
+                Icons.adaptive.arrow_forward_rounded,
                 color: AppColors.textSecondary,
                 size: 16.sp,
               ),

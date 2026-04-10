@@ -167,6 +167,16 @@ class RideService extends _$RideService {
       TalkerService.error('Failed to update booking statuses: $e');
     }
 
+    // FIX RC-1: Only award XP when the ride was genuinely completed with at
+    // least one passenger who was picked up.  A force-completed or corrupted
+    // ride (zero completed passengers) must not grant rewards.
+    if (completedPassengerIds.isEmpty) {
+      TalkerService.warning(
+        'completeRide $rideId: no completed passengers — skipping XP/stats.',
+      );
+      return;
+    }
+
     // Award XP, update stats, streaks, and achievements
     try {
       final xp = calculateXpReward(ride);
@@ -204,6 +214,7 @@ class RideService extends _$RideService {
           uid: passengerId,
           asDriver: false,
           distance: distanceKm,
+          fareAmountPaid: ride.pricing.pricePerSeat.amount,
         );
         if (passengerLevelUp != null) {
           await notificationRepo.sendLevelUpNotification(

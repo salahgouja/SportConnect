@@ -79,7 +79,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
         elevation: 0,
         leading: IconButton(
           tooltip: l10n.goBack,
-          icon: const Icon(Icons.arrow_back_rounded),
+          icon: Icon(Icons.adaptive.arrow_back_rounded),
           onPressed: () => context.pop(),
         ),
         title: Text(
@@ -277,7 +277,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
           child: PremiumButton(
             text: l10n.changePasswordDone,
             onPressed: () => context.pop(),
-            icon: Icons.arrow_back_rounded,
+            icon: Icons.adaptive.arrow_back_rounded,
           ),
         ).animate().fadeIn(delay: 400.ms),
 

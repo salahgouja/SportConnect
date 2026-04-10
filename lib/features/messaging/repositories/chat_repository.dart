@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_chat_repository.dart';
-import 'package:sport_connect/core/models/models.dart';
 import 'package:sport_connect/features/messaging/models/message_model.dart';
 
 /// Chat Repository for Firestore operations
@@ -38,19 +37,6 @@ class ChatRepository implements IChatRepository {
                 TypingIndicator.fromJson(snapshot.data()!),
             toFirestore: (typing, _) => typing.toJson(),
           );
-  CollectionReference<UserModel> get _usersCollection => _firestore
-      .collection(AppConstants.usersCollection)
-      .withConverter<UserModel>(
-        fromFirestore: (snapshot, _) => UserModel.fromJson(snapshot.data()!),
-        toFirestore: (user, _) => user.toJson(),
-      );
-
-  /// Sub-collection stores metadata only: {blockedAt, chatId}.
-  /// No [UserModel] converter — the documents are not user documents.
-  CollectionReference _blockedUsersCollection(String userId) => _firestore
-      .collection(AppConstants.usersCollection)
-      .doc(userId)
-      .collection(AppConstants.blockedUsersCollection);
 
   // ==================== CHAT OPERATIONS ====================
 
@@ -71,6 +57,7 @@ class ChatRepository implements IChatRepository {
   }
 
   /// Get or create private chat between two users
+  @override
   Future<ChatModel> getOrCreatePrivateChat({
     required String userId1,
     required String userId2,
@@ -146,6 +133,35 @@ class ChatRepository implements IChatRepository {
     return chat.copyWith(id: chatId);
   }
 
+  /// Create an event group chat
+  Future<ChatModel> createEventChat({
+    required String eventId,
+    required String creatorId,
+    required String creatorName,
+    String? creatorPhoto,
+    required String eventName,
+  }) async {
+    final chat = ChatModel(
+      id: '',
+      type: ChatType.eventGroup,
+      eventId: eventId,
+      groupName: eventName,
+      participantIds: [creatorId],
+      participants: [
+        ChatParticipant(
+          odid: creatorId,
+          displayName: creatorName,
+          photoUrl: creatorPhoto,
+          isAdmin: true,
+          joinedAt: DateTime.now(),
+        ),
+      ],
+    );
+
+    final chatId = await createChat(chat);
+    return chat.copyWith(id: chatId);
+  }
+
   /// Get chat by ID
   @override
   Future<ChatModel?> getChatById(String chatId) async {
@@ -154,14 +170,31 @@ class ChatRepository implements IChatRepository {
     return doc.data();
   }
 
+  /// Get a ride group chat by ride ID.
+  Future<ChatModel?> getChatByRideId(String rideId) async {
+    final query = await _chatsCollection
+        .where('type', isEqualTo: ChatType.rideGroup.name)
+        .where('rideId', isEqualTo: rideId)
+        .limit(1)
+        .get();
+    if (query.docs.isEmpty) return null;
+    return query.docs.first.data();
+  }
+
   /// Stream user's chats
+  @override
   Stream<List<ChatModel>> streamUserChats(String userId) {
     return _chatsCollection
         .where('participantIds', arrayContains: userId)
         // .where('isActive', isEqualTo: true)
         .orderBy('lastMessageAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => doc.data())
+              .where((chat) => !(chat.deletedFor[userId] ?? false))
+              .toList(),
+        );
   }
 
   /// Add participant to chat
@@ -172,6 +205,38 @@ class ChatRepository implements IChatRepository {
     await _chatsCollection.doc(chatId).update({
       'participantIds': FieldValue.arrayUnion([participant.odid]),
       'participants': FieldValue.arrayUnion([participant.toJson()]),
+      'updatedAt': DateTime.now(),
+    });
+  }
+
+  /// Ensure user is a participant in the chat (idempotent operation)
+  /// Used to fix permission issues by adding missing users to participantIds
+  Future<void> ensureParticipant({
+    required String chatId,
+    required String userId,
+    String? displayName,
+    String? photoUrl,
+  }) async {
+    final chat = await getChatById(chatId);
+    if (chat == null) return;
+
+    // Check if user is already a participant
+    if (chat.participantIds.contains(userId)) {
+      return;
+    }
+
+    // Add user to participantIds
+    await _chatsCollection.doc(chatId).update({
+      'participantIds': FieldValue.arrayUnion([userId]),
+      if (displayName != null && photoUrl != null)
+        'participants': FieldValue.arrayUnion([
+          ChatParticipant(
+            odid: userId,
+            displayName: displayName,
+            photoUrl: photoUrl,
+            joinedAt: DateTime.now(),
+          ).toJson(),
+        ]),
       'updatedAt': DateTime.now(),
     });
   }
@@ -224,18 +289,78 @@ class ChatRepository implements IChatRepository {
   /// Send a message
   @override
   Future<String> sendMessage(MessageModel message) async {
+    // M-5: Enforce message length limit to prevent Firestore bloat.
+    if (message.content.length > 2000) {
+      throw ArgumentError(
+        'Message content must not exceed 2000 characters (got ${message.content.length}).',
+      );
+    }
+
+    final chat = await getChatById(message.chatId);
+    late final List<String> participantIds;
+
+    // If chat exists, use its participants
+    if (chat != null) {
+      // FIX M-1: Verify the sender is actually a participant in the chat.
+      // Without this check any authenticated user who knows a chatId can inject
+      // messages into someone else's conversation.
+      if (!chat.participantIds.contains(message.senderId)) {
+        throw StateError(
+          'sendMessage: sender ${message.senderId} is not a participant in chat ${message.chatId}',
+        );
+      }
+
+      // FIX M-4: Check whether any recipient has blocked the sender.
+      // If so, reject the message to honour the block.
+      for (final recipientId in chat.participantIds) {
+        if (recipientId == message.senderId) continue;
+        final recipientDoc = await _firestore
+            .collection(AppConstants.usersCollection)
+            .doc(recipientId)
+            .get();
+        final blockedUsers = List<String>.from(
+          recipientDoc.data()?['blockedUsers'] as List? ?? [],
+        );
+        if (blockedUsers.contains(message.senderId)) {
+          throw StateError(
+            'sendMessage: recipient $recipientId has blocked sender ${message.senderId}',
+          );
+        }
+      }
+
+      participantIds = chat.participantIds;
+    } else {
+      // Chat doesn't exist - need to determine participants
+      // For draft chats (format: "draft-user1__user2"), extract both user IDs
+      if (message.chatId.startsWith('draft-')) {
+        participantIds = _extractParticipantsFromDraftId(message.chatId);
+      } else {
+        // For non-draft chats, only add sender (shouldn't happen in normal flow)
+        participantIds = <String>[message.senderId];
+      }
+    }
+
     final docRef = _messagesCollection(message.chatId).doc();
     final messageWithId = message.copyWith(
       id: docRef.id,
-      createdAt: DateTime.now(),
+      createdAt: DateTime.now(), // local copy for in-memory use
       status: MessageStatus.sent,
     );
 
     // Use batch for atomic operation
     final batch = _firestore.batch();
 
-    // Add message
-    batch.set(docRef, messageWithId);
+    // Write message using a raw reference so we can set createdAt to
+    // FieldValue.serverTimestamp() — prevents backdating/forward-dating by
+    // clients whose device clocks are wrong (M-2).
+    final rawMsgRef = _firestore
+        .collection(AppConstants.chatsCollection)
+        .doc(message.chatId)
+        .collection(AppConstants.messagesCollection)
+        .doc(docRef.id);
+    final messageJson = messageWithId.toJson();
+    messageJson['createdAt'] = FieldValue.serverTimestamp();
+    batch.set(rawMsgRef, messageJson);
 
     // Update or create chat's last message info.
     batch.set(
@@ -247,12 +372,29 @@ class ChatRepository implements IChatRepository {
         'lastMessageType': message.type.name,
         'lastMessageAt': DateTime.now(),
         'updatedAt': DateTime.now(),
+        'participantIds':
+            participantIds, // Ensure both participants are in the document
+        for (final participantId in participantIds)
+          'deletedFor.$participantId': FieldValue.delete(),
       },
       SetOptions(merge: true),
     );
 
     await batch.commit();
     return docRef.id;
+  }
+
+  /// Extract participant IDs from a draft chat ID
+  /// Draft chat IDs have format: "draft-user1__user2"
+  List<String> _extractParticipantsFromDraftId(String draftChatId) {
+    try {
+      final parts = draftChatId.replaceFirst('draft-', '').split('__');
+      if (parts.length == 2) {
+        return parts;
+      }
+    } catch (_) {}
+    // Fallback: shouldn't reach here in normal operation
+    return <String>[];
   }
 
   /// Stream messages for a chat
@@ -324,7 +466,12 @@ class ChatRepository implements IChatRepository {
         .where('participantIds', arrayContains: userId)
         .orderBy('lastMessageAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => doc.data())
+              .where((chat) => !(chat.deletedFor[userId] ?? false))
+              .toList(),
+        );
   }
 
   @override
@@ -456,152 +603,61 @@ class ChatRepository implements IChatRepository {
     required String displayName,
     required bool isTyping,
   }) async {
-    final typingRef = _typingCollection(chatId).doc(odid);
+    // FIX M-3: Write to the raw collection so we can add expiresAt = now+30s.
+    // If the user kills the app while typing the indicator will auto-expire
+    // rather than staying "forever" in Firestore.
+    final rawTypingRef = _firestore
+        .collection(AppConstants.chatsCollection)
+        .doc(chatId)
+        .collection(AppConstants.typingCollection)
+        .doc(odid);
 
     if (isTyping) {
-      await typingRef.set(
-        TypingIndicator(
-          odid: odid,
-          displayName: displayName,
-          chatId: chatId,
-          startedAt: DateTime.now(),
+      await rawTypingRef.set({
+        'odid': odid,
+        'displayName': displayName,
+        'chatId': chatId,
+        'startedAt': FieldValue.serverTimestamp(),
+        'expiresAt': Timestamp.fromDate(
+          DateTime.now().add(const Duration(seconds: 30)),
         ),
-      );
+      });
     } else {
-      await typingRef.delete();
+      await rawTypingRef.delete();
     }
   }
 
-  /// Stream typing indicators
+  /// Stream typing indicators — only returns non-expired indicators (M-3).
   Stream<List<TypingIndicator>> streamTypingIndicators(String chatId) {
-    return _typingCollection(chatId).snapshots().map(
-      (snapshot) => snapshot.docs.map((doc) => doc.data()).toList(),
-    );
-  }
-
-  // ==================== ONLINE STATUS ====================
-
-  /// Update online status
-  Future<void> updateOnlineStatus({
-    required String chatId,
-    required String odid,
-    required bool isOnline,
-  }) async {
-    final chat = await getChatById(chatId);
-    if (chat == null) return;
-
-    final updatedParticipants = chat.participants.map((p) {
-      if (p.odid == odid) {
-        return p.copyWith(
-          isOnline: isOnline,
-          lastSeenAt: isOnline ? null : DateTime.now(),
+    // FIX M-3: Filter server-side to only return indicators that have not
+    // yet expired, so stale indicators from killed apps are invisible.
+    return _firestore
+        .collection(AppConstants.chatsCollection)
+        .doc(chatId)
+        .collection(AppConstants.typingCollection)
+        .where('expiresAt', isGreaterThan: Timestamp.now())
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => TypingIndicator.fromJson(doc.data()))
+              .toList(),
         );
-      }
-      return p;
-    }).toList();
-
-    await _chatsCollection.doc(chatId).update({
-      'participants': updatedParticipants.map((p) => p.toJson()).toList(),
-    });
   }
 
   // ==================== FILE UPLOADS ====================
 
   /// Clear all messages in a chat for the current user (soft delete)
+  @override
   Future<void> clearChat({
     required String chatId,
     required String userId,
   }) async {
-    // Set a 'clearedAt' timestamp for this user so the client
-    // filters out messages sent before this point.
+    // Hide this chat only for the requesting user.
     await _chatsCollection.doc(chatId).update({
-      'clearedAt.$userId': DateTime.now(),
+      'deletedFor.$userId': true,
+      'unreadCounts.$userId': 0,
+      'updatedAt': DateTime.now(),
     });
-  }
-
-  /// Block a user atomically:
-  /// 1. Writes metadata to the blocked-users sub-collection.
-  /// 2. Adds the UID to the [UserModel.blockedUsers] array for fast query filtering.
-  /// 3. Auto-mutes the chat in the same batch.
-  Future<void> blockUser({
-    required String chatId,
-    required String userId,
-    required String blockedUserId,
-  }) async {
-    final batch = _firestore.batch();
-
-    // 1. Write block metadata to sub-collection
-    final blockDoc = _blockedUsersCollection(userId).doc(blockedUserId);
-    batch.set(blockDoc, {
-      'blockedAt': FieldValue.serverTimestamp(),
-      'chatId': chatId,
-    });
-
-    // 2. Mirror the UID into the UserModel.blockedUsers array for fast Firestore queries
-    final userDoc = _usersCollection.doc(userId);
-    batch.update(userDoc, {
-      'blockedUsers': FieldValue.arrayUnion([blockedUserId]),
-    });
-
-    // 3. Mute the chat for the blocker
-    batch.set(
-      _firestore.collection(AppConstants.chatsCollection).doc(chatId),
-      {'mutedBy.$userId': true, 'updatedAt': FieldValue.serverTimestamp()},
-      SetOptions(merge: true),
-    );
-
-    await batch.commit();
-  }
-
-  /// Unblock a user atomically — reverses every write done in [blockUser].
-  Future<void> unblockUser({
-    required String userId,
-    required String blockedUserId,
-    String? chatId,
-  }) async {
-    final batch = _firestore.batch();
-
-    // 1. Remove sub-collection document
-    final blockDoc = _blockedUsersCollection(userId).doc(blockedUserId);
-    batch.delete(blockDoc);
-
-    // 2. Remove from UserModel.blockedUsers array
-    final userDoc = _usersCollection.doc(userId);
-    batch.update(userDoc, {
-      'blockedUsers': FieldValue.arrayRemove([blockedUserId]),
-    });
-
-    // 3. Unmute the chat if provided
-    if (chatId != null) {
-      batch.set(
-        _firestore.collection(AppConstants.chatsCollection).doc(chatId),
-        {
-          'mutedBy.$userId': FieldValue.delete(),
-          'updatedAt': FieldValue.serverTimestamp(),
-        },
-        SetOptions(merge: true),
-      );
-    }
-
-    await batch.commit();
-  }
-
-  /// Returns whether [blockedUserId] is blocked by [userId].
-  /// Reads a single document — O(1), safe to call before sending messages.
-  Future<bool> isUserBlocked({
-    required String userId,
-    required String blockedUserId,
-  }) async {
-    final doc = await _blockedUsersCollection(userId).doc(blockedUserId).get();
-    return doc.exists;
-  }
-
-  /// Streams the list of blocked UIDs for [userId].
-  /// Backed by the sub-collection so the UI reacts in real time.
-  Stream<List<String>> streamBlockedUserIds(String userId) {
-    return _blockedUsersCollection(userId).snapshots().map(
-      (snapshot) => snapshot.docs.map((doc) => doc.id).toList(),
-    );
   }
 
   /// Upload chat image to Firebase Storage and return download URL

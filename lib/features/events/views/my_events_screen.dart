@@ -51,7 +51,7 @@ class _MyEventsScreenState extends ConsumerState<MyEventsScreen>
         elevation: 0,
         leading: IconButton(
           icon: Icon(
-            Icons.arrow_back_rounded,
+            Icons.adaptive.arrow_back_rounded,
             color: AppColors.textPrimary,
             size: 22.sp,
           ),
@@ -118,7 +118,7 @@ class _CreatedTab extends ConsumerWidget {
     final stream = ref.watch(eventsByCreatorStreamProvider(userId));
 
     return stream.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const Center(child: CircularProgressIndicator.adaptive()),
       error: (_, __) => _EmptyTab(message: l10n.unableToLoadEvents),
       data: (events) {
         if (events.isEmpty) {
@@ -144,7 +144,7 @@ class _JoinedTab extends ConsumerWidget {
     final stream = ref.watch(joinedEventsStreamProvider(userId));
 
     return stream.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const Center(child: CircularProgressIndicator.adaptive()),
       error: (_, __) => _EmptyTab(message: l10n.unableToLoadEvents),
       data: (events) {
         if (events.isEmpty) {

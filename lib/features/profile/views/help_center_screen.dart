@@ -185,7 +185,7 @@ class HelpCenterScreen extends ConsumerWidget {
         ),
         leading: IconButton(
           tooltip: l10n.goBackTooltip,
-          icon: const Icon(Icons.arrow_back_rounded),
+          icon: Icon(Icons.adaptive.arrow_back_rounded),
           onPressed: () => context.pop(),
         ),
       ),
@@ -256,6 +256,7 @@ class HelpCenterScreen extends ConsumerWidget {
           .setSearchQuery,
       textInputAction: TextInputAction.search,
       decoration: InputDecoration(
+        labelText: AppLocalizations.of(context).searchHelpArticles,
         hintText: AppLocalizations.of(context).searchHelpArticles,
         hintStyle: TextStyle(fontSize: 14.sp, color: AppColors.textTertiary),
         prefixIcon: Icon(Icons.search_rounded, color: AppColors.textSecondary),

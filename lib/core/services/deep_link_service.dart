@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
@@ -113,10 +112,10 @@ class DeepLinkService {
   /// Handles App Links / Custom URL schemes (app_links package).
   ///
   /// Call this once from the app's root widget after the router is ready.
-  Future<void> initialize(BuildContext context) async {
+  Future<void> initialize(GoRouter router) async {
     try {
       // Handle App Links / Custom URL schemes
-      await _initializeAppLinks(context);
+      await _initializeAppLinks(router);
 
       TalkerService.info('✅ Deep link service initialized');
     } catch (e, stackTrace) {
@@ -125,9 +124,7 @@ class DeepLinkService {
   }
 
   /// Initialize standard App Links (sportconnect://, sc://)
-  Future<void> _initializeAppLinks(BuildContext context) async {
-    final router = GoRouter.of(context);
-
+  Future<void> _initializeAppLinks(GoRouter router) async {
     // Handle the initial link (app opened via link while closed)
     final initialUri = await _appLinks.getInitialLink();
     if (initialUri != null) {
@@ -207,7 +204,9 @@ class DeepLinkService {
           final routeId = match.group(1)!;
           if (handler.routeName == AppRoutes.chatDetail.name ||
               handler.routeName == AppRoutes.chatRide.name) {
-            final receiver = await _resolveReceiverForChat(chatId: routeId);
+            final (:receiver, :chatType) = await _resolveReceiverForChat(
+              chatId: routeId,
+            );
             if (receiver == null) {
               TalkerService.warning(
                 'Could not resolve receiver for deep-link chat $routeId; '
@@ -217,12 +216,33 @@ class DeepLinkService {
               return;
             }
 
+            // Auto-detect correct route based on actual chat type
+            final routeName = switch (chatType) {
+              ChatType.rideGroup => AppRoutes.chatGroup.name,
+              ChatType.eventGroup => AppRoutes.chatGroup.name,
+              _ => AppRoutes.chatDetail.name,
+            };
+
             router.pushNamed(
-              handler.routeName,
+              routeName,
               pathParameters: {handler.paramKey!: routeId},
               extra: receiver,
             );
           } else {
+            // DL-1: Validate the resource exists before navigating.
+            // A deleted or expired resource would otherwise cause an infinite
+            // loading spinner on the destination screen.
+            final exists = await _resourceExists(
+              routeName: handler.routeName,
+              id: routeId,
+            );
+            if (!exists) {
+              TalkerService.warning(
+                '🔗 Deep-link target not found (${handler.routeName}/$routeId) — redirecting.',
+              );
+              router.pushNamed(AppRoutes.notifications.name);
+              return;
+            }
             router.pushNamed(
               handler.routeName,
               pathParameters: {handler.paramKey!: routeId},
@@ -238,22 +258,53 @@ class DeepLinkService {
     TalkerService.warning('⚠️ No route matched for deep link path: $path');
   }
 
-  Future<UserModel?> _resolveReceiverForChat({required String chatId}) async {
+  /// DL-1: Checks whether the target Firestore document for a deep-link route
+  /// still exists. Returns false if the resource has been deleted, preventing
+  /// the app from navigating into an infinite loading state.
+  Future<bool> _resourceExists({
+    required String routeName,
+    required String id,
+  }) async {
+    try {
+      final db = FirebaseFirestore.instance;
+      if (routeName == AppRoutes.rideDetail.name) {
+        final snap = await db
+            .collection(AppConstants.ridesCollection)
+            .doc(id)
+            .get();
+        return snap.exists;
+      }
+      // For any other resource type, default to allowing navigation.
+      return true;
+    } catch (e) {
+      TalkerService.error('_resourceExists check failed', e);
+      return true; // fail-open — let destination screen handle the error
+    }
+  }
+
+  Future<({UserModel? receiver, ChatType chatType})> _resolveReceiverForChat({
+    required String chatId,
+  }) async {
     try {
       final currentUserId = FirebaseAuth.instance.currentUser?.uid;
       final chat = await _chatsCollection
           .doc(chatId)
           .get()
           .then((s) => s.data());
-      if (chat == null) return null;
+      if (chat == null) {
+        return (receiver: null, chatType: ChatType.private);
+      }
 
       if (chat.type != ChatType.private) {
         final title = chat.groupName ?? chat.getChatTitle(currentUserId ?? '');
-        return UserModel.rider(
-          uid: chatId,
-          email: '',
-          displayName: title.isEmpty ? 'Group Chat' : title,
-          photoUrl: chat.groupPhotoUrl,
+        return (
+          receiver: UserModel.rider(
+            uid: chatId,
+            email: '',
+            displayName: title.isEmpty ? 'Group Chat' : title,
+            photoUrl: chat.groupPhotoUrl,
+          ),
+          chatType: chat.type,
         );
       }
 
@@ -267,19 +318,26 @@ class DeepLinkService {
             .doc(participantId)
             .get()
             .then((s) => s.data());
-        if (fullUser != null) return fullUser;
+        if (fullUser != null) {
+          return (receiver: fullUser, chatType: ChatType.private);
+        }
       }
 
-      if (otherParticipant == null) return null;
-      return UserModel.rider(
-        uid: participantId ?? chatId,
-        email: '',
-        displayName: otherParticipant.displayName,
-        photoUrl: otherParticipant.photoUrl,
+      if (otherParticipant == null) {
+        return (receiver: null, chatType: ChatType.private);
+      }
+      return (
+        receiver: UserModel.rider(
+          uid: participantId ?? chatId,
+          email: '',
+          displayName: otherParticipant.displayName,
+          photoUrl: otherParticipant.photoUrl,
+        ),
+        chatType: ChatType.private,
       );
     } catch (e) {
       TalkerService.error('Failed to resolve chat receiver from deep link', e);
-      return null;
+      return (receiver: null, chatType: ChatType.private);
     }
   }
 

@@ -257,7 +257,7 @@ class _PremiumButtonState extends State<PremiumButton>
         child: SizedBox(
           width: _iconSize,
           height: _iconSize,
-          child: CircularProgressIndicator(
+          child: CircularProgressIndicator.adaptive(
             strokeWidth: 2.5,
             valueColor: AlwaysStoppedAnimation(_textColor),
           ),
@@ -467,7 +467,7 @@ class _PremiumIconButtonState extends State<PremiumIconButton>
                 ? SizedBox(
                     width: _iconSize * 0.8,
                     height: _iconSize * 0.8,
-                    child: CircularProgressIndicator(
+                    child: CircularProgressIndicator.adaptive(
                       strokeWidth: 2,
                       valueColor: AlwaysStoppedAnimation(_iconColor),
                     ),

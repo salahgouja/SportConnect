@@ -1,0 +1,26 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAM_ID_HERE.com.sportconnect.SportConnectApplication",
+        "paths": [
+          "/ride/*",
+          "/chat/detail/*",
+          "/chat/ride/*",
+          "/chat/group/*",
+          "/profile",
+          "/edit-profile",
+          "/driver/vehicles",
+          "/notifications",
+          "/events/*"
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": [
+      "TEAM_ID_HERE.com.sportconnect.SportConnectApplication"
+    ]
+  }
+}

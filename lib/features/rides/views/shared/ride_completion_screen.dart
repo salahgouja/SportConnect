@@ -74,7 +74,8 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: rideAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () =>
+            const Center(child: CircularProgressIndicator.adaptive()),
         error: (e, _) => Center(
           child: Padding(
             padding: EdgeInsets.all(24.w),
@@ -277,7 +278,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                                   child: SizedBox(
                                     width: 20,
                                     height: 20,
-                                    child: CircularProgressIndicator(
+                                    child: CircularProgressIndicator.adaptive(
                                       strokeWidth: 2,
                                     ),
                                   ),

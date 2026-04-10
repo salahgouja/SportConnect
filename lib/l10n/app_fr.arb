@@ -3414,6 +3414,14 @@
   "@searchConversations": {
     "description": "Hint text for chat search field"
   },
+  "searchChatsOrPeople": "Rechercher des discussions ou des personnes",
+  "@searchChatsOrPeople": {
+    "description": "Hint text for chat inbox search field"
+  },
+  "peopleResults": "Personnes",
+  "@peopleResults": {
+    "description": "Section title for people found while searching chats"
+  },
   "direct": "Direct",
   "@direct": {
     "description": "Tab label for direct/private chats"
@@ -3571,6 +3579,8 @@
   "driverCityHint": "Où êtes-vous basé ?",
   "driverCityRequired": "Veuillez entrer votre ville",
   "driverGenderRequired": "Veuillez sélectionner votre genre.",
+  "expertiseLevel": "Niveau d'expertise",
+  "expertiseLevelRequired": "Veuillez sélectionner votre niveau d'expertise.",
   "driverInterestsRequired": "Veuillez sélectionner au moins un intérêt.",
   "driverTermsLabel": "J'accepte les Conditions d'utilisation et la Politique de confidentialité.",
   "driverTermsRequired": "Vous devez accepter les conditions pour continuer.",
@@ -3728,7 +3738,7 @@
   "supportsImagesHint": "Images acceptées (max 10 Mo chacune)",
   "submitReportButton": "Envoyer le signalement",
   "reportSubmittedTitle": "Signalement envoyé",
-  "reportSubmittedMessage": "Merci d'avoir signalé ce problème. Notre équipe de sécurité l'examinera et prendra les mesures appropriées sous 24 à 48 heures.",
+  "reportSubmittedMessage": "Merci d'avoir signalé ce problème. Notre équipe de sécurité l'examinera et prendra les mesures appropriées sous 24 à 48 heures. Vous recevrez un e-mail lorsque votre problème sera résolu.",
   "doneButton": "Terminé",
   "chooseFromGallery": "Choisir dans la galerie",
   "takeAPhoto": "Prendre une photo",
@@ -4003,7 +4013,7 @@
   "submitTicketButton": "Envoyer le ticket",
   "responseTimeInfo": "La plupart des demandes reçoivent une réponse sous 12 à 24 heures",
   "ticketSubmittedTitle": "Ticket envoyé !",
-  "ticketSubmittedMessage": "Nous avons bien reçu votre message et vous répondrons sous 24 heures. Vérifiez votre e-mail pour les mises à jour.",
+  "ticketSubmittedMessage": "Nous avons bien reçu votre message et vous répondrons sous 24 heures. Vous recevrez un e-mail lorsque votre problème sera résolu.",
   "findPeopleTitle": "Trouver des personnes",
   "searchByNameHint": "Rechercher par nom",
   "clearSearchTooltip": "Effacer la recherche",
@@ -4274,6 +4284,19 @@
   },
   "userBlocked": "L'utilisateur a été bloqué.",
   "couldNotBlockUserTryAgain": "Impossible de bloquer l'utilisateur. Veuillez réessayer.",
+  "unblockUser": "Débloquer l'utilisateur",
+  "unblockUserDialogMessage": "Débloquer {name} ?",
+  "@unblockUserDialogMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "actionUnblock": "Débloquer",
+  "userUnblocked": "Utilisateur débloqué.",
+  "couldNotUnblockUserTryAgain": "Impossible de débloquer l'utilisateur. Veuillez réessayer.",
+  "youBlockedThisUser": "Vous avez bloqué cet utilisateur.",
   "actionBlock": "Bloquer",
   "downloadReceipt": "Télécharger le reçu",
   "notificationsAlreadyEnabled": "Les notifications sont déjà activées.",

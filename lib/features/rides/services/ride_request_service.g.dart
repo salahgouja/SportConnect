@@ -8,18 +8,27 @@ part of 'ride_request_service.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Ride request service - handles business logic
-/// Moved from model extensions to proper service layer
+/// Booking action service — handles driver accept/reject of pending bookings.
+///
+/// Replaces the old RideRequestService which maintained a separate
+/// `rideRequests` Firestore collection in parallel with `bookings`.
+/// Now there is only one source of truth: the `bookings` collection.
 
 @ProviderFor(RideRequestService)
 final rideRequestServiceProvider = RideRequestServiceProvider._();
 
-/// Ride request service - handles business logic
-/// Moved from model extensions to proper service layer
+/// Booking action service — handles driver accept/reject of pending bookings.
+///
+/// Replaces the old RideRequestService which maintained a separate
+/// `rideRequests` Firestore collection in parallel with `bookings`.
+/// Now there is only one source of truth: the `bookings` collection.
 final class RideRequestServiceProvider
     extends $AsyncNotifierProvider<RideRequestService, void> {
-  /// Ride request service - handles business logic
-  /// Moved from model extensions to proper service layer
+  /// Booking action service — handles driver accept/reject of pending bookings.
+  ///
+  /// Replaces the old RideRequestService which maintained a separate
+  /// `rideRequests` Firestore collection in parallel with `bookings`.
+  /// Now there is only one source of truth: the `bookings` collection.
   RideRequestServiceProvider._()
     : super(
         from: null,
@@ -40,10 +49,13 @@ final class RideRequestServiceProvider
 }
 
 String _$rideRequestServiceHash() =>
-    r'03efb407834aa265fb58700f1577ffdc83555e3b';
+    r'0ee2f8a5f1485d63609d5cb2f2de857ef75b6ba4';
 
-/// Ride request service - handles business logic
-/// Moved from model extensions to proper service layer
+/// Booking action service — handles driver accept/reject of pending bookings.
+///
+/// Replaces the old RideRequestService which maintained a separate
+/// `rideRequests` Firestore collection in parallel with `bookings`.
+/// Now there is only one source of truth: the `bookings` collection.
 
 abstract class _$RideRequestService extends $AsyncNotifier<void> {
   FutureOr<void> build();

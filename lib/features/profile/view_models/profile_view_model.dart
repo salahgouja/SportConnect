@@ -2,9 +2,9 @@ import 'dart:io';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:sport_connect/core/models/user/user_model.dart';
 import 'package:sport_connect/core/widgets/address_autocomplete_field.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 
@@ -16,6 +16,7 @@ class ProfileEditState {
   final String? phoneNumber;
   final DateTime? dateOfBirth;
   final String? gender;
+  final Expertise expertise;
   final AddressResult? cityResult;
   final File? newPhotoFile;
   final bool imageRemoved;
@@ -29,6 +30,7 @@ class ProfileEditState {
     this.phoneNumber,
     this.dateOfBirth,
     this.gender,
+    this.expertise = Expertise.rookie,
     this.cityResult,
     this.newPhotoFile,
     this.imageRemoved = false,
@@ -43,6 +45,7 @@ class ProfileEditState {
     String? phoneNumber,
     DateTime? dateOfBirth,
     String? gender,
+    Expertise? expertise,
     AddressResult? cityResult,
     bool clearCityResult = false,
     File? newPhotoFile,
@@ -58,6 +61,7 @@ class ProfileEditState {
       phoneNumber: phoneNumber ?? this.phoneNumber,
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       gender: gender ?? this.gender,
+      expertise: expertise ?? this.expertise,
       cityResult: clearCityResult ? null : (cityResult ?? this.cityResult),
       newPhotoFile: clearNewPhotoFile
           ? null
@@ -76,6 +80,7 @@ class ProfileEditState {
       phoneNumber: user.phoneNumber,
       dateOfBirth: user.dateOfBirth,
       gender: user.gender,
+      expertise: user.expertise,
       hasChanges: false,
     );
   }
@@ -224,11 +229,77 @@ class ProfileActionsViewModel {
   final Ref _ref;
 
   Future<List<UserModel>> searchUsers({required String query}) {
-    return _ref.read(profileRepositoryProvider).searchUsers(query: query);
+    final currentUser = _ref.read(currentUserProvider).value;
+    final excludedIds = <String>{
+      if (currentUser != null) currentUser.uid,
+      ...?currentUser?.blockedUsers,
+    };
+    return _ref
+        .read(profileRepositoryProvider)
+        .searchUsers(
+          query: query,
+          excludeUserIds: excludedIds,
+          excludeUsersWhoBlockedId: currentUser?.uid,
+        );
   }
 
   Future<UserModel?> getUserById(String userId) {
     return _ref.read(profileRepositoryProvider).getUserById(userId);
+  }
+
+  Future<List<UserModel>> getUsersByIds(Iterable<String> userIds) async {
+    final ids = userIds
+        .map((id) => id.trim())
+        .where((id) => id.isNotEmpty)
+        .toList(growable: false);
+
+    if (ids.isEmpty) return const <UserModel>[];
+
+    final repository = _ref.read(profileRepositoryProvider);
+    final users = await Future.wait(ids.map(repository.getUserById));
+
+    final usersById = <String, UserModel>{};
+    for (final user in users.whereType<UserModel>()) {
+      usersById[user.uid] = user;
+    }
+
+    // Keep the same order as blocked IDs and preserve unknown IDs as fallback entries.
+    return ids
+        .map(
+          (id) =>
+              usersById[id] ??
+              UserModel.rider(uid: id, email: '', displayName: id),
+        )
+        .toList(growable: false);
+  }
+
+  Future<List<UserModel>> getBlockedUsersForCurrentUser() async {
+    final currentUser = _ref.read(currentUserProvider).value;
+    if (currentUser == null || currentUser.blockedUsers.isEmpty) {
+      return const <UserModel>[];
+    }
+    return getUsersByIds(currentUser.blockedUsers);
+  }
+
+  Future<void> unblockUser({
+    required String currentUserId,
+    required String blockedUserId,
+  }) {
+    return _ref
+        .read(profileRepositoryProvider)
+        .unblockUser(currentUserId, blockedUserId);
+  }
+
+  Future<void> unblockCurrentUser(String blockedUserId) async {
+    final currentUser = _ref.read(currentUserProvider).value;
+    if (currentUser == null) {
+      throw StateError('No current user found while trying to unblock user.');
+    }
+
+    await unblockUser(
+      currentUserId: currentUser.uid,
+      blockedUserId: blockedUserId,
+    );
   }
 
   Future<void> updateProfile(String uid, Map<String, dynamic> updates) {
@@ -307,6 +378,16 @@ class ProfileActionsViewModel {
         );
   }
 }
+
+final blockedUsersProvider = FutureProvider<List<UserModel>>((ref) async {
+  final currentUser = ref.watch(currentUserProvider).value;
+  if (currentUser == null || currentUser.blockedUsers.isEmpty) {
+    return const <UserModel>[];
+  }
+
+  final actions = ref.read(profileActionsViewModelProvider);
+  return actions.getUsersByIds(currentUser.blockedUsers);
+});
 
 @riverpod
 class ReportIssueFormViewModel extends _$ReportIssueFormViewModel {
@@ -493,6 +574,10 @@ class ProfileEditViewModel extends _$ProfileEditViewModel {
     state = state.copyWith(gender: gender, hasChanges: true, isSaved: false);
   }
 
+  void setExpertise(Expertise expertise) {
+    state = state.copyWith(expertise: expertise, hasChanges: true, isSaved: false);
+  }
+
   void setCityResult(AddressResult? result) {
     state = state.copyWith(
       cityResult: result,
@@ -544,6 +629,7 @@ class ProfileEditViewModel extends _$ProfileEditViewModel {
         'phoneNumber': state.phoneNumber,
         'dateOfBirth': state.dateOfBirth,
         'gender': state.gender,
+        'expertise': state.expertise.name,
       });
 
       if (!ref.mounted) return true;

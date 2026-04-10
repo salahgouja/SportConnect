@@ -46,12 +46,18 @@ class RouteGuardService {
   bool get isLoggedIn => user != null;
 
   /// Check if user is a driver
-  bool get isDriver => user is DriverModel;
+  bool get isDriver => user!.role == UserRole.driver;
 
   /// Check if driver has completed onboarding (has vehicles)
   bool get hasCompletedDriverOnboarding {
     if (!isDriver) return true;
     return (user as DriverModel).vehicleIds.isNotEmpty;
+  }
+
+  /// Check if driver has completed Stripe payout onboarding
+  bool get hasCompletedStripeOnboarding {
+    if (!isDriver) return true;
+    return (user as DriverModel).isStripeOnboarded;
   }
 
   bool get _driverHasPersistedProfileData {
@@ -157,6 +163,9 @@ class RouteGuardService {
       if (!hasCompletedDriverOnboarding) {
         return _driverOnboardingRedirectPath;
       }
+      if (!hasCompletedStripeOnboarding) {
+        return AppRoutes.driverStripeOnboarding.path;
+      }
     }
 
     return null;
@@ -186,6 +195,9 @@ class RouteGuardService {
         if (driver.vehicleIds.isEmpty) {
           return _driverOnboardingRedirectPath;
         }
+        if (!driver.isStripeOnboarded) {
+          return AppRoutes.driverStripeOnboarding.path;
+        }
         return AppRoutes.driverHome.path;
       },
     );
@@ -212,9 +224,10 @@ class RouteGuardService {
     return path.startsWith('/driver');
   }
 
-  /// Check if route is driver onboarding
+  /// Check if route is driver onboarding (profile/vehicle wizard or Stripe setup)
   bool _isDriverOnboardingRoute(String path) {
-    return path == AppRoutes.driverOnboarding.path;
+    return path == AppRoutes.driverOnboarding.path ||
+        path == AppRoutes.driverStripeOnboarding.path;
   }
 
   /// Returns a safe in-app redirect target from `?redirect=` query param.

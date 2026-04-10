@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
@@ -113,12 +114,27 @@ class StripeService {
   ///
   /// Uses Stripe's conversion-optimized Payment Sheet UI which supports
   /// saved cards, Apple Pay, Google Pay, and localized payment methods.
+  ///
+  /// [currency] - ISO 4217 currency code (e.g. 'eur', 'usd') for Google Pay
   Future<bool> processPaymentWithSheet({
     required String paymentIntentClientSecret,
     required String customerId,
     String? ephemeralKeySecret,
+    String currency = 'eur',
+    String merchantCountryCode = 'FR',
   }) async {
+    // P-5: Guard against empty/null clientSecret before touching the Stripe SDK,
+    // which would throw a cryptic internal exception.
+    if (paymentIntentClientSecret.isEmpty) {
+      throw ArgumentError(
+        'paymentIntentClientSecret must not be empty. '
+        'The payment intent may have failed to create.',
+      );
+    }
+
     try {
+      final currencyUpper = currency.toUpperCase();
+
       // Initialize Payment Sheet with branded appearance
       await Stripe.instance.initPaymentSheet(
         paymentSheetParameters: SetupPaymentSheetParameters(
@@ -126,19 +142,53 @@ class StripeService {
           merchantDisplayName: 'SportConnect',
           customerId: customerId,
           customerEphemeralKeySecret: ephemeralKeySecret,
-          // Enable Apple Pay / Google Pay for faster checkout
-          // applePay: const PaymentSheetApplePay(merchantCountryCode: 'FR'),
-          googlePay: const PaymentSheetGooglePay(
-            merchantCountryCode: 'FR',
-            testEnv: true, // Set to false in production
+          // Apple Pay — shown automatically on iOS when device has a card
+          // applePay: PaymentSheetApplePay(
+          //   merchantCountryCode: merchantCountryCode,
+          // ),
+          // Google Pay — shown automatically on Android when device has a card
+          googlePay: PaymentSheetGooglePay(
+            merchantCountryCode: merchantCountryCode,
+            currencyCode: currencyUpper,
+            testEnv: kDebugMode,
           ),
-          // Allow delayed payment methods (e.g., SEPA direct debit)
+          // Allow SEPA direct debit and other delayed payment methods
           allowsDelayedPaymentMethods: true,
-          appearance: const PaymentSheetAppearance(
-            colors: PaymentSheetAppearanceColors(primary: Color(0xFF1E88E5)),
-            shapes: PaymentSheetShape(borderWidth: 1),
-            primaryButton: PaymentSheetPrimaryButtonAppearance(
-              shapes: PaymentSheetPrimaryButtonShape(),
+          // Collect billing details for fraud prevention
+          billingDetailsCollectionConfiguration:
+              const BillingDetailsCollectionConfiguration(
+            name: CollectionMode.automatic,
+            email: CollectionMode.never,
+            phone: CollectionMode.never,
+            address: AddressCollectionMode.never,
+          ),
+          appearance: PaymentSheetAppearance(
+            colors: PaymentSheetAppearanceColors(
+              primary: const Color(0xFF1E88E5),
+              background: const Color(0xFFF8FAFF),
+              componentBackground: const Color(0xFFFFFFFF),
+              componentBorder: const Color(0xFFE0E7FF),
+              componentText: const Color(0xFF1A1A2E),
+              primaryText: const Color(0xFF1A1A2E),
+              secondaryText: const Color(0xFF6B7280),
+              placeholderText: const Color(0xFF9CA3AF),
+              icon: const Color(0xFF1E88E5),
+              error: const Color(0xFFEF4444),
+            ),
+            shapes: const PaymentSheetShape(
+              borderRadius: 12,
+              borderWidth: 1.5,
+              shadow: PaymentSheetShadowParams(opacity: 0.04),
+            ),
+            primaryButton: const PaymentSheetPrimaryButtonAppearance(
+              shapes: PaymentSheetPrimaryButtonShape(blurRadius: 0),
+              colors: PaymentSheetPrimaryButtonTheme(
+                light: PaymentSheetPrimaryButtonThemeColors(
+                  background: Color(0xFF1E88E5),
+                  text: Color(0xFFFFFFFF),
+                  border: Color(0xFF1E88E5),
+                ),
+              ),
             ),
           ),
         ),
@@ -150,10 +200,13 @@ class StripeService {
       TalkerService.info('Payment successful');
       return true;
     } on StripeException catch (e) {
-      TalkerService.error('Stripe error: ${e.error.localizedMessage}');
-      throw StripePaymentException(
-        e.error.localizedMessage ?? 'Payment failed',
-      );
+      final msg = e.error.localizedMessage ?? '';
+      // User deliberately dismissed the sheet — not an error
+      if (e.error.code == FailureCode.Canceled) {
+        return false;
+      }
+      TalkerService.error('Stripe error: $msg');
+      throw StripePaymentException(msg.isNotEmpty ? msg : 'Payment failed');
     } catch (e) {
       TalkerService.error('Payment error: $e');
       throw StripePaymentException('Payment processing failed');
@@ -264,6 +317,18 @@ class StripeService {
     }
   }
 
+  /// Sync driver's Stripe balance to Firestore
+  Future<Map<String, dynamic>> syncDriverBalance() async {
+    try {
+      final response = await _callFunction('syncDriverBalance', {});
+      return response;
+    } catch (e) {
+      TalkerService.error('Error syncing balance: $e');
+      if (e is StripePaymentException) rethrow;
+      throw StripePaymentException('Failed to sync balance: $e');
+    }
+  }
+
   /// Create instant payout to driver's debit card
   /// Uses Firebase Cloud Functions
   ///
@@ -299,7 +364,7 @@ class StripeService {
     try {
       final response = await _callFunction('refundPayment', {
         'paymentIntentId': paymentIntentId,
-        if (amount != null) 'amount': amount,
+        'amount': ?amount,
         'reason': reason ?? 'requested_by_customer',
       });
 

@@ -34,7 +34,7 @@ class PremiumLoader extends StatelessWidget {
     return SizedBox(
       width: size.w,
       height: size.w,
-      child: CircularProgressIndicator(
+      child: CircularProgressIndicator.adaptive(
         strokeWidth: 3,
         valueColor: AlwaysStoppedAnimation(color ?? AppColors.primary),
       ),
@@ -117,7 +117,7 @@ class PremiumLoader extends StatelessWidget {
           SizedBox(
                 width: size.w,
                 height: size.w,
-                child: CircularProgressIndicator(
+                child: CircularProgressIndicator.adaptive(
                   strokeWidth: 3,
                   strokeCap: StrokeCap.round,
                   valueColor: AlwaysStoppedAnimation(

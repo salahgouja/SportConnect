@@ -28,6 +28,8 @@ abstract class RideBooking with _$RideBooking {
     // Payment tracking — stamped when Stripe payment succeeds
     String? paymentIntentId,
     @TimestampConverter() DateTime? paidAt,
+    // Pickup OTP — shown to passenger, driver enters this to confirm pickup
+    String? pickupOtp,
   }) = _RideBooking;
 
   factory RideBooking.fromJson(Map<String, dynamic> json) =>

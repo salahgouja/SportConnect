@@ -181,6 +181,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
           role: uiState.selectedRole,
           phone: uiState.phoneNumber,
           profileImage: uiState.profileImage,
+          expertise: uiState.expertise,
         );
     if (!mounted) return;
 
@@ -295,7 +296,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             icon: Icon(
               wizardUiState.currentStep == 0
                   ? Icons.close_rounded
-                  : Icons.arrow_back_ios_new_rounded,
+                  : Icons.adaptive.arrow_back_rounded,
               size: 18.sp,
             ),
           ),
@@ -655,6 +656,38 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                 .setDateOfBirth(d),
           ),
           SizedBox(height: 16.h),
+
+          // Expertise level
+          FormBuilderDropdown<Expertise>(
+            name: 'expertise',
+            initialValue: wizardUiState.expertise,
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context).expertiseLevel,
+              prefixIcon: Icon(
+                Icons.workspace_premium_rounded,
+                color: theme.accent,
+              ),
+              filled: true,
+              fillColor: theme.accent.withOpacity(0.06),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14.r),
+                borderSide: BorderSide.none,
+              ),
+            ),
+            onChanged: (e) {
+              if (e != null) {
+                ref
+                    .read(signupWizardUiViewModelProvider.notifier)
+                    .setExpertise(e);
+              }
+            },
+            items: Expertise.values
+                .map(
+                  (e) => DropdownMenuItem(value: e, child: Text(e.displayName)),
+                )
+                .toList(),
+          ),
+          SizedBox(height: 16.h),
         ],
       ),
     );
@@ -837,8 +870,10 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                         ? SizedBox(
                             width: 24.w,
                             height: 24.w,
-                            child: const CircularProgressIndicator(
-                              color: Colors.white,
+                            child: const CircularProgressIndicator.adaptive(
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                               strokeWidth: 2.5,
                             ),
                           )
@@ -862,7 +897,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                               Icon(
                                 isLast
                                     ? Icons.check_rounded
-                                    : Icons.arrow_forward_rounded,
+                                    : Icons.adaptive.arrow_forward_rounded,
                                 color: Colors.white,
                                 size: 20.sp,
                               ),

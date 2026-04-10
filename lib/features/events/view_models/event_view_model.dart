@@ -1,6 +1,6 @@
 import 'dart:io';
+import 'dart:math' as math;
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
@@ -25,7 +25,6 @@ class CreateEventSubmissionResult {
 class CreateEventFormState {
   CreateEventFormState({
     this.title = '',
-    this.venueName = '',
     this.description = '',
     this.type = EventType.running,
     DateTime? startsAt,
@@ -34,7 +33,7 @@ class CreateEventFormState {
     this.maxParticipants = 0,
     this.imageFile,
     this.isRecurring = false,
-    this.recurringDays = const [],
+    this.recurringPattern,
     this.recurringEndDate,
     this.costSplitEnabled = false,
     this.isSubmitting = false,
@@ -49,7 +48,6 @@ class CreateEventFormState {
   );
 
   final String title;
-  final String venueName;
   final String description;
   final EventType type;
   final DateTime startsAt;
@@ -58,7 +56,7 @@ class CreateEventFormState {
   final int maxParticipants;
   final File? imageFile;
   final bool isRecurring;
-  final List<int> recurringDays;
+  final RecurrencePattern? recurringPattern;
   final DateTime? recurringEndDate;
   final bool costSplitEnabled;
   final bool isSubmitting;
@@ -69,7 +67,6 @@ class CreateEventFormState {
 
   CreateEventFormState copyWith({
     String? title,
-    String? venueName,
     String? description,
     EventType? type,
     DateTime? startsAt,
@@ -81,7 +78,8 @@ class CreateEventFormState {
     File? imageFile,
     bool clearImageFile = false,
     bool? isRecurring,
-    List<int>? recurringDays,
+    RecurrencePattern? recurringPattern,
+    bool clearRecurringPattern = false,
     DateTime? recurringEndDate,
     bool clearRecurringEndDate = false,
     bool? costSplitEnabled,
@@ -95,7 +93,6 @@ class CreateEventFormState {
   }) {
     return CreateEventFormState(
       title: title ?? this.title,
-      venueName: venueName ?? this.venueName,
       description: description ?? this.description,
       type: type ?? this.type,
       startsAt: startsAt ?? this.startsAt,
@@ -104,7 +101,9 @@ class CreateEventFormState {
       maxParticipants: maxParticipants ?? this.maxParticipants,
       imageFile: clearImageFile ? null : (imageFile ?? this.imageFile),
       isRecurring: isRecurring ?? this.isRecurring,
-      recurringDays: recurringDays ?? this.recurringDays,
+      recurringPattern: clearRecurringPattern
+          ? null
+          : (recurringPattern ?? this.recurringPattern),
       recurringEndDate: clearRecurringEndDate
           ? null
           : (recurringEndDate ?? this.recurringEndDate),
@@ -121,10 +120,14 @@ class CreateEventFormState {
 
   bool get isBusy => isSubmitting || isUploadingImage;
 
-  List<int> get sortedRecurringDays {
-    final sorted = List<int>.from(recurringDays);
-    sorted.sort();
-    return sorted;
+  /// Get applicable recurrence patterns based on duration between start and end dates
+  List<RecurrencePattern> get applicablePatterns {
+    if (!isRecurring) return RecurrencePattern.values;
+    return _allowedPatternsForWindow(
+      startsAt: startsAt,
+      endsAt: endsAt,
+      recurringEndDate: recurringEndDate,
+    );
   }
 
   String? get titleError {
@@ -158,8 +161,8 @@ class CreateEventFormState {
 
   String? get recurringError {
     if (!isRecurring) return null;
-    if (recurringDays.isEmpty) {
-      return 'Select at least one day for a recurring event.';
+    if (recurringPattern == null) {
+      return 'Select a recurrence pattern.';
     }
     final endDate = recurringEndDate;
     if (endDate != null && _dateOnly(endDate).isBefore(_dateOnly(startsAt))) {
@@ -188,6 +191,37 @@ class CreateEventFormState {
 DateTime _dateOnly(DateTime value) =>
     DateTime(value.year, value.month, value.day);
 
+List<RecurrencePattern> _allowedPatternsForWindow({
+  required DateTime startsAt,
+  DateTime? endsAt,
+  DateTime? recurringEndDate,
+}) {
+  var patterns = RecurrencePattern.values;
+
+  // 1) Do not offer patterns that would overlap with the same event occurrence.
+  // Example: a 14-day event should not repeat daily or weekly.
+  if (endsAt != null && endsAt.isAfter(startsAt)) {
+    final occurrenceDuration = endsAt.difference(startsAt);
+    patterns = patterns.where((pattern) {
+      final recurrenceGap = pattern
+          .nextOccurrenceFrom(startsAt)
+          .difference(startsAt);
+      return recurrenceGap >= occurrenceDuration;
+    }).toList();
+  }
+
+  // 2) If repeat-until is set, keep only patterns that can occur within that
+  // window at least once.
+  if (recurringEndDate != null) {
+    patterns = patterns.where((pattern) {
+      final nextOccurrence = pattern.nextOccurrenceFrom(startsAt);
+      return !nextOccurrence.isAfter(recurringEndDate);
+    }).toList();
+  }
+
+  return patterns;
+}
+
 @riverpod
 class CreateEventFormViewModel extends _$CreateEventFormViewModel {
   @override
@@ -195,10 +229,6 @@ class CreateEventFormViewModel extends _$CreateEventFormViewModel {
 
   void setTitle(String value) {
     state = state.copyWith(title: value, clearError: true);
-  }
-
-  void setVenueName(String value) {
-    state = state.copyWith(venueName: value, clearError: true);
   }
 
   void setDescription(String value) {
@@ -228,18 +258,38 @@ class CreateEventFormViewModel extends _$CreateEventFormViewModel {
         ? _dateOnly(nextStartsAt)
         : recurringEndDate;
 
+    final nextAllowedPatterns = _allowedPatternsForWindow(
+      startsAt: nextStartsAt,
+      endsAt: nextEndsAt,
+      recurringEndDate: normalizedRecurringEndDate,
+    );
+    final shouldClearPattern =
+        state.recurringPattern != null &&
+        !nextAllowedPatterns.contains(state.recurringPattern);
+
     state = state.copyWith(
       startsAt: nextStartsAt,
       endsAt: nextEndsAt,
       recurringEndDate: normalizedRecurringEndDate,
+      clearRecurringPattern: shouldClearPattern,
       clearError: true,
     );
   }
 
   void setEndsAt(DateTime? value) {
+    final nextAllowedPatterns = _allowedPatternsForWindow(
+      startsAt: state.startsAt,
+      endsAt: value,
+      recurringEndDate: state.recurringEndDate,
+    );
+    final shouldClearPattern =
+        state.recurringPattern != null &&
+        !nextAllowedPatterns.contains(state.recurringPattern);
+
     state = state.copyWith(
       endsAt: value,
       clearEndsAt: value == null,
+      clearRecurringPattern: shouldClearPattern,
       clearError: true,
     );
   }
@@ -268,28 +318,31 @@ class CreateEventFormViewModel extends _$CreateEventFormViewModel {
   void setIsRecurring(bool value) {
     state = state.copyWith(
       isRecurring: value,
-      recurringDays: value ? state.sortedRecurringDays : const [],
+      clearRecurringPattern: !value,
       clearRecurringEndDate: !value,
       clearError: true,
     );
   }
 
-  void toggleRecurringDay(int day) {
-    final nextDays = List<int>.from(state.recurringDays);
-    if (nextDays.contains(day)) {
-      nextDays.remove(day);
-    } else {
-      nextDays.add(day);
-    }
-    nextDays.sort();
-    state = state.copyWith(recurringDays: nextDays, clearError: true);
+  void setRecurringPattern(RecurrencePattern pattern) {
+    state = state.copyWith(recurringPattern: pattern, clearError: true);
   }
 
   void setRecurringEndDate(DateTime? value) {
     final normalizedValue = value == null ? null : _dateOnly(value);
+    final nextAllowedPatterns = _allowedPatternsForWindow(
+      startsAt: state.startsAt,
+      endsAt: state.endsAt,
+      recurringEndDate: normalizedValue,
+    );
+    final shouldClearPattern =
+        state.recurringPattern != null &&
+        !nextAllowedPatterns.contains(state.recurringPattern);
+
     state = state.copyWith(
       recurringEndDate: normalizedValue,
       clearRecurringEndDate: normalizedValue == null,
+      clearRecurringPattern: shouldClearPattern,
       clearError: true,
     );
   }
@@ -336,12 +389,11 @@ class CreateEventFormViewModel extends _$CreateEventFormViewModel {
       description: state.description.trim().isEmpty
           ? null
           : state.description.trim(),
-      venueName: state.venueName.trim().isEmpty ? null : state.venueName.trim(),
       organizerName: authUser.displayName,
       maxParticipants: state.maxParticipants,
       participantIds: [authUser.uid],
       isRecurring: state.isRecurring,
-      recurringDays: state.sortedRecurringDays,
+      recurringPattern: state.recurringPattern,
       recurringEndDate: state.recurringEndDate,
       costSplitEnabled: state.costSplitEnabled,
     );
@@ -401,7 +453,6 @@ class CreateEventFormViewModel extends _$CreateEventFormViewModel {
 class EditEventFormState {
   const EditEventFormState({
     this.title = '',
-    this.venueName = '',
     this.description = '',
     this.type = EventType.running,
     this.startsAt,
@@ -412,7 +463,7 @@ class EditEventFormState {
     this.existingImageUrl,
     this.removeExistingImage = false,
     this.isRecurring = false,
-    this.recurringDays = const [],
+    this.recurringPattern,
     this.recurringEndDate,
     this.costSplitEnabled = false,
     this.isSubmitting = false,
@@ -423,7 +474,6 @@ class EditEventFormState {
 
   factory EditEventFormState.fromEvent(EventModel event) => EditEventFormState(
     title: event.title,
-    venueName: event.venueName ?? '',
     description: event.description ?? '',
     type: event.type,
     startsAt: event.startsAt,
@@ -432,13 +482,12 @@ class EditEventFormState {
     maxParticipants: event.maxParticipants,
     existingImageUrl: event.imageUrl,
     isRecurring: event.isRecurring,
-    recurringDays: event.recurringDays,
+    recurringPattern: event.recurringPattern,
     recurringEndDate: event.recurringEndDate,
     costSplitEnabled: event.costSplitEnabled,
   );
 
   final String title;
-  final String venueName;
   final String description;
   final EventType type;
   final DateTime? startsAt;
@@ -449,7 +498,7 @@ class EditEventFormState {
   final String? existingImageUrl;
   final bool removeExistingImage;
   final bool isRecurring;
-  final List<int> recurringDays;
+  final RecurrencePattern? recurringPattern;
   final DateTime? recurringEndDate;
   final bool costSplitEnabled;
   final bool isSubmitting;
@@ -459,7 +508,6 @@ class EditEventFormState {
 
   EditEventFormState copyWith({
     String? title,
-    String? venueName,
     String? description,
     EventType? type,
     DateTime? startsAt,
@@ -471,7 +519,8 @@ class EditEventFormState {
     Object? existingImageUrl = _sentinel,
     bool? removeExistingImage,
     bool? isRecurring,
-    List<int>? recurringDays,
+    RecurrencePattern? recurringPattern,
+    bool clearRecurringPattern = false,
     Object? recurringEndDate = _sentinel,
     bool? costSplitEnabled,
     bool? isSubmitting,
@@ -482,7 +531,6 @@ class EditEventFormState {
   }) {
     return EditEventFormState(
       title: title ?? this.title,
-      venueName: venueName ?? this.venueName,
       description: description ?? this.description,
       type: type ?? this.type,
       startsAt: startsAt ?? this.startsAt,
@@ -497,7 +545,9 @@ class EditEventFormState {
           : existingImageUrl as String?,
       removeExistingImage: removeExistingImage ?? this.removeExistingImage,
       isRecurring: isRecurring ?? this.isRecurring,
-      recurringDays: recurringDays ?? this.recurringDays,
+      recurringPattern: clearRecurringPattern
+          ? null
+          : (recurringPattern ?? this.recurringPattern),
       recurringEndDate: identical(recurringEndDate, _sentinel)
           ? this.recurringEndDate
           : recurringEndDate as DateTime?,
@@ -513,6 +563,18 @@ class EditEventFormState {
 
   bool get hasExistingImage =>
       !removeExistingImage && (existingImageUrl?.isNotEmpty ?? false);
+
+  /// Get applicable recurrence patterns based on duration between start and end dates
+  List<RecurrencePattern> get applicablePatterns {
+    if (!isRecurring) return RecurrencePattern.values;
+    final start = startsAt;
+    if (start == null) return RecurrencePattern.values;
+    return _allowedPatternsForWindow(
+      startsAt: start,
+      endsAt: endsAt,
+      recurringEndDate: recurringEndDate,
+    );
+  }
 
   String? get titleError {
     final normalized = title.trim();
@@ -546,8 +608,8 @@ class EditEventFormState {
 
   String? get recurringError {
     if (!isRecurring) return null;
-    if (recurringDays.isEmpty) {
-      return 'Select at least one day for a recurring event.';
+    if (recurringPattern == null) {
+      return 'Select a recurrence pattern.';
     }
     final start = startsAt;
     final endDate = recurringEndDate;
@@ -589,12 +651,6 @@ class EditEventFormViewModel extends _$EditEventFormViewModel {
   void setTitle(String value) =>
       state = state.copyWith(title: value, isSaved: false, clearError: true);
 
-  void setVenueName(String value) => state = state.copyWith(
-    venueName: value,
-    isSaved: false,
-    clearError: true,
-  );
-
   void setDescription(String value) => state = state.copyWith(
     description: value,
     isSaved: false,
@@ -615,16 +671,44 @@ class EditEventFormViewModel extends _$EditEventFormViewModel {
     final nextEnd = state.endsAt != null && !state.endsAt!.isAfter(nextStart)
         ? nextStart.add(const Duration(hours: 2))
         : state.endsAt;
+    final nextAllowedPatterns = _allowedPatternsForWindow(
+      startsAt: nextStart,
+      endsAt: nextEnd,
+      recurringEndDate: state.recurringEndDate,
+    );
+    final shouldClearPattern =
+        state.recurringPattern != null &&
+        !nextAllowedPatterns.contains(state.recurringPattern);
+
     state = state.copyWith(
       startsAt: nextStart,
       endsAt: nextEnd,
+      clearRecurringPattern: shouldClearPattern,
       isSaved: false,
       clearError: true,
     );
   }
 
-  void setEndsAt(DateTime? value) =>
-      state = state.copyWith(endsAt: value, isSaved: false, clearError: true);
+  void setEndsAt(DateTime? value) {
+    final start = state.startsAt;
+    final nextAllowedPatterns = start == null
+        ? RecurrencePattern.values
+        : _allowedPatternsForWindow(
+            startsAt: start,
+            endsAt: value,
+            recurringEndDate: state.recurringEndDate,
+          );
+    final shouldClearPattern =
+        state.recurringPattern != null &&
+        !nextAllowedPatterns.contains(state.recurringPattern);
+
+    state = state.copyWith(
+      endsAt: value,
+      clearRecurringPattern: shouldClearPattern,
+      isSaved: false,
+      clearError: true,
+    );
+  }
 
   void setLocation(LocationPoint value) =>
       state = state.copyWith(location: value, isSaved: false, clearError: true);
@@ -658,32 +742,39 @@ class EditEventFormViewModel extends _$EditEventFormViewModel {
 
   void setRecurring(bool value) => state = state.copyWith(
     isRecurring: value,
-    recurringDays: value ? state.recurringDays : const [],
+    clearRecurringPattern: !value,
     recurringEndDate: value ? state.recurringEndDate : null,
     isSaved: false,
     clearError: true,
   );
 
-  void toggleRecurringDay(int day) {
-    final nextDays = [...state.recurringDays];
-    if (nextDays.contains(day)) {
-      nextDays.remove(day);
-    } else {
-      nextDays.add(day);
-    }
-    nextDays.sort();
+  void setRecurringPattern(RecurrencePattern pattern) => state = state.copyWith(
+    recurringPattern: pattern,
+    isSaved: false,
+    clearError: true,
+  );
+
+  void setRecurringEndDate(DateTime? value) {
+    final normalized = value == null ? null : _dateOnly(value);
+    final start = state.startsAt;
+    final nextAllowedPatterns = start == null
+        ? RecurrencePattern.values
+        : _allowedPatternsForWindow(
+            startsAt: start,
+            endsAt: state.endsAt,
+            recurringEndDate: normalized,
+          );
+    final shouldClearPattern =
+        state.recurringPattern != null &&
+        !nextAllowedPatterns.contains(state.recurringPattern);
+
     state = state.copyWith(
-      recurringDays: nextDays,
+      recurringEndDate: normalized,
+      clearRecurringPattern: shouldClearPattern,
       isSaved: false,
       clearError: true,
     );
   }
-
-  void setRecurringEndDate(DateTime? value) => state = state.copyWith(
-    recurringEndDate: value == null ? null : _dateOnly(value),
-    isSaved: false,
-    clearError: true,
-  );
 
   void setCostSplitEnabled(bool value) => state = state.copyWith(
     costSplitEnabled: value,
@@ -730,13 +821,10 @@ class EditEventFormViewModel extends _$EditEventFormViewModel {
         description: state.description.trim().isEmpty
             ? null
             : state.description.trim(),
-        venueName: state.venueName.trim().isEmpty
-            ? null
-            : state.venueName.trim(),
         imageUrl: imageUrl,
         maxParticipants: state.maxParticipants,
         isRecurring: state.isRecurring,
-        recurringDays: [...state.recurringDays]..sort(),
+        recurringPattern: state.recurringPattern,
         recurringEndDate: state.recurringEndDate,
         costSplitEnabled: state.costSplitEnabled,
         updatedAt: DateTime.now(),
@@ -842,11 +930,10 @@ class EventSelectionViewModel extends _$EventSelectionViewModel {
     required DateTime startsAt,
     DateTime? endsAt,
     String? description,
-    String? venueName,
     String? organizerName,
     int maxParticipants = 0,
     bool isRecurring = false,
-    List<int> recurringDays = const [],
+    RecurrencePattern? recurringPattern,
     DateTime? recurringEndDate,
     bool costSplitEnabled = false,
   }) async {
@@ -864,14 +951,13 @@ class EventSelectionViewModel extends _$EventSelectionViewModel {
         description: description?.trim().isEmpty ?? true
             ? null
             : description!.trim(),
-        venueName: venueName?.trim().isEmpty ?? true ? null : venueName!.trim(),
         organizerName: organizerName?.trim().isEmpty ?? true
             ? null
             : organizerName!.trim(),
         maxParticipants: maxParticipants,
         participantIds: [creatorId],
         isRecurring: isRecurring,
-        recurringDays: recurringDays,
+        recurringPattern: recurringPattern,
         recurringEndDate: recurringEndDate,
         costSplitEnabled: costSplitEnabled,
       );
@@ -999,6 +1085,34 @@ class EventDetailViewModel extends _$EventDetailViewModel {
     }
   }
 
+  /// Ensures the event group chat exists and contains the requesting user.
+  Future<String?> ensureEventGroupChat(EventModel event, String userId) async {
+    final currentUser = ref.read(currentUserProvider).value;
+    final isPremiumSubscriber = currentUser?.isPremium ?? false;
+
+    if (!isPremiumSubscriber) {
+      if (!ref.mounted) return null;
+      state = state.copyWith(
+        error:
+            'Event group chat is available to Premium subscribers only. Upgrade to join attendee chat.',
+      );
+      return null;
+    }
+
+    try {
+      return await ref
+          .read(eventRepositoryProvider)
+          .ensureEventGroupChat(event: event, userId: userId);
+    } catch (e, st) {
+      TalkerService.error('ensureEventGroupChat failed', e, st);
+      if (!ref.mounted) return null;
+      state = state.copyWith(
+        error: 'Unable to open event chat. Please try again.',
+      );
+      return null;
+    }
+  }
+
   /// Updates the event with new data.
   Future<bool> updateEvent(EventModel event) async {
     state = state.copyWith(isLoading: true, clearError: true);
@@ -1041,11 +1155,32 @@ class EventDetailViewModel extends _$EventDetailViewModel {
     }
   }
 
-  /// Soft-deletes the event by setting isActive to false.
-  Future<bool> cancelEvent() async {
+  /// Soft-deletes the event and notifies all participants.
+  Future<bool> cancelEvent({String? reason}) async {
     state = state.copyWith(isDeleting: true, clearError: true);
     try {
+      final event = await ref.read(eventRepositoryProvider).getEventById(eventId);
+      if (event == null) throw Exception('Event not found');
+
       await ref.read(eventRepositoryProvider).cancelEvent(eventId);
+
+      // Notify every participant (fire-and-forget; don't let failures block cancel)
+      if (event.participantIds.isNotEmpty) {
+        final organizer = ref.read(currentUserProvider).value;
+        final notifRepo = ref.read(notificationRepositoryProvider);
+        for (final uid in event.participantIds) {
+          if (uid == organizer?.uid) continue; // don't notify the organiser
+          notifRepo.sendEventCancelled(
+            toUserId: uid,
+            organizerName: organizer?.displayName ?? event.organizerName ?? 'Organizer',
+            organizerPhoto: organizer?.photoUrl,
+            eventId: eventId,
+            eventTitle: event.title,
+            reason: reason,
+          ).catchError((_) {});
+        }
+      }
+
       if (!ref.mounted) return false;
       state = state.copyWith(
         isDeleting: false,
@@ -1209,6 +1344,10 @@ class EventListState {
     this.searchFieldKey = 0,
     this.isLoading = false,
     this.error,
+    this.radiusKm,
+    this.userLatitude,
+    this.userLongitude,
+    this.isLoadingLocation = false,
   });
 
   final List<EventModel> allEvents;
@@ -1218,6 +1357,13 @@ class EventListState {
   final int searchFieldKey;
   final bool isLoading;
   final String? error;
+  /// Active radius filter in km — null means "everywhere".
+  final double? radiusKm;
+  final double? userLatitude;
+  final double? userLongitude;
+  final bool isLoadingLocation;
+
+  bool get hasLocationFilter => radiusKm != null && userLatitude != null && userLongitude != null;
 
   EventListState copyWith({
     List<EventModel>? allEvents,
@@ -1229,6 +1375,11 @@ class EventListState {
     bool? isLoading,
     String? error,
     bool clearError = false,
+    double? radiusKm,
+    bool clearRadius = false,
+    double? userLatitude,
+    double? userLongitude,
+    bool? isLoadingLocation,
   }) {
     return EventListState(
       allEvents: allEvents ?? this.allEvents,
@@ -1238,6 +1389,10 @@ class EventListState {
       searchFieldKey: searchFieldKey ?? this.searchFieldKey,
       isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : (error ?? this.error),
+      radiusKm: clearRadius ? null : (radiusKm ?? this.radiusKm),
+      userLatitude: clearRadius ? null : (userLatitude ?? this.userLatitude),
+      userLongitude: clearRadius ? null : (userLongitude ?? this.userLongitude),
+      isLoadingLocation: isLoadingLocation ?? this.isLoadingLocation,
     );
   }
 }
@@ -1252,6 +1407,9 @@ class EventListViewModel extends _$EventListViewModel {
   EventType? _filterType;
   String _searchQuery = '';
   int _searchFieldKey = 0;
+  double? _radiusKm;
+  double? _userLat;
+  double? _userLng;
 
   @override
   EventListState build() {
@@ -1265,6 +1423,9 @@ class EventListViewModel extends _$EventListViewModel {
       searchFieldKey: _searchFieldKey,
       isLoading: eventsAsync.isLoading,
       error: eventsAsync.error?.toString(),
+      radiusKm: _radiusKm,
+      userLatitude: _userLat,
+      userLongitude: _userLng,
     );
   }
 
@@ -1286,6 +1447,25 @@ class EventListViewModel extends _$EventListViewModel {
     state = _withFiltersApplied();
   }
 
+  /// Sets (or clears) the location radius filter.
+  /// Provide [lat]/[lng] from the device location service.
+  void setRadiusFilter({double? radiusKm, double? lat, double? lng}) {
+    _radiusKm = radiusKm;
+    _userLat = lat;
+    _userLng = lng;
+    state = _withFiltersApplied();
+  }
+
+  void clearRadiusFilter() {
+    _radiusKm = null;
+    _userLat = null;
+    _userLng = null;
+    state = state.copyWith(
+      filteredEvents: _applyFilters(state.allEvents),
+      clearRadius: true,
+    );
+  }
+
   // ── Private ──
 
   EventListState _withFiltersApplied() {
@@ -1295,6 +1475,10 @@ class EventListViewModel extends _$EventListViewModel {
       clearFilterType: _filterType == null,
       searchQuery: _searchQuery,
       searchFieldKey: _searchFieldKey,
+      radiusKm: _radiusKm,
+      clearRadius: _radiusKm == null,
+      userLatitude: _userLat,
+      userLongitude: _userLng,
     );
   }
 
@@ -1309,13 +1493,33 @@ class EventListViewModel extends _$EventListViewModel {
             (e) =>
                 e.title.toLowerCase().contains(_searchQuery) ||
                 e.location.address.toLowerCase().contains(_searchQuery) ||
-                (e.venueName?.toLowerCase().contains(_searchQuery) ?? false) ||
                 (e.organizerName?.toLowerCase().contains(_searchQuery) ??
                     false),
           )
           .toList();
     }
+    if (_radiusKm != null && _userLat != null && _userLng != null) {
+      filtered = filtered.where((e) {
+        final dist = _haversineKm(
+          _userLat!, _userLng!,
+          e.location.latitude ?? 0, e.location.longitude ?? 0,
+        );
+        return dist <= _radiusKm!;
+      }).toList();
+    }
     return filtered;
+  }
+
+  static double _haversineKm(double lat1, double lon1, double lat2, double lon2) {
+    const r = 6371.0;
+    final dLat = (lat2 - lat1) * math.pi / 180;
+    final dLon = (lon2 - lon1) * math.pi / 180;
+    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(lat1 * math.pi / 180) *
+            math.cos(lat2 * math.pi / 180) *
+            math.sin(dLon / 2) *
+            math.sin(dLon / 2);
+    return r * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
   }
 }
 

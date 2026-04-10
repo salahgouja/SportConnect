@@ -266,7 +266,7 @@ class _TopBar extends StatelessWidget {
                         ),
                         SizedBox(width: 4.w),
                         Icon(
-                          Icons.arrow_forward_rounded,
+                          Icons.adaptive.arrow_forward_rounded,
                           size: 15.sp,
                           color: AppColors.textSecondary,
                         ),
@@ -520,7 +520,7 @@ class _FindRideIllustration extends StatelessWidget {
     final cx = w * 0.5;
     final cy = h * 0.5;
     final carR = math.min(w, h) * 0.14; // car circle radius
-    final orbitR = math.min(w, h) * 0.28; // orbit radius
+    final orbitR = h * 0.28; // orbit radius
     final avatarR = math.min(w, h) * 0.07; // runner avatar radius
     final pulse = 1.0 + 0.05 * math.sin(t * math.pi);
 
@@ -569,7 +569,7 @@ class _FindRideIllustration extends StatelessWidget {
           () {
             final angle = (i / 3) * 2 * math.pi + t * math.pi * 0.4;
             final dx = math.cos(angle) * orbitR;
-            final dy = math.sin(angle) * orbitR * 0.55;
+            final dy = math.sin(angle) * orbitR;
             return Positioned(
               left: cx + dx - avatarR,
               top: cy + dy - avatarR,
@@ -1522,7 +1522,7 @@ class _BottomControls extends StatelessWidget {
                       borderRadius: BorderRadius.circular(15.r),
                     ),
                     child: Icon(
-                      Icons.arrow_back_rounded,
+                      Icons.adaptive.arrow_back_rounded,
                       color: AppColors.textSecondary,
                       size: 22.sp,
                     ),
@@ -1586,7 +1586,7 @@ class _BottomControls extends StatelessWidget {
                               child: Icon(
                                 isLast
                                     ? Icons.rocket_launch_rounded
-                                    : Icons.arrow_forward_rounded,
+                                    : Icons.adaptive.arrow_forward_rounded,
                                 color: Colors.white,
                                 size: 14.sp,
                               ),

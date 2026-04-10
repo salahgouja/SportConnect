@@ -313,16 +313,6 @@ class RideActionsViewModel {
         );
   }
 
-  Future<void> addMidRideStop(String rideId, Map<String, dynamic> waypoint) {
-    return _ref.read(rideRepositoryProvider).addMidRideStop(rideId, waypoint);
-  }
-
-  Future<void> removeMidRideStop(String rideId, int waypointIndex) {
-    return _ref
-        .read(rideRepositoryProvider)
-        .removeMidRideStop(rideId, waypointIndex);
-  }
-
   Future<String> createReturnRide(String originalRideId) {
     return _ref.read(rideRepositoryProvider).createReturnRide(originalRideId);
   }
@@ -995,7 +985,7 @@ List<RideModel> _applyRideSearchPresentation(
     if (state.draftVehicleType == 'comfort' && !ride.isPremium) {
       return false;
     }
-    if (state.draftInstantBook && !ride.acceptsOnlinePayment) {
+    if (state.draftInstantBook) {
       return false;
     }
     if (state.draftVerifiedOnly && !ride.isDriverVerified) {
@@ -1582,6 +1572,7 @@ class RideDetailViewModel extends _$RideDetailViewModel {
             bookingId: bookingId,
             newStatus: BookingStatus.rejected,
           );
+
       state = state.copyWith(isActing: false, actionError: null);
       return true;
     } catch (e) {
@@ -1692,8 +1683,6 @@ class ActiveRideState {
     this.noShowPassengerIds = const <String>{},
     // 7D: Quick messages
     this.latestQuickMessage,
-    // 7E: Mid-ride stop request
-    this.pendingStopRequest,
     // 7F: Fare tracking
     this.actualDistanceKm = 0,
     // 7G: Ride timeout
@@ -1748,8 +1737,6 @@ class ActiveRideState {
   final Set<String> noShowPassengerIds;
   // 7D: Latest quick message received during ride
   final String? latestQuickMessage;
-  // 7E: Pending mid-ride stop request description
-  final String? pendingStopRequest;
   // 7F: Actual distance driven (cumulative GPS odometer)
   final double actualDistanceKm;
   // 7G: Minutes past estimated duration (null = not timed out)
@@ -1803,7 +1790,6 @@ class ActiveRideState {
     List<String>? pickupOrder,
     Set<String>? noShowPassengerIds,
     Object? latestQuickMessage = _unset,
-    Object? pendingStopRequest = _unset,
     double? actualDistanceKm,
     Object? rideTimeoutMinutes = _unset,
     bool? hasShownTimeoutWarning,
@@ -1876,9 +1862,6 @@ class ActiveRideState {
     latestQuickMessage: latestQuickMessage == _unset
         ? this.latestQuickMessage
         : latestQuickMessage as String?,
-    pendingStopRequest: pendingStopRequest == _unset
-        ? this.pendingStopRequest
-        : pendingStopRequest as String?,
     actualDistanceKm: actualDistanceKm ?? this.actualDistanceKm,
     rideTimeoutMinutes: rideTimeoutMinutes == _unset
         ? this.rideTimeoutMinutes
@@ -1910,9 +1893,8 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
   // G2: Debounce ETA recalculation — max 1/sec
   DateTime? _lastEtaUpdateTime;
 
-  // F2: Exponential backoff for Firestore location writes
-  int _writeBackoffSeconds = 10;
-  static const int _maxWriteBackoffSeconds = 60;
+  // RTDB writes are cheap — update at most once every 3 seconds (no backoff)
+  static const int _writeIntervalSeconds = 3;
 
   @override
   ActiveRideState build(String rideId) {
@@ -1936,6 +1918,18 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
       Future.microtask(() {
         if (!ref.mounted) return;
         _handleDriverLiveLocationUpdate(next.value);
+      });
+    });
+
+    // Sync picked-up passengers from Firestore so the driver's confirmed
+    // pickups survive app restarts and are visible to all parties.
+    ref.listen(pickedUpPassengersStreamProvider(rideId), (_, next) {
+      Future.microtask(() {
+        if (!ref.mounted) return;
+        final ids = next.value;
+        if (ids != null) {
+          state = state.copyWith(pickedUpPassengerIds: ids.toSet());
+        }
       });
     });
 
@@ -2113,11 +2107,12 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
               locationError: null,
             );
 
-            // Throttle Firestore location writes with exponential backoff (F2)
+            // Write to RTDB at most once every 3 seconds.
+            // RTDB is billed per GB transferred, not per write — no backoff needed.
             final now = DateTime.now();
             if (_lastLocationWriteTime == null ||
                 now.difference(_lastLocationWriteTime!).inSeconds >=
-                    _writeBackoffSeconds) {
+                    _writeIntervalSeconds) {
               _lastLocationWriteTime = now;
               unawaited(
                 ref
@@ -2127,17 +2122,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
                       position.latitude,
                       position.longitude,
                     )
-                    .then((_) {
-                      // Success — reset backoff to normal interval
-                      _writeBackoffSeconds = 10;
-                    })
-                    .catchError((_) {
-                      // Failure — increase backoff up to max
-                      _writeBackoffSeconds = (_writeBackoffSeconds * 2).clamp(
-                        10,
-                        _maxWriteBackoffSeconds,
-                      );
-                    }),
+                    .catchError((_) {}),
               );
             }
 
@@ -2192,13 +2177,31 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     );
   }
 
-  void togglePickedUpPassenger(String passengerId) {
-    final nextPickedUp = <String>{...state.pickedUpPassengerIds};
-    if (!nextPickedUp.add(passengerId)) {
-      nextPickedUp.remove(passengerId);
+  /// Verify OTP and mark passenger as picked up if it matches.
+  ///
+  /// The OTP is generated when the driver accepts the booking and is shown
+  /// to the passenger. The driver enters it here to confirm the pickup.
+  /// Returns true on success, false if OTP doesn't match.
+  Future<bool> confirmPickupWithOtp({
+    required String passengerId,
+    required String bookingId,
+    required String enteredOtp,
+  }) async {
+    final booking = state.bookings.where((b) => b.id == bookingId).firstOrNull;
+    if (booking == null) {
+      state = state.copyWith(actionError: 'Booking not found');
+      return false;
     }
 
-    state = state.copyWith(pickedUpPassengerIds: nextPickedUp);
+    if (booking.pickupOtp == null || booking.pickupOtp != enteredOtp.trim()) {
+      state = state.copyWith(
+        actionError: 'Incorrect OTP — ask the passenger for their code',
+      );
+      return false;
+    }
+
+    markPassengerPickedUp(passengerId);
+    return true;
   }
 
   void transitionToArriving() {
@@ -2587,82 +2590,6 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     }
   }
 
-  // ==================== 7E: MID-RIDE STOP REQUESTS ====================
-
-  /// Request a mid-ride stop (passenger sends to driver).
-  void requestMidRideStop(String description) {
-    state = state.copyWith(pendingStopRequest: description);
-  }
-
-  /// Accept a mid-ride stop request and add waypoint.
-  Future<void> acceptStopRequest({
-    required double latitude,
-    required double longitude,
-    required String address,
-  }) async {
-    final ride = state.currentRide;
-    if (ride == null) return;
-
-    final waypointData = {
-      'location': {
-        'latitude': latitude,
-        'longitude': longitude,
-        'address': address,
-      },
-      'order': ride.route.waypoints.length,
-    };
-
-    try {
-      await ref
-          .read(rideRepositoryProvider)
-          .addMidRideStop(ride.id, waypointData);
-
-      if (!ref.mounted) return;
-
-      // Clear the route cache so next route load picks up the new waypoint
-      RoutingService.clearRouteCache();
-
-      state = state.copyWith(
-        pendingStopRequest: null,
-        // Force route reload
-        loadedRouteKey: null,
-        osrmRoutePoints: null,
-        remainingRoutePoints: null,
-      );
-    } catch (e) {
-      if (!ref.mounted) return;
-      state = state.copyWith(actionError: e.toString());
-    }
-  }
-
-  /// Reject a mid-ride stop request.
-  void rejectStopRequest() {
-    state = state.copyWith(pendingStopRequest: null);
-  }
-
-  /// Remove a mid-ride stop waypoint by index.
-  Future<void> removeMidRideStop(int waypointIndex) async {
-    final ride = state.currentRide;
-    if (ride == null) return;
-
-    try {
-      await ref
-          .read(rideRepositoryProvider)
-          .removeMidRideStop(ride.id, waypointIndex);
-
-      if (!ref.mounted) return;
-      RoutingService.clearRouteCache();
-      state = state.copyWith(
-        loadedRouteKey: null,
-        osrmRoutePoints: null,
-        remainingRoutePoints: null,
-      );
-    } catch (e) {
-      if (!ref.mounted) return;
-      state = state.copyWith(actionError: e.toString());
-    }
-  }
-
   // ==================== 7F: FARE ADJUSTMENT ====================
 
   /// Accumulate actual distance driven from GPS position updates.
@@ -2914,6 +2841,11 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
           : null,
     );
     _updatePassengerRouteTracking(state.currentRide, driverLiveLocation);
+    // Recalculate ETAs on every driver-location tick so the passenger screen
+    // shows live remaining time and per-waypoint ETAs (not stale snapshots).
+    _updateDynamicEta(state.currentRide);
+    final ride = state.currentRide;
+    if (ride != null) _computeWaypointEtas(ride);
   }
 
   /// Derives the ride phase from the ride document's persisted `ridePhase`
@@ -3021,10 +2953,15 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
   }
 
   void _updateDynamicEta(RideModel? ride) {
-    final currentLocation = state.currentLocation;
+    // Driver uses own GPS; passenger uses the Firestore-synced driver location.
+    final dl = state.driverLiveLocation;
+    final effectiveLocation =
+        state.currentLocation ??
+        (dl != null ? LatLng(dl.latitude, dl.longitude) : null);
+
     final routePoints = state.osrmRoutePoints;
     if (ride == null ||
-        currentLocation == null ||
+        effectiveLocation == null ||
         routePoints == null ||
         routePoints.length < 2) {
       _clearDynamicEta();
@@ -3034,7 +2971,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     var minimumDistance = double.infinity;
     var closestIndex = 0;
     for (var index = 0; index < routePoints.length; index++) {
-      final distance = _haversineKm(currentLocation, routePoints[index]);
+      final distance = _haversineKm(effectiveLocation, routePoints[index]);
       if (!distance.isFinite) continue;
       if (distance < minimumDistance) {
         minimumDistance = distance;
@@ -3048,7 +2985,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     }
 
     var remainingDistance = _haversineKm(
-      currentLocation,
+      effectiveLocation,
       routePoints[closestIndex],
     );
     for (var index = closestIndex; index < routePoints.length - 1; index++) {
@@ -3077,9 +3014,9 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     // B6: EMA smoothing — cap single-update change to ±30%
     final smoothedEta = _smoothEta(rawEta);
 
-    // Build the remaining-portion polyline: driver position + route from closest point onward
+    // Build the remaining-portion polyline: effective position + route from closest point onward
     final remaining = <LatLng>[
-      currentLocation,
+      effectiveLocation,
       ...routePoints.sublist(closestIndex),
     ];
 
@@ -3129,7 +3066,11 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     );
   }
 
-  /// Compute ETA (minutes from now) for each waypoint along the OSRM route.
+  /// Compute ETA (minutes from now) for each upcoming waypoint.
+  ///
+  /// Uses the driver's current GPS position (driver side) or the
+  /// Firestore-synced live location (passenger side) as the starting point so
+  /// ETAs reflect remaining travel time, not time from the route origin.
   void _computeWaypointEtas(RideModel ride) {
     final routePoints = state.osrmRoutePoints;
     if (routePoints == null ||
@@ -3139,37 +3080,71 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
       return;
     }
 
-    // Compute cumulative distance along the route polyline.
-    final cumulativeKm = <double>[0];
-    for (var i = 1; i < routePoints.length; i++) {
-      cumulativeKm.add(
-        cumulativeKm[i - 1] + _haversineKm(routePoints[i - 1], routePoints[i]),
+    // Resolve effective position: driver GPS first, Firestore location as fallback.
+    final dl = state.driverLiveLocation;
+    final effectivePos =
+        state.currentLocation ??
+        (dl != null ? LatLng(dl.latitude, dl.longitude) : null);
+
+    // Find the route index nearest to the driver's current position.
+    var driverNearestIdx = 0;
+    if (effectivePos != null) {
+      var minDist = double.infinity;
+      for (var i = 0; i < routePoints.length; i++) {
+        final d = _haversineKm(effectivePos, routePoints[i]);
+        if (d < minDist) {
+          minDist = d;
+          driverNearestIdx = i;
+        }
+      }
+    }
+
+    // Compute cumulative distance from driver's nearest point to end of route.
+    final cumulativeFromDriver = <double>[0.0];
+    for (var i = driverNearestIdx + 1; i < routePoints.length; i++) {
+      cumulativeFromDriver.add(
+        cumulativeFromDriver.last +
+            _haversineKm(routePoints[i - 1], routePoints[i]),
       );
     }
-    final totalRouteKm = cumulativeKm.last;
-    if (totalRouteKm <= 0) return;
+    final remainingRouteKm = cumulativeFromDriver.last;
+    if (remainingRouteKm <= 0) return;
 
-    final totalDurationMin =
-        (ride.durationMinutes ?? ride.route.durationMinutes ?? 0).toDouble();
-    if (totalDurationMin <= 0) return;
+    // Use the live remaining ETA when available; fall back to proportional estimate.
+    final remainingEtaMin =
+        (state.remainingEtaMinutes ??
+                ride.durationMinutes ??
+                ride.route.durationMinutes ??
+                0)
+            .toDouble();
+    if (remainingEtaMin <= 0) return;
 
     final etas = <int, int>{};
     for (final wp in ride.route.waypoints) {
-      // B1: Skip already-passed waypoints — no phantom ETAs
+      // B1: Skip already-passed waypoints — no phantom ETAs.
       if (state.passedWaypointIndices.contains(wp.order)) continue;
 
       final wpLatLng = LatLng(wp.location.latitude, wp.location.longitude);
-      var nearestIdx = 0;
-      var minDist = double.infinity;
-      for (var i = 0; i < routePoints.length; i++) {
+
+      // Find the route index nearest to this waypoint, searching only ahead
+      // of the driver to avoid snapping to already-travelled segments.
+      var nearestRouteIdx = driverNearestIdx;
+      var minWpDist = double.infinity;
+      for (var i = driverNearestIdx; i < routePoints.length; i++) {
         final d = _haversineKm(wpLatLng, routePoints[i]);
-        if (d < minDist) {
-          minDist = d;
-          nearestIdx = i;
+        if (d < minWpDist) {
+          minWpDist = d;
+          nearestRouteIdx = i;
         }
       }
-      final fraction = cumulativeKm[nearestIdx] / totalRouteKm;
-      etas[wp.order] = (fraction * totalDurationMin).round();
+
+      final idxFromDriver = nearestRouteIdx - driverNearestIdx;
+      if (idxFromDriver < 0 || idxFromDriver >= cumulativeFromDriver.length) {
+        continue;
+      }
+      final distToWp = cumulativeFromDriver[idxFromDriver];
+      final fraction = (distToWp / remainingRouteKm).clamp(0.0, 1.0);
+      etas[wp.order] = (fraction * remainingEtaMin).round();
     }
 
     state = state.copyWith(waypointEtaMinutes: etas);
@@ -3190,13 +3165,34 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
       return;
     }
 
+    // Use perpendicular distance to route SEGMENTS (not nearest point).
+    // This prevents false positives on long routes where OSRM returns sparse
+    // geometry — a driver can be between two points 2 km apart but still
+    // perfectly on the correct road.
     var minDistMeters = double.infinity;
-    for (final point in routePoints) {
-      final d = _haversineKm(currentLocation, point) * 1000;
+    for (var i = 0; i < routePoints.length - 1; i++) {
+      final d = _perpDistToSegmentMeters(
+        currentLocation,
+        routePoints[i],
+        routePoints[i + 1],
+      );
       if (d < minDistMeters) minDistMeters = d;
     }
+    // Also check the final point
+    final lastDist = _haversineKm(currentLocation, routePoints.last) * 1000;
+    if (lastDist < minDistMeters) minDistMeters = lastDist;
 
-    final isOffRoute = minDistMeters > 500;
+    // Adaptive threshold: scales with average segment length so that long
+    // routes with sparse OSRM geometry don't generate constant false positives.
+    double totalRouteMeters = 0;
+    for (var i = 0; i < routePoints.length - 1; i++) {
+      totalRouteMeters += _haversineKm(routePoints[i], routePoints[i + 1]) * 1000;
+    }
+    final avgSegmentMeters = totalRouteMeters / (routePoints.length - 1);
+    // Threshold: 40% of avg segment length, clamped between 150 m and 400 m.
+    final offRouteThreshold = (avgSegmentMeters * 0.4).clamp(150.0, 400.0);
+
+    final isOffRoute = minDistMeters.isFinite && minDistMeters > offRouteThreshold;
     if (isOffRoute != state.isOffRoute || isOffRoute) {
       state = state.copyWith(
         isOffRoute: isOffRoute,
@@ -3207,6 +3203,29 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     if (isOffRoute) {
       unawaited(_recalculateRouteFromPosition(currentLocation, ride));
     }
+  }
+
+  /// Returns the perpendicular distance (metres) from point [p] to the segment [a]→[b].
+  /// Uses a flat-earth projection — accurate for segments up to ~50 km.
+  double _perpDistToSegmentMeters(LatLng p, LatLng a, LatLng b) {
+    const latMeters = 110574.0;
+    final lngMeters = 111320.0 * math.cos(a.latitude * math.pi / 180);
+
+    final px = (p.longitude - a.longitude) * lngMeters;
+    final py = (p.latitude - a.latitude) * latMeters;
+    final bx = (b.longitude - a.longitude) * lngMeters;
+    final by = (b.latitude - a.latitude) * latMeters;
+
+    final segLenSq = bx * bx + by * by;
+    if (segLenSq < 1.0) {
+      // Degenerate (zero-length) segment — fall back to point distance.
+      return _haversineKm(p, a) * 1000;
+    }
+
+    final t = ((px * bx + py * by) / segLenSq).clamp(0.0, 1.0);
+    final dx = px - t * bx;
+    final dy = py - t * by;
+    return math.sqrt(dx * dx + dy * dy);
   }
 
   /// Recalculate the OSRM route from the given position when off-route.
@@ -3264,14 +3283,22 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
       driverLiveLocation.longitude,
     );
     double minimumDistanceMeters = double.infinity;
-    for (final point in state.osrmRoutePoints!) {
-      final distanceMeters = _haversineKm(driverPosition, point) * 1000;
-      if (distanceMeters < minimumDistanceMeters) {
-        minimumDistanceMeters = distanceMeters;
-      }
+    final pts = state.osrmRoutePoints!;
+    for (var i = 0; i < pts.length - 1; i++) {
+      final d = _perpDistToSegmentMeters(driverPosition, pts[i], pts[i + 1]);
+      if (d < minimumDistanceMeters) minimumDistanceMeters = d;
     }
+    final lastPtDist = _haversineKm(driverPosition, pts.last) * 1000;
+    if (lastPtDist < minimumDistanceMeters) minimumDistanceMeters = lastPtDist;
 
-    final isOffRoute = minimumDistanceMeters > 500;
+    double totalMeters = 0;
+    for (var i = 0; i < pts.length - 1; i++) {
+      totalMeters += _haversineKm(pts[i], pts[i + 1]) * 1000;
+    }
+    final avgSeg = totalMeters / (pts.length - 1);
+    final threshold = (avgSeg * 0.4).clamp(150.0, 400.0);
+
+    final isOffRoute = minimumDistanceMeters.isFinite && minimumDistanceMeters > threshold;
     final newPassedIndices = _getPassedWaypointIndices(
       driverPosition,
       state.osrmRoutePoints!,
@@ -3438,19 +3465,40 @@ Stream<List<RideModel>> nearbyRides(
   return repository.streamNearbyRides(latitude: latitude, longitude: longitude);
 }
 
-/// Real-time stream of all bookings for a given ride.
+/// Real-time stream of bookings for a given ride, scoped to the current user's role.
 ///
-/// Use this alongside [rideDetailViewModelProvider] in any screen that needs
-/// booking data (requests tab, passenger list, earnings, etc.) — the
-/// [RideModel.bookings] field is never populated from Firestore.
+/// • Driver  → all bookings for the ride (filtered by driverId so Firestore
+///             security rules can allow the collection query).
+/// • Passenger → only their own booking (filtered by passengerId).
+///
+/// The role is determined lazily from [rideStreamProvider] so there is no
+/// extra Firestore read — the ride document is already being watched.
 @riverpod
 Stream<List<RideBooking>> bookingsByRide(Ref ref, String rideId) {
   final uid = ref.watch(currentUserProvider).value?.uid;
   if (uid == null) return const Stream.empty();
+
+  // Once the ride snapshot is available, use driverId to determine role.
+  final ride = ref.watch(rideStreamProvider(rideId)).value;
+  if (ride != null && ride.driverId != uid) {
+    // Current user is a passenger — stream only their own booking.
+    return ref
+        .read(bookingRepositoryProvider)
+        .streamPassengerBookingForRide(rideId, uid);
+  }
+
+  // Current user is the driver (or ride hasn't loaded yet — driver query is
+  // safe to retry because it returns empty for non-drivers).
   return ref
       .read(bookingRepositoryProvider)
       .streamBookingsByRideId(rideId, uid);
 }
+
+/// Real-time stream of passenger IDs the driver has confirmed as picked up.
+final pickedUpPassengersStreamProvider = StreamProvider.family
+    .autoDispose<List<String>, String>((ref, rideId) {
+      return ref.read(rideRepositoryProvider).streamPickedUpPassengers(rideId);
+    });
 
 /// Real-time stream of a single booking by ID.
 ///

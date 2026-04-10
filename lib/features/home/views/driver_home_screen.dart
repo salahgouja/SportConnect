@@ -16,8 +16,10 @@ import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/core/widgets/gamification_widgets.dart';
 import 'package:sport_connect/features/rides/models/driver_stats.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
-import 'package:sport_connect/features/rides/models/ride_request_model.dart';
+import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/home/view_models/driver_location_view_model.dart';
+import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
+import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/features/rides/view_models/driver_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -37,9 +39,8 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
   @override
   void initState() {
     super.initState();
-    ref.read(driverLocationViewModelProvider.notifier).initialize();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _requestLocationPermission();
+      ref.read(driverLocationViewModelProvider.notifier).initialize();
       _requestNotificationPermission();
     });
   }
@@ -206,7 +207,7 @@ class _DriverDashboard extends ConsumerWidget {
     final upcomingRides = driverState.upcomingRides;
     final l10n = AppLocalizations.of(context);
 
-    return RefreshIndicator(
+    return RefreshIndicator.adaptive(
       onRefresh: () => ref.read(driverViewModelProvider.notifier).refresh(),
       child: OrientationBuilder(
         builder: (context, orientation) {
@@ -689,7 +690,7 @@ class _DriverDashboard extends ConsumerWidget {
                 Padding(
                   padding: EdgeInsets.only(bottom: 6.h),
                   child: Text(
-                    l10n.valueRides(driverStats.ridesCompleted),
+                    l10n.valueRides(driverStats.totalRides),
                     style: TextStyle(
                       fontSize: isSmall ? 12.sp : 14.sp,
                       color: Colors.white.withAlpha(200),
@@ -750,14 +751,14 @@ class _DriverDashboard extends ConsumerWidget {
           _StatCard(
             icon: Icons.check_circle_rounded,
             iconColor: AppColors.success,
-            value: '${driverStats.ridesCompleted}',
+            value: '${driverStats.totalRides}',
             label: l10n.complete,
           ),
           _StatCard(
-            icon: Icons.timer_outlined,
+            icon: Icons.trending_up_rounded,
             iconColor: AppColors.info,
-            value: '${driverStats.hoursOnline.toStringAsFixed(0)}h',
-            label: l10n.driverHoursOnline,
+            value: '${(driverStats.earningsThisMonth).toStringAsFixed(0)}',
+            label: l10n.driverThisMonth,
           ),
         ];
 
@@ -809,7 +810,7 @@ class _DriverDashboard extends ConsumerWidget {
     WidgetRef ref,
     DriverState driverState,
     AppLocalizations l10n,
-    AsyncValue<List<RideRequestModel>> requestsAsync,
+    AsyncValue<List<RideBooking>> requestsAsync,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -831,7 +832,7 @@ class _DriverDashboard extends ConsumerWidget {
             ),
             TextButton.icon(
               onPressed: () => context.push(AppRoutes.driverRequests.path),
-              icon: Icon(Icons.arrow_forward_ios, size: 14.sp),
+              icon: Icon(Icons.adaptive.arrow_forward, size: 14.sp),
               label: Text(
                 l10n.viewAll,
                 style: TextStyle(
@@ -1181,8 +1182,8 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-class _RequestCard extends StatelessWidget {
-  final RideRequestModel request;
+class _RequestCard extends ConsumerWidget {
+  final RideBooking request;
   final bool isProcessing;
   final VoidCallback onAccept;
   final VoidCallback onDecline;
@@ -1195,156 +1196,82 @@ class _RequestCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final profile = ref.watch(userProfileProvider(request.passengerId)).value;
+    final ride = ref.watch(rideStreamProvider(request.rideId)).value;
+    final passengerName = profile?.displayName ?? '…';
+    final passengerRating = profile?.rating.average ?? 0.0;
+    final pricePerSeat = ride?.pricePerSeat ?? 0.0;
+    final total = pricePerSeat * request.seatsBooked;
+
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(8),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 10, offset: const Offset(0, 2))],
       ),
       child: Column(
         children: [
-          // Passenger info
           Row(
             children: [
-              PremiumAvatar(name: request.passenger.displayName, size: 44.w),
+              PremiumAvatar(name: passengerName, size: 44.w),
               SizedBox(width: 12.w),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      request.passenger.displayName,
-                      style: TextStyle(
-                        fontSize: 15.sp,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
+                    Text(passengerName, style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
                     Row(
                       children: [
-                        Icon(
-                          Icons.star,
-                          color: AppColors.starFilled,
-                          size: 14.sp,
-                        ),
+                        Icon(Icons.star, color: AppColors.starFilled, size: 14.sp),
                         SizedBox(width: 4.w),
                         Text(
-                          request.passenger.rating.average > 0
-                              ? request.passenger.rating.average
-                                    .toStringAsFixed(1)
-                              : AppLocalizations.of(context).kNew,
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            color: AppColors.textSecondary,
-                          ),
+                          passengerRating > 0 ? passengerRating.toStringAsFixed(1) : AppLocalizations.of(context).kNew,
+                          style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
                         ),
                         SizedBox(width: 8.w),
-                        Icon(
-                          Icons.event_seat,
-                          size: 14.sp,
-                          color: AppColors.textTertiary,
-                        ),
+                        Icon(Icons.event_seat, size: 14.sp, color: AppColors.textTertiary),
                         SizedBox(width: 4.w),
                         Text(
-                          AppLocalizations.of(context).valueSeatValue(
-                            request.seatsRequested,
-                            request.seatsRequested > 1 ? 's' : '',
-                          ),
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            color: AppColors.textSecondary,
-                          ),
+                          AppLocalizations.of(context).valueSeatValue(request.seatsBooked, request.seatsBooked > 1 ? 's' : ''),
+                          style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
                         ),
                       ],
                     ),
                   ],
                 ),
               ),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-                decoration: BoxDecoration(
-                  color: AppColors.success.withAlpha(25),
-                  borderRadius: BorderRadius.circular(20.r),
-                ),
-                child: Text(
-                  AppLocalizations.of(context).value6(
-                    (request.pricePerSeat * request.seatsRequested)
-                        .toStringAsFixed(0),
-                  ),
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.success,
+              if (total > 0)
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+                  decoration: BoxDecoration(color: AppColors.success.withAlpha(25), borderRadius: BorderRadius.circular(20.r)),
+                  child: Text(
+                    AppLocalizations.of(context).value6(total.toStringAsFixed(0)),
+                    style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w700, color: AppColors.success),
                   ),
                 ),
-              ),
             ],
           ),
           SizedBox(height: 12.h),
-          // Route info
           Container(
             padding: EdgeInsets.all(12.w),
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              borderRadius: BorderRadius.circular(12.r),
-            ),
+            decoration: BoxDecoration(color: AppColors.background, borderRadius: BorderRadius.circular(12.r)),
             child: Row(
               children: [
-                Column(
-                  children: [
-                    Container(
-                      width: 8.w,
-                      height: 8.w,
-                      decoration: BoxDecoration(
-                        color: AppColors.success,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    Container(width: 1, height: 20.h, color: AppColors.border),
-                    Container(
-                      width: 8.w,
-                      height: 8.w,
-                      decoration: BoxDecoration(
-                        color: AppColors.error,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ],
-                ),
+                Column(children: [
+                  Container(width: 8.w, height: 8.w, decoration: BoxDecoration(color: AppColors.success, shape: BoxShape.circle)),
+                  Container(width: 1, height: 20.h, color: AppColors.border),
+                  Container(width: 8.w, height: 8.w, decoration: BoxDecoration(color: AppColors.error, shape: BoxShape.circle)),
+                ]),
                 SizedBox(width: 12.w),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        request.fromLocation,
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textPrimary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      Text(request.pickupLocation?.address ?? '—', style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w500, color: AppColors.textPrimary), maxLines: 1, overflow: TextOverflow.ellipsis),
                       SizedBox(height: 8.h),
-                      Text(
-                        request.toLocation,
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textPrimary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      Text(request.dropoffLocation?.address ?? '—', style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w500, color: AppColors.textPrimary), maxLines: 1, overflow: TextOverflow.ellipsis),
                     ],
                   ),
                 ),
@@ -1352,78 +1279,34 @@ class _RequestCard extends StatelessWidget {
             ),
           ),
           SizedBox(height: 12.h),
-          // Time
           Row(
             children: [
-              Icon(
-                Icons.schedule_outlined,
-                size: 16.sp,
-                color: AppColors.textTertiary,
-              ),
+              Icon(Icons.schedule_outlined, size: 16.sp, color: AppColors.textTertiary),
               SizedBox(width: 6.w),
               Text(
-                DateFormat('EEE, MMM d • h:mm a').format(request.requestedDate),
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  color: AppColors.textSecondary,
-                ),
+                DateFormat('EEE, MMM d • h:mm a').format(request.createdAt ?? DateTime.now()),
+                style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
               ),
             ],
           ),
           SizedBox(height: 12.h),
-          // Actions
           Row(
             children: [
               Expanded(
                 child: OutlinedButton(
                   onPressed: isProcessing ? null : onDecline,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.error,
-                    side: BorderSide(color: AppColors.error.withAlpha(80)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    padding: EdgeInsets.symmetric(vertical: 12.h),
-                  ),
-                  child: Text(
-                    AppLocalizations.of(context).decline,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  style: OutlinedButton.styleFrom(foregroundColor: AppColors.error, side: BorderSide(color: AppColors.error.withAlpha(80)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)), padding: EdgeInsets.symmetric(vertical: 12.h)),
+                  child: Text(AppLocalizations.of(context).decline, style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600)),
                 ),
               ),
               SizedBox(width: 12.w),
               Expanded(
                 child: ElevatedButton(
                   onPressed: isProcessing ? null : onAccept,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.success,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    padding: EdgeInsets.symmetric(vertical: 12.h),
-                  ),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.success, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)), padding: EdgeInsets.symmetric(vertical: 12.h)),
                   child: isProcessing
-                      ? SizedBox(
-                          width: 18.w,
-                          height: 18.w,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: const AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                          ),
-                        )
-                      : Text(
-                          AppLocalizations.of(context).accept,
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                      ? SizedBox(width: 18.w, height: 18.w, child: CircularProgressIndicator.adaptive(strokeWidth: 2, valueColor: const AlwaysStoppedAnimation<Color>(Colors.white)))
+                      : Text(AppLocalizations.of(context).accept, style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600)),
                 ),
               ),
             ],

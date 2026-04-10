@@ -219,9 +219,11 @@ class _DriverStripeOnboardingScreenState
                               SizedBox(
                                 width: 20.w,
                                 height: 20.w,
-                                child: CircularProgressIndicator(
+                                child: CircularProgressIndicator.adaptive(
                                   strokeWidth: 2,
-                                  color: AppColors.primary,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    AppColors.primary,
+                                  ),
                                 ),
                               ),
                               SizedBox(width: 12.w),
@@ -476,7 +478,11 @@ class _DriverStripeOnboardingScreenState
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    CircularProgressIndicator(color: AppColors.primary),
+                    CircularProgressIndicator.adaptive(
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppColors.primary,
+                      ),
+                    ),
                     SizedBox(height: 20.h),
                     Text(
                       AppLocalizations.of(context).stripeLoadingConnect,
@@ -514,7 +520,7 @@ class _DriverStripeOnboardingScreenState
   Future<void> _showCancelConfirmation() async {
     final shouldCancel = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => AlertDialog.adaptive(
         title: Text(AppLocalizations.of(context).cancelSetupTitle),
         content: Text(AppLocalizations.of(context).cancelSetupMessage),
         actions: [

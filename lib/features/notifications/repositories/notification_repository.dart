@@ -97,20 +97,25 @@ class NotificationRepository implements INotificationRepository {
     });
   }
 
-  /// Mark all user notifications as read
+  /// Mark all user notifications as read.
+  /// Chunks into batches of 499 to stay within Firestore's 500-op limit.
   @override
   Future<void> markAllAsRead(String userId) async {
-    final batch = _firestore.batch();
     final snapshot = await _notificationsCollection
         .where('userId', isEqualTo: userId)
         .where('isRead', isEqualTo: false)
         .get();
 
-    for (final doc in snapshot.docs) {
-      batch.update(doc.reference, {'isRead': true, 'readAt': DateTime.now()});
+    final docs = snapshot.docs;
+    final now = DateTime.now();
+    for (var i = 0; i < docs.length; i += 499) {
+      final chunk = docs.sublist(i, (i + 499).clamp(0, docs.length));
+      final batch = _firestore.batch();
+      for (final doc in chunk) {
+        batch.update(doc.reference, {'isRead': true, 'readAt': now});
+      }
+      await batch.commit();
     }
-
-    await batch.commit();
   }
 
   /// Archive notification (soft delete)
@@ -121,20 +126,24 @@ class NotificationRepository implements INotificationRepository {
     });
   }
 
-  /// Archive all user notifications
+  /// Archive all user notifications.
+  /// Chunks into batches of 499 to stay within Firestore's 500-op limit.
   @override
   Future<void> archiveAll(String userId) async {
-    final batch = _firestore.batch();
     final snapshot = await _notificationsCollection
         .where('userId', isEqualTo: userId)
         .where('isArchived', isEqualTo: false)
         .get();
 
-    for (final doc in snapshot.docs) {
-      batch.update(doc.reference, {'isArchived': true});
+    final docs = snapshot.docs;
+    for (var i = 0; i < docs.length; i += 499) {
+      final chunk = docs.sublist(i, (i + 499).clamp(0, docs.length));
+      final batch = _firestore.batch();
+      for (final doc in chunk) {
+        batch.update(doc.reference, {'isArchived': true});
+      }
+      await batch.commit();
     }
-
-    await batch.commit();
   }
 
   /// Delete notification permanently
@@ -334,6 +343,34 @@ class NotificationRepository implements INotificationRepository {
             '$driverName has arrived at your pickup for $rideName. Head out now!',
         priority: NotificationPriority.high,
         data: {'rideId': rideId, 'driverPhoto': driverPhoto},
+      ),
+    );
+  }
+  /// Send event cancelled notification to a participant.
+  Future<void> sendEventCancelled({
+    required String toUserId,
+    required String organizerName,
+    String? organizerPhoto,
+    required String eventId,
+    required String eventTitle,
+    String? reason,
+  }) async {
+    final body = reason != null && reason.isNotEmpty
+        ? '$organizerName cancelled "$eventTitle": $reason'
+        : '$organizerName cancelled "$eventTitle"';
+    await createNotification(
+      NotificationModel(
+        id: '',
+        userId: toUserId,
+        type: NotificationType.eventCancelled,
+        title: 'Event Cancelled',
+        body: body,
+        senderId: organizerName,
+        senderName: organizerName,
+        senderPhotoUrl: organizerPhoto,
+        referenceId: eventId,
+        referenceType: 'event',
+        priority: NotificationPriority.high,
       ),
     );
   }

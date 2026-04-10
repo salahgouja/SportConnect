@@ -39,6 +39,7 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
       'city': user.city ?? '',
       'gender': user.gender,
       'dob': user.dateOfBirth,
+      'expertise': user.expertise,
     });
   }
 
@@ -70,6 +71,7 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
         country: vmState.riderCountry,
         gender: values['gender'],
         dateOfBirth: values['dob'],
+        expertise: values['expertise'] ?? Expertise.rookie,
       ),
       driver: (driver) => driver,
     );
@@ -125,7 +127,7 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
         leading: IconButton(
           tooltip: l10n.goBackTooltip,
           onPressed: () => context.go(AppRoutes.roleSelection.path),
-          icon: const Icon(Icons.arrow_back_rounded),
+          icon: Icon(Icons.adaptive.arrow_back_rounded),
         ),
         title: Text(l10n.riderOnboardingTitle),
       ),
@@ -287,6 +289,28 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
                         return null;
                       },
                     ]),
+                  ),
+                  SizedBox(height: 16.h),
+
+                  // Expertise level
+                  FormBuilderDropdown<Expertise>(
+                    name: 'expertise',
+                    initialValue: Expertise.rookie,
+                    decoration: InputDecoration(
+                      labelText: l10n.expertiseLevel,
+                      prefixIcon: Icon(Icons.workspace_premium_rounded),
+                    ),
+                    items: Expertise.values
+                        .map(
+                          (e) => DropdownMenuItem(
+                            value: e,
+                            child: Text(e.displayName),
+                          ),
+                        )
+                        .toList(),
+                    validator: FormBuilderValidators.required(
+                      errorText: l10n.expertiseLevelRequired,
+                    ),
                   ),
                   SizedBox(height: 20.h),
 

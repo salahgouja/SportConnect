@@ -24,7 +24,6 @@ RiderModel _$RiderModelFromJson(Map json) => RiderModel(
   isPhoneVerified: json['isPhoneVerified'] as bool? ?? false,
   isIdVerified: json['isIdVerified'] as bool? ?? false,
   isActive: json['isActive'] as bool? ?? true,
-  isOnline: json['isOnline'] as bool? ?? false,
   isPremium: json['isPremium'] as bool? ?? false,
   blockedUsers:
       (json['blockedUsers'] as List<dynamic>?)
@@ -80,7 +79,6 @@ Map<String, dynamic> _$RiderModelToJson(RiderModel instance) =>
       'isPhoneVerified': instance.isPhoneVerified,
       'isIdVerified': instance.isIdVerified,
       'isActive': instance.isActive,
-      'isOnline': instance.isOnline,
       'isPremium': instance.isPremium,
       'blockedUsers': instance.blockedUsers,
       'favoriteRoutes': instance.favoriteRoutes,
@@ -120,7 +118,6 @@ DriverModel _$DriverModelFromJson(Map json) => DriverModel(
   isPhoneVerified: json['isPhoneVerified'] as bool? ?? false,
   isIdVerified: json['isIdVerified'] as bool? ?? false,
   isActive: json['isActive'] as bool? ?? true,
-  isOnline: json['isOnline'] as bool? ?? false,
   isPremium: json['isPremium'] as bool? ?? false,
   blockedUsers:
       (json['blockedUsers'] as List<dynamic>?)
@@ -190,7 +187,6 @@ Map<String, dynamic> _$DriverModelToJson(DriverModel instance) =>
       'isPhoneVerified': instance.isPhoneVerified,
       'isIdVerified': instance.isIdVerified,
       'isActive': instance.isActive,
-      'isOnline': instance.isOnline,
       'isPremium': instance.isPremium,
       'blockedUsers': instance.blockedUsers,
       'vehicleIds': instance.vehicleIds,

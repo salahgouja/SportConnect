@@ -5600,6 +5600,18 @@ abstract class AppLocalizations {
   /// **'Search conversations...'**
   String get searchConversations;
 
+  /// Hint text for chat inbox search field
+  ///
+  /// In en, this message translates to:
+  /// **'Search chats or people'**
+  String get searchChatsOrPeople;
+
+  /// Section title for people found while searching chats
+  ///
+  /// In en, this message translates to:
+  /// **'People'**
+  String get peopleResults;
+
   /// Tab label for direct/private chats
   ///
   /// In en, this message translates to:
@@ -6794,6 +6806,18 @@ abstract class AppLocalizations {
   /// **'Please select your gender.'**
   String get driverGenderRequired;
 
+  /// No description provided for @expertiseLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Expertise Level'**
+  String get expertiseLevel;
+
+  /// No description provided for @expertiseLevelRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select your expertise level.'**
+  String get expertiseLevelRequired;
+
   /// No description provided for @driverInterestsRequired.
   ///
   /// In en, this message translates to:
@@ -7775,7 +7799,7 @@ abstract class AppLocalizations {
   /// No description provided for @reportSubmittedMessage.
   ///
   /// In en, this message translates to:
-  /// **'Thank you for reporting this issue. Our safety team will review it and take appropriate action within 24-48 hours.'**
+  /// **'Thank you for reporting this issue. Our safety team will review it and take appropriate action within 24-48 hours. You will receive an email when your issue is resolved.'**
   String get reportSubmittedMessage;
 
   /// No description provided for @doneButton.
@@ -9293,7 +9317,7 @@ abstract class AppLocalizations {
   /// No description provided for @ticketSubmittedMessage.
   ///
   /// In en, this message translates to:
-  /// **'We\'ve received your message and will get back to you within 24 hours. Check your email for updates.'**
+  /// **'We\'ve received your message and will get back to you within 24 hours. You will receive an email when your issue is resolved.'**
   String get ticketSubmittedMessage;
 
   /// No description provided for @findPeopleTitle.
@@ -9847,6 +9871,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not block user. Please try again.'**
   String get couldNotBlockUserTryAgain;
+
+  /// No description provided for @unblockUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock user'**
+  String get unblockUser;
+
+  /// No description provided for @unblockUserDialogMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock {name}?'**
+  String unblockUserDialogMessage(String name);
+
+  /// No description provided for @actionUnblock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock'**
+  String get actionUnblock;
+
+  /// No description provided for @userUnblocked.
+  ///
+  /// In en, this message translates to:
+  /// **'User unblocked.'**
+  String get userUnblocked;
+
+  /// No description provided for @couldNotUnblockUserTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not unblock user. Please try again.'**
+  String get couldNotUnblockUserTryAgain;
+
+  /// No description provided for @youBlockedThisUser.
+  ///
+  /// In en, this message translates to:
+  /// **'You blocked this user.'**
+  String get youBlockedThisUser;
 
   /// No description provided for @actionBlock.
   ///

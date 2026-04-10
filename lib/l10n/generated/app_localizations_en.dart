@@ -3049,6 +3049,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchConversations => 'Search conversations...';
 
   @override
+  String get searchChatsOrPeople => 'Search chats or people';
+
+  @override
+  String get peopleResults => 'People';
+
+  @override
   String get direct => 'Direct';
 
   @override
@@ -3681,6 +3687,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get driverGenderRequired => 'Please select your gender.';
 
   @override
+  String get expertiseLevel => 'Expertise Level';
+
+  @override
+  String get expertiseLevelRequired => 'Please select your expertise level.';
+
+  @override
   String get driverInterestsRequired => 'Please select at least one interest.';
 
   @override
@@ -4218,7 +4230,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reportSubmittedMessage =>
-      'Thank you for reporting this issue. Our safety team will review it and take appropriate action within 24-48 hours.';
+      'Thank you for reporting this issue. Our safety team will review it and take appropriate action within 24-48 hours. You will receive an email when your issue is resolved.';
 
   @override
   String get doneButton => 'Done';
@@ -5045,7 +5057,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ticketSubmittedMessage =>
-      'We\'ve received your message and will get back to you within 24 hours. Check your email for updates.';
+      'We\'ve received your message and will get back to you within 24 hours. You will receive an email when your issue is resolved.';
 
   @override
   String get findPeopleTitle => 'Find People';
@@ -5334,6 +5346,27 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get couldNotBlockUserTryAgain =>
       'Could not block user. Please try again.';
+
+  @override
+  String get unblockUser => 'Unblock user';
+
+  @override
+  String unblockUserDialogMessage(String name) {
+    return 'Unblock $name?';
+  }
+
+  @override
+  String get actionUnblock => 'Unblock';
+
+  @override
+  String get userUnblocked => 'User unblocked.';
+
+  @override
+  String get couldNotUnblockUserTryAgain =>
+      'Could not unblock user. Please try again.';
+
+  @override
+  String get youBlockedThisUser => 'You blocked this user.';
 
   @override
   String get actionBlock => 'Block';

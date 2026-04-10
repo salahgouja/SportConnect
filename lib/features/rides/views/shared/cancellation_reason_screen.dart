@@ -65,11 +65,7 @@ class CancellationReasonScreen extends ConsumerWidget {
       Icons.emergency_rounded,
       'I have an unexpected emergency.',
     ),
-    _CancelReason(
-      'Other',
-      Icons.more_horiz_rounded,
-      'Another reason not listed above.',
-    ),
+    _CancelReason('Other', null, 'Another reason not listed above.'),
   ];
 
   static const _driverReasons = [
@@ -108,11 +104,7 @@ class CancellationReasonScreen extends ConsumerWidget {
       Icons.emergency_rounded,
       'I have an unexpected emergency.',
     ),
-    _CancelReason(
-      'Other',
-      Icons.more_horiz_rounded,
-      'Another reason not listed above.',
-    ),
+    _CancelReason('Other', null, 'Another reason not listed above.'),
   ];
 
   Future<void> _submitCancellation(BuildContext context, WidgetRef ref) async {
@@ -128,7 +120,7 @@ class CancellationReasonScreen extends ConsumerWidget {
   Future<bool?> _showConfirmationDialog(BuildContext context) {
     return showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => AlertDialog.adaptive(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
@@ -268,7 +260,7 @@ class CancellationReasonScreen extends ConsumerWidget {
         ),
         leading: IconButton(
           tooltip: AppLocalizations.of(context).goBackTooltip,
-          icon: const Icon(Icons.arrow_back_rounded),
+          icon: Icon(Icons.adaptive.arrow_back_rounded),
           onPressed: () => context.pop(),
         ),
       ),
@@ -415,7 +407,7 @@ class CancellationReasonScreen extends ConsumerWidget {
                 text: AppLocalizations.of(context).keepRide,
                 onPressed: () => context.pop(false),
                 style: PremiumButtonStyle.ghost,
-                icon: Icons.arrow_back_rounded,
+                icon: Icons.adaptive.arrow_back_rounded,
               ),
             ).animate().fadeIn(delay: 750.ms),
 
@@ -526,8 +518,16 @@ class CancellationReasonScreen extends ConsumerWidget {
 
 class _CancelReason {
   final String title;
-  final IconData icon;
   final String description;
+  final IconData? _staticIcon;
 
-  const _CancelReason(this.title, this.icon, this.description);
+  const _CancelReason(this.title, this._staticIcon, this.description);
+
+  // This handles the runtime platform check
+  IconData get icon {
+    if (title.toLowerCase() == 'other') {
+      return Icons.adaptive.more_rounded;
+    }
+    return _staticIcon ?? Icons.help_outline_rounded;
+  }
 }

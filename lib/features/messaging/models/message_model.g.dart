@@ -97,7 +97,6 @@ _ChatParticipant _$ChatParticipantFromJson(Map json) => _ChatParticipant(
   odid: json['odid'] as String,
   displayName: json['displayName'] as String,
   photoUrl: json['photoUrl'] as String?,
-  isOnline: json['isOnline'] as bool? ?? false,
   isAdmin: json['isAdmin'] as bool? ?? false,
   isMuted: json['isMuted'] as bool? ?? false,
   lastSeenAt: const TimestampConverter().fromJson(json['lastSeenAt']),
@@ -109,7 +108,6 @@ Map<String, dynamic> _$ChatParticipantToJson(_ChatParticipant instance) =>
       'odid': instance.odid,
       'displayName': instance.displayName,
       'photoUrl': instance.photoUrl,
-      'isOnline': instance.isOnline,
       'isAdmin': instance.isAdmin,
       'isMuted': instance.isMuted,
       'lastSeenAt': const TimestampConverter().toJson(instance.lastSeenAt),
@@ -137,6 +135,7 @@ _ChatModel _$ChatModelFromJson(Map json) => _ChatModel(
   groupPhotoUrl: json['groupPhotoUrl'] as String?,
   description: json['description'] as String?,
   rideId: json['rideId'] as String?,
+  eventId: json['eventId'] as String?,
   lastMessageContent: json['lastMessageContent'] as String?,
   lastMessageSenderId: json['lastMessageSenderId'] as String?,
   lastMessageSenderName: json['lastMessageSenderName'] as String?,
@@ -159,6 +158,11 @@ _ChatModel _$ChatModelFromJson(Map json) => _ChatModel(
         (k, e) => MapEntry(k as String, e as bool),
       ) ??
       const {},
+  deletedFor:
+      (json['deletedFor'] as Map?)?.map(
+        (k, e) => MapEntry(k as String, e as bool),
+      ) ??
+      const {},
   isActive: json['isActive'] as bool? ?? true,
   createdAt: const TimestampConverter().fromJson(json['createdAt']),
   updatedAt: const TimestampConverter().fromJson(json['updatedAt']),
@@ -175,6 +179,7 @@ Map<String, dynamic> _$ChatModelToJson(
   'groupPhotoUrl': instance.groupPhotoUrl,
   'description': instance.description,
   'rideId': instance.rideId,
+  'eventId': instance.eventId,
   'lastMessageContent': instance.lastMessageContent,
   'lastMessageSenderId': instance.lastMessageSenderId,
   'lastMessageSenderName': instance.lastMessageSenderName,
@@ -183,6 +188,7 @@ Map<String, dynamic> _$ChatModelToJson(
   'unreadCounts': instance.unreadCounts,
   'mutedBy': instance.mutedBy,
   'pinnedBy': instance.pinnedBy,
+  'deletedFor': instance.deletedFor,
   'isActive': instance.isActive,
   'createdAt': const TimestampConverter().toJson(instance.createdAt),
   'updatedAt': const TimestampConverter().toJson(instance.updatedAt),
@@ -191,6 +197,7 @@ Map<String, dynamic> _$ChatModelToJson(
 const _$ChatTypeEnumMap = {
   ChatType.private: 'private',
   ChatType.rideGroup: 'rideGroup',
+  ChatType.eventGroup: 'eventGroup',
   ChatType.support: 'support',
 };
 

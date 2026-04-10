@@ -64,6 +64,15 @@ class LocationServiceImpl implements ILocationService {
     return true;
   }
 
+  /// LS-1: Returns true if the user has permanently denied location permission.
+  /// The caller should show a manual address-entry fallback in this case, since
+  /// `requestPermission()` cannot prompt the user again once denied-forever.
+  @override
+  Future<bool> isPermissionPermanentlyDenied() async {
+    final permission = await Geolocator.checkPermission();
+    return permission == LocationPermission.deniedForever;
+  }
+
   @override
   Future<Position?> getCurrentLocation() async {
     try {

@@ -27,15 +27,6 @@ class DisputeScreen extends ConsumerStatefulWidget {
 class _DisputeScreenState extends ConsumerState<DisputeScreen> {
   final _imagePicker = ImagePicker();
 
-  static const _disputeTypeIds = [
-    ('incorrect_fare', Icons.attach_money_rounded),
-    ('incomplete_ride', Icons.wrong_location_rounded),
-    ('unauthorized_charge', Icons.credit_card_off_rounded),
-    ('poor_service', Icons.sentiment_dissatisfied_rounded),
-    ('safety_concern', Icons.health_and_safety_rounded),
-    ('other', Icons.more_horiz_rounded),
-  ];
-
   List<_DisputeType> _getDisputeTypes(AppLocalizations l10n) => [
     _DisputeType(
       id: 'incorrect_fare',
@@ -69,7 +60,7 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
     ),
     _DisputeType(
       id: 'other',
-      icon: Icons.more_horiz_rounded,
+      icon: Icons.adaptive.more_rounded,
       title: l10n.otherDisputeType,
       description: l10n.otherDisputeDesc,
     ),
@@ -181,7 +172,7 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
         ),
         leading: IconButton(
           tooltip: AppLocalizations.of(context).goBackTooltip,
-          icon: const Icon(Icons.arrow_back_rounded),
+          icon: Icon(Icons.adaptive.arrow_back_rounded),
           onPressed: () => context.pop(),
         ),
       ),
@@ -680,9 +671,9 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
                 ? SizedBox(
                     height: 20.h,
                     width: 20.h,
-                    child: const CircularProgressIndicator(
+                    child: const CircularProgressIndicator.adaptive(
                       strokeWidth: 2,
-                      color: Colors.white,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   )
                 : Text(

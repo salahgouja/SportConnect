@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:sport_connect/features/auth/models/models.dart';
-import 'package:sport_connect/features/profile/models/leaderboard_entry.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 
 /// User data repository interface
@@ -13,6 +12,8 @@ abstract class IUserRepository {
     String? query,
     UserRole? role,
     int? limit,
+    Iterable<String>? excludeUserIds,
+    String? excludeUsersWhoBlockedId,
   });
 
   Future<void> updateUser(UserModel user);
@@ -20,13 +21,14 @@ abstract class IUserRepository {
   Future<void> updateProfile(String uid, Map<String, dynamic> updates);
   Future<void> updateProfilePhoto(String uid, File file);
 
-  // Online Status
-  Future<void> updateOnlineStatus(String userId, bool isOnline);
-  Stream<bool> getUserOnlineStatus(String userId);
-
   // Block/Unblock
   Future<void> blockUser(String currentUserId, String targetUserId);
   Future<void> unblockUser(String currentUserId, String targetUserId);
+  Future<bool> isUserBlocked({
+    required String userId,
+    required String blockedUserId,
+  });
+  Stream<List<String>> streamBlockedUserIds(String userId);
 
   // Vehicles
   Future<void> addVehicle(String uid, VehicleModel vehicle);
@@ -46,6 +48,7 @@ abstract class IUserRepository {
     required String uid,
     required bool asDriver,
     required double distance,
+    double fareAmountPaid = 0.0,
   });
   Future<void> unlockAchievement(String uid, String achievementId);
 

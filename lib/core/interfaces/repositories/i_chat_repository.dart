@@ -7,6 +7,7 @@ abstract class IChatRepository {
   // Chat Management
   Future<String> createChat(ChatModel chat);
   Future<ChatModel?> getChatById(String chatId);
+  Future<ChatModel?> getChatByRideId(String rideId);
   Future<ChatModel?> getOrCreateDirectChat(String userId1, String userId2);
   Future<ChatModel> getOrCreatePrivateChat({
     required String userId1,
@@ -63,11 +64,6 @@ abstract class IChatRepository {
     required bool mute,
   });
   Future<void> clearChat({required String chatId, required String userId});
-  Future<void> blockUser({
-    required String chatId,
-    required String userId,
-    required String blockedUserId,
-  });
 
   // Media Uploads
   Future<String> uploadChatImage({

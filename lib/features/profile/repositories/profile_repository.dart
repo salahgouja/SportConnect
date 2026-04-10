@@ -6,6 +6,7 @@ import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_user_repository.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 
@@ -89,16 +90,6 @@ class ProfileRepository implements IUserRepository {
     }
   }
 
-  // ==================== ONLINE STATUS ====================
-
-  /// Update online status
-  Future<void> setOnlineStatus(String uid, bool isOnline) async {
-    await _usersCollection.doc(uid).update({
-      'isOnline': isOnline,
-      'lastSeenAt': DateTime.now(),
-    });
-  }
-
   /// Update FCM token
   Future<void> updateFCMToken(String uid, String token) async {
     await _usersCollection.doc(uid).update({'fcmToken': token});
@@ -114,6 +105,7 @@ class ProfileRepository implements IUserRepository {
   /// Block a user atomically:
   /// 1. Writes metadata to blocked-users sub-collection.
   /// 2. Appends UID to [UserModel.blockedUsers] array for fast query filtering.
+  @override
   Future<void> blockUser(String currentUserId, String targetUserId) async {
     final batch = _firestore.batch();
 
@@ -129,6 +121,7 @@ class ProfileRepository implements IUserRepository {
   }
 
   /// Unblock a user atomically — exact reverse of [blockUser].
+  @override
   Future<void> unblockUser(String currentUserId, String targetUserId) async {
     final batch = _firestore.batch();
 
@@ -139,6 +132,22 @@ class ProfileRepository implements IUserRepository {
     });
 
     await batch.commit();
+  }
+
+  @override
+  Future<bool> isUserBlocked({
+    required String userId,
+    required String blockedUserId,
+  }) async {
+    final doc = await _blockedUsersCollection(userId).doc(blockedUserId).get();
+    return doc.exists;
+  }
+
+  @override
+  Stream<List<String>> streamBlockedUserIds(String userId) {
+    return _blockedUsersCollection(userId).snapshots().map(
+      (snapshot) => snapshot.docs.map((doc) => doc.id).toList(),
+    );
   }
 
   // ==================== VEHICLES (Driver Only) ====================
@@ -195,20 +204,29 @@ class ProfileRepository implements IUserRepository {
     });
   }
 
-  /// Set default vehicle (only for drivers)
+  /// Set default vehicle (only for drivers).
+  /// G-6: Chunks writes into batches of 499 to stay within Firestore's
+  /// 500-operation-per-batch limit for drivers with many vehicles.
   Future<void> setDefaultVehicle(String uid, String vehicleId) async {
     final user = await getUserById(uid);
     if (user == null || user is! DriverModel) return;
 
     final driver = user;
-    // Deactivate all vehicles, activate the selected one
-    final batch = _firestore.batch();
-    for (final vId in driver.vehicleIds) {
-      batch.update(_vehiclesCollection.doc(vId), {
-        'isActive': vId == vehicleId,
-      });
+    final vehicleIds = driver.vehicleIds;
+
+    for (var i = 0; i < vehicleIds.length; i += 499) {
+      final chunk = vehicleIds.sublist(
+        i,
+        (i + 499).clamp(0, vehicleIds.length),
+      );
+      final batch = _firestore.batch();
+      for (final vId in chunk) {
+        batch.update(_vehiclesCollection.doc(vId), {
+          'isActive': vId == vehicleId,
+        });
+      }
+      await batch.commit();
     }
-    await batch.commit();
   }
 
   /// Get vehicles for a driver
@@ -258,16 +276,23 @@ class ProfileRepository implements IUserRepository {
       ),
     };
 
+    // FIX G-1: Cap XP/level progression at level 50.
+    const maxLevel = 50;
+
     var newTotalXP = totalXP + xp;
     var newCurrentLevelXP = currentLevelXP + xp;
     var newLevel = level;
     var newXpToNextLevel = xpToNextLevel;
 
-    // Check for level up
-    while (newCurrentLevelXP >= newXpToNextLevel) {
+    // Check for level up — stop advancing once max level is reached.
+    while (newCurrentLevelXP >= newXpToNextLevel && newLevel < maxLevel) {
       newLevel++;
       newCurrentLevelXP -= newXpToNextLevel;
       newXpToNextLevel = (newXpToNextLevel * 1.2).round();
+    }
+    // At max level clamp XP so the bar stays full but doesn't overflow.
+    if (newLevel >= maxLevel) {
+      newCurrentLevelXP = newXpToNextLevel;
     }
 
     await _usersCollection.doc(uid).update({
@@ -310,12 +335,18 @@ class ProfileRepository implements IUserRepository {
     if (lastRide == null) {
       newCurrentStreak = 1;
     } else {
-      final difference = now.difference(lastRide).inDays;
-      if (difference == 1) {
+      // Compare calendar days (midnight boundaries), not 24-hour periods.
+      // A ride at 11 PM and the next at 1 AM the following calendar day is
+      // exactly 1 calendar day apart — inDays would incorrectly return 0.
+      final lastRideDay = DateTime(lastRide.year, lastRide.month, lastRide.day);
+      final today = DateTime(now.year, now.month, now.day);
+      final calendarDays = today.difference(lastRideDay).inDays;
+      if (calendarDays == 1) {
         newCurrentStreak++;
-      } else if (difference > 1) {
+      } else if (calendarDays > 1) {
         newCurrentStreak = 1;
       }
+      // calendarDays == 0 → same calendar day, streak unchanged
     }
 
     if (newCurrentStreak > newLongestStreak) {
@@ -335,7 +366,17 @@ class ProfileRepository implements IUserRepository {
     required String uid,
     required bool asDriver,
     required double distance,
+    double fareAmountPaid = 0.0,
   }) async {
+    // G-4 guard: verify role matches the asDriver flag to catch call-site bugs.
+    final user = await getUserById(uid);
+    if (user != null && asDriver != user.isDriver) {
+      TalkerService.warning(
+        'updateRideStats: asDriver=$asDriver but uid=$uid has role=${user.role.name} — skipping to avoid stat corruption.',
+      );
+      return;
+    }
+
     final updates = <String, dynamic>{
       'gamification.totalRides': FieldValue.increment(1),
       'gamification.totalDistance': FieldValue.increment(distance),
@@ -345,9 +386,13 @@ class ProfileRepository implements IUserRepository {
       updates['gamification.ridesAsDriver'] = FieldValue.increment(1);
     } else {
       updates['gamification.ridesAsPassenger'] = FieldValue.increment(1);
-      updates['gamification.moneySaved'] = FieldValue.increment(
-        distance * 0.15,
-      );
+      // G-3: moneySaved = (standard per-km car cost) − fare paid.
+      // 0.25 EUR/km is a commonly used estimate for per-km car running cost.
+      const perKmCarCost = 0.25;
+      final savedAmount = (distance * perKmCarCost) - fareAmountPaid;
+      if (savedAmount > 0) {
+        updates['gamification.moneySaved'] = FieldValue.increment(savedAmount);
+      }
     }
 
     await _usersCollection.doc(uid).update(updates);
@@ -408,6 +453,11 @@ class ProfileRepository implements IUserRepository {
     await _usersCollection.doc(uid).update({
       'gamification.unlockedBadges': FieldValue.arrayUnion(newBadges),
     });
+
+    // FIX G-5: Award XP for each newly unlocked badge.
+    // Each badge grants 50 XP as a reward for the achievement.
+    const xpPerBadge = 50;
+    await addXP(uid, newBadges.length * xpPerBadge);
 
     return newBadges;
   }
@@ -509,20 +559,88 @@ class ProfileRepository implements IUserRepository {
     String? query,
     UserRole? role,
     int? limit,
+    Iterable<String>? excludeUserIds,
+    String? excludeUsersWhoBlockedId,
   }) async {
-    if (query == null || query.isEmpty) return [];
+    final rawQuery = query?.trim() ?? '';
+    if (rawQuery.isEmpty) return [];
 
-    Query<UserModel> queryRef = _usersCollection
-        .where('displayName', isGreaterThanOrEqualTo: query)
-        .where('displayName', isLessThanOrEqualTo: '$query\uf8ff');
+    final normalized = rawQuery.toLowerCase();
+    final maxItems = limit ?? 50;
+    final excludedIds = (excludeUserIds ?? const <String>[]).toSet();
+    final deduped = <String, UserModel>{};
 
-    if (role != null) {
-      queryRef = queryRef.where('role', isEqualTo: role.name);
+    Future<void> runPrefixQuery(String value) async {
+      if (value.isEmpty) return;
+
+      Query<UserModel> queryRef = _usersCollection
+          .where('displayName', isGreaterThanOrEqualTo: value)
+          .where('displayName', isLessThanOrEqualTo: '$value\uf8ff');
+
+      if (role != null) {
+        queryRef = queryRef.where('role', isEqualTo: role.name);
+      }
+
+      final snapshot = await queryRef.limit(maxItems * 2).get();
+      for (final doc in snapshot.docs) {
+        final user = doc.data();
+        final isExcludedById = excludedIds.contains(user.uid);
+        final hasBlockedCurrentUser =
+            excludeUsersWhoBlockedId != null &&
+            user.blockedUsers.contains(excludeUsersWhoBlockedId);
+        if (isExcludedById || hasBlockedCurrentUser) {
+          continue;
+        }
+
+        final matchesName = user.displayName.toLowerCase().contains(normalized);
+        final matchesEmail = user.email.toLowerCase().contains(normalized);
+        if (matchesName || matchesEmail) {
+          deduped[user.uid] = user;
+        }
+      }
     }
 
-    final results = await queryRef.limit(limit ?? 20).get();
+    // Try common casing patterns first to avoid full scans.
+    final titleCase = rawQuery.isEmpty
+        ? rawQuery
+        : '${rawQuery[0].toUpperCase()}${rawQuery.substring(1).toLowerCase()}';
+    for (final candidate in <String>{
+      rawQuery,
+      rawQuery.toLowerCase(),
+      titleCase,
+    }) {
+      await runPrefixQuery(candidate);
+      if (deduped.length >= maxItems) break;
+    }
 
-    return results.docs.map((doc) => doc.data()).toList();
+    if (deduped.length < maxItems) {
+      // Fallback broad scan for mixed-case/non-prefix matches.
+      Query<UserModel> fallbackQuery = _usersCollection;
+      if (role != null) {
+        fallbackQuery = fallbackQuery.where('role', isEqualTo: role.name);
+      }
+
+      final fallback = await fallbackQuery.limit(maxItems * 8).get();
+      for (final doc in fallback.docs) {
+        final user = doc.data();
+        final isExcludedById = excludedIds.contains(user.uid);
+        final hasBlockedCurrentUser =
+            excludeUsersWhoBlockedId != null &&
+            user.blockedUsers.contains(excludeUsersWhoBlockedId);
+        if (isExcludedById || hasBlockedCurrentUser) {
+          continue;
+        }
+
+        final matchesName = user.displayName.toLowerCase().contains(normalized);
+        final matchesEmail = user.email.toLowerCase().contains(normalized);
+        if (matchesName || matchesEmail) {
+          deduped[user.uid] = user;
+          if (deduped.length >= maxItems) break;
+        }
+      }
+    }
+
+    return deduped.values.take(maxItems).toList(growable: false);
   }
 
   // ==================== INTERFACE METHODS ====================
@@ -544,23 +662,6 @@ class ProfileRepository implements IUserRepository {
     await _usersCollection.doc(userId).update({
       field: value,
       'updatedAt': DateTime.now(),
-    });
-  }
-
-  @override
-  Future<void> updateOnlineStatus(String userId, bool isOnline) async {
-    await _usersCollection.doc(userId).update({
-      'isOnline': isOnline,
-      'lastSeenAt': DateTime.now(),
-    });
-  }
-
-  @override
-  Stream<bool> getUserOnlineStatus(String userId) {
-    return _usersCollection.doc(userId).snapshots().map((doc) {
-      if (!doc.exists) return false;
-      final data = doc.data();
-      return data?.isOnline ?? false;
     });
   }
 }

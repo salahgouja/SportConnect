@@ -372,8 +372,7 @@ mixin _$DriverPayout {
  double get amount;// Amount in dollars
  String get currency; PayoutStatus get status;// Stripe IDs
  String? get stripePayoutId; String? get stripeTransferId;// Related transactions
- List<String> get transactionIds;// Bank details (last 4 digits)
- String? get bankAccountLast4; String? get bankName;// Timestamps
+ List<String> get transactionIds;// Timestamps
 @TimestampConverter() DateTime? get createdAt;@TimestampConverter() DateTime? get expectedArrivalDate;@TimestampConverter() DateTime? get arrivedAt;// Additional info
  String? get failureReason; bool? get isInstantPayout; Map<String, dynamic> get metadata;
 /// Create a copy of DriverPayout
@@ -388,16 +387,16 @@ $DriverPayoutCopyWith<DriverPayout> get copyWith => _$DriverPayoutCopyWithImpl<D
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is DriverPayout&&(identical(other.id, id) || other.id == id)&&(identical(other.driverId, driverId) || other.driverId == driverId)&&(identical(other.driverName, driverName) || other.driverName == driverName)&&(identical(other.connectedAccountId, connectedAccountId) || other.connectedAccountId == connectedAccountId)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.currency, currency) || other.currency == currency)&&(identical(other.status, status) || other.status == status)&&(identical(other.stripePayoutId, stripePayoutId) || other.stripePayoutId == stripePayoutId)&&(identical(other.stripeTransferId, stripeTransferId) || other.stripeTransferId == stripeTransferId)&&const DeepCollectionEquality().equals(other.transactionIds, transactionIds)&&(identical(other.bankAccountLast4, bankAccountLast4) || other.bankAccountLast4 == bankAccountLast4)&&(identical(other.bankName, bankName) || other.bankName == bankName)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.expectedArrivalDate, expectedArrivalDate) || other.expectedArrivalDate == expectedArrivalDate)&&(identical(other.arrivedAt, arrivedAt) || other.arrivedAt == arrivedAt)&&(identical(other.failureReason, failureReason) || other.failureReason == failureReason)&&(identical(other.isInstantPayout, isInstantPayout) || other.isInstantPayout == isInstantPayout)&&const DeepCollectionEquality().equals(other.metadata, metadata));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is DriverPayout&&(identical(other.id, id) || other.id == id)&&(identical(other.driverId, driverId) || other.driverId == driverId)&&(identical(other.driverName, driverName) || other.driverName == driverName)&&(identical(other.connectedAccountId, connectedAccountId) || other.connectedAccountId == connectedAccountId)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.currency, currency) || other.currency == currency)&&(identical(other.status, status) || other.status == status)&&(identical(other.stripePayoutId, stripePayoutId) || other.stripePayoutId == stripePayoutId)&&(identical(other.stripeTransferId, stripeTransferId) || other.stripeTransferId == stripeTransferId)&&const DeepCollectionEquality().equals(other.transactionIds, transactionIds)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.expectedArrivalDate, expectedArrivalDate) || other.expectedArrivalDate == expectedArrivalDate)&&(identical(other.arrivedAt, arrivedAt) || other.arrivedAt == arrivedAt)&&(identical(other.failureReason, failureReason) || other.failureReason == failureReason)&&(identical(other.isInstantPayout, isInstantPayout) || other.isInstantPayout == isInstantPayout)&&const DeepCollectionEquality().equals(other.metadata, metadata));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,driverId,driverName,connectedAccountId,amount,currency,status,stripePayoutId,stripeTransferId,const DeepCollectionEquality().hash(transactionIds),bankAccountLast4,bankName,createdAt,expectedArrivalDate,arrivedAt,failureReason,isInstantPayout,const DeepCollectionEquality().hash(metadata));
+int get hashCode => Object.hash(runtimeType,id,driverId,driverName,connectedAccountId,amount,currency,status,stripePayoutId,stripeTransferId,const DeepCollectionEquality().hash(transactionIds),createdAt,expectedArrivalDate,arrivedAt,failureReason,isInstantPayout,const DeepCollectionEquality().hash(metadata));
 
 @override
 String toString() {
-  return 'DriverPayout(id: $id, driverId: $driverId, driverName: $driverName, connectedAccountId: $connectedAccountId, amount: $amount, currency: $currency, status: $status, stripePayoutId: $stripePayoutId, stripeTransferId: $stripeTransferId, transactionIds: $transactionIds, bankAccountLast4: $bankAccountLast4, bankName: $bankName, createdAt: $createdAt, expectedArrivalDate: $expectedArrivalDate, arrivedAt: $arrivedAt, failureReason: $failureReason, isInstantPayout: $isInstantPayout, metadata: $metadata)';
+  return 'DriverPayout(id: $id, driverId: $driverId, driverName: $driverName, connectedAccountId: $connectedAccountId, amount: $amount, currency: $currency, status: $status, stripePayoutId: $stripePayoutId, stripeTransferId: $stripeTransferId, transactionIds: $transactionIds, createdAt: $createdAt, expectedArrivalDate: $expectedArrivalDate, arrivedAt: $arrivedAt, failureReason: $failureReason, isInstantPayout: $isInstantPayout, metadata: $metadata)';
 }
 
 
@@ -408,7 +407,7 @@ abstract mixin class $DriverPayoutCopyWith<$Res>  {
   factory $DriverPayoutCopyWith(DriverPayout value, $Res Function(DriverPayout) _then) = _$DriverPayoutCopyWithImpl;
 @useResult
 $Res call({
- String id, String driverId, String driverName, String connectedAccountId, double amount, String currency, PayoutStatus status, String? stripePayoutId, String? stripeTransferId, List<String> transactionIds, String? bankAccountLast4, String? bankName,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? expectedArrivalDate,@TimestampConverter() DateTime? arrivedAt, String? failureReason, bool? isInstantPayout, Map<String, dynamic> metadata
+ String id, String driverId, String driverName, String connectedAccountId, double amount, String currency, PayoutStatus status, String? stripePayoutId, String? stripeTransferId, List<String> transactionIds,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? expectedArrivalDate,@TimestampConverter() DateTime? arrivedAt, String? failureReason, bool? isInstantPayout, Map<String, dynamic> metadata
 });
 
 
@@ -425,7 +424,7 @@ class _$DriverPayoutCopyWithImpl<$Res>
 
 /// Create a copy of DriverPayout
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? driverId = null,Object? driverName = null,Object? connectedAccountId = null,Object? amount = null,Object? currency = null,Object? status = null,Object? stripePayoutId = freezed,Object? stripeTransferId = freezed,Object? transactionIds = null,Object? bankAccountLast4 = freezed,Object? bankName = freezed,Object? createdAt = freezed,Object? expectedArrivalDate = freezed,Object? arrivedAt = freezed,Object? failureReason = freezed,Object? isInstantPayout = freezed,Object? metadata = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? driverId = null,Object? driverName = null,Object? connectedAccountId = null,Object? amount = null,Object? currency = null,Object? status = null,Object? stripePayoutId = freezed,Object? stripeTransferId = freezed,Object? transactionIds = null,Object? createdAt = freezed,Object? expectedArrivalDate = freezed,Object? arrivedAt = freezed,Object? failureReason = freezed,Object? isInstantPayout = freezed,Object? metadata = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,driverId: null == driverId ? _self.driverId : driverId // ignore: cast_nullable_to_non_nullable
@@ -437,9 +436,7 @@ as String,status: null == status ? _self.status : status // ignore: cast_nullabl
 as PayoutStatus,stripePayoutId: freezed == stripePayoutId ? _self.stripePayoutId : stripePayoutId // ignore: cast_nullable_to_non_nullable
 as String?,stripeTransferId: freezed == stripeTransferId ? _self.stripeTransferId : stripeTransferId // ignore: cast_nullable_to_non_nullable
 as String?,transactionIds: null == transactionIds ? _self.transactionIds : transactionIds // ignore: cast_nullable_to_non_nullable
-as List<String>,bankAccountLast4: freezed == bankAccountLast4 ? _self.bankAccountLast4 : bankAccountLast4 // ignore: cast_nullable_to_non_nullable
-as String?,bankName: freezed == bankName ? _self.bankName : bankName // ignore: cast_nullable_to_non_nullable
-as String?,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as List<String>,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,expectedArrivalDate: freezed == expectedArrivalDate ? _self.expectedArrivalDate : expectedArrivalDate // ignore: cast_nullable_to_non_nullable
 as DateTime?,arrivedAt: freezed == arrivedAt ? _self.arrivedAt : arrivedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,failureReason: freezed == failureReason ? _self.failureReason : failureReason // ignore: cast_nullable_to_non_nullable
@@ -530,10 +527,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String driverId,  String driverName,  String connectedAccountId,  double amount,  String currency,  PayoutStatus status,  String? stripePayoutId,  String? stripeTransferId,  List<String> transactionIds,  String? bankAccountLast4,  String? bankName, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? expectedArrivalDate, @TimestampConverter()  DateTime? arrivedAt,  String? failureReason,  bool? isInstantPayout,  Map<String, dynamic> metadata)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String driverId,  String driverName,  String connectedAccountId,  double amount,  String currency,  PayoutStatus status,  String? stripePayoutId,  String? stripeTransferId,  List<String> transactionIds, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? expectedArrivalDate, @TimestampConverter()  DateTime? arrivedAt,  String? failureReason,  bool? isInstantPayout,  Map<String, dynamic> metadata)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _DriverPayout() when $default != null:
-return $default(_that.id,_that.driverId,_that.driverName,_that.connectedAccountId,_that.amount,_that.currency,_that.status,_that.stripePayoutId,_that.stripeTransferId,_that.transactionIds,_that.bankAccountLast4,_that.bankName,_that.createdAt,_that.expectedArrivalDate,_that.arrivedAt,_that.failureReason,_that.isInstantPayout,_that.metadata);case _:
+return $default(_that.id,_that.driverId,_that.driverName,_that.connectedAccountId,_that.amount,_that.currency,_that.status,_that.stripePayoutId,_that.stripeTransferId,_that.transactionIds,_that.createdAt,_that.expectedArrivalDate,_that.arrivedAt,_that.failureReason,_that.isInstantPayout,_that.metadata);case _:
   return orElse();
 
 }
@@ -551,10 +548,10 @@ return $default(_that.id,_that.driverId,_that.driverName,_that.connectedAccountI
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String driverId,  String driverName,  String connectedAccountId,  double amount,  String currency,  PayoutStatus status,  String? stripePayoutId,  String? stripeTransferId,  List<String> transactionIds,  String? bankAccountLast4,  String? bankName, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? expectedArrivalDate, @TimestampConverter()  DateTime? arrivedAt,  String? failureReason,  bool? isInstantPayout,  Map<String, dynamic> metadata)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String driverId,  String driverName,  String connectedAccountId,  double amount,  String currency,  PayoutStatus status,  String? stripePayoutId,  String? stripeTransferId,  List<String> transactionIds, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? expectedArrivalDate, @TimestampConverter()  DateTime? arrivedAt,  String? failureReason,  bool? isInstantPayout,  Map<String, dynamic> metadata)  $default,) {final _that = this;
 switch (_that) {
 case _DriverPayout():
-return $default(_that.id,_that.driverId,_that.driverName,_that.connectedAccountId,_that.amount,_that.currency,_that.status,_that.stripePayoutId,_that.stripeTransferId,_that.transactionIds,_that.bankAccountLast4,_that.bankName,_that.createdAt,_that.expectedArrivalDate,_that.arrivedAt,_that.failureReason,_that.isInstantPayout,_that.metadata);case _:
+return $default(_that.id,_that.driverId,_that.driverName,_that.connectedAccountId,_that.amount,_that.currency,_that.status,_that.stripePayoutId,_that.stripeTransferId,_that.transactionIds,_that.createdAt,_that.expectedArrivalDate,_that.arrivedAt,_that.failureReason,_that.isInstantPayout,_that.metadata);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -571,10 +568,10 @@ return $default(_that.id,_that.driverId,_that.driverName,_that.connectedAccountI
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String driverId,  String driverName,  String connectedAccountId,  double amount,  String currency,  PayoutStatus status,  String? stripePayoutId,  String? stripeTransferId,  List<String> transactionIds,  String? bankAccountLast4,  String? bankName, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? expectedArrivalDate, @TimestampConverter()  DateTime? arrivedAt,  String? failureReason,  bool? isInstantPayout,  Map<String, dynamic> metadata)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String driverId,  String driverName,  String connectedAccountId,  double amount,  String currency,  PayoutStatus status,  String? stripePayoutId,  String? stripeTransferId,  List<String> transactionIds, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? expectedArrivalDate, @TimestampConverter()  DateTime? arrivedAt,  String? failureReason,  bool? isInstantPayout,  Map<String, dynamic> metadata)?  $default,) {final _that = this;
 switch (_that) {
 case _DriverPayout() when $default != null:
-return $default(_that.id,_that.driverId,_that.driverName,_that.connectedAccountId,_that.amount,_that.currency,_that.status,_that.stripePayoutId,_that.stripeTransferId,_that.transactionIds,_that.bankAccountLast4,_that.bankName,_that.createdAt,_that.expectedArrivalDate,_that.arrivedAt,_that.failureReason,_that.isInstantPayout,_that.metadata);case _:
+return $default(_that.id,_that.driverId,_that.driverName,_that.connectedAccountId,_that.amount,_that.currency,_that.status,_that.stripePayoutId,_that.stripeTransferId,_that.transactionIds,_that.createdAt,_that.expectedArrivalDate,_that.arrivedAt,_that.failureReason,_that.isInstantPayout,_that.metadata);case _:
   return null;
 
 }
@@ -586,7 +583,7 @@ return $default(_that.id,_that.driverId,_that.driverName,_that.connectedAccountI
 @JsonSerializable()
 
 class _DriverPayout extends DriverPayout {
-  const _DriverPayout({required this.id, required this.driverId, required this.driverName, required this.connectedAccountId, required this.amount, required this.currency, required this.status, this.stripePayoutId, this.stripeTransferId, final  List<String> transactionIds = const [], this.bankAccountLast4, this.bankName, @TimestampConverter() this.createdAt, @TimestampConverter() this.expectedArrivalDate, @TimestampConverter() this.arrivedAt, this.failureReason, this.isInstantPayout, final  Map<String, dynamic> metadata = const {}}): _transactionIds = transactionIds,_metadata = metadata,super._();
+  const _DriverPayout({required this.id, required this.driverId, required this.driverName, required this.connectedAccountId, required this.amount, required this.currency, required this.status, this.stripePayoutId, this.stripeTransferId, final  List<String> transactionIds = const [], @TimestampConverter() this.createdAt, @TimestampConverter() this.expectedArrivalDate, @TimestampConverter() this.arrivedAt, this.failureReason, this.isInstantPayout, final  Map<String, dynamic> metadata = const {}}): _transactionIds = transactionIds,_metadata = metadata,super._();
   factory _DriverPayout.fromJson(Map<String, dynamic> json) => _$DriverPayoutFromJson(json);
 
 @override final  String id;
@@ -610,9 +607,6 @@ class _DriverPayout extends DriverPayout {
   return EqualUnmodifiableListView(_transactionIds);
 }
 
-// Bank details (last 4 digits)
-@override final  String? bankAccountLast4;
-@override final  String? bankName;
 // Timestamps
 @override@TimestampConverter() final  DateTime? createdAt;
 @override@TimestampConverter() final  DateTime? expectedArrivalDate;
@@ -641,16 +635,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DriverPayout&&(identical(other.id, id) || other.id == id)&&(identical(other.driverId, driverId) || other.driverId == driverId)&&(identical(other.driverName, driverName) || other.driverName == driverName)&&(identical(other.connectedAccountId, connectedAccountId) || other.connectedAccountId == connectedAccountId)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.currency, currency) || other.currency == currency)&&(identical(other.status, status) || other.status == status)&&(identical(other.stripePayoutId, stripePayoutId) || other.stripePayoutId == stripePayoutId)&&(identical(other.stripeTransferId, stripeTransferId) || other.stripeTransferId == stripeTransferId)&&const DeepCollectionEquality().equals(other._transactionIds, _transactionIds)&&(identical(other.bankAccountLast4, bankAccountLast4) || other.bankAccountLast4 == bankAccountLast4)&&(identical(other.bankName, bankName) || other.bankName == bankName)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.expectedArrivalDate, expectedArrivalDate) || other.expectedArrivalDate == expectedArrivalDate)&&(identical(other.arrivedAt, arrivedAt) || other.arrivedAt == arrivedAt)&&(identical(other.failureReason, failureReason) || other.failureReason == failureReason)&&(identical(other.isInstantPayout, isInstantPayout) || other.isInstantPayout == isInstantPayout)&&const DeepCollectionEquality().equals(other._metadata, _metadata));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DriverPayout&&(identical(other.id, id) || other.id == id)&&(identical(other.driverId, driverId) || other.driverId == driverId)&&(identical(other.driverName, driverName) || other.driverName == driverName)&&(identical(other.connectedAccountId, connectedAccountId) || other.connectedAccountId == connectedAccountId)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.currency, currency) || other.currency == currency)&&(identical(other.status, status) || other.status == status)&&(identical(other.stripePayoutId, stripePayoutId) || other.stripePayoutId == stripePayoutId)&&(identical(other.stripeTransferId, stripeTransferId) || other.stripeTransferId == stripeTransferId)&&const DeepCollectionEquality().equals(other._transactionIds, _transactionIds)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.expectedArrivalDate, expectedArrivalDate) || other.expectedArrivalDate == expectedArrivalDate)&&(identical(other.arrivedAt, arrivedAt) || other.arrivedAt == arrivedAt)&&(identical(other.failureReason, failureReason) || other.failureReason == failureReason)&&(identical(other.isInstantPayout, isInstantPayout) || other.isInstantPayout == isInstantPayout)&&const DeepCollectionEquality().equals(other._metadata, _metadata));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,driverId,driverName,connectedAccountId,amount,currency,status,stripePayoutId,stripeTransferId,const DeepCollectionEquality().hash(_transactionIds),bankAccountLast4,bankName,createdAt,expectedArrivalDate,arrivedAt,failureReason,isInstantPayout,const DeepCollectionEquality().hash(_metadata));
+int get hashCode => Object.hash(runtimeType,id,driverId,driverName,connectedAccountId,amount,currency,status,stripePayoutId,stripeTransferId,const DeepCollectionEquality().hash(_transactionIds),createdAt,expectedArrivalDate,arrivedAt,failureReason,isInstantPayout,const DeepCollectionEquality().hash(_metadata));
 
 @override
 String toString() {
-  return 'DriverPayout(id: $id, driverId: $driverId, driverName: $driverName, connectedAccountId: $connectedAccountId, amount: $amount, currency: $currency, status: $status, stripePayoutId: $stripePayoutId, stripeTransferId: $stripeTransferId, transactionIds: $transactionIds, bankAccountLast4: $bankAccountLast4, bankName: $bankName, createdAt: $createdAt, expectedArrivalDate: $expectedArrivalDate, arrivedAt: $arrivedAt, failureReason: $failureReason, isInstantPayout: $isInstantPayout, metadata: $metadata)';
+  return 'DriverPayout(id: $id, driverId: $driverId, driverName: $driverName, connectedAccountId: $connectedAccountId, amount: $amount, currency: $currency, status: $status, stripePayoutId: $stripePayoutId, stripeTransferId: $stripeTransferId, transactionIds: $transactionIds, createdAt: $createdAt, expectedArrivalDate: $expectedArrivalDate, arrivedAt: $arrivedAt, failureReason: $failureReason, isInstantPayout: $isInstantPayout, metadata: $metadata)';
 }
 
 
@@ -661,7 +655,7 @@ abstract mixin class _$DriverPayoutCopyWith<$Res> implements $DriverPayoutCopyWi
   factory _$DriverPayoutCopyWith(_DriverPayout value, $Res Function(_DriverPayout) _then) = __$DriverPayoutCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String driverId, String driverName, String connectedAccountId, double amount, String currency, PayoutStatus status, String? stripePayoutId, String? stripeTransferId, List<String> transactionIds, String? bankAccountLast4, String? bankName,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? expectedArrivalDate,@TimestampConverter() DateTime? arrivedAt, String? failureReason, bool? isInstantPayout, Map<String, dynamic> metadata
+ String id, String driverId, String driverName, String connectedAccountId, double amount, String currency, PayoutStatus status, String? stripePayoutId, String? stripeTransferId, List<String> transactionIds,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? expectedArrivalDate,@TimestampConverter() DateTime? arrivedAt, String? failureReason, bool? isInstantPayout, Map<String, dynamic> metadata
 });
 
 
@@ -678,7 +672,7 @@ class __$DriverPayoutCopyWithImpl<$Res>
 
 /// Create a copy of DriverPayout
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? driverId = null,Object? driverName = null,Object? connectedAccountId = null,Object? amount = null,Object? currency = null,Object? status = null,Object? stripePayoutId = freezed,Object? stripeTransferId = freezed,Object? transactionIds = null,Object? bankAccountLast4 = freezed,Object? bankName = freezed,Object? createdAt = freezed,Object? expectedArrivalDate = freezed,Object? arrivedAt = freezed,Object? failureReason = freezed,Object? isInstantPayout = freezed,Object? metadata = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? driverId = null,Object? driverName = null,Object? connectedAccountId = null,Object? amount = null,Object? currency = null,Object? status = null,Object? stripePayoutId = freezed,Object? stripeTransferId = freezed,Object? transactionIds = null,Object? createdAt = freezed,Object? expectedArrivalDate = freezed,Object? arrivedAt = freezed,Object? failureReason = freezed,Object? isInstantPayout = freezed,Object? metadata = null,}) {
   return _then(_DriverPayout(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,driverId: null == driverId ? _self.driverId : driverId // ignore: cast_nullable_to_non_nullable
@@ -690,9 +684,7 @@ as String,status: null == status ? _self.status : status // ignore: cast_nullabl
 as PayoutStatus,stripePayoutId: freezed == stripePayoutId ? _self.stripePayoutId : stripePayoutId // ignore: cast_nullable_to_non_nullable
 as String?,stripeTransferId: freezed == stripeTransferId ? _self.stripeTransferId : stripeTransferId // ignore: cast_nullable_to_non_nullable
 as String?,transactionIds: null == transactionIds ? _self._transactionIds : transactionIds // ignore: cast_nullable_to_non_nullable
-as List<String>,bankAccountLast4: freezed == bankAccountLast4 ? _self.bankAccountLast4 : bankAccountLast4 // ignore: cast_nullable_to_non_nullable
-as String?,bankName: freezed == bankName ? _self.bankName : bankName // ignore: cast_nullable_to_non_nullable
-as String?,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as List<String>,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,expectedArrivalDate: freezed == expectedArrivalDate ? _self.expectedArrivalDate : expectedArrivalDate // ignore: cast_nullable_to_non_nullable
 as DateTime?,arrivedAt: freezed == arrivedAt ? _self.arrivedAt : arrivedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,failureReason: freezed == failureReason ? _self.failureReason : failureReason // ignore: cast_nullable_to_non_nullable
@@ -712,7 +704,7 @@ mixin _$DriverConnectedAccount {
  String get id; String get driverId; String get stripeAccountId;// Account details
  String get email; String get country; bool get chargesEnabled; bool get payoutsEnabled; bool get detailsSubmitted;// Onboarding
  bool? get onboardingCompleted;@TimestampConverter() DateTime? get onboardingCompletedAt; String? get onboardingUrl;// Bank account info (masked)
- String? get bankAccountLast4; String? get bankName; String? get accountHolderName;// Earnings summary
+ String? get accountHolderName;// Earnings summary
  double get totalEarnings; double get availableBalance; double get pendingBalance;// Timestamps
 @TimestampConverter() DateTime? get createdAt;@TimestampConverter() DateTime? get updatedAt;@TimestampConverter() DateTime? get lastPayoutAt;// Additional info
  Map<String, dynamic> get requirements; Map<String, dynamic> get metadata;
@@ -728,16 +720,16 @@ $DriverConnectedAccountCopyWith<DriverConnectedAccount> get copyWith => _$Driver
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is DriverConnectedAccount&&(identical(other.id, id) || other.id == id)&&(identical(other.driverId, driverId) || other.driverId == driverId)&&(identical(other.stripeAccountId, stripeAccountId) || other.stripeAccountId == stripeAccountId)&&(identical(other.email, email) || other.email == email)&&(identical(other.country, country) || other.country == country)&&(identical(other.chargesEnabled, chargesEnabled) || other.chargesEnabled == chargesEnabled)&&(identical(other.payoutsEnabled, payoutsEnabled) || other.payoutsEnabled == payoutsEnabled)&&(identical(other.detailsSubmitted, detailsSubmitted) || other.detailsSubmitted == detailsSubmitted)&&(identical(other.onboardingCompleted, onboardingCompleted) || other.onboardingCompleted == onboardingCompleted)&&(identical(other.onboardingCompletedAt, onboardingCompletedAt) || other.onboardingCompletedAt == onboardingCompletedAt)&&(identical(other.onboardingUrl, onboardingUrl) || other.onboardingUrl == onboardingUrl)&&(identical(other.bankAccountLast4, bankAccountLast4) || other.bankAccountLast4 == bankAccountLast4)&&(identical(other.bankName, bankName) || other.bankName == bankName)&&(identical(other.accountHolderName, accountHolderName) || other.accountHolderName == accountHolderName)&&(identical(other.totalEarnings, totalEarnings) || other.totalEarnings == totalEarnings)&&(identical(other.availableBalance, availableBalance) || other.availableBalance == availableBalance)&&(identical(other.pendingBalance, pendingBalance) || other.pendingBalance == pendingBalance)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.lastPayoutAt, lastPayoutAt) || other.lastPayoutAt == lastPayoutAt)&&const DeepCollectionEquality().equals(other.requirements, requirements)&&const DeepCollectionEquality().equals(other.metadata, metadata));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is DriverConnectedAccount&&(identical(other.id, id) || other.id == id)&&(identical(other.driverId, driverId) || other.driverId == driverId)&&(identical(other.stripeAccountId, stripeAccountId) || other.stripeAccountId == stripeAccountId)&&(identical(other.email, email) || other.email == email)&&(identical(other.country, country) || other.country == country)&&(identical(other.chargesEnabled, chargesEnabled) || other.chargesEnabled == chargesEnabled)&&(identical(other.payoutsEnabled, payoutsEnabled) || other.payoutsEnabled == payoutsEnabled)&&(identical(other.detailsSubmitted, detailsSubmitted) || other.detailsSubmitted == detailsSubmitted)&&(identical(other.onboardingCompleted, onboardingCompleted) || other.onboardingCompleted == onboardingCompleted)&&(identical(other.onboardingCompletedAt, onboardingCompletedAt) || other.onboardingCompletedAt == onboardingCompletedAt)&&(identical(other.onboardingUrl, onboardingUrl) || other.onboardingUrl == onboardingUrl)&&(identical(other.accountHolderName, accountHolderName) || other.accountHolderName == accountHolderName)&&(identical(other.totalEarnings, totalEarnings) || other.totalEarnings == totalEarnings)&&(identical(other.availableBalance, availableBalance) || other.availableBalance == availableBalance)&&(identical(other.pendingBalance, pendingBalance) || other.pendingBalance == pendingBalance)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.lastPayoutAt, lastPayoutAt) || other.lastPayoutAt == lastPayoutAt)&&const DeepCollectionEquality().equals(other.requirements, requirements)&&const DeepCollectionEquality().equals(other.metadata, metadata));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hashAll([runtimeType,id,driverId,stripeAccountId,email,country,chargesEnabled,payoutsEnabled,detailsSubmitted,onboardingCompleted,onboardingCompletedAt,onboardingUrl,bankAccountLast4,bankName,accountHolderName,totalEarnings,availableBalance,pendingBalance,createdAt,updatedAt,lastPayoutAt,const DeepCollectionEquality().hash(requirements),const DeepCollectionEquality().hash(metadata)]);
+int get hashCode => Object.hashAll([runtimeType,id,driverId,stripeAccountId,email,country,chargesEnabled,payoutsEnabled,detailsSubmitted,onboardingCompleted,onboardingCompletedAt,onboardingUrl,accountHolderName,totalEarnings,availableBalance,pendingBalance,createdAt,updatedAt,lastPayoutAt,const DeepCollectionEquality().hash(requirements),const DeepCollectionEquality().hash(metadata)]);
 
 @override
 String toString() {
-  return 'DriverConnectedAccount(id: $id, driverId: $driverId, stripeAccountId: $stripeAccountId, email: $email, country: $country, chargesEnabled: $chargesEnabled, payoutsEnabled: $payoutsEnabled, detailsSubmitted: $detailsSubmitted, onboardingCompleted: $onboardingCompleted, onboardingCompletedAt: $onboardingCompletedAt, onboardingUrl: $onboardingUrl, bankAccountLast4: $bankAccountLast4, bankName: $bankName, accountHolderName: $accountHolderName, totalEarnings: $totalEarnings, availableBalance: $availableBalance, pendingBalance: $pendingBalance, createdAt: $createdAt, updatedAt: $updatedAt, lastPayoutAt: $lastPayoutAt, requirements: $requirements, metadata: $metadata)';
+  return 'DriverConnectedAccount(id: $id, driverId: $driverId, stripeAccountId: $stripeAccountId, email: $email, country: $country, chargesEnabled: $chargesEnabled, payoutsEnabled: $payoutsEnabled, detailsSubmitted: $detailsSubmitted, onboardingCompleted: $onboardingCompleted, onboardingCompletedAt: $onboardingCompletedAt, onboardingUrl: $onboardingUrl, accountHolderName: $accountHolderName, totalEarnings: $totalEarnings, availableBalance: $availableBalance, pendingBalance: $pendingBalance, createdAt: $createdAt, updatedAt: $updatedAt, lastPayoutAt: $lastPayoutAt, requirements: $requirements, metadata: $metadata)';
 }
 
 
@@ -748,7 +740,7 @@ abstract mixin class $DriverConnectedAccountCopyWith<$Res>  {
   factory $DriverConnectedAccountCopyWith(DriverConnectedAccount value, $Res Function(DriverConnectedAccount) _then) = _$DriverConnectedAccountCopyWithImpl;
 @useResult
 $Res call({
- String id, String driverId, String stripeAccountId, String email, String country, bool chargesEnabled, bool payoutsEnabled, bool detailsSubmitted, bool? onboardingCompleted,@TimestampConverter() DateTime? onboardingCompletedAt, String? onboardingUrl, String? bankAccountLast4, String? bankName, String? accountHolderName, double totalEarnings, double availableBalance, double pendingBalance,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? updatedAt,@TimestampConverter() DateTime? lastPayoutAt, Map<String, dynamic> requirements, Map<String, dynamic> metadata
+ String id, String driverId, String stripeAccountId, String email, String country, bool chargesEnabled, bool payoutsEnabled, bool detailsSubmitted, bool? onboardingCompleted,@TimestampConverter() DateTime? onboardingCompletedAt, String? onboardingUrl, String? accountHolderName, double totalEarnings, double availableBalance, double pendingBalance,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? updatedAt,@TimestampConverter() DateTime? lastPayoutAt, Map<String, dynamic> requirements, Map<String, dynamic> metadata
 });
 
 
@@ -765,7 +757,7 @@ class _$DriverConnectedAccountCopyWithImpl<$Res>
 
 /// Create a copy of DriverConnectedAccount
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? driverId = null,Object? stripeAccountId = null,Object? email = null,Object? country = null,Object? chargesEnabled = null,Object? payoutsEnabled = null,Object? detailsSubmitted = null,Object? onboardingCompleted = freezed,Object? onboardingCompletedAt = freezed,Object? onboardingUrl = freezed,Object? bankAccountLast4 = freezed,Object? bankName = freezed,Object? accountHolderName = freezed,Object? totalEarnings = null,Object? availableBalance = null,Object? pendingBalance = null,Object? createdAt = freezed,Object? updatedAt = freezed,Object? lastPayoutAt = freezed,Object? requirements = null,Object? metadata = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? driverId = null,Object? stripeAccountId = null,Object? email = null,Object? country = null,Object? chargesEnabled = null,Object? payoutsEnabled = null,Object? detailsSubmitted = null,Object? onboardingCompleted = freezed,Object? onboardingCompletedAt = freezed,Object? onboardingUrl = freezed,Object? accountHolderName = freezed,Object? totalEarnings = null,Object? availableBalance = null,Object? pendingBalance = null,Object? createdAt = freezed,Object? updatedAt = freezed,Object? lastPayoutAt = freezed,Object? requirements = null,Object? metadata = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,driverId: null == driverId ? _self.driverId : driverId // ignore: cast_nullable_to_non_nullable
@@ -778,8 +770,6 @@ as bool,detailsSubmitted: null == detailsSubmitted ? _self.detailsSubmitted : de
 as bool,onboardingCompleted: freezed == onboardingCompleted ? _self.onboardingCompleted : onboardingCompleted // ignore: cast_nullable_to_non_nullable
 as bool?,onboardingCompletedAt: freezed == onboardingCompletedAt ? _self.onboardingCompletedAt : onboardingCompletedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,onboardingUrl: freezed == onboardingUrl ? _self.onboardingUrl : onboardingUrl // ignore: cast_nullable_to_non_nullable
-as String?,bankAccountLast4: freezed == bankAccountLast4 ? _self.bankAccountLast4 : bankAccountLast4 // ignore: cast_nullable_to_non_nullable
-as String?,bankName: freezed == bankName ? _self.bankName : bankName // ignore: cast_nullable_to_non_nullable
 as String?,accountHolderName: freezed == accountHolderName ? _self.accountHolderName : accountHolderName // ignore: cast_nullable_to_non_nullable
 as String?,totalEarnings: null == totalEarnings ? _self.totalEarnings : totalEarnings // ignore: cast_nullable_to_non_nullable
 as double,availableBalance: null == availableBalance ? _self.availableBalance : availableBalance // ignore: cast_nullable_to_non_nullable
@@ -874,10 +864,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String driverId,  String stripeAccountId,  String email,  String country,  bool chargesEnabled,  bool payoutsEnabled,  bool detailsSubmitted,  bool? onboardingCompleted, @TimestampConverter()  DateTime? onboardingCompletedAt,  String? onboardingUrl,  String? bankAccountLast4,  String? bankName,  String? accountHolderName,  double totalEarnings,  double availableBalance,  double pendingBalance, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt, @TimestampConverter()  DateTime? lastPayoutAt,  Map<String, dynamic> requirements,  Map<String, dynamic> metadata)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String driverId,  String stripeAccountId,  String email,  String country,  bool chargesEnabled,  bool payoutsEnabled,  bool detailsSubmitted,  bool? onboardingCompleted, @TimestampConverter()  DateTime? onboardingCompletedAt,  String? onboardingUrl,  String? accountHolderName,  double totalEarnings,  double availableBalance,  double pendingBalance, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt, @TimestampConverter()  DateTime? lastPayoutAt,  Map<String, dynamic> requirements,  Map<String, dynamic> metadata)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _DriverConnectedAccount() when $default != null:
-return $default(_that.id,_that.driverId,_that.stripeAccountId,_that.email,_that.country,_that.chargesEnabled,_that.payoutsEnabled,_that.detailsSubmitted,_that.onboardingCompleted,_that.onboardingCompletedAt,_that.onboardingUrl,_that.bankAccountLast4,_that.bankName,_that.accountHolderName,_that.totalEarnings,_that.availableBalance,_that.pendingBalance,_that.createdAt,_that.updatedAt,_that.lastPayoutAt,_that.requirements,_that.metadata);case _:
+return $default(_that.id,_that.driverId,_that.stripeAccountId,_that.email,_that.country,_that.chargesEnabled,_that.payoutsEnabled,_that.detailsSubmitted,_that.onboardingCompleted,_that.onboardingCompletedAt,_that.onboardingUrl,_that.accountHolderName,_that.totalEarnings,_that.availableBalance,_that.pendingBalance,_that.createdAt,_that.updatedAt,_that.lastPayoutAt,_that.requirements,_that.metadata);case _:
   return orElse();
 
 }
@@ -895,10 +885,10 @@ return $default(_that.id,_that.driverId,_that.stripeAccountId,_that.email,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String driverId,  String stripeAccountId,  String email,  String country,  bool chargesEnabled,  bool payoutsEnabled,  bool detailsSubmitted,  bool? onboardingCompleted, @TimestampConverter()  DateTime? onboardingCompletedAt,  String? onboardingUrl,  String? bankAccountLast4,  String? bankName,  String? accountHolderName,  double totalEarnings,  double availableBalance,  double pendingBalance, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt, @TimestampConverter()  DateTime? lastPayoutAt,  Map<String, dynamic> requirements,  Map<String, dynamic> metadata)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String driverId,  String stripeAccountId,  String email,  String country,  bool chargesEnabled,  bool payoutsEnabled,  bool detailsSubmitted,  bool? onboardingCompleted, @TimestampConverter()  DateTime? onboardingCompletedAt,  String? onboardingUrl,  String? accountHolderName,  double totalEarnings,  double availableBalance,  double pendingBalance, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt, @TimestampConverter()  DateTime? lastPayoutAt,  Map<String, dynamic> requirements,  Map<String, dynamic> metadata)  $default,) {final _that = this;
 switch (_that) {
 case _DriverConnectedAccount():
-return $default(_that.id,_that.driverId,_that.stripeAccountId,_that.email,_that.country,_that.chargesEnabled,_that.payoutsEnabled,_that.detailsSubmitted,_that.onboardingCompleted,_that.onboardingCompletedAt,_that.onboardingUrl,_that.bankAccountLast4,_that.bankName,_that.accountHolderName,_that.totalEarnings,_that.availableBalance,_that.pendingBalance,_that.createdAt,_that.updatedAt,_that.lastPayoutAt,_that.requirements,_that.metadata);case _:
+return $default(_that.id,_that.driverId,_that.stripeAccountId,_that.email,_that.country,_that.chargesEnabled,_that.payoutsEnabled,_that.detailsSubmitted,_that.onboardingCompleted,_that.onboardingCompletedAt,_that.onboardingUrl,_that.accountHolderName,_that.totalEarnings,_that.availableBalance,_that.pendingBalance,_that.createdAt,_that.updatedAt,_that.lastPayoutAt,_that.requirements,_that.metadata);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -915,10 +905,10 @@ return $default(_that.id,_that.driverId,_that.stripeAccountId,_that.email,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String driverId,  String stripeAccountId,  String email,  String country,  bool chargesEnabled,  bool payoutsEnabled,  bool detailsSubmitted,  bool? onboardingCompleted, @TimestampConverter()  DateTime? onboardingCompletedAt,  String? onboardingUrl,  String? bankAccountLast4,  String? bankName,  String? accountHolderName,  double totalEarnings,  double availableBalance,  double pendingBalance, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt, @TimestampConverter()  DateTime? lastPayoutAt,  Map<String, dynamic> requirements,  Map<String, dynamic> metadata)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String driverId,  String stripeAccountId,  String email,  String country,  bool chargesEnabled,  bool payoutsEnabled,  bool detailsSubmitted,  bool? onboardingCompleted, @TimestampConverter()  DateTime? onboardingCompletedAt,  String? onboardingUrl,  String? accountHolderName,  double totalEarnings,  double availableBalance,  double pendingBalance, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt, @TimestampConverter()  DateTime? lastPayoutAt,  Map<String, dynamic> requirements,  Map<String, dynamic> metadata)?  $default,) {final _that = this;
 switch (_that) {
 case _DriverConnectedAccount() when $default != null:
-return $default(_that.id,_that.driverId,_that.stripeAccountId,_that.email,_that.country,_that.chargesEnabled,_that.payoutsEnabled,_that.detailsSubmitted,_that.onboardingCompleted,_that.onboardingCompletedAt,_that.onboardingUrl,_that.bankAccountLast4,_that.bankName,_that.accountHolderName,_that.totalEarnings,_that.availableBalance,_that.pendingBalance,_that.createdAt,_that.updatedAt,_that.lastPayoutAt,_that.requirements,_that.metadata);case _:
+return $default(_that.id,_that.driverId,_that.stripeAccountId,_that.email,_that.country,_that.chargesEnabled,_that.payoutsEnabled,_that.detailsSubmitted,_that.onboardingCompleted,_that.onboardingCompletedAt,_that.onboardingUrl,_that.accountHolderName,_that.totalEarnings,_that.availableBalance,_that.pendingBalance,_that.createdAt,_that.updatedAt,_that.lastPayoutAt,_that.requirements,_that.metadata);case _:
   return null;
 
 }
@@ -930,7 +920,7 @@ return $default(_that.id,_that.driverId,_that.stripeAccountId,_that.email,_that.
 @JsonSerializable()
 
 class _DriverConnectedAccount extends DriverConnectedAccount {
-  const _DriverConnectedAccount({required this.id, required this.driverId, required this.stripeAccountId, required this.email, required this.country, required this.chargesEnabled, required this.payoutsEnabled, required this.detailsSubmitted, this.onboardingCompleted, @TimestampConverter() this.onboardingCompletedAt, this.onboardingUrl, this.bankAccountLast4, this.bankName, this.accountHolderName, this.totalEarnings = 0.0, this.availableBalance = 0.0, this.pendingBalance = 0.0, @TimestampConverter() this.createdAt, @TimestampConverter() this.updatedAt, @TimestampConverter() this.lastPayoutAt, final  Map<String, dynamic> requirements = const {}, final  Map<String, dynamic> metadata = const {}}): _requirements = requirements,_metadata = metadata,super._();
+  const _DriverConnectedAccount({required this.id, required this.driverId, required this.stripeAccountId, required this.email, required this.country, required this.chargesEnabled, required this.payoutsEnabled, required this.detailsSubmitted, this.onboardingCompleted, @TimestampConverter() this.onboardingCompletedAt, this.onboardingUrl, this.accountHolderName, this.totalEarnings = 0.0, this.availableBalance = 0.0, this.pendingBalance = 0.0, @TimestampConverter() this.createdAt, @TimestampConverter() this.updatedAt, @TimestampConverter() this.lastPayoutAt, final  Map<String, dynamic> requirements = const {}, final  Map<String, dynamic> metadata = const {}}): _requirements = requirements,_metadata = metadata,super._();
   factory _DriverConnectedAccount.fromJson(Map<String, dynamic> json) => _$DriverConnectedAccountFromJson(json);
 
 @override final  String id;
@@ -947,8 +937,6 @@ class _DriverConnectedAccount extends DriverConnectedAccount {
 @override@TimestampConverter() final  DateTime? onboardingCompletedAt;
 @override final  String? onboardingUrl;
 // Bank account info (masked)
-@override final  String? bankAccountLast4;
-@override final  String? bankName;
 @override final  String? accountHolderName;
 // Earnings summary
 @override@JsonKey() final  double totalEarnings;
@@ -988,16 +976,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DriverConnectedAccount&&(identical(other.id, id) || other.id == id)&&(identical(other.driverId, driverId) || other.driverId == driverId)&&(identical(other.stripeAccountId, stripeAccountId) || other.stripeAccountId == stripeAccountId)&&(identical(other.email, email) || other.email == email)&&(identical(other.country, country) || other.country == country)&&(identical(other.chargesEnabled, chargesEnabled) || other.chargesEnabled == chargesEnabled)&&(identical(other.payoutsEnabled, payoutsEnabled) || other.payoutsEnabled == payoutsEnabled)&&(identical(other.detailsSubmitted, detailsSubmitted) || other.detailsSubmitted == detailsSubmitted)&&(identical(other.onboardingCompleted, onboardingCompleted) || other.onboardingCompleted == onboardingCompleted)&&(identical(other.onboardingCompletedAt, onboardingCompletedAt) || other.onboardingCompletedAt == onboardingCompletedAt)&&(identical(other.onboardingUrl, onboardingUrl) || other.onboardingUrl == onboardingUrl)&&(identical(other.bankAccountLast4, bankAccountLast4) || other.bankAccountLast4 == bankAccountLast4)&&(identical(other.bankName, bankName) || other.bankName == bankName)&&(identical(other.accountHolderName, accountHolderName) || other.accountHolderName == accountHolderName)&&(identical(other.totalEarnings, totalEarnings) || other.totalEarnings == totalEarnings)&&(identical(other.availableBalance, availableBalance) || other.availableBalance == availableBalance)&&(identical(other.pendingBalance, pendingBalance) || other.pendingBalance == pendingBalance)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.lastPayoutAt, lastPayoutAt) || other.lastPayoutAt == lastPayoutAt)&&const DeepCollectionEquality().equals(other._requirements, _requirements)&&const DeepCollectionEquality().equals(other._metadata, _metadata));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DriverConnectedAccount&&(identical(other.id, id) || other.id == id)&&(identical(other.driverId, driverId) || other.driverId == driverId)&&(identical(other.stripeAccountId, stripeAccountId) || other.stripeAccountId == stripeAccountId)&&(identical(other.email, email) || other.email == email)&&(identical(other.country, country) || other.country == country)&&(identical(other.chargesEnabled, chargesEnabled) || other.chargesEnabled == chargesEnabled)&&(identical(other.payoutsEnabled, payoutsEnabled) || other.payoutsEnabled == payoutsEnabled)&&(identical(other.detailsSubmitted, detailsSubmitted) || other.detailsSubmitted == detailsSubmitted)&&(identical(other.onboardingCompleted, onboardingCompleted) || other.onboardingCompleted == onboardingCompleted)&&(identical(other.onboardingCompletedAt, onboardingCompletedAt) || other.onboardingCompletedAt == onboardingCompletedAt)&&(identical(other.onboardingUrl, onboardingUrl) || other.onboardingUrl == onboardingUrl)&&(identical(other.accountHolderName, accountHolderName) || other.accountHolderName == accountHolderName)&&(identical(other.totalEarnings, totalEarnings) || other.totalEarnings == totalEarnings)&&(identical(other.availableBalance, availableBalance) || other.availableBalance == availableBalance)&&(identical(other.pendingBalance, pendingBalance) || other.pendingBalance == pendingBalance)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.lastPayoutAt, lastPayoutAt) || other.lastPayoutAt == lastPayoutAt)&&const DeepCollectionEquality().equals(other._requirements, _requirements)&&const DeepCollectionEquality().equals(other._metadata, _metadata));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hashAll([runtimeType,id,driverId,stripeAccountId,email,country,chargesEnabled,payoutsEnabled,detailsSubmitted,onboardingCompleted,onboardingCompletedAt,onboardingUrl,bankAccountLast4,bankName,accountHolderName,totalEarnings,availableBalance,pendingBalance,createdAt,updatedAt,lastPayoutAt,const DeepCollectionEquality().hash(_requirements),const DeepCollectionEquality().hash(_metadata)]);
+int get hashCode => Object.hashAll([runtimeType,id,driverId,stripeAccountId,email,country,chargesEnabled,payoutsEnabled,detailsSubmitted,onboardingCompleted,onboardingCompletedAt,onboardingUrl,accountHolderName,totalEarnings,availableBalance,pendingBalance,createdAt,updatedAt,lastPayoutAt,const DeepCollectionEquality().hash(_requirements),const DeepCollectionEquality().hash(_metadata)]);
 
 @override
 String toString() {
-  return 'DriverConnectedAccount(id: $id, driverId: $driverId, stripeAccountId: $stripeAccountId, email: $email, country: $country, chargesEnabled: $chargesEnabled, payoutsEnabled: $payoutsEnabled, detailsSubmitted: $detailsSubmitted, onboardingCompleted: $onboardingCompleted, onboardingCompletedAt: $onboardingCompletedAt, onboardingUrl: $onboardingUrl, bankAccountLast4: $bankAccountLast4, bankName: $bankName, accountHolderName: $accountHolderName, totalEarnings: $totalEarnings, availableBalance: $availableBalance, pendingBalance: $pendingBalance, createdAt: $createdAt, updatedAt: $updatedAt, lastPayoutAt: $lastPayoutAt, requirements: $requirements, metadata: $metadata)';
+  return 'DriverConnectedAccount(id: $id, driverId: $driverId, stripeAccountId: $stripeAccountId, email: $email, country: $country, chargesEnabled: $chargesEnabled, payoutsEnabled: $payoutsEnabled, detailsSubmitted: $detailsSubmitted, onboardingCompleted: $onboardingCompleted, onboardingCompletedAt: $onboardingCompletedAt, onboardingUrl: $onboardingUrl, accountHolderName: $accountHolderName, totalEarnings: $totalEarnings, availableBalance: $availableBalance, pendingBalance: $pendingBalance, createdAt: $createdAt, updatedAt: $updatedAt, lastPayoutAt: $lastPayoutAt, requirements: $requirements, metadata: $metadata)';
 }
 
 
@@ -1008,7 +996,7 @@ abstract mixin class _$DriverConnectedAccountCopyWith<$Res> implements $DriverCo
   factory _$DriverConnectedAccountCopyWith(_DriverConnectedAccount value, $Res Function(_DriverConnectedAccount) _then) = __$DriverConnectedAccountCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String driverId, String stripeAccountId, String email, String country, bool chargesEnabled, bool payoutsEnabled, bool detailsSubmitted, bool? onboardingCompleted,@TimestampConverter() DateTime? onboardingCompletedAt, String? onboardingUrl, String? bankAccountLast4, String? bankName, String? accountHolderName, double totalEarnings, double availableBalance, double pendingBalance,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? updatedAt,@TimestampConverter() DateTime? lastPayoutAt, Map<String, dynamic> requirements, Map<String, dynamic> metadata
+ String id, String driverId, String stripeAccountId, String email, String country, bool chargesEnabled, bool payoutsEnabled, bool detailsSubmitted, bool? onboardingCompleted,@TimestampConverter() DateTime? onboardingCompletedAt, String? onboardingUrl, String? accountHolderName, double totalEarnings, double availableBalance, double pendingBalance,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? updatedAt,@TimestampConverter() DateTime? lastPayoutAt, Map<String, dynamic> requirements, Map<String, dynamic> metadata
 });
 
 
@@ -1025,7 +1013,7 @@ class __$DriverConnectedAccountCopyWithImpl<$Res>
 
 /// Create a copy of DriverConnectedAccount
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? driverId = null,Object? stripeAccountId = null,Object? email = null,Object? country = null,Object? chargesEnabled = null,Object? payoutsEnabled = null,Object? detailsSubmitted = null,Object? onboardingCompleted = freezed,Object? onboardingCompletedAt = freezed,Object? onboardingUrl = freezed,Object? bankAccountLast4 = freezed,Object? bankName = freezed,Object? accountHolderName = freezed,Object? totalEarnings = null,Object? availableBalance = null,Object? pendingBalance = null,Object? createdAt = freezed,Object? updatedAt = freezed,Object? lastPayoutAt = freezed,Object? requirements = null,Object? metadata = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? driverId = null,Object? stripeAccountId = null,Object? email = null,Object? country = null,Object? chargesEnabled = null,Object? payoutsEnabled = null,Object? detailsSubmitted = null,Object? onboardingCompleted = freezed,Object? onboardingCompletedAt = freezed,Object? onboardingUrl = freezed,Object? accountHolderName = freezed,Object? totalEarnings = null,Object? availableBalance = null,Object? pendingBalance = null,Object? createdAt = freezed,Object? updatedAt = freezed,Object? lastPayoutAt = freezed,Object? requirements = null,Object? metadata = null,}) {
   return _then(_DriverConnectedAccount(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,driverId: null == driverId ? _self.driverId : driverId // ignore: cast_nullable_to_non_nullable
@@ -1038,8 +1026,6 @@ as bool,detailsSubmitted: null == detailsSubmitted ? _self.detailsSubmitted : de
 as bool,onboardingCompleted: freezed == onboardingCompleted ? _self.onboardingCompleted : onboardingCompleted // ignore: cast_nullable_to_non_nullable
 as bool?,onboardingCompletedAt: freezed == onboardingCompletedAt ? _self.onboardingCompletedAt : onboardingCompletedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,onboardingUrl: freezed == onboardingUrl ? _self.onboardingUrl : onboardingUrl // ignore: cast_nullable_to_non_nullable
-as String?,bankAccountLast4: freezed == bankAccountLast4 ? _self.bankAccountLast4 : bankAccountLast4 // ignore: cast_nullable_to_non_nullable
-as String?,bankName: freezed == bankName ? _self.bankName : bankName // ignore: cast_nullable_to_non_nullable
 as String?,accountHolderName: freezed == accountHolderName ? _self.accountHolderName : accountHolderName // ignore: cast_nullable_to_non_nullable
 as String?,totalEarnings: null == totalEarnings ? _self.totalEarnings : totalEarnings // ignore: cast_nullable_to_non_nullable
 as double,availableBalance: null == availableBalance ? _self.availableBalance : availableBalance // ignore: cast_nullable_to_non_nullable

@@ -12,7 +12,7 @@ import 'package:sport_connect/core/widgets/premium_text_field.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/messaging/models/message_model.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
-import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
+import 'package:sport_connect/features/profile/view_models/user_search_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
@@ -29,7 +29,6 @@ class ChatListScreen extends ConsumerStatefulWidget {
 class _ChatListScreenState extends ConsumerState<ChatListScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  StreamSubscription? _incomingCallSubscription;
 
   @override
   void initState() {
@@ -40,13 +39,13 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
   @override
   void dispose() {
     _tabController.dispose();
-    _incomingCallSubscription?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final uiState = ref.watch(chatListUiViewModelProvider);
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -59,7 +58,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
               child: PremiumSearchField(
-                hint: AppLocalizations.of(context).searchConversations,
+                hint: l10n.searchChatsOrPeople,
                 onChanged: (value) => ref
                     .read(chatListUiViewModelProvider.notifier)
                     .setSearchQuery(value),
@@ -83,18 +82,6 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
           ],
         ),
       ),
-      floatingActionButton:
-          FloatingActionButton(
-            heroTag: 'chat_list_fab',
-            onPressed: () => _showNewChatBottomSheet(context),
-            backgroundColor: AppColors.primary,
-            child: Icon(Icons.edit_rounded, color: Colors.white, size: 24.sp),
-          ).animate().scale(
-            begin: const Offset(0, 0),
-            duration: 400.ms,
-            delay: 300.ms,
-            curve: Curves.easeOutBack,
-          ),
     );
   }
 
@@ -117,42 +104,27 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
             ],
           );
 
-    return RefreshIndicator(
+    return RefreshIndicator.adaptive(
       onRefresh: () => _refreshChatsForUser(userId),
       child: refreshableChild,
     );
   }
 
   Widget _buildHeader() {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            AppLocalizations.of(context).messages,
-            style: TextStyle(
-              fontSize: 28.sp,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(20.w, 24.h, 20.w, 8.h),
+        child: Text(
+          'Chats',
+          style: TextStyle(
+            fontSize: 32.sp,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
+            letterSpacing: -0.8,
+            height: 1.0,
           ),
-          Row(
-            children: [
-              IconButton(
-                tooltip: AppLocalizations.of(context).searchUsersTooltip,
-                onPressed: () {
-                  context.push(AppRoutes.profileSearch.path);
-                },
-                icon: Icon(
-                  Icons.person_search_outlined,
-                  color: AppColors.textSecondary,
-                  size: 24.sp,
-                ),
-              ),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -207,6 +179,9 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
         }
 
         final chatsAsync = ref.watch(userChatsProvider(currentUser.uid));
+        final peopleAsync = searchQuery.length >= 2
+            ? ref.watch(searchResultsProvider(searchQuery))
+            : const AsyncData(<UserModel>[]);
 
         return chatsAsync.when(
           loading: () =>
@@ -231,16 +206,49 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
             ),
           ),
           data: (chats) {
+            final blockedIds = currentUser.blockedUsers.toSet();
             final directChats = chats
                 .where((c) => c.type == ChatType.private)
                 .where((c) {
+                  final other = c.getOtherParticipant(currentUser.uid);
+                  final otherId = (other != null && other.odid.isNotEmpty)
+                      ? other.odid
+                      : c.participantIds.firstWhere(
+                          (id) => id != currentUser.uid,
+                          orElse: () => '',
+                        );
+
+                  if (searchQuery.isNotEmpty && blockedIds.contains(otherId)) {
+                    return false;
+                  }
+
                   if (searchQuery.isEmpty) return true;
                   final title = c.getChatTitle(currentUser.uid).toLowerCase();
                   return title.contains(searchQuery);
                 })
                 .toList();
 
-            if (directChats.isEmpty) {
+            final peopleMatches = (peopleAsync.value ?? const <UserModel>[])
+                .where((user) {
+                  if (user.uid == currentUser.uid) {
+                    return false;
+                  }
+                  if (blockedIds.contains(user.uid)) {
+                    return false;
+                  }
+                  if (searchQuery.isEmpty) {
+                    return false;
+                  }
+                  final name = user.displayName.toLowerCase();
+                  final email = user.email.toLowerCase();
+                  return name.contains(searchQuery) ||
+                      email.contains(searchQuery);
+                })
+                .toList(growable: false);
+
+            final showPeopleSearchBlock = searchQuery.length >= 2;
+
+            if (directChats.isEmpty && !showPeopleSearchBlock) {
               return _withChatPullToRefresh(
                 userId: currentUser.uid,
                 child: _buildEmptyState(
@@ -256,14 +264,23 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
               child: ListView.separated(
                 padding: EdgeInsets.symmetric(vertical: 16.h),
                 physics: const AlwaysScrollableScrollPhysics(),
-                itemCount: directChats.length,
+                itemCount: directChats.length + (showPeopleSearchBlock ? 1 : 0),
                 separatorBuilder: (context, index) => Divider(
                   height: 1,
                   indent: 88.w,
                   color: AppColors.border.withValues(alpha: 0.5),
                 ),
                 itemBuilder: (context, index) {
-                  final chat = directChats[index];
+                  if (showPeopleSearchBlock && index == 0) {
+                    return _buildPeopleSearchSection(
+                      peopleAsync: peopleAsync,
+                      peopleMatches: peopleMatches,
+                      currentUser: currentUser,
+                    );
+                  }
+
+                  final chatIndex = showPeopleSearchBlock ? index - 1 : index;
+                  final chat = directChats[chatIndex];
                   return _buildSwipeableChatTile(chat, currentUser.uid)
                       .animate()
                       .fadeIn(
@@ -277,6 +294,182 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
           },
         );
       },
+    );
+  }
+
+  Future<void> _openChatWithUser(UserModel currentUser, UserModel user) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierLabel: AppLocalizations.of(context).creatingChatLabel,
+      builder: (context) =>
+          const Center(child: CircularProgressIndicator.adaptive()),
+    );
+
+    try {
+      final chatModel = await ref.read(
+        getOrCreateChatProvider(
+          userId1: currentUser.uid,
+          userId2: user.uid,
+          userName1: currentUser.displayName,
+          userName2: user.displayName,
+          userPhoto1: currentUser.photoUrl,
+          userPhoto2: user.photoUrl,
+        ).future,
+      );
+
+      if (!mounted) return;
+      context.pop();
+      context.pushNamed(
+        AppRoutes.chatDetail.name,
+        pathParameters: {'id': chatModel.id},
+        queryParameters: {
+          'receiverId': user.uid,
+          'receiverName': user.displayName,
+          if (user.photoUrl != null) 'receiverPhotoUrl': user.photoUrl!,
+        },
+        extra: user,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      context.pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).failedToCreateChatTryAgain,
+          ),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+        ),
+      );
+    }
+  }
+
+  Widget _buildPeopleSearchSection({
+    required AsyncValue<List<UserModel>> peopleAsync,
+    required List<UserModel> peopleMatches,
+    required UserModel currentUser,
+  }) {
+    if (peopleAsync.isLoading) {
+      return Padding(
+        padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 8.h),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 16.w,
+              height: 16.w,
+              child: const CircularProgressIndicator.adaptive(strokeWidth: 2),
+            ),
+            SizedBox(width: 10.w),
+            Text(
+              AppLocalizations.of(context).peopleResults,
+              style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (peopleMatches.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: EdgeInsets.fromLTRB(20.w, 0, 20.w, 10.h),
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14.r),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.45)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.person_search_rounded,
+                size: 16.sp,
+                color: AppColors.primary,
+              ),
+              SizedBox(width: 6.w),
+              Text(
+                AppLocalizations.of(context).peopleResults,
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(999.r),
+                ),
+                child: Text(
+                  '${peopleMatches.length}',
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8.h),
+          ...peopleMatches.map((user) {
+            return Container(
+              margin: EdgeInsets.only(bottom: 6.h),
+              decoration: BoxDecoration(
+                color: AppColors.cardBg,
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(
+                  color: AppColors.border.withValues(alpha: 0.4),
+                ),
+              ),
+              child: ListTile(
+                dense: true,
+                contentPadding: EdgeInsets.symmetric(horizontal: 10.w),
+                leading: user.photoUrl != null
+                    ? CircleAvatar(
+                        radius: 18.r,
+                        backgroundImage: NetworkImage(user.photoUrl!),
+                      )
+                    : PremiumAvatar(name: user.displayName, size: 36),
+                title: Text(
+                  user.displayName,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                subtitle: Text(
+                  user.email,
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    color: AppColors.textTertiary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                trailing: Icon(
+                  Icons.north_east_rounded,
+                  size: 18.sp,
+                  color: AppColors.primary,
+                ),
+                onTap: () => _openChatWithUser(currentUser, user),
+              ),
+            );
+          }),
+        ],
+      ),
     );
   }
 
@@ -305,7 +498,12 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
           ),
           data: (chats) {
             final groupChats = chats
-                .where((c) => c.type == ChatType.support || c.groupName != null)
+                .where(
+                  (c) =>
+                      c.type == ChatType.support ||
+                      c.type == ChatType.eventGroup ||
+                      c.groupName != null,
+                )
                 .where((c) => c.type != ChatType.rideGroup)
                 .where((c) {
                   if (searchQuery.isEmpty) return true;
@@ -581,14 +779,28 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
                 duration: 2.seconds,
               ),
             );
-          } catch (_) {}
+          } catch (_) {
+            messenger.showSnackBar(
+              SnackBar(
+                content: Text(
+                  AppLocalizations.of(context).couldNotClearChatTryAgain,
+                ),
+                behavior: SnackBarBehavior.floating,
+                backgroundColor: AppColors.error,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                duration: 2.seconds,
+              ),
+            );
+          }
           return false; // card stays in place
         } else {
           // Confirm before deleting
           final confirmed = await showDialog<bool>(
             context: context,
             barrierLabel: AppLocalizations.of(context).deleteConversationTitle,
-            builder: (ctx) => AlertDialog(
+            builder: (ctx) => AlertDialog.adaptive(
               title: Text(AppLocalizations.of(context).deleteConversationTitle),
               content: Text(
                 AppLocalizations.of(context).deleteConversationMessage,
@@ -609,10 +821,35 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
               ],
             ),
           );
-          if (confirmed == true) {
+          if (confirmed != true) {
+            return false;
+          }
+
+          try {
+            await ref
+                .read(chatActionsViewModelProvider)
+                .clearChat(chatId: chat.id, userId: currentUserId);
+
+            if (!mounted) return false;
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(AppLocalizations.of(context).conversationRemoved),
+                behavior: SnackBarBehavior.floating,
+                backgroundColor: AppColors.success,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                duration: 2.seconds,
+              ),
+            );
+            return true;
+          } catch (_) {
+            if (!mounted) return false;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  AppLocalizations.of(context).couldNotClearChatTryAgain,
+                ),
                 behavior: SnackBarBehavior.floating,
                 backgroundColor: AppColors.error,
                 shape: RoundedRectangleBorder(
@@ -621,8 +858,8 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
                 duration: 2.seconds,
               ),
             );
+            return false;
           }
-          return false; // always bounce back (no backend delete method yet)
         }
       },
       child: _buildChatTile(chat, currentUserId),
@@ -633,25 +870,41 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
     final title = chat.getChatTitle(currentUserId);
     final photoUrl = chat.getChatPhoto(currentUserId);
     final unreadCount = chat.getUnreadCount(currentUserId);
-    final isOnline = chat.isOtherOnline(currentUserId);
     final lastMessage =
         chat.lastMessageContent ?? AppLocalizations.of(context).noMessagesYet;
     final lastMessageTime = _formatTime(chat.lastMessageAt);
     final otherParticipant = chat.getOtherParticipant(currentUserId);
+    final fallbackParticipantId = chat.participantIds.firstWhere(
+      (id) => id != currentUserId,
+      orElse: () => '',
+    );
 
     return InkWell(
       onTap: () {
         // Create minimal UserModel for the other participant
         final receiverUser = UserModel.rider(
-          uid: otherParticipant?.odid ?? '',
+          uid: otherParticipant?.odid ?? fallbackParticipantId,
           email: '', // Not needed for chat display
           displayName: title,
           photoUrl: photoUrl,
         );
 
+        // Route to correct screen based on chat type
+        final routeName = switch (chat.type) {
+          ChatType.rideGroup => AppRoutes.chatGroup.name,
+          ChatType.eventGroup => AppRoutes.chatGroup.name,
+          _ => AppRoutes.chatDetail.name,
+        };
+
         context.pushNamed(
-          AppRoutes.chatDetail.name,
+          routeName,
           pathParameters: {'id': chat.id},
+          queryParameters: {
+            'receiverId': receiverUser.uid,
+            'receiverName': receiverUser.displayName,
+            if (receiverUser.photoUrl != null)
+              'receiverPhotoUrl': receiverUser.photoUrl!,
+          },
           extra: receiverUser,
         );
       },
@@ -668,23 +921,6 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
                         backgroundImage: NetworkImage(photoUrl),
                       )
                     : PremiumAvatar(name: title, size: 56),
-                if (isOnline)
-                  Positioned(
-                    right: 0,
-                    bottom: 0,
-                    child: Container(
-                      width: 14.w,
-                      height: 14.w,
-                      decoration: BoxDecoration(
-                        color: AppColors.success,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppColors.background,
-                          width: 2,
-                        ),
-                      ),
-                    ),
-                  ),
               ],
             ),
             SizedBox(width: 12.w),
@@ -795,289 +1031,5 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
     } else {
       return '${dateTime.day}/${dateTime.month}';
     }
-  }
-
-  void _showNewChatBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => const _NewChatBottomSheet(),
-    );
-  }
-}
-
-/// Separate stateful widget for new chat bottom sheet with user search
-class _NewChatBottomSheet extends ConsumerWidget {
-  const _NewChatBottomSheet();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final searchState = ref.watch(newChatSearchViewModelProvider);
-
-    Future<void> navigateToChat(UserModel user) async {
-      final currentUser = ref.read(currentUserProvider).value;
-      if (currentUser == null) return;
-
-      // Show loading indicator
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        barrierLabel: AppLocalizations.of(context).creatingChatLabel,
-        builder: (context) => const Center(child: CircularProgressIndicator()),
-      );
-
-      try {
-        // Get or create the chat using the repository
-        final chatModel = await ref.read(
-          getOrCreateChatProvider(
-            userId1: currentUser.uid,
-            userId2: user.uid,
-            userName1: currentUser.displayName,
-            userName2: user.displayName,
-            userPhoto1: currentUser.photoUrl,
-            userPhoto2: user.photoUrl,
-          ).future,
-        );
-
-        if (!context.mounted) return;
-        // Close loading dialog
-        context.pop();
-        // Close bottom sheet
-        context.pop();
-
-        // Navigate to the actual chat with the real chat ID from Firestore
-        context.pushNamed(
-          AppRoutes.chatDetail.name,
-          pathParameters: {'id': chatModel.id},
-          extra: user,
-        );
-      } catch (e) {
-        if (!context.mounted) return;
-        // Close loading dialog
-        context.pop();
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(context).failedToCreateChatTryAgain,
-            ),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-          ),
-        );
-      }
-    }
-
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.7,
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-      ),
-      child: Column(
-        children: [
-          // Handle bar
-          Container(
-            margin: EdgeInsets.only(top: 12.h),
-            width: 40.w,
-            height: 4.h,
-            decoration: BoxDecoration(
-              color: AppColors.divider,
-              borderRadius: BorderRadius.circular(2.r),
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.all(20.w),
-            child: Row(
-              children: [
-                Icon(Icons.edit_rounded, color: AppColors.primary, size: 24.sp),
-                SizedBox(width: 12.w),
-                Text(
-                  AppLocalizations.of(context).newMessage,
-                  style: TextStyle(
-                    fontSize: 20.sp,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const Spacer(),
-                IconButton(
-                  tooltip: AppLocalizations.of(context).actionClose,
-                  onPressed: () => context.pop(),
-                  icon: Icon(Icons.close, color: AppColors.textSecondary),
-                ),
-              ],
-            ),
-          ),
-
-          // Search field for users
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.w),
-            child: TextField(
-              key: ValueKey(searchState.searchFieldKey),
-              onChanged: (value) => ref
-                  .read(newChatSearchViewModelProvider.notifier)
-                  .scheduleSearch(value),
-              decoration: InputDecoration(
-                hintText: AppLocalizations.of(context).searchUsersByName,
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: searchState.searchQuery.isNotEmpty
-                    ? IconButton(
-                        tooltip: AppLocalizations.of(
-                          context,
-                        ).clearSearchTooltip,
-                        icon: const Icon(Icons.clear),
-                        onPressed: () => ref
-                            .read(newChatSearchViewModelProvider.notifier)
-                            .clearSearch(),
-                      )
-                    : null,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-              ),
-            ),
-          ),
-
-          SizedBox(height: 16.h),
-
-          // Search results
-          Expanded(
-            child: _buildSearchContent(
-              context,
-              ref,
-              searchState,
-              navigateToChat,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSearchContent(
-    BuildContext context,
-    WidgetRef ref,
-    NewChatSearchState searchState,
-    Future<void> Function(UserModel user) navigateToChat,
-  ) {
-    if (searchState.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (searchState.error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 48.sp, color: AppColors.error),
-            SizedBox(height: 16.h),
-            Text(
-              searchState.error!,
-              style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (searchState.searchQuery.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.person_search_rounded,
-              size: 48.sp,
-              color: AppColors.textSecondary,
-            ),
-            SizedBox(height: 16.h),
-            Text(
-              AppLocalizations.of(context).searchForAUserTo,
-              style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
-            ),
-            SizedBox(height: 8.h),
-            Text(
-              AppLocalizations.of(context).typeAtLeast2Characters,
-              style: TextStyle(fontSize: 12.sp, color: AppColors.textTertiary),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (searchState.searchResults.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.search_off_rounded,
-              size: 48.sp,
-              color: AppColors.textSecondary,
-            ),
-            SizedBox(height: 16.h),
-            Text(
-              AppLocalizations.of(
-                context,
-              ).noUsersFoundForValue(searchState.searchQuery),
-              style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: () async {
-        ref
-            .read(newChatSearchViewModelProvider.notifier)
-            .scheduleSearch(searchState.searchQuery);
-        await Future<void>.delayed(const Duration(milliseconds: 250));
-      },
-      child: ListView.separated(
-        padding: EdgeInsets.symmetric(horizontal: 20.w),
-        physics: const AlwaysScrollableScrollPhysics(),
-        itemCount: searchState.searchResults.length,
-        separatorBuilder: (context, index) =>
-            Divider(height: 1, color: AppColors.border.withValues(alpha: 0.5)),
-        itemBuilder: (context, index) {
-          final user = searchState.searchResults[index];
-          return _buildUserTile(user, navigateToChat);
-        },
-      ),
-    );
-  }
-
-  Widget _buildUserTile(
-    UserModel user,
-    Future<void> Function(UserModel user) navigateToChat,
-  ) {
-    return ListTile(
-      contentPadding: EdgeInsets.symmetric(vertical: 8.h),
-      leading: user.photoUrl != null
-          ? CircleAvatar(
-              radius: 24.r,
-              backgroundImage: NetworkImage(user.photoUrl!),
-            )
-          : PremiumAvatar(name: user.displayName, size: 48),
-      title: Text(
-        user.displayName,
-        style: TextStyle(
-          fontSize: 16.sp,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
-        ),
-      ),
-      trailing: Icon(
-        Icons.chevron_right_rounded,
-        color: AppColors.textSecondary,
-      ),
-      onTap: () => navigateToChat(user),
-    );
   }
 }

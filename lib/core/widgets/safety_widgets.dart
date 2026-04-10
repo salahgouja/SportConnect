@@ -3,81 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-
-/// Auto safety check-in widget (#69)
-class SafetyCheckInBanner extends StatelessWidget {
-  final VoidCallback onCheckIn;
-  final int minutesSinceLastCheckIn;
-
-  const SafetyCheckInBanner({
-    super.key,
-    required this.onCheckIn,
-    this.minutesSinceLastCheckIn = 0,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isOverdue = minutesSinceLastCheckIn > 15;
-    return Container(
-      padding: EdgeInsets.all(12.w),
-      decoration: BoxDecoration(
-        color: isOverdue
-            ? AppColors.warning.withValues(alpha: 0.08)
-            : AppColors.success.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(
-          color: isOverdue
-              ? AppColors.warning.withValues(alpha: 0.3)
-              : AppColors.success.withValues(alpha: 0.2),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            isOverdue ? Icons.warning_amber_rounded : Icons.security_rounded,
-            size: 24.sp,
-            color: isOverdue ? AppColors.warning : AppColors.success,
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isOverdue ? 'Safety check-in overdue' : 'Safety check-in',
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-                Text(
-                  isOverdue
-                      ? AppLocalizations.of(
-                          context,
-                        ).lastCheckedInMinutesAgo(minutesSinceLastCheckIn)
-                      : AppLocalizations.of(context).letContactsKnowSafe,
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: theme.textTheme.bodySmall?.color,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              HapticFeedback.mediumImpact();
-              onCheckIn();
-            },
-            child: Text(AppLocalizations.of(context).imOk),
-          ),
-        ],
-      ),
-    );
-  }
-}
+import 'dart:async';
+import 'dart:io';
 
 /// Incident report flow (#70)
 class IncidentReportSheet extends StatefulWidget {
@@ -241,15 +168,29 @@ class _IncidentReportSheetState extends State<IncidentReportSheet> {
 }
 
 enum IncidentType {
-  unsafeDriving(Icons.speed_rounded),
-  harassment(Icons.report_gmailerrorred_rounded),
-  routeDeviation(Icons.wrong_location_rounded),
-  vehicleIssue(Icons.car_crash_rounded),
-  noShow(Icons.person_off_rounded),
-  other(Icons.more_horiz_rounded);
+  unsafeDriving,
+  harassment,
+  routeDeviation,
+  vehicleIssue,
+  noShow,
+  other;
 
-  final IconData icon;
-  const IncidentType(this.icon);
+  IconData get icon {
+    switch (this) {
+      case IncidentType.unsafeDriving:
+        return Icons.speed_rounded;
+      case IncidentType.harassment:
+        return Icons.report_gmailerrorred_rounded;
+      case IncidentType.routeDeviation:
+        return Icons.wrong_location_rounded;
+      case IncidentType.vehicleIssue:
+        return Icons.car_crash_rounded;
+      case IncidentType.noShow:
+        return Icons.person_off_rounded;
+      case IncidentType.other:
+        return Icons.adaptive.more_rounded;
+    }
+  }
 }
 
 enum IncidentSeverity {

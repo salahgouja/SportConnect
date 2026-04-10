@@ -102,8 +102,6 @@ _DriverPayout _$DriverPayoutFromJson(Map json) => _DriverPayout(
           ?.map((e) => e as String)
           .toList() ??
       const [],
-  bankAccountLast4: json['bankAccountLast4'] as String?,
-  bankName: json['bankName'] as String?,
   createdAt: const TimestampConverter().fromJson(json['createdAt']),
   expectedArrivalDate: const TimestampConverter().fromJson(
     json['expectedArrivalDate'],
@@ -128,8 +126,6 @@ Map<String, dynamic> _$DriverPayoutToJson(_DriverPayout instance) =>
       'stripePayoutId': instance.stripePayoutId,
       'stripeTransferId': instance.stripeTransferId,
       'transactionIds': instance.transactionIds,
-      'bankAccountLast4': instance.bankAccountLast4,
-      'bankName': instance.bankName,
       'createdAt': const TimestampConverter().toJson(instance.createdAt),
       'expectedArrivalDate': const TimestampConverter().toJson(
         instance.expectedArrivalDate,
@@ -163,8 +159,6 @@ _DriverConnectedAccount _$DriverConnectedAccountFromJson(Map json) =>
         json['onboardingCompletedAt'],
       ),
       onboardingUrl: json['onboardingUrl'] as String?,
-      bankAccountLast4: json['bankAccountLast4'] as String?,
-      bankName: json['bankName'] as String?,
       accountHolderName: json['accountHolderName'] as String?,
       totalEarnings: (json['totalEarnings'] as num?)?.toDouble() ?? 0.0,
       availableBalance: (json['availableBalance'] as num?)?.toDouble() ?? 0.0,
@@ -198,8 +192,6 @@ Map<String, dynamic> _$DriverConnectedAccountToJson(
     instance.onboardingCompletedAt,
   ),
   'onboardingUrl': instance.onboardingUrl,
-  'bankAccountLast4': instance.bankAccountLast4,
-  'bankName': instance.bankName,
   'accountHolderName': instance.accountHolderName,
   'totalEarnings': instance.totalEarnings,
   'availableBalance': instance.availableBalance,

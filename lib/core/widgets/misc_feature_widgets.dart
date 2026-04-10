@@ -4,31 +4,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
-/// Clone previous ride (#34)
-class CloneRideButton extends StatelessWidget {
-  final VoidCallback onClone;
-
-  const CloneRideButton({super.key, required this.onClone});
-
-  @override
-  Widget build(BuildContext context) {
-    return OutlinedButton.icon(
-      onPressed: () {
-        HapticFeedback.lightImpact();
-        onClone();
-      },
-      icon: Icon(Icons.copy_rounded, size: 18.sp),
-      label: Text(AppLocalizations.of(context).cloneThisRide),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.primary,
-        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.4)),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-      ),
-    );
-  }
-}
 
 /// Post-ride quick review prompt (#47)
 class PostRideReviewPrompt extends StatelessWidget {
@@ -335,61 +310,6 @@ class FeatureTooltip extends StatelessWidget {
   }
 }
 
-/// Weather at destination (#88)
-class WeatherAtDestination extends StatelessWidget {
-  final String condition;
-  final double tempCelsius;
-  final IconData icon;
-  final String locationName;
-
-  const WeatherAtDestination({
-    super.key,
-    required this.condition,
-    required this.tempCelsius,
-    this.icon = Icons.wb_sunny_rounded,
-    required this.locationName,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: EdgeInsets.all(12.w),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12.r),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 28.sp, color: AppColors.warning),
-          SizedBox(width: 10.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '$condition at $locationName',
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-                Text(
-                  '${tempCelsius.round()}°C',
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: theme.textTheme.bodySmall?.color,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 /// Traffic-aware ETA display (#89)
 class TrafficAwareEta extends StatelessWidget {

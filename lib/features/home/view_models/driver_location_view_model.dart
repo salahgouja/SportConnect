@@ -78,6 +78,9 @@ class DriverLocationViewModel extends Notifier<DriverLocationState> {
   }
 
   Future<void> _runInitialize({required bool force}) async {
+    await Future<void>.value();
+
+    if (!ref.mounted) return;
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
@@ -139,8 +142,10 @@ class DriverLocationViewModel extends Notifier<DriverLocationState> {
   }
 
   Future<void> _runRequestPermission() async {
+    await Future<void>.value();
+    
+    if (!ref.mounted) return;
     state = state.copyWith(isLoading: true, clearError: true);
-
     try {
       final granted = await LocationServiceImpl.instance.requestPermission();
       final permission = await Geolocator.checkPermission();

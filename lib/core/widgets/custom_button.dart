@@ -198,7 +198,7 @@ class _PremiumButtonState extends State<PremiumButton>
                   ? SizedBox(
                       height: 22.h,
                       width: 22.w,
-                      child: CircularProgressIndicator(
+                      child: CircularProgressIndicator.adaptive(
                         strokeWidth: 2.5,
                         valueColor: AlwaysStoppedAnimation<Color>(
                           _foregroundColor,

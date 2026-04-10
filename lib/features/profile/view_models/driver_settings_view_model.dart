@@ -2,9 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class DriverSettingsState {
   const DriverSettingsState({
-    this.autoAcceptRequests = false,
-    this.acceptCashPayments = true,
-    this.acceptCardPayments = true,
     this.showOnMap = true,
     this.allowInstantBooking = true,
     this.soundEffects = true,
@@ -15,9 +12,6 @@ class DriverSettingsState {
     this.navigationApp = 'In-App',
   });
 
-  final bool autoAcceptRequests;
-  final bool acceptCashPayments;
-  final bool acceptCardPayments;
   final bool showOnMap;
   final bool allowInstantBooking;
   final bool soundEffects;
@@ -28,9 +22,6 @@ class DriverSettingsState {
   final String navigationApp;
 
   DriverSettingsState copyWith({
-    bool? autoAcceptRequests,
-    bool? acceptCashPayments,
-    bool? acceptCardPayments,
     bool? showOnMap,
     bool? allowInstantBooking,
     bool? soundEffects,
@@ -41,9 +32,6 @@ class DriverSettingsState {
     String? navigationApp,
   }) {
     return DriverSettingsState(
-      autoAcceptRequests: autoAcceptRequests ?? this.autoAcceptRequests,
-      acceptCashPayments: acceptCashPayments ?? this.acceptCashPayments,
-      acceptCardPayments: acceptCardPayments ?? this.acceptCardPayments,
       showOnMap: showOnMap ?? this.showOnMap,
       allowInstantBooking: allowInstantBooking ?? this.allowInstantBooking,
       soundEffects: soundEffects ?? this.soundEffects,
@@ -60,27 +48,10 @@ class DriverSettingsViewModel extends Notifier<DriverSettingsState> {
   @override
   DriverSettingsState build() => const DriverSettingsState();
 
-  void setAutoAcceptRequests(bool value) {
-    state = state.copyWith(autoAcceptRequests: value);
-  }
-
   void setAllowInstantBooking(bool value) {
     state = state.copyWith(allowInstantBooking: value);
   }
 
-  void setAcceptCashPayments(bool value) {
-    if (!value && !state.acceptCardPayments) {
-      return;
-    }
-    state = state.copyWith(acceptCashPayments: value);
-  }
-
-  void setAcceptCardPayments(bool value) {
-    if (!value && !state.acceptCashPayments) {
-      return;
-    }
-    state = state.copyWith(acceptCardPayments: value);
-  }
 
   void setShowOnMap(bool value) {
     state = state.copyWith(showOnMap: value);

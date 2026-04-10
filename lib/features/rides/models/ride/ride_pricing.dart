@@ -11,8 +11,6 @@ abstract class RidePricing with _$RidePricing {
 
   const factory RidePricing({
     required Money pricePerSeat,
-    @Default(false) bool isNegotiable,
-    @Default(false) bool acceptsOnlinePayment,
   }) = _RidePricing;
 
   factory RidePricing.fromJson(Map<String, dynamic> json) =>

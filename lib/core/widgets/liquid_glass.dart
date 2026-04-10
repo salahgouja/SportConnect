@@ -265,7 +265,7 @@ class LiquidGlassAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
         ),
         child: Icon(
-          Icons.arrow_back_rounded,
+          Icons.adaptive.arrow_back_rounded,
           color: AppColors.textPrimary,
           size: 22.sp,
         ),

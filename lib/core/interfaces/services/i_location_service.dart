@@ -5,6 +5,8 @@ abstract class ILocationService {
   // Permissions
   Future<bool> checkPermission();
   Future<bool> requestPermission();
+  // LS-1: Lets UI distinguish a permanent denial so it can show manual input.
+  Future<bool> isPermissionPermanentlyDenied();
 
   // Location Operations
   Future<Position?> getCurrentLocation();

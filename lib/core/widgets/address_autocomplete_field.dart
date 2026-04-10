@@ -328,9 +328,9 @@ class AddressAutocompleteFieldState extends State<AddressAutocompleteField> {
                     child: SizedBox(
                       width: 18.w,
                       height: 18.w,
-                      child: CircularProgressIndicator(
+                      child: CircularProgressIndicator.adaptive(
                         strokeWidth: 2,
-                        color: accent,
+                        valueColor: AlwaysStoppedAnimation<Color>(accent),
                       ),
                     ),
                   ),

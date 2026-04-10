@@ -31,7 +31,7 @@ class AboutScreen extends ConsumerWidget {
         ),
         leading: IconButton(
           tooltip: l10n.goBackTooltip,
-          icon: const Icon(Icons.arrow_back_rounded),
+          icon: Icon(Icons.adaptive.arrow_back_rounded),
           onPressed: () => context.pop(),
         ),
       ),

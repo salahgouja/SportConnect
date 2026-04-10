@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:accessibility_tools/accessibility_tools.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,7 +8,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-
+import 'package:go_router/go_router.dart';
 // Config & Services
 import 'package:sport_connect/core/config/app_router.dart';
 import 'package:sport_connect/core/config/stripe_config.dart';
@@ -99,7 +98,7 @@ void _runApp() {
           ),
         ],
       ],
-      child:  const SportConnectApp(),
+      child: const SportConnectApp(),
     ),
   );
 }
@@ -115,7 +114,7 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
   bool _deepLinksInitialized = false;
   bool _fcmTokenSaved = false;
 
-  void _initializeDeepLinks(BuildContext context) {
+  void _initializeDeepLinks(GoRouter router, BuildContext context) {
     if (_deepLinksInitialized) return;
     _deepLinksInitialized = true;
 
@@ -123,7 +122,7 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        ref.read(deepLinkServiceProvider).initialize(context);
+        ref.read(deepLinkServiceProvider).initialize(router);
         PushNotificationService.instance.handlePendingInitialMessage(context);
       }
     });
@@ -142,7 +141,6 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
   Widget build(BuildContext context) {
     final router = ref.watch(appRouterProvider);
     final localeAsync = ref.watch(localeProviderProvider);
-    final themeModeAsync = ref.watch(themeModeProviderProvider);
 
     ref.listen(authStateProvider, (prev, next) {
       if (next.value != null) {
@@ -157,7 +155,7 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
-        _initializeDeepLinks(context);
+        _initializeDeepLinks(router, context);
 
         return MaterialApp.router(
           title: 'SportConnect',
@@ -170,12 +168,11 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
             GlobalCupertinoLocalizations.delegate,
           ],
           supportedLocales: AppLocalizations.supportedLocales,
-          themeMode: themeModeAsync.value ?? ThemeMode.light,
+          themeMode: ThemeMode.light,
           theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
           routerConfig: router,
           builder: (context, child) {
-            return AccessibilityTools(child: child);
+            return child!;
           },
         );
       },

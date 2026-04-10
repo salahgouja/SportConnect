@@ -11,7 +11,7 @@ enum MessageType { text, image, location, ride, system, audio }
 enum MessageStatus { sending, sent, delivered, read, failed }
 
 /// Chat type enum
-enum ChatType { private, rideGroup, support }
+enum ChatType { private, rideGroup, eventGroup, support }
 
 /// Single message model
 @freezed
@@ -79,7 +79,6 @@ abstract class ChatParticipant with _$ChatParticipant {
     required String odid,
     required String displayName,
     String? photoUrl,
-    @Default(false) bool isOnline,
     @Default(false) bool isAdmin,
     @Default(false) bool isMuted,
     @TimestampConverter() DateTime? lastSeenAt,
@@ -111,6 +110,9 @@ abstract class ChatModel with _$ChatModel {
     // For ride chats
     String? rideId,
 
+    // For event chats
+    String? eventId,
+
     // Last message info
     String? lastMessageContent,
     String? lastMessageSenderId,
@@ -124,6 +126,9 @@ abstract class ChatModel with _$ChatModel {
     // Settings
     @Default({}) Map<String, bool> mutedBy,
     @Default({}) Map<String, bool> pinnedBy,
+
+    // One-sided deletion: userId -> true if deleted for that user
+    @Default({}) Map<String, bool> deletedFor,
 
     // Metadata
     @Default(true) bool isActive,
@@ -146,6 +151,7 @@ abstract class ChatModel with _$ChatModel {
   /// Get chat title (group name or other participant's name)
   String getChatTitle(String currentUserId) {
     if (type == ChatType.rideGroup) return groupName ?? 'Ride Chat';
+    if (type == ChatType.eventGroup) return groupName ?? 'Event Chat';
     if (type == ChatType.support) return 'Support';
     if (groupName != null) return groupName!;
 
@@ -167,12 +173,6 @@ abstract class ChatModel with _$ChatModel {
 
   /// Is pinned by user
   bool isPinnedBy(String userId) => pinnedBy[userId] ?? false;
-
-  /// Is other participant online (for private chats)
-  bool isOtherOnline(String currentUserId) {
-    final other = getOtherParticipant(currentUserId);
-    return other?.isOnline ?? false;
-  }
 }
 
 /// Typing indicator model

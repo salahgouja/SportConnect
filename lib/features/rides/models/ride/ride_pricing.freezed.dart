@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$RidePricing {
 
- Money get pricePerSeat; bool get isNegotiable; bool get acceptsOnlinePayment;
+ Money get pricePerSeat;
 /// Create a copy of RidePricing
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $RidePricingCopyWith<RidePricing> get copyWith => _$RidePricingCopyWithImpl<Ride
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RidePricing&&(identical(other.pricePerSeat, pricePerSeat) || other.pricePerSeat == pricePerSeat)&&(identical(other.isNegotiable, isNegotiable) || other.isNegotiable == isNegotiable)&&(identical(other.acceptsOnlinePayment, acceptsOnlinePayment) || other.acceptsOnlinePayment == acceptsOnlinePayment));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RidePricing&&(identical(other.pricePerSeat, pricePerSeat) || other.pricePerSeat == pricePerSeat));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,pricePerSeat,isNegotiable,acceptsOnlinePayment);
+int get hashCode => Object.hash(runtimeType,pricePerSeat);
 
 @override
 String toString() {
-  return 'RidePricing(pricePerSeat: $pricePerSeat, isNegotiable: $isNegotiable, acceptsOnlinePayment: $acceptsOnlinePayment)';
+  return 'RidePricing(pricePerSeat: $pricePerSeat)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $RidePricingCopyWith<$Res>  {
   factory $RidePricingCopyWith(RidePricing value, $Res Function(RidePricing) _then) = _$RidePricingCopyWithImpl;
 @useResult
 $Res call({
- Money pricePerSeat, bool isNegotiable, bool acceptsOnlinePayment
+ Money pricePerSeat
 });
 
 
@@ -65,12 +65,10 @@ class _$RidePricingCopyWithImpl<$Res>
 
 /// Create a copy of RidePricing
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? pricePerSeat = null,Object? isNegotiable = null,Object? acceptsOnlinePayment = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? pricePerSeat = null,}) {
   return _then(_self.copyWith(
 pricePerSeat: null == pricePerSeat ? _self.pricePerSeat : pricePerSeat // ignore: cast_nullable_to_non_nullable
-as Money,isNegotiable: null == isNegotiable ? _self.isNegotiable : isNegotiable // ignore: cast_nullable_to_non_nullable
-as bool,acceptsOnlinePayment: null == acceptsOnlinePayment ? _self.acceptsOnlinePayment : acceptsOnlinePayment // ignore: cast_nullable_to_non_nullable
-as bool,
+as Money,
   ));
 }
 /// Create a copy of RidePricing
@@ -164,10 +162,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Money pricePerSeat,  bool isNegotiable,  bool acceptsOnlinePayment)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Money pricePerSeat)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _RidePricing() when $default != null:
-return $default(_that.pricePerSeat,_that.isNegotiable,_that.acceptsOnlinePayment);case _:
+return $default(_that.pricePerSeat);case _:
   return orElse();
 
 }
@@ -185,10 +183,10 @@ return $default(_that.pricePerSeat,_that.isNegotiable,_that.acceptsOnlinePayment
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Money pricePerSeat,  bool isNegotiable,  bool acceptsOnlinePayment)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Money pricePerSeat)  $default,) {final _that = this;
 switch (_that) {
 case _RidePricing():
-return $default(_that.pricePerSeat,_that.isNegotiable,_that.acceptsOnlinePayment);case _:
+return $default(_that.pricePerSeat);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -205,10 +203,10 @@ return $default(_that.pricePerSeat,_that.isNegotiable,_that.acceptsOnlinePayment
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Money pricePerSeat,  bool isNegotiable,  bool acceptsOnlinePayment)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Money pricePerSeat)?  $default,) {final _that = this;
 switch (_that) {
 case _RidePricing() when $default != null:
-return $default(_that.pricePerSeat,_that.isNegotiable,_that.acceptsOnlinePayment);case _:
+return $default(_that.pricePerSeat);case _:
   return null;
 
 }
@@ -220,12 +218,10 @@ return $default(_that.pricePerSeat,_that.isNegotiable,_that.acceptsOnlinePayment
 @JsonSerializable()
 
 class _RidePricing extends RidePricing {
-  const _RidePricing({required this.pricePerSeat, this.isNegotiable = false, this.acceptsOnlinePayment = false}): super._();
+  const _RidePricing({required this.pricePerSeat}): super._();
   factory _RidePricing.fromJson(Map<String, dynamic> json) => _$RidePricingFromJson(json);
 
 @override final  Money pricePerSeat;
-@override@JsonKey() final  bool isNegotiable;
-@override@JsonKey() final  bool acceptsOnlinePayment;
 
 /// Create a copy of RidePricing
 /// with the given fields replaced by the non-null parameter values.
@@ -240,16 +236,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RidePricing&&(identical(other.pricePerSeat, pricePerSeat) || other.pricePerSeat == pricePerSeat)&&(identical(other.isNegotiable, isNegotiable) || other.isNegotiable == isNegotiable)&&(identical(other.acceptsOnlinePayment, acceptsOnlinePayment) || other.acceptsOnlinePayment == acceptsOnlinePayment));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RidePricing&&(identical(other.pricePerSeat, pricePerSeat) || other.pricePerSeat == pricePerSeat));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,pricePerSeat,isNegotiable,acceptsOnlinePayment);
+int get hashCode => Object.hash(runtimeType,pricePerSeat);
 
 @override
 String toString() {
-  return 'RidePricing(pricePerSeat: $pricePerSeat, isNegotiable: $isNegotiable, acceptsOnlinePayment: $acceptsOnlinePayment)';
+  return 'RidePricing(pricePerSeat: $pricePerSeat)';
 }
 
 
@@ -260,7 +256,7 @@ abstract mixin class _$RidePricingCopyWith<$Res> implements $RidePricingCopyWith
   factory _$RidePricingCopyWith(_RidePricing value, $Res Function(_RidePricing) _then) = __$RidePricingCopyWithImpl;
 @override @useResult
 $Res call({
- Money pricePerSeat, bool isNegotiable, bool acceptsOnlinePayment
+ Money pricePerSeat
 });
 
 
@@ -277,12 +273,10 @@ class __$RidePricingCopyWithImpl<$Res>
 
 /// Create a copy of RidePricing
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? pricePerSeat = null,Object? isNegotiable = null,Object? acceptsOnlinePayment = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? pricePerSeat = null,}) {
   return _then(_RidePricing(
 pricePerSeat: null == pricePerSeat ? _self.pricePerSeat : pricePerSeat // ignore: cast_nullable_to_non_nullable
-as Money,isNegotiable: null == isNegotiable ? _self.isNegotiable : isNegotiable // ignore: cast_nullable_to_non_nullable
-as bool,acceptsOnlinePayment: null == acceptsOnlinePayment ? _self.acceptsOnlinePayment : acceptsOnlinePayment // ignore: cast_nullable_to_non_nullable
-as bool,
+as Money,
   ));
 }
 

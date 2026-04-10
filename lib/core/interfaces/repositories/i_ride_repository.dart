@@ -1,6 +1,5 @@
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
-import 'package:sport_connect/features/rides/models/ride_request_model.dart';
 
 /// Ride operations repository interface
 abstract class IRideRepository {
@@ -27,6 +26,7 @@ abstract class IRideRepository {
   Stream<List<RideModel>> getRideHistory(String userId);
   Future<List<RideModel>> getRidesByDriver(String driverId);
   Stream<List<RideModel>> streamRidesByDriver(String driverId);
+  Future<bool> hasActiveRidesForVehicle(String vehicleId);
   Stream<List<RideModel>> streamRidesAsPassenger(String userId);
   Stream<List<RideModel>> streamNearbyRides({
     required double latitude,
@@ -35,15 +35,9 @@ abstract class IRideRepository {
   });
   Stream<List<RideModel>> streamActiveRides();
 
-  // Ride Requests
-  Future<String> createRideRequest(RideRequestModel request);
-  Future<RideRequestModel?> getRideRequest(String requestId);
-  Future<void> updateRideRequest(RideRequestModel request);
-  Future<void> acceptRideRequest(String requestId);
-  Future<void> rejectRideRequest(String requestId);
-  Stream<List<RideRequestModel>> getRideRequests(String rideId);
-
-  // Bookings
+  // Bookings — passenger creates a pending booking; driver accepts/rejects it.
+  // createRideRequest is kept for API compat but now writes a RideBooking.
+  Future<String> createRideRequest(String rideId, RideBooking booking);
   Future<void> bookRide({required String rideId, required RideBooking booking});
   Future<void> updateBookingStatus({
     required String rideId,
@@ -79,11 +73,8 @@ abstract class IRideRepository {
     required String passengerId,
   });
 
-  /// Add a mid-ride stop to the ride's waypoints.
-  Future<void> addMidRideStop(String rideId, Map<String, dynamic> waypoint);
-
-  /// Remove a mid-ride stop from the ride's waypoints by index.
-  Future<void> removeMidRideStop(String rideId, int waypointIndex);
+  /// Real-time stream of passenger IDs the driver has confirmed as picked up.
+  Stream<List<String>> streamPickedUpPassengers(String rideId);
 
   /// Record the actual distance driven (for fare adjustment).
   Future<void> recordActualDistance(String rideId, double distanceKm);

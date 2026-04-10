@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/features/profile/models/leaderboard_entry.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
-/// Premium Achievements Screen with gamification UI
+// ─────────────────────────────────────────────────────────────────
+// SCREEN ENTRY POINT
+// ─────────────────────────────────────────────────────────────────
+
 class AchievementsScreen extends ConsumerStatefulWidget {
   const AchievementsScreen({super.key});
 
@@ -34,1051 +40,425 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final userAsync = ref.watch(currentUserProvider);
 
     return userAsync.when(
-      data: (user) => _buildContent(context, user!),
-      loading: () => const Scaffold(
-        backgroundColor: AppColors.background,
-        body: Center(child: CircularProgressIndicator()),
-      ),
-      error: (e, _) => Scaffold(
-        backgroundColor: AppColors.background,
-        body: Center(
-          child: Text(AppLocalizations.of(context).errorLoadingAchievements),
-        ),
-      ),
+      loading: () => _AchievementsLoadingShell(l10n: l10n),
+      error: (e, _) =>
+          _AchievementsErrorShell(l10n: l10n, message: e.toString()),
+      data: (user) {
+        if (user == null)
+          return _AchievementsErrorShell(
+            l10n: l10n,
+            message: l10n.signInToSeeYourRides,
+          );
+        final stats = user.gamification;
+        if (stats == null) return _AchievementsLoadingShell(l10n: l10n);
+        return _AchievementsContent(
+          user: user,
+          stats: stats,
+          tabController: _tabController,
+          l10n: l10n,
+        );
+      },
     );
   }
+}
 
-  Widget _buildContent(BuildContext context, UserModel user) {
-    // Get gamification stats based on user type
-    final GamificationStats gamification = switch (user) {
-      RiderModel(:final gamification) => gamification,
-      DriverModel(:final gamification) => gamification,
-    };
+// ─────────────────────────────────────────────────────────────────
+// MAIN CONTENT
+// ─────────────────────────────────────────────────────────────────
+
+class _AchievementsContent extends StatelessWidget {
+  const _AchievementsContent({
+    required this.user,
+    required this.stats,
+    required this.tabController,
+    required this.l10n,
+  });
+
+  final dynamic user;
+  final GamificationStats stats;
+  final TabController tabController;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    final levelName = _levelName(stats.level);
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
-          SliverAppBar(
-            expandedHeight: 280.h,
-            floating: false,
-            pinned: true,
-            backgroundColor: AppColors.primary,
-            leading: IconButton(
-              tooltip: AppLocalizations.of(context).goBackTooltip,
-              onPressed: () => context.pop(),
-              icon: Container(
-                padding: EdgeInsets.all(8.w),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                child: Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: Colors.white,
-                  size: 18.sp,
-                ),
-              ),
-            ),
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      AppColors.primary,
-                      AppColors.primary.withValues(alpha: 0.8),
-                      AppColors.secondary,
-                    ],
-                  ),
-                ),
-                child: SafeArea(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(height: 40.h),
-                      // Level Badge
-                      _buildLevelBadge(gamification),
-                      SizedBox(height: 16.h),
-                      // XP Progress
-                      _buildXPProgress(gamification),
-                      SizedBox(height: 12.h),
-                      // Stats Row
-                      _buildStatsRow(gamification),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            bottom: PreferredSize(
-              preferredSize: Size.fromHeight(48.h),
-              child: Container(
-                color: AppColors.surface,
-                child: TabBar(
-                  controller: _tabController,
-                  indicatorColor: AppColors.primary,
-                  indicatorWeight: 3,
-                  labelColor: AppColors.primary,
-                  unselectedLabelColor: AppColors.textSecondary,
-                  labelStyle: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  tabs: [
-                    Tab(text: AppLocalizations.of(context).badges),
-                    Tab(text: AppLocalizations.of(context).challenges),
-                    Tab(text: AppLocalizations.of(context).leaderboard),
-                  ],
-                ),
-              ),
-            ),
+          _AchievementsSliverHeader(
+            stats: stats,
+            levelName: levelName,
+            tabController: tabController,
+            l10n: l10n,
           ),
         ],
         body: TabBarView(
-          controller: _tabController,
+          controller: tabController,
           children: [
-            _buildBadgesTab(gamification),
-            _buildChallengesTab(gamification),
-            _buildLeaderboardTab(user),
+            _BadgesTab(stats: stats, l10n: l10n),
+            _ChallengesTab(stats: stats, l10n: l10n),
+            _LeaderboardTab(stats: stats, l10n: l10n),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildLevelBadge(GamificationStats gamification) {
-    final userLevel = UserLevel.fromXP(gamification.totalXP);
+  static String _levelName(int level) {
+    if (level >= 20) return 'Diamond';
+    if (level >= 15) return 'Platinum';
+    if (level >= 10) return 'Gold';
+    if (level >= 5) return 'Silver';
+    return 'Bronze';
+  }
+}
 
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF52B788), Color(0xFF40916C)],
-        ),
-        borderRadius: BorderRadius.circular(30.r),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF52B788).withValues(alpha: 0.4),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
+// ─────────────────────────────────────────────────────────────────
+// SLIVER HEADER
+// ─────────────────────────────────────────────────────────────────
+
+class _AchievementsSliverHeader extends StatelessWidget {
+  const _AchievementsSliverHeader({
+    required this.stats,
+    required this.levelName,
+    required this.tabController,
+    required this.l10n,
+  });
+
+  final GamificationStats stats;
+  final String levelName;
+  final TabController tabController;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    final xpProgress = stats.xpToNextLevel > 0
+        ? (stats.currentLevelXP / stats.xpToNextLevel).clamp(0.0, 1.0)
+        : 1.0;
+    final isMaxLevel = stats.level >= 25;
+
+    return SliverAppBar(
+      expandedHeight: 280.h,
+      pinned: true,
+      backgroundColor: AppColors.primary,
+      foregroundColor: Colors.white,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_ios_rounded),
+        onPressed: () => context.pop(),
+        tooltip: l10n.goBackTooltip,
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.star_rounded, color: Colors.white, size: 24.sp),
-          SizedBox(width: 8.w),
-          Text(
-            AppLocalizations.of(
-              context,
-            ).levelValueValue(userLevel.level, userLevel.name),
-            style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [AppColors.primaryDark, AppColors.primary],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildXPProgress(GamificationStats gamification) {
-    final userLevel = UserLevel.fromXP(gamification.totalXP);
-    final currentXP = gamification.totalXP - userLevel.minXP.toInt();
-    final isMaxLevel = !userLevel.maxXP.isFinite;
-    final maxXP = isMaxLevel
-        ? currentXP // At max level, show full bar
-        : (userLevel.maxXP - userLevel.minXP).toInt();
-    final xpNeeded = isMaxLevel ? 0 : (maxXP - currentXP).clamp(0, maxXP);
-    final progress = isMaxLevel
-        ? 1.0
-        : (maxXP > 0 ? (currentXP / maxXP).clamp(0.0, 1.0) : 1.0);
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 40.w),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                AppLocalizations.of(context).valueXp2(_formatNumber(currentXP)),
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-              Text(
-                isMaxLevel
-                    ? '★ MAX'
-                    : AppLocalizations.of(
-                        context,
-                      ).valueXp2(_formatNumber(maxXP)),
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  color: Colors.white.withValues(alpha: 0.8),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 8.h),
-          Stack(
-            children: [
-              Container(
-                height: 10.h,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(5.r),
-                ),
-              ),
-              FractionallySizedBox(
-                widthFactor: progress.clamp(0.0, 1.0),
-                child: Container(
-                  height: 10.h,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF74C69D), Color(0xFF40916C)],
-                    ),
-                    borderRadius: BorderRadius.circular(5.r),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 6.h),
-          Text(
-            isMaxLevel
-                ? AppLocalizations.of(context).maxLevel
-                : AppLocalizations.of(context).valueXpToLevelValue(
-                    _formatNumber(xpNeeded),
-                    userLevel.level + 1,
-                  ),
-            style: TextStyle(
-              fontSize: 12.sp,
-              color: Colors.white.withValues(alpha: 0.9),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatsRow(GamificationStats gamification) {
-    final badges = gamification.unlockedBadges.length;
-    final challenges = gamification.achievements
-        .where((a) => a.isUnlocked)
-        .length;
-    final rides = gamification.totalRides;
-    final distance = gamification.totalDistance;
-
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 24.w),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildStatItem(
-            Icons.emoji_events_rounded,
-            AppLocalizations.of(context).value2(badges),
-            AppLocalizations.of(context).badges,
-          ),
-          _buildStatDivider(),
-          _buildStatItem(
-            Icons.track_changes_rounded,
-            AppLocalizations.of(context).value2(challenges),
-            AppLocalizations.of(context).challenges,
-          ),
-          _buildStatDivider(),
-          _buildStatItem(
-            Icons.directions_car_rounded,
-            AppLocalizations.of(context).value2(rides),
-            AppLocalizations.of(context).navRides,
-          ),
-          _buildStatDivider(),
-          _buildStatItem(
-            Icons.route_rounded,
-            '${distance.toStringAsFixed(0)} km',
-            'Distance',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem(IconData icon, String value, String label) {
-    return Column(
-      children: [
-        Icon(icon, size: 24.sp, color: Colors.white),
-        SizedBox(height: 4.h),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11.sp,
-            color: Colors.white.withValues(alpha: 0.8),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatDivider() {
-    return Container(
-      width: 1,
-      height: 40.h,
-      color: Colors.white.withValues(alpha: 0.3),
-    );
-  }
-
-  Widget _buildBadgesTab(GamificationStats gamification) {
-    // Define badge definitions with unlock criteria
-    final badges = _getBadgeDefinitions(gamification);
-
-    return GridView.builder(
-      padding: EdgeInsets.all(16.w),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 12.w,
-        mainAxisSpacing: 12.h,
-        childAspectRatio: 0.85,
-      ),
-      itemCount: badges.length,
-      itemBuilder: (context, index) => _buildBadgeCard(badges[index]),
-    );
-  }
-
-  Widget _buildBadgeCard(_BadgeData badge) {
-    final tierColors = {
-      'bronze': const Color(0xFFB7E4C7),
-      'silver': const Color(0xFF95D5B2),
-      'gold': const Color(0xFF74C69D),
-      'platinum': const Color(0xFF40916C),
-      'diamond': const Color(0xFF2D6A4F),
-    };
-
-    final color = tierColors[badge.tier] ?? AppColors.primary;
-
-    return GestureDetector(
-      onTap: () => _showBadgeDetails(badge),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16.r),
-          boxShadow: [
-            if (badge.unlocked)
-              BoxShadow(
-                color: color.withValues(alpha: 0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: EdgeInsets.all(12.w),
-                  decoration: BoxDecoration(
-                    color: badge.unlocked
-                        ? color.withValues(alpha: 0.15)
-                        : AppColors.textSecondary.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    badge.icon,
-                    color: badge.unlocked ? color : AppColors.textSecondary,
-                    size: 28.sp,
-                  ),
-                ),
-                SizedBox(height: 8.h),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8.w),
-                  child: Text(
-                    badge.name,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 11.sp,
-                      fontWeight: FontWeight.w600,
-                      color: badge.unlocked
-                          ? AppColors.textPrimary
-                          : AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-                if (!badge.unlocked && badge.progress != null) ...[
-                  SizedBox(height: 6.h),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12.w),
-                    child: LinearProgressIndicator(
-                      value: badge.progress,
-                      backgroundColor: AppColors.border,
-                      valueColor: AlwaysStoppedAnimation(color),
-                      minHeight: 3.h,
-                      borderRadius: BorderRadius.circular(2.r),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-            if (badge.unlocked)
-              Positioned(
-                top: 8.h,
-                right: 8.w,
-                child: Icon(
-                  Icons.check_circle_rounded,
-                  color: AppColors.success,
-                  size: 16.sp,
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showBadgeDetails(_BadgeData badge) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: EdgeInsets.all(24.w),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40.w,
-              height: 4.h,
-              decoration: BoxDecoration(
-                color: AppColors.border,
-                borderRadius: BorderRadius.circular(2.r),
-              ),
-            ),
-            SizedBox(height: 24.h),
-            Container(
-              padding: EdgeInsets.all(20.w),
-              decoration: BoxDecoration(
-                gradient: badge.unlocked
-                    ? LinearGradient(
-                        colors: [
-                          AppColors.primary.withValues(alpha: 0.2),
-                          AppColors.secondary.withValues(alpha: 0.2),
-                        ],
-                      )
-                    : null,
-                color: badge.unlocked ? null : AppColors.background,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                badge.icon,
-                size: 48.sp,
-                color: badge.unlocked
-                    ? AppColors.primary
-                    : AppColors.textSecondary,
-              ),
-            ),
-            SizedBox(height: 16.h),
-            Text(
-              badge.name,
-              style: TextStyle(
-                fontSize: 20.sp,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            SizedBox(height: 8.h),
-            Text(
-              badge.description,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
-            ),
-            SizedBox(height: 16.h),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-              decoration: BoxDecoration(
-                color: badge.unlocked
-                    ? AppColors.success.withValues(alpha: 0.1)
-                    : AppColors.warning.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(20.r),
-              ),
-              child: Text(
-                badge.unlocked
-                    ? AppLocalizations.of(context).unlocked
-                    : AppLocalizations.of(context).locked,
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w600,
-                  color: badge.unlocked ? AppColors.success : AppColors.warning,
-                ),
-              ),
-            ),
-            if (!badge.unlocked && badge.progress != null) ...[
-              SizedBox(height: 16.h),
-              Column(
+          child: SafeArea(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(20.w, 56.h, 20.w, 56.h),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  LinearProgressIndicator(
-                    value: badge.progress,
-                    backgroundColor: AppColors.border,
-                    valueColor: AlwaysStoppedAnimation(AppColors.primary),
-                    minHeight: 8.h,
-                    borderRadius: BorderRadius.circular(4.r),
+                  // Level badge + XP
+                  Row(
+                    children: [
+                      _LevelBadge(level: stats.level, name: levelName),
+                      SizedBox(width: 14.w),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.levelValueValue(stats.level, levelName),
+                              style: TextStyle(
+                                fontSize: 15.sp,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                            SizedBox(height: 4.h),
+                            if (!isMaxLevel) ...[
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(4.r),
+                                child: LinearProgressIndicator(
+                                  value: xpProgress,
+                                  backgroundColor: Colors.white.withValues(
+                                    alpha: 0.25,
+                                  ),
+                                  color: Colors.white,
+                                  minHeight: 6.h,
+                                ),
+                              ),
+                              SizedBox(height: 4.h),
+                              Text(
+                                l10n.valueXpToLevelValue(
+                                  stats.xpToNextLevel - stats.currentLevelXP,
+                                  stats.level + 1,
+                                ),
+                                style: TextStyle(
+                                  fontSize: 11.sp,
+                                  color: Colors.white.withValues(alpha: 0.8),
+                                ),
+                              ),
+                            ] else
+                              Text(
+                                l10n.maxLevel,
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.accentLight,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  SizedBox(height: 8.h),
-                  Text(
-                    AppLocalizations.of(
-                      context,
-                    ).valueComplete((badge.progress! * 100).toInt()),
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      color: AppColors.textSecondary,
-                    ),
+                  SizedBox(height: 16.h),
+                  // Stats row
+                  Row(
+                    children: [
+                      _StatItem(
+                        icon: Icons.bolt_rounded,
+                        value: l10n.valueXp2(stats.totalXP),
+                        label: 'Total XP',
+                      ),
+                      const _StatDivider(),
+                      _StatItem(
+                        icon: Icons.directions_car_rounded,
+                        value: '${stats.totalRides}',
+                        label: l10n.navRides,
+                      ),
+                      const _StatDivider(),
+                      _StatItem(
+                        icon: Icons.local_fire_department_rounded,
+                        value: '${stats.currentStreak}',
+                        label: 'Streak',
+                      ),
+                      const _StatDivider(),
+                      _StatItem(
+                        icon: Icons.emoji_events_rounded,
+                        value: '${stats.unlockedBadges.length}',
+                        label: l10n.badges,
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-            SizedBox(height: 24.h),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildChallengesTab(GamificationStats gamification) {
-    final l10n = AppLocalizations.of(context);
-    final totalRides = gamification.totalRides;
-    final totalDistance = gamification.totalDistance;
-    final currentStreak = gamification.currentStreak;
-
-    String status(bool done) =>
-        done ? l10n.challengeCompleted : l10n.challengeInProgress;
-
-    final challenges = [
-      _ChallengeData(
-        l10n.challengeFirstRide,
-        l10n.challengeFirstRideDesc,
-        '${totalRides.clamp(0, 1)}/1',
-        totalRides >= 1 ? 1.0 : 0.0,
-        50,
-        Icons.directions_car_rounded,
-        status(totalRides >= 1),
-      ),
-      _ChallengeData(
-        l10n.challengeRideRegular,
-        l10n.challengeRideRegularDesc,
-        '${totalRides.clamp(0, 10)}/10',
-        (totalRides / 10).clamp(0.0, 1.0),
-        100,
-        Icons.calendar_today_rounded,
-        status(totalRides >= 10),
-      ),
-      _ChallengeData(
-        l10n.challengeRoadTripper,
-        l10n.challengeRoadTripperDesc,
-        '${totalDistance.toStringAsFixed(0)}/50',
-        (totalDistance / 50).clamp(0.0, 1.0),
-        250,
-        Icons.map_rounded,
-        status(totalDistance >= 50),
-      ),
-      _ChallengeData(
-        l10n.challengeDistanceMaster,
-        l10n.challengeDistanceMasterDesc,
-        '${totalDistance.toStringAsFixed(0)}/100',
-        (totalDistance / 100).clamp(0.0, 1.0),
-        150,
-        Icons.route_rounded,
-        status(totalDistance >= 100),
-      ),
-      _ChallengeData(
-        l10n.challengeStreakBuilder,
-        l10n.challengeStreakBuilderDesc,
-        '$currentStreak/7',
-        (currentStreak / 7).clamp(0.0, 1.0),
-        200,
-        Icons.local_fire_department_rounded,
-        status(currentStreak >= 7),
-      ),
-      _ChallengeData(
-        l10n.challengeCenturyRider,
-        l10n.challengeCenturyRiderDesc,
-        '${totalRides.clamp(0, 100)}/100',
-        (totalRides / 100).clamp(0.0, 1.0),
-        500,
-        Icons.emoji_events_rounded,
-        status(totalRides >= 100),
-      ),
-    ];
-
-    return ListView.builder(
-      padding: EdgeInsets.all(16.w),
-      itemCount: challenges.length,
-      itemBuilder: (context, index) => _buildChallengeCard(challenges[index]),
-    );
-  }
-
-  Widget _buildChallengeCard(_ChallengeData challenge) {
-    final isCompleted = challenge.progress >= 1.0;
-
-    return Container(
-      margin: EdgeInsets.only(bottom: 12.h),
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16.r),
-        border: isCompleted
-            ? Border.all(
-                color: AppColors.success.withValues(alpha: 0.5),
-                width: 2,
-              )
-            : null,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(10.w),
-                decoration: BoxDecoration(
-                  color: isCompleted
-                      ? AppColors.success.withValues(alpha: 0.1)
-                      : AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                child: Icon(
-                  challenge.icon,
-                  color: isCompleted ? AppColors.success : AppColors.primary,
-                  size: 24.sp,
-                ),
-              ),
-              SizedBox(width: 12.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      challenge.name,
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      challenge.description,
-                      style: TextStyle(
-                        fontSize: 13.sp,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 8.w,
-                      vertical: 4.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF52B788).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8.r),
-                    ),
-                    child: Text(
-                      AppLocalizations.of(context).valueXp(challenge.xpReward),
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF40916C),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 4.h),
-                  Text(
-                    challenge.timeLeft,
-                    style: TextStyle(
-                      fontSize: 11.sp,
-                      color: isCompleted
-                          ? AppColors.success
-                          : AppColors.textSecondary,
-                      fontWeight: isCompleted
-                          ? FontWeight.w600
-                          : FontWeight.normal,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          SizedBox(height: 12.h),
-          Row(
-            children: [
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4.r),
-                  child: LinearProgressIndicator(
-                    value: challenge.progress,
-                    backgroundColor: AppColors.border,
-                    valueColor: AlwaysStoppedAnimation(
-                      isCompleted ? AppColors.success : AppColors.primary,
-                    ),
-                    minHeight: 6.h,
-                  ),
-                ),
-              ),
-              SizedBox(width: 12.w),
-              Text(
-                challenge.progressText,
-                style: TextStyle(
-                  fontSize: 13.sp,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLeaderboardTab(UserModel user) {
-    final leaderboardAsync = ref.watch(leaderboardProvider);
-
-    return leaderboardAsync.when(
-      data: (entries) {
-        if (entries.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.leaderboard_rounded,
-                  size: 64.sp,
-                  color: AppColors.textTertiary,
-                ),
-                SizedBox(height: 16.h),
-                Text(
-                  AppLocalizations.of(context).noResultsFound,
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
             ),
-          );
-        }
-
-        return ListView.builder(
-          padding: EdgeInsets.all(16.w),
-          itemCount: entries.length + 1,
-          itemBuilder: (context, index) {
-            if (index == 0) {
-              return _buildLeaderboardHeader(entries, user);
-            }
-            final entry = entries[index - 1];
-            return _buildLeaderboardRow(
-              _LeaderboardEntry(
-                entry.displayName,
-                entry.totalXP,
-                entry.rank,
-                level: entry.level,
-                isCurrentUser: entry.odid == user.uid,
-              ),
-            );
-          },
-        );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(
-        child: Text(
-          AppLocalizations.of(context).errorLoadingAchievements,
-          style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
+          ),
+        ),
+      ),
+      bottom: PreferredSize(
+        preferredSize: Size.fromHeight(48.h),
+        child: Container(
+          color: AppColors.primary,
+          child: TabBar(
+            controller: tabController,
+            indicatorColor: Colors.white,
+            indicatorWeight: 3,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white.withValues(alpha: 0.6),
+            labelStyle: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
+            tabs: [
+              Tab(text: l10n.badges),
+              Tab(text: l10n.challenges),
+              Tab(text: l10n.leaderboard),
+            ],
+          ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildLeaderboardHeader(
-    List<LeaderboardEntry> entries,
-    UserModel user,
-  ) {
-    // Need at least 3 entries for the podium
-    if (entries.length < 3) {
-      return SizedBox(height: 16.h);
+// ─────────────────────────────────────────────────────────────────
+// LEVEL BADGE
+// ─────────────────────────────────────────────────────────────────
+
+class _LevelBadge extends StatelessWidget {
+  const _LevelBadge({required this.level, required this.name});
+  final int level;
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    Color badgeColor;
+    Color shadowColor;
+    switch (name) {
+      case 'Diamond':
+        badgeColor = AppColors.info;
+        shadowColor = AppColors.info;
+      case 'Platinum':
+        badgeColor = AppColors.levelPlatinum;
+        shadowColor = AppColors.levelPlatinum;
+      case 'Gold':
+        badgeColor = AppColors.levelGold;
+        shadowColor = AppColors.levelGold;
+      case 'Silver':
+        badgeColor = AppColors.levelSilver;
+        shadowColor = AppColors.levelSilver;
+      default: // Bronze
+        badgeColor = AppColors.levelBronze;
+        shadowColor = AppColors.levelBronze;
     }
 
-    final medals = ['🥈', '🥇', '🥉'];
-    final top3 = entries.take(3).toList();
-    // Display order: 2nd, 1st, 3rd
     return Container(
-      margin: EdgeInsets.only(bottom: 16.h),
-      padding: EdgeInsets.all(20.w),
+      width: 56.w,
+      height: 56.w,
       decoration: BoxDecoration(
+        shape: BoxShape.circle,
         gradient: LinearGradient(
-          colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.primaryLight, AppColors.primaryDark],
         ),
-        borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryLight.withValues(alpha: 0.5),
+            blurRadius: 12,
+            spreadRadius: 2,
+          ),
+        ],
+        border: Border.all(color: badgeColor, width: 2.5),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _buildTopRanker(
-            medals[0],
-            top3[1].displayName,
-            AppLocalizations.of(
-              context,
-            ).valueXp2(_formatNumber(top3[1].totalXP)),
-            2,
-          ),
-          _buildTopRanker(
-            medals[1],
-            top3[0].displayName,
-            AppLocalizations.of(
-              context,
-            ).valueXp2(_formatNumber(top3[0].totalXP)),
-            1,
-            isFirst: true,
-          ),
-          _buildTopRanker(
-            medals[2],
-            top3[2].displayName,
-            AppLocalizations.of(
-              context,
-            ).valueXp2(_formatNumber(top3[2].totalXP)),
-            3,
+          Icon(Icons.emoji_events_rounded, size: 18.sp, color: badgeColor),
+          Text(
+            '$level',
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              height: 1.0,
+            ),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildTopRanker(
-    String medal,
-    String name,
-    String xp,
-    int rank, {
-    bool isFirst = false,
-  }) {
-    return Column(
+// ─────────────────────────────────────────────────────────────────
+// BADGES TAB
+// ─────────────────────────────────────────────────────────────────
+
+class _BadgesTab extends StatelessWidget {
+  const _BadgesTab({required this.stats, required this.l10n});
+  final GamificationStats stats;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    final badges = _getBadgeDefinitions(stats);
+    final unlocked = badges.where((b) => b.unlocked).length;
+    final total = badges.length;
+    final progress = total > 0 ? unlocked / total : 0.0;
+
+    return ListView(
+      padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 24.h),
       children: [
-        if (!isFirst) SizedBox(height: 20.h),
-        Text(medal, style: TextStyle(fontSize: isFirst ? 40.sp : 32.sp)),
-        SizedBox(height: 8.h),
+        // Progress header
         Container(
-          width: isFirst ? 60.w : 50.w,
-          height: isFirst ? 60.w : 50.w,
+          padding: EdgeInsets.all(14.w),
+          margin: EdgeInsets.only(bottom: 16.h),
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white.withValues(alpha: 0.2),
-            border: Border.all(color: Colors.white, width: 2),
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(14.r),
+            border: Border.all(color: AppColors.border),
           ),
-          child: Center(
-            child: Text(
-              name[0],
-              style: TextStyle(
-                fontSize: isFirst ? 24.sp : 20.sp,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ),
-        SizedBox(height: 8.h),
-        Text(
-          name,
-          style: TextStyle(
-            fontSize: 12.sp,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
-        Text(
-          xp,
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w700,
-            color: Colors.white.withValues(alpha: 0.9),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLeaderboardRow(_LeaderboardEntry entry) {
-    final isTop3 = entry.rank <= 3;
-
-    return Container(
-      margin: EdgeInsets.only(bottom: 8.h),
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-      decoration: BoxDecoration(
-        color: entry.isCurrentUser
-            ? AppColors.primary.withValues(alpha: 0.1)
-            : AppColors.surface,
-        borderRadius: BorderRadius.circular(12.r),
-        border: entry.isCurrentUser
-            ? Border.all(color: AppColors.primary.withValues(alpha: 0.3))
-            : null,
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 32.w,
-            child: isTop3
-                ? Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 4.w,
-                      vertical: 2.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: [
-                        const Color(0xFF2D6A4F),
-                        const Color(0xFF40916C),
-                        const Color(0xFF74C69D),
-                      ][entry.rank - 1].withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(6.r),
-                    ),
-                    child: Text(
-                      '#${entry.rank}',
-                      style: TextStyle(
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w800,
-                        color: [
-                          const Color(0xFF1B4332),
-                          const Color(0xFF2D6A4F),
-                          const Color(0xFF40916C),
-                        ][entry.rank - 1],
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  )
-                : Text(
-                    AppLocalizations.of(context).value3(entry.rank),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.military_tech_rounded,
+                    size: 18.sp,
+                    color: AppColors.accent,
+                  ),
+                  SizedBox(width: 8.w),
+                  Text(
+                    '$unlocked / $total ${l10n.badges} ${l10n.unlocked.toLowerCase()}',
                     style: TextStyle(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
                     ),
                   ),
-          ),
-          SizedBox(width: 12.w),
-          Container(
-            width: 40.w,
-            height: 40.w,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: entry.isCurrentUser
-                  ? AppColors.primary
-                  : AppColors.primary.withValues(alpha: 0.1),
-            ),
-            child: Center(
-              child: Text(
-                entry.name[0],
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w600,
-                  color: entry.isCurrentUser ? Colors.white : AppColors.primary,
-                ),
+                ],
               ),
-            ),
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  entry.name,
-                  style: TextStyle(
-                    fontSize: 15.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                Text(
-                  UserLevel.fromXP(entry.xp).name,
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                AppLocalizations.of(context).valueXp2(
-                  entry.xp.toString().replaceAllMapped(
-                    RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-                    (m) => '${m[1]},',
-                  ),
-                ),
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
+              SizedBox(height: 8.h),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4.r),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  backgroundColor: AppColors.border,
+                  color: AppColors.accent,
+                  minHeight: 8.h,
                 ),
               ),
             ],
           ),
-        ],
-      ),
+        ).animate().fadeIn(duration: 300.ms),
+        // Grid
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            crossAxisSpacing: 10.w,
+            mainAxisSpacing: 10.h,
+            childAspectRatio: 0.8,
+          ),
+          itemCount: badges.length,
+          itemBuilder: (context, i) => _BadgeCard(data: badges[i], index: i),
+        ),
+      ],
     );
   }
 
-  /// Helper method to format numbers with commas
-  String _formatNumber(int number) {
-    return number.toString().replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (m) => '${m[1]},',
-    );
-  }
-
-  /// Get badge definitions with unlocked status based on gamification data
-  List<_BadgeData> _getBadgeDefinitions(GamificationStats gamification) {
-    final totalRides = gamification.totalRides;
-    final totalDistance = gamification.totalDistance;
-    final longestStreak = gamification.longestStreak;
-    final unlockedBadges = gamification.unlockedBadges;
+  List<_BadgeData> _getBadgeDefinitions(GamificationStats stats) {
+    final unlockedBadges = stats.unlockedBadges;
+    final totalRides = stats.totalRides;
+    final totalDistance = stats.totalDistance;
+    final longestStreak = stats.longestStreak;
 
     return [
       _BadgeData(
         'First Ride',
-        'Complete your first carpool ride',
+        'Complete your first ride',
         Icons.directions_car_rounded,
         totalRides >= 1 || unlockedBadges.contains('first_ride'),
         'bronze',
+      ),
+      _BadgeData(
+        'Road Warrior',
+        'Complete 10 rides',
+        Icons.emoji_transportation_rounded,
+        totalRides >= 10 || unlockedBadges.contains('road_warrior'),
+        'silver',
+        totalRides < 10 ? totalRides / 10 : null,
+      ),
+      _BadgeData(
+        'Eco Hero',
+        'Save 50 kg of CO₂',
+        Icons.eco_rounded,
+        unlockedBadges.contains('eco_hero'),
+        'gold',
+        0.6,
       ),
       _BadgeData(
         'Social Butterfly',
@@ -1097,7 +477,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
       ),
       _BadgeData(
         'Speed Demon',
-        'Maintain a 7-day ride streak',
+        'Maintain a 7-day streak',
         Icons.speed_rounded,
         longestStreak >= 7 || unlockedBadges.contains('speed_demon'),
         'gold',
@@ -1148,25 +528,861 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
         unlockedBadges.contains('verified_pro'),
         'silver',
       ),
-      _BadgeData(
-        'Chat Champion',
-        'Send 100 messages',
-        Icons.chat_rounded,
-        unlockedBadges.contains('chat_champion'),
-        'bronze',
-        0.8,
+    ];
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// BADGE CARD
+// ─────────────────────────────────────────────────────────────────
+
+class _BadgeCard extends StatelessWidget {
+  const _BadgeCard({required this.data, required this.index});
+  final _BadgeData data;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    final tierColor = _tierColor(data.tier);
+    final locked = !data.unlocked;
+
+    return Container(
+      padding: EdgeInsets.all(10.w),
+      decoration: BoxDecoration(
+        color: locked ? AppColors.surfaceVariant : AppColors.surface,
+        borderRadius: BorderRadius.circular(14.r),
+        border: Border.all(
+          color: locked ? AppColors.border : tierColor.withValues(alpha: 0.4),
+          width: locked ? 1 : 1.5,
+        ),
+        boxShadow: locked
+            ? null
+            : [
+                BoxShadow(
+                  color: tierColor.withValues(alpha: 0.15),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
-      _BadgeData(
-        'Team Player',
-        'Join 5 group rides',
-        Icons.groups_rounded,
-        unlockedBadges.contains('team_player'),
-        'gold',
-        0.4,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 44.w,
+            height: 44.w,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: locked
+                  ? AppColors.border.withValues(alpha: 0.4)
+                  : tierColor.withValues(alpha: 0.15),
+            ),
+            child: Icon(
+              locked ? Icons.lock_rounded : data.icon,
+              size: 22.sp,
+              color: locked ? AppColors.textTertiary : tierColor,
+            ),
+          ),
+          SizedBox(height: 6.h),
+          Text(
+            data.name,
+            style: TextStyle(
+              fontSize: 10.sp,
+              fontWeight: FontWeight.w700,
+              color: locked ? AppColors.textTertiary : AppColors.textPrimary,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (!locked)
+            Padding(
+              padding: EdgeInsets.only(top: 4.h),
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                decoration: BoxDecoration(
+                  color: tierColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(6.r),
+                ),
+                child: Text(
+                  data.tier.toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 8.sp,
+                    fontWeight: FontWeight.w800,
+                    color: tierColor,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+            ),
+          if (locked && data.progress != null)
+            Padding(
+              padding: EdgeInsets.only(top: 6.h),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(3.r),
+                child: LinearProgressIndicator(
+                  value: data.progress,
+                  backgroundColor: AppColors.border,
+                  color: tierColor,
+                  minHeight: 4.h,
+                ),
+              ),
+            ),
+        ],
+      ),
+    ).animate().fadeIn(delay: (index * 30).ms, duration: 300.ms);
+  }
+
+  Color _tierColor(String tier) {
+    switch (tier) {
+      case 'diamond':
+        return AppColors.info;
+      case 'platinum':
+        return AppColors.levelPlatinum;
+      case 'gold':
+        return AppColors.levelGold;
+      case 'silver':
+        return AppColors.levelSilver;
+      default:
+        return AppColors.levelBronze;
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// CHALLENGES TAB
+// ─────────────────────────────────────────────────────────────────
+
+class _ChallengesTab extends StatelessWidget {
+  const _ChallengesTab({required this.stats, required this.l10n});
+  final GamificationStats stats;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    final challenges = _getChallenges(stats);
+
+    return ListView.builder(
+      padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 24.h),
+      itemCount: challenges.length,
+      itemBuilder: (context, i) =>
+          _ChallengeCard(data: challenges[i], index: i, l10n: l10n),
+    );
+  }
+
+  List<_ChallengeData> _getChallenges(GamificationStats stats) {
+    return [
+      _ChallengeData(
+        'Daily Commuter',
+        'Complete 1 ride today',
+        '0/1',
+        0.0,
+        50,
+        Icons.today_rounded,
+        'Resets in 12h',
+      ),
+      _ChallengeData(
+        'Week Warrior',
+        'Complete 5 rides this week',
+        '${stats.totalRides.clamp(0, 5)}/5',
+        (stats.totalRides.clamp(0, 5) / 5).toDouble(),
+        200,
+        Icons.calendar_view_week_rounded,
+        'Resets in 3d',
+      ),
+      _ChallengeData(
+        'Streak Keeper',
+        'Maintain a 3-day streak',
+        '${stats.currentStreak.clamp(0, 3)}/3',
+        (stats.currentStreak.clamp(0, 3) / 3).toDouble(),
+        150,
+        Icons.local_fire_department_rounded,
+        'Keep going!',
+      ),
+      _ChallengeData(
+        'Explorer',
+        'Try 3 new routes this month',
+        '0/3',
+        0.1,
+        300,
+        Icons.explore_rounded,
+        'Resets in 23d',
+      ),
+      _ChallengeData(
+        'Social Rider',
+        'Rate 5 drivers this week',
+        '0/5',
+        0.0,
+        100,
+        Icons.star_half_rounded,
+        'Resets in 3d',
+      ),
+      _ChallengeData(
+        'Eco Warrior',
+        'Share 3 rides today',
+        '0/3',
+        0.0,
+        75,
+        Icons.eco_rounded,
+        'Resets in 12h',
       ),
     ];
   }
 }
+
+// ─────────────────────────────────────────────────────────────────
+// CHALLENGE CARD
+// ─────────────────────────────────────────────────────────────────
+
+class _ChallengeCard extends StatelessWidget {
+  const _ChallengeCard({
+    required this.data,
+    required this.index,
+    required this.l10n,
+  });
+  final _ChallengeData data;
+  final int index;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    final isComplete = data.progress >= 1.0;
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 10.h),
+      padding: EdgeInsets.all(14.w),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14.r),
+        border: Border.all(
+          color: isComplete
+              ? AppColors.success.withValues(alpha: 0.4)
+              : AppColors.border,
+          width: isComplete ? 1.5 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44.w,
+            height: 44.w,
+            decoration: BoxDecoration(
+              color: isComplete
+                  ? AppColors.success.withValues(alpha: 0.1)
+                  : AppColors.primarySurface,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              isComplete ? Icons.check_circle_rounded : data.icon,
+              size: 22.sp,
+              color: isComplete ? AppColors.success : AppColors.primary,
+            ),
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        data.name,
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    // XP chip
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 7.w,
+                        vertical: 3.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Text(
+                        l10n.valueXp(data.xpReward),
+                        style: TextStyle(
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primaryDark,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  data.description,
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                SizedBox(height: 6.h),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(4.r),
+                        child: LinearProgressIndicator(
+                          value: data.progress,
+                          backgroundColor: AppColors.border,
+                          color: isComplete
+                              ? AppColors.success
+                              : AppColors.primary,
+                          minHeight: 5.h,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
+                    Text(
+                      data.progressText,
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  data.timeLeft,
+                  style: TextStyle(
+                    fontSize: 10.sp,
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(delay: (index * 50).ms, duration: 350.ms);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// LEADERBOARD TAB
+// ─────────────────────────────────────────────────────────────────
+
+class _LeaderboardTab extends ConsumerWidget {
+  const _LeaderboardTab({required this.stats, required this.l10n});
+  final GamificationStats stats;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final leaderboardAsync = ref.watch(leaderboardProvider);
+
+    return leaderboardAsync.when(
+      loading: () => Padding(
+        padding: EdgeInsets.all(16.w),
+        child: SkeletonLoader(type: SkeletonType.compactTile, itemCount: 8),
+      ),
+      error: (e, _) => Center(
+        child: Padding(
+          padding: EdgeInsets.all(24.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.wifi_off_rounded,
+                size: 40.sp,
+                color: AppColors.textTertiary,
+              ),
+              SizedBox(height: 12.h),
+              Text(
+                l10n.errorLoadingAchievements,
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      data: (entries) {
+        if (entries.isEmpty) {
+          return Center(
+            child: Text(
+              l10n.noResultsFound,
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 14.sp),
+            ),
+          );
+        }
+        final top3 = entries.take(3).toList();
+        final rest = entries.skip(3).toList();
+
+        return ListView(
+          padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 24.h),
+          children: [
+            // Podium
+            _Podium(top3: top3, l10n: l10n),
+            SizedBox(height: 16.h),
+            // Rest of leaderboard
+            ...rest.asMap().entries.map(
+              (e) => _LeaderboardRow(entry: e.value, index: e.key, l10n: l10n),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// PODIUM (top 3)
+// ─────────────────────────────────────────────────────────────────
+
+class _Podium extends StatelessWidget {
+  const _Podium({required this.top3, required this.l10n});
+  final List<LeaderboardEntry> top3;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    if (top3.isEmpty) return const SizedBox.shrink();
+
+    final first = top3[0];
+    final second = top3.length > 1 ? top3[1] : null;
+    final third = top3.length > 2 ? top3[2] : null;
+
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [AppColors.primarySurface, AppColors.background],
+        ),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          if (second != null)
+            _PodiumSpot(
+              entry: second,
+              height: 80.h,
+              medal: AppColors.levelSilver,
+            ),
+          _PodiumSpot(
+            entry: first,
+            height: 110.h,
+            medal: AppColors.levelGold,
+            isCrown: true,
+          ),
+          if (third != null)
+            _PodiumSpot(
+              entry: third,
+              height: 60.h,
+              medal: AppColors.levelBronze,
+            ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 400.ms);
+  }
+}
+
+class _PodiumSpot extends StatelessWidget {
+  const _PodiumSpot({
+    required this.entry,
+    required this.height,
+    required this.medal,
+    this.isCrown = false,
+  });
+  final LeaderboardEntry entry;
+  final double height;
+  final Color medal;
+  final bool isCrown;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (isCrown)
+          Icon(
+            Icons.workspace_premium_rounded,
+            color: AppColors.levelGold,
+            size: 20.sp,
+          ),
+        CircleAvatar(
+          radius: isCrown ? 24.r : 20.r,
+          backgroundImage: entry.photoUrl != null
+              ? NetworkImage(entry.photoUrl!)
+              : null,
+          backgroundColor: medal.withValues(alpha: 0.2),
+          child: entry.photoUrl == null
+              ? Text(
+                  entry.displayName.isNotEmpty
+                      ? entry.displayName[0].toUpperCase()
+                      : '?',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: medal,
+                    fontSize: isCrown ? 16.sp : 13.sp,
+                  ),
+                )
+              : null,
+        ),
+        SizedBox(height: 4.h),
+        SizedBox(
+          width: 70.w,
+          child: Text(
+            entry.displayName,
+            style: TextStyle(
+              fontSize: 10.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        Text(
+          _formatNumber(entry.totalXP),
+          style: TextStyle(fontSize: 10.sp, color: AppColors.textSecondary),
+        ),
+        SizedBox(height: 4.h),
+        Container(
+          width: 64.w,
+          height: height,
+          decoration: BoxDecoration(
+            color: medal.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(8.r),
+              topRight: Radius.circular(8.r),
+            ),
+            border: Border.all(color: medal.withValues(alpha: 0.3)),
+          ),
+          child: Center(
+            child: Text(
+              '#${entry.rank}',
+              style: TextStyle(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w800,
+                color: medal,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _formatNumber(int n) {
+    if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}k XP';
+    return '$n XP';
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// LEADERBOARD ROW
+// ─────────────────────────────────────────────────────────────────
+
+class _LeaderboardRow extends StatelessWidget {
+  const _LeaderboardRow({
+    required this.entry,
+    required this.index,
+    required this.l10n,
+  });
+  final LeaderboardEntry entry;
+  final int index;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    final isTop3 = entry.rank <= 3;
+    final rankBgColors = [
+      AppColors.levelGold,
+      AppColors.levelSilver,
+      AppColors.levelBronze,
+    ];
+    final rankColor = isTop3
+        ? rankBgColors[entry.rank - 1]
+        : AppColors.textTertiary;
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 8.h),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(
+          color: isTop3 ? rankColor.withValues(alpha: 0.3) : AppColors.border,
+        ),
+      ),
+      child: Row(
+        children: [
+          // Rank badge
+          Container(
+            width: 32.w,
+            height: 32.w,
+            decoration: BoxDecoration(
+              color: isTop3
+                  ? rankColor.withValues(alpha: 0.15)
+                  : AppColors.background,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                '#${entry.rank}',
+                style: TextStyle(
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w800,
+                  color: rankColor,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(width: 10.w),
+          // Avatar
+          CircleAvatar(
+            radius: 16.r,
+            backgroundImage: entry.photoUrl != null
+                ? NetworkImage(entry.photoUrl!)
+                : null,
+            backgroundColor: AppColors.primarySurface,
+            child: entry.photoUrl == null
+                ? Text(
+                    entry.displayName.isNotEmpty
+                        ? entry.displayName[0].toUpperCase()
+                        : '?',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                    ),
+                  )
+                : null,
+          ),
+          SizedBox(width: 10.w),
+          // Name + level
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  entry.displayName,
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  'Lvl ${entry.level}',
+                  style: TextStyle(
+                    fontSize: 10.sp,
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // XP
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                _formatNumber(entry.totalXP),
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              Text(
+                '${entry.ridesThisMonth} rides',
+                style: TextStyle(
+                  fontSize: 10.sp,
+                  color: AppColors.textTertiary,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ).animate().fadeIn(delay: (index * 40).ms, duration: 300.ms);
+  }
+
+  String _formatNumber(int n) {
+    if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}k';
+    return '$n';
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// SHARED STAT WIDGETS
+// ─────────────────────────────────────────────────────────────────
+
+class _StatItem extends StatelessWidget {
+  const _StatItem({
+    required this.icon,
+    required this.value,
+    required this.label,
+  });
+
+  final IconData icon;
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        children: [
+          Icon(icon, size: 18.sp, color: Colors.white.withValues(alpha: 0.9)),
+          SizedBox(height: 3.h),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 9.sp,
+              color: Colors.white.withValues(alpha: 0.7),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatDivider extends StatelessWidget {
+  const _StatDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 1,
+      height: 36.h,
+      color: Colors.white.withValues(alpha: 0.25),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// SHELL STATES
+// ─────────────────────────────────────────────────────────────────
+
+class _AchievementsLoadingShell extends StatelessWidget {
+  const _AchievementsLoadingShell({required this.l10n});
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: Text(l10n.badges),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_rounded),
+          onPressed: () => context.pop(),
+        ),
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(16.w),
+        child: Column(
+          children: [
+            SkeletonLoader(type: SkeletonType.rideCard, itemCount: 1),
+            SizedBox(height: 16.h),
+            SkeletonLoader(type: SkeletonType.compactTile, itemCount: 5),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AchievementsErrorShell extends StatelessWidget {
+  const _AchievementsErrorShell({required this.l10n, required this.message});
+  final AppLocalizations l10n;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: Text(l10n.badges),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_rounded),
+          onPressed: () => context.pop(),
+        ),
+      ),
+      body: Center(
+        child: Padding(
+          padding: EdgeInsets.all(24.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.error_outline_rounded,
+                size: 48.sp,
+                color: AppColors.error,
+              ),
+              SizedBox(height: 12.h),
+              Text(
+                l10n.errorLoadingAchievements,
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              SizedBox(height: 6.h),
+              Text(
+                message,
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: AppColors.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// DATA CLASSES
+// ─────────────────────────────────────────────────────────────────
 
 class _BadgeData {
   final String name;
@@ -1176,7 +1392,7 @@ class _BadgeData {
   final String tier;
   final double? progress;
 
-  _BadgeData(
+  const _BadgeData(
     this.name,
     this.description,
     this.icon,
@@ -1195,7 +1411,7 @@ class _ChallengeData {
   final IconData icon;
   final String timeLeft;
 
-  _ChallengeData(
+  const _ChallengeData(
     this.name,
     this.description,
     this.progressText,
@@ -1204,20 +1420,4 @@ class _ChallengeData {
     this.icon,
     this.timeLeft,
   );
-}
-
-class _LeaderboardEntry {
-  final String name;
-  final int xp;
-  final int rank;
-  final int level;
-  final bool isCurrentUser;
-
-  _LeaderboardEntry(
-    this.name,
-    this.xp,
-    this.rank, {
-    this.level = 1,
-    this.isCurrentUser = false,
-  });
 }

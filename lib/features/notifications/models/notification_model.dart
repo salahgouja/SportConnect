@@ -32,6 +32,9 @@ enum NotificationType {
   leaderboardRank,
   xpEarned,
 
+  // Event notifications
+  eventCancelled,
+
   // System
   accountVerified,
   profileIncomplete,
@@ -127,6 +130,8 @@ abstract class NotificationModel with _$NotificationModel {
         return 'notifications';
       case NotificationType.promotion:
         return 'campaign';
+      case NotificationType.eventCancelled:
+        return 'event_busy';
     }
   }
 
@@ -142,6 +147,7 @@ abstract class NotificationModel with _$NotificationModel {
       case NotificationType.rideBookingRejected:
       case NotificationType.rideBookingCancelled:
       case NotificationType.rideCancelled:
+      case NotificationType.eventCancelled:
         return 'error';
       case NotificationType.rideStartingSoon:
       case NotificationType.profileIncomplete:

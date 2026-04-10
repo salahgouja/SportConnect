@@ -48,6 +48,10 @@ class AppConfig {
   /// App-level settings
   static const String appName = 'SportConnect';
   static const String appVersion = '1.0.0';
+  static const String supportTicketEmail = String.fromEnvironment(
+    'SPORTCONNECT_SUPPORT_EMAIL',
+    defaultValue: 'support@sportconnect.app',
+  );
 
   /// API settings
   static const Duration apiTimeout = Duration(seconds: 30);
@@ -66,6 +70,17 @@ class AppConfig {
   static bool get isPremiumEnabled => true;
   static bool get isChatEnabled => true;
   static bool get isGamificationEnabled => true;
+
+  /// In-app purchase product identifiers for premium subscription plans.
+  /// Override via --dart-define in CI/CD per environment if needed.
+  static const String premiumMonthlyProductId = String.fromEnvironment(
+    'SPORTCONNECT_IAP_PREMIUM_MONTHLY_ID',
+    defaultValue: 'sportconnect_premium_monthly',
+  );
+  static const String premiumYearlyProductId = String.fromEnvironment(
+    'SPORTCONNECT_IAP_PREMIUM_YEARLY_ID',
+    defaultValue: 'sportconnect_premium_yearly',
+  );
 
   /// Get environment status string for logging
   static String get environmentStatus {

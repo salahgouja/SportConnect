@@ -104,7 +104,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
         backgroundColor: AppColors.primary,
         title: Text(AppLocalizations.of(context).yourRide),
       ),
-      body: const Center(child: CircularProgressIndicator()),
+      body: const Center(child: CircularProgressIndicator.adaptive()),
     );
   }
 
@@ -325,7 +325,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
             shape: BoxShape.circle,
           ),
           child: Icon(
-            Icons.arrow_back_ios_new_rounded,
+            Icons.adaptive.arrow_back_rounded,
             color: Colors.white,
             size: 18.sp,
           ),
@@ -342,7 +342,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
               shape: BoxShape.circle,
             ),
             child: Icon(
-              Icons.more_vert_rounded,
+              Icons.adaptive.more_rounded,
               color: Colors.white,
               size: 18.sp,
             ),
@@ -702,7 +702,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                     borderRadius: BorderRadius.circular(8.r),
                   ),
                   child: Text(
-                    ref.watch(distanceFormatterProvider)(ride.distanceKm!),
+                    '${ride.distanceKm!.toStringAsFixed(1)} km',
                     style: TextStyle(
                       fontSize: 12.sp,
                       fontWeight: FontWeight.w500,
@@ -977,9 +977,6 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       prefs.add(MapEntry(Icons.female_rounded, 'Women only'));
     }
     if (ride.allowChat) prefs.add(MapEntry(Icons.chat_rounded, 'Chat enabled'));
-    if (ride.isPriceNegotiable) {
-      prefs.add(MapEntry(Icons.handshake_rounded, 'Price negotiable'));
-    }
 
     if (prefs.isEmpty) return const SizedBox.shrink();
 
@@ -1246,6 +1243,22 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
 
           SizedBox(height: 12.h),
 
+          // Chat button
+          Align(
+            alignment: Alignment.centerLeft,
+            child: IconButton(
+              onPressed: () => _openPassengerChat(booking),
+              icon: Icon(Icons.chat_bubble_outline_rounded, size: 20.sp),
+              tooltip: AppLocalizations.of(context).chatWithPassenger,
+              style: IconButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                padding: EdgeInsets.all(8.w),
+              ),
+            ),
+          ),
+
+          SizedBox(height: 8.h),
+
           Row(
             children: [
               Expanded(
@@ -1439,7 +1452,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                 tooltip: AppLocalizations.of(context).passengerOptions,
                 onPressed: () => _showPassengerOptions(ride, booking),
                 icon: Icon(
-                  Icons.more_vert_rounded,
+                  Icons.adaptive.more_rounded,
                   size: 20.sp,
                   color: AppColors.textSecondary,
                 ),
@@ -1577,7 +1590,10 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
             ),
             SizedBox(height: 20.h),
             ListTile(
-              leading: Icon(Icons.share_rounded, color: AppColors.primary),
+              leading: Icon(
+                Icons.adaptive.share_rounded,
+                color: AppColors.primary,
+              ),
               title: Text(AppLocalizations.of(context).shareRide),
               onTap: () {
                 Navigator.pop(context);
@@ -1753,7 +1769,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
 
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => AlertDialog.adaptive(
         title: Text(AppLocalizations.of(context).declineBooking),
         content: Text(
           AppLocalizations.of(
@@ -1840,7 +1856,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
 
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => AlertDialog.adaptive(
         title: Text(AppLocalizations.of(context).removePassenger),
         content: Text(
           AppLocalizations.of(context).removeValueFromThisRide(passengerName),
@@ -1993,7 +2009,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
   Future<void> _startRide(RideModel ride) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => AlertDialog.adaptive(
         title: Text(AppLocalizations.of(context).startRide),
         content: Text(AppLocalizations.of(context).markThisRideAsStarted),
         actions: [
@@ -2031,7 +2047,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
   Future<void> _completeRide(RideModel ride) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => AlertDialog.adaptive(
         title: Text(AppLocalizations.of(context).completeRide),
         content: Text(AppLocalizations.of(context).markThisRideAsCompleted),
         actions: [
@@ -2069,7 +2085,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
   Future<void> _cancelRide(RideModel ride) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => AlertDialog.adaptive(
         title: Text(AppLocalizations.of(context).cancelRide2),
         content: Text(AppLocalizations.of(context).areYouSureYouWant8),
         actions: [

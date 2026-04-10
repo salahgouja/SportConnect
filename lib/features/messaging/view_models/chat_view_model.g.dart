@@ -146,7 +146,7 @@ final class ChatDetailViewModelProvider
 }
 
 String _$chatDetailViewModelHash() =>
-    r'0f3d82624b4ef4dfbd0e5cafbf7ee3604a8f7723';
+    r'e093936273592f4dc5ff0a4588d2c04d813e1878';
 
 /// Chat Detail View Model
 
@@ -288,7 +288,7 @@ final class GetOrCreateChatProvider
   }
 }
 
-String _$getOrCreateChatHash() => r'83317096344dcdda0fd96d1a677fbbd6161642c0';
+String _$getOrCreateChatHash() => r'6c35570b1d7d98b8d8c2579d488b963159ff4493';
 
 /// Create or get private chat
 
@@ -337,4 +337,87 @@ final class GetOrCreateChatFamily extends $Family
 
   @override
   String toString() => r'getOrCreateChatProvider';
+}
+
+/// Fetch the ride group chat for a given ride ID, or null if none exists.
+
+@ProviderFor(rideChatByRideId)
+final rideChatByRideIdProvider = RideChatByRideIdFamily._();
+
+/// Fetch the ride group chat for a given ride ID, or null if none exists.
+
+final class RideChatByRideIdProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<ChatModel?>,
+          ChatModel?,
+          FutureOr<ChatModel?>
+        >
+    with $FutureModifier<ChatModel?>, $FutureProvider<ChatModel?> {
+  /// Fetch the ride group chat for a given ride ID, or null if none exists.
+  RideChatByRideIdProvider._({
+    required RideChatByRideIdFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'rideChatByRideIdProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$rideChatByRideIdHash();
+
+  @override
+  String toString() {
+    return r'rideChatByRideIdProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<ChatModel?> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<ChatModel?> create(Ref ref) {
+    final argument = this.argument as String;
+    return rideChatByRideId(ref, rideId: argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is RideChatByRideIdProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$rideChatByRideIdHash() => r'bf68791f02ef532ec899a008d727c0208e0c12ae';
+
+/// Fetch the ride group chat for a given ride ID, or null if none exists.
+
+final class RideChatByRideIdFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<ChatModel?>, String> {
+  RideChatByRideIdFamily._()
+    : super(
+        retry: null,
+        name: r'rideChatByRideIdProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Fetch the ride group chat for a given ride ID, or null if none exists.
+
+  RideChatByRideIdProvider call({required String rideId}) =>
+      RideChatByRideIdProvider._(argument: rideId, from: this);
+
+  @override
+  String toString() => r'rideChatByRideIdProvider';
 }

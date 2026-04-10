@@ -109,4 +109,13 @@ abstract class INotificationRepository {
     required String rideId,
     required String rideName,
   });
+
+  Future<void> sendEventCancelled({
+    required String toUserId,
+    required String organizerName,
+    String? organizerPhoto,
+    required String eventId,
+    required String eventTitle,
+    String? reason,
+  });
 }

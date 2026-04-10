@@ -25,7 +25,6 @@ class HomeState {
   final bool isLoadingLocation;
   final String? locationError;
   final double userHeading;
-  final bool isFollowingUser;
 
   // Map state
   final double currentZoom;
@@ -59,7 +58,6 @@ class HomeState {
     this.isLoadingLocation = true,
     this.locationError,
     this.userHeading = 0.0,
-    this.isFollowingUser = true,
     this.currentZoom = 14,
     this.selectedMapStyle = 'standard',
     this.showNearbyDrivers = true,
@@ -83,7 +81,6 @@ class HomeState {
     bool? isLoadingLocation,
     String? locationError,
     double? userHeading,
-    bool? isFollowingUser,
     double? currentZoom,
     String? selectedMapStyle,
     bool? showNearbyDrivers,
@@ -106,7 +103,6 @@ class HomeState {
       isLoadingLocation: isLoadingLocation ?? this.isLoadingLocation,
       locationError: locationError,
       userHeading: userHeading ?? this.userHeading,
-      isFollowingUser: isFollowingUser ?? this.isFollowingUser,
       currentZoom: currentZoom ?? this.currentZoom,
       selectedMapStyle: selectedMapStyle ?? this.selectedMapStyle,
       showNearbyDrivers: showNearbyDrivers ?? this.showNearbyDrivers,
@@ -285,11 +281,6 @@ class HomeViewModel extends _$HomeViewModel {
       isLoadingLocation: false,
       locationError: null,
     );
-  }
-
-  /// Toggle user following mode (map centers on user)
-  void toggleFollowingUser() {
-    state = state.copyWith(isFollowingUser: !state.isFollowingUser);
   }
 
   // ============================================================================

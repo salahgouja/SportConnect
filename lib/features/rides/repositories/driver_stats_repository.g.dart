@@ -54,13 +54,13 @@ final pendingRideRequestsProvider = PendingRideRequestsProvider._();
 final class PendingRideRequestsProvider
     extends
         $FunctionalProvider<
-          AsyncValue<List<RideRequestModel>>,
-          List<RideRequestModel>,
-          Stream<List<RideRequestModel>>
+          AsyncValue<List<RideBooking>>,
+          List<RideBooking>,
+          Stream<List<RideBooking>>
         >
     with
-        $FutureModifier<List<RideRequestModel>>,
-        $StreamProvider<List<RideRequestModel>> {
+        $FutureModifier<List<RideBooking>>,
+        $StreamProvider<List<RideBooking>> {
   PendingRideRequestsProvider._()
     : super(
         from: null,
@@ -77,18 +77,18 @@ final class PendingRideRequestsProvider
 
   @$internal
   @override
-  $StreamProviderElement<List<RideRequestModel>> $createElement(
+  $StreamProviderElement<List<RideBooking>> $createElement(
     $ProviderPointer pointer,
   ) => $StreamProviderElement(pointer);
 
   @override
-  Stream<List<RideRequestModel>> create(Ref ref) {
+  Stream<List<RideBooking>> create(Ref ref) {
     return pendingRideRequests(ref);
   }
 }
 
 String _$pendingRideRequestsHash() =>
-    r'77aefe6b60673c0853b7063520fcb8fbed6bb03b';
+    r'766497f0447b8f2bd60b56876b0ff58f56b436ed';
 
 @ProviderFor(acceptedRideRequests)
 final acceptedRideRequestsProvider = AcceptedRideRequestsProvider._();
@@ -96,13 +96,13 @@ final acceptedRideRequestsProvider = AcceptedRideRequestsProvider._();
 final class AcceptedRideRequestsProvider
     extends
         $FunctionalProvider<
-          AsyncValue<List<RideRequestModel>>,
-          List<RideRequestModel>,
-          Stream<List<RideRequestModel>>
+          AsyncValue<List<RideBooking>>,
+          List<RideBooking>,
+          Stream<List<RideBooking>>
         >
     with
-        $FutureModifier<List<RideRequestModel>>,
-        $StreamProvider<List<RideRequestModel>> {
+        $FutureModifier<List<RideBooking>>,
+        $StreamProvider<List<RideBooking>> {
   AcceptedRideRequestsProvider._()
     : super(
         from: null,
@@ -119,18 +119,18 @@ final class AcceptedRideRequestsProvider
 
   @$internal
   @override
-  $StreamProviderElement<List<RideRequestModel>> $createElement(
+  $StreamProviderElement<List<RideBooking>> $createElement(
     $ProviderPointer pointer,
   ) => $StreamProviderElement(pointer);
 
   @override
-  Stream<List<RideRequestModel>> create(Ref ref) {
+  Stream<List<RideBooking>> create(Ref ref) {
     return acceptedRideRequests(ref);
   }
 }
 
 String _$acceptedRideRequestsHash() =>
-    r'e6a883fedd14bdcbbaaae32413dfde4daf5d44e2';
+    r'c059295ec24ad978801821e07c50fa5f3307f078';
 
 @ProviderFor(rejectedRideRequests)
 final rejectedRideRequestsProvider = RejectedRideRequestsProvider._();
@@ -138,13 +138,13 @@ final rejectedRideRequestsProvider = RejectedRideRequestsProvider._();
 final class RejectedRideRequestsProvider
     extends
         $FunctionalProvider<
-          AsyncValue<List<RideRequestModel>>,
-          List<RideRequestModel>,
-          Stream<List<RideRequestModel>>
+          AsyncValue<List<RideBooking>>,
+          List<RideBooking>,
+          Stream<List<RideBooking>>
         >
     with
-        $FutureModifier<List<RideRequestModel>>,
-        $StreamProvider<List<RideRequestModel>> {
+        $FutureModifier<List<RideBooking>>,
+        $StreamProvider<List<RideBooking>> {
   RejectedRideRequestsProvider._()
     : super(
         from: null,
@@ -161,18 +161,18 @@ final class RejectedRideRequestsProvider
 
   @$internal
   @override
-  $StreamProviderElement<List<RideRequestModel>> $createElement(
+  $StreamProviderElement<List<RideBooking>> $createElement(
     $ProviderPointer pointer,
   ) => $StreamProviderElement(pointer);
 
   @override
-  Stream<List<RideRequestModel>> create(Ref ref) {
+  Stream<List<RideBooking>> create(Ref ref) {
     return rejectedRideRequests(ref);
   }
 }
 
 String _$rejectedRideRequestsHash() =>
-    r'23599351633ece364e914e7607d66589586bd210';
+    r'1ca2b7bf32922f81e6e14238fff714fbac7e8988';
 
 @ProviderFor(upcomingDriverRides)
 final upcomingDriverRidesProvider = UpcomingDriverRidesProvider._();

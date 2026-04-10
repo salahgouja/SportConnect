@@ -82,31 +82,31 @@ class CreateEventScreen extends ConsumerWidget {
         ),
         centerTitle: true,
       ),
-      body: ListView(
-        padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 32.h),
-        children: [
-          _buildSportTypeSelector(ref, createState, l10n),
-          SizedBox(height: 20.h),
-          _buildTitleField(ref, createState, l10n),
-          SizedBox(height: 14.h),
-          _buildVenueField(ref, createState, l10n),
-          SizedBox(height: 14.h),
-          _buildDescriptionField(ref, createState, l10n),
-          SizedBox(height: 20.h),
-          _buildImagePicker(ref, createState, l10n),
-          SizedBox(height: 20.h),
-          _buildLocationPicker(context, ref, createState, l10n),
-          SizedBox(height: 20.h),
-          _buildWhenSection(context, ref, createState, l10n),
-          SizedBox(height: 20.h),
-          _buildParticipantSlider(ref, createState, l10n),
-          SizedBox(height: 20.h),
-          _buildRecurringToggle(context, ref, createState, l10n),
-          SizedBox(height: 20.h),
-          _buildCostSplitToggle(ref, createState, l10n),
-          SizedBox(height: 32.h),
-          _buildSubmitButton(context, ref, createState, l10n),
-        ],
+      body: SafeArea(
+        top: false,
+        child: ListView(
+          padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 32.h),
+          children: [
+            _buildSportTypeSelector(ref, createState, l10n),
+            SizedBox(height: 20.h),
+            _buildTitleField(ref, createState, l10n),
+            SizedBox(height: 14.h),
+            SizedBox(height: 14.h),
+            _buildDescriptionField(ref, createState, l10n),
+            SizedBox(height: 20.h),
+            _buildImagePicker(ref, createState, l10n),
+            SizedBox(height: 20.h),
+            _buildLocationPicker(context, ref, createState, l10n),
+            SizedBox(height: 20.h),
+            _buildWhenSection(context, ref, createState, l10n),
+            SizedBox(height: 20.h),
+            _buildParticipantSlider(ref, createState, l10n),
+            SizedBox(height: 20.h),
+            _buildRecurringToggle(context, ref, createState, l10n),
+            SizedBox(height: 32.h),
+            _buildSubmitButton(context, ref, createState, l10n),
+          ],
+        ),
       ),
     );
   }
@@ -187,21 +187,6 @@ class CreateEventScreen extends ConsumerWidget {
             : null,
       ),
     ).animate().fadeIn(duration: 250.ms, delay: 60.ms);
-  }
-
-  Widget _buildVenueField(
-    WidgetRef ref,
-    CreateEventFormState createState,
-    AppLocalizations l10n,
-  ) {
-    return TextFormField(
-      initialValue: createState.venueName,
-      textCapitalization: TextCapitalization.words,
-      onChanged: ref
-          .read(createEventFormViewModelProvider.notifier)
-          .setVenueName,
-      decoration: _deco(l10n.eventVenueName, Icons.stadium_rounded),
-    ).animate().fadeIn(duration: 250.ms, delay: 100.ms);
   }
 
   Widget _buildDescriptionField(
@@ -534,7 +519,7 @@ class CreateEventScreen extends ConsumerWidget {
             ),
           ],
         ),
-        Slider(
+        Slider.adaptive(
           value: createState.maxParticipants.toDouble(),
           min: 0,
           max: 100,
@@ -548,14 +533,13 @@ class CreateEventScreen extends ConsumerWidget {
     ).animate().fadeIn(duration: 250.ms, delay: 260.ms);
   }
 
-  // ── Recurring Toggle + Day Selector ──────────────────────────
+  // ── Recurring Toggle + Pattern Selector ──────────────────────────
   Widget _buildRecurringToggle(
     BuildContext context,
     WidgetRef ref,
     CreateEventFormState createState,
     AppLocalizations l10n,
   ) {
-    const dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -588,45 +572,48 @@ class CreateEventScreen extends ConsumerWidget {
           contentPadding: EdgeInsets.zero,
         ),
         if (createState.isRecurring) ...[
-          SizedBox(height: 8.h),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: List.generate(7, (i) {
-              final day = i + 1; // 1=Mon .. 7=Sun
-              final selected = createState.recurringDays.contains(day);
-              return GestureDetector(
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  ref
-                      .read(createEventFormViewModelProvider.notifier)
-                      .toggleRecurringDay(day);
-                },
-                child: AnimatedContainer(
-                  duration: 150.ms,
-                  width: 38.w,
-                  height: 38.w,
-                  decoration: BoxDecoration(
-                    color: selected ? AppColors.primary : AppColors.surface,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: selected ? AppColors.primary : AppColors.border,
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      dayLabels[i],
-                      style: TextStyle(
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w600,
-                        color: selected
-                            ? Colors.white
-                            : AppColors.textSecondary,
+          SizedBox(height: 12.h),
+          GestureDetector(
+            onTap: () {
+              _showRecurrencePatternPicker(context, ref, createState);
+            },
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today_rounded,
+                        size: 18.sp,
+                        color: AppColors.textTertiary,
                       ),
-                    ),
+                      SizedBox(width: 10.w),
+                      Text(
+                        createState.recurringPattern?.label ?? 'Select pattern',
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          color: createState.recurringPattern != null
+                              ? AppColors.textPrimary
+                              : AppColors.textTertiary,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              );
-            }),
+                  Icon(
+                    Icons.expand_more_rounded,
+                    size: 18.sp,
+                    color: AppColors.textTertiary,
+                  ),
+                ],
+              ),
+            ),
           ),
           SizedBox(height: 12.h),
           GestureDetector(
@@ -676,6 +663,112 @@ class CreateEventScreen extends ConsumerWidget {
     ).animate().fadeIn(duration: 250.ms, delay: 280.ms);
   }
 
+  Future<void> _showRecurrencePatternPicker(
+    BuildContext context,
+    WidgetRef ref,
+    CreateEventFormState createState,
+  ) async {
+    final liveState = ref.read(createEventFormViewModelProvider);
+    final patterns = liveState.applicablePatterns;
+
+    if (!context.mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+      ),
+      builder: (context) => Container(
+        padding: EdgeInsets.symmetric(vertical: 16.h),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: EdgeInsets.only(bottom: 12.h),
+              child: Text(
+                'Repeat',
+                style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600),
+              ),
+            ),
+            if (patterns.isEmpty)
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+                child: Text(
+                  'No recurrence pattern fits this start/end window. '
+                  'Extend end time or set a later repeat end date.',
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              )
+            else
+              ...patterns.map((pattern) {
+                final selected = liveState.recurringPattern == pattern;
+                return Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.w,
+                    vertical: 4.h,
+                  ),
+                  child: GestureDetector(
+                    onTap: () {
+                      ref
+                          .read(createEventFormViewModelProvider.notifier)
+                          .setRecurringPattern(pattern);
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12.w,
+                        vertical: 12.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? AppColors.primary.withValues(alpha: 0.1)
+                            : AppColors.surface,
+                        borderRadius: BorderRadius.circular(8.r),
+                        border: Border.all(
+                          color: selected
+                              ? AppColors.primary
+                              : AppColors.border,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            selected
+                                ? Icons.check_circle_rounded
+                                : Icons.circle_outlined,
+                            size: 20.sp,
+                            color: selected
+                                ? AppColors.primary
+                                : AppColors.textTertiary,
+                          ),
+                          SizedBox(width: 12.w),
+                          Text(
+                            pattern.label,
+                            style: TextStyle(
+                              fontSize: 13.sp,
+                              fontWeight: selected
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            SizedBox(height: 8.h),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _pickRecurringEndDate(
     BuildContext context,
     WidgetRef ref,
@@ -700,42 +793,6 @@ class CreateEventScreen extends ConsumerWidget {
           .read(createEventFormViewModelProvider.notifier)
           .setRecurringEndDate(date);
     }
-  }
-
-  // ── Cost Split Toggle ────────────────────────────────────────
-  Widget _buildCostSplitToggle(
-    WidgetRef ref,
-    CreateEventFormState createState,
-    AppLocalizations l10n,
-  ) {
-    return SwitchListTile.adaptive(
-      value: createState.costSplitEnabled,
-      onChanged: (v) {
-        HapticFeedback.selectionClick();
-        ref
-            .read(createEventFormViewModelProvider.notifier)
-            .setCostSplitEnabled(v);
-      },
-      title: Text(
-        l10n.eventCostSplit,
-        style: TextStyle(
-          fontSize: 14.sp,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
-        ),
-      ),
-      subtitle: Text(
-        l10n.eventCostSplitSubtitle,
-        style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
-      ),
-      secondary: Icon(
-        Icons.payments_outlined,
-        size: 22.sp,
-        color: AppColors.primary,
-      ),
-      activeColor: AppColors.primary,
-      contentPadding: EdgeInsets.zero,
-    ).animate().fadeIn(duration: 250.ms, delay: 290.ms);
   }
 
   // ── Submit ────────────────────────────────────────────────────
@@ -780,6 +837,7 @@ class CreateEventScreen extends ConsumerWidget {
   );
 
   InputDecoration _deco(String hint, IconData icon) => InputDecoration(
+    labelText: hint,
     hintText: hint,
     hintStyle: TextStyle(color: AppColors.textTertiary, fontSize: 14.sp),
     prefixIcon: Icon(icon, size: 20.sp, color: AppColors.textTertiary),

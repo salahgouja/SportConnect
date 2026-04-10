@@ -131,7 +131,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
         ),
         leading: IconButton(
           tooltip: l10n.goBackTooltip,
-          icon: const Icon(Icons.arrow_back_rounded),
+          icon: Icon(Icons.adaptive.arrow_back_rounded),
           onPressed: () => context.pop(),
         ),
       ),
@@ -508,7 +508,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
           child: PremiumButton(
             text: AppLocalizations.of(context).backToSettings,
             onPressed: () => context.pop(),
-            icon: Icons.arrow_back_rounded,
+            icon: Icons.adaptive.arrow_back_rounded,
           ),
         ).animate().fadeIn(delay: 400.ms),
       ],

@@ -95,13 +95,10 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
           description: next.description.trim().isEmpty
               ? null
               : next.description.trim(),
-          venueName: next.venueName.trim().isEmpty
-              ? null
-              : next.venueName.trim(),
           imageUrl: next.removeExistingImage ? null : next.existingImageUrl,
           maxParticipants: next.maxParticipants,
           isRecurring: next.isRecurring,
-          recurringDays: [...next.recurringDays]..sort(),
+          recurringPattern: next.recurringPattern,
           recurringEndDate: next.recurringEndDate,
           costSplitEnabled: next.costSplitEnabled,
           updatedAt: DateTime.now(),
@@ -141,8 +138,6 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
             _buildSportTypeSelector(),
             SizedBox(height: 20.h),
             _buildTitleField(),
-            SizedBox(height: 14.h),
-            _buildVenueField(),
             SizedBox(height: 14.h),
             _buildDescriptionField(),
             SizedBox(height: 20.h),
@@ -240,19 +235,6 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
         ),
       ]),
     ).animate().fadeIn(duration: 250.ms, delay: 60.ms);
-  }
-
-  Widget _buildVenueField() {
-    return FormBuilderTextField(
-      name: 'venue',
-      initialValue: _formState.venueName,
-      textCapitalization: TextCapitalization.words,
-      onChanged: (value) => _formNotifier.setVenueName(value ?? ''),
-      decoration: _deco(
-        AppLocalizations.of(context).eventVenueName,
-        Icons.stadium_rounded,
-      ),
-    ).animate().fadeIn(duration: 250.ms, delay: 100.ms);
   }
 
   Widget _buildDescriptionField() {
@@ -537,7 +519,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
             ),
           ],
         ),
-        Slider(
+        Slider.adaptive(
           value: _formState.maxParticipants.toDouble(),
           min: 0,
           max: 100,
@@ -555,7 +537,6 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
 
   // ── Recurring Toggle + Day Selector ──────────────────────────
   Widget _buildRecurringToggle() {
-    const dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -586,43 +567,48 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
           contentPadding: EdgeInsets.zero,
         ),
         if (_formState.isRecurring) ...[
-          SizedBox(height: 8.h),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: List.generate(7, (i) {
-              final day = i + 1;
-              final selected = _formState.recurringDays.contains(day);
-              return GestureDetector(
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  _formNotifier.toggleRecurringDay(day);
-                },
-                child: AnimatedContainer(
-                  duration: 150.ms,
-                  width: 38.w,
-                  height: 38.w,
-                  decoration: BoxDecoration(
-                    color: selected ? AppColors.primary : AppColors.surface,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: selected ? AppColors.primary : AppColors.border,
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      dayLabels[i],
-                      style: TextStyle(
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w600,
-                        color: selected
-                            ? Colors.white
-                            : AppColors.textSecondary,
+          SizedBox(height: 12.h),
+          GestureDetector(
+            onTap: () {
+              _showRecurrencePatternPicker();
+            },
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today_rounded,
+                        size: 18.sp,
+                        color: AppColors.textTertiary,
                       ),
-                    ),
+                      SizedBox(width: 10.w),
+                      Text(
+                        _formState.recurringPattern?.label ?? 'Select pattern',
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          color: _formState.recurringPattern != null
+                              ? AppColors.textPrimary
+                              : AppColors.textTertiary,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              );
-            }),
+                  Icon(
+                    Icons.expand_more_rounded,
+                    size: 18.sp,
+                    color: AppColors.textTertiary,
+                  ),
+                ],
+              ),
+            ),
           ),
           SizedBox(height: 12.h),
           GestureDetector(
@@ -664,6 +650,104 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
         ],
       ],
     ).animate().fadeIn(duration: 250.ms, delay: 280.ms);
+  }
+
+  void _showRecurrencePatternPicker() {
+    final liveState = ref.read(editEventFormViewModelProvider(widget.event.id));
+    final patterns = liveState.applicablePatterns;
+
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+      ),
+      builder: (context) => Container(
+        padding: EdgeInsets.symmetric(vertical: 16.h),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: EdgeInsets.only(bottom: 12.h),
+              child: Text(
+                'Repeat',
+                style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600),
+              ),
+            ),
+            if (patterns.isEmpty)
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+                child: Text(
+                  'No recurrence pattern fits this start/end window. '
+                  'Extend end time or set a later repeat end date.',
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              )
+            else
+              ...patterns.map((pattern) {
+                final selected = liveState.recurringPattern == pattern;
+                return Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.w,
+                    vertical: 4.h,
+                  ),
+                  child: GestureDetector(
+                    onTap: () {
+                      _formNotifier.setRecurringPattern(pattern);
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12.w,
+                        vertical: 12.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? AppColors.primary.withValues(alpha: 0.1)
+                            : AppColors.surface,
+                        borderRadius: BorderRadius.circular(8.r),
+                        border: Border.all(
+                          color: selected
+                              ? AppColors.primary
+                              : AppColors.border,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            selected
+                                ? Icons.check_circle_rounded
+                                : Icons.circle_outlined,
+                            size: 20.sp,
+                            color: selected
+                                ? AppColors.primary
+                                : AppColors.textTertiary,
+                          ),
+                          SizedBox(width: 12.w),
+                          Text(
+                            pattern.label,
+                            style: TextStyle(
+                              fontSize: 13.sp,
+                              fontWeight: selected
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            SizedBox(height: 8.h),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _pickRecurringEndDate() async {
@@ -808,6 +892,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
   // ════════════════════════════════════════════════════════════
   InputDecoration _deco(String hint, IconData icon) {
     return InputDecoration(
+      labelText: hint,
       hintText: hint,
       hintStyle: TextStyle(fontSize: 14.sp, color: AppColors.textTertiary),
       prefixIcon: Icon(icon, size: 20.sp, color: AppColors.textTertiary),

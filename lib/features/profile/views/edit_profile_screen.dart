@@ -118,279 +118,330 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final selectedGender = editState.gender ?? 'Male';
     final selectedDateOfBirth = editState.dateOfBirth ?? DateTime(1990, 1, 1);
 
-    return PopScope(
-      canPop: !editState.hasChanges,
-      onPopInvokedWithResult: (didPop, result) async {
-        if (didPop) return;
-        if (editState.hasChanges) {
-          final shouldPop = await _showDiscardChangesDialog();
-          if (shouldPop == true && mounted) context.pop();
-        }
-      },
-      child: Scaffold(
-        backgroundColor: AppColors.background,
-        // Sticky Bottom Bar
-        bottomNavigationBar: Container(
-          padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 32.h),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, -5),
-              ),
-            ],
-          ),
-          child: PremiumButton(
-            text: AppLocalizations.of(context).saveChanges,
-            onPressed: editState.hasChanges ? _saveProfile : null,
-            isLoading: editState.isLoading,
-            icon: Icons.check_rounded,
-          ),
-        ),
-        body: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            SliverAppBar(
-              backgroundColor: AppColors.surface,
-              surfaceTintColor: Colors.transparent,
-              elevation: 0,
-              pinned: true,
-              leading: IconButton(
-                tooltip: AppLocalizations.of(context).goBackTooltip,
-                onPressed: () => context.pop(),
-                icon: Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: AppColors.textPrimary,
-                  size: 20.sp,
+    return SafeArea(
+      top: false,
+      child: PopScope(
+        canPop: !editState.hasChanges,
+        onPopInvokedWithResult: (didPop, result) async {
+          if (didPop) return;
+          if (editState.hasChanges) {
+            final shouldPop = await _showDiscardChangesDialog();
+            if (shouldPop == true && mounted) context.pop();
+          }
+        },
+        child: Scaffold(
+          backgroundColor: AppColors.background,
+          // Sticky Bottom Bar
+          bottomNavigationBar: Container(
+            padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 32.h),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, -5),
                 ),
-              ),
-              centerTitle: true,
-              title: Text(
-                AppLocalizations.of(context).settingsEditProfile,
-                style: TextStyle(
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
+              ],
             ),
+            child: PremiumButton(
+              text: AppLocalizations.of(context).saveChanges,
+              onPressed: editState.hasChanges ? _saveProfile : null,
+              isLoading: editState.isLoading,
+              icon: Icons.check_rounded,
+            ),
+          ),
+          body: CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              SliverAppBar(
+                backgroundColor: AppColors.surface,
+                surfaceTintColor: Colors.transparent,
+                elevation: 0,
+                pinned: true,
+                leading: IconButton(
+                  tooltip: AppLocalizations.of(context).goBackTooltip,
+                  onPressed: () => context.pop(),
+                  icon: Icon(
+                    Icons.adaptive.arrow_back_rounded,
+                    color: AppColors.textPrimary,
+                    size: 20.sp,
+                  ),
+                ),
+                centerTitle: true,
+                title: Text(
+                  AppLocalizations.of(context).settingsEditProfile,
+                  style: TextStyle(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
 
-            // Profile Picture
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 24.h),
-                child: Center(
-                  child: GestureDetector(
-                    onTap: _changeProfilePicture,
-                    child: Column(
-                      children: [
-                        Stack(
-                          alignment: Alignment.bottomRight,
-                          children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: AppColors.surface,
-                                  width: 4,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.1),
-                                    blurRadius: 15,
-                                    offset: const Offset(0, 5),
+              // Profile Picture
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24.h),
+                  child: Center(
+                    child: GestureDetector(
+                      onTap: _changeProfilePicture,
+                      child: Column(
+                        children: [
+                          Stack(
+                            alignment: Alignment.bottomRight,
+                            children: [
+                              Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: AppColors.surface,
+                                    width: 4,
                                   ),
-                                ],
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.1,
+                                      ),
+                                      blurRadius: 15,
+                                      offset: const Offset(0, 5),
+                                    ),
+                                  ],
+                                ),
+                                child: ClipOval(child: _buildProfileImage()),
                               ),
-                              child: ClipOval(child: _buildProfileImage()),
-                            ),
-                            Container(
-                              padding: EdgeInsets.all(8.w),
-                              decoration: BoxDecoration(
-                                color: AppColors.primary,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: AppColors.surface,
-                                  width: 2,
+                              Container(
+                                padding: EdgeInsets.all(8.w),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: AppColors.surface,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.camera_alt_rounded,
+                                  color: Colors.white,
+                                  size: 16.sp,
                                 ),
                               ),
-                              child: Icon(
-                                Icons.camera_alt_rounded,
-                                color: Colors.white,
-                                size: 16.sp,
+                            ],
+                          ),
+                          SizedBox(height: 12.h),
+                          Text(
+                            AppLocalizations.of(context).changePhoto,
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              // Form
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20.w),
+                  child: FormBuilder(
+                    key: _formKey,
+                    onChanged: () {
+                      ref
+                          .read(
+                            profileEditViewModelProvider(
+                              _currentUser!.uid,
+                            ).notifier,
+                          )
+                          .markChanged();
+                    },
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSectionLabel(
+                          AppLocalizations.of(context).personalInformation,
+                        ),
+                        _buildContainer(
+                          children: [
+                            FormBuilderTextField(
+                              name: 'name',
+                              decoration: InputDecoration(
+                                labelText: AppLocalizations.of(
+                                  context,
+                                ).authFullName,
+                                prefixIcon: const Icon(
+                                  Icons.person_outline_rounded,
+                                ),
                               ),
+                              validator: FormBuilderValidators.compose([
+                                FormBuilderValidators.required(
+                                  errorText: AppLocalizations.of(
+                                    context,
+                                  ).requiredField,
+                                ),
+                                FormBuilderValidators.minLength(2),
+                                FormBuilderValidators.maxLength(60),
+                                (value) => FormValidators.name(value),
+                              ]),
+                            ),
+                            SizedBox(height: 16.h),
+                            FormBuilderTextField(
+                              name: 'email',
+                              decoration: InputDecoration(
+                                labelText: AppLocalizations.of(
+                                  context,
+                                ).authEmail,
+                                prefixIcon: const Icon(Icons.email_outlined),
+                                filled: true,
+                                fillColor: AppColors.background,
+                              ),
+                              readOnly: true,
+                              enabled: false,
+                            ),
+                            SizedBox(height: 16.h),
+                            IntlPhoneInput(
+                              key: _phoneKey,
+                              label: 'Phone Number',
+                              hint: 'Enter your phone number',
+                              accentColor: AppColors.primary,
+                              fillColor: AppColors.primary.withValues(
+                                alpha: 0.06,
+                              ),
+                              initialValue: _currentUser?.phoneNumber,
+                              onChanged: (phone) {
+                                ref
+                                    .read(
+                                      profileEditViewModelProvider(
+                                        _currentUser!.uid,
+                                      ).notifier,
+                                    )
+                                    .setPhoneNumber(phone.fullNumber);
+                              },
                             ),
                           ],
                         ),
-                        SizedBox(height: 12.h),
-                        Text(
-                          AppLocalizations.of(context).changePhoto,
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primary,
+
+                        SizedBox(height: 24.h),
+
+                        // Driver Specific Section
+                        if (isDriver) ...[
+                          _buildSectionLabel(
+                            AppLocalizations.of(context).driverSettings,
                           ),
+                          _buildContainer(
+                            children: [
+                              _buildActionTile(
+                                label: AppLocalizations.of(context).myVehicles,
+                                value:
+                                    '${_currentUser?.asDriver?.vehicles.length ?? 0} Active',
+                                icon: Icons.directions_car_rounded,
+                                onTap: () {
+                                  context.push(AppRoutes.driverVehicles.path);
+                                },
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 24.h),
+                        ],
+
+                        _buildSectionLabel(
+                          AppLocalizations.of(context).aboutYou,
                         ),
+                        _buildContainer(
+                          children: [
+                            AddressAutocompleteField(
+                              key: _cityKey,
+                              label: 'City',
+                              hint: 'Search your city...',
+                              cityOnly: true,
+                              initialValue: _currentUser?.city,
+                              accentColor: AppColors.primary,
+                              onSelected: (result) {
+                                ref
+                                    .read(
+                                      profileEditViewModelProvider(
+                                        _currentUser!.uid,
+                                      ).notifier,
+                                    )
+                                    .setCityResult(result);
+                              },
+                            ),
+                            SizedBox(height: 20.h),
+                            Text(
+                              'Sport Expertise Level',
+                              style: TextStyle(
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            SizedBox(height: 10.h),
+                            Wrap(
+                              spacing: 8.w,
+                              children: Expertise.values.map((level) {
+                                final isSelected = editState.expertise == level;
+                                return ChoiceChip(
+                                  label: Text(level.displayName),
+                                  selected: isSelected,
+                                  onSelected: (_) => ref
+                                      .read(
+                                        profileEditViewModelProvider(
+                                          _currentUser!.uid,
+                                        ).notifier,
+                                      )
+                                      .setExpertise(level),
+                                  selectedColor: AppColors.primary,
+                                  labelStyle: TextStyle(
+                                    fontSize: 13.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : AppColors.textPrimary,
+                                  ),
+                                  backgroundColor: AppColors.background,
+                                  side: BorderSide(
+                                    color: isSelected
+                                        ? AppColors.primary
+                                        : AppColors.border,
+                                  ),
+                                  showCheckmark: false,
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+
+                        SizedBox(height: 24.h),
+
+                        _buildSectionLabel(
+                          AppLocalizations.of(context).demographics,
+                        ),
+                        _buildActionTile(
+                          label: AppLocalizations.of(context).gender,
+                          value: selectedGender,
+                          icon: Icons.wc_rounded,
+                          onTap: _showGenderPicker,
+                        ),
+                        SizedBox(height: 12.h),
+                        _buildActionTile(
+                          label: AppLocalizations.of(context).birthday,
+                          value:
+                              '${selectedDateOfBirth.day.toString().padLeft(2, '0')}/${selectedDateOfBirth.month.toString().padLeft(2, '0')}/${selectedDateOfBirth.year}',
+                          icon: Icons.cake_rounded,
+                          onTap: _selectDateOfBirth,
+                        ),
+                        SizedBox(height: 24.h),
                       ],
                     ),
                   ),
                 ),
               ),
-            ),
-
-            // Form
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w),
-                child: FormBuilder(
-                  key: _formKey,
-                  onChanged: () {
-                    ref
-                        .read(
-                          profileEditViewModelProvider(
-                            _currentUser!.uid,
-                          ).notifier,
-                        )
-                        .markChanged();
-                  },
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildSectionLabel(
-                        AppLocalizations.of(context).personalInformation,
-                      ),
-                      _buildContainer(
-                        children: [
-                          FormBuilderTextField(
-                            name: 'name',
-                            decoration: InputDecoration(
-                              labelText: AppLocalizations.of(
-                                context,
-                              ).authFullName,
-                              prefixIcon: const Icon(
-                                Icons.person_outline_rounded,
-                              ),
-                            ),
-                            validator: FormBuilderValidators.compose([
-                              FormBuilderValidators.required(
-                                errorText: AppLocalizations.of(
-                                  context,
-                                ).requiredField,
-                              ),
-                              FormBuilderValidators.minLength(2),
-                              FormBuilderValidators.maxLength(60),
-                              (value) => FormValidators.name(value),
-                            ]),
-                          ),
-                          SizedBox(height: 16.h),
-                          FormBuilderTextField(
-                            name: 'email',
-                            decoration: InputDecoration(
-                              labelText: AppLocalizations.of(context).authEmail,
-                              prefixIcon: const Icon(Icons.email_outlined),
-                              filled: true,
-                              fillColor: AppColors.background,
-                            ),
-                            readOnly: true,
-                            enabled: false,
-                          ),
-                          SizedBox(height: 16.h),
-                          IntlPhoneInput(
-                            key: _phoneKey,
-                            label: 'Phone Number',
-                            hint: 'Enter your phone number',
-                            accentColor: AppColors.primary,
-                            fillColor: AppColors.primary.withValues(
-                              alpha: 0.06,
-                            ),
-                            initialValue: _currentUser?.phoneNumber,
-                            onChanged: (phone) {
-                              ref
-                                  .read(
-                                    profileEditViewModelProvider(
-                                      _currentUser!.uid,
-                                    ).notifier,
-                                  )
-                                  .setPhoneNumber(phone.fullNumber);
-                            },
-                          ),
-                        ],
-                      ),
-
-                      SizedBox(height: 24.h),
-
-                      // Driver Specific Section
-                      if (isDriver) ...[
-                        _buildSectionLabel(
-                          AppLocalizations.of(context).driverSettings,
-                        ),
-                        _buildContainer(
-                          children: [
-                            _buildActionTile(
-                              label: AppLocalizations.of(context).myVehicles,
-                              value:
-                                  '${_currentUser?.asDriver?.vehicles.length ?? 0} Active',
-                              icon: Icons.directions_car_rounded,
-                              onTap: () {
-                                context.push(AppRoutes.driverVehicles.path);
-                              },
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 24.h),
-                      ],
-
-                      _buildSectionLabel(AppLocalizations.of(context).aboutYou),
-                      _buildContainer(
-                        children: [
-                          AddressAutocompleteField(
-                            key: _cityKey,
-                            label: 'City',
-                            hint: 'Search your city...',
-                            cityOnly: true,
-                            initialValue: _currentUser?.city,
-                            accentColor: AppColors.primary,
-                            onSelected: (result) {
-                              ref
-                                  .read(
-                                    profileEditViewModelProvider(
-                                      _currentUser!.uid,
-                                    ).notifier,
-                                  )
-                                  .setCityResult(result);
-                            },
-                          ),
-                        ],
-                      ),
-
-                      SizedBox(height: 24.h),
-
-                      _buildSectionLabel(
-                        AppLocalizations.of(context).demographics,
-                      ),
-                      _buildActionTile(
-                        label: AppLocalizations.of(context).gender,
-                        value: selectedGender,
-                        icon: Icons.wc_rounded,
-                        onTap: _showGenderPicker,
-                      ),
-                      SizedBox(height: 12.h),
-                      _buildActionTile(
-                        label: AppLocalizations.of(context).birthday,
-                        value:
-                            '${selectedDateOfBirth.day.toString().padLeft(2, '0')}/${selectedDateOfBirth.month.toString().padLeft(2, '0')}/${selectedDateOfBirth.year}',
-                        icon: Icons.cake_rounded,
-                        onTap: _selectDateOfBirth,
-                      ),
-                      SizedBox(height: 24.h),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -513,7 +564,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             ),
             const Spacer(),
             Icon(
-              Icons.arrow_forward_ios_rounded,
+              Icons.adaptive.arrow_forward_rounded,
               size: 14.sp,
               color: AppColors.textTertiary,
             ),
@@ -846,7 +897,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   Future<bool?> _showDiscardChangesDialog() async {
     return showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => AlertDialog.adaptive(
         title: Text(AppLocalizations.of(context).discardChanges),
         content: Text(AppLocalizations.of(context).youHaveUnsavedChanges),
         actions: [

@@ -63,7 +63,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         elevation: 0,
         leading: IconButton(
           tooltip: l10n.goBackTooltip,
-          icon: const Icon(Icons.arrow_back_rounded),
+          icon: Icon(Icons.adaptive.arrow_back_rounded),
           onPressed: () => context.pop(),
         ),
       ),
@@ -161,7 +161,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           Center(
             child: TextButton.icon(
               onPressed: () => context.pop(),
-              icon: Icon(Icons.arrow_back_rounded, size: 18.sp),
+              icon: Icon(Icons.adaptive.arrow_back_rounded, size: 18.sp),
               label: Text(
                 l10n.forgotPasswordBackToLogin,
                 style: TextStyle(

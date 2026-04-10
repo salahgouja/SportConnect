@@ -33,12 +33,13 @@ class PayoutDetailScreen extends ConsumerWidget {
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
+          icon: Icon(Icons.adaptive.arrow_back_rounded),
           onPressed: () => context.pop(),
         ),
       ),
       body: payoutAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () =>
+            const Center(child: CircularProgressIndicator.adaptive()),
         error: (_, _) => _buildErrorView(context, l10n, ref),
         data: (payout) => payout == null
             ? _buildNotFoundView(context, l10n)
@@ -55,7 +56,7 @@ class PayoutDetailScreen extends ConsumerWidget {
   ) {
     final dateFormat = DateFormat('MMM dd, yyyy HH:mm');
 
-    return RefreshIndicator(
+    return RefreshIndicator.adaptive(
       onRefresh: () async {
         ref.invalidate(payoutDetailProvider(payoutId));
       },
@@ -232,13 +233,6 @@ class PayoutDetailScreen extends ConsumerWidget {
               l10n.arrivedAt,
               dateFormat.format(payout.arrivedAt!),
             ),
-          if (payout.bankName != null)
-            _buildDetailRow(l10n.bankName, payout.bankName!),
-          if (payout.bankAccountLast4 != null)
-            _buildDetailRow(
-              l10n.accountEnding,
-              '•••• ${payout.bankAccountLast4}',
-            ),
           if (payout.stripePayoutId != null)
             _buildDetailRow(
               l10n.transactionId,
@@ -310,7 +304,7 @@ class PayoutDetailScreen extends ConsumerWidget {
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => AlertDialog.adaptive(
         title: Text(l10n.cancelPayout),
         content: Text(l10n.cancelPayoutConfirm),
         actions: [

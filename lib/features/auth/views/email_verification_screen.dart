@@ -179,9 +179,9 @@ class EmailVerificationScreen extends ConsumerWidget {
             SizedBox(
               width: 16.w,
               height: 16.w,
-              child: CircularProgressIndicator(
+              child: CircularProgressIndicator.adaptive(
                 strokeWidth: 2,
-                color: AppColors.primary,
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
               ),
             ),
             SizedBox(width: 8.w),

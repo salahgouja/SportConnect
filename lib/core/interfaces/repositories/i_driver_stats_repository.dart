@@ -1,6 +1,6 @@
+import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/driver_stats.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
-import 'package:sport_connect/features/rides/models/ride_request_model.dart';
 
 /// Driver Stats Repository
 abstract class IDriverStatsRepository {
@@ -10,22 +10,25 @@ abstract class IDriverStatsRepository {
   /// Stream driver stats
   Stream<DriverStats> streamDriverStats(String driverId);
 
-  /// Update driver online status
-  Future<void> setOnlineStatus(String driverId, bool isOnline);
+  /// Stream pending bookings for driver
+  Stream<List<RideBooking>> streamPendingRequests(String driverId);
 
-  /// Get pending ride requests for driver
-  Stream<List<RideRequestModel>> streamPendingRequests(String driverId);
+  /// Stream accepted bookings for driver
+  Stream<List<RideBooking>> streamAcceptedRequests(String driverId);
 
-  /// Get upcoming rides for driver - returns proper RideModel
+  /// Stream rejected/cancelled bookings for driver
+  Stream<List<RideBooking>> streamRejectedRequests(String driverId);
+
+  /// Get upcoming rides for driver
   Stream<List<RideModel>> streamUpcomingRides(String driverId);
 
   /// Get earnings transactions
   Stream<List<EarningsTransaction>> streamTransactions(String driverId);
 
-  /// Accept a ride request
+  /// Accept a booking
   Future<void> acceptRequest(String rideId, String bookingId);
 
-  /// Decline a ride request
+  /// Decline a booking
   Future<void> declineRequest(String rideId, String bookingId);
 
   /// Update driver stats after ride completion
@@ -34,10 +37,4 @@ abstract class IDriverStatsRepository {
     required double earnings,
     required double distanceKm,
   });
-
-  /// Get accepted ride requests for driver
-  Stream<List<RideRequestModel>> streamAcceptedRequests(String driverId);
-
-  /// Get rejected ride requests for driver
-  Stream<List<RideRequestModel>> streamRejectedRequests(String driverId);
 }

@@ -65,7 +65,7 @@ class PaymentHistoryScreen extends ConsumerWidget {
 
         return Scaffold(
           backgroundColor: AppColors.background,
-          body: RefreshIndicator(
+          body: RefreshIndicator.adaptive(
             color: AppColors.primary,
             onRefresh: () async {
               ref.invalidate(riderPaymentHistoryStreamProvider(user.uid));
@@ -121,7 +121,7 @@ class PaymentHistoryScreen extends ConsumerWidget {
                     );
                   },
                   loading: () => const SliverFillRemaining(
-                    child: Center(child: CircularProgressIndicator()),
+                    child: Center(child: CircularProgressIndicator.adaptive()),
                   ),
                   error: (error, stack) => SliverFillRemaining(
                     child: Center(
@@ -139,8 +139,9 @@ class PaymentHistoryScreen extends ConsumerWidget {
           ),
         );
       },
-      loading: () =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      loading: () => const Scaffold(
+        body: Center(child: CircularProgressIndicator.adaptive()),
+      ),
       error: (error, stack) => Scaffold(
         body: Center(
           child: Text(AppLocalizations.of(context).errorValue(error)),
@@ -694,7 +695,7 @@ Future<void> _requestRefund(
 ) async {
   final confirmed = await showDialog<bool>(
     context: context,
-    builder: (ctx) => AlertDialog(
+    builder: (ctx) => AlertDialog.adaptive(
       title: Text(AppLocalizations.of(context).requestRefund),
       content: Text(
         AppLocalizations.of(context).areYouSureYouWant10(

@@ -707,7 +707,7 @@ final class ActiveRideViewModelProvider
 }
 
 String _$activeRideViewModelHash() =>
-    r'04f2855a949a06aba30c854d469fe3bee0063927';
+    r'11384ba7bc85a64c16a337d5cfee0af0bf96635b';
 
 /// ViewModel for active-ride screens — views watch only this provider.
 
@@ -1113,20 +1113,26 @@ final class NearbyRidesFamily extends $Family
   String toString() => r'nearbyRidesProvider';
 }
 
-/// Real-time stream of all bookings for a given ride.
+/// Real-time stream of bookings for a given ride, scoped to the current user's role.
 ///
-/// Use this alongside [rideDetailViewModelProvider] in any screen that needs
-/// booking data (requests tab, passenger list, earnings, etc.) — the
-/// [RideModel.bookings] field is never populated from Firestore.
+/// • Driver  → all bookings for the ride (filtered by driverId so Firestore
+///             security rules can allow the collection query).
+/// • Passenger → only their own booking (filtered by passengerId).
+///
+/// The role is determined lazily from [rideStreamProvider] so there is no
+/// extra Firestore read — the ride document is already being watched.
 
 @ProviderFor(bookingsByRide)
 final bookingsByRideProvider = BookingsByRideFamily._();
 
-/// Real-time stream of all bookings for a given ride.
+/// Real-time stream of bookings for a given ride, scoped to the current user's role.
 ///
-/// Use this alongside [rideDetailViewModelProvider] in any screen that needs
-/// booking data (requests tab, passenger list, earnings, etc.) — the
-/// [RideModel.bookings] field is never populated from Firestore.
+/// • Driver  → all bookings for the ride (filtered by driverId so Firestore
+///             security rules can allow the collection query).
+/// • Passenger → only their own booking (filtered by passengerId).
+///
+/// The role is determined lazily from [rideStreamProvider] so there is no
+/// extra Firestore read — the ride document is already being watched.
 
 final class BookingsByRideProvider
     extends
@@ -1138,11 +1144,14 @@ final class BookingsByRideProvider
     with
         $FutureModifier<List<RideBooking>>,
         $StreamProvider<List<RideBooking>> {
-  /// Real-time stream of all bookings for a given ride.
+  /// Real-time stream of bookings for a given ride, scoped to the current user's role.
   ///
-  /// Use this alongside [rideDetailViewModelProvider] in any screen that needs
-  /// booking data (requests tab, passenger list, earnings, etc.) — the
-  /// [RideModel.bookings] field is never populated from Firestore.
+  /// • Driver  → all bookings for the ride (filtered by driverId so Firestore
+  ///             security rules can allow the collection query).
+  /// • Passenger → only their own booking (filtered by passengerId).
+  ///
+  /// The role is determined lazily from [rideStreamProvider] so there is no
+  /// extra Firestore read — the ride document is already being watched.
   BookingsByRideProvider._({
     required BookingsByRideFamily super.from,
     required String super.argument,
@@ -1187,13 +1196,16 @@ final class BookingsByRideProvider
   }
 }
 
-String _$bookingsByRideHash() => r'10a217065614cc6c32deb98418892f9cba3de9e9';
+String _$bookingsByRideHash() => r'773ee1f899cc5ca5050bf6a9b03cae07c7535a36';
 
-/// Real-time stream of all bookings for a given ride.
+/// Real-time stream of bookings for a given ride, scoped to the current user's role.
 ///
-/// Use this alongside [rideDetailViewModelProvider] in any screen that needs
-/// booking data (requests tab, passenger list, earnings, etc.) — the
-/// [RideModel.bookings] field is never populated from Firestore.
+/// • Driver  → all bookings for the ride (filtered by driverId so Firestore
+///             security rules can allow the collection query).
+/// • Passenger → only their own booking (filtered by passengerId).
+///
+/// The role is determined lazily from [rideStreamProvider] so there is no
+/// extra Firestore read — the ride document is already being watched.
 
 final class BookingsByRideFamily extends $Family
     with $FunctionalFamilyOverride<Stream<List<RideBooking>>, String> {
@@ -1206,11 +1218,14 @@ final class BookingsByRideFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Real-time stream of all bookings for a given ride.
+  /// Real-time stream of bookings for a given ride, scoped to the current user's role.
   ///
-  /// Use this alongside [rideDetailViewModelProvider] in any screen that needs
-  /// booking data (requests tab, passenger list, earnings, etc.) — the
-  /// [RideModel.bookings] field is never populated from Firestore.
+  /// • Driver  → all bookings for the ride (filtered by driverId so Firestore
+  ///             security rules can allow the collection query).
+  /// • Passenger → only their own booking (filtered by passengerId).
+  ///
+  /// The role is determined lazily from [rideStreamProvider] so there is no
+  /// extra Firestore read — the ride document is already being watched.
 
   BookingsByRideProvider call(String rideId) =>
       BookingsByRideProvider._(argument: rideId, from: this);

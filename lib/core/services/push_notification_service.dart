@@ -129,6 +129,18 @@ class PushNotificationService {
   /// silent failure).
   Future<void> saveFcmToken(String userId) async {
     try {
+      // FIX PN-1 / PN-2: Check that the user has granted notification
+      // permission before storing the token.  If permission was revoked after
+      // initial grant the token stored in Firestore would be dead — skip it
+      // so we don't accumulate stale tokens that waste FCM quota.
+      final settings = await _messaging.getNotificationSettings();
+      if (settings.authorizationStatus == AuthorizationStatus.denied) {
+        TalkerService.info(
+          'saveFcmToken: notification permission denied for $userId — skipping token save.',
+        );
+        return;
+      }
+
       final token = await _messaging.getToken();
       if (token == null) {
         TalkerService.warning(
@@ -293,9 +305,34 @@ class PushNotificationService {
 
     if (type == null || referenceId == null) return;
 
+    // FIX N-1: Auto-mark matching Firestore notification docs as read when
+    // the user opens the notification, so the unread badge clears automatically.
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      try {
+        final notifSnap = await FirebaseFirestore.instance
+            .collection(AppConstants.notificationsCollection)
+            .where('userId', isEqualTo: uid)
+            .where('referenceId', isEqualTo: referenceId)
+            .where('isRead', isEqualTo: false)
+            .limit(10)
+            .get();
+        for (final doc in notifSnap.docs) {
+          unawaited(
+            doc.reference.update({
+              'isRead': true,
+              'readAt': FieldValue.serverTimestamp(),
+            }),
+          );
+        }
+      } catch (_) {
+        // Best-effort — navigation must not fail if this read fails.
+      }
+    }
+
     switch (type) {
       case 'message':
-        final receiver = await _resolveReceiverForChat(
+        final (:receiver, :chatType) = await _resolveReceiverForChat(
           chatId: referenceId,
           hintUserId:
               (data['senderId'] as String?) ?? (data['userId'] as String?),
@@ -317,9 +354,16 @@ class PushNotificationService {
           return;
         }
 
+        // Route to the correct chat screen based on chat type
+        final routeName = switch (chatType) {
+          ChatType.rideGroup => AppRoutes.chatGroup.name,
+          ChatType.eventGroup => AppRoutes.chatGroup.name,
+          _ => AppRoutes.chatDetail.name,
+        };
+
         if (context.mounted) {
           context.pushNamed(
-            AppRoutes.chatDetail.name,
+            routeName,
             pathParameters: {'id': referenceId},
             extra: receiver,
           );
@@ -350,7 +394,7 @@ class PushNotificationService {
     }
   }
 
-  Future<UserModel?> _resolveReceiverForChat({
+  Future<({UserModel? receiver, ChatType chatType})> _resolveReceiverForChat({
     required String chatId,
     String? hintUserId,
     String? hintDisplayName,
@@ -364,12 +408,17 @@ class PushNotificationService {
           .then((s) => s.data());
 
       if (chat == null) {
-        if (hintUserId == null && hintDisplayName == null) return null;
-        return UserModel.rider(
-          uid: hintUserId ?? chatId,
-          email: '',
-          displayName: hintDisplayName ?? 'User',
-          photoUrl: hintPhotoUrl,
+        if (hintUserId == null && hintDisplayName == null) {
+          return (receiver: null, chatType: ChatType.private);
+        }
+        return (
+          receiver: UserModel.rider(
+            uid: hintUserId ?? chatId,
+            email: '',
+            displayName: hintDisplayName ?? 'User',
+            photoUrl: hintPhotoUrl,
+          ),
+          chatType: ChatType.private,
         );
       }
 
@@ -378,11 +427,14 @@ class PushNotificationService {
             hintDisplayName ??
             chat.groupName ??
             chat.getChatTitle(currentUserId ?? '');
-        return UserModel.rider(
-          uid: chatId,
-          email: '',
-          displayName: title.isEmpty ? 'Group Chat' : title,
-          photoUrl: hintPhotoUrl ?? chat.groupPhotoUrl,
+        return (
+          receiver: UserModel.rider(
+            uid: chatId,
+            email: '',
+            displayName: title.isEmpty ? 'Group Chat' : title,
+            photoUrl: hintPhotoUrl ?? chat.groupPhotoUrl,
+          ),
+          chatType: chat.type,
         );
       }
 
@@ -396,25 +448,30 @@ class PushNotificationService {
             .doc(participantId)
             .get()
             .then((s) => s.data());
-        if (fullUser != null) return fullUser;
+        if (fullUser != null) {
+          return (receiver: fullUser, chatType: ChatType.private);
+        }
       }
 
       final displayName =
           hintDisplayName ??
           otherParticipant?.displayName ??
           chat.getChatTitle(currentUserId ?? '');
-      return UserModel.rider(
-        uid: participantId ?? chatId,
-        email: '',
-        displayName: displayName.isEmpty ? 'User' : displayName,
-        photoUrl: hintPhotoUrl ?? otherParticipant?.photoUrl,
+      return (
+        receiver: UserModel.rider(
+          uid: participantId ?? chatId,
+          email: '',
+          displayName: displayName.isEmpty ? 'User' : displayName,
+          photoUrl: hintPhotoUrl ?? otherParticipant?.photoUrl,
+        ),
+        chatType: ChatType.private,
       );
     } catch (e) {
       TalkerService.error(
         'Failed to resolve chat receiver from notification',
         e,
       );
-      return null;
+      return (receiver: null, chatType: ChatType.private);
     }
   }
 

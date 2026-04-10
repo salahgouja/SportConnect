@@ -47,7 +47,7 @@ final class HomeViewModelProvider
   }
 }
 
-String _$homeViewModelHash() => r'1c87a526c25379d1629b83ce06a99216062cc913';
+String _$homeViewModelHash() => r'c44333b46ec4f4079270424e4cc22c43fdbd2674';
 
 /// ViewModel for the home screen with full business logic extraction
 /// Manages navigation, map state, location tracking, and routing

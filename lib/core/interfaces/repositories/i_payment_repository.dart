@@ -71,6 +71,8 @@ abstract class IPaymentRepository {
     required bool chargesEnabled,
     required bool payoutsEnabled,
     required bool detailsSubmitted,
+    double? availableBalance,
+    double? pendingBalance,
   });
 
   /// Process refund

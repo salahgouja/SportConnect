@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/features/rides/models/ride_request_model.dart';
-import 'package:sport_connect/features/rides/view_models/driver_view_model.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
+import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
+import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
-
+import 'package:sport_connect/features/rides/view_models/driver_view_model.dart';
+import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
-/// Driver Rides Screen – pending booking requests + upcoming rides timeline.
-///
-/// Design: professional dashboard layout.
-/// - Section 1: Pending Requests — scrollable list with inline Accept/Decline.
-/// - Section 2: Upcoming Rides — vertical timeline cards.
-/// - FAB: Offer a new ride.
+// ─────────────────────────────────────────────────────────────────
+// SCREEN ENTRY POINT
+// ─────────────────────────────────────────────────────────────────
+
 class DriverMyRidesScreen extends ConsumerWidget {
   const DriverMyRidesScreen({super.key});
 
@@ -26,204 +26,299 @@ class DriverMyRidesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final driverState = ref.watch(driverViewModelProvider);
-    final pendingAsync = driverState.pendingRequests;
-    final upcomingAsync = driverState.upcomingRides;
+    final notifier = ref.read(driverViewModelProvider.notifier);
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: null,
-        onPressed: () => context.push(AppRoutes.driverOfferRide.path),
-        backgroundColor: AppColors.primary,
-        elevation: 4,
-        icon: Icon(Icons.add_rounded, size: 22.sp, color: Colors.white),
-        label: Text(
-          l10n.offerRide,
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
-      ),
-      body: RefreshIndicator(
-        onRefresh: () async =>
-            ref.read(driverViewModelProvider.notifier).refresh(),
+      body: RefreshIndicator.adaptive(
+        color: AppColors.primary,
+        onRefresh: () async => notifier.refresh(),
         child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            // ── App Bar ─────────────────────────────────────────
-            SliverAppBar(
-              backgroundColor: AppColors.surface,
-              elevation: 0,
-              floating: true,
-              snap: true,
-              title: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.driverMyRidesTitle,
-                    style: TextStyle(
-                      fontSize: 20.sp,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  Text(
-                    DateFormat('EEEE, MMMM d').format(DateTime.now()),
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ],
-              ),
-              actions: [
-                IconButton(
-                  tooltip: l10n.viewRequestsTooltip,
-                  icon: Icon(
-                    Icons.notifications_none_rounded,
-                    color: AppColors.textPrimary,
-                    size: 24.sp,
-                  ),
-                  onPressed: () =>
-                      context.pushNamed(AppRoutes.driverRequests.name),
-                ),
-                SizedBox(width: 4.w),
-              ],
+            _DriverSliverAppBar(
+              onOfferRide: () => context.push(AppRoutes.driverOfferRide.path),
             ),
-
-            // ── Pending Requests ─────────────────────────────────
+            // Active ride banner
+            if (driverState.hasActiveRide && driverState.activeRide != null)
+              SliverToBoxAdapter(
+                child: _ActiveRideBanner(ride: driverState.activeRide!),
+              ),
+            // Pending booking requests
             SliverToBoxAdapter(
-              child: pendingAsync.when(
-                data: (requests) => _PendingRequestsSection(requests: requests),
-                loading: () => const _RequestsLoading(),
-                error: (e, _) => _RequestsError(error: e),
+              child: _PendingRequestsSection(
+                requestsAsync: driverState.pendingRequests,
+                notifier: notifier,
               ),
             ),
-
-            SliverToBoxAdapter(child: SizedBox(height: 8.h)),
-
-            // ── Timeline Header ──────────────────────────────────
-            const SliverToBoxAdapter(child: _TimelineHeader()),
-
-            // ── Upcoming Rides ───────────────────────────────────
-            upcomingAsync.when(
-              data: (rides) => rides.isEmpty
-                  ? const SliverToBoxAdapter(child: _EmptyTimeline())
-                  : _RidesTimeline(rides: rides),
-              loading: () =>
-                  const SliverToBoxAdapter(child: _LoadingTimeline()),
-              error: (e, _) =>
-                  SliverToBoxAdapter(child: _ErrorTimeline(error: e)),
+            // Upcoming rides timeline
+            SliverToBoxAdapter(
+              child: _UpcomingRidesSection(
+                ridesAsync: driverState.upcomingRides,
+              ),
             ),
-
             SliverToBoxAdapter(child: SizedBox(height: 100.h)),
           ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push(AppRoutes.driverOfferRide.path),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add_rounded),
+        label: Text(l10n.offerRide),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// SLIVER APP BAR
+// ─────────────────────────────────────────────────────────────────
+
+class _DriverSliverAppBar extends StatelessWidget {
+  const _DriverSliverAppBar({required this.onOfferRide});
+  final VoidCallback onOfferRide;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final now = DateTime.now();
+    final dateStr = DateFormat('EEEE, d MMM').format(now);
+
+    return SliverAppBar(
+      expandedHeight: 120.h,
+      pinned: true,
+      backgroundColor: AppColors.primary,
+      foregroundColor: Colors.white,
+      actions: [
+        IconButton(
+          onPressed: () => context.pushNamed(AppRoutes.driverRequests.name),
+          icon: const Icon(Icons.inbox_rounded),
+          tooltip: AppLocalizations.of(context).viewRequestsTooltip,
+        ),
+      ],
+      flexibleSpace: FlexibleSpaceBar(
+        titlePadding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 16.h),
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.driverMyRidesTitle,
+              style: TextStyle(
+                fontSize: 20.sp,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
+            Text(
+              dateStr,
+              style: TextStyle(
+                fontSize: 11.sp,
+                color: Colors.white.withValues(alpha: 0.8),
+              ),
+            ),
+          ],
+        ),
+        background: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [AppColors.primaryDark, AppColors.primary],
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
-// ════════════════════════════════════════════════════════════════
+// ─────────────────────────────────────────────────────────────────
+// ACTIVE RIDE BANNER
+// ─────────────────────────────────────────────────────────────────
+
+class _ActiveRideBanner extends StatelessWidget {
+  const _ActiveRideBanner({required this.ride});
+  final RideModel ride;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 0),
+      child: GestureDetector(
+        onTap: () => context.push(
+          '${AppRoutes.driverActiveRide.path}?rideId=${ride.id}',
+        ),
+        child: Container(
+          padding: EdgeInsets.all(16.w),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [AppColors.primaryDark, AppColors.primary],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16.r),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.35),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              _PulsingDot(),
+              SizedBox(width: 10.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'RIDE IN PROGRESS',
+                      style: TextStyle(
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    SizedBox(height: 4.h),
+                    Text(
+                      '${ride.origin.address} → ${ride.destination.address}',
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 4.h),
+                    Text(
+                      '${ride.bookedSeats}/${ride.capacity.available} passengers · '
+                      '${AppLocalizations.of(context).value5(ride.pricePerSeat.toStringAsFixed(0))} per seat',
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        color: Colors.white.withValues(alpha: 0.85),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(10.r),
+                ),
+                child: Text(
+                  'View',
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.05, end: 0),
+      ),
+    );
+  }
+}
+
+class _PulsingDot extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+          width: 10.w,
+          height: 10.w,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+          ),
+        )
+        .animate(onPlay: (c) => c.repeat())
+        .scaleXY(begin: 1, end: 1.5, duration: 800.ms, curve: Curves.easeInOut)
+        .then()
+        .scaleXY(begin: 1.5, end: 1, duration: 800.ms, curve: Curves.easeInOut);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
 // PENDING REQUESTS SECTION
-// ════════════════════════════════════════════════════════════════
+// ─────────────────────────────────────────────────────────────────
 
 class _PendingRequestsSection extends ConsumerWidget {
-  const _PendingRequestsSection({required this.requests});
-  final List<RideRequestModel> requests;
+  const _PendingRequestsSection({
+    required this.requestsAsync,
+    required this.notifier,
+  });
+
+  final AsyncValue<List<RideBooking>> requestsAsync;
+  final DriverViewModel notifier;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
-      padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 0),
+      padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
+              Container(
+                width: 4.w,
+                height: 18.h,
+                decoration: BoxDecoration(
+                  color: AppColors.warning,
+                  borderRadius: BorderRadius.circular(2.r),
+                ),
+              ),
+              SizedBox(width: 8.w),
               Text(
-                AppLocalizations.of(context).pendingRequestsTitle,
+                l10n.pendingRequestsTitle,
                 style: TextStyle(
                   fontSize: 16.sp,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
                 ),
               ),
-              if (requests.isNotEmpty) ...[
-                SizedBox(width: 8.w),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
-                  decoration: BoxDecoration(
-                    color: AppColors.warning,
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  child: Text(
-                    '${requests.length}',
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
+              const Spacer(),
+              requestsAsync.maybeWhen(
+                data: (list) => list.isNotEmpty
+                    ? _Badge(count: list.length)
+                    : const SizedBox.shrink(),
+                orElse: () => const SizedBox.shrink(),
+              ),
             ],
           ),
           SizedBox(height: 12.h),
-          if (requests.isEmpty)
-            const _EmptyRequests()
-          else
-            ...requests.asMap().entries.map(
-              (entry) => Padding(
-                padding: EdgeInsets.only(bottom: 12.h),
-                child: _PendingRequestCard(request: entry.value)
-                    .animate(delay: Duration(milliseconds: entry.key * 60))
-                    .fadeIn(duration: 250.ms)
-                    .slideY(begin: 0.08, curve: Curves.easeOut),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _EmptyRequests extends StatelessWidget {
-  const _EmptyRequests();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(vertical: 32.h),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        children: [
-          Icon(
-            Icons.inbox_outlined,
-            size: 40.sp,
-            color: AppColors.textTertiary,
-          ),
-          SizedBox(height: 12.h),
-          Text(
-            AppLocalizations.of(context).noPendingRequestsTitle,
-            style: TextStyle(
-              fontSize: 15.sp,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          SizedBox(height: 4.h),
-          Text(
-            AppLocalizations.of(context).noPendingRequestsMessage,
-            style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
+          requestsAsync.when(
+            loading: () =>
+                SkeletonLoader(type: SkeletonType.compactTile, itemCount: 3),
+            error: (e, _) => _InlineError(message: l10n.couldNotLoadRequests),
+            data: (requests) {
+              if (requests.isEmpty) {
+                return _InlineEmpty(
+                  icon: Icons.inbox_rounded,
+                  label: 'No pending requests',
+                );
+              }
+              return Column(
+                children: requests.asMap().entries.map((e) {
+                  return _PendingRequestCard(
+                    request: e.value,
+                    index: e.key,
+                    notifier: notifier,
+                  );
+                }).toList(),
+              );
+            },
           ),
         ],
       ),
@@ -231,82 +326,40 @@ class _EmptyRequests extends StatelessWidget {
   }
 }
 
-class _RequestsLoading extends StatelessWidget {
-  const _RequestsLoading();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            AppLocalizations.of(context).pendingRequestsTitle,
-            style: TextStyle(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          SizedBox(height: 24.h),
-          Center(child: CircularProgressIndicator(color: AppColors.primary)),
-        ],
-      ),
-    );
-  }
-}
-
-class _RequestsError extends StatelessWidget {
-  const _RequestsError({required this.error});
-  final Object error;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 0),
-      child: Container(
-        padding: EdgeInsets.all(16.w),
-        decoration: BoxDecoration(
-          color: AppColors.error.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              Icons.error_outline_rounded,
-              color: AppColors.error,
-              size: 20.sp,
-            ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Text(
-                AppLocalizations.of(context).couldNotLoadRequests,
-                style: TextStyle(fontSize: 13.sp, color: AppColors.error),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ════════════════════════════════════════════════════════════════
+// ─────────────────────────────────────────────────────────────────
 // PENDING REQUEST CARD
-// ════════════════════════════════════════════════════════════════
+// ─────────────────────────────────────────────────────────────────
 
 class _PendingRequestCard extends ConsumerWidget {
-  const _PendingRequestCard({required this.request});
-  final RideRequestModel request;
+  const _PendingRequestCard({
+    required this.request,
+    required this.index,
+    required this.notifier,
+  });
+
+  final RideBooking request;
+  final int index;
+  final DriverViewModel notifier;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final profile = ref.watch(userProfileProvider(request.passengerId)).value;
+    final ride = ref.watch(rideStreamProvider(request.rideId)).value;
+
+    final passengerName = profile?.displayName ?? '…';
+    final passengerPhoto = profile?.photoUrl;
+    final passengerRating = profile?.rating.average ?? 0.0;
+    final pricePerSeat = ride?.pricePerSeat ?? 0.0;
+    final pickupAddress = request.pickupLocation?.address ?? ride?.origin.address ?? '…';
+    final dropoffAddress = request.dropoffLocation?.address ?? ride?.destination.address ?? '…';
+
     return Container(
+      margin: EdgeInsets.only(bottom: 10.h),
+      padding: EdgeInsets.all(14.w),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16.r),
+        borderRadius: BorderRadius.circular(14.r),
         border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
@@ -319,251 +372,196 @@ class _PendingRequestCard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
-          Padding(
-            padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 12.h),
-            child: Row(
-              children: [
-                Container(
-                  width: 44.w,
-                  height: 44.w,
-                  decoration: BoxDecoration(
-                    color: AppColors.primarySurface,
-                    shape: BoxShape.circle,
-                    image: request.passengerPhotoUrl != null
-                        ? DecorationImage(
-                            image: NetworkImage(request.passengerPhotoUrl!),
-                            fit: BoxFit.cover,
-                          )
-                        : null,
-                  ),
-                  child: request.passengerPhotoUrl == null
-                      ? Icon(
-                          Icons.person_rounded,
-                          color: AppColors.primary,
-                          size: 24.sp,
-                        )
-                      : null,
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        request.passengerName ??
-                            AppLocalizations.of(context).bookingRequestTitle,
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          if (request.passengerRating > 0) ...[
-                            Icon(
-                              Icons.star_rounded,
-                              size: 12.sp,
-                              color: AppColors.xpGold,
-                            ),
-                            SizedBox(width: 2.w),
-                            Text(
-                              request.passengerRating.toStringAsFixed(1),
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                            SizedBox(width: 6.w),
-                          ],
-                          Text(
-                            DateFormat(
-                              'MMM d, HH:mm',
-                            ).format(request.createdAt),
-                            style: TextStyle(
-                              fontSize: 12.sp,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 10.w,
-                    vertical: 5.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.success.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(8.r),
-                  ),
-                  child: Text(
-                    '${request.pricePerSeat.toStringAsFixed(0)} DT',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.success,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Route
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w),
-            child: Container(
-              padding: EdgeInsets.all(12.w),
-              decoration: BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.circular(12.r),
+          // Passenger header
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 20.r,
+                backgroundImage: passengerPhoto != null
+                    ? NetworkImage(passengerPhoto)
+                    : null,
+                backgroundColor: AppColors.primarySurface,
+                child: passengerPhoto == null
+                    ? Icon(Icons.person_rounded, size: 20.sp, color: AppColors.primary)
+                    : null,
               ),
-              child: Column(
-                children: [
-                  _RoutePoint(
-                    icon: Icons.radio_button_checked_rounded,
-                    label: AppLocalizations.of(context).pickupLabel,
-                    address: request.pickupLocation.address,
-                    color: AppColors.primary,
-                  ),
-                  Padding(
-                    padding: EdgeInsets.only(
-                      left: 11.5.w,
-                      top: 2.h,
-                      bottom: 2.h,
-                    ),
-                    child: SizedBox(
-                      height: 16.h,
-                      child: VerticalDivider(
-                        width: 1.w,
-                        thickness: 1.5,
-                        color: AppColors.divider,
+              SizedBox(width: 10.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      passengerName,
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
                       ),
                     ),
+                    Row(
+                      children: [
+                        Icon(Icons.star_rounded, size: 13.sp, color: AppColors.accent),
+                        SizedBox(width: 3.w),
+                        Text(
+                          passengerRating.toStringAsFixed(1),
+                          style: TextStyle(
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    l10n.value5(pricePerSeat.toStringAsFixed(0)),
+                    style: TextStyle(
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primary,
+                    ),
                   ),
-                  _RoutePoint(
-                    icon: Icons.location_on_rounded,
-                    label: AppLocalizations.of(context).dropoffLabel,
-                    address: request.dropoffLocation.address,
-                    color: AppColors.error,
+                  Text(
+                    '× ${request.seatsBooked} ${l10n.seatsCount(request.seatsBooked)}',
+                    style: TextStyle(fontSize: 11.sp, color: AppColors.textTertiary),
                   ),
                 ],
               ),
-            ),
+            ],
           ),
-
           SizedBox(height: 10.h),
-
-          // Chip row
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w),
-            child: _DetailChip(
-              icon: Icons.people_outline_rounded,
-              text: AppLocalizations.of(
-                context,
-              ).seatsCount(request.requestedSeats),
+          // Route info
+          Container(
+            padding: EdgeInsets.all(10.w),
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(10.r),
             ),
-          ),
-
-          SizedBox(height: 14.h),
-
-          Divider(height: 1, color: AppColors.divider),
-
-          // Action buttons
-          Padding(
-            padding: EdgeInsets.all(12.w),
-            child: Row(
+            child: Column(
               children: [
-                Expanded(
-                  child: _ActionButton(
-                    label: AppLocalizations.of(context).declineButton,
-                    icon: Icons.close_rounded,
-                    color: AppColors.error,
-                    onTap: () async {
-                      HapticFeedback.lightImpact();
-                      final l10n = AppLocalizations.of(context);
-                      final confirmed = await showDialog<bool>(
-                        context: context,
-                        builder: (ctx) => AlertDialog(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16.r),
-                          ),
-                          title: Text(l10n.declineRequestTitle),
-                          content: Text(l10n.declineRequestMessage),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.of(ctx).pop(false),
-                              child: Text(l10n.keepButton),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.of(ctx).pop(true),
-                              style: TextButton.styleFrom(
-                                foregroundColor: AppColors.error,
-                              ),
-                              child: Text(l10n.declineButton),
-                            ),
-                          ],
-                        ),
-                      );
-                      if (confirmed == true) {
-                        ref
-                            .read(driverViewModelProvider.notifier)
-                            .declineRideRequest(request.rideId, request.id);
-                      }
-                    },
-                  ),
+                _RoutePoint(
+                  icon: Icons.radio_button_checked_rounded,
+                  color: AppColors.primary,
+                  label: l10n.pickupLabel,
+                  address: pickupAddress,
                 ),
-                SizedBox(width: 10.w),
-                Expanded(
-                  child: _ActionButton(
-                    label: AppLocalizations.of(context).acceptButton,
-                    icon: Icons.check_rounded,
-                    color: AppColors.success,
-                    onTap: () async {
-                      HapticFeedback.lightImpact();
-                      final l10n = AppLocalizations.of(context);
-                      final confirmed = await showDialog<bool>(
-                        context: context,
-                        builder: (ctx) => AlertDialog(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16.r),
-                          ),
-                          title: Text(l10n.acceptRequestTitle),
-                          content: Text(
-                            l10n.acceptRequestMessage(
-                              request.passengerName ?? 'this passenger',
-                            ),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.of(ctx).pop(false),
-                              child: Text(l10n.actionCancel),
-                            ),
-                            ElevatedButton(
-                              onPressed: () => Navigator.of(ctx).pop(true),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.success,
-                                foregroundColor: Colors.white,
-                              ),
-                              child: Text(l10n.acceptButton),
-                            ),
-                          ],
-                        ),
-                      );
-                      if (confirmed == true) {
-                        ref
-                            .read(driverViewModelProvider.notifier)
-                            .acceptRideRequest(request.rideId, request.id);
-                      }
-                    },
-                  ),
+                SizedBox(height: 6.h),
+                _RoutePoint(
+                  icon: Icons.location_on_rounded,
+                  color: AppColors.error,
+                  label: l10n.dropoffLabel,
+                  address: dropoffAddress,
                 ),
               ],
             ),
+          ),
+          SizedBox(height: 12.h),
+          // Accept / Decline
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => _confirmDecline(context, passengerName),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.error,
+                    side: BorderSide(color: AppColors.error),
+                    padding: EdgeInsets.symmetric(vertical: 10.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.r),
+                    ),
+                  ),
+                  child: Text(
+                    l10n.declineButton,
+                    style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+              SizedBox(width: 10.w),
+              Expanded(
+                flex: 2,
+                child: ElevatedButton(
+                  onPressed: () => _confirmAccept(context, passengerName),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(vertical: 10.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.r),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    l10n.acceptButton,
+                    style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ).animate().fadeIn(delay: (index * 60).ms, duration: 350.ms);
+  }
+
+  void _confirmAccept(BuildContext context, String passengerName) {
+    final l10n = AppLocalizations.of(context);
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog.adaptive(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+        title: Text(l10n.acceptRequestTitle),
+        content: Text(l10n.acceptRequestMessage(passengerName)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l10n.actionCancel),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              HapticFeedback.mediumImpact();
+              notifier.acceptRideRequest(request.rideId, request.id);
+              Navigator.pop(ctx);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+            ),
+            child: Text(l10n.acceptButton),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDecline(BuildContext context, String passengerName) {
+    final l10n = AppLocalizations.of(context);
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog.adaptive(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+        title: Text(l10n.declineRequestTitle),
+        content: Text(l10n.declineRequestMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l10n.keepButton),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              HapticFeedback.mediumImpact();
+              notifier.declineRideRequest(request.rideId, request.id);
+              Navigator.pop(ctx);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            child: Text(l10n.declineButton),
           ),
         ],
       ),
@@ -571,35 +569,25 @@ class _PendingRequestCard extends ConsumerWidget {
   }
 }
 
-// ════════════════════════════════════════════════════════════════
-// SHARED SMALL WIDGETS
-// ════════════════════════════════════════════════════════════════
-
 class _RoutePoint extends StatelessWidget {
   const _RoutePoint({
     required this.icon,
+    required this.color,
     required this.label,
     required this.address,
-    required this.color,
   });
 
   final IconData icon;
+  final Color color;
   final String label;
   final String address;
-  final Color color;
 
   @override
   Widget build(BuildContext context) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: 24.w,
-          height: 24.w,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          child: Icon(icon, color: Colors.white, size: 13.sp),
-        ),
-        SizedBox(width: 10.w),
+        Icon(icon, size: 14.sp, color: color),
+        SizedBox(width: 8.w),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -607,17 +595,18 @@ class _RoutePoint extends StatelessWidget {
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 11.sp,
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w500,
+                  fontSize: 9.sp,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textTertiary,
+                  letterSpacing: 0.5,
                 ),
               ),
               Text(
                 address,
                 style: TextStyle(
-                  fontSize: 13.sp,
-                  color: AppColors.textPrimary,
+                  fontSize: 12.sp,
                   fontWeight: FontWeight.w500,
+                  color: AppColors.textPrimary,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -630,116 +619,57 @@ class _RoutePoint extends StatelessWidget {
   }
 }
 
-class _DetailChip extends StatelessWidget {
-  const _DetailChip({required this.icon, required this.text});
-  final IconData icon;
-  final String text;
+// ─────────────────────────────────────────────────────────────────
+// UPCOMING RIDES SECTION
+// ─────────────────────────────────────────────────────────────────
+
+class _UpcomingRidesSection extends StatelessWidget {
+  const _UpcomingRidesSection({required this.ridesAsync});
+  final AsyncValue<List<RideModel>> ridesAsync;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+    final l10n = AppLocalizations.of(context);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16.w, 24.h, 16.w, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 14.sp, color: AppColors.textSecondary),
-          SizedBox(width: 5.w),
-          Text(
-            text,
-            style: TextStyle(
-              fontSize: 12.sp,
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ActionButton extends StatelessWidget {
-  const _ActionButton({
-    required this.label,
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12.r),
-        child: Container(
-          padding: EdgeInsets.symmetric(vertical: 11.h),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(12.r),
-            border: Border.all(color: color.withValues(alpha: 0.5)),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Row(
             children: [
-              Icon(icon, color: color, size: 18.sp),
-              SizedBox(width: 6.w),
+              Container(
+                width: 4.w,
+                height: 18.h,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(2.r),
+                ),
+              ),
+              SizedBox(width: 8.w),
               Text(
-                label,
+                l10n.upcoming,
                 style: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w600,
-                  color: color,
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
                 ),
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// ════════════════════════════════════════════════════════════════
-// UPCOMING RIDES TIMELINE
-// ════════════════════════════════════════════════════════════════
-
-class _TimelineHeader extends StatelessWidget {
-  const _TimelineHeader();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 0),
-      child: Row(
-        children: [
-          Container(
-            width: 4.w,
-            height: 20.h,
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(2.r),
-            ),
-          ),
-          SizedBox(width: 10.w),
-          Text(
-            AppLocalizations.of(context).upcomingRidesTitle,
-            style: TextStyle(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
+          SizedBox(height: 12.h),
+          ridesAsync.when(
+            loading: () =>
+                SkeletonLoader(type: SkeletonType.rideCard, itemCount: 2),
+            error: (e, _) => _InlineError(message: l10n.couldNotLoadRides),
+            data: (rides) {
+              if (rides.isEmpty) {
+                return _InlineEmpty(
+                  icon: Icons.calendar_today_outlined,
+                  label: l10n.noRidesYetTitle,
+                );
+              }
+              return _RidesTimeline(rides: rides);
+            },
           ),
         ],
       ),
@@ -747,88 +677,24 @@ class _TimelineHeader extends StatelessWidget {
   }
 }
 
-class _RidesTimeline extends ConsumerWidget {
+// ─────────────────────────────────────────────────────────────────
+// RIDES TIMELINE
+// ─────────────────────────────────────────────────────────────────
+
+class _RidesTimeline extends StatelessWidget {
   const _RidesTimeline({required this.rides});
   final List<RideModel> rides;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return SliverPadding(
-      padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 0),
-      sliver: SliverList(
-        delegate: SliverChildBuilderDelegate((context, index) {
-          final ride = rides[index];
-          final isLast = index == rides.length - 1;
-
-          return Dismissible(
-            key: ValueKey('driver_timeline_${ride.id}'),
-            direction: DismissDirection.endToStart,
-            confirmDismiss: (_) async {
-              HapticFeedback.mediumImpact();
-              if (!context.mounted) return false;
-              final confirmed = await showDialog<bool>(
-                context: context,
-                builder: (ctx) {
-                  final l10n = AppLocalizations.of(context);
-                  return AlertDialog(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16.r),
-                    ),
-                    title: Text(l10n.cancelRideTitle),
-                    content: Text(l10n.cancelRideConfirmMessage),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(ctx).pop(false),
-                        child: Text(l10n.keepRideButton),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => Navigator.of(ctx).pop(true),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.error,
-                          foregroundColor: Colors.white,
-                        ),
-                        child: Text(l10n.actionCancel),
-                      ),
-                    ],
-                  );
-                },
-              );
-              if ((confirmed ?? false) && context.mounted) {
-                context.pushNamed(
-                  AppRoutes.cancellationReason.name,
-                  pathParameters: {'id': ride.id},
-                );
-              }
-              return false;
-            },
-            background: Container(
-              margin: EdgeInsets.only(bottom: isLast ? 0 : 12.h),
-              decoration: BoxDecoration(
-                color: AppColors.error,
-                borderRadius: BorderRadius.circular(16.r),
-              ),
-              alignment: Alignment.centerRight,
-              padding: EdgeInsets.only(right: 24.w),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.cancel_outlined, color: Colors.white, size: 24.sp),
-                  SizedBox(height: 4.h),
-                  Text(
-                    AppLocalizations.of(context).actionCancel,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            child: _TimelineRideCard(ride: ride, index: index, isLast: isLast),
-          );
-        }, childCount: rides.length),
-      ),
+  Widget build(BuildContext context) {
+    return Column(
+      children: rides.asMap().entries.map((e) {
+        return _TimelineRideCard(
+          ride: e.value,
+          isLast: e.key == rides.length - 1,
+          index: e.key,
+        );
+      }).toList(),
     );
   }
 }
@@ -836,337 +702,325 @@ class _RidesTimeline extends ConsumerWidget {
 class _TimelineRideCard extends StatelessWidget {
   const _TimelineRideCard({
     required this.ride,
-    required this.index,
     required this.isLast,
+    required this.index,
   });
 
   final RideModel ride;
-  final int index;
   final bool isLast;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Timeline indicator
-        Column(
-          children: [
-            Container(
-              width: 32.w,
-              height: 32.w,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.primary,
-              ),
-              child: Center(
-                child: Text(
-                  '${index + 1}',
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-            if (!isLast)
-              Container(
-                width: 2.w,
-                height: 80.h,
-                margin: EdgeInsets.symmetric(vertical: 4.h),
-                color: AppColors.divider,
-              ),
-          ],
-        ).animate(delay: Duration(milliseconds: index * 80)).fadeIn(),
-
-        SizedBox(width: 12.w),
-
-        // Card
-        Expanded(
-          child: GestureDetector(
-            onTap: () => context.pushNamed(
-              AppRoutes.driverViewRide.name,
-              pathParameters: {'id': ride.id},
-            ),
-            child:
-                Container(
-                      margin: EdgeInsets.only(bottom: isLast ? 0 : 12.h),
-                      padding: EdgeInsets.all(16.w),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(16.r),
-                        border: Border.all(color: AppColors.border),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Date + seats
-                          Row(
-                            children: [
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 10.w,
-                                  vertical: 5.h,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primarySurface,
-                                  borderRadius: BorderRadius.circular(8.r),
-                                ),
-                                child: Text(
-                                  DateFormat(
-                                    'MMM d • HH:mm',
-                                  ).format(ride.departureTime),
-                                  style: TextStyle(
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.primary,
-                                  ),
-                                ),
-                              ),
-                              const Spacer(),
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.people_outline_rounded,
-                                    size: 14.sp,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                  SizedBox(width: 4.w),
-                                  Text(
-                                    '${ride.acceptedBookings.length}/${ride.availableSeats}',
-                                    style: TextStyle(
-                                      fontSize: 12.sp,
-                                      color: AppColors.textSecondary,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 10.h),
-
-                          // Origin
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.radio_button_checked_rounded,
-                                size: 14.sp,
-                                color: AppColors.primary,
-                              ),
-                              SizedBox(width: 6.w),
-                              Expanded(
-                                child: Text(
-                                  ride.origin.address,
-                                  style: TextStyle(
-                                    fontSize: 13.sp,
-                                    color: AppColors.textPrimary,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 6.h),
-
-                          // Destination
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.location_on_rounded,
-                                size: 14.sp,
-                                color: AppColors.error,
-                              ),
-                              SizedBox(width: 6.w),
-                              Expanded(
-                                child: Text(
-                                  ride.destination.address,
-                                  style: TextStyle(
-                                    fontSize: 13.sp,
-                                    color: AppColors.textPrimary,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    )
-                    .animate(delay: Duration(milliseconds: index * 80 + 40))
-                    .fadeIn()
-                    .slideX(begin: 0.05),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _EmptyTimeline extends StatelessWidget {
-  const _EmptyTimeline();
+  final int index;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Container(
-      margin: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 0),
-      padding: EdgeInsets.symmetric(vertical: 32.h, horizontal: 24.w),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.border),
+    final dt = ride.departureTime;
+    final time = DateFormat('HH:mm').format(dt);
+    final date = DateFormat('d MMM').format(dt);
+    final seatsText = '${ride.bookedSeats}/${ride.capacity.available}';
+
+    return GestureDetector(
+      onTap: () => context.pushNamed(
+        AppRoutes.driverViewRide.name,
+        pathParameters: {'id': ride.id},
       ),
-      child: Column(
-        children: [
-          Container(
-            width: 72.w,
-            height: 72.w,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Timeline indicator
+            Column(
+              children: [
+                Container(
+                  width: 36.w,
+                  height: 36.w,
+                  decoration: BoxDecoration(
+                    color: AppColors.primarySurface,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.primary, width: 2),
+                  ),
+                  child: Icon(
+                    Icons.directions_car_rounded,
+                    size: 16.sp,
+                    color: AppColors.primary,
+                  ),
+                ),
+                if (!isLast)
+                  Expanded(
+                    child: Container(
+                      width: 2,
+                      margin: EdgeInsets.symmetric(vertical: 4.h),
+                      color: AppColors.border,
+                    ),
+                  ),
+              ],
             ),
-            child: Icon(
-              Icons.add_road_rounded,
-              size: 36.sp,
-              color: AppColors.primary,
-            ),
-          ).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
-          SizedBox(height: 16.h),
-          Text(
-            l10n.startSharingTheRoad,
-            style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ).animate().fadeIn(delay: 200.ms),
-          SizedBox(height: 6.h),
-          Text(
-            l10n.offerFirstRideMessage,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 13.sp,
-              color: AppColors.textSecondary,
-              height: 1.4,
-            ),
-          ).animate().fadeIn(delay: 300.ms),
-          SizedBox(height: 20.h),
-          // Feature row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _FeatureChip(
-                icon: Icons.people_rounded,
-                label: l10n.connectWithRiders,
-              ),
-              _FeatureChip(
-                icon: Icons.attach_money_rounded,
-                label: l10n.earnPerRide,
-              ),
-              _FeatureChip(
-                icon: Icons.schedule_rounded,
-                label: l10n.flexibleSchedule,
-              ),
-            ],
-          ).animate().fadeIn(delay: 400.ms),
-          SizedBox(height: 20.h),
-          SizedBox(
-            width: double.infinity,
-            height: 44.h,
-            child: ElevatedButton.icon(
-              onPressed: () => context.push(AppRoutes.driverOfferRide.path),
-              icon: Icon(Icons.add_rounded, size: 20.sp),
-              label: Text(
-                l10n.offerYourFirstRide,
-                style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.r),
+            SizedBox(width: 12.w),
+            // Card content
+            Expanded(
+              child: Container(
+                margin: EdgeInsets.only(bottom: 12.h),
+                padding: EdgeInsets.all(14.w),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(14.r),
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Time + price
+                    Row(
+                      children: [
+                        Text(
+                          time,
+                          style: TextStyle(
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        SizedBox(width: 6.w),
+                        Text(
+                          date,
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: AppColors.textTertiary,
+                          ),
+                        ),
+                        const Spacer(),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 8.w,
+                            vertical: 3.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primarySurface,
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                          child: Text(
+                            l10n.value5(ride.pricePerSeat.toStringAsFixed(0)),
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8.h),
+                    // Route
+                    Text(
+                      ride.origin.address,
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Padding(
+                      padding: EdgeInsets.only(left: 2.w),
+                      child: Icon(
+                        Icons.south_rounded,
+                        size: 12.sp,
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                    Text(
+                      ride.destination.address,
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        color: AppColors.textSecondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 8.h),
+                    // Seats + status
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.people_rounded,
+                          size: 14.sp,
+                          color: AppColors.textTertiary,
+                        ),
+                        SizedBox(width: 4.w),
+                        Text(
+                          '$seatsText booked',
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const Spacer(),
+                        _StatusChip(status: ride.status),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ),
-          ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.15),
+          ],
+        ),
+      ).animate().fadeIn(delay: (index * 80).ms, duration: 350.ms),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// STATUS CHIP
+// ─────────────────────────────────────────────────────────────────
+
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({required this.status});
+  final RideStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    Color bg;
+    Color fg;
+    String label;
+
+    switch (status) {
+      case RideStatus.active:
+        bg = AppColors.primarySurface;
+        fg = AppColors.primary;
+        label = 'Open';
+      case RideStatus.full:
+        bg = AppColors.warningSurface;
+        fg = AppColors.warning;
+        label = 'Full';
+      case RideStatus.inProgress:
+        bg = AppColors.successLight.withValues(alpha: 0.2);
+        fg = AppColors.success;
+        label = 'Live';
+      case RideStatus.completed:
+        bg = AppColors.border;
+        fg = AppColors.textSecondary;
+        label = 'Done';
+      case RideStatus.cancelled:
+        bg = AppColors.error.withValues(alpha: 0.1);
+        fg = AppColors.error;
+        label = 'Cancelled';
+      case RideStatus.draft:
+        bg = AppColors.infoSurface;
+        fg = AppColors.info;
+        label = 'Draft';
+    }
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(8.r),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10.sp,
+          fontWeight: FontWeight.w700,
+          color: fg,
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// BADGE
+// ─────────────────────────────────────────────────────────────────
+
+class _Badge extends StatelessWidget {
+  const _Badge({required this.count});
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+      decoration: BoxDecoration(
+        color: AppColors.warning,
+        borderRadius: BorderRadius.circular(10.r),
+      ),
+      child: Text(
+        '$count',
+        style: TextStyle(
+          fontSize: 11.sp,
+          fontWeight: FontWeight.w700,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// INLINE STATES
+// ─────────────────────────────────────────────────────────────────
+
+class _InlineError extends StatelessWidget {
+  const _InlineError({required this.message});
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: AppColors.error.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.error_outline_rounded,
+            size: 18.sp,
+            color: AppColors.error,
+          ),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(fontSize: 12.sp, color: AppColors.error),
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-class _FeatureChip extends StatelessWidget {
-  const _FeatureChip({required this.icon, required this.label});
+class _InlineEmpty extends StatelessWidget {
+  const _InlineEmpty({required this.icon, required this.label});
   final IconData icon;
   final String label;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Icon(icon, size: 22.sp, color: AppColors.primary),
-        SizedBox(height: 4.h),
-        Text(
-          label,
-          style: TextStyle(fontSize: 11.sp, color: AppColors.textSecondary),
-        ),
-      ],
-    );
-  }
-}
-
-class _LoadingTimeline extends StatelessWidget {
-  const _LoadingTimeline();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 32.h),
-      child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
-    );
-  }
-}
-
-class _ErrorTimeline extends StatelessWidget {
-  const _ErrorTimeline({required this.error});
-  final Object error;
-
-  @override
-  Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 0),
-      padding: EdgeInsets.all(16.w),
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(vertical: 24.h),
       decoration: BoxDecoration(
-        color: AppColors.error.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: AppColors.border),
       ),
-      child: Row(
+      child: Column(
         children: [
-          Icon(
-            Icons.error_outline_rounded,
-            color: AppColors.error,
-            size: 20.sp,
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Text(
-              AppLocalizations.of(context).couldNotLoadRides,
-              style: TextStyle(fontSize: 13.sp, color: AppColors.error),
-            ),
+          Icon(icon, size: 32.sp, color: AppColors.textTertiary),
+          SizedBox(height: 8.h),
+          Text(
+            label,
+            style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
           ),
         ],
       ),

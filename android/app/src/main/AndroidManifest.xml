@@ -68,6 +68,12 @@
                     android:scheme="https"
                     android:host="sportaxitrip.com"
                     android:pathPrefix="/ride"/>
+                <data android:pathPrefix="/chat"/>
+                <data android:pathPrefix="/profile"/>
+                <data android:pathPrefix="/edit-profile"/>
+                <data android:pathPrefix="/driver"/>
+                <data android:pathPrefix="/notifications"/>
+                <data android:pathPrefix="/events"/>
             </intent-filter>
         </activity>
         <meta-data

@@ -11,11 +11,8 @@ _UserPreferences _$UserPreferencesFromJson(Map json) => _UserPreferences(
   emailNotifications: json['emailNotifications'] as bool? ?? true,
   rideReminders: json['rideReminders'] as bool? ?? true,
   chatNotifications: json['chatNotifications'] as bool? ?? true,
-  marketingEmails: json['marketingEmails'] as bool? ?? true,
   language: json['language'] as String? ?? 'en',
-  theme: json['theme'] as String? ?? 'system',
-  maxPickupRadius: (json['maxPickupRadius'] as num?)?.toDouble() ?? 5.0,
-  showOnlineStatus: json['showOnlineStatus'] as bool? ?? true,
+  maxPickupRadius: (json['maxPickupRadius'] as num?)?.toDouble() ?? 20.0,
   allowMessages: json['allowMessages'] as bool? ?? true,
 );
 
@@ -25,10 +22,7 @@ Map<String, dynamic> _$UserPreferencesToJson(_UserPreferences instance) =>
       'emailNotifications': instance.emailNotifications,
       'rideReminders': instance.rideReminders,
       'chatNotifications': instance.chatNotifications,
-      'marketingEmails': instance.marketingEmails,
       'language': instance.language,
-      'theme': instance.theme,
       'maxPickupRadius': instance.maxPickupRadius,
-      'showOnlineStatus': instance.showOnlineStatus,
       'allowMessages': instance.allowMessages,
     };

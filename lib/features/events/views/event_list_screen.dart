@@ -10,6 +10,7 @@ import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/premium_card.dart';
+import 'package:sport_connect/core/services/location_service.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
 import 'package:sport_connect/features/events/view_models/event_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -24,7 +25,7 @@ class EventListScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: RefreshIndicator(
+      body: RefreshIndicator.adaptive(
         onRefresh: () async {
           ref.invalidate(eventListViewModelProvider);
           await Future<void>.delayed(const Duration(milliseconds: 250));
@@ -46,7 +47,7 @@ class EventListScreen extends ConsumerWidget {
             // ── Event list ──
             if (vm.isLoading)
               const SliverFillRemaining(
-                child: Center(child: CircularProgressIndicator()),
+                child: Center(child: CircularProgressIndicator.adaptive()),
               )
             else if (vm.error != null)
               SliverFillRemaining(
@@ -89,6 +90,7 @@ class EventListScreen extends ConsumerWidget {
       ),
       floatingActionButton:
           FloatingActionButton.extended(
+            heroTag: null,
             onPressed: () => context.push(AppRoutes.createEvent.path),
             backgroundColor: AppColors.primary,
             icon: Icon(Icons.add_rounded, size: 22.sp),
@@ -113,8 +115,9 @@ class EventListScreen extends ConsumerWidget {
       backgroundColor: AppColors.background,
       surfaceTintColor: Colors.transparent,
       leading: IconButton(
+        tooltip: AppLocalizations.of(context).goBackTooltip,
         icon: Icon(
-          Icons.arrow_back_rounded,
+          Icons.adaptive.arrow_back_rounded,
           color: AppColors.textPrimary,
           size: 22.sp,
         ),
@@ -153,6 +156,7 @@ class EventListScreen extends ConsumerWidget {
         onChanged: (v) =>
             ref.read(eventListViewModelProvider.notifier).setSearchQuery(v),
         decoration: InputDecoration(
+          labelText: AppLocalizations.of(context).searchEventsHint,
           hintText: AppLocalizations.of(context).searchEventsHint,
           hintStyle: TextStyle(fontSize: 14.sp, color: AppColors.textTertiary),
           prefixIcon: Icon(
@@ -162,6 +166,7 @@ class EventListScreen extends ConsumerWidget {
           ),
           suffixIcon: vm.searchQuery.isNotEmpty
               ? IconButton(
+                  tooltip: AppLocalizations.of(context).clearSearchTooltip,
                   icon: Icon(Icons.close_rounded, size: 18.sp),
                   onPressed: () => ref
                       .read(eventListViewModelProvider.notifier)
@@ -188,33 +193,241 @@ class EventListScreen extends ConsumerWidget {
     WidgetRef ref,
     EventListState vm,
   ) {
-    return SizedBox(
-      height: 44.h,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
-        children: [
-          _FilterChip(
-            label: AppLocalizations.of(context).filterAll,
-            isSelected: vm.filterType == null,
-            onTap: () => ref
-                .read(eventListViewModelProvider.notifier)
-                .setFilterType(null),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          height: 44.h,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
+            children: [
+              _FilterChip(
+                label: AppLocalizations.of(context).filterAll,
+                isSelected: vm.filterType == null,
+                onTap: () => ref
+                    .read(eventListViewModelProvider.notifier)
+                    .setFilterType(null),
+              ),
+              ...EventType.values.map((type) {
+                return _FilterChip(
+                  label: type.label,
+                  icon: type.icon,
+                  color: type.color,
+                  isSelected: vm.filterType == type,
+                  onTap: () => ref
+                      .read(eventListViewModelProvider.notifier)
+                      .setFilterType(vm.filterType == type ? null : type),
+                );
+              }),
+            ],
           ),
-          ...EventType.values.map((type) {
-            return _FilterChip(
-              label: type.label,
-              icon: type.icon,
-              color: type.color,
-              isSelected: vm.filterType == type,
-              onTap: () => ref
-                  .read(eventListViewModelProvider.notifier)
-                  .setFilterType(vm.filterType == type ? null : type),
-            );
-          }),
-        ],
-      ),
+        ),
+        SizedBox(height: 8.h),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
+          child: GestureDetector(
+            onTap: () => _showRadiusPicker(context, ref, vm),
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+              decoration: BoxDecoration(
+                color: vm.hasLocationFilter
+                    ? AppColors.primary.withValues(alpha: 0.1)
+                    : AppColors.surface,
+                borderRadius: BorderRadius.circular(20.r),
+                border: Border.all(
+                  color: vm.hasLocationFilter
+                      ? AppColors.primary
+                      : AppColors.border,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (vm.isLoadingLocation)
+                    SizedBox(
+                      width: 14.w,
+                      height: 14.h,
+                      child: CircularProgressIndicator.adaptive(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation(AppColors.primary),
+                      ),
+                    )
+                  else
+                    Icon(
+                      Icons.near_me_rounded,
+                      size: 14.sp,
+                      color: vm.hasLocationFilter
+                          ? AppColors.primary
+                          : AppColors.textSecondary,
+                    ),
+                  SizedBox(width: 6.w),
+                  Text(
+                    vm.hasLocationFilter
+                        ? 'Within ${vm.radiusKm!.toInt()} km'
+                        : 'Near me',
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w600,
+                      color: vm.hasLocationFilter
+                          ? AppColors.primary
+                          : AppColors.textSecondary,
+                    ),
+                  ),
+                  if (vm.hasLocationFilter) ...[
+                    SizedBox(width: 6.w),
+                    GestureDetector(
+                      onTap: () => ref
+                          .read(eventListViewModelProvider.notifier)
+                          .clearRadiusFilter(),
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 14.sp,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+        SizedBox(height: 4.h),
+      ],
     ).animate().fadeIn(delay: 100.ms, duration: 300.ms);
+  }
+
+  Future<void> _showRadiusPicker(
+    BuildContext context,
+    WidgetRef ref,
+    EventListState vm,
+  ) async {
+    final options = [5.0, 10.0, 25.0, 50.0];
+    final chosen = await showModalBottomSheet<double?>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      showDragHandle: false,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 32.h),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40.w,
+              height: 4.h,
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2.r),
+              ),
+            ),
+            SizedBox(height: 16.h),
+            Text(
+              'Events near me',
+              style: TextStyle(
+                fontSize: 17.sp,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            SizedBox(height: 16.h),
+            Flexible(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ...options.map(
+                      (km) => ListTile(
+                        leading: Icon(
+                          Icons.radio_button_checked_rounded,
+                          color: vm.radiusKm == km
+                              ? AppColors.primary
+                              : AppColors.border,
+                          size: 20.sp,
+                        ),
+                        title: Text(
+                          'Within ${km.toInt()} km',
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        onTap: () => Navigator.of(ctx).pop(km),
+                      ),
+                    ),
+                    const Divider(),
+                    ListTile(
+                      leading: Icon(
+                        Icons.public_rounded,
+                        size: 20.sp,
+                        color: AppColors.textSecondary,
+                      ),
+                      title: Text(
+                        'Everywhere',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      onTap: () => Navigator.of(ctx).pop(-1.0),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (chosen == null || !context.mounted) return;
+    if (chosen < 0) {
+      ref.read(eventListViewModelProvider.notifier).clearRadiusFilter();
+      return;
+    }
+
+    // Mark loading while fetching GPS
+    ref
+        .read(eventListViewModelProvider.notifier)
+        .setRadiusFilter(
+          radiusKm: chosen,
+          lat: vm.userLatitude,
+          lng: vm.userLongitude,
+        );
+
+    try {
+      final locationService = ref.read(locationServiceProvider);
+      final position = await locationService.getCurrentLocation();
+      if (!context.mounted) return;
+      if (position != null) {
+        ref
+            .read(eventListViewModelProvider.notifier)
+            .setRadiusFilter(
+              radiusKm: chosen,
+              lat: position.latitude,
+              lng: position.longitude,
+            );
+      } else {
+        ref.read(eventListViewModelProvider.notifier).clearRadiusFilter();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Could not get your location. Please enable location access.',
+            ),
+          ),
+        );
+      }
+    } catch (_) {
+      if (!context.mounted) return;
+      ref.read(eventListViewModelProvider.notifier).clearRadiusFilter();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Location unavailable. Please try again.'),
+        ),
+      );
+    }
   }
 
   // -------------------------------------------------------------------
@@ -473,10 +686,6 @@ class _EventCard extends ConsumerWidget {
                   Icons.calendar_today_rounded,
                   _fmt.format(event.startsAt),
                 ),
-                if (event.venueName != null) ...[
-                  SizedBox(height: 4.h),
-                  _iconRow(Icons.location_on_rounded, event.venueName!),
-                ],
                 if (event.organizerName != null &&
                     event.organizerName!.isNotEmpty) ...[
                   SizedBox(height: 4.h),

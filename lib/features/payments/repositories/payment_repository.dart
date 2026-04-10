@@ -59,7 +59,18 @@ class PaymentRepository implements IPaymentRepository {
     }
   }
 
-  /// Update payment transaction status
+  // FIX P-1: Valid payment state transitions.
+  static const _validTransitions = <String, Set<String>>{
+    'pending': {'processing', 'failed'},
+    'processing': {'succeeded', 'failed'},
+    'succeeded': {'refunded', 'partiallyRefunded'},
+    'failed': {},
+    'refunded': {},
+    'partiallyRefunded': {'refunded'},
+    'refunding': {'refunded', 'failed'},
+  };
+
+  /// Update payment transaction status — enforces valid state machine.
   @override
   Future<void> updatePaymentStatus({
     required String paymentId,
@@ -68,6 +79,18 @@ class PaymentRepository implements IPaymentRepository {
     DateTime? completedAt,
   }) async {
     try {
+      // FIX P-1: Read current status first and reject invalid transitions.
+      final current = await _paymentsCollection.doc(paymentId).get();
+      if (current.exists) {
+        final currentStatus = current.data()!.status.name;
+        final allowed = _validTransitions[currentStatus] ?? {};
+        if (!allowed.contains(status.name)) {
+          throw StateError(
+            'Invalid payment transition: $currentStatus → ${status.name}',
+          );
+        }
+      }
+
       await _paymentsCollection.doc(paymentId).update({
         'status': status.name,
         'updatedAt': DateTime.now(),
@@ -84,14 +107,27 @@ class PaymentRepository implements IPaymentRepository {
     }
   }
 
-  /// Get payment transaction by ID
+  /// Get payment transaction by Firestore document ID or Stripe paymentIntentId.
+  ///
+  /// The Cloud Function creates payment docs with `.add()` (auto-generated Firestore
+  /// ID), so [paymentId] may be either the Firestore doc ID or the Stripe
+  /// paymentIntentId (pi_xxx). We try the doc lookup first (fast path), then
+  /// fall back to a field query.
   @override
   Future<PaymentTransaction?> getPaymentById(String paymentId) async {
     try {
+      // Fast path: try direct document lookup (works if caller has Firestore ID)
       final doc = await _paymentsCollection.doc(paymentId).get();
-      if (!doc.exists) return null;
+      if (doc.exists) return doc.data();
 
-      return doc.data();
+      // Fallback: query by Stripe paymentIntentId field (pi_xxx)
+      final snapshot = await _paymentsCollection
+          .where('paymentIntentId', isEqualTo: paymentId)
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isEmpty) return null;
+      return snapshot.docs.first.data();
     } catch (e) {
       TalkerService.error('Error getting payment: $e');
       rethrow;
@@ -186,17 +222,75 @@ class PaymentRepository implements IPaymentRepository {
     }
   }
 
-  /// Calculate earnings summary for driver
+  /// Calculate earnings summary for driver.
+  ///
+  /// P-2: Uses the pre-computed `driver_stats` document as a fast path.
+  /// Cloud Functions `recomputeDriverStats` keeps it up to date after every
+  /// payment success and every refund.  Falls back to a full payments scan
+  /// only when the doc doesn't exist yet (first-time / cold-start scenario).
   @override
   Future<EarningsSummary> calculateEarningsSummary(String driverId) async {
     try {
+      // Fast path: read the pre-aggregated driver_stats document.
+      final statsDoc = await _firestore
+          .collection(AppConstants.driverStatsCollection)
+          .doc(driverId)
+          .get();
+
+      // Always fetch payout info — it's a single bounded query.
+      final payoutsSnapshot = await _payoutsCollection
+          .where('driverId', isEqualTo: driverId)
+          .orderBy('createdAt', descending: true)
+          .limit(1)
+          .get();
+
+      DateTime? lastPayoutDate;
+      if (payoutsSnapshot.docs.isNotEmpty) {
+        lastPayoutDate = payoutsSnapshot.docs.first.data().arrivedAt;
+      }
+
+      if (statsDoc.exists) {
+        final data = statsDoc.data()!;
+        TalkerService.info(
+          'calculateEarningsSummary: using driver_stats fast path for $driverId',
+        );
+        return EarningsSummary(
+          driverId: driverId,
+          totalEarnings: (data['totalEarnings'] as num?)?.toDouble() ?? 0.0,
+          totalPlatformFees:
+              (data['totalPlatformFees'] as num?)?.toDouble() ?? 0.0,
+          totalStripeFees: (data['totalStripeFees'] as num?)?.toDouble() ?? 0.0,
+          earningsToday: (data['earningsToday'] as num?)?.toDouble() ?? 0.0,
+          earningsThisWeek:
+              (data['earningsThisWeek'] as num?)?.toDouble() ?? 0.0,
+          earningsThisMonth:
+              (data['earningsThisMonth'] as num?)?.toDouble() ?? 0.0,
+          earningsThisYear:
+              (data['earningsThisYear'] as num?)?.toDouble() ?? 0.0,
+          totalRidesCompleted: (data['totalRides'] as num?)?.toInt() ?? 0,
+          ridesCompletedToday: (data['ridesToday'] as num?)?.toInt() ?? 0,
+          ridesCompletedThisWeek: (data['ridesThisWeek'] as num?)?.toInt() ?? 0,
+          ridesCompletedThisMonth:
+              (data['ridesThisMonth'] as num?)?.toInt() ?? 0,
+          lastUpdated:
+              (data['lastUpdatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+          lastPayoutDate: lastPayoutDate,
+        );
+      }
+
+      // Fallback: full payments scan — only runs before the first Cloud
+      // Function execution or if driver_stats was manually deleted.
+      TalkerService.info(
+        'calculateEarningsSummary: driver_stats missing for $driverId — '
+        'falling back to full payments scan',
+      );
+
       final now = DateTime.now();
       final todayStart = DateTime(now.year, now.month, now.day);
       final weekStart = now.subtract(Duration(days: now.weekday - 1));
       final monthStart = DateTime(now.year, now.month, 1);
       final yearStart = DateTime(now.year, 1, 1);
 
-      // Get all successful payments
       final allPayments = await _paymentsCollection
           .where('driverId', isEqualTo: driverId)
           .where('status', isEqualTo: PaymentStatus.succeeded.name)
@@ -204,7 +298,6 @@ class PaymentRepository implements IPaymentRepository {
 
       final payments = allPayments.docs.map((doc) => doc.data()).toList();
 
-      // Calculate totals
       double totalEarnings = 0;
       double totalPlatformFees = 0;
       double totalStripeFees = 0;
@@ -219,9 +312,7 @@ class PaymentRepository implements IPaymentRepository {
       int ridesThisWeek = 0;
       int ridesThisMonth = 0;
 
-      DateTime? lastPayoutDate;
-
-      for (var payment in payments) {
+      for (final payment in payments) {
         totalEarnings += payment.driverEarnings;
         totalPlatformFees += payment.platformFee;
         totalStripeFees += payment.stripeFee;
@@ -243,18 +334,6 @@ class PaymentRepository implements IPaymentRepository {
             earningsThisYear += payment.driverEarnings;
           }
         }
-      }
-
-      // Get payout info
-      final payoutsSnapshot = await _payoutsCollection
-          .where('driverId', isEqualTo: driverId)
-          .orderBy('createdAt', descending: true)
-          .limit(1)
-          .get();
-
-      if (payoutsSnapshot.docs.isNotEmpty) {
-        final lastPayout = payoutsSnapshot.docs.first.data();
-        lastPayoutDate = lastPayout.arrivedAt;
       }
 
       return EarningsSummary(
@@ -309,7 +388,8 @@ class PaymentRepository implements IPaymentRepository {
     try {
       await _payoutsCollection.doc(payoutId).update({
         'status': status.name,
-        'failureReason': failureReason,
+        'updatedAt': DateTime.now(),
+        'failureReason': ?failureReason,
         if (arrivedAt != null) 'arrivedAt': Timestamp.fromDate(arrivedAt),
       });
 
@@ -382,12 +462,16 @@ class PaymentRepository implements IPaymentRepository {
     required bool chargesEnabled,
     required bool payoutsEnabled,
     required bool detailsSubmitted,
+    double? availableBalance,
+    double? pendingBalance,
   }) async {
     try {
       await _connectedAccountsCollection.doc(driverId).update({
         'chargesEnabled': chargesEnabled,
         'payoutsEnabled': payoutsEnabled,
         'detailsSubmitted': detailsSubmitted,
+        'availableBalance': ?availableBalance,
+        'pendingBalance': ?pendingBalance,
         'onboardingCompleted':
             chargesEnabled && payoutsEnabled && detailsSubmitted,
         'updatedAt': DateTime.now(),

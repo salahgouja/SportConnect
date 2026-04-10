@@ -8,56 +8,6 @@ part of 'settings_provider.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Provider for app theme mode (light, dark, system)
-
-@ProviderFor(ThemeModeProvider)
-final themeModeProviderProvider = ThemeModeProviderProvider._();
-
-/// Provider for app theme mode (light, dark, system)
-final class ThemeModeProviderProvider
-    extends $AsyncNotifierProvider<ThemeModeProvider, ThemeMode> {
-  /// Provider for app theme mode (light, dark, system)
-  ThemeModeProviderProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'themeModeProviderProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$themeModeProviderHash();
-
-  @$internal
-  @override
-  ThemeModeProvider create() => ThemeModeProvider();
-}
-
-String _$themeModeProviderHash() => r'f6e0a6e14f7d3aeb608c51aef14607c53ec3d48c';
-
-/// Provider for app theme mode (light, dark, system)
-
-abstract class _$ThemeModeProvider extends $AsyncNotifier<ThemeMode> {
-  FutureOr<ThemeMode> build();
-  @$mustCallSuper
-  @override
-  void runBuild() {
-    final ref = this.ref as $Ref<AsyncValue<ThemeMode>, ThemeMode>;
-    final element =
-        ref.element
-            as $ClassProviderElement<
-              AnyNotifier<AsyncValue<ThemeMode>, ThemeMode>,
-              AsyncValue<ThemeMode>,
-              Object?,
-              Object?
-            >;
-    element.handleCreate(ref, build);
-  }
-}
-
 /// Provider for map style preference
 
 @ProviderFor(MapStyleProvider)
@@ -324,57 +274,6 @@ abstract class _$ChatNotificationsProvider extends $AsyncNotifier<bool> {
   }
 }
 
-/// Provider for marketing emails setting
-
-@ProviderFor(MarketingEmailsProvider)
-final marketingEmailsProviderProvider = MarketingEmailsProviderProvider._();
-
-/// Provider for marketing emails setting
-final class MarketingEmailsProviderProvider
-    extends $AsyncNotifierProvider<MarketingEmailsProvider, bool> {
-  /// Provider for marketing emails setting
-  MarketingEmailsProviderProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'marketingEmailsProviderProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$marketingEmailsProviderHash();
-
-  @$internal
-  @override
-  MarketingEmailsProvider create() => MarketingEmailsProvider();
-}
-
-String _$marketingEmailsProviderHash() =>
-    r'baa2a74593c77b5c889d2fda2ece7193aea38683';
-
-/// Provider for marketing emails setting
-
-abstract class _$MarketingEmailsProvider extends $AsyncNotifier<bool> {
-  FutureOr<bool> build();
-  @$mustCallSuper
-  @override
-  void runBuild() {
-    final ref = this.ref as $Ref<AsyncValue<bool>, bool>;
-    final element =
-        ref.element
-            as $ClassProviderElement<
-              AnyNotifier<AsyncValue<bool>, bool>,
-              AsyncValue<bool>,
-              Object?,
-              Object?
-            >;
-    element.handleCreate(ref, build);
-  }
-}
-
 /// Provider for auto-accept rides setting
 
 @ProviderFor(AutoAcceptRidesProvider)
@@ -521,57 +420,6 @@ abstract class _$PublicProfileProvider extends $AsyncNotifier<bool> {
             as $ClassProviderElement<
               AnyNotifier<AsyncValue<bool>, bool>,
               AsyncValue<bool>,
-              Object?,
-              Object?
-            >;
-    element.handleCreate(ref, build);
-  }
-}
-
-/// Provider for distance unit setting ('km' or 'miles')
-
-@ProviderFor(DistanceUnitProvider)
-final distanceUnitProviderProvider = DistanceUnitProviderProvider._();
-
-/// Provider for distance unit setting ('km' or 'miles')
-final class DistanceUnitProviderProvider
-    extends $AsyncNotifierProvider<DistanceUnitProvider, String> {
-  /// Provider for distance unit setting ('km' or 'miles')
-  DistanceUnitProviderProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'distanceUnitProviderProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$distanceUnitProviderHash();
-
-  @$internal
-  @override
-  DistanceUnitProvider create() => DistanceUnitProvider();
-}
-
-String _$distanceUnitProviderHash() =>
-    r'62bbd9d8167909a6d96995ed5cead2cdc5684e24';
-
-/// Provider for distance unit setting ('km' or 'miles')
-
-abstract class _$DistanceUnitProvider extends $AsyncNotifier<String> {
-  FutureOr<String> build();
-  @$mustCallSuper
-  @override
-  void runBuild() {
-    final ref = this.ref as $Ref<AsyncValue<String>, String>;
-    final element =
-        ref.element
-            as $ClassProviderElement<
-              AnyNotifier<AsyncValue<String>, String>,
-              AsyncValue<String>,
               Object?,
               Object?
             >;

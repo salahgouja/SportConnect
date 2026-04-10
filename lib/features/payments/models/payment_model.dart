@@ -116,10 +116,6 @@ abstract class DriverPayout with _$DriverPayout {
     // Related transactions
     @Default([]) List<String> transactionIds,
 
-    // Bank details (last 4 digits)
-    String? bankAccountLast4,
-    String? bankName,
-
     // Timestamps
     @TimestampConverter() DateTime? createdAt,
     @TimestampConverter() DateTime? expectedArrivalDate,
@@ -168,8 +164,6 @@ abstract class DriverConnectedAccount with _$DriverConnectedAccount {
     String? onboardingUrl,
 
     // Bank account info (masked)
-    String? bankAccountLast4,
-    String? bankName,
     String? accountHolderName,
 
     // Earnings summary

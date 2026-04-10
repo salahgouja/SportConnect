@@ -20,7 +20,6 @@ import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/features/payments/view_models/payment_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:sport_connect/core/widgets/safety_widgets.dart';
 import 'package:sport_connect/core/widgets/ride_feature_widgets.dart';
 import 'package:sport_connect/features/vehicles/repositories/vehicle_repository.dart';
 import 'package:sport_connect/core/widgets/misc_feature_widgets.dart';
@@ -37,30 +36,60 @@ class PassengerActiveRideScreen extends ConsumerStatefulWidget {
 }
 
 class _PassengerActiveRideScreenState
-    extends ConsumerState<PassengerActiveRideScreen>
-    with TickerProviderStateMixin {
-  late AnimationController _pulseController;
+    extends ConsumerState<PassengerActiveRideScreen> {
   bool _hasNavigatedOnCancel = false;
 
   // MapController for live tracking map — allows auto-panning to driver
   final MapController _liveMapController = MapController();
 
+  // Controls the bottom sheet programmatically for auto-expansion
+  final DraggableScrollableController _sheetController =
+      DraggableScrollableController();
+
   // H1: Passenger's own GPS location for map pin
   LatLng? _passengerLocation;
+
+  // Whether the map has been initially centered on the driver's position
+  bool _hasInitiallyPannedToDriver = false;
+
+  // AR-7: Whether to show the OTP inline during enRoute phase
+  bool _showOtp = false;
+
+  // AR-6: Set when location permission is permanently denied so we can show a prompt
+  bool _locationPermissionDeniedForever = false;
 
   @override
   void initState() {
     super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
 
     // H1: Fetch passenger's current location for map display
     _fetchPassengerLocation();
   }
 
   Future<void> _fetchPassengerLocation() async {
+    // AR-6: Check permission status before attempting to get position so we
+    // can surface a meaningful prompt instead of silently dropping the pin.
+    final permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.deniedForever) {
+      if (mounted) {
+        setState(() => _locationPermissionDeniedForever = true);
+      }
+      return;
+    }
+    if (permission == LocationPermission.denied) {
+      final requested = await Geolocator.requestPermission();
+      if (requested == LocationPermission.denied ||
+          requested == LocationPermission.deniedForever) {
+        if (mounted) {
+          setState(
+            () => _locationPermissionDeniedForever =
+                requested == LocationPermission.deniedForever,
+          );
+        }
+        return;
+      }
+    }
+
     try {
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
@@ -79,8 +108,8 @@ class _PassengerActiveRideScreenState
 
   @override
   void dispose() {
-    _pulseController.dispose();
     _liveMapController.dispose();
+    _sheetController.dispose();
     super.dispose();
   }
 
@@ -88,7 +117,7 @@ class _PassengerActiveRideScreenState
   Future<void> _shareTrip(RideModel ride) async {
     HapticFeedback.mediumImpact();
     final currentUser = ref.read(currentUserProvider).value;
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
 
     final userName = currentUser?.displayName ?? 'A passenger';
     final origin = ride.origin.address;
@@ -112,112 +141,6 @@ class _PassengerActiveRideScreenState
   }
 
   // ==================== SECTION 7 PASSENGER HELPERS ====================
-
-  /// SOS — shares ride details with emergency formatting.
-  void _triggerSOS(RideModel ride, ActiveRideState rideState) {
-    HapticFeedback.heavyImpact();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.sos, color: AppColors.error),
-            SizedBox(width: 8.w),
-            Text(AppLocalizations.of(context).emergencySos),
-          ],
-        ),
-        content: Text(AppLocalizations.of(context).sosShareConfirmationMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(AppLocalizations.of(context).actionCancel),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.of(ctx).pop();
-              final notifier = ref.read(
-                activeRideViewModelProvider(widget.rideId).notifier,
-              );
-              final sosMessage = notifier.generateSosMessage();
-              await SharePlus.instance.share(ShareParams(text: sosMessage));
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-            ),
-            child: Text(AppLocalizations.of(context).shareSos),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Shows dialog for passenger to describe and request a mid-ride stop.
-  void _showRequestStopDialog(RideModel ride) {
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.add_location_alt, color: AppColors.warning),
-            SizedBox(width: 8.w),
-            Text(AppLocalizations.of(context).requestAStop),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(AppLocalizations.of(context).requestStopDescription),
-            SizedBox(height: 12.h),
-            TextField(
-              controller: controller,
-              decoration: InputDecoration(
-                hintText: AppLocalizations.of(context).requestStopHint,
-                border: OutlineInputBorder(),
-              ),
-              maxLength: 100,
-              textCapitalization: TextCapitalization.sentences,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(AppLocalizations.of(context).actionCancel),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final desc = controller.text.trim();
-              if (desc.isEmpty) return;
-              Navigator.of(ctx).pop();
-              ref
-                  .read(activeRideViewModelProvider(widget.rideId).notifier)
-                  .requestMidRideStop(desc);
-              HapticFeedback.lightImpact();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    AppLocalizations.of(context).stopRequestSentToDriver,
-                  ),
-                  backgroundColor: AppColors.success,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.warning,
-              foregroundColor: Colors.white,
-            ),
-            child: Text(AppLocalizations.of(context).requestStop),
-          ),
-        ],
-      ),
-    );
-  }
 
   /// Quick message chips for passenger (e.g. "I'm at pickup", "Running late").
   Widget _buildPassengerQuickMessages(
@@ -284,7 +207,7 @@ class _PassengerActiveRideScreenState
                       chatId: ride.id,
                       message: messages[index],
                       senderId: user.uid,
-                      senderName: user.displayName ?? 'Passenger',
+                      senderName: user.displayName,
                     );
                     HapticFeedback.lightImpact();
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -312,6 +235,38 @@ class _PassengerActiveRideScreenState
     );
   }
 
+  /// Formats a DateTime as "Jan 5, 3:45 PM".
+  String _formatPaidAt(DateTime dt) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final hour = dt.hour;
+    final period = hour >= 12 ? 'PM' : 'AM';
+    final displayHour = hour % 12 == 0 ? 12 : hour % 12;
+    return '${months[dt.month - 1]} ${dt.day}, $displayHour:${dt.minute.toString().padLeft(2, '0')} $period';
+  }
+
+  /// Formats a future arrival time as "h:mm AM/PM" given minutes from now.
+  String _formatArrivalTime(int minutes) {
+    final arrival = DateTime.now().add(Duration(minutes: minutes));
+    final hour = arrival.hour;
+    final min = arrival.minute;
+    final period = hour >= 12 ? 'PM' : 'AM';
+    final displayHour = hour % 12 == 0 ? 12 : hour % 12;
+    return '$displayHour:${min.toString().padLeft(2, '0')} $period';
+  }
+
   /// Returns true if it's currently nighttime (between 8 PM and 6 AM).
   bool get _isNightTime {
     final hour = DateTime.now().hour;
@@ -320,16 +275,38 @@ class _PassengerActiveRideScreenState
 
   @override
   Widget build(BuildContext context) {
-    final rideState = ref.watch(activeRideViewModelProvider(widget.rideId));
-    final rideAsync = rideState.ride;
+    // PERF: Only watch the ride AsyncValue — GPS/driver location changes
+    // won't trigger a full rebuild. Individual sections use Consumer widgets.
+    final rideAsync = ref.watch(
+      activeRideViewModelProvider(widget.rideId).select((s) => s.ride),
+    );
+
+    // Auto-expand bottom sheet on key phase transitions
+    ref.listen<ActiveRidePhase>(
+      activeRideViewModelProvider(widget.rideId).select((s) => s.phase),
+      (prev, next) {
+        if (prev == next) return;
+        if (next == ActiveRidePhase.pickingUp ||
+            next == ActiveRidePhase.arriving) {
+          if (_sheetController.isAttached) {
+            _sheetController.animateTo(
+              0.55,
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeOutCubic,
+            );
+          }
+        }
+      },
+    );
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: rideAsync.when(
         data: (ride) => ride == null
             ? _buildRideNotFound()
-            : _buildActiveRideContent(context, ride, rideState),
-        loading: () => const Center(child: CircularProgressIndicator()),
+            : _buildActiveRideContent(context, ride),
+        loading: () =>
+            const Center(child: CircularProgressIndicator.adaptive()),
         error: (e, _) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -389,16 +366,13 @@ class _PassengerActiveRideScreenState
     );
   }
 
-  Widget _buildActiveRideContent(
-    BuildContext context,
-    RideModel ride,
-    ActiveRideState rideState,
-  ) {
-    final driverAsync = ref.watch(currentUserProfileProvider(ride.driverId));
+  Widget _buildActiveRideContent(BuildContext context, RideModel ride) {
+    // Non-reactive read for redirect logic
+    final currentState = ref.read(activeRideViewModelProvider(widget.rideId));
 
     // Auto-navigate to completion screen when driver marks ride as done.
     if (ride.status == RideStatus.completed &&
-        !rideState.hasAutoNavigatedToCompletion) {
+        !currentState.hasAutoNavigatedToCompletion) {
       // Set flag BEFORE scheduling the push to prevent double-navigation
       // if the widget rebuilds between the status check and the callback.
       ref
@@ -429,134 +403,167 @@ class _PassengerActiveRideScreenState
     }
 
     // For in-progress rides, use a full-screen map-first layout
+    // PERF: Wrapped in Consumer so driver profile + ride state are
+    // isolated from the parent build() which only watches ride status.
     if (ride.status == RideStatus.inProgress) {
-      return _buildMapFirstLayout(context, ride, rideState, driverAsync);
+      // Phase auto-expand is handled by ref.listen in build()
+      return Consumer(
+        builder: (context, ref, _) {
+          final rideState = ref.watch(
+            activeRideViewModelProvider(widget.rideId),
+          );
+          final driverAsync = ref.watch(
+            currentUserProfileProvider(ride.driverId),
+          );
+          return _buildMapFirstLayout(context, ride, rideState, driverAsync);
+        },
+      );
     }
 
-    return CustomScrollView(
-      slivers: [
-        SliverToBoxAdapter(child: _buildHeader(context, ride)),
-        // Static route map — shown for scheduled/active/completed rides
-        SliverToBoxAdapter(
-          child: _buildStaticRouteMap(context, ride, rideState)
-              .animate()
-              .fadeIn(duration: 400.ms, delay: 50.ms)
-              .slideY(begin: 0.2, curve: Curves.easeOutCubic),
-        ),
-        SliverToBoxAdapter(
-          child: _buildStatusSection(context, ride, rideState)
-              .animate()
-              .fadeIn(duration: 400.ms, delay: 100.ms)
-              .slideY(begin: 0.2, curve: Curves.easeOutCubic),
-        ),
-        SliverToBoxAdapter(
-          child: driverAsync
-              .when(
-                data: (driver) => _buildDriverInfo(context, driver, ride),
-                loading: () => const Padding(
-                  padding: EdgeInsets.all(20.0),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-                error: (_, _) => const SizedBox.shrink(),
-              )
-              .animate()
-              .fadeIn(duration: 400.ms, delay: 200.ms)
-              .slideY(begin: 0.2, curve: Curves.easeOutCubic),
-        ),
-        // Vehicle photo match for easy identification
-        if (ride.vehicleId != null || ride.vehicleInfo != null)
-          SliverToBoxAdapter(
-            child:
-                Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 20.w,
-                        vertical: 4.h,
+    // Non-inProgress rides: show details in a scroll view
+    return Consumer(
+      builder: (context, ref, _) {
+        final rideState = ref.watch(activeRideViewModelProvider(widget.rideId));
+        final driverAsync = ref.watch(
+          currentUserProfileProvider(ride.driverId),
+        );
+
+        return CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(child: _buildHeader(context, ride)),
+            // Static route map — shown for scheduled/active/completed rides
+            SliverToBoxAdapter(
+              child: _buildStaticRouteMap(context, ride, rideState)
+                  .animate()
+                  .fadeIn(duration: 400.ms, delay: 50.ms)
+                  .slideY(begin: 0.2, curve: Curves.easeOutCubic),
+            ),
+            SliverToBoxAdapter(
+              child: _buildStatusSection(context, ride, rideState)
+                  .animate()
+                  .fadeIn(duration: 400.ms, delay: 100.ms)
+                  .slideY(begin: 0.2, curve: Curves.easeOutCubic),
+            ),
+            SliverToBoxAdapter(
+              child: driverAsync
+                  .when(
+                    data: (driver) => _buildDriverInfo(context, driver, ride),
+                    loading: () => const Padding(
+                      padding: EdgeInsets.all(20.0),
+                      child: Center(
+                        child: CircularProgressIndicator.adaptive(),
                       ),
-                      child: Builder(
-                        builder: (context) {
-                          if (ride.vehicleId != null) {
-                            final vehiclesAsync = ref.watch(
-                              userVehiclesStreamProvider(ride.driverId),
-                            );
-                            return vehiclesAsync.when(
-                              data: (vehicles) {
-                                final vehicle = vehicles
-                                    .where((v) => v.id == ride.vehicleId)
-                                    .firstOrNull;
-                                if (vehicle == null) {
-                                  return const SizedBox.shrink();
-                                }
-                                return VehiclePhotoMatchCard(
-                                  vehicleMake: vehicle.make,
-                                  vehicleModel: vehicle.model,
-                                  vehicleColor: vehicle.color,
-                                  licensePlate: vehicle.licensePlate,
+                    ),
+                    error: (_, _) => const SizedBox.shrink(),
+                  )
+                  .animate()
+                  .fadeIn(duration: 400.ms, delay: 200.ms)
+                  .slideY(begin: 0.2, curve: Curves.easeOutCubic),
+            ),
+            // Vehicle photo match for easy identification
+            if (ride.vehicleId != null || ride.vehicleInfo != null)
+              SliverToBoxAdapter(
+                child:
+                    Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 20.w,
+                            vertical: 4.h,
+                          ),
+                          child: Builder(
+                            builder: (context) {
+                              if (ride.vehicleId != null) {
+                                final vehiclesAsync = ref.watch(
+                                  userVehiclesStreamProvider(ride.driverId),
                                 );
-                              },
-                              loading: () => const SizedBox.shrink(),
-                              error: (_, _) => const SizedBox.shrink(),
-                            );
-                          }
-                          // Fallback: parse from vehicleInfo string
-                          final parts = ride.vehicleInfo!.split(' ');
-                          return VehiclePhotoMatchCard(
-                            vehicleMake: parts.firstOrNull ?? '',
-                            vehicleModel: parts.skip(1).join(' '),
-                            vehicleColor: '',
-                            licensePlate: '',
-                          );
-                        },
-                      ),
-                    )
-                    .animate()
-                    .fadeIn(duration: 400.ms, delay: 250.ms)
-                    .slideY(begin: 0.2, curve: Curves.easeOutCubic),
-          ),
-        SliverToBoxAdapter(
-          child: _buildRouteDetails(context, ride)
-              .animate()
-              .fadeIn(duration: 400.ms, delay: 300.ms)
-              .slideY(begin: 0.2, curve: Curves.easeOutCubic),
-        ),
-        SliverToBoxAdapter(
-          child: _buildPassengersList(context, ride)
-              .animate()
-              .fadeIn(duration: 400.ms, delay: 400.ms)
-              .slideY(begin: 0.2, curve: Curves.easeOutCubic),
-        ),
-        // Post-ride review prompt — shown when ride is completed
-        if (ride.status == RideStatus.completed && !rideState.hasSkippedReview)
-          SliverToBoxAdapter(
-            child:
-                Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 20.w,
-                        vertical: 8.h,
-                      ),
-                      child: PostRideReviewPrompt(
-                        driverName: driverAsync.value?.displayName ?? 'Driver',
-                        onRate: (rating) => _showRatingDialog(context, ride),
-                        onSkip: () => ref
-                            .read(
-                              activeRideViewModelProvider(
-                                widget.rideId,
-                              ).notifier,
-                            )
-                            .skipReviewPrompt(),
-                      ),
-                    )
-                    .animate()
-                    .fadeIn(duration: 400.ms, delay: 450.ms)
-                    .slideY(begin: 0.2, curve: Curves.easeOutCubic),
-          ),
-        SliverToBoxAdapter(
-          child: _buildActionButtons(context, ride)
-              .animate()
-              .fadeIn(duration: 400.ms, delay: 500.ms)
-              .slideY(begin: 0.2, curve: Curves.easeOutCubic),
-        ),
-        SliverToBoxAdapter(child: SizedBox(height: 100.h)),
-      ],
+                                return vehiclesAsync.when(
+                                  data: (vehicles) {
+                                    final vehicle = vehicles
+                                        .where((v) => v.id == ride.vehicleId)
+                                        .firstOrNull;
+                                    if (vehicle == null) {
+                                      return const SizedBox.shrink();
+                                    }
+                                    return VehiclePhotoMatchCard(
+                                      vehicleMake: vehicle.make,
+                                      vehicleModel: vehicle.model,
+                                      vehicleColor: vehicle.color,
+                                      licensePlate: vehicle.licensePlate,
+                                    );
+                                  },
+                                  loading: () => const SizedBox.shrink(),
+                                  error: (_, _) => const SizedBox.shrink(),
+                                );
+                              }
+                              // Fallback: parse from vehicleInfo string
+                              final parts = ride.vehicleInfo!.split(' ');
+                              return VehiclePhotoMatchCard(
+                                vehicleMake: parts.firstOrNull ?? '',
+                                vehicleModel: parts.skip(1).join(' '),
+                                vehicleColor: '',
+                                licensePlate: '',
+                              );
+                            },
+                          ),
+                        )
+                        .animate()
+                        .fadeIn(duration: 400.ms, delay: 250.ms)
+                        .slideY(begin: 0.2, curve: Curves.easeOutCubic),
+              ),
+            SliverToBoxAdapter(
+              child: _buildRouteDetails(context, ride)
+                  .animate()
+                  .fadeIn(duration: 400.ms, delay: 300.ms)
+                  .slideY(begin: 0.2, curve: Curves.easeOutCubic),
+            ),
+            SliverToBoxAdapter(
+              child: _buildPassengersList(context, ride)
+                  .animate()
+                  .fadeIn(duration: 400.ms, delay: 400.ms)
+                  .slideY(begin: 0.2, curve: Curves.easeOutCubic),
+            ),
+            // Post-ride review prompt — shown when ride is completed AND the
+            // passenger was actually picked up (FIX RC-2: do not show after a
+            // mid-trip cancellation or a ride the passenger never boarded).
+            if (ride.status == RideStatus.completed &&
+                !rideState.hasSkippedReview &&
+                rideState.pickedUpPassengerIds.contains(
+                  ref.read(currentUserProvider).value?.uid ?? '',
+                ))
+              SliverToBoxAdapter(
+                child:
+                    Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 20.w,
+                            vertical: 8.h,
+                          ),
+                          child: PostRideReviewPrompt(
+                            driverName:
+                                driverAsync.value?.displayName ?? 'Driver',
+                            onRate: (rating) =>
+                                _showRatingDialog(context, ride),
+                            onSkip: () => ref
+                                .read(
+                                  activeRideViewModelProvider(
+                                    widget.rideId,
+                                  ).notifier,
+                                )
+                                .skipReviewPrompt(),
+                          ),
+                        )
+                        .animate()
+                        .fadeIn(duration: 400.ms, delay: 450.ms)
+                        .slideY(begin: 0.2, curve: Curves.easeOutCubic),
+              ),
+            SliverToBoxAdapter(
+              child: _buildActionButtons(context, ride)
+                  .animate()
+                  .fadeIn(duration: 400.ms, delay: 500.ms)
+                  .slideY(begin: 0.2, curve: Curves.easeOutCubic),
+            ),
+            SliverToBoxAdapter(child: SizedBox(height: 100.h)),
+          ],
+        );
+      },
     );
   }
 
@@ -582,14 +589,17 @@ class _PassengerActiveRideScreenState
         ? LatLng(driverLoc.latitude, driverLoc.longitude)
         : originLatLng;
     final etaMinutes =
-        rideState.remainingEtaMinutes ??
-        ((ride.durationMinutes ?? 30) * 0.5).round();
+        rideState.remainingEtaMinutes ?? ride.durationMinutes ?? 30;
     final distToDest = rideState.remainingDistanceKm ?? ride.distanceKm ?? 0;
 
-    // Auto-pan to follow driver
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _liveMapController.move(driverLatLng, 15);
-    });
+    // Center on driver only once when the map is first shown,
+    // then let the passenger pan freely. Use the recenter button to re-focus.
+    if (!_hasInitiallyPannedToDriver && driverLoc != null) {
+      _hasInitiallyPannedToDriver = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _liveMapController.move(driverLatLng, 15);
+      });
+    }
 
     final routePoints =
         rideState.remainingRoutePoints ??
@@ -605,199 +615,168 @@ class _PassengerActiveRideScreenState
     return Stack(
       children: [
         // ── Full-screen live map ──
-        FlutterMap(
-          mapController: _liveMapController,
-          options: MapOptions(initialCenter: driverLatLng, initialZoom: 15),
-          children: [
-            TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.sportconnect.app',
-            ),
-            PolylineLayer(
-              polylines: [
-                Polyline(
-                  points: routePoints,
-                  color: Colors.white,
-                  strokeWidth: 6,
-                ),
-                Polyline(
-                  points: routePoints,
-                  color: AppColors.primary,
-                  strokeWidth: 4,
-                ),
-              ],
-            ),
-            MarkerLayer(
-              markers: [
-                // Driver's live position (pulsing)
-                if (driverLoc != null)
+        RepaintBoundary(
+          child: FlutterMap(
+            mapController: _liveMapController,
+            options: MapOptions(initialCenter: driverLatLng, initialZoom: 15),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.sportconnect.app',
+              ),
+              PolylineLayer(
+                polylines: [
+                  Polyline(
+                    points: routePoints,
+                    color: Colors.white,
+                    strokeWidth: 6,
+                  ),
+                  Polyline(
+                    points: routePoints,
+                    color: AppColors.primary,
+                    strokeWidth: 4,
+                  ),
+                ],
+              ),
+              MarkerLayer(
+                markers: [
+                  // Driver's live position (pulsing)
+                  if (driverLoc != null)
+                    Marker(
+                      point: driverLatLng,
+                      width: 44.w,
+                      height: 44.w,
+                      child: _PulsingLocationMarker(
+                        heading: 0,
+                        outerSize: 44.w,
+                        innerSize: 28.w,
+                        iconSize: 16.w,
+                        icon: Icons.directions_car,
+                        reverse: true,
+                      ),
+                    ),
+                  // Origin marker
                   Marker(
-                    point: driverLatLng,
-                    width: 44.w,
-                    height: 44.w,
-                    child: AnimatedBuilder(
-                      animation: _pulseController,
-                      builder: (context, child) {
-                        return Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            Container(
-                              width: 44.w * (1 + _pulseController.value * 0.3),
-                              height: 44.w * (1 + _pulseController.value * 0.3),
-                              decoration: BoxDecoration(
-                                color: AppColors.primary.withValues(
-                                  alpha: 0.3 * (1 - _pulseController.value),
-                                ),
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            Container(
-                              width: 28.w,
-                              height: 28.w,
-                              decoration: BoxDecoration(
-                                color: AppColors.primary,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 3,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.3),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Icon(
-                                Icons.directions_car,
-                                color: Colors.white,
-                                size: 16.w,
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ),
-                // Origin marker
-                Marker(
-                  point: originLatLng,
-                  width: 36.w,
-                  height: 36.w,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.success,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                    child: Icon(
-                      Icons.my_location,
-                      color: Colors.white,
-                      size: 18.w,
-                    ),
-                  ),
-                ),
-                // Destination marker
-                Marker(
-                  point: destLatLng,
-                  width: 36.w,
-                  height: 36.w,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.error,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                    child: Icon(Icons.flag, color: Colors.white, size: 18.w),
-                  ),
-                ),
-                // Waypoint markers with ETA
-                ...ride.route.waypoints.map((wp) {
-                  final isPassed = rideState.passedWaypointIndices.contains(
-                    wp.order,
-                  );
-                  final etaMin = rideState.waypointEtaMinutes[wp.order];
-                  return Marker(
-                    point: LatLng(wp.location.latitude, wp.location.longitude),
-                    width: 56.w,
-                    height: etaMin != null && !isPassed ? 48.h : 28.w,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (etaMin != null && !isPassed)
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 4.w,
-                              vertical: 1.h,
-                            ),
-                            margin: EdgeInsets.only(bottom: 2.h),
-                            decoration: BoxDecoration(
-                              color: AppColors.warning,
-                              borderRadius: BorderRadius.circular(4.r),
-                            ),
-                            child: Text(
-                              '${etaMin}m',
-                              style: TextStyle(
-                                fontSize: 9.sp,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        Container(
-                          width: 28.w,
-                          height: 28.w,
-                          decoration: BoxDecoration(
-                            color: isPassed
-                                ? AppColors.textTertiary
-                                : AppColors.warning,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
-                          ),
-                          child: Center(
-                            child: Text(
-                              '${wp.order + 1}',
-                              style: TextStyle(
-                                fontSize: 10.sp,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-                // H1: Passenger's own location pin
-                if (_passengerLocation != null)
-                  Marker(
-                    point: _passengerLocation!,
-                    width: 32.w,
-                    height: 32.w,
+                    point: originLatLng,
+                    width: 36.w,
+                    height: 36.w,
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.blue,
+                        color: AppColors.success,
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white, width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.blue.withValues(alpha: 0.3),
-                            blurRadius: 8,
+                      ),
+                      child: Icon(
+                        Icons.my_location,
+                        color: Colors.white,
+                        size: 18.w,
+                      ),
+                    ),
+                  ),
+                  // Destination marker
+                  Marker(
+                    point: destLatLng,
+                    width: 36.w,
+                    height: 36.w,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.error,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                      child: Icon(Icons.flag, color: Colors.white, size: 18.w),
+                    ),
+                  ),
+                  // Waypoint markers with ETA
+                  ...ride.route.waypoints.map((wp) {
+                    final isPassed = rideState.passedWaypointIndices.contains(
+                      wp.order,
+                    );
+                    final etaMin = rideState.waypointEtaMinutes[wp.order];
+                    return Marker(
+                      point: LatLng(
+                        wp.location.latitude,
+                        wp.location.longitude,
+                      ),
+                      width: 56.w,
+                      height: etaMin != null && !isPassed ? 48.h : 28.w,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (etaMin != null && !isPassed)
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 4.w,
+                                vertical: 1.h,
+                              ),
+                              margin: EdgeInsets.only(bottom: 2.h),
+                              decoration: BoxDecoration(
+                                color: AppColors.warning,
+                                borderRadius: BorderRadius.circular(4.r),
+                              ),
+                              child: Text(
+                                '${etaMin}m',
+                                style: TextStyle(
+                                  fontSize: 9.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          Container(
+                            width: 28.w,
+                            height: 28.w,
+                            decoration: BoxDecoration(
+                              color: isPassed
+                                  ? AppColors.textTertiary
+                                  : AppColors.warning,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                            child: Center(
+                              child: Text(
+                                '${wp.order + 1}',
+                                style: TextStyle(
+                                  fontSize: 10.sp,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
                           ),
                         ],
                       ),
-                      child: Icon(
-                        Icons.person,
-                        color: Colors.white,
-                        size: 16.w,
+                    );
+                  }),
+                  // H1: Passenger's own location pin
+                  if (_passengerLocation != null)
+                    Marker(
+                      point: _passengerLocation!,
+                      width: 32.w,
+                      height: 32.w,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.blue,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.blue.withValues(alpha: 0.3),
+                              blurRadius: 8,
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          Icons.person,
+                          color: Colors.white,
+                          size: 16.w,
+                        ),
                       ),
                     ),
-                  ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
 
         // ── Route loading indicator ──
@@ -825,7 +804,9 @@ class _PassengerActiveRideScreenState
                     SizedBox(
                       width: 16.w,
                       height: 16.w,
-                      child: const CircularProgressIndicator(strokeWidth: 2),
+                      child: const CircularProgressIndicator.adaptive(
+                        strokeWidth: 2,
+                      ),
                     ),
                     SizedBox(width: 8.w),
                     Text(
@@ -864,16 +845,22 @@ class _PassengerActiveRideScreenState
                 child: Row(
                   children: [
                     _buildMapCircleButton(
-                      Icons.arrow_back_ios_new,
+                      Icons.adaptive.arrow_back,
                       () => context.pop(),
                     ),
                     SizedBox(width: 12.w),
-                    _buildPhaseBadge(rideState.phase),
+                    _buildPhaseBadge(rideState.phase, rideStatus: ride.status),
                     const Spacer(),
                     _buildMapCircleButton(
                       Icons.share_location,
                       () => _shareTrip(ride),
                     ),
+                    SizedBox(width: 8.w),
+                    _buildMapCircleButton(Icons.my_location, () {
+                      if (driverLoc != null) {
+                        _liveMapController.move(driverLatLng, 15);
+                      }
+                    }),
                   ],
                 ),
               ),
@@ -918,6 +905,74 @@ class _PassengerActiveRideScreenState
             ),
           ),
         ),
+
+        // AR-5: "Waiting for driver location" overlay when driver GPS is absent
+        if (driverLoc == null)
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 56.h,
+            left: 12.w,
+            right: 12.w,
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.65),
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 14.w,
+                    height: 14.w,
+                    child: CircularProgressIndicator.adaptive(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation(Colors.white70),
+                    ),
+                  ),
+                  SizedBox(width: 8.w),
+                  Text(
+                    'Waiting for driver\'s location…',
+                    style: TextStyle(fontSize: 12.sp, color: Colors.white70),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+        // AR-6: Location permission denied — prompt to re-enable
+        if (_locationPermissionDeniedForever)
+          Positioned(
+            bottom: 220.h,
+            left: 16.w,
+            right: 16.w,
+            child: GestureDetector(
+              onTap: () => Geolocator.openAppSettings(),
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withValues(alpha: 0.9),
+                  borderRadius: BorderRadius.circular(10.r),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.location_off, size: 18.sp, color: Colors.white),
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: Text(
+                        'Location access denied. Tap to open Settings and re-enable.',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
 
         // ── Night safety banner ──
         if (_isNightTime)
@@ -983,6 +1038,7 @@ class _PassengerActiveRideScreenState
 
         // ── Bottom draggable info sheet ──
         DraggableScrollableSheet(
+          controller: _sheetController,
           initialChildSize: 0.38,
           minChildSize: 0.15,
           maxChildSize: 0.80,
@@ -1005,30 +1061,26 @@ class _PassengerActiveRideScreenState
   }
 
   Widget _buildMapCircleButton(IconData icon, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        onTap();
-      },
-      child: Container(
-        padding: EdgeInsets.all(10.w),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.15),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+    return Material(
+      color: Colors.white,
+      shape: const CircleBorder(),
+      elevation: 3,
+      shadowColor: Colors.black.withValues(alpha: 0.2),
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onTap();
+        },
+        customBorder: const CircleBorder(),
+        child: Padding(
+          padding: EdgeInsets.all(10.w),
+          child: Icon(icon, size: 20.sp, color: AppColors.textPrimary),
         ),
-        child: Icon(icon, size: 20.sp, color: AppColors.textPrimary),
       ),
     );
   }
 
-  Widget _buildPhaseBadge(ActiveRidePhase phase) {
+  Widget _buildPhaseBadge(ActiveRidePhase phase, {RideStatus? rideStatus}) {
     final l10n = AppLocalizations.of(context);
     Color color;
     String label;
@@ -1036,8 +1088,13 @@ class _PassengerActiveRideScreenState
     switch (phase) {
       case ActiveRidePhase.pickingUp:
         color = AppColors.warning;
-        label = l10n.headingToPickup;
-        icon = Icons.person_pin_circle;
+        if (rideStatus == RideStatus.inProgress) {
+          label = 'Driver at Pickup';
+          icon = Icons.how_to_reg;
+        } else {
+          label = l10n.headingToPickup;
+          icon = Icons.person_pin_circle;
+        }
         break;
       case ActiveRidePhase.enRoute:
         color = AppColors.primary;
@@ -1121,15 +1178,15 @@ class _PassengerActiveRideScreenState
         controller: scrollController,
         padding: EdgeInsets.zero,
         children: [
-          // Handle
+          // Drag handle
           Center(
             child: Container(
               margin: EdgeInsets.symmetric(vertical: 10.h),
-              width: 40.w,
-              height: 4.h,
+              width: 44.w,
+              height: 5.h,
               decoration: BoxDecoration(
-                color: AppColors.border,
-                borderRadius: BorderRadius.circular(2.r),
+                color: AppColors.textSecondary.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(3.r),
               ),
             ),
           ),
@@ -1210,7 +1267,7 @@ class _PassengerActiveRideScreenState
                   label: AppLocalizations.of(context).eta,
                   value: etaMinutes < 1
                       ? 'Arriving'
-                      : l10n.valueMin(etaMinutes),
+                      : '${etaMinutes}m · ${_formatArrivalTime(etaMinutes)}',
                   color: AppColors.primary,
                 ),
                 SizedBox(width: 12.w),
@@ -1283,7 +1340,238 @@ class _PassengerActiveRideScreenState
             ),
           ],
 
+          // OTP card — full display during pickingUp; collapsible during enRoute
+          if (rideState.phase == ActiveRidePhase.pickingUp ||
+              rideState.phase == ActiveRidePhase.enRoute) ...[
+            SizedBox(height: 12.h),
+            Builder(
+              builder: (context) {
+                final currentUser = ref.read(currentUserProvider).value;
+                if (currentUser == null) return const SizedBox.shrink();
+                final myBooking = rideState.bookings
+                    .where((b) => b.passengerId == currentUser.uid)
+                    .firstOrNull;
+                final otp = myBooking?.pickupOtp;
+                if (otp == null) return const SizedBox.shrink();
+
+                final isPickingUp =
+                    rideState.phase == ActiveRidePhase.pickingUp;
+
+                if (isPickingUp) {
+                  // Full OTP card during pickingUp
+                  return Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20.w),
+                    child: Container(
+                      padding: EdgeInsets.all(16.w),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.primary,
+                            AppColors.primary.withValues(alpha: 0.8),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16.r),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.35),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.pin_rounded,
+                                color: Colors.white70,
+                                size: 16.sp,
+                              ),
+                              SizedBox(width: 6.w),
+                              Text(
+                                'Your Pickup Code',
+                                style: TextStyle(
+                                  fontSize: 13.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white70,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 8.h),
+                          Text(
+                            otp,
+                            style: TextStyle(
+                              fontSize: 40.sp,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              letterSpacing: 16,
+                            ),
+                          ),
+                          SizedBox(height: 4.h),
+                          Text(
+                            'Show this to your driver',
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              color: Colors.white60,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                // AR-7: Collapsible "show again" row during enRoute phase
+                return Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20.w),
+                  child: Column(
+                    children: [
+                      InkWell(
+                        onTap: () => setState(() => _showOtp = !_showOtp),
+                        borderRadius: BorderRadius.circular(12.r),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 16.w,
+                            vertical: 10.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(12.r),
+                            border: Border.all(
+                              color: AppColors.primary.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.pin_rounded,
+                                color: AppColors.primary,
+                                size: 16.sp,
+                              ),
+                              SizedBox(width: 6.w),
+                              Text(
+                                'Show my pickup code',
+                                style: TextStyle(
+                                  fontSize: 13.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                              const Spacer(),
+                              Icon(
+                                _showOtp
+                                    ? Icons.keyboard_arrow_up
+                                    : Icons.keyboard_arrow_down,
+                                color: AppColors.primary,
+                                size: 18.sp,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      if (_showOtp) ...[
+                        SizedBox(height: 8.h),
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.symmetric(vertical: 14.h),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                AppColors.primary,
+                                AppColors.primary.withValues(alpha: 0.8),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                otp,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 40.sp,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                  letterSpacing: 16,
+                                ),
+                              ),
+                              SizedBox(height: 2.h),
+                              Text(
+                                'Your pickup confirmation code',
+                                style: TextStyle(
+                                  fontSize: 11.sp,
+                                  color: Colors.white60,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+
           SizedBox(height: 16.h),
+
+          // AR-3: Overtime warning banner
+          if (rideState.rideTimeoutMinutes != null &&
+              !rideState.hasShownTimeoutWarning) ...[
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.w),
+              child: Container(
+                padding: EdgeInsets.all(12.w),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(
+                    color: AppColors.error.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.timer_off, size: 18.sp, color: AppColors.error),
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: Text(
+                        'Trip is taking longer than expected — is everything okay?',
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.error,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
+                    GestureDetector(
+                      onTap: () => ref
+                          .read(
+                            activeRideViewModelProvider(widget.rideId).notifier,
+                          )
+                          .dismissTimeoutWarning(),
+                      child: Icon(
+                        Icons.close,
+                        size: 18.sp,
+                        color: AppColors.error,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(height: 12.h),
+          ],
 
           // Driver info row
           if (driver != null)
@@ -1343,9 +1631,28 @@ class _PassengerActiveRideScreenState
                               driver.rating.average.toStringAsFixed(1),
                               style: TextStyle(
                                 fontSize: 13.sp,
-                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
                               ),
                             ),
+                            if (driver.rating.total > 0) ...[
+                              Text(
+                                ' (${driver.rating.total})',
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                            if (driver.totalRides > 0) ...[
+                              Text(
+                                ' · ${driver.totalRides} trips',
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ],
@@ -1366,35 +1673,216 @@ class _PassengerActiveRideScreenState
               ),
             ),
 
+          // Payment confirmation badge — derived from the passenger's own booking
+          Builder(
+            builder: (context) {
+              final currentUser = ref.read(currentUserProvider).value;
+              if (currentUser == null) return const SizedBox.shrink();
+              final myBooking = rideState.bookings
+                  .where((b) => b.passengerId == currentUser.uid)
+                  .firstOrNull;
+              if (myBooking == null) return const SizedBox.shrink();
+
+              final isPaid = myBooking.paidAt != null;
+              return Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 20.w,
+                ).copyWith(top: 12.h),
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 14.w,
+                    vertical: 10.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isPaid
+                        ? AppColors.success.withValues(alpha: 0.1)
+                        : AppColors.warning.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(
+                      color: isPaid
+                          ? AppColors.success.withValues(alpha: 0.3)
+                          : AppColors.warning.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        isPaid
+                            ? Icons.check_circle_rounded
+                            : Icons.schedule_rounded,
+                        size: 18.sp,
+                        color: isPaid ? AppColors.success : AppColors.warning,
+                      ),
+                      SizedBox(width: 10.w),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isPaid ? 'Payment Confirmed' : 'Payment Pending',
+                              style: TextStyle(
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w700,
+                                color: isPaid
+                                    ? AppColors.success
+                                    : AppColors.warning,
+                              ),
+                            ),
+                            if (isPaid && myBooking.paidAt != null)
+                              Text(
+                                'Paid on ${_formatPaidAt(myBooking.paidAt!)}',
+                                style: TextStyle(
+                                  fontSize: 11.sp,
+                                  color: AppColors.textSecondary,
+                                ),
+                              )
+                            else
+                              Text(
+                                'Complete payment to confirm your seat',
+                                style: TextStyle(
+                                  fontSize: 11.sp,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      if (isPaid)
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 8.w,
+                            vertical: 4.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.success,
+                            borderRadius: BorderRadius.circular(20.r),
+                          ),
+                          child: Text(
+                            'PAID',
+                            style: TextStyle(
+                              fontSize: 10.sp,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+
           SizedBox(height: 16.h),
+
+          // Vehicle info for easy identification
+          if (ride.vehicleId != null || ride.vehicleInfo != null)
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: 20.w,
+              ).copyWith(bottom: 8.h),
+              child: Builder(
+                builder: (context) {
+                  if (ride.vehicleId != null) {
+                    final vehiclesAsync = ref.watch(
+                      userVehiclesStreamProvider(ride.driverId),
+                    );
+                    return vehiclesAsync.when(
+                      data: (vehicles) {
+                        final vehicle = vehicles
+                            .where((v) => v.id == ride.vehicleId)
+                            .firstOrNull;
+                        if (vehicle == null) return const SizedBox.shrink();
+                        return Container(
+                          padding: EdgeInsets.all(12.w),
+                          decoration: BoxDecoration(
+                            color: AppColors.background,
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.directions_car,
+                                size: 20.sp,
+                                color: AppColors.primary,
+                              ),
+                              SizedBox(width: 10.w),
+                              Expanded(
+                                child: Text(
+                                  '${vehicle.color} ${vehicle.make} ${vehicle.model}',
+                                  style: TextStyle(
+                                    fontSize: 13.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                              ),
+                              if (vehicle.licensePlate.isNotEmpty)
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 8.w,
+                                    vertical: 4.h,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary.withValues(
+                                      alpha: 0.1,
+                                    ),
+                                    borderRadius: BorderRadius.circular(6.r),
+                                  ),
+                                  child: Text(
+                                    vehicle.licensePlate,
+                                    style: TextStyle(
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.primary,
+                                      letterSpacing: 1,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        );
+                      },
+                      loading: () => const SizedBox.shrink(),
+                      error: (_, _) => const SizedBox.shrink(),
+                    );
+                  }
+                  // Fallback: parse from vehicleInfo string
+                  return Container(
+                    padding: EdgeInsets.all(12.w),
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.directions_car,
+                          size: 20.sp,
+                          color: AppColors.primary,
+                        ),
+                        SizedBox(width: 10.w),
+                        Expanded(
+                          child: Text(
+                            ride.vehicleInfo!,
+                            style: TextStyle(
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
 
           // Quick message chips (7D)
           if (ride.status == RideStatus.inProgress)
             _buildPassengerQuickMessages(ride, rideState),
-
-          // Request mid-ride stop button (E1)
-          if (ride.status == RideStatus.inProgress &&
-              rideState.phase == ActiveRidePhase.enRoute)
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: 20.w,
-              ).copyWith(bottom: 12.h),
-              child: OutlinedButton.icon(
-                onPressed: () => _showRequestStopDialog(ride),
-                icon: Icon(Icons.add_location_alt, size: 18.sp),
-                label: Text(AppLocalizations.of(context).requestAStop),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.warning,
-                  side: BorderSide(
-                    color: AppColors.warning.withValues(alpha: 0.4),
-                  ),
-                  padding: EdgeInsets.symmetric(vertical: 12.h),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                ),
-              ),
-            ),
 
           // Route itinerary (Compact)
           Padding(
@@ -1439,6 +1927,7 @@ class _PassengerActiveRideScreenState
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 20.w),
             child: Row(
+              mainAxisSize: MainAxisSize.max,
               children: [
                 // Share button
                 Expanded(
@@ -1458,458 +1947,12 @@ class _PassengerActiveRideScreenState
                     ),
                   ),
                 ),
-                SizedBox(width: 10.w),
-                // SOS / Emergency button (7C)
-                SizedBox(
-                  height: 48.h,
-                  child: ElevatedButton.icon(
-                    onPressed: () => _triggerSOS(ride, rideState),
-                    icon: Icon(Icons.sos, size: 18.sp),
-                    label: Text(AppLocalizations.of(context).sos),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.error,
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 16.w,
-                        vertical: 12.h,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                      elevation: 0,
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
 
           SizedBox(height: 12.h + bottomPadding),
         ],
-      ),
-    );
-  }
-
-  /// Builds a live map showing driver's real-time position from Firestore,
-  /// OSRM route polyline, origin/destination markers, and real-time ETA.
-  Widget _buildLiveTrackingMap(
-    BuildContext context,
-    RideModel ride,
-    ActiveRideState rideState,
-  ) {
-    final originLatLng = LatLng(ride.origin.latitude, ride.origin.longitude);
-    final destLatLng = LatLng(
-      ride.destination.latitude,
-      ride.destination.longitude,
-    );
-
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20.w),
-      height: 250.h,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20.r),
-        child: Stack(
-          children: [
-            // Map
-            Builder(
-              builder: (context) {
-                final driverLoc = rideState.driverLiveLocation;
-                final driverLatLng = driverLoc != null
-                    ? LatLng(driverLoc.latitude, driverLoc.longitude)
-                    : originLatLng;
-
-                // Calculate real-time ETA from driver position to destination
-                final distToDest =
-                    rideState.remainingDistanceKm ?? ride.distanceKm ?? 0;
-
-                // Estimate ETA: use ride duration ratio or 30 km/h average
-                final etaMinutes =
-                    rideState.remainingEtaMinutes ??
-                    ((ride.durationMinutes ?? 30) * 0.5).round();
-
-                // Auto-pan the live map to follow the driver
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted) {
-                    _liveMapController.move(driverLatLng, 15);
-                  }
-                });
-
-                return Stack(
-                  children: [
-                    FlutterMap(
-                      mapController: _liveMapController,
-                      options: MapOptions(
-                        initialCenter: driverLatLng,
-                        initialZoom: 15,
-                      ),
-                      children: [
-                        TileLayer(
-                          urlTemplate:
-                              'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                          userAgentPackageName: 'com.sportconnect.app',
-                        ),
-                        // Route polyline — remaining route from driver position
-                        PolylineLayer(
-                          polylines: [
-                            Polyline(
-                              points:
-                                  rideState.remainingRoutePoints ??
-                                  rideState.osrmRoutePoints ??
-                                  [
-                                    originLatLng,
-                                    ...ride.route.waypoints.map(
-                                      (wp) => LatLng(
-                                        wp.location.latitude,
-                                        wp.location.longitude,
-                                      ),
-                                    ),
-                                    destLatLng,
-                                  ],
-                              color: Colors.white,
-                              strokeWidth: 6,
-                            ),
-                            Polyline(
-                              points:
-                                  rideState.remainingRoutePoints ??
-                                  rideState.osrmRoutePoints ??
-                                  [
-                                    originLatLng,
-                                    ...ride.route.waypoints.map(
-                                      (wp) => LatLng(
-                                        wp.location.latitude,
-                                        wp.location.longitude,
-                                      ),
-                                    ),
-                                    destLatLng,
-                                  ],
-                              color: AppColors.primary,
-                              strokeWidth: 4,
-                            ),
-                          ],
-                        ),
-                        // Markers
-                        MarkerLayer(
-                          markers: [
-                            // Driver's live position (pulsing)
-                            if (driverLoc != null)
-                              Marker(
-                                point: driverLatLng,
-                                width: 44.w,
-                                height: 44.w,
-                                child: AnimatedBuilder(
-                                  animation: _pulseController,
-                                  builder: (context, child) {
-                                    return Stack(
-                                      alignment: Alignment.center,
-                                      children: [
-                                        Container(
-                                          width:
-                                              44.w *
-                                              (1 +
-                                                  _pulseController.value * 0.3),
-                                          height:
-                                              44.w *
-                                              (1 +
-                                                  _pulseController.value * 0.3),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.primary.withValues(
-                                              alpha:
-                                                  0.3 *
-                                                  (1 - _pulseController.value),
-                                            ),
-                                            shape: BoxShape.circle,
-                                          ),
-                                        ),
-                                        Container(
-                                          width: 28.w,
-                                          height: 28.w,
-                                          decoration: BoxDecoration(
-                                            color: AppColors.primary,
-                                            shape: BoxShape.circle,
-                                            border: Border.all(
-                                              color: Colors.white,
-                                              width: 3,
-                                            ),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.black.withValues(
-                                                  alpha: 0.3,
-                                                ),
-                                                blurRadius: 8,
-                                                offset: const Offset(0, 2),
-                                              ),
-                                            ],
-                                          ),
-                                          child: Icon(
-                                            Icons.directions_car,
-                                            color: Colors.white,
-                                            size: 16.w,
-                                          ),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                ),
-                              ),
-                            // Origin marker
-                            Marker(
-                              point: originLatLng,
-                              width: 36.w,
-                              height: 36.w,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: AppColors.success,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Colors.white,
-                                    width: 2,
-                                  ),
-                                ),
-                                child: Icon(
-                                  Icons.my_location,
-                                  color: Colors.white,
-                                  size: 18.w,
-                                ),
-                              ),
-                            ),
-                            // Destination marker
-                            Marker(
-                              point: destLatLng,
-                              width: 36.w,
-                              height: 36.w,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: AppColors.error,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Colors.white,
-                                    width: 2,
-                                  ),
-                                ),
-                                child: Icon(
-                                  Icons.flag,
-                                  color: Colors.white,
-                                  size: 18.w,
-                                ),
-                              ),
-                            ),
-                            // Waypoint markers with pickup ETA
-                            ...ride.route.waypoints.map((wp) {
-                              final isPassed = rideState.passedWaypointIndices
-                                  .contains(wp.order);
-                              final etaMin =
-                                  rideState.waypointEtaMinutes[wp.order];
-                              return Marker(
-                                point: LatLng(
-                                  wp.location.latitude,
-                                  wp.location.longitude,
-                                ),
-                                width: 56.w,
-                                height: etaMin != null && !isPassed
-                                    ? 48.h
-                                    : 28.w,
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    if (etaMin != null && !isPassed)
-                                      Container(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 4.w,
-                                          vertical: 1.h,
-                                        ),
-                                        margin: EdgeInsets.only(bottom: 2.h),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.warning,
-                                          borderRadius: BorderRadius.circular(
-                                            4.r,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          '${etaMin}m',
-                                          style: TextStyle(
-                                            fontSize: 9.sp,
-                                            fontWeight: FontWeight.w700,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ),
-                                    Container(
-                                      width: 28.w,
-                                      height: 28.w,
-                                      decoration: BoxDecoration(
-                                        color: isPassed
-                                            ? AppColors.textTertiary
-                                            : AppColors.warning,
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: Colors.white,
-                                          width: 2,
-                                        ),
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          '${wp.order + 1}',
-                                          style: TextStyle(
-                                            fontSize: 10.sp,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }),
-                          ],
-                        ),
-                      ],
-                    ),
-                    // ETA overlay
-                    Positioned(
-                      bottom: 8.h,
-                      left: 8.w,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 12.w,
-                          vertical: 6.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(12.r),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.2),
-                              blurRadius: 8,
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.schedule,
-                              color: Colors.white,
-                              size: 16.w,
-                            ),
-                            SizedBox(width: 6.w),
-                            Text(
-                              driverLoc != null
-                                  ? (etaMinutes < 1
-                                        ? 'Arriving'
-                                        : AppLocalizations.of(
-                                            context,
-                                          ).valueMin(etaMinutes))
-                                  : 'Waiting for driver...',
-                              style: TextStyle(
-                                fontSize: 13.sp,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    // Distance remaining overlay
-                    if (driverLoc != null)
-                      Positioned(
-                        bottom: 8.h,
-                        right: 8.w,
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 12.w,
-                            vertical: 6.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12.r),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 8,
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.straighten,
-                                color: AppColors.textPrimary,
-                                size: 16.w,
-                              ),
-                              SizedBox(width: 6.w),
-                              Text(
-                                distToDest < 1
-                                    ? '${(distToDest * 1000).toInt()} m'
-                                    : '${distToDest.toStringAsFixed(1)} km',
-                                style: TextStyle(
-                                  fontSize: 13.sp,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    // Live indicator
-                    Positioned(
-                      top: 8.h,
-                      right: 8.w,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 10.w,
-                          vertical: 4.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: driverLoc != null
-                              ? AppColors.success
-                              : AppColors.textSecondary,
-                          borderRadius: BorderRadius.circular(8.r),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 8.w,
-                              height: 8.w,
-                              decoration: const BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            SizedBox(width: 6.w),
-                            Text(
-                              driverLoc != null ? 'LIVE' : 'OFFLINE',
-                              style: TextStyle(
-                                fontSize: 11.sp,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -2155,7 +2198,7 @@ class _PassengerActiveRideScreenState
                   IconButton(
                     tooltip: AppLocalizations.of(context).goBackTooltip,
                     onPressed: () => context.pop(),
-                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+                    icon: Icon(Icons.adaptive.arrow_back, color: Colors.white),
                   ),
                   const Spacer(),
                   _buildStatusBadge(ride.status),
@@ -3028,39 +3071,6 @@ class _PassengerActiveRideScreenState
     );
   }
 
-  /// Share My Trip row — shown during active ride.
-  Widget _buildShareTripRow(BuildContext context, RideModel ride) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
-      child: GestureDetector(
-        onTap: () => _shareTrip(ride),
-        child: Container(
-          padding: EdgeInsets.symmetric(vertical: 14.h),
-          decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(14.r),
-            border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.share_location, size: 20.sp, color: AppColors.primary),
-              SizedBox(width: 8.w),
-              Text(
-                'Share My Trip',
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildActionButtons(BuildContext context, RideModel ride) {
     return Padding(
       padding: EdgeInsets.all(20.w),
@@ -3173,7 +3183,7 @@ class _PassengerActiveRideScreenState
     showDialog(
       context: context,
       barrierLabel: AppLocalizations.of(context).cancelRide,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => AlertDialog.adaptive(
         title: Text(AppLocalizations.of(context).cancelRide2),
         content: Text(AppLocalizations.of(context).areYouSureYouWant9),
         actions: [
@@ -3282,12 +3292,16 @@ class _PassengerActiveRideScreenState
 
   String _formatDateTime(DateTime dateTime) {
     final now = DateTime.now();
-    final difference = dateTime.difference(now);
+    final today = DateTime(now.year, now.month, now.day);
+    final dateDay = DateTime(dateTime.year, dateTime.month, dateTime.day);
+    final daysDiff = dateDay.difference(today).inDays;
 
-    if (difference.inDays == 0) {
+    if (daysDiff == 0) {
       return 'Today at ${_formatTime(dateTime)}';
-    } else if (difference.inDays == 1) {
+    } else if (daysDiff == 1) {
       return 'Tomorrow at ${_formatTime(dateTime)}';
+    } else if (daysDiff == -1) {
+      return 'Yesterday at ${_formatTime(dateTime)}';
     } else {
       return '${dateTime.day}/${dateTime.month}/${dateTime.year} at ${_formatTime(dateTime)}';
     }
@@ -3405,6 +3419,103 @@ class _PassengerActiveRideScreenState
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Self-contained pulsing marker that manages its own [AnimationController].
+///
+/// Extracting the animation into a separate [StatefulWidget] prevents the
+/// 60 fps animation rebuild from being coupled to the parent's state changes
+/// (GPS updates, ETA recalculations, etc.) and avoids animation stutter when
+/// the parent rebuilds.
+class _PulsingLocationMarker extends StatefulWidget {
+  const _PulsingLocationMarker({
+    required this.heading,
+    required this.outerSize,
+    required this.innerSize,
+    required this.iconSize,
+    this.icon = Icons.navigation,
+    this.color = AppColors.primary,
+    this.reverse = false,
+  });
+
+  final double heading;
+  final double outerSize;
+  final double innerSize;
+  final double iconSize;
+  final IconData icon;
+  final Color color;
+  final bool reverse;
+
+  @override
+  State<_PulsingLocationMarker> createState() => _PulsingLocationMarkerState();
+}
+
+class _PulsingLocationMarkerState extends State<_PulsingLocationMarker>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    )..repeat(reverse: widget.reverse);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.rotate(
+      angle: widget.heading * 3.14159 / 180,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          return Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: widget.outerSize * (1 + _controller.value * 0.3),
+                height: widget.outerSize * (1 + _controller.value * 0.3),
+                decoration: BoxDecoration(
+                  color: widget.color.withValues(
+                    alpha: 0.3 * (1 - _controller.value),
+                  ),
+                  shape: BoxShape.circle,
+                ),
+              ),
+              Container(
+                width: widget.innerSize,
+                height: widget.innerSize,
+                decoration: BoxDecoration(
+                  color: widget.color,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 3),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  widget.icon,
+                  color: Colors.white,
+                  size: widget.iconSize,
+                ),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 }

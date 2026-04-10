@@ -8,7 +8,7 @@ part of 'money.dart';
 
 _Money _$MoneyFromJson(Map json) => _Money(
   amount: (json['amount'] as num).toDouble(),
-  currency: json['currency'] as String? ?? 'USD',
+  currency: json['currency'] as String? ?? 'EUR',
 );
 
 Map<String, dynamic> _$MoneyToJson(_Money instance) => <String, dynamic>{

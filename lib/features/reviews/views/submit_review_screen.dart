@@ -53,7 +53,7 @@ class _SubmitReviewScreenState extends ConsumerState<SubmitReviewScreen> {
         systemOverlayStyle: SystemUiOverlayStyle.dark,
       ),
       body: state.isSubmitting
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator.adaptive())
           : SingleChildScrollView(
               padding: EdgeInsets.all(16.r),
               child: Column(

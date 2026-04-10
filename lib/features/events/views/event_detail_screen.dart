@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
@@ -53,7 +54,8 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     final detailVm = ref.watch(eventDetailViewModelProvider(widget.eventId));
     final currentUser = ref.watch(currentUserProvider).value;
     final userId = currentUser?.uid ?? '';
-
+    final isPremiumSubscriber = currentUser?.isPremium ?? false;
+    final isDriver = currentUser?.role == UserRole.driver;
     // Listen for success / error messages from the view-model.
     ref.listen<EventDetailState>(eventDetailViewModelProvider(widget.eventId), (
       prev,
@@ -95,7 +97,8 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: eventAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () =>
+            const Center(child: CircularProgressIndicator.adaptive()),
         error: (e, _) => _ErrorBody(message: e.toString()),
         data: (event) {
           if (event == null) {
@@ -103,7 +106,13 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
               message: AppLocalizations.of(context).eventNotFound,
             );
           }
-          return _buildBody(event, userId, detailVm);
+          return _buildBody(
+            event,
+            userId,
+            detailVm,
+            isPremiumSubscriber,
+            isDriver,
+          );
         },
       ),
     );
@@ -113,6 +122,8 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     EventModel event,
     String userId,
     EventDetailState detailState,
+    bool isPremiumSubscriber,
+    bool isDriver,
   ) {
     final isOwner = _isCreator(event, userId);
     final isJoined = _isParticipant(event, userId);
@@ -149,15 +160,6 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                 ).animate().fadeIn(delay: 100.ms, duration: 350.ms),
 
                 SizedBox(height: 12.h),
-
-                if (event.venueName != null) ...[
-                  _InfoRow(
-                    icon: Icons.location_on_rounded,
-                    label: event.venueName!,
-                    sublabel: event.location.address,
-                  ).animate().fadeIn(delay: 150.ms, duration: 350.ms),
-                  SizedBox(height: 12.h),
-                ],
 
                 _OrganizerRow(
                   creatorId: event.creatorId,
@@ -216,10 +218,31 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                     ),
                   ),
                   SizedBox(height: 12.h),
-                  _ParticipantAvatars(
-                    participantIds: event.participantIds,
-                  ).animate().fadeIn(delay: 350.ms, duration: 350.ms),
-                  SizedBox(height: 24.h),
+                  GestureDetector(
+                    onTap: () => context.pushNamed(
+                      AppRoutes.eventAttendees.name,
+                      pathParameters: {'id': event.id},
+                    ),
+                    child: _ParticipantAvatars(
+                      participantIds: event.participantIds,
+                    ).animate().fadeIn(delay: 350.ms, duration: 350.ms),
+                  ),
+                  SizedBox(height: 6.h),
+                  GestureDetector(
+                    onTap: () => context.pushNamed(
+                      AppRoutes.eventAttendees.name,
+                      pathParameters: {'id': event.id},
+                    ),
+                    child: Text(
+                      'View all attendees →',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 18.h),
                 ],
 
                 // ── Action button ──
@@ -305,9 +328,17 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                 // ── #29: Event Chat Group ──
                 if (isJoined && event.participantIds.length >= 2) ...[
                   SizedBox(height: 16.h),
-                  _EventChatButton(
-                    event: event,
-                  ).animate().fadeIn(delay: 455.ms, duration: 350.ms),
+                  (isPremiumSubscriber
+                          ? _EventChatButton(
+                              event: event,
+                              onOpenChat: () => _openEventChat(event, userId),
+                            )
+                          : _EventChatPremiumLockedCard(
+                              onUpgradeTap: () =>
+                                  context.push(AppRoutes.settings.path),
+                            ))
+                      .animate()
+                      .fadeIn(delay: 455.ms, duration: 350.ms),
                 ],
 
                 // ── #23: Need Ride Home button ──
@@ -323,8 +354,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                       context.push(
                         AppRoutes.searchRides.path,
                         extra: {
-                          'originAddress':
-                              event.venueName ?? event.location.address,
+                          'originAddress': event.location.address,
                           'originLat': event.location.latitude,
                           'originLng': event.location.longitude,
                         },
@@ -344,8 +374,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                     onPressed: () => context.push(
                       AppRoutes.searchRides.path,
                       extra: {
-                        'destinationAddress':
-                            event.venueName ?? event.location.address,
+                        'destinationAddress': event.location.address,
                         'destinationLat': event.location.latitude,
                         'destinationLng': event.location.longitude,
                       },
@@ -353,26 +382,26 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                   ).animate().fadeIn(delay: 470.ms, duration: 350.ms),
                   SizedBox(height: 8.h),
                   // #21: Offer a ride to this event (Event-Linked Carpool)
-                  PremiumButton(
-                    text: AppLocalizations.of(context).eventOfferRide,
-                    icon: Icons.add_road_rounded,
-                    style: PremiumButtonStyle.ghost,
-                    fullWidth: true,
-                    onPressed: () {
-                      HapticFeedback.lightImpact();
-                      context.push(
-                        AppRoutes.driverOfferRide.path,
-                        extra: {
-                          'eventId': event.id,
-                          'eventName': event.title,
-                          'destinationAddress':
-                              event.venueName ?? event.location.address,
-                          'destinationLat': event.location.latitude,
-                          'destinationLng': event.location.longitude,
-                        },
-                      );
-                    },
-                  ).animate().fadeIn(delay: 480.ms, duration: 350.ms),
+                  if (isDriver)
+                    PremiumButton(
+                      text: AppLocalizations.of(context).eventOfferRide,
+                      icon: Icons.add_road_rounded,
+                      style: PremiumButtonStyle.ghost,
+                      fullWidth: true,
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        context.push(
+                          AppRoutes.driverOfferRide.path,
+                          extra: {
+                            'eventId': event.id,
+                            'eventName': event.title,
+                            'destinationAddress': event.location.address,
+                            'destinationLat': event.location.latitude,
+                            'destinationLng': event.location.longitude,
+                          },
+                        );
+                      },
+                    ).animate().fadeIn(delay: 480.ms, duration: 350.ms),
                 ],
 
                 // Bottom safe-area padding
@@ -405,7 +434,11 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
           onPressed: () => _addToCalendar(event),
         ),
         IconButton(
-          icon: Icon(Icons.share_rounded, color: Colors.white, size: 22.sp),
+          icon: Icon(
+            Icons.adaptive.share_rounded,
+            color: Colors.white,
+            size: 22.sp,
+          ),
           onPressed: () {
             final dateStr = DateFormat(
               'EEE, MMM d · h:mm a',
@@ -427,6 +460,16 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
             icon: Icon(Icons.edit_rounded, color: Colors.white, size: 22.sp),
             onPressed: () =>
                 context.push('/events/${event.id}/edit', extra: event),
+          ),
+        if (isOwner)
+          IconButton(
+            icon: Icon(
+              Icons.delete_rounded,
+              color: Colors.red.shade300,
+              size: 22.sp,
+            ),
+            tooltip: 'Delete event',
+            onPressed: () => _showDeleteConfirmation(event),
           ),
       ],
       flexibleSpace: FlexibleSpaceBar(
@@ -482,7 +525,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
   }
 
   // ------------------------------------------------------------------
-  // Owner action buttons (Edit + Delete)
+  // Owner action buttons (Edit + Cancel + Delete)
   // ------------------------------------------------------------------
   Widget _buildOwnerActions(EventModel event, EventDetailState detailState) {
     return Column(
@@ -494,6 +537,15 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
           fullWidth: true,
           onPressed: () =>
               context.push('/events/${event.id}/edit', extra: event),
+        ),
+        SizedBox(height: 12.h),
+        PremiumButton(
+          text: 'Cancel Event',
+          icon: Icons.event_busy_rounded,
+          style: PremiumButtonStyle.ghost,
+          fullWidth: true,
+          isLoading: detailState.isDeleting,
+          onPressed: () => _showCancelSheet(event),
         ),
         SizedBox(height: 12.h),
         PremiumButton(
@@ -516,12 +568,106 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     );
   }
 
+  Future<void> _showCancelSheet(EventModel event) async {
+    final reasonController = TextEditingController();
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          20.w,
+          20.h,
+          20.w,
+          MediaQuery.of(ctx).viewInsets.bottom + 24.h,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40.w,
+                height: 4.h,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2.r),
+                ),
+              ),
+            ),
+            SizedBox(height: 16.h),
+            Text(
+              'Cancel Event',
+              style: TextStyle(
+                fontSize: 18.sp,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              'All ${event.participantIds.length} participant(s) will be notified.',
+              style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
+            ),
+            SizedBox(height: 16.h),
+            TextField(
+              controller: reasonController,
+              maxLines: 3,
+              maxLength: 200,
+              decoration: InputDecoration(
+                hintText: 'Reason (optional)',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                filled: true,
+                fillColor: AppColors.background,
+              ),
+            ),
+            SizedBox(height: 16.h),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(ctx).pop(false),
+                    child: const Text('Keep Event'),
+                  ),
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.error,
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: () => Navigator.of(ctx).pop(true),
+                    child: const Text('Cancel Event'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+    HapticFeedback.mediumImpact();
+    final reason = reasonController.text.trim();
+    final cancelled = await ref
+        .read(eventDetailViewModelProvider(widget.eventId).notifier)
+        .cancelEvent(reason: reason.isNotEmpty ? reason : null);
+    if (cancelled && mounted) context.pop();
+  }
+
   Future<bool> _confirmDelete() async {
     final l10n = AppLocalizations.of(context);
     return await showDialog<bool>(
           context: context,
           barrierLabel: l10n.eventDeleteConfirmTitle,
-          builder: (ctx) => AlertDialog(
+          builder: (ctx) => AlertDialog.adaptive(
             title: Text(l10n.eventDeleteConfirmTitle),
             content: Text(l10n.eventDeleteWarning),
             actions: [
@@ -559,31 +705,250 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     }
   }
 
-  void _addToCalendar(EventModel event) {
-    final start = event.startsAt.toUtc().toIso8601String().replaceAll(
-      RegExp(r'[-:]'),
-      '',
+  Future<void> _openEventChat(EventModel event, String userId) async {
+    if (userId.isEmpty) return;
+
+    final isPremiumSubscriber =
+        ref.read(currentUserProvider).value?.isPremium ?? false;
+    if (!isPremiumSubscriber) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Event group chat is available to Premium subscribers only.',
+          ),
+          backgroundColor: AppColors.warning,
+        ),
+      );
+      return;
+    }
+
+    HapticFeedback.lightImpact();
+
+    final chatId = await ref
+        .read(eventDetailViewModelProvider(widget.eventId).notifier)
+        .ensureEventGroupChat(event, userId);
+
+    if (!mounted || chatId == null) return;
+
+    final receiver = UserModel.rider(
+      uid: chatId,
+      email: '',
+      displayName: event.title,
+      photoUrl: event.imageUrl,
     );
-    final end = (event.endsAt ?? event.startsAt.add(const Duration(hours: 2)))
-        .toUtc()
-        .toIso8601String()
-        .replaceAll(RegExp(r'[-:]'), '');
-    final title = Uri.encodeComponent(event.title);
-    final location = Uri.encodeComponent(
-      event.venueName ?? event.location.address,
+
+    context.pushNamed(
+      AppRoutes.chatGroup.name,
+      pathParameters: {'id': chatId},
+      extra: receiver,
     );
-    final details = Uri.encodeComponent(
-      event.description ?? '${event.type.label} on SportConnect',
+  }
+
+  Future<void> _addToCalendar(EventModel event) async {
+    try {
+      final start = event.startsAt.toUtc().toIso8601String().replaceAll(
+        RegExp(r'[-:]'),
+        '',
+      );
+      final end = (event.endsAt ?? event.startsAt.add(const Duration(hours: 2)))
+          .toUtc()
+          .toIso8601String()
+          .replaceAll(RegExp(r'[-:]'), '');
+      final title = Uri.encodeComponent(event.title);
+      final location = Uri.encodeComponent(event.location.address);
+      final details = Uri.encodeComponent(
+        event.description ?? '${event.type.label} on SportConnect',
+      );
+
+      // Build base URL parameters
+      var urlString =
+          'https://calendar.google.com/calendar/render'
+          '?action=TEMPLATE'
+          '&text=$title'
+          '&dates=$start/$end'
+          '&location=$location'
+          '&details=$details';
+
+      // Build recurrence rule (RRULE) if event is recurring
+      // RFC-5545 format: RRULE:FREQ=WEEKLY
+      if (event.isRecurring) {
+        // Build RRULE according to RFC-5545 spec using recurrence pattern
+        if (event.recurringPattern != null) {
+          final freqPart = event.recurringPattern!.rruleFreq;
+
+          if (event.recurringEndDate != null) {
+            // Format end date as iCal timestamp: YYYYMMDDTHHMMSSZ (no milliseconds)
+            final untilDate = event.recurringEndDate!
+                .toUtc()
+                .toIso8601String()
+                .replaceAll(
+                  RegExp(r'\.\d+Z$'),
+                  'Z',
+                ) // Remove milliseconds (.000Z)
+                .replaceAll(RegExp(r'[-:]'), ''); // Remove dashes and colons
+
+            // RRULE:FREQ=DAILY;UNTIL=20260630T235959Z
+            // RRULE:FREQ=WEEKLY;UNTIL=20260630T235959Z
+            // RRULE:FREQ=WEEKLY;INTERVAL=2;UNTIL=20260630T235959Z
+            // RRULE:FREQ=MONTHLY;UNTIL=20260630T235959Z
+            final rrule = 'RRULE:FREQ=$freqPart;UNTIL=$untilDate';
+            urlString += '&recur=${Uri.encodeComponent(rrule)}';
+          } else {
+            // No end date
+            final rrule = 'RRULE:FREQ=$freqPart';
+            urlString += '&recur=${Uri.encodeComponent(rrule)}';
+          }
+        }
+      }
+
+      final url = Uri.parse(urlString);
+
+      // Check if URL can be launched before attempting
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+        if (mounted) {
+          final message = event.isRecurring
+              ? 'Opening Google Calendar (recurring: ${event.recurringPattern?.label ?? 'custom'})...'
+              : 'Opening Google Calendar...';
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(message),
+              backgroundColor: AppColors.success,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'Could not open calendar. Please ensure Google Calendar is available.',
+              ),
+              backgroundColor: AppColors.error,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      TalkerService.error('Failed to add event to calendar', e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error opening calendar: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  /// Show delete confirmation dialog before deleting event
+  void _showDeleteConfirmation(EventModel event) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog.adaptive(
+        title: const Text('Delete Event'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Are you sure you want to delete "${event.title}"?'),
+            if (event.isRecurring) ...[
+              SizedBox(height: 16.h),
+              Container(
+                padding: EdgeInsets.all(12.w),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.1),
+                  border: Border.all(color: AppColors.error, width: 1),
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '⚠️ Recurring Event',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.error,
+                      ),
+                    ),
+                    SizedBox(height: 8.h),
+                    const Text(
+                      'This event repeats. Deleting it will remove ALL occurrences (past and future).',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    SizedBox(height: 8.h),
+                    const Text(
+                      'To delete only specific occurrences, use Google Calendar: tap the event → "This event" (not "All events").',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => context.pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              context.pop(); // Close dialog
+              _deleteEvent(event);
+            },
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
     );
-    final url = Uri.parse(
-      'https://calendar.google.com/calendar/render'
-      '?action=TEMPLATE'
-      '&text=$title'
-      '&dates=$start/$end'
-      '&location=$location'
-      '&details=$details',
-    );
-    launchUrl(url, mode: LaunchMode.externalApplication);
+  }
+
+  /// Delete event from Firestore
+  Future<void> _deleteEvent(EventModel event) async {
+    try {
+      // Call the repository to delete the event
+      await ref
+          .read(eventDetailViewModelProvider(event.id).notifier)
+          .deleteEvent();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: event.isRecurring
+                ? const Text('Event and all recurring instances deleted')
+                : const Text('Event deleted'),
+            backgroundColor: AppColors.success,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+
+        // Navigate back after deletion
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) context.pop();
+        });
+      }
+    } catch (e) {
+      TalkerService.error('Failed to delete event', e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error deleting event: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 }
 
@@ -605,7 +970,7 @@ class _CircleBackButton extends StatelessWidget {
           backgroundColor: Colors.black26,
           radius: 18.r,
           child: Icon(
-            Icons.arrow_back_rounded,
+            Icons.adaptive.arrow_back_rounded,
             color: Colors.white,
             size: 20.sp,
           ),
@@ -1279,11 +1644,11 @@ class _EventRidesSection extends ConsumerWidget {
               child: SizedBox(
                 width: 24.w,
                 height: 24.w,
-                child: const CircularProgressIndicator(strokeWidth: 2),
+                child: const CircularProgressIndicator.adaptive(strokeWidth: 2),
               ),
             ),
           ),
-          error: (_, __) => PremiumCard(
+          error: (_, _) => PremiumCard(
             child: Center(
               child: Text(
                 AppLocalizations.of(context).eventCouldNotLoadRides,
@@ -1370,15 +1735,10 @@ class _RecurringEventBadge extends StatelessWidget {
 
   final EventModel event;
 
-  static const _dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final days = event.recurringDays
-        .where((d) => d >= 1 && d <= 7)
-        .map((d) => _dayNames[d - 1])
-        .join(', ');
+    final patternText = event.recurringPattern?.label ?? 'Recurring';
 
     final endStr = event.recurringEndDate != null
         ? ' ${l10n.eventUntilDate(DateFormat('MMM d').format(event.recurringEndDate!))}'
@@ -1401,16 +1761,14 @@ class _RecurringEventBadge extends StatelessWidget {
                     color: AppColors.textPrimary,
                   ),
                 ),
-                if (days.isNotEmpty) ...[
-                  SizedBox(height: 2.h),
-                  Text(
-                    '${l10n.eventEvery} $days$endStr',
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      color: AppColors.textSecondary,
-                    ),
+                SizedBox(height: 2.h),
+                Text(
+                  '$patternText$endStr',
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: AppColors.textSecondary,
                   ),
-                ],
+                ),
               ],
             ),
           ),
@@ -1519,9 +1877,10 @@ class _MeetupPinSection extends StatelessWidget {
 
 // ── #29: Event Chat Button ──
 class _EventChatButton extends StatelessWidget {
-  const _EventChatButton({required this.event});
+  const _EventChatButton({required this.event, required this.onOpenChat});
 
   final EventModel event;
+  final VoidCallback onOpenChat;
 
   @override
   Widget build(BuildContext context) {
@@ -1530,21 +1889,57 @@ class _EventChatButton extends StatelessWidget {
       icon: Icons.chat_bubble_outline_rounded,
       style: PremiumButtonStyle.secondary,
       fullWidth: true,
-      onPressed: () {
-        HapticFeedback.lightImpact();
-        final chatId = event.chatGroupId ?? event.id;
-        final receiver = UserModel.rider(
-          uid: chatId,
-          email: '',
-          displayName: event.title,
-          photoUrl: event.imageUrl,
-        );
-        context.pushNamed(
-          AppRoutes.chatGroup.name,
-          pathParameters: {'id': chatId},
-          extra: receiver,
-        );
-      },
+      onPressed: onOpenChat,
+    );
+  }
+}
+
+class _EventChatPremiumLockedCard extends StatelessWidget {
+  const _EventChatPremiumLockedCard({required this.onUpgradeTap});
+
+  final VoidCallback onUpgradeTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return PremiumCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.lock_rounded, color: AppColors.warning, size: 18.sp),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: Text(
+                  'Premium event chat',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            'Subscribe to Premium to join attendee group chats for events.',
+            style: TextStyle(
+              fontSize: 12.sp,
+              color: AppColors.textSecondary,
+              height: 1.4,
+            ),
+          ),
+          SizedBox(height: 12.h),
+          PremiumButton(
+            text: 'Upgrade to Premium',
+            icon: Icons.workspace_premium_rounded,
+            style: PremiumButtonStyle.ghost,
+            size: PremiumButtonSize.small,
+            onPressed: onUpgradeTap,
+          ),
+        ],
+      ),
     );
   }
 }

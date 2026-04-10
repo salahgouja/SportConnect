@@ -75,7 +75,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     showDialog(
       context: scaffoldContext,
       barrierLabel: AppLocalizations.of(context).clearAllNotifications,
-      builder: (dialogContext) => AlertDialog(
+      builder: (dialogContext) => AlertDialog.adaptive(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
@@ -381,12 +381,14 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
             ),
             child: TextField(
               controller: _searchController,
+              textInputAction: TextInputAction.search,
               onChanged: (value) {
                 setState(() {
                   _searchQuery = value;
                 });
               },
               decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).searchConversations,
                 hintText: AppLocalizations.of(context).searchConversations,
                 prefixIcon: const Icon(Icons.search_rounded),
                 suffixIcon: _searchQuery.isEmpty
@@ -430,6 +432,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
       backgroundColor: AppColors.surface,
       elevation: 0,
       leading: IconButton(
+        tooltip: AppLocalizations.of(context).goBackTooltip,
         icon: Container(
           padding: EdgeInsets.all(8.w),
           decoration: BoxDecoration(
@@ -437,7 +440,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
             borderRadius: BorderRadius.circular(12.r),
           ),
           child: Icon(
-            Icons.arrow_back,
+            Icons.adaptive.arrow_back,
             color: AppColors.textPrimary,
             size: 20.sp,
           ),
@@ -476,7 +479,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
       ),
       actions: [
         PopupMenuButton<String>(
-          icon: Icon(Icons.more_vert, color: AppColors.textSecondary),
+          icon: Icon(Icons.adaptive.more, color: AppColors.textSecondary),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12.r),
           ),
@@ -523,7 +526,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     String userId,
   ) {
     if (notifications.isEmpty) {
-      return RefreshIndicator(
+      return RefreshIndicator.adaptive(
         onRefresh: () async {
           ref.read(notificationViewModelProvider.notifier).refresh();
           await Future<void>.delayed(const Duration(milliseconds: 250));
@@ -566,7 +569,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
       );
     }
 
-    return RefreshIndicator(
+    return RefreshIndicator.adaptive(
       onRefresh: () async {
         ref.read(notificationViewModelProvider.notifier).refresh();
         await Future<void>.delayed(const Duration(milliseconds: 250));

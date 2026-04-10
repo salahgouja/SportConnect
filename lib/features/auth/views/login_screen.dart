@@ -328,7 +328,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             padding: EdgeInsets.symmetric(vertical: 12.h),
             child: Row(
               children: [
-                Checkbox(
+                Checkbox.adaptive(
                   value: loginUiState.rememberMe,
                   onChanged: (value) {
                     HapticFeedback.selectionClick();
@@ -387,7 +387,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                 child: SizedBox(
                   height: 18.h,
                   width: 18.w,
-                  child: const CircularProgressIndicator(strokeWidth: 2.5),
+                  child: const CircularProgressIndicator.adaptive(
+                    strokeWidth: 2.5,
+                  ),
                 ),
               )
             : Text(
@@ -434,8 +436,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   borderRadius: BorderRadius.circular(14.r),
                 ),
                 child: Center(
-                  child: const CircularProgressIndicator(
-                    color: AppColors.primary,
+                  child: const CircularProgressIndicator.adaptive(
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                   ),
                 ),
               ),

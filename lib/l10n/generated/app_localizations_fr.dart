@@ -3112,6 +3112,13 @@ class AppLocalizationsFr extends AppLocalizations {
   String get searchConversations => 'Rechercher des conversations...';
 
   @override
+  String get searchChatsOrPeople =>
+      'Rechercher des discussions ou des personnes';
+
+  @override
+  String get peopleResults => 'Personnes';
+
+  @override
   String get direct => 'Direct';
 
   @override
@@ -3763,6 +3770,13 @@ class AppLocalizationsFr extends AppLocalizations {
   String get driverGenderRequired => 'Veuillez sélectionner votre genre.';
 
   @override
+  String get expertiseLevel => 'Niveau d\'expertise';
+
+  @override
+  String get expertiseLevelRequired =>
+      'Veuillez sélectionner votre niveau d\'expertise.';
+
+  @override
   String get driverInterestsRequired =>
       'Veuillez sélectionner au moins un intérêt.';
 
@@ -4315,7 +4329,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get reportSubmittedMessage =>
-      'Merci d\'avoir signalé ce problème. Notre équipe de sécurité l\'examinera et prendra les mesures appropriées sous 24 à 48 heures.';
+      'Merci d\'avoir signalé ce problème. Notre équipe de sécurité l\'examinera et prendra les mesures appropriées sous 24 à 48 heures. Vous recevrez un e-mail lorsque votre problème sera résolu.';
 
   @override
   String get doneButton => 'Terminé';
@@ -5155,7 +5169,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get ticketSubmittedMessage =>
-      'Nous avons bien reçu votre message et vous répondrons sous 24 heures. Vérifiez votre e-mail pour les mises à jour.';
+      'Nous avons bien reçu votre message et vous répondrons sous 24 heures. Vous recevrez un e-mail lorsque votre problème sera résolu.';
 
   @override
   String get findPeopleTitle => 'Trouver des personnes';
@@ -5447,6 +5461,27 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get couldNotBlockUserTryAgain =>
       'Impossible de bloquer l\'utilisateur. Veuillez réessayer.';
+
+  @override
+  String get unblockUser => 'Débloquer l\'utilisateur';
+
+  @override
+  String unblockUserDialogMessage(String name) {
+    return 'Débloquer $name ?';
+  }
+
+  @override
+  String get actionUnblock => 'Débloquer';
+
+  @override
+  String get userUnblocked => 'Utilisateur débloqué.';
+
+  @override
+  String get couldNotUnblockUserTryAgain =>
+      'Impossible de débloquer l\'utilisateur. Veuillez réessayer.';
+
+  @override
+  String get youBlockedThisUser => 'Vous avez bloqué cet utilisateur.';
 
   @override
   String get actionBlock => 'Bloquer';

@@ -38,8 +38,18 @@ class AppRoutes {
   // Driver chat shell branch
   static const driverChat = AppRoute('/driver/chat', 'driver-chat');
   static const driverVehicles = AppRoute('/driver/vehicles', 'driver-vehicles');
-  static const driverStats = AppRoute('/driver/stats', 'driver-stats');
-  static const driverSettings = AppRoute('/driver/settings', 'driver-settings');
+  static const driverDocuments = AppRoute(
+    '/driver/documents',
+    'driver-documents',
+  );
+  static const taxDocuments = AppRoute(
+    '/driver/tax-documents',
+    'tax-documents',
+  );
+  static const backgroundCheck = AppRoute(
+    '/driver/background-check',
+    'background-check',
+  );
   static const driverStripeOnboarding = AppRoute(
     '/driver/stripe-onboarding',
     'driver-stripe-onboarding',
@@ -61,10 +71,19 @@ class AppRoutes {
   static const profileSearch = AppRoute('/profile/search', 'profile-search');
   static const home = AppRoute('/home', 'home');
   static const paymentHistory = AppRoute('/payment-history', 'payment-history');
+  static const premiumSubscribe = AppRoute(
+    '/premium/subscribe',
+    'premium-subscribe',
+  );
+  static const premiumCheckout = AppRoute(
+    '/premium/checkout',
+    'premium-checkout',
+  );
   static const profile = AppRoute('/profile', 'profile');
   static const userProfile = AppRoute('/user/profile/:id', 'user-profile');
   static const editProfile = AppRoute('/edit-profile', 'edit-profile');
   static const settings = AppRoute('/settings', 'settings');
+  static const twoFactorAuth = AppRoute('/settings/2fa', 'settings-2fa');
   static const achievements = AppRoute('/achievements', 'achievements');
   static const notifications = AppRoute('/notifications', 'notifications');
 
@@ -140,7 +159,8 @@ class AppRoutes {
   // Events
   static const events = AppRoute('/events', 'events');
   static const eventDetail = AppRoute('/events/:id', 'event-detail');
+  static const eventAttendees = AppRoute('/events/:id/attendees', 'event-attendees');
   static const editEvent = AppRoute('/events/:id/edit', 'edit-event');
   static const myEvents = AppRoute('/events/mine', 'my-events');
-  static const createEvent = AppRoute('/events/create', 'createEvent');
+  static const createEvent = AppRoute('/events/create', 'create-event');
 }

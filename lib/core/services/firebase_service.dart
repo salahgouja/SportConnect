@@ -68,7 +68,7 @@ class FirebaseService implements IFirebaseService {
             : AndroidProvider.playIntegrity,
         appleProvider: kDebugMode
             ? AppleProvider.debug
-            : AppleProvider.deviceCheck,
+            : AppleProvider.appAttest,
       );
       TalkerService.info('Firebase initialized successfully');
       TalkerService.info('Environment: ${AppConfig.environmentStatus}');

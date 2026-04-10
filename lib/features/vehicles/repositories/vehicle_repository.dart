@@ -30,6 +30,25 @@ class VehicleRepository implements IVehicleRepository {
   /// Create a new vehicle
   @override
   Future<String> createVehicle(VehicleModel vehicle) async {
+    // VE-3: Validate vehicle year is realistic (1900–current year + 1).
+    final currentYear = DateTime.now().year;
+    if (vehicle.year < 1900 || vehicle.year > currentYear + 1) {
+      throw ArgumentError(
+        'Vehicle year must be between 1900 and ${currentYear + 1} (got ${vehicle.year}).',
+      );
+    }
+
+    // FIX VE-1: Reject duplicate license plates across all drivers.
+    final plateQuery = await _vehiclesCollection
+        .where('licensePlate', isEqualTo: vehicle.licensePlate)
+        .limit(1)
+        .get();
+    if (plateQuery.docs.isNotEmpty) {
+      throw StateError(
+        'A vehicle with plate "${vehicle.licensePlate}" is already registered.',
+      );
+    }
+
     final rawCol = _firestore.collection(AppConstants.vehiclesCollection);
     final docRef = rawCol.doc();
     final vehicleWithId = vehicle.copyWith(id: docRef.id);

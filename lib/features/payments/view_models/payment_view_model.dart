@@ -219,10 +219,13 @@ class PaymentViewModel extends _$PaymentViewModel {
             '${ride.route.origin.address} → ${ride.route.destination.address}',
       );
 
-      // Process payment with Payment Sheet
+      // Process payment with Payment Sheet (pass ephemeral key for saved cards
+      // and currency for Google/Apple Pay)
       final success = await stripeService.processPaymentWithSheet(
-        paymentIntentClientSecret: paymentIntentData['clientSecret'],
+        paymentIntentClientSecret: paymentIntentData['clientSecret'] as String,
         customerId: customerId,
+        ephemeralKeySecret: paymentIntentData['ephemeralKey'] as String?,
+        currency: currency,
       );
 
       if (success) {
@@ -497,6 +500,17 @@ class DriverStripeOnboardingFlowViewModel
       if (!ref.mounted) return;
 
       if (status.isConnected) {
+        // Write isStripeOnboarded to the user document so the route guard
+        // sees the flag immediately when the screen navigates to driverHome.
+        // This bridges the gap before the Cloud Function webhook fires.
+        try {
+          await ref.read(profileRepositoryProvider).updateProfile(user.uid, {
+            'isStripeOnboarded': true,
+          });
+        } catch (e) {
+          TalkerService.warning('Failed to persist isStripeOnboarded flag: $e');
+        }
+        if (!ref.mounted) return;
         state = state.copyWith(
           isVerifying: false,
           isConnected: true,
@@ -741,26 +755,92 @@ abstract class DriverStripeStatus with _$DriverStripeStatus {
 @riverpod
 Future<DriverStripeStatus> driverStripeStatus(Ref ref) async {
   final paymentRepo = ref.watch(paymentRepositoryProvider);
-  final user = ref.watch(authStateProvider).value;
-  if (user == null) return const DriverStripeStatus();
+  final stripeService = ref.watch(stripeServiceProvider);
+  final authUser = ref.watch(authStateProvider).value;
+  final userModel = ref.watch(currentUserProvider).value;
+  if (authUser == null) return const DriverStripeStatus();
 
   try {
-    final connectedAccount = await paymentRepo.getConnectedAccount(user.uid);
+    final connectedAccount = await paymentRepo.getConnectedAccount(
+      authUser.uid,
+    );
+    final driver = userModel is DriverModel ? userModel : null;
 
-    if (connectedAccount == null) {
+    final accountId =
+        connectedAccount?.stripeAccountId ?? driver?.stripeAccountId;
+    final hasStripeAccountId = accountId != null && accountId.isNotEmpty;
+    if (!hasStripeAccountId) {
       return const DriverStripeStatus();
     }
 
-    return DriverStripeStatus(
-      isConnected: true,
-      payoutsEnabled: connectedAccount.payoutsEnabled,
-      chargesEnabled: connectedAccount.chargesEnabled,
-      detailsSubmitted: connectedAccount.detailsSubmitted,
-      availableBalance: connectedAccount.availableBalance,
-      pendingBalance: connectedAccount.pendingBalance,
-      currency: connectedAccount.defaultCurrency,
-      stripeAccountId: connectedAccount.stripeAccountId,
-    );
+    try {
+      // Stripe docs recommend checking connected-account balance live.
+      final liveStatus = await stripeService.getAccountStatus(
+        accountId: accountId,
+      );
+      final liveChargesEnabled = liveStatus['chargesEnabled'] == true;
+      final livePayoutsEnabled = liveStatus['payoutsEnabled'] == true;
+      final liveDetailsSubmitted = liveStatus['detailsSubmitted'] == true;
+      final liveAvailableBalance =
+          (liveStatus['availableBalance'] as num?)?.toDouble() ?? 0.0;
+      final livePendingBalance =
+          (liveStatus['pendingBalance'] as num?)?.toDouble() ?? 0.0;
+      final liveCurrency =
+          ((liveStatus['currency'] as String?)
+                  ?.toUpperCase()
+                  .trim()
+                  .isNotEmpty ??
+              false)
+          ? (liveStatus['currency'] as String).toUpperCase().trim()
+          : (connectedAccount?.defaultCurrency ?? 'EUR');
+
+      if (connectedAccount != null) {
+        await paymentRepo.updateConnectedAccountStatus(
+          driverId: authUser.uid,
+          chargesEnabled: liveChargesEnabled,
+          payoutsEnabled: livePayoutsEnabled,
+          detailsSubmitted: liveDetailsSubmitted,
+          availableBalance: liveAvailableBalance,
+          pendingBalance: livePendingBalance,
+        );
+      }
+
+      return DriverStripeStatus(
+        isConnected: true,
+        payoutsEnabled: livePayoutsEnabled,
+        chargesEnabled: liveChargesEnabled,
+        detailsSubmitted: liveDetailsSubmitted,
+        availableBalance: liveAvailableBalance,
+        pendingBalance: livePendingBalance,
+        currency: liveCurrency,
+        stripeAccountId: accountId,
+      );
+    } catch (e) {
+      TalkerService.warning(
+        'Live Stripe status fetch failed, falling back to cached status: $e',
+      );
+
+      final mergedChargesEnabled =
+          (connectedAccount?.chargesEnabled ?? false) ||
+          (driver?.chargesEnabled ?? false);
+      final mergedPayoutsEnabled =
+          (connectedAccount?.payoutsEnabled ?? false) ||
+          (driver?.payoutsEnabled ?? false);
+      final mergedDetailsSubmitted =
+          (connectedAccount?.detailsSubmitted ?? false) ||
+          (driver?.detailsSubmitted ?? false);
+
+      return DriverStripeStatus(
+        isConnected: true,
+        payoutsEnabled: mergedPayoutsEnabled,
+        chargesEnabled: mergedChargesEnabled,
+        detailsSubmitted: mergedDetailsSubmitted,
+        availableBalance: connectedAccount?.availableBalance ?? 0.0,
+        pendingBalance: connectedAccount?.pendingBalance ?? 0.0,
+        currency: connectedAccount?.defaultCurrency ?? 'EUR',
+        stripeAccountId: accountId,
+      );
+    }
   } catch (e) {
     return const DriverStripeStatus();
   }

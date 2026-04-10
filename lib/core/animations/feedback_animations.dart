@@ -64,7 +64,7 @@ class FeedbackAnimations {
     return showGeneralDialog(
       context: context,
       barrierDismissible: false,
-      barrierLabel: AppLocalizations.of(context).bookingConfirmed,
+      barrierLabel: AppLocalizations.of(context).bookingRequestSent,
       barrierColor: Colors.black54,
       transitionDuration: const Duration(milliseconds: 300),
       pageBuilder: (_, __, ___) => _BookingConfirmationOverlay(
@@ -191,7 +191,7 @@ class _BookingConfirmationOverlayState
                     gradient: AppColors.primaryGradient,
                   ),
                   child: Icon(
-                    Icons.check_rounded,
+                    Icons.send_rounded,
                     size: 48.sp,
                     color: Colors.white,
                   ),
@@ -203,7 +203,7 @@ class _BookingConfirmationOverlayState
                 ),
                 SizedBox(height: 20.h),
                 Text(
-                  AppLocalizations.of(context).bookingConfirmedTitle,
+                  AppLocalizations.of(context).requestSentTitle,
                   style: TextStyle(
                     fontSize: 22.sp,
                     fontWeight: FontWeight.w700,

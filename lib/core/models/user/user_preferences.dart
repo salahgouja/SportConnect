@@ -11,11 +11,8 @@ abstract class UserPreferences with _$UserPreferences {
     @Default(true) bool emailNotifications,
     @Default(true) bool rideReminders,
     @Default(true) bool chatNotifications,
-    @Default(true) bool marketingEmails,
     @Default('en') String language,
-    @Default('system') String theme,
-    @Default(5.0) double maxPickupRadius,
-    @Default(true) bool showOnlineStatus,
+    @Default(20.0) double maxPickupRadius,
     @Default(true) bool allowMessages,
   }) = _UserPreferences;
 

@@ -164,6 +164,16 @@ class AuthRepository implements IAuthRepository {
   }
 
   Future<String?> _uploadProfileImage(File image, String uid) async {
+    // FIX A-8: Validate file size before upload (max 5 MB)
+    const maxSizeBytes = 5 * 1024 * 1024; // 5 MB
+    final sizeInBytes = await image.length();
+    if (sizeInBytes > maxSizeBytes) {
+      final sizeMb = (sizeInBytes / (1024 * 1024)).toStringAsFixed(1);
+      throw Exception(
+        'Profile image must be smaller than 5 MB (current: $sizeMb MB)',
+      );
+    }
+
     try {
       // Create a reference: users/{uid}/profile/profile.jpg
       final ref = _storage
@@ -237,6 +247,21 @@ class AuthRepository implements IAuthRepository {
 
       final uid = user.uid;
 
+      // FIX A-1: Block deletion if the user has a ride currently in progress.
+      // Orphaning an active ride leaves passengers with no driver and no refund.
+      final activeRideQuery = await _firestore
+          .collection(AppConstants.ridesCollection)
+          .where('driverId', isEqualTo: uid)
+          .where('status', isEqualTo: 'inProgress')
+          .limit(1)
+          .get();
+      if (activeRideQuery.docs.isNotEmpty) {
+        throw Exception(
+          'Cannot delete account while a ride is in progress. '
+          'Please complete or cancel the active ride first.',
+        );
+      }
+
       // Collect all document references to delete
       final refs = <DocumentReference>[_usersCollection.doc(uid)];
 
@@ -250,9 +275,29 @@ class AuthRepository implements IAuthRepository {
       // User's bookings
       final bookingsQuery = await _firestore
           .collection(AppConstants.bookingsCollection)
-          .where('userId', isEqualTo: uid)
+          .where('passengerId', isEqualTo: uid)
           .get();
       refs.addAll(bookingsQuery.docs.map((d) => d.reference));
+
+      // FIX A-2: Delete driver financial records so a deleted UID doesn't
+      // leave dangling references in driver_connected_accounts and driver_stats.
+      final driverConnectedRef = _firestore
+          .collection(AppConstants.connectedAccountsCollection)
+          .doc(uid);
+      if ((await driverConnectedRef.get()).exists) refs.add(driverConnectedRef);
+
+      final driverStatsRef = _firestore
+          .collection(AppConstants.driverStatsCollection)
+          .doc(uid);
+      if ((await driverStatsRef.get()).exists) refs.add(driverStatsRef);
+
+      // FIX A-3: Delete reviews *written by* this user so deleted users'
+      // names don't persist on other people's profiles.
+      final reviewsByUserQuery = await _firestore
+          .collection(AppConstants.reviewsCollection)
+          .where('reviewerId', isEqualTo: uid)
+          .get();
+      refs.addAll(reviewsByUserQuery.docs.map((d) => d.reference));
 
       // User's messages
       final messagesQuery = await _firestore
@@ -261,12 +306,18 @@ class AuthRepository implements IAuthRepository {
           .get();
       refs.addAll(messagesQuery.docs.map((d) => d.reference));
 
-      // User's chats
+      // User's chats: remove the user from participantIds.
+      // Chat deletion is blocked by security rules.
       final chatsQuery = await _firestore
           .collection(AppConstants.chatsCollection)
-          .where('participants', arrayContains: uid)
+          .where('participantIds', arrayContains: uid)
           .get();
-      refs.addAll(chatsQuery.docs.map((d) => d.reference));
+      for (final chatDoc in chatsQuery.docs) {
+        await chatDoc.reference.update({
+          'participantIds': FieldValue.arrayRemove([uid]),
+          'updatedAt': DateTime.now(),
+        });
+      }
 
       // Commit in chunks of 499 to stay within Firestore batch limit (500)
       const batchLimit = 499;
@@ -284,19 +335,13 @@ class AuthRepository implements IAuthRepository {
 
       // Clean up storage (profile images)
       try {
-        await _storage.ref().child('users').child(uid).listAll().then((
-          result,
-        ) async {
+        final storagePrefixes = ['users/$uid/profile', 'users/$uid/cover'];
+        for (final prefixPath in storagePrefixes) {
+          final result = await _storage.ref(prefixPath).listAll();
           for (final ref in result.items) {
             await ref.delete();
           }
-          for (final prefix in result.prefixes) {
-            final subItems = await prefix.listAll();
-            for (final item in subItems.items) {
-              await item.delete();
-            }
-          }
-        });
+        }
       } on FirebaseException catch (e) {
         TalkerService.warning(
           'Storage cleanup failed (best-effort): ${e.message}',
@@ -346,6 +391,17 @@ class AuthRepository implements IAuthRepository {
         UserModel? existingUser = await getUserData(userCredential.user!.uid);
 
         if (existingUser != null) {
+          // FIX A-4: A banned/suspended user must not regain access simply by
+          // re-authenticating via a social provider.  Sign them out of Firebase
+          // Auth immediately and surface a clear error.
+          if (!existingUser.isActive) {
+            await _auth.signOut();
+            throw AuthException(
+              code: 'account-disabled',
+              message:
+                  'Your account has been suspended. Please contact support.',
+            );
+          }
           existingUser = existingUser.copyWith(lastSeenAt: DateTime.now());
           await _usersCollection
               .doc(userCredential.user!.uid)
@@ -411,6 +467,16 @@ class AuthRepository implements IAuthRepository {
         UserModel? existingUser = await getUserData(userCredential.user!.uid);
 
         if (existingUser != null) {
+          // FIX A-4: Same ban check as Google sign-in — banned users must not
+          // re-enter via Apple OAuth either.
+          if (!existingUser.isActive) {
+            await _auth.signOut();
+            throw AuthException(
+              code: 'account-disabled',
+              message:
+                  'Your account has been suspended. Please contact support.',
+            );
+          }
           existingUser = existingUser.copyWith(lastSeenAt: DateTime.now());
           await _usersCollection
               .doc(userCredential.user!.uid)
@@ -676,6 +742,18 @@ class AuthRepository implements IAuthRepository {
 
       await googleSignIn.initialize();
       final googleUser = await googleSignIn.authenticate();
+
+      // FIX A-7: Verify the Google account email matches the current user's email
+      final currentEmail = _auth.currentUser?.email;
+      if (currentEmail != null && googleUser.email != currentEmail) {
+        throw AuthException(
+          code: 'email-mismatch',
+          message:
+              'The selected Google account does not match your account email. '
+              'Please choose the correct account.',
+        );
+      }
+
       final googleAuth = googleUser.authentication;
       final credential = GoogleAuthProvider.credential(
         idToken: googleAuth.idToken,
@@ -705,7 +783,34 @@ class AuthRepository implements IAuthRepository {
       if (user == null) {
         throw Exception('No user is currently signed in');
       }
+
+      // FIX A-5: Enforce a 60-second cooldown between verification email sends
+      const cooldownSeconds = 60;
+      final rawUserDoc = await _firestore
+          .collection(AppConstants.usersCollection)
+          .doc(user.uid)
+          .get();
+      final lastSentTs =
+          rawUserDoc.data()?['lastEmailVerificationSentAt'] as Timestamp?;
+      if (lastSentTs != null) {
+        final elapsed = DateTime.now()
+            .difference(lastSentTs.toDate())
+            .inSeconds;
+        if (elapsed < cooldownSeconds) {
+          final remaining = cooldownSeconds - elapsed;
+          throw Exception(
+            'Please wait $remaining seconds before requesting another verification email.',
+          );
+        }
+      }
+
       await user.sendEmailVerification();
+      await _firestore
+          .collection(AppConstants.usersCollection)
+          .doc(user.uid)
+          .update({
+            'lastEmailVerificationSentAt': FieldValue.serverTimestamp(),
+          });
       TalkerService.info('Verification email sent to ${user.email}');
     } on FirebaseAuthException catch (e) {
       TalkerService.error('Send verification email error: ${e.message}');
@@ -755,6 +860,41 @@ class AuthRepository implements IAuthRepository {
     onVerificationCompleted,
     int? forceResendingToken,
   }) async {
+    // FIX A-6: Throttle OTP send/resend requests (max 3 per 10-minute window)
+    final uid = _auth.currentUser?.uid;
+    if (uid != null) {
+      const maxResends = 3;
+      const windowMinutes = 10;
+      final userRef = _firestore
+          .collection(AppConstants.usersCollection)
+          .doc(uid);
+      final snap = await userRef.get();
+      final data = snap.data() ?? {};
+      final windowStart = (data['phoneOtpWindowStart'] as Timestamp?)?.toDate();
+      final resendCount = (data['phoneOtpResendCount'] as int?) ?? 0;
+      final now = DateTime.now();
+      final windowExpired =
+          windowStart == null ||
+          now.difference(windowStart).inMinutes >= windowMinutes;
+
+      if (!windowExpired && resendCount >= maxResends) {
+        final minutesLeft =
+            windowMinutes - now.difference(windowStart).inMinutes;
+        throw Exception(
+          'Too many OTP requests. Please wait $minutesLeft minutes before trying again.',
+        );
+      }
+
+      await userRef.update(
+        windowExpired
+            ? {
+                'phoneOtpResendCount': 1,
+                'phoneOtpWindowStart': FieldValue.serverTimestamp(),
+              }
+            : {'phoneOtpResendCount': resendCount + 1},
+      );
+    }
+
     await _auth.verifyPhoneNumber(
       phoneNumber: phoneNumber,
       verificationCompleted: onVerificationCompleted,

@@ -1,5 +1,34 @@
 {
   "rules": {
+    // Live driver location during active rides.
+    // Path: liveLocations/{rideId}  — written by the driver, read by ride participants.
+    //
+    // RTDB cannot cross-reference Firestore, so we enforce authentication here
+    // and rely on client-side logic (only drivers call updateLiveLocation) plus
+    // Firestore rules (which protect the ride document) for the full security model.
+    "liveLocations": {
+      "$rideId": {
+        // Any authenticated user may read a location node.
+        // Client code only subscribes to rides the user is part of.
+        ".read": "auth != null",
+
+        // Any authenticated user may write — driver identity enforced client-side.
+        ".write": "auth != null",
+
+        // Validate the expected shape: lat, lng, ts are required.
+        ".validate": "newData.hasChildren(['lat', 'lng', 'ts'])",
+
+        "lat":     { ".validate": "newData.isNumber() && newData.val() >= -90  && newData.val() <= 90" },
+        "lng":     { ".validate": "newData.isNumber() && newData.val() >= -180 && newData.val() <= 180" },
+        "heading": { ".validate": "newData.isNumber()" },
+        "ts":      { ".validate": "newData.isNumber() && newData.val() > 0" },
+
+        // Reject any unexpected extra keys
+        "$other":  { ".validate": false }
+      }
+    },
+
+    // Deny all other read/write by default
     ".read": false,
     ".write": false
   }

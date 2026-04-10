@@ -513,9 +513,11 @@ class _MapLocationPickerState extends State<MapLocationPicker>
                     SizedBox(
                           width: 20.w,
                           height: 20.w,
-                          child: CircularProgressIndicator(
+                          child: CircularProgressIndicator.adaptive(
                             strokeWidth: 2.5,
-                            color: AppColors.primary,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.primary,
+                            ),
                           ),
                         )
                         .animate(onPlay: (c) => c.repeat())
@@ -615,7 +617,7 @@ class _MapLocationPickerState extends State<MapLocationPicker>
         overflow: TextOverflow.ellipsis,
       ),
       trailing: Icon(
-        Icons.arrow_forward_ios_rounded,
+        Icons.adaptive.arrow_forward_rounded,
         size: 16.sp,
         color: AppColors.textTertiary,
       ),
@@ -784,8 +786,8 @@ class _MapLocationPickerState extends State<MapLocationPicker>
                   markers: [
                     Marker(
                       point: _selectedLocation!,
-                      width: 60,
-                      height: 60,
+                      width: 70,
+                      height: 70,
                       child: _buildSelectedMarker(),
                     ),
                   ],
@@ -924,9 +926,9 @@ class _MapLocationPickerState extends State<MapLocationPicker>
             ? SizedBox(
                 width: 22.w,
                 height: 22.w,
-                child: CircularProgressIndicator(
+                child: CircularProgressIndicator.adaptive(
                   strokeWidth: 2,
-                  color: AppColors.primary,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                 ),
               )
             : Icon(icon, color: AppColors.primary, size: 22.sp),

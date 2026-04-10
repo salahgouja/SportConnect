@@ -74,6 +74,7 @@ const _$NotificationTypeEnumMap = {
   NotificationType.streakMilestone: 'streakMilestone',
   NotificationType.leaderboardRank: 'leaderboardRank',
   NotificationType.xpEarned: 'xpEarned',
+  NotificationType.eventCancelled: 'eventCancelled',
   NotificationType.accountVerified: 'accountVerified',
   NotificationType.profileIncomplete: 'profileIncomplete',
   NotificationType.systemAlert: 'systemAlert',

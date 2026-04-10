@@ -20,6 +20,34 @@ class BookingRepository implements IBookingRepository {
 
   /// Create a new booking
   Future<String> createBooking(RideBooking booking) async {
+    // R-10: Validate the ride exists and is still accepting bookings.
+    final rideDoc = await _firestore
+        .collection(AppConstants.ridesCollection)
+        .doc(booking.rideId)
+        .get();
+    if (!rideDoc.exists) {
+      throw StateError('Ride ${booking.rideId} not found.');
+    }
+    final rideStatus = rideDoc.data()?['status'] as String?;
+    if (rideStatus != 'active' && rideStatus != 'scheduled') {
+      throw StateError(
+        'Cannot book a ride with status "$rideStatus". Only active or scheduled rides accept bookings.',
+      );
+    }
+
+    // R-11: Prevent duplicate active/pending bookings for the same passenger.
+    final existing = await _bookingsCollection
+        .where('passengerId', isEqualTo: booking.passengerId)
+        .where('rideId', isEqualTo: booking.rideId)
+        .where('status', whereIn: ['pending', 'accepted'])
+        .limit(1)
+        .get();
+    if (existing.docs.isNotEmpty) {
+      throw StateError(
+        'Passenger ${booking.passengerId} already has an active booking for ride ${booking.rideId}.',
+      );
+    }
+
     final docRef = _bookingsCollection.doc(booking.id);
     await docRef.set(booking);
     return booking.id;
@@ -98,6 +126,23 @@ class BookingRepository implements IBookingRepository {
     return query.docs.map((doc) => doc.data()).toList();
   }
 
+  /// Real-time stream of a passenger's own booking for a specific ride.
+  ///
+  /// Filters by [rideId] and [passengerId] so Firestore security rules can
+  /// verify `resource.data.passengerId == request.auth.uid`.
+  @override
+  Stream<List<RideBooking>> streamPassengerBookingForRide(
+    String rideId,
+    String passengerId,
+  ) {
+    return _bookingsCollection
+        .where('rideId', isEqualTo: rideId)
+        .where('passengerId', isEqualTo: passengerId)
+        .limit(1)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+  }
+
   /// Stream bookings for a specific passenger (real-time)
   Stream<List<RideBooking>> streamBookingsByPassengerId(String passengerId) {
     return _bookingsCollection
@@ -139,6 +184,7 @@ class BookingRepository implements IBookingRepository {
   }
 
   /// Delete booking
+  @override
   Future<void> deleteBooking(String bookingId) async {
     await _bookingsCollection.doc(bookingId).delete();
   }

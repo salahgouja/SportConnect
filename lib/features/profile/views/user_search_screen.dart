@@ -60,7 +60,7 @@ class UserSearchScreen extends ConsumerWidget {
                 boxShadow: AppSpacing.shadowSm,
               ),
               child: Icon(
-                Icons.arrow_back_ios_new_rounded,
+                Icons.adaptive.arrow_back_rounded,
                 size: 18.sp,
                 color: AppColors.textPrimary,
               ),
@@ -118,6 +118,7 @@ class UserSearchScreen extends ConsumerWidget {
           textInputAction: TextInputAction.search,
           style: TextStyle(fontSize: 16.sp, color: AppColors.textPrimary),
           decoration: InputDecoration(
+            labelText: AppLocalizations.of(context).searchUsers,
             hintText: AppLocalizations.of(context).searchUsers,
             hintStyle: TextStyle(
               fontSize: 16.sp,
@@ -253,7 +254,7 @@ class UserSearchScreen extends ConsumerWidget {
           SizedBox(
             width: 48.w,
             height: 48.w,
-            child: CircularProgressIndicator(
+            child: CircularProgressIndicator.adaptive(
               strokeWidth: 3,
               valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
             ),
@@ -353,7 +354,7 @@ class UserSearchScreen extends ConsumerWidget {
     List<UserModel> users,
     String query,
   ) {
-    return RefreshIndicator(
+    return RefreshIndicator.adaptive(
       onRefresh: () async {
         ref.invalidate(searchResultsProvider(query));
         await Future<void>.delayed(const Duration(milliseconds: 250));
@@ -369,12 +370,12 @@ class UserSearchScreen extends ConsumerWidget {
             HapticFeedback.lightImpact();
             if (user.role == UserRole.driver) {
               context.pushNamed(
-                AppRoutes.driverProfile.path,
+                AppRoutes.driverProfile.name,
                 pathParameters: {'userId': user.uid},
               );
             } else {
               context.pushNamed(
-                AppRoutes.profile.path,
+                AppRoutes.profile.name,
                 pathParameters: {'userId': user.uid},
               );
             }

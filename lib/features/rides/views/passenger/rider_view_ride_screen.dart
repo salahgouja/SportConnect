@@ -142,7 +142,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
         backgroundColor: AppColors.primary,
         title: Text(AppLocalizations.of(context).rideDetails),
       ),
-      body: const Center(child: CircularProgressIndicator()),
+      body: const Center(child: CircularProgressIndicator.adaptive()),
     );
   }
 
@@ -247,7 +247,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
             shape: BoxShape.circle,
           ),
           child: Icon(
-            Icons.arrow_back_ios_new_rounded,
+            Icons.adaptive.arrow_back_rounded,
             color: Colors.white,
             size: 18.sp,
           ),
@@ -263,7 +263,11 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
               color: Colors.black.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.share_rounded, color: Colors.white, size: 18.sp),
+            child: Icon(
+              Icons.adaptive.share_rounded,
+              color: Colors.white,
+              size: 18.sp,
+            ),
           ),
         ),
         SizedBox(width: 8.w),
@@ -873,7 +877,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
                   if (ride.distanceKm != null)
                     _buildDetailChip(
                       Icons.straighten_rounded,
-                      ref.watch(distanceFormatterProvider)(ride.distanceKm!),
+                      '${ride.distanceKm!.toStringAsFixed(1)} km',
                     ),
                   if (ride.durationMinutes != null)
                     _buildDetailChip(
@@ -888,17 +892,6 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
                       context,
                     ).valueSeats(ride.remainingSeats),
                   ),
-                  if (ride.isPriceNegotiable)
-                    _buildDetailChip(
-                      Icons.handshake_rounded,
-                      AppLocalizations.of(context).negotiable,
-                      highlight: true,
-                    ),
-                  if (ride.acceptsOnlinePayment)
-                    _buildDetailChip(
-                      Icons.credit_card_rounded,
-                      AppLocalizations.of(context).onlinePay,
-                    ),
                 ],
               ),
 
@@ -1158,7 +1151,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
                     child: SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator.adaptive(strokeWidth: 2),
                     ),
                   ),
                 ),
@@ -1296,8 +1289,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
     // Show "Complete Payment" only if they haven't paid yet;
     // once paidAt is stamped on the booking, show Confirmed instead.
     if (existingBooking != null &&
-        existingBooking.status == BookingStatus.accepted &&
-        ride.acceptsOnlinePayment) {
+        existingBooking.status == BookingStatus.accepted) {
       if (existingBooking.paidAt != null) {
         return _buildExistingBookingBar(
           label: AppLocalizations.of(context).bookingConfirmed,
@@ -1327,12 +1319,12 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
       );
     }
 
-    // Rider already has an accepted booking (cash ride) → show confirmed
+    // Booking was declined by driver → show status + allow re-booking
     if (existingBooking != null &&
-        existingBooking.status == BookingStatus.accepted) {
+        existingBooking.status == BookingStatus.rejected) {
       return _buildExistingBookingBar(
-        label: AppLocalizations.of(context).bookingConfirmed,
-        icon: Icons.check_circle_rounded,
+        label: AppLocalizations.of(context).bookingDeclined,
+        icon: Icons.cancel_rounded,
         onPressed: null,
         style: PremiumButtonStyle.secondary,
       );
@@ -1467,7 +1459,6 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 15,
-            offset: const Offset(0, -5),
           ),
         ],
       ),
@@ -1695,110 +1686,113 @@ class _BookingConfirmationSheetState extends State<_BookingConfirmationSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Padding(
-      padding: EdgeInsets.all(20.w),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40.w,
-              height: 4.h,
-              decoration: BoxDecoration(
-                color: AppColors.border,
-                borderRadius: BorderRadius.circular(2.r),
+    return SafeArea(
+      top: true,
+      child: Padding(
+        padding: EdgeInsets.all(20.w),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40.w,
+                height: 4.h,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2.r),
+                ),
               ),
             ),
-          ),
-          SizedBox(height: 20.h),
-          Text(
-            l10n.confirmBooking,
-            style: TextStyle(
-              fontSize: 20.sp,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+            SizedBox(height: 20.h),
+            Text(
+              l10n.confirmBooking,
+              style: TextStyle(
+                fontSize: 20.sp,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
             ),
-          ),
-          SizedBox(height: 16.h),
-          Container(
-            padding: EdgeInsets.all(16.w),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceVariant,
-              borderRadius: BorderRadius.circular(12.r),
+            SizedBox(height: 16.h),
+            Container(
+              padding: EdgeInsets.all(16.w),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceVariant,
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              child: Column(
+                children: [
+                  _buildRow(l10n.seats2, l10n.value2(widget.seatsToBook)),
+                  SizedBox(height: 8.h),
+                  _buildRow(
+                    l10n.pricePerSeat2,
+                    '\$${widget.ride.pricePerSeat.toStringAsFixed(0)}',
+                  ),
+                  SizedBox(height: 8.h),
+                  Divider(color: AppColors.divider),
+                  SizedBox(height: 8.h),
+                  _buildRow(
+                    l10n.total,
+                    '\$${(widget.ride.pricePerSeat * widget.seatsToBook).toStringAsFixed(0)}',
+                    isBold: true,
+                  ),
+                ],
+              ),
             ),
-            child: Column(
-              children: [
-                _buildRow(l10n.seats2, l10n.value2(widget.seatsToBook)),
-                SizedBox(height: 8.h),
-                _buildRow(
-                  l10n.pricePerSeat2,
-                  '\$${widget.ride.pricePerSeat.toStringAsFixed(0)}',
+            SizedBox(height: 16.h),
+            TextFormField(
+              initialValue: widget.initialNote,
+              onChanged: (v) => _noteText = v,
+              maxLength: 255,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: InputDecoration(
+                hintText: l10n.addANoteToThe,
+                hintStyle: TextStyle(
+                  fontSize: 13.sp,
+                  color: AppColors.textTertiary,
                 ),
-                SizedBox(height: 8.h),
-                Divider(color: AppColors.divider),
-                SizedBox(height: 8.h),
-                _buildRow(
-                  l10n.total,
-                  '\$${(widget.ride.pricePerSeat * widget.seatsToBook).toStringAsFixed(0)}',
-                  isBold: true,
+                filled: true,
+                fillColor: AppColors.inputFill,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                  borderSide: BorderSide.none,
+                ),
+                counterStyle: TextStyle(
+                  fontSize: 11.sp,
+                  color: AppColors.textTertiary,
+                ),
+                contentPadding: EdgeInsets.all(12.w),
+              ),
+              maxLines: 2,
+            ),
+            SizedBox(height: 20.h),
+            Row(
+              children: [
+                Expanded(
+                  child: PremiumButton(
+                    text: AppLocalizations.of(context).actionCancel,
+                    onPressed: () => Navigator.pop(context),
+                    style: PremiumButtonStyle.secondary,
+                  ),
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  flex: 2,
+                  child: PremiumButton(
+                    text: AppLocalizations.of(context).confirmBooking,
+                    onPressed: () {
+                      final note = _noteText;
+                      Navigator.pop(context);
+                      widget.onConfirm(note);
+                    },
+                    style: PremiumButtonStyle.primary,
+                  ),
                 ),
               ],
             ),
-          ),
-          SizedBox(height: 16.h),
-          TextFormField(
-            initialValue: widget.initialNote,
-            onChanged: (v) => _noteText = v,
-            maxLength: 255,
-            textCapitalization: TextCapitalization.sentences,
-            decoration: InputDecoration(
-              hintText: l10n.addANoteToThe,
-              hintStyle: TextStyle(
-                fontSize: 13.sp,
-                color: AppColors.textTertiary,
-              ),
-              filled: true,
-              fillColor: AppColors.inputFill,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12.r),
-                borderSide: BorderSide.none,
-              ),
-              counterStyle: TextStyle(
-                fontSize: 11.sp,
-                color: AppColors.textTertiary,
-              ),
-              contentPadding: EdgeInsets.all(12.w),
-            ),
-            maxLines: 2,
-          ),
-          SizedBox(height: 20.h),
-          Row(
-            children: [
-              Expanded(
-                child: PremiumButton(
-                  text: AppLocalizations.of(context).actionCancel,
-                  onPressed: () => Navigator.pop(context),
-                  style: PremiumButtonStyle.secondary,
-                ),
-              ),
-              SizedBox(width: 12.w),
-              Expanded(
-                flex: 2,
-                child: PremiumButton(
-                  text: AppLocalizations.of(context).confirmBooking,
-                  onPressed: () {
-                    final note = _noteText;
-                    Navigator.pop(context);
-                    widget.onConfirm(note);
-                  },
-                  style: PremiumButtonStyle.primary,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
-        ],
+            SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
+          ],
+        ),
       ),
     );
   }

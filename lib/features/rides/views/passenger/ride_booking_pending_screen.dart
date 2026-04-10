@@ -119,7 +119,7 @@ class _RideBookingPendingScreenState
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.textOnPrimary,
       ),
-      body: const Center(child: CircularProgressIndicator()),
+      body: const Center(child: CircularProgressIndicator.adaptive()),
     );
   }
 
@@ -151,9 +151,7 @@ class _RideBookingPendingScreenState
     PendingBookingViewModel notifier,
   ) {
     final isAcceptedNeedsPayment =
-        booking?.status == BookingStatus.accepted &&
-        ride.acceptsOnlinePayment &&
-        booking?.paidAt == null;
+        booking?.status == BookingStatus.accepted && booking?.paidAt == null;
     final hours = state.timeRemaining.inHours;
     final minutes = state.timeRemaining.inMinutes.remainder(60);
     final seconds = state.timeRemaining.inSeconds.remainder(60);
@@ -171,7 +169,12 @@ class _RideBookingPendingScreenState
         centerTitle: true,
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
+        padding: EdgeInsets.fromLTRB(
+          24.w,
+          32.h,
+          24.w,
+          32.h + MediaQuery.paddingOf(context).bottom,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -244,7 +247,7 @@ class _RideBookingPendingScreenState
                 Column(
                   children: [
                     SizedBox(height: 8.h),
-                    const CircularProgressIndicator(),
+                    const CircularProgressIndicator.adaptive(),
                     SizedBox(height: 12.h),
                     Text(
                       AppLocalizations.of(context).processingPaymentLoading,

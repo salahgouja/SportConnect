@@ -1,9 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
+import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
-import 'package:sport_connect/features/rides/models/ride_request_model.dart';
 
 part 'ride_request_service.g.dart';
 
@@ -22,208 +21,107 @@ class Failure<T> extends Result<T> {
   const Failure(this.message);
 }
 
-/// Ride request service - handles business logic
-/// Moved from model extensions to proper service layer
+/// Booking action service — handles driver accept/reject of pending bookings.
+///
+/// Replaces the old RideRequestService which maintained a separate
+/// `rideRequests` Firestore collection in parallel with `bookings`.
+/// Now there is only one source of truth: the `bookings` collection.
 @Riverpod(keepAlive: true)
 class RideRequestService extends _$RideRequestService {
   @override
   FutureOr<void> build() async {}
 
-  /// Accept a ride request
-  /// Business logic: validation, state updates, notifications
-  Future<Result<RideRequestModel>> acceptRequest(String requestId) async {
+  /// Accept a pending booking (driver action).
+  Future<Result<RideBooking>> acceptRequest(String bookingId) async {
     try {
-      // Get the repository
-      final repo = ref.read(rideRepositoryProvider);
-
-      // Get request
-      final request = await repo.getRideRequest(requestId);
-      if (request == null) {
-        return const Failure('Request not found');
+      final bookingRepo = ref.read(bookingRepositoryProvider);
+      final booking = await bookingRepo.getBookingById(bookingId);
+      if (booking == null) return const Failure('Booking not found');
+      if (booking.status != BookingStatus.pending) {
+        return const Failure('Booking already processed');
       }
 
-      // Validation
-      if (!request.isPending) {
-        return const Failure('Request already processed');
-      }
+      // Increment ride capacity and mark booking accepted atomically.
+      final statsRepo = ref.read(driverStatsRepositoryProvider);
+      await statsRepo.acceptRequest(booking.rideId, bookingId);
 
-      if (request.isExpired) {
-        return const Failure('Request has expired');
-      }
-
-      // Check ride capacity
-      final ride = await repo.getRideById(request.rideId);
-      if (ride == null) {
-        return const Failure('Ride not found');
-      }
-
-      if (!ride.capacity.canBook(request.requestedSeats)) {
-        return const Failure('Not enough seats available');
-      }
-
-      // Accept the request
-      final accepted = request.copyWith(
-        status: RideRequestStatus.accepted,
-        respondedAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-
-      // Update request
-      await repo.updateRideRequest(accepted);
-
-      // Update ride capacity atomically using FieldValue.increment so we
-      // don't overwrite fields written by concurrent bookings.
-      await repo.updateRideFields(request.rideId, {
-        'capacity.booked': FieldValue.increment(request.requestedSeats),
-      });
-
-      // Send notification to the requester that their request was accepted
-      await _sendAcceptedNotification(
-        requesterId: accepted.requesterId,
-        driverId: accepted.driverId,
-        rideId: accepted.rideId,
-        ride: ride,
-      );
-
-      return Success(accepted);
+      await _sendAcceptedNotification(booking);
+      return Success(booking.copyWith(status: BookingStatus.accepted));
     } catch (e) {
-      return Failure('Failed to accept request: $e');
+      return Failure('Failed to accept booking: $e');
     }
   }
 
-  /// Reject a ride request
-  Future<Result<RideRequestModel>> rejectRequest(
-    String requestId,
+  /// Reject a pending booking (driver action).
+  Future<Result<RideBooking>> rejectRequest(
+    String bookingId,
     String reason,
   ) async {
     try {
-      final repo = ref.read(rideRepositoryProvider);
-
-      final request = await repo.getRideRequest(requestId);
-      if (request == null) {
-        return const Failure('Request not found');
+      final bookingRepo = ref.read(bookingRepositoryProvider);
+      final booking = await bookingRepo.getBookingById(bookingId);
+      if (booking == null) return const Failure('Booking not found');
+      if (booking.status != BookingStatus.pending) {
+        return const Failure('Booking already processed');
       }
 
-      if (!request.isPending) {
-        return const Failure('Request already processed');
-      }
-
-      final rejected = request.copyWith(
-        status: RideRequestStatus.rejected,
-        rejectionReason: reason,
-        respondedAt: DateTime.now(),
-        updatedAt: DateTime.now(),
+      await bookingRepo.updateBookingStatus(
+        bookingId: bookingId,
+        newStatus: BookingStatus.rejected,
       );
 
-      await repo.updateRideRequest(rejected);
-
-      // Fetch ride info for the notification
-      final ride = await repo.getRideById(rejected.rideId);
-
-      // Send notification to the requester that their request was rejected
-      await _sendRejectedNotification(
-        requesterId: rejected.requesterId,
-        driverId: rejected.driverId,
-        rideId: rejected.rideId,
-        ride: ride,
-        reason: reason,
-      );
-
-      return Success(rejected);
+      await _sendRejectedNotification(booking, reason);
+      return Success(booking.copyWith(status: BookingStatus.rejected));
     } catch (e) {
-      return Failure('Failed to reject request: $e');
+      return Failure('Failed to reject booking: $e');
     }
   }
 
-  /// Cancel a ride request (by requester)
-  Future<Result<RideRequestModel>> cancelRequest(String requestId) async {
-    try {
-      final repo = ref.read(rideRepositoryProvider);
+  // ── Notification helpers ─────────────────────────────────────────────────
 
-      final request = await repo.getRideRequest(requestId);
-      if (request == null) {
-        return const Failure('Request not found');
-      }
-
-      if (!request.isPending) {
-        return const Failure('Cannot cancel processed request');
-      }
-
-      final cancelled = request.copyWith(
-        status: RideRequestStatus.cancelled,
-        updatedAt: DateTime.now(),
-      );
-
-      await repo.updateRideRequest(cancelled);
-
-      return Success(cancelled);
-    } catch (e) {
-      return Failure('Failed to cancel request: $e');
-    }
-  }
-
-  /// Check if request is active (helper)
-  bool isRequestActive(RideRequestModel request) {
-    return request.isPending && !request.isExpired;
-  }
-
-  /// Get active requests for a ride
-  Future<List<RideRequestModel>> getActiveRequests(String rideId) async {
-    final repo = ref.read(rideRepositoryProvider);
-    final requests = await repo.getRideRequests(rideId).first;
-    return requests.where((r) => isRequestActive(r)).toList();
-  }
-
-  // ==================== NOTIFICATION HELPERS ====================
-
-  /// Sends an accepted notification to the requester.
-  Future<void> _sendAcceptedNotification({
-    required String requesterId,
-    required String driverId,
-    required String rideId,
-    required RideModel? ride,
-  }) async {
+  Future<void> _sendAcceptedNotification(RideBooking booking) async {
     try {
       final notificationRepo = ref.read(notificationRepositoryProvider);
       final profileRepo = ref.read(profileRepositoryProvider);
+      final rideRepo = ref.read(rideRepositoryProvider);
 
-      final driver = await profileRepo.getUserById(driverId);
-      final rideName = _formatRideName(ride);
+      final driver = booking.driverId != null
+          ? await profileRepo.getUserById(booking.driverId!)
+          : null;
+      final ride = await rideRepo.getRideById(booking.rideId);
 
       await notificationRepo.sendRideBookingAccepted(
-        toUserId: requesterId,
+        toUserId: booking.passengerId,
         driverName: driver?.displayName ?? 'Driver',
         driverPhoto: driver?.photoUrl,
-        rideId: rideId,
-        rideName: rideName,
+        rideId: booking.rideId,
+        rideName: _formatRideName(ride),
       );
     } catch (e) {
-      // Notification failure should not break the main flow
       TalkerService.error('Failed to send accepted notification: $e');
     }
   }
 
-  /// Sends a rejected notification to the requester.
-  Future<void> _sendRejectedNotification({
-    required String requesterId,
-    required String driverId,
-    required String rideId,
-    required RideModel? ride,
+  Future<void> _sendRejectedNotification(
+    RideBooking booking,
     String? reason,
-  }) async {
+  ) async {
     try {
       final notificationRepo = ref.read(notificationRepositoryProvider);
       final profileRepo = ref.read(profileRepositoryProvider);
+      final rideRepo = ref.read(rideRepositoryProvider);
 
-      final driver = await profileRepo.getUserById(driverId);
-      final rideName = _formatRideName(ride);
+      final driver = booking.driverId != null
+          ? await profileRepo.getUserById(booking.driverId!)
+          : null;
+      final ride = await rideRepo.getRideById(booking.rideId);
 
       await notificationRepo.sendRideBookingRejected(
-        toUserId: requesterId,
+        toUserId: booking.passengerId,
         driverName: driver?.displayName ?? 'Driver',
         driverPhoto: driver?.photoUrl,
-        rideId: rideId,
-        rideName: rideName,
+        rideId: booking.rideId,
+        rideName: _formatRideName(ride),
         reason: reason,
       );
     } catch (e) {
@@ -231,7 +129,6 @@ class RideRequestService extends _$RideRequestService {
     }
   }
 
-  /// Formats a ride name for notification display.
   String _formatRideName(RideModel? ride) {
     if (ride == null) return 'ride';
     final origin = ride.origin.city ?? ride.origin.address;

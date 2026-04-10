@@ -191,6 +191,19 @@ class VehicleViewModel extends _$VehicleViewModel {
         throw Exception('User not authenticated');
       }
 
+      // Block deletion if the vehicle is used by an active/in-progress ride
+      final rideRepo = ref.read(rideRepositoryProvider);
+      final inUse = await rideRepo.hasActiveRidesForVehicle(vehicleId);
+      if (inUse) {
+        state = state.copyWith(
+          isLoading: false,
+          isSuccess: false,
+          errorMessage:
+              'This vehicle is linked to an active ride and cannot be deleted.',
+        );
+        return false;
+      }
+
       await repository.deleteVehicle(vehicleId);
 
       state = state.copyWith(

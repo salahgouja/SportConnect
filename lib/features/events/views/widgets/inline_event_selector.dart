@@ -52,119 +52,129 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
   // ── Trigger row ─────────────────────────────────────────────
   Widget _buildTrigger() {
     final hasEvent = widget.selected != null;
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        setState(() => _expanded = !_expanded);
-      },
-      child: AnimatedContainer(
-        duration: 200.ms,
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 13.h),
-        decoration: BoxDecoration(
+    return AnimatedContainer(
+      duration: 200.ms,
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 13.h),
+      decoration: BoxDecoration(
+        color: hasEvent
+            ? widget.selected!.type.color.withValues(alpha: 0.07)
+            : AppColors.surface,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(
           color: hasEvent
-              ? widget.selected!.type.color.withValues(alpha: 0.07)
-              : AppColors.surface,
-          borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(
-            color: hasEvent
-                ? widget.selected!.type.color
-                : _expanded
-                ? AppColors.primary
-                : AppColors.border,
-            width: hasEvent || _expanded ? 1.5 : 1,
+              ? widget.selected!.type.color
+              : _expanded
+              ? AppColors.primary
+              : AppColors.border,
+          width: hasEvent || _expanded ? 1.5 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            AnimatedSwitcher(
-              duration: 200.ms,
-              child: Icon(
-                hasEvent
-                    ? widget.selected!.type.icon
-                    : _expanded
-                    ? Icons.keyboard_arrow_up_rounded
-                    : Icons.event_rounded,
-                key: ValueKey(hasEvent ? widget.selected!.id : _expanded),
-                size: 20.sp,
-                color: hasEvent
-                    ? widget.selected!.type.color
-                    : _expanded
-                    ? AppColors.primary
-                    : AppColors.textTertiary,
-              ),
-            ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: hasEvent
-                  ? Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.selected!.title,
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          DateFormat(
-                            'EEE d MMM · HH:mm',
-                          ).format(widget.selected!.startsAt),
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    )
-                  : Text(
-                      _expanded
-                          ? 'Pick an event'
-                          : 'Link to a sport event  (optional)',
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        color: _expanded
-                            ? AppColors.textPrimary
-                            : AppColors.textTertiary,
-                      ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // ── Tappable expand zone ────────────────────────────
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                setState(() => _expanded = !_expanded);
+              },
+              behavior: HitTestBehavior.opaque,
+              child: Row(
+                children: [
+                  AnimatedSwitcher(
+                    duration: 200.ms,
+                    child: Icon(
+                      hasEvent
+                          ? widget.selected!.type.icon
+                          : _expanded
+                          ? Icons.keyboard_arrow_up_rounded
+                          : Icons.event_rounded,
+                      key: ValueKey(hasEvent ? widget.selected!.id : _expanded),
+                      size: 20.sp,
+                      color: hasEvent
+                          ? widget.selected!.type.color
+                          : _expanded
+                          ? AppColors.primary
+                          : AppColors.textTertiary,
                     ),
-            ),
-            if (hasEvent)
-              GestureDetector(
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  widget.onChanged(null);
-                  setState(() => _expanded = false);
-                },
-                behavior: HitTestBehavior.opaque,
-                child: Padding(
-                  padding: EdgeInsets.only(left: 8.w),
-                  child: Icon(
-                    Icons.close_rounded,
-                    size: 18.sp,
-                    color: AppColors.textTertiary,
                   ),
-                ),
-              )
-            else
-              Icon(
-                _expanded
-                    ? Icons.keyboard_arrow_up_rounded
-                    : Icons.keyboard_arrow_down_rounded,
-                size: 20.sp,
-                color: AppColors.textTertiary,
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: hasEvent
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                widget.selected!.title,
+                                style: TextStyle(
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimary,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                DateFormat(
+                                  'EEE d MMM · HH:mm',
+                                ).format(widget.selected!.startsAt),
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          )
+                        : Text(
+                            _expanded
+                                ? 'Pick an event'
+                                : 'Link to a sport event (optional)',
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              color: _expanded
+                                  ? AppColors.textPrimary
+                                  : AppColors.textTertiary,
+                            ),
+                          ),
+                  ),
+                  if (!hasEvent)
+                    Icon(
+                      _expanded
+                          ? Icons.keyboard_arrow_up_rounded
+                          : Icons.keyboard_arrow_down_rounded,
+                      size: 20.sp,
+                      color: AppColors.textTertiary,
+                    ),
+                ],
               ),
-          ],
-        ),
+            ),
+          ),
+
+          // ── Close button — isolated tap zone ────────────────
+          if (hasEvent)
+            GestureDetector(
+              onTap: () {
+                HapticFeedback.lightImpact();
+                widget.onChanged(null);
+                setState(() => _expanded = false);
+              },
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: EdgeInsets.only(left: 12.w),
+                child: Icon(
+                  Icons.close_rounded,
+                  size: 20.sp,
+                  color: AppColors.textTertiary,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -311,8 +321,13 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
     return GestureDetector(
       onTap: () {
         HapticFeedback.selectionClick();
-        widget.onChanged(isSelected ? null : event);
-        if (!isSelected) setState(() => _expanded = false);
+        if (isSelected) {
+          widget.onChanged(null);
+          // keep expanded so user can pick another
+        } else {
+          widget.onChanged(event);
+          setState(() => _expanded = false);
+        }
       },
       child: AnimatedContainer(
         duration: 200.ms,
@@ -349,7 +364,7 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
                 ),
                 if (isSelected)
                   Icon(
-                    Icons.check_circle_rounded,
+                    Icons.cancel_rounded,
                     size: 16.sp,
                     color: event.type.color,
                   ),

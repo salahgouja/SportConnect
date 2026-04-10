@@ -98,7 +98,7 @@ class _VehicleManagementScreenState
       loading: () => Scaffold(
         backgroundColor: AppColors.background,
         appBar: _buildAppBar(),
-        body: const Center(child: CircularProgressIndicator()),
+        body: const Center(child: CircularProgressIndicator.adaptive()),
       ),
       error: (e, _) => Scaffold(
         backgroundColor: AppColors.background,
@@ -122,7 +122,7 @@ class _VehicleManagementScreenState
             border: Border.all(color: AppColors.border),
           ),
           child: Icon(
-            Icons.arrow_back,
+            Icons.adaptive.arrow_back,
             color: AppColors.textPrimary,
             size: 20.w,
           ),
@@ -296,7 +296,7 @@ class _VehicleManagementScreenState
     showDialog(
       context: context,
       barrierLabel: AppLocalizations.of(context).deleteVehicle,
-      builder: (context) => AlertDialog(
+      builder: (context) => AlertDialog.adaptive(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
@@ -606,17 +606,17 @@ class _InfoChip extends StatelessWidget {
   }
 }
 
-class _AddVehicleSheet extends StatefulWidget {
+class _AddVehicleSheet extends ConsumerStatefulWidget {
   final VehicleModel? vehicle;
   final Function(VehicleModel) onSave;
 
   const _AddVehicleSheet({this.vehicle, required this.onSave});
 
   @override
-  State<_AddVehicleSheet> createState() => _AddVehicleSheetState();
+  ConsumerState<_AddVehicleSheet> createState() => _AddVehicleSheetState();
 }
 
-class _AddVehicleSheetState extends State<_AddVehicleSheet> {
+class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
   final _formKey = GlobalKey<FormBuilderState>();
 
   String get _providerKey => widget.vehicle?.id ?? '__new_vehicle__';
@@ -642,6 +642,7 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
     final picker = ImagePicker();
     final image = await picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
+      if (!mounted) return;
       final container = ProviderScope.containerOf(context, listen: false);
       container
           .read(addVehicleSheetUiViewModelProvider(_providerKey).notifier)
@@ -664,7 +665,7 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
     final values = _formKey.currentState!.value;
     final vehicle = VehicleModel(
       id: widget.vehicle?.id ?? '',
-      ownerId: widget.vehicle!.ownerId,
+      ownerId: widget.vehicle?.ownerId ?? '',
       make: (values['make'] as String).trim(),
       model: (values['model'] as String).trim(),
       year: int.parse((values['year'] as String).trim()),
@@ -686,10 +687,7 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.vehicle != null;
-    final container = ProviderScope.containerOf(context);
-    final uiState = container.read(
-      addVehicleSheetUiViewModelProvider(_providerKey),
-    );
+    final uiState = ref.watch(addVehicleSheetUiViewModelProvider(_providerKey));
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
@@ -870,11 +868,7 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
                         return Expanded(
                           child: GestureDetector(
                             onTap: () {
-                              final container = ProviderScope.containerOf(
-                                context,
-                                listen: false,
-                              );
-                              container
+                              ref
                                   .read(
                                     addVehicleSheetUiViewModelProvider(
                                       _providerKey,
@@ -934,11 +928,7 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
                         final isSelected = type == uiState.fuelType;
                         return GestureDetector(
                           onTap: () {
-                            final container = ProviderScope.containerOf(
-                              context,
-                              listen: false,
-                            );
-                            container
+                            ref
                                 .read(
                                   addVehicleSheetUiViewModelProvider(
                                     _providerKey,
@@ -1009,7 +999,7 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
                       ? SizedBox(
                           height: 20.h,
                           width: 20.h,
-                          child: const CircularProgressIndicator(
+                          child: const CircularProgressIndicator.adaptive(
                             strokeWidth: 2,
                             valueColor: AlwaysStoppedAnimation<Color>(
                               Colors.white,

@@ -160,7 +160,7 @@ class PremiumAppBar extends StatelessWidget implements PreferredSizeWidget {
                             : null,
                       ),
                       child: Icon(
-                        Icons.arrow_back_rounded,
+                        Icons.adaptive.arrow_back_rounded,
                         color: Colors.white,
                         size: 22.sp,
                       ),
@@ -218,7 +218,7 @@ class PremiumAppBar extends StatelessWidget implements PreferredSizeWidget {
               : null,
         ),
         child: Icon(
-          Icons.arrow_back_rounded,
+          Icons.adaptive.arrow_back_rounded,
           color: AppColors.textPrimary,
           size: 22.sp,
         ),
@@ -332,7 +332,7 @@ class PremiumHeroHeader extends StatelessWidget {
                                   : null,
                             ),
                             child: Icon(
-                              Icons.arrow_back_rounded,
+                              Icons.adaptive.arrow_back_rounded,
                               color: Colors.white,
                               size: 22.sp,
                             ),

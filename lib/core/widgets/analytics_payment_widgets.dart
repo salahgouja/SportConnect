@@ -1,6 +1,4 @@
 import 'dart:math' as math;
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -14,8 +12,6 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 /// Monthly ride summary card (#92)
 class MonthlyRideSummary extends StatelessWidget {
   final int totalRides;
-  final int asDriver;
-  final int asPassenger;
   final double totalSpent;
   final double totalEarned;
   final double totalDistance;
@@ -24,8 +20,6 @@ class MonthlyRideSummary extends StatelessWidget {
   const MonthlyRideSummary({
     super.key,
     required this.totalRides,
-    required this.asDriver,
-    required this.asPassenger,
     required this.totalSpent,
     required this.totalEarned,
     required this.totalDistance,
@@ -34,7 +28,6 @@ class MonthlyRideSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -76,18 +69,6 @@ class MonthlyRideSummary extends StatelessWidget {
                     color: Colors.white,
                   ),
                 ),
-              ),
-            ],
-          ),
-          SizedBox(height: 16.h),
-          Row(
-            children: [
-              _summaryTile('As Driver', '$asDriver', Icons.directions_car),
-              SizedBox(width: 8.w),
-              _summaryTile(
-                'As Rider',
-                '$asPassenger',
-                Icons.airline_seat_recline_normal,
               ),
             ],
           ),
@@ -521,17 +502,23 @@ class _RefundRequestSheetState extends State<RefundRequestSheet> {
             ),
           ),
           SizedBox(height: 8.h),
-          ...RefundReason.values.map(
-            (reason) => RadioListTile<RefundReason>(
-              value: reason,
-              groupValue: _reason,
-              onChanged: (v) => setState(() => _reason = v),
-              title: Text(
-                reason.localizedLabel(context),
-                style: TextStyle(fontSize: 14.sp),
-              ),
-              dense: true,
-              contentPadding: EdgeInsets.zero,
+          RadioGroup<RefundReason>(
+            groupValue: _reason,
+            onChanged: (v) => setState(() => _reason = v),
+            child: Column(
+              children: RefundReason.values
+                  .map(
+                    (reason) => RadioListTile<RefundReason>.adaptive(
+                      value: reason,
+                      title: Text(
+                        reason.localizedLabel(context),
+                        style: TextStyle(fontSize: 14.sp),
+                      ),
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  )
+                  .toList(),
             ),
           ),
           SizedBox(height: 12.h),

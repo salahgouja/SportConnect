@@ -119,7 +119,7 @@ class _DriverRatePassengerScreenState
         return _buildContent(ride, bookings, formState);
       },
       loading: () => _buildScaffold(
-        body: const Center(child: CircularProgressIndicator()),
+        body: const Center(child: CircularProgressIndicator.adaptive()),
       ),
       error: (e, _) => _buildScaffold(
         body: Center(child: Text(AppLocalizations.of(context).errorValue(e))),
@@ -419,7 +419,9 @@ class _DriverRatePassengerScreenState
                 child: SizedBox(
                   width: 16.w,
                   height: 16.w,
-                  child: const CircularProgressIndicator(strokeWidth: 2),
+                  child: const CircularProgressIndicator.adaptive(
+                    strokeWidth: 2,
+                  ),
                 ),
               ),
               error: (_, __) => CircleAvatar(

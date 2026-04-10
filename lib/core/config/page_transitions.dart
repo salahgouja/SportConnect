@@ -4,6 +4,10 @@ import 'package:go_router/go_router.dart';
 /// Custom page transitions for the app
 /// Provides smooth, premium-feeling animations
 
+Widget _wrapWithRouteSafeArea(Widget child) {
+  return SafeArea(top: true, bottom: true, child: child);
+}
+
 /// Fade transition - gentle and elegant
 class FadeTransitionPage<T> extends CustomTransitionPage<T> {
   FadeTransitionPage({required super.child, super.key, super.name})
@@ -11,9 +15,10 @@ class FadeTransitionPage<T> extends CustomTransitionPage<T> {
         transitionDuration: const Duration(milliseconds: 300),
         reverseTransitionDuration: const Duration(milliseconds: 250),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final wrappedChild = _wrapWithRouteSafeArea(child);
           return FadeTransition(
             opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
-            child: child,
+            child: wrappedChild,
           );
         },
       );
@@ -26,6 +31,7 @@ class SlideUpTransitionPage<T> extends CustomTransitionPage<T> {
         transitionDuration: const Duration(milliseconds: 350),
         reverseTransitionDuration: const Duration(milliseconds: 300),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final wrappedChild = _wrapWithRouteSafeArea(child);
           final slideAnimation =
               Tween<Offset>(
                 begin: const Offset(0, 0.15),
@@ -41,7 +47,7 @@ class SlideUpTransitionPage<T> extends CustomTransitionPage<T> {
 
           return SlideTransition(
             position: slideAnimation,
-            child: FadeTransition(opacity: fadeAnimation, child: child),
+            child: FadeTransition(opacity: fadeAnimation, child: wrappedChild),
           );
         },
       );
@@ -54,6 +60,7 @@ class SlideRightTransitionPage<T> extends CustomTransitionPage<T> {
         transitionDuration: const Duration(milliseconds: 300),
         reverseTransitionDuration: const Duration(milliseconds: 250),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final wrappedChild = _wrapWithRouteSafeArea(child);
           final slideAnimation =
               Tween<Offset>(
                 begin: const Offset(1, 0),
@@ -62,7 +69,7 @@ class SlideRightTransitionPage<T> extends CustomTransitionPage<T> {
                 CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
               );
 
-          return SlideTransition(position: slideAnimation, child: child);
+          return SlideTransition(position: slideAnimation, child: wrappedChild);
         },
       );
 }
@@ -74,6 +81,7 @@ class ScaleTransitionPage<T> extends CustomTransitionPage<T> {
         transitionDuration: const Duration(milliseconds: 300),
         reverseTransitionDuration: const Duration(milliseconds: 250),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final wrappedChild = _wrapWithRouteSafeArea(child);
           final scaleAnimation = Tween<double>(begin: 0.92, end: 1.0).animate(
             CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
           );
@@ -85,7 +93,7 @@ class ScaleTransitionPage<T> extends CustomTransitionPage<T> {
 
           return ScaleTransition(
             scale: scaleAnimation,
-            child: FadeTransition(opacity: fadeAnimation, child: child),
+            child: FadeTransition(opacity: fadeAnimation, child: wrappedChild),
           );
         },
       );
@@ -98,6 +106,7 @@ class ZoomFadeTransitionPage<T> extends CustomTransitionPage<T> {
         transitionDuration: const Duration(milliseconds: 400),
         reverseTransitionDuration: const Duration(milliseconds: 350),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final wrappedChild = _wrapWithRouteSafeArea(child);
           final scaleAnimation = Tween<double>(begin: 0.95, end: 1.0).animate(
             CurvedAnimation(parent: animation, curve: Curves.easeOutQuart),
           );
@@ -111,7 +120,7 @@ class ZoomFadeTransitionPage<T> extends CustomTransitionPage<T> {
 
           return FadeTransition(
             opacity: fadeAnimation,
-            child: ScaleTransition(scale: scaleAnimation, child: child),
+            child: ScaleTransition(scale: scaleAnimation, child: wrappedChild),
           );
         },
       );
@@ -128,6 +137,7 @@ class SharedAxisTransitionPage<T> extends CustomTransitionPage<T> {
          transitionDuration: const Duration(milliseconds: 350),
          reverseTransitionDuration: const Duration(milliseconds: 300),
          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+           final wrappedChild = _wrapWithRouteSafeArea(child);
            final slideAnimation =
                Tween<Offset>(
                  begin: Offset(horizontal ? 0.1 : 0, horizontal ? 0 : 0.1),
@@ -145,7 +155,7 @@ class SharedAxisTransitionPage<T> extends CustomTransitionPage<T> {
 
            return SlideTransition(
              position: slideAnimation,
-             child: FadeTransition(opacity: fadeAnimation, child: child),
+             child: FadeTransition(opacity: fadeAnimation, child: wrappedChild),
            );
          },
        );
@@ -158,7 +168,7 @@ class NoTransitionPage<T> extends CustomTransitionPage<T> {
         transitionDuration: Duration.zero,
         reverseTransitionDuration: Duration.zero,
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return child;
+          return _wrapWithRouteSafeArea(child);
         },
       );
 }

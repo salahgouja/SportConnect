@@ -210,7 +210,7 @@ return $default(_that.amount,_that.currency);case _:
 @JsonSerializable()
 
 class _Money extends Money {
-  const _Money({required this.amount, this.currency = 'USD'}): super._();
+  const _Money({required this.amount, this.currency = 'EUR'}): super._();
   factory _Money.fromJson(Map<String, dynamic> json) => _$MoneyFromJson(json);
 
 @override final  double amount;

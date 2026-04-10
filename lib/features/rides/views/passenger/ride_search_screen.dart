@@ -85,7 +85,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: RefreshIndicator(
+      body: RefreshIndicator.adaptive(
         onRefresh: _handlePullToRefresh,
         child: CustomScrollView(
           controller: _scrollController,
@@ -155,7 +155,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
         onPressed: () =>
             context.canPop() ? context.pop() : context.go(AppRoutes.home.path),
         icon: Icon(
-          Icons.arrow_back_ios_new_rounded,
+          Icons.adaptive.arrow_back_rounded,
           color: Colors.white,
           size: 20.sp,
         ),
@@ -515,7 +515,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
             ? SizedBox(
                 width: 20.w,
                 height: 20.w,
-                child: const CircularProgressIndicator(
+                child: const CircularProgressIndicator.adaptive(
                   strokeWidth: 2,
                   valueColor: AlwaysStoppedAnimation(Colors.white),
                 ),
@@ -1232,7 +1232,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                             ),
                             trackHeight: 4.h,
                           ),
-                          child: Slider(
+                          child: Slider.adaptive(
                             value: searchState.draftMaxPrice,
                             min: 5,
                             max: 100,

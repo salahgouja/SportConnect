@@ -9,6 +9,7 @@ import 'package:sport_connect/core/config/page_transitions.dart'
 import 'package:sport_connect/core/config/routes/route_params.dart';
 import 'package:sport_connect/core/config/routes/ride_routes.dart';
 import 'package:sport_connect/core/config/routes/profile_routes.dart';
+import 'package:sport_connect/core/config/routes/events_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/analytics_service.dart';
 import 'package:sport_connect/core/services/route_guard_service.dart';
@@ -26,12 +27,7 @@ import 'package:sport_connect/features/auth/views/rider_onboarding_screen.dart';
 import 'package:sport_connect/features/auth/views/forgot_password_screen.dart';
 import 'package:sport_connect/features/auth/views/email_verification_screen.dart';
 import 'package:sport_connect/features/auth/views/change_password_screen.dart';
-import 'package:sport_connect/features/events/views/create_event_screen.dart';
-import 'package:sport_connect/features/events/views/event_detail_screen.dart';
 import 'package:sport_connect/features/events/views/event_list_screen.dart';
-import 'package:sport_connect/features/events/views/edit_event_screen.dart';
-import 'package:sport_connect/features/events/views/my_events_screen.dart';
-import 'package:sport_connect/features/events/models/event_model.dart';
 
 // Feature imports - Home
 import 'package:sport_connect/features/home/views/rider_home_screen.dart';
@@ -58,6 +54,8 @@ import 'package:sport_connect/features/legal/views/legal_screen.dart';
 import 'package:sport_connect/features/onboarding/views/onboarding_screen.dart';
 import 'package:sport_connect/features/onboarding/repositories/onboarding_repository.dart';
 import 'package:sport_connect/features/payments/views/driver_earnings_screen.dart';
+import 'package:sport_connect/features/payments/views/premium_checkout_screen.dart';
+import 'package:sport_connect/features/payments/views/premium_subscribe_screen.dart';
 
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -135,6 +133,7 @@ String? _handleRedirect(
 /// Modular route configurations
 final _rideRoutes = RideRoutes();
 final _profileRoutes = ProfileRoutes();
+final _eventsRoutes = EventsRoutes();
 
 /// Build all application routes using modular route configurations
 List<RouteBase> _buildRoutes() {
@@ -154,14 +153,17 @@ List<RouteBase> _buildRoutes() {
     // Chat Routes (require complex extra parameters - keep inline)
     ..._buildChatRoutes(),
 
+    // Premium Subscription Routes
+    ..._buildPremiumRoutes(),
+
     // Profile Sub-Routes from modular config
     ..._profileRoutes.getRoutes().cast<GoRoute>(),
 
+    // Events Sub-Routes from modular config
+    ..._eventsRoutes.getRoutes().cast<GoRoute>(),
+
     // Review Routes
     ..._buildReviewRoutes(),
-
-    // Event Routes
-    ..._buildEventRoutes(),
   ];
 }
 
@@ -443,13 +445,27 @@ List<StatefulShellBranch> _buildDriverBranches() {
 // � CHAT ROUTES (Requires complex extra parameters - keep inline)
 // =============================================================================
 List<GoRoute> _buildChatRoutes() {
+  UserModel fallbackReceiver(GoRouterState state) {
+    final receiverId = state.params.getQueryOrDefault('receiverId', '');
+    final receiverName = state.params.getQueryOrDefault('receiverName', 'User');
+    final receiverPhoto = state.params.getQuery('receiverPhotoUrl');
+
+    return UserModel.rider(
+      uid: receiverId,
+      email: '',
+      displayName: receiverName,
+      photoUrl: receiverPhoto,
+    );
+  }
+
   return [
     GoRoute(
       path: AppRoutes.chatDetail.path,
       name: AppRoutes.chatDetail.name,
       pageBuilder: (context, state) {
         final chatId = state.params.getStringOrThrow('id');
-        final receiver = state.params.getExtraOrThrow<UserModel>();
+        final receiver =
+            state.params.getExtra<UserModel>() ?? fallbackReceiver(state);
         return SlideRightTransitionPage(
           key: state.pageKey,
           child: ChatDetailScreen(chatId: chatId, receiver: receiver),
@@ -461,7 +477,8 @@ List<GoRoute> _buildChatRoutes() {
       name: AppRoutes.chatGroup.name,
       pageBuilder: (context, state) {
         final groupId = state.params.getStringOrThrow('id');
-        final receiver = state.params.getExtraOrThrow<UserModel>();
+        final receiver =
+            state.params.getExtra<UserModel>() ?? fallbackReceiver(state);
         return SlideRightTransitionPage(
           key: state.pageKey,
           child: ChatDetailScreen(
@@ -477,7 +494,8 @@ List<GoRoute> _buildChatRoutes() {
       name: AppRoutes.chatRide.name,
       pageBuilder: (context, state) {
         final rideId = state.params.getStringOrThrow('id');
-        final receiver = state.params.getExtraOrThrow<UserModel>();
+        final receiver =
+            state.params.getExtra<UserModel>() ?? fallbackReceiver(state);
         return SlideRightTransitionPage(
           key: state.pageKey,
           child: ChatDetailScreen(
@@ -487,6 +505,30 @@ List<GoRoute> _buildChatRoutes() {
           ),
         );
       },
+    ),
+  ];
+}
+
+// =============================================================================
+// 💎 PREMIUM ROUTES
+// =============================================================================
+List<GoRoute> _buildPremiumRoutes() {
+  return [
+    GoRoute(
+      path: AppRoutes.premiumSubscribe.path,
+      name: AppRoutes.premiumSubscribe.name,
+      pageBuilder: (context, state) => SlideUpTransitionPage(
+        key: state.pageKey,
+        child: const PremiumSubscribeScreen(),
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.premiumCheckout.path,
+      name: AppRoutes.premiumCheckout.name,
+      pageBuilder: (context, state) => SlideUpTransitionPage(
+        key: state.pageKey,
+        child: const PremiumCheckoutScreen(),
+      ),
     ),
   ];
 }
@@ -550,60 +592,6 @@ List<GoRoute> _buildReviewRoutes() {
 // =============================================================================
 // 🏆 EVENT ROUTES
 // =============================================================================
-List<GoRoute> _buildEventRoutes() {
-  return [
-    // Create
-    GoRoute(
-      path: AppRoutes.createEvent.path,
-      name: AppRoutes.createEvent.name,
-      parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (context, state) => SlideUpTransitionPage(
-        key: state.pageKey,
-        child: const CreateEventScreen(),
-      ),
-    ),
-
-    // My Events
-    GoRoute(
-      path: AppRoutes.myEvents.path,
-      name: AppRoutes.myEvents.name,
-      parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (context, state) => SlideRightTransitionPage(
-        key: state.pageKey,
-        child: const MyEventsScreen(),
-      ),
-    ),
-
-    // Event Detail (must be after /events/create and /events/mine
-    // so GoRouter matches specific paths first)
-    GoRoute(
-      path: AppRoutes.eventDetail.path,
-      name: AppRoutes.eventDetail.name,
-      parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (context, state) {
-        final eventId = state.params.getStringOrThrow('id');
-        return SlideRightTransitionPage(
-          key: state.pageKey,
-          child: EventDetailScreen(eventId: eventId),
-        );
-      },
-    ),
-
-    // Edit Event
-    GoRoute(
-      path: AppRoutes.editEvent.path,
-      name: AppRoutes.editEvent.name,
-      parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (context, state) {
-        final event = state.params.getExtraOrThrow<EventModel>();
-        return SlideUpTransitionPage(
-          key: state.pageKey,
-          child: EditEventScreen(event: event),
-        );
-      },
-    ),
-  ];
-}
 
 // 🔔 ROUTER REFRESH LISTENABLE
 // =============================================================================

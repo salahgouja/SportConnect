@@ -101,7 +101,7 @@ class PermissionDialogHelper {
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => AlertDialog.adaptive(
         backgroundColor: AppColors.surface.withValues(
           alpha: PlatformAdaptive.dialogAlpha,
         ),

@@ -139,12 +139,6 @@ abstract class RideModel with _$RideModel {
   /// Arrival time
   DateTime? get arrivalTime => schedule.arrivalTime;
 
-  /// Is price negotiable (delegates to pricing)
-  bool get isPriceNegotiable => pricing.isNegotiable;
-
-  /// Accepts online payment (delegates to pricing)
-  bool get acceptsOnlinePayment => pricing.acceptsOnlinePayment;
-
   ///Is ride full
   bool get isFull => capacity.isFull;
 

@@ -72,7 +72,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
     if (bookingAsync.isLoading) {
       return _buildScaffold(
         title: AppLocalizations.of(context).yourRide,
-        body: const Center(child: CircularProgressIndicator()),
+        body: const Center(child: CircularProgressIndicator.adaptive()),
       );
     }
 
@@ -109,7 +109,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
     if (vmState == null) {
       return _buildScaffold(
         title: AppLocalizations.of(context).yourRide,
-        body: const Center(child: CircularProgressIndicator()),
+        body: const Center(child: CircularProgressIndicator.adaptive()),
       );
     }
 
@@ -124,7 +124,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
           : _buildContent(ride, booking, uiState),
       loading: () => _buildScaffold(
         title: AppLocalizations.of(context).yourRide,
-        body: const Center(child: CircularProgressIndicator()),
+        body: const Center(child: CircularProgressIndicator.adaptive()),
       ),
       error: (e, _) => _buildScaffold(
         title: AppLocalizations.of(context).yourRide,

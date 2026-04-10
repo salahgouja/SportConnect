@@ -11,13 +11,13 @@ abstract class Money with _$Money {
 
   const factory Money({
     required double amount,
-    @Default('USD') String currency,
+    @Default('EUR') String currency,
   }) = _Money;
 
   factory Money.fromJson(Map<String, dynamic> json) => _$MoneyFromJson(json);
 
   /// Create zero money
-  factory Money.zero([String currency = 'USD']) =>
+  factory Money.zero([String currency = 'EUR']) =>
       Money(amount: 0, currency: currency);
 
   /// Formatted display
@@ -94,18 +94,12 @@ abstract class Money with _$Money {
 
   String _getCurrencySymbol(String currencyCode) {
     switch (currencyCode.toUpperCase()) {
-      case 'USD':
-        return '\$';
       case 'EUR':
         return '€';
+      case 'USD':
+        return '\$';
       case 'GBP':
         return '£';
-      case 'JPY':
-        return '¥';
-      case 'CAD':
-        return 'C\$';
-      case 'AUD':
-        return 'A\$';
       default:
         return currencyCode;
     }

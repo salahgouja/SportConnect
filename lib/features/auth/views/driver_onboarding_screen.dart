@@ -105,6 +105,7 @@ class _DriverOnboardingScreenState
       'city': user.city ?? '',
       'gender': user.gender,
       'dob': user.dateOfBirth,
+      'expertise': user.expertise,
     });
   }
 
@@ -133,6 +134,7 @@ class _DriverOnboardingScreenState
             '',
         gender: values['gender'],
         dateOfBirth: values['dob'],
+        expertise: values['expertise'] ?? Expertise.rookie,
       ),
     );
 
@@ -258,7 +260,7 @@ class _DriverOnboardingScreenState
                 onPressed: () =>
                     _previousStep(vmState, skipProfileStep: skipProfileStep),
                 icon: Icon(
-                  Icons.arrow_back_ios_new_rounded,
+                  Icons.adaptive.arrow_back_rounded,
                   color: AppColors.textPrimary,
                   size: 20.sp,
                 ),
@@ -267,7 +269,7 @@ class _DriverOnboardingScreenState
                 tooltip: AppLocalizations.of(context).goBackTooltip,
                 onPressed: () => context.go(AppRoutes.roleSelection.path),
                 icon: Icon(
-                  Icons.arrow_back_ios_new_rounded,
+                  Icons.adaptive.arrow_back_rounded,
                   color: AppColors.textPrimary,
                   size: 20.sp,
                 ),
@@ -563,6 +565,26 @@ class _DriverOnboardingScreenState
                 },
               ]),
             ),
+            SizedBox(height: 16.h),
+
+            // Expertise level
+            FormBuilderDropdown<Expertise>(
+              name: 'expertise',
+              initialValue: Expertise.rookie,
+              decoration: InputDecoration(
+                labelText: l10n.expertiseLevel,
+                prefixIcon: Icon(Icons.workspace_premium_rounded),
+              ),
+              items: Expertise.values
+                  .map(
+                    (e) =>
+                        DropdownMenuItem(value: e, child: Text(e.displayName)),
+                  )
+                  .toList(),
+              validator: FormBuilderValidators.required(
+                errorText: l10n.expertiseLevelRequired,
+              ),
+            ),
             SizedBox(height: 20.h),
 
             // Terms checkbox
@@ -585,7 +607,7 @@ class _DriverOnboardingScreenState
                 isLoading: vmState.isLoading,
                 style: PremiumButtonStyle.primary,
                 size: PremiumButtonSize.large,
-                trailingIcon: Icons.arrow_forward_rounded,
+                trailingIcon: Icons.adaptive.arrow_forward_rounded,
               ),
             ).animate().fadeIn(duration: 400.ms, delay: 450.ms),
 
@@ -760,7 +782,7 @@ class _DriverOnboardingScreenState
                 isLoading: vmState.isLoading,
                 style: PremiumButtonStyle.primary,
                 size: PremiumButtonSize.large,
-                trailingIcon: Icons.arrow_forward_rounded,
+                trailingIcon: Icons.adaptive.arrow_forward_rounded,
               ),
             ).animate().fadeIn(duration: 400.ms, delay: 400.ms),
 
@@ -843,55 +865,6 @@ class _DriverOnboardingScreenState
           ).animate().fadeIn(duration: 400.ms, delay: 200.ms),
 
           SizedBox(height: 16.h),
-
-          // Skip button
-          SizedBox(
-            width: double.infinity,
-            child: TextButton(
-              onPressed: _skipStripeForNow,
-              child: Text(
-                AppLocalizations.of(context).skipForNowILl,
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  color: AppColors.textSecondary,
-                  decoration: TextDecoration.underline,
-                ),
-              ),
-            ),
-          ).animate().fadeIn(duration: 400.ms, delay: 250.ms),
-
-          SizedBox(height: 16.h),
-
-          // Info note
-          Container(
-            padding: EdgeInsets.all(16.w),
-            decoration: BoxDecoration(
-              color: AppColors.info.withAlpha(15),
-              borderRadius: BorderRadius.circular(12.r),
-              border: Border.all(color: AppColors.info.withAlpha(30)),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  Icons.info_outline_rounded,
-                  color: AppColors.info,
-                  size: 20.sp,
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: Text(
-                    AppLocalizations.of(context).youCanStillOfferRides,
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      color: AppColors.textSecondary,
-                      height: 1.4,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ).animate().fadeIn(duration: 400.ms, delay: 300.ms),
         ],
       ),
     );

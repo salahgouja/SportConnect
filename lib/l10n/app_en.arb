@@ -3434,6 +3434,14 @@
   "@searchConversations": {
     "description": "Hint text for chat search field"
   },
+  "searchChatsOrPeople": "Search chats or people",
+  "@searchChatsOrPeople": {
+    "description": "Hint text for chat inbox search field"
+  },
+  "peopleResults": "People",
+  "@peopleResults": {
+    "description": "Section title for people found while searching chats"
+  },
   "direct": "Direct",
   "@direct": {
     "description": "Tab label for direct/private chats"
@@ -3723,6 +3731,8 @@
   "driverCityHint": "Where are you based?",
   "driverCityRequired": "Please enter your city",
   "driverGenderRequired": "Please select your gender.",
+  "expertiseLevel": "Expertise Level",
+  "expertiseLevelRequired": "Please select your expertise level.",
   "driverInterestsRequired": "Please select at least one interest.",
   "driverTermsLabel": "I agree to the Terms of Service and Privacy Policy.",
   "driverTermsRequired": "You must accept Terms and Privacy to continue.",
@@ -3971,7 +3981,7 @@
   "supportsImagesHint": "Supports images (max 10MB each)",
   "submitReportButton": "Submit Report",
   "reportSubmittedTitle": "Report Submitted",
-  "reportSubmittedMessage": "Thank you for reporting this issue. Our safety team will review it and take appropriate action within 24-48 hours.",
+  "reportSubmittedMessage": "Thank you for reporting this issue. Our safety team will review it and take appropriate action within 24-48 hours. You will receive an email when your issue is resolved.",
   "doneButton": "Done",
   "chooseFromGallery": "Choose from Gallery",
   "takeAPhoto": "Take a Photo",
@@ -4323,7 +4333,7 @@
   "submitTicketButton": "Submit Ticket",
   "responseTimeInfo": "Most inquiries are answered within 12-24 hours",
   "ticketSubmittedTitle": "Ticket Submitted!",
-  "ticketSubmittedMessage": "We've received your message and will get back to you within 24 hours. Check your email for updates.",
+  "ticketSubmittedMessage": "We've received your message and will get back to you within 24 hours. You will receive an email when your issue is resolved.",
   "findPeopleTitle": "Find People",
   "searchByNameHint": "Search by name",
   "clearSearchTooltip": "Clear search",
@@ -4438,6 +4448,19 @@
   },
   "userBlocked": "User has been blocked.",
   "couldNotBlockUserTryAgain": "Could not block user. Please try again.",
+  "unblockUser": "Unblock user",
+  "unblockUserDialogMessage": "Unblock {name}?",
+  "@unblockUserDialogMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "actionUnblock": "Unblock",
+  "userUnblocked": "User unblocked.",
+  "couldNotUnblockUserTryAgain": "Could not unblock user. Please try again.",
+  "youBlockedThisUser": "You blocked this user.",
   "actionBlock": "Block",
   "downloadReceipt": "Download Receipt",
   "notificationsAlreadyEnabled": "Notifications are already enabled.",

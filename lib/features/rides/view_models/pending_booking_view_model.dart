@@ -97,7 +97,6 @@ class PendingBookingState {
 
   bool get isAcceptedNeedsPayment =>
       booking?.status == BookingStatus.accepted &&
-      ride?.acceptsOnlinePayment == true &&
       booking?.paidAt == null;
 
   bool get isPending => booking?.status == BookingStatus.pending;
@@ -439,6 +438,7 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
         paymentIntentClientSecret: paymentData['clientSecret'] as String,
         customerId: customerId,
         ephemeralKeySecret: paymentData['ephemeralKey'] as String?,
+        currency: _currencyIsoCode(ride.currency ?? 'eur'),
       );
       if (!ref.mounted) {
         return;

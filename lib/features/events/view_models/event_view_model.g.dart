@@ -42,7 +42,7 @@ final class CreateEventFormViewModelProvider
 }
 
 String _$createEventFormViewModelHash() =>
-    r'c273f77ac4d6af7495785b8ddabea7a8543518aa';
+    r'be1e9758181bb5d31c0bc6ad1b4c18991523afd6';
 
 abstract class _$CreateEventFormViewModel
     extends $Notifier<CreateEventFormState> {
@@ -114,7 +114,7 @@ final class EditEventFormViewModelProvider
 }
 
 String _$editEventFormViewModelHash() =>
-    r'7b0129a1ae91a82deed7a9dc0261d0803e6a9930';
+    r'0da64fa5e165f9d7e15c0573401332ac4dcbea21';
 
 final class EditEventFormViewModelFamily extends $Family
     with
@@ -195,7 +195,7 @@ final class EventSelectionViewModelProvider
 }
 
 String _$eventSelectionViewModelHash() =>
-    r'47fb1a89f782021e463700637fd2cb5a963f536b';
+    r'2eb5c069f416862657ea95f94cac7894c97a27ec';
 
 abstract class _$EventSelectionViewModel
     extends $Notifier<EventSelectionState> {
@@ -266,7 +266,7 @@ final class EventDetailViewModelProvider
 }
 
 String _$eventDetailViewModelHash() =>
-    r'1e7270affe5638e2a5c8dfd2b6fa05e2e75aefa1';
+    r'd9a644929ec12a18272bc9491d59aeb34c2505de';
 
 final class EventDetailViewModelFamily extends $Family
     with
@@ -360,7 +360,7 @@ final class EventListViewModelProvider
 }
 
 String _$eventListViewModelHash() =>
-    r'e5b77b90af82332a846a7e6155b6e60a92d79b51';
+    r'3a387e49b952a311de87e64d62a6d18057464e1a';
 
 /// ViewModel for the event list screen.
 ///

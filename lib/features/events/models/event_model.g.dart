@@ -17,7 +17,6 @@ _EventModel _$EventModelFromJson(Map json) => _EventModel(
   startsAt: const RequiredTimestampConverter().fromJson(json['startsAt']),
   endsAt: const TimestampConverter().fromJson(json['endsAt']),
   description: json['description'] as String?,
-  venueName: json['venueName'] as String?,
   organizerName: json['organizerName'] as String?,
   imageUrl: json['imageUrl'] as String?,
   participantIds:
@@ -44,11 +43,10 @@ _EventModel _$EventModelFromJson(Map json) => _EventModel(
         ),
   chatGroupId: json['chatGroupId'] as String?,
   isRecurring: json['isRecurring'] as bool? ?? false,
-  recurringDays:
-      (json['recurringDays'] as List<dynamic>?)
-          ?.map((e) => (e as num).toInt())
-          .toList() ??
-      const [],
+  recurringPattern: $enumDecodeNullable(
+    _$RecurrencePatternEnumMap,
+    json['recurringPattern'],
+  ),
   recurringEndDate: const TimestampConverter().fromJson(
     json['recurringEndDate'],
   ),
@@ -67,7 +65,6 @@ Map<String, dynamic> _$EventModelToJson(_EventModel instance) =>
       'startsAt': const RequiredTimestampConverter().toJson(instance.startsAt),
       'endsAt': const TimestampConverter().toJson(instance.endsAt),
       'description': instance.description,
-      'venueName': instance.venueName,
       'organizerName': instance.organizerName,
       'imageUrl': instance.imageUrl,
       'participantIds': instance.participantIds,
@@ -78,7 +75,7 @@ Map<String, dynamic> _$EventModelToJson(_EventModel instance) =>
       'meetupPinLocation': instance.meetupPinLocation?.toJson(),
       'chatGroupId': instance.chatGroupId,
       'isRecurring': instance.isRecurring,
-      'recurringDays': instance.recurringDays,
+      'recurringPattern': _$RecurrencePatternEnumMap[instance.recurringPattern],
       'recurringEndDate': const TimestampConverter().toJson(
         instance.recurringEndDate,
       ),
@@ -88,3 +85,11 @@ Map<String, dynamic> _$EventModelToJson(_EventModel instance) =>
     };
 
 const _$EventTypeEnumMap = {EventType.running: 'running'};
+
+const _$RecurrencePatternEnumMap = {
+  RecurrencePattern.daily: 'daily',
+  RecurrencePattern.weekly: 'weekly',
+  RecurrencePattern.biweekly: 'biweekly',
+  RecurrencePattern.monthly: 'monthly',
+  RecurrencePattern.yearly: 'yearly',
+};

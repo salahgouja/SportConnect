@@ -133,9 +133,9 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
       final status = settings.authorizationStatus;
 
       if (status == AuthorizationStatus.authorized ||
-          status == AuthorizationStatus.provisional)
+          status == AuthorizationStatus.provisional) {
         return;
-
+      }
       if (status == AuthorizationStatus.denied && alreadyAsked) return;
 
       await Future.delayed(const Duration(seconds: 1));
@@ -199,13 +199,19 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
     ref.listen<RiderHomeState>(riderHomeViewModelProvider, (previous, next) {
       if (next.locationState == LocationPermissionState.ready &&
           next.showMapView &&
-          next.isFollowingUser &&
           next.currentLocation != null) {
-        final vm = ref.read(riderHomeViewModelProvider.notifier);
-        if (vm.canMoveMap()) {
-          _mapController.move(next.currentLocation!, next.currentZoom);
-          vm.updateLastMapMoveTime(DateTime.now());
-        }
+        // Defer to next frame to ensure FlutterMap is rendered
+        Future.microtask(() {
+          try {
+            final vm = ref.read(riderHomeViewModelProvider.notifier);
+            if (vm.canMoveMap()) {
+              _mapController.move(next.currentLocation!, next.currentZoom);
+              vm.updateLastMapMoveTime(DateTime.now());
+            }
+          } catch (e) {
+            // MapController not ready yet; will retry on next location update
+          }
+        });
       }
     });
 
@@ -396,8 +402,8 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                 SizedBox(
                   width: 56.w,
                   height: 56.w,
-                  child: CircularProgressIndicator(
-                    color: AppColors.primary,
+                  child: CircularProgressIndicator.adaptive(
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                     strokeWidth: 3,
                   ),
                 ),
@@ -741,7 +747,6 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                 final vm = ref.read(riderHomeViewModelProvider.notifier);
                 final nextZoom = position.zoom;
                 vm.updateZoom(nextZoom);
-                vm.disableFollowingUser();
               }
             },
           ),
@@ -843,7 +848,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
           filteredNearbyRides.when(
             data: (rides) => rides.isEmpty
                 ? Positioned(
-                    top: 160.h,
+                    top: 120.h,
                     left: 0,
                     right: 0,
                     child: Center(
@@ -915,9 +920,9 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                     SizedBox(
                       width: 18.w,
                       height: 18.w,
-                      child: CircularProgressIndicator(
+                      child: CircularProgressIndicator.adaptive(
                         strokeWidth: 2,
-                        color: AppColors.primary,
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                       ),
                     ),
                     SizedBox(width: 12.w),
@@ -948,7 +953,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
         // ── Back to feed button ───────────────────────────────
         Positioned(
           left: 16.w,
-          bottom: 60.h,
+          bottom: 80.h,
           child: GestureDetector(
             onTap: () {
               HapticFeedback.mediumImpact();
@@ -1141,7 +1146,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
     ];
 
     return Positioned(
-      top: 100.h,
+      top: 66.h,
       left: 16.w,
       right: 16.w,
       child: SizedBox(
@@ -1241,13 +1246,12 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
     final showDistanceRadius = vmState.showDistanceRadius;
     final showHotspots = vmState.showHotspots;
     final showNearbyDrivers = vmState.showNearbyDrivers;
-    final isFollowingUser = vmState.isFollowingUser;
     final currentLocation = vmState.currentLocation;
     final currentZoom = vmState.currentZoom;
 
     return Positioned(
       right: 16.w,
-      top: 160.h,
+      top: 120.h,
       child: Column(
         children: [
           _buildMapControl(
@@ -1289,20 +1293,6 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
             },
           ),
           SizedBox(height: 8.h),
-          _buildMapControl(
-            icon: isFollowingUser ? Icons.gps_fixed : Icons.gps_not_fixed,
-            isActive: isFollowingUser,
-            tooltip: l10n.followLocation,
-            onTap: () {
-              HapticFeedback.mediumImpact();
-              final vm = ref.read(riderHomeViewModelProvider.notifier);
-              vm.toggleFollowingUser();
-              final newState = ref.read(riderHomeViewModelProvider);
-              if (newState.isFollowingUser && currentLocation != null) {
-                _mapController.move(currentLocation, currentZoom);
-              }
-            },
-          ),
           // Divider to visually separate navigation action from toggles
           Padding(
             padding: EdgeInsets.symmetric(vertical: 6.h),
@@ -1312,13 +1302,15 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
               color: AppColors.border.withValues(alpha: 0.6),
             ),
           ),
+          SizedBox(height: 8.h),
           _buildMapControl(
-            icon: Icons.emoji_events_outlined,
-            tooltip: l10n.events,
-            isNavigation: true,
+            icon: Icons.my_location,
+            tooltip: 'My Location',
             onTap: () {
               HapticFeedback.selectionClick();
-              context.push(AppRoutes.events.path);
+              ref
+                  .read(riderHomeViewModelProvider.notifier)
+                  .refetchCurrentLocation();
             },
           ),
         ],
@@ -1375,7 +1367,6 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
   }
 
   Widget _buildCurrentLocationMarker(RiderHomeState vmState) {
-    final isFollowingUser = vmState.isFollowingUser;
     final userHeading = vmState.userHeading;
 
     return AnimatedBuilder(
@@ -1383,17 +1374,6 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
       builder: (context, _) => Stack(
         alignment: Alignment.center,
         children: [
-          if (isFollowingUser)
-            Container(
-              width: 50.w * (1 + _pulseAnimationController.value * 0.3),
-              height: 50.w * (1 + _pulseAnimationController.value * 0.3),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(
-                  alpha: 0.2 * (1 - _pulseAnimationController.value),
-                ),
-                shape: BoxShape.circle,
-              ),
-            ),
           Container(
             width: 45.w,
             height: 45.w,
@@ -1587,7 +1567,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                 overlayColor: AppColors.primary.withValues(alpha: 0.2),
                 trackHeight: 4.h,
               ),
-              child: Slider(
+              child: Slider.adaptive(
                 value: searchRadius,
                 min: 1,
                 max: 25,
@@ -1950,6 +1930,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                             controller: fromCtrl,
                             onChanged: (_) => setModal(() {}),
                             decoration: InputDecoration(
+                              labelText: l10n.fromWhere,
                               hintText: l10n.fromWhere,
                               hintStyle: TextStyle(
                                 color: AppColors.textSecondary,
@@ -1972,6 +1953,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                             controller: toCtrl,
                             onChanged: (_) => setModal(() {}),
                             decoration: InputDecoration(
+                              labelText: l10n.toWhere,
                               hintText: l10n.toWhere,
                               hintStyle: TextStyle(
                                 color: AppColors.textSecondary,
@@ -2160,9 +2142,9 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                             loading: () => SizedBox(
                               width: 16.w,
                               height: 16.w,
-                              child: CircularProgressIndicator(
+                              child: CircularProgressIndicator.adaptive(
                                 strokeWidth: 2,
-                                color: AppColors.primary,
+                                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                               ),
                             ),
                             error: (_, _) => const SizedBox.shrink(),
@@ -2241,8 +2223,8 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                           );
                         },
                         loading: () => Center(
-                          child: CircularProgressIndicator(
-                            color: AppColors.primary,
+                          child: CircularProgressIndicator.adaptive(
+                            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                           ),
                         ),
                         error: (_, _) => Center(
@@ -2919,10 +2901,7 @@ class _ActiveTripBanner extends ConsumerWidget {
   ) {
     final l10n = AppLocalizations.of(context);
     final isInProgress = ride?.status == RideStatus.inProgress;
-    final needsPayment =
-        !isInProgress &&
-        booking.paymentIntentId == null &&
-        (ride?.acceptsOnlinePayment ?? false);
+    final needsPayment = !isInProgress && booking.paymentIntentId == null;
 
     final IconData icon;
     final String title;

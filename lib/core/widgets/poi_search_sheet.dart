@@ -287,7 +287,7 @@ class _POISearchSheetState extends State<POISearchSheet> {
               trackHeight: 4.h,
               thumbShape: RoundSliderThumbShape(enabledThumbRadius: 8.r),
             ),
-            child: Slider(
+            child: Slider.adaptive(
               value: _searchRadius,
               min: 500,
               max: 10000,

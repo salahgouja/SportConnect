@@ -20,7 +20,6 @@ import 'package:sport_connect/features/vehicles/view_models/vehicle_view_model.d
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
-import 'package:sport_connect/features/events/view_models/event_view_model.dart';
 import 'package:sport_connect/core/widgets/rating_and_profile_widgets.dart';
 import 'package:sport_connect/core/widgets/ride_feature_widgets.dart';
 import 'package:sport_connect/core/animations/feedback_animations.dart';
@@ -49,6 +48,7 @@ class DriverOfferRideScreen extends ConsumerStatefulWidget {
 class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   // Page controller (widget-local only)
   late PageController _pageController;
+  final MapController _mapController = MapController();
 
   // Shorthand accessor for form state
   DriverOfferRideFormState get _formState =>
@@ -65,8 +65,6 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   List<LocationPoint> get _waypoints => _formState.waypoints;
   int get _availableSeats => _formState.availableSeats;
   double get _pricePerSeat => _formState.pricePerSeat;
-  bool get _isPriceNegotiable => _formState.isPriceNegotiable;
-  bool get _acceptOnlinePayment => _formState.acceptOnlinePayment;
   bool get _isRecurring => _formState.isRecurring;
   List<int> get _recurringDays => _formState.recurringDays;
   bool get _allowPets => _formState.allowPets;
@@ -129,6 +127,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   @override
   void dispose() {
     _pageController.dispose();
+    _mapController.dispose();
     super.dispose();
   }
 
@@ -139,13 +138,23 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
 
     // Listen for submission errors to show feedback
     ref.listen(
-      driverOfferRideViewModelProvider.select((s) => s.submissionError),
+      driverOfferRideViewModelProvider.select((s) => s.osrmRoutePoints),
       (previous, next) {
-        if (next != null && next != previous && context.mounted) {
-          FeedbackAnimations.showError(context, message: next);
-          ref
-              .read(driverOfferRideViewModelProvider.notifier)
-              .clearSubmissionError();
+        if (next != null && next != previous) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final allPoints = [
+              LatLng(_fromLocation!.latitude, _fromLocation!.longitude),
+              ..._waypoints.map((w) => LatLng(w.latitude, w.longitude)),
+              LatLng(_toLocation!.latitude, _toLocation!.longitude),
+            ];
+            final bounds = LatLngBounds.fromPoints(allPoints);
+            _mapController.fitCamera(
+              CameraFit.bounds(
+                bounds: bounds,
+                padding: const EdgeInsets.all(48),
+              ),
+            );
+          });
         }
       },
     );
@@ -185,11 +194,13 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
 
           return vehiclesAsync.when(
             data: (vehicles) => _buildMainContent(context, vehicles),
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () =>
+                const Center(child: CircularProgressIndicator.adaptive()),
             error: (err, stack) => _buildErrorState(context, err.toString()),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () =>
+            const Center(child: CircularProgressIndicator.adaptive()),
         error: (err, stack) => _buildErrorState(context, err.toString()),
       ),
     );
@@ -203,7 +214,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         elevation: 0,
         leading: IconButton(
           tooltip: AppLocalizations.of(context).goBackTooltip,
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          icon: Icon(Icons.adaptive.arrow_back_rounded, size: 20),
           onPressed: () => context.pop(),
         ),
       ),
@@ -273,7 +284,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         elevation: 0,
         leading: IconButton(
           tooltip: AppLocalizations.of(context).goBackTooltip,
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          icon: Icon(Icons.adaptive.arrow_back_rounded, size: 20),
           onPressed: () => context.pop(),
         ),
       ),
@@ -352,7 +363,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
             children: [
               IconButton(
                 tooltip: AppLocalizations.of(context).backButton,
-                icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+                icon: Icon(Icons.adaptive.arrow_back_rounded, size: 20),
                 onPressed: () => context.pop(),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
@@ -475,19 +486,38 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         SizedBox(height: 20.h),
         _buildRouteCard(),
 
-        // Route map preview (appears when both locations set)
-        if (_fromLocation != null && _toLocation != null) ...[
-          SizedBox(height: 14.h),
-          _buildRoutePreview(),
-        ],
+        // Keep this slot stable to avoid remounting sibling widgets and
+        // replaying entrance animations when destination is cleared/restored.
+        AnimatedSwitcher(
+          duration: 220.ms,
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          child: _fromLocation != null && _toLocation != null
+              ? Column(
+                  key: const ValueKey('route-preview-visible'),
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(height: 14.h),
+                    _buildRoutePreview(),
+                    SizedBox(height: 14.h),
+                  ],
+                )
+              : SizedBox(
+                  key: const ValueKey('route-preview-hidden'),
+                  height: 14.h,
+                ),
+        ),
 
-        SizedBox(height: 14.h),
         _buildWaypointsSection(),
         SizedBox(height: 20.h),
         InlineEventSelector(
           selected: _selectedEvent,
           onChanged: (e) {
-            ref.read(driverOfferRideViewModelProvider.notifier).setEvent(e);
+            if (e == null) {
+              ref.read(driverOfferRideViewModelProvider.notifier).clearEvent();
+            } else {
+              ref.read(driverOfferRideViewModelProvider.notifier).setEvent(e);
+            }
           },
         ),
         SizedBox(height: 20.h),
@@ -495,6 +525,95 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         SizedBox(height: 20.h),
         _buildRecurringDaysSelector(),
       ],
+    );
+  }
+
+  Widget _buildDestinationOverlay() {
+    return Container(
+      height: 180.h,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: AppColors.borderLight),
+        color: AppColors.surface,
+      ),
+      child: Stack(
+        children: [
+          // Blurred/faded map hint using color
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16.r),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  AppColors.primary.withValues(alpha: 0.04),
+                  AppColors.primary.withValues(alpha: 0.08),
+                ],
+              ),
+            ),
+          ),
+          // Centered CTA
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(14.w),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.location_on_rounded,
+                    color: AppColors.primary,
+                    size: 28.sp,
+                  ),
+                ),
+                SizedBox(height: 10.h),
+                Text(
+                  AppLocalizations.of(context).selectDestinationTitle,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  AppLocalizations.of(context).selectDropoffLocation,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                SizedBox(height: 12.h),
+                TextButton.icon(
+                  onPressed: () => _selectLocation(isFrom: false),
+                  icon: Icon(Icons.add_location_alt_rounded, size: 16.sp),
+                  label: Text(
+                    AppLocalizations.of(context).toLabel,
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.08),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 8.h,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20.r),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -593,13 +712,30 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
       child: Stack(
         children: [
           FlutterMap(
+            mapController: _mapController,
             options: MapOptions(
               initialCenter: center,
               initialZoom: 10,
               interactionOptions: const InteractionOptions(
-                flags: InteractiveFlag.none,
+                flags: InteractiveFlag.all,
               ),
+
+              onMapReady: () {
+                final allPoints = [
+                  origin,
+                  ..._waypoints.map((w) => LatLng(w.latitude, w.longitude)),
+                  dest,
+                ];
+                final bounds = LatLngBounds.fromPoints(allPoints);
+                _mapController.fitCamera(
+                  CameraFit.bounds(
+                    bounds: bounds,
+                    padding: const EdgeInsets.all(48),
+                  ),
+                );
+              },
             ),
+
             children: [
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -678,9 +814,9 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                 child: SizedBox(
                   width: 16.w,
                   height: 16.w,
-                  child: CircularProgressIndicator(
+                  child: CircularProgressIndicator.adaptive(
                     strokeWidth: 2,
-                    color: AppColors.primary,
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                   ),
                 ),
               ),
@@ -1457,159 +1593,6 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
     }
   }
 
-  Widget _buildSeatsAndPrice() {
-    final l10n = AppLocalizations.of(context);
-    return Container(
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.borderLight),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          _buildSeatCounter(null),
-          Divider(height: 28.h, color: AppColors.borderLight),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.pricePerSeatLabel,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 15.sp,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  SizedBox(height: 2.h),
-                  Text(
-                    _pricePerSeat < 1
-                        ? l10n.minimumPriceError
-                        : l10n.totalPriceForSeats(
-                            (_pricePerSeat * _availableSeats).toStringAsFixed(
-                              0,
-                            ),
-                            _availableSeats,
-                          ),
-                    style: TextStyle(
-                      fontSize: 11.sp,
-                      color: _pricePerSeat < 1
-                          ? AppColors.error
-                          : AppColors.textSecondary,
-                      fontWeight: _pricePerSeat < 1
-                          ? FontWeight.w600
-                          : FontWeight.w400,
-                    ),
-                  ),
-                ],
-              ),
-              Container(
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant,
-                  borderRadius: BorderRadius.circular(12.r),
-                  border: Border.all(
-                    color: _pricePerSeat < 1
-                        ? AppColors.error
-                        : AppColors.border,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    IconButton(
-                      tooltip: l10n.decreasePriceTooltip,
-                      onPressed: _pricePerSeat > 1
-                          ? () {
-                              HapticFeedback.lightImpact();
-                              ref
-                                  .read(
-                                    driverOfferRideViewModelProvider.notifier,
-                                  )
-                                  .setPrice(_pricePerSeat - 1);
-                            }
-                          : null,
-                      icon: Icon(Icons.remove, size: 18.sp),
-                    ),
-                    SizedBox(
-                      width: 50.w,
-                      child: Text(
-                        '\$${_pricePerSeat.toInt()}',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 17.sp,
-                          color: _pricePerSeat < 1
-                              ? AppColors.error
-                              : AppColors.textPrimary,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: l10n.increasePriceTooltip,
-                      onPressed: _pricePerSeat < 999
-                          ? () {
-                              HapticFeedback.lightImpact();
-                              ref
-                                  .read(
-                                    driverOfferRideViewModelProvider.notifier,
-                                  )
-                                  .setPrice(_pricePerSeat + 1);
-                            }
-                          : null,
-                      icon: Icon(Icons.add, size: 18.sp),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 4.h),
-          SwitchListTile(
-            title: Text(
-              l10n.priceNegotiableToggle,
-              style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500),
-            ),
-            value: _isPriceNegotiable,
-            onChanged: (val) => ref
-                .read(driverOfferRideViewModelProvider.notifier)
-                .setPriceNegotiable(val),
-            activeColor: AppColors.primary,
-            dense: true,
-            contentPadding: EdgeInsets.zero,
-          ),
-          SwitchListTile(
-            title: Text(
-              l10n.acceptOnlinePaymentToggle,
-              style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500),
-            ),
-            value: _acceptOnlinePayment,
-            onChanged: (val) => ref
-                .read(driverOfferRideViewModelProvider.notifier)
-                .setAcceptOnlinePayment(val),
-            activeColor: AppColors.primary,
-            dense: true,
-            contentPadding: EdgeInsets.zero,
-          ),
-          SizedBox(height: 8.h),
-          RideEarningsPreview(
-            pricePerSeat: _pricePerSeat,
-            totalSeats: _availableSeats,
-            distanceKm: 15,
-          ),
-        ],
-      ),
-    ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0);
-  }
-
   Widget _buildSeatsAndPriceWithVehicle(List<VehicleModel> vehicles) {
     final l10n = AppLocalizations.of(context);
     final selectedVehicle = _selectedVehicle(vehicles);
@@ -1726,39 +1709,6 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
               ),
             ],
           ),
-          SizedBox(height: 4.h),
-          SwitchListTile(
-            title: Text(
-              l10n.priceNegotiableToggle,
-              style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500),
-            ),
-            value: _isPriceNegotiable,
-            onChanged: (val) => ref
-                .read(driverOfferRideViewModelProvider.notifier)
-                .setPriceNegotiable(val),
-            activeColor: AppColors.primary,
-            dense: true,
-            contentPadding: EdgeInsets.zero,
-          ),
-          SwitchListTile(
-            title: Text(
-              l10n.acceptOnlinePaymentToggle,
-              style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500),
-            ),
-            value: _acceptOnlinePayment,
-            onChanged: (val) => ref
-                .read(driverOfferRideViewModelProvider.notifier)
-                .setAcceptOnlinePayment(val),
-            activeColor: AppColors.primary,
-            dense: true,
-            contentPadding: EdgeInsets.zero,
-          ),
-          SizedBox(height: 8.h),
-          RideEarningsPreview(
-            pricePerSeat: _pricePerSeat,
-            totalSeats: _availableSeats,
-            distanceKm: 15,
-          ),
         ],
       ),
     ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0);
@@ -1768,66 +1718,68 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
     final l10n = AppLocalizations.of(context);
     final maxSeats = selectedVehicle?.capacity ?? 4;
 
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              l10n.availableSeatsLabel,
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 15.sp,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            Text(
-              l10n.totalCapacityCount(maxSeats),
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 12.sp),
-            ),
-          ],
+        Text(
+          l10n.availableSeatsLabel,
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 15.sp,
+            color: AppColors.textPrimary,
+          ),
         ),
-        const Spacer(),
-        Row(
-          children: [
-            for (int i = 1; i <= maxSeats; i++)
-              GestureDetector(
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  ref
-                      .read(driverOfferRideViewModelProvider.notifier)
-                      .setSeats(i);
-                },
-                child: Container(
-                  width: 34.w,
-                  height: 34.w,
-                  margin: EdgeInsets.only(left: 6.w),
-                  decoration: BoxDecoration(
-                    color: i <= _availableSeats
-                        ? AppColors.primary
-                        : AppColors.surfaceVariant,
-                    shape: BoxShape.circle,
-                    border: Border.all(
+        Text(
+          l10n.totalCapacityCount(maxSeats),
+          style: TextStyle(color: AppColors.textSecondary, fontSize: 12.sp),
+        ),
+        SizedBox(height: 12.h),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: EdgeInsets.zero,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              for (int i = 1; i <= maxSeats; i++)
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    ref
+                        .read(driverOfferRideViewModelProvider.notifier)
+                        .setSeats(i);
+                  },
+                  child: Container(
+                    width: 34.w,
+                    height: 34.w,
+                    margin: EdgeInsets.only(left: i == 1 ? 0 : 6.w),
+                    decoration: BoxDecoration(
                       color: i <= _availableSeats
                           ? AppColors.primary
-                          : AppColors.border,
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      '$i',
-                      style: TextStyle(
+                          : AppColors.surfaceVariant,
+                      shape: BoxShape.circle,
+                      border: Border.all(
                         color: i <= _availableSeats
-                            ? Colors.white
-                            : AppColors.textSecondary,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13.sp,
+                            ? AppColors.primary
+                            : AppColors.border,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '$i',
+                        style: TextStyle(
+                          color: i <= _availableSeats
+                              ? Colors.white
+                              : AppColors.textSecondary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13.sp,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ],
     );
@@ -1944,11 +1896,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
           _buildSummaryRow(
             Icons.attach_money_rounded,
             l10n.priceSummaryLabel,
-            _isPriceNegotiable
-                ? l10n.pricePerSeatNegotiableSummary(
-                    '\$${_pricePerSeat.toInt()}',
-                  )
-                : l10n.pricePerSeatSummary('\$${_pricePerSeat.toInt()}'),
+            l10n.pricePerSeatSummary('\$${_pricePerSeat.toInt()}'),
           ),
           if (_selectedEvent != null) ...[
             SizedBox(height: 8.h),
@@ -2090,7 +2038,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
             style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
           ),
           SizedBox(height: 8.h),
-          Slider(
+          Slider.adaptive(
             value: (_maxDetourMinutes ?? 0).toDouble(),
             min: 0,
             max: 60,
@@ -2198,7 +2146,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
-    return SwitchListTile(
+    return SwitchListTile.adaptive(
       value: value,
       onChanged: onChanged,
       title: Row(
@@ -2318,9 +2266,9 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                         ? SizedBox(
                             height: 18.w,
                             width: 18.w,
-                            child: const CircularProgressIndicator(
+                            child: const CircularProgressIndicator.adaptive(
                               strokeWidth: 2,
-                              color: Colors.white,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
                         : Text(

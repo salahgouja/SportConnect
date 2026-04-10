@@ -44,7 +44,7 @@ class LegalScreen extends ConsumerWidget {
                 border: Border.all(color: AppColors.border),
               ),
               child: Icon(
-                Icons.arrow_back_ios_new_rounded,
+                Icons.adaptive.arrow_back_rounded,
                 size: 18.sp,
                 color: AppColors.textPrimary,
               ),
@@ -115,8 +115,8 @@ class LegalScreen extends ConsumerWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      CircularProgressIndicator(
-                        color: AppColors.primary,
+                      CircularProgressIndicator.adaptive(
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                         strokeWidth: 2.5,
                       ),
                       SizedBox(height: 16.h),

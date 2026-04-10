@@ -43,7 +43,6 @@ class RiderHomeState {
     this.showHotspots = true,
     this.showDistanceRadius = false,
     this.searchRadius = 5.0,
-    this.isFollowingUser = true,
     this.selectedFilter = 'all',
     this.activeRoute,
     this.alternativeRoutes = const [],
@@ -69,7 +68,6 @@ class RiderHomeState {
   final bool showHotspots;
   final bool showDistanceRadius;
   final double searchRadius;
-  final bool isFollowingUser;
 
   // Filter state
   final String selectedFilter;
@@ -96,7 +94,6 @@ class RiderHomeState {
     bool? showHotspots,
     bool? showDistanceRadius,
     double? searchRadius,
-    bool? isFollowingUser,
     String? selectedFilter,
     RouteInfo? activeRoute,
     List<RouteInfo>? alternativeRoutes,
@@ -117,7 +114,6 @@ class RiderHomeState {
       showHotspots: showHotspots ?? this.showHotspots,
       showDistanceRadius: showDistanceRadius ?? this.showDistanceRadius,
       searchRadius: searchRadius ?? this.searchRadius,
-      isFollowingUser: isFollowingUser ?? this.isFollowingUser,
       selectedFilter: selectedFilter ?? this.selectedFilter,
       activeRoute: activeRoute ?? this.activeRoute,
       alternativeRoutes: alternativeRoutes ?? this.alternativeRoutes,
@@ -141,7 +137,6 @@ class RiderHomeState {
       showHotspots: showHotspots,
       showDistanceRadius: showDistanceRadius,
       searchRadius: searchRadius,
-      isFollowingUser: isFollowingUser,
       selectedFilter: selectedFilter,
       activeRoute: activeRoute,
       alternativeRoutes: alternativeRoutes,
@@ -165,7 +160,6 @@ class RiderHomeState {
       showHotspots: showHotspots,
       showDistanceRadius: showDistanceRadius,
       searchRadius: searchRadius,
-      isFollowingUser: isFollowingUser,
       selectedFilter: selectedFilter,
       activeRoute: null,
       alternativeRoutes: const [],
@@ -280,6 +274,32 @@ class RiderHomeViewModel extends _$RiderHomeViewModel {
     }
   }
 
+  /// Refresh current location without full acquisition
+  /// Useful for manual \"center on me\" button in map controls
+  Future<void> refetchCurrentLocation() async {
+    if (state.locationState != LocationPermissionState.ready) {
+      return;
+    }
+
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+
+      final loc = LatLng(position.latitude, position.longitude);
+
+      state = state.copyWith(
+        currentLocation: loc,
+        userHeading: position.heading,
+      );
+    } catch (e) {
+      TalkerService.error('Failed to refetch location: $e');
+    }
+  }
+
   /// Start continuous GPS tracking stream
   void _startLocationStream() {
     _positionStreamSubscription?.cancel();
@@ -374,18 +394,6 @@ class RiderHomeViewModel extends _$RiderHomeViewModel {
   void updateSearchRadius(double radius) {
     if (radius >= 1.0 && radius <= 25.0) {
       state = state.copyWith(searchRadius: radius);
-    }
-  }
-
-  /// Toggle user following mode
-  void toggleFollowingUser() {
-    state = state.copyWith(isFollowingUser: !state.isFollowingUser);
-  }
-
-  /// Disable following when user manually pans map
-  void disableFollowingUser() {
-    if (state.isFollowingUser) {
-      state = state.copyWith(isFollowingUser: false);
     }
   }
 

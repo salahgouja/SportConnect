@@ -1,11 +1,11 @@
 import 'dart:math' as math;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart' hide Query;
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_ride_repository.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
-import 'package:sport_connect/features/rides/models/ride_request_model.dart';
 
 /// Ride Repository for Firestore operations
 class RideRepository implements IRideRepository {
@@ -20,15 +20,6 @@ class RideRepository implements IRideRepository {
             RideModel.fromJson({...snap.data()!, 'id': snap.id}),
         toFirestore: (ride, _) => ride.toJson(),
       );
-
-  CollectionReference<RideRequestModel> get _rideRequestsCollection =>
-      _firestore
-          .collection(AppConstants.rideRequestsCollection)
-          .withConverter<RideRequestModel>(
-            fromFirestore: (snap, _) =>
-                RideRequestModel.fromJson({...snap.data()!, 'id': snap.id}),
-            toFirestore: (request, _) => request.toJson(),
-          );
 
   CollectionReference<RideBooking> get _rideBookingsCollection => _firestore
       .collection(AppConstants.bookingsCollection)
@@ -114,59 +105,17 @@ class RideRepository implements IRideRepository {
   }
 
   @override
-  Future<String> createRideRequest(RideRequestModel request) async {
-    final docRef = _rideRequestsCollection.doc();
-    var requestWithId = request.copyWith(id: docRef.id);
-    requestWithId = requestWithId.copyWith(
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
+  Future<String> createRideRequest(String rideId, RideBooking booking) async {
+    // Unified flow: creating a "request" simply creates a pending booking.
+    final docRef = _rideBookingsCollection.doc(
+      booking.id.isNotEmpty ? booking.id : null,
     );
-    await docRef.set(requestWithId);
+    final bookingWithId = booking.copyWith(
+      id: docRef.id,
+      createdAt: DateTime.now(),
+    );
+    await docRef.set(bookingWithId);
     return docRef.id;
-  }
-
-  @override
-  Future<void> acceptRideRequest(String requestId) async {
-    await _rideRequestsCollection.doc(requestId).update({
-      'status': RideRequestStatus.accepted.name,
-      'respondedAt': DateTime.now(),
-      'updatedAt': DateTime.now(),
-    });
-  }
-
-  @override
-  Future<void> rejectRideRequest(String requestId) async {
-    await _rideRequestsCollection.doc(requestId).update({
-      'status': RideRequestStatus.rejected.name,
-      'respondedAt': DateTime.now(),
-      'updatedAt': DateTime.now(),
-    });
-  }
-
-  @override
-  Future<RideRequestModel?> getRideRequest(String requestId) async {
-    final doc = await _rideRequestsCollection.doc(requestId).get();
-    return doc.data();
-  }
-
-  @override
-  Future<void> updateRideRequest(RideRequestModel request) async {
-    final json = request.toJson()
-      ..remove('id')
-      ..remove('createdAt');
-    json['updatedAt'] = DateTime.now();
-    await _rideRequestsCollection.doc(request.id).update(json);
-  }
-
-  @override
-  Stream<List<RideRequestModel>> getRideRequests(String rideId) {
-    return _rideRequestsCollection
-        .where('rideId', isEqualTo: rideId)
-        .where('status', isEqualTo: RideRequestStatus.pending.name)
-        .orderBy('createdAt', descending: true)
-        .limit(100)
-        .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 
   @override
@@ -179,6 +128,11 @@ class RideRepository implements IRideRepository {
     int? minSeats,
     double? maxPrice,
   }) async {
+    // R-2: A negative maxPrice silently hides all rides.
+    if (maxPrice != null && maxPrice < 0) {
+      throw ArgumentError('maxPrice must be >= 0 (got $maxPrice).');
+    }
+
     final radiusKm = 10.0;
     final latRange = radiusKm / 111.0;
 
@@ -238,6 +192,17 @@ class RideRepository implements IRideRepository {
         .get();
 
     return query.docs.map((doc) => doc.data()).toList();
+  }
+
+  /// Check if a vehicle is associated with any non-terminal ride.
+  @override
+  Future<bool> hasActiveRidesForVehicle(String vehicleId) async {
+    final snapshot = await _ridesCollection
+        .where('vehicleId', isEqualTo: vehicleId)
+        .where('status', whereIn: ['draft', 'active', 'full', 'inProgress'])
+        .limit(1)
+        .get();
+    return snapshot.docs.isNotEmpty;
   }
 
   /// Stream rides by driver (real-time)
@@ -427,32 +392,60 @@ class RideRepository implements IRideRepository {
       }
     }
 
+    // Generate a 4-digit OTP when accepting — shown to passenger, entered by driver.
+    // Use Random.secure() to prevent OTP prediction from a time-seeded RNG.
+    final pickupOtp = newStatus == BookingStatus.accepted
+        ? (1000 + math.Random.secure().nextInt(9000)).toString()
+        : null;
+
     // Update the booking document
     await _rideBookingsCollection.doc(bookingId).update({
       'status': newStatus.name,
       'respondedAt': DateTime.now(),
+      if (pickupOtp != null) 'pickupOtp': pickupOtp,
     });
 
-    // If accepted, reserve the seats on the ride and add pickup waypoint
+    // If accepted, reserve the seats on the ride and add pickup waypoint.
+    // R-6/R-7: Use a transaction so capacity check + increment and waypoint
+    // order assignment are atomic — preventing overselling and duplicate order
+    // values when two bookings are accepted concurrently.
     if (newStatus == BookingStatus.accepted) {
-      final updates = <String, dynamic>{
-        'capacity.booked': FieldValue.increment(seatsBooked),
-        'updatedAt': DateTime.now(),
-      };
+      await _firestore.runTransaction((txn) async {
+        final rideRef = _firestore
+            .collection(AppConstants.ridesCollection)
+            .doc(rideId);
+        final rideSnap = await txn.get(rideRef);
+        if (!rideSnap.exists) throw StateError('Ride $rideId not found.');
 
-      // Add passenger's pickup as a waypoint on the ride route
-      if (pickupLocationMap != null) {
-        // Read current waypoints count for ordering
-        final rideDoc = await _ridesCollection.doc(rideId).get();
-        final currentWaypointsCount =
-            (rideDoc.data()?.route.waypoints.length ?? 0);
+        final data = rideSnap.data()!;
+        final total = (data['capacity']?['total'] as int?) ?? 0;
+        final booked = (data['capacity']?['booked'] as int?) ?? 0;
+        final available = total - booked;
 
-        updates['route.waypoints'] = FieldValue.arrayUnion([
-          {'location': pickupLocationMap, 'order': currentWaypointsCount},
-        ]);
-      }
+        // R-6: Reject if not enough seats available at transaction time.
+        if (available < seatsBooked) {
+          throw StateError(
+            'Not enough seats: $available available, $seatsBooked requested.',
+          );
+        }
 
-      await _ridesCollection.doc(rideId).update(updates);
+        final updates = <String, dynamic>{
+          'capacity.booked': FieldValue.increment(seatsBooked),
+          'updatedAt': DateTime.now(),
+        };
+
+        // R-7: Derive waypoint order inside the transaction using the
+        // snapshot's current count — eliminates the duplicate-order race.
+        if (pickupLocationMap != null) {
+          final waypointsList = (data['route']?['waypoints'] as List?) ?? [];
+          final nextOrder = waypointsList.length;
+          updates['route.waypoints'] = FieldValue.arrayUnion([
+            {'location': pickupLocationMap, 'order': nextOrder},
+          ]);
+        }
+
+        txn.update(rideRef, updates);
+      });
     }
 
     // Free up seats ONLY if the booking was previously accepted (i.e. seats
@@ -568,6 +561,31 @@ class RideRepository implements IRideRepository {
   /// `RideSchedule` model structure (not at the document root level).
   @override
   Future<void> completeRide(String rideId) async {
+    // R-4: Warn if any accepted passenger was never picked up (OTP not confirmed).
+    final rideDoc = await _firestore
+        .collection(AppConstants.ridesCollection)
+        .doc(rideId)
+        .get();
+    if (rideDoc.exists) {
+      final pickedUp = List<String>.from(
+        rideDoc.data()?['pickedUpPassengers'] as List? ?? [],
+      );
+      final acceptedBookings = await _rideBookingsCollection
+          .where('rideId', isEqualTo: rideId)
+          .where('status', isEqualTo: BookingStatus.accepted.name)
+          .get();
+      final notPickedUp = acceptedBookings.docs
+          .map((d) => d.data().passengerId)
+          .where((pid) => !pickedUp.contains(pid))
+          .toList();
+      if (notPickedUp.isNotEmpty) {
+        throw StateError(
+          'Cannot complete ride: ${notPickedUp.length} accepted passenger(s) '
+          'have not been picked up (OTP not confirmed).',
+        );
+      }
+    }
+
     await _ridesCollection.doc(rideId).update({
       'status': RideStatus.completed.name,
       'ridePhase': 'completed',
@@ -596,35 +614,57 @@ class RideRepository implements IRideRepository {
     });
   }
 
-  /// Writes the driver's current GPS coordinates to the ride document.
+  /// Writes the driver's current GPS coordinates to Firebase Realtime Database.
   ///
-  /// Failures are expected to be swallowed by the caller \u2014 a missed
-  /// location ping must not interrupt the navigation flow.
+  /// RTDB is used instead of Firestore for live location because:
+  /// - ~10x cheaper (charged per GB transferred, not per write operation)
+  /// - ~50-150ms latency vs Firestore's ~300-1000ms for real-time
+  /// - Designed for high-frequency data; no per-write billing pressure
   Future<void> updateLiveLocation(
     String rideId,
     double latitude,
-    double longitude,
-  ) async {
-    await _ridesCollection.doc(rideId).update({
-      'liveLocation': GeoPoint(latitude, longitude),
-      'lastLocationUpdate': DateTime.now(),
+    double longitude, {
+    double heading = 0,
+  }) async {
+    await FirebaseDatabase.instance.ref('liveLocations/$rideId').update({
+      'lat': latitude,
+      'lng': longitude,
+      'heading': heading,
+      'ts': DateTime.now().millisecondsSinceEpoch,
     });
   }
 
-  /// Streams the driver's live GPS location from the ride document.
+  /// Streams the driver's live GPS location from Firebase Realtime Database.
   @override
   Stream<({double latitude, double longitude})?> streamLiveLocation(
     String rideId,
   ) {
-    return _firestore.collection('rides').doc(rideId).snapshots().map((
-      snapshot,
+    return FirebaseDatabase.instance.ref('liveLocations/$rideId').onValue.map((
+      event,
     ) {
-      final data = snapshot.data();
+      final data = event.snapshot.value as Map<dynamic, dynamic>?;
       if (data == null) return null;
-      final geoPoint = data['liveLocation'] as GeoPoint?;
-      if (geoPoint == null) return null;
-      return (latitude: geoPoint.latitude, longitude: geoPoint.longitude);
+      final lat = (data['lat'] as num?)?.toDouble();
+      final lng = (data['lng'] as num?)?.toDouble();
+      if (lat == null || lng == null) return null;
+      return (latitude: lat, longitude: lng);
     });
+  }
+
+  // ==================== REAL-TIME EXTRA FIELDS ====================
+
+  /// Streams the list of passenger IDs the driver has confirmed as picked up.
+  @override
+  Stream<List<String>> streamPickedUpPassengers(String rideId) {
+    return _firestore
+        .collection('rides')
+        .doc(rideId)
+        .snapshots()
+        .map(
+          (snap) => List<String>.from(
+            snap.data()?['pickedUpPassengers'] as List? ?? [],
+          ),
+        );
   }
 
   // Helper methods

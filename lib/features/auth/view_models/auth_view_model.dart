@@ -89,6 +89,7 @@ class SignupWizardUiState {
     this.profileImage,
     this.dateOfBirth,
     this.phoneNumber,
+    this.expertise = Expertise.rookie,
   });
 
   final int currentStep;
@@ -100,6 +101,7 @@ class SignupWizardUiState {
   final File? profileImage;
   final DateTime? dateOfBirth;
   final String? phoneNumber;
+  final Expertise expertise;
 
   SignupWizardUiState copyWith({
     int? currentStep,
@@ -113,6 +115,7 @@ class SignupWizardUiState {
     DateTime? dateOfBirth,
     bool clearDateOfBirth = false,
     String? phoneNumber,
+    Expertise? expertise,
   }) {
     return SignupWizardUiState(
       currentStep: currentStep ?? this.currentStep,
@@ -127,6 +130,7 @@ class SignupWizardUiState {
           : (profileImage ?? this.profileImage),
       dateOfBirth: clearDateOfBirth ? null : (dateOfBirth ?? this.dateOfBirth),
       phoneNumber: phoneNumber ?? this.phoneNumber,
+      expertise: expertise ?? this.expertise,
     );
   }
 }
@@ -178,6 +182,10 @@ class SignupWizardUiViewModel extends Notifier<SignupWizardUiState> {
 
   void setPhoneNumber(String? phoneNumber) {
     state = state.copyWith(phoneNumber: phoneNumber);
+  }
+
+  void setExpertise(Expertise expertise) {
+    state = state.copyWith(expertise: expertise);
   }
 }
 
@@ -238,6 +246,7 @@ class RegisterViewModel extends _$RegisterViewModel {
     required UserRole role,
     String? phone,
     File? profileImage,
+    Expertise expertise = Expertise.rookie,
   }) async {
     state = const AsyncValue.loading();
 
@@ -255,7 +264,14 @@ class RegisterViewModel extends _$RegisterViewModel {
       if (!ref.mounted) return false;
 
       final uid = ref.read(authRepositoryProvider).currentUserId;
-      if (uid != null) AnalyticsService.instance.setUserId(uid);
+      if (uid != null) {
+        AnalyticsService.instance.setUserId(uid);
+        if (expertise != Expertise.rookie) {
+          await ref.read(profileRepositoryProvider).updateProfile(uid, {
+            'expertise': expertise.name,
+          });
+        }
+      }
       AnalyticsService.instance.logSignUp('email');
       state = const AsyncValue.data(null);
       return true;
