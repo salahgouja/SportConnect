@@ -1,126 +1,63 @@
-# Fastfile for SportConnect
-# Requires: fastlane >= 2.222.0
-#
-# Android lanes:
-#   bundle exec fastlane android internal   → Play Store internal testing track
-#   bundle exec fastlane android production → Play Store production track
-#
-# iOS lanes:
-#   bundle exec fastlane ios beta           → TestFlight internal testing
-#   bundle exec fastlane ios release        → App Store production submit
+default_platform(:android)
 
-# ─────────────────────────────────────────
-# Shared helpers
-# ─────────────────────────────────────────
-
-before_all do
-  # Verify required secrets are present
-end
-
-# ─────────────────────────────────────────
-# Android
-# ─────────────────────────────────────────
 platform :android do
 
-  desc "Upload a signed AAB to the Play Store internal testing track"
-  lane :internal do
+  # ── deploy ─────────────────────────────────────────────────────────────
+  # Called by CI with: bundle exec fastlane android deploy track:<track>
+  # Defaults to internal if no track is passed.
+  desc "Upload the signed AAB to the Play Store"
+  lane :deploy do |options|
+    track = options[:track] || "internal"
+
+    # Derive the version name from the current git tag (e.g. v1.2.3 → 1.2.3)
+    version_name = last_git_tag.sub(/^v/, "")
+
+    # Auto-increment the build number from the Play Store's current value
+    # so we never have to manually bump it in pubspec.yaml
+    build_number = google_play_track_version_codes(
+      package_name:    CredentialsManager::AppfileConfig.try_fetch_value(:package_name),
+      track:           "internal",    # always read from internal — it's the source of truth
+      json_key_data:   ENV["PLAY_STORE_JSON_KEY"]
+    ).max.to_i + 1
+
+    UI.message("Deploying #{version_name} (#{build_number}) to #{track}")
+
+    # Build changelog from git log since the previous tag
+    changelog = changelog_from_git_commits(
+      between:         [last_git_tag(pattern: "v*~1"), "HEAD"],
+      pretty:          "- %s",
+      merge_commit_filtering: "exclude_merges"
+    )
+    changelog = "No changes listed." if changelog.nil? || changelog.strip.empty?
+
     upload_to_play_store(
-      package_name:       "com.sportconnect.sport_connect",
-      track:              "internal",
-      aab:                "build/app/outputs/bundle/release/app-release.aab",
-      json_key_data:      ENV["PLAY_STORE_JSON_KEY"],
-      skip_upload_apk:    true,
-      release_status:     "completed",  # makes it immediately available to internal testers
-      rollout:            "1.0"
-    )
-  end
-
-  desc "Promote the current internal build to production"
-  lane :production do
-    upload_to_play_store(
-      package_name:       "com.sportconnect.sport_connect",
-      track:              "internal",
-      track_promote_to:   "production",
-      json_key_data:      ENV["PLAY_STORE_JSON_KEY"],
-      skip_upload_apk:    true,
-      skip_upload_aab:    true,
-      rollout:            "0.1"         # 10% staged rollout
-    )
-  end
-
-end
-
-# ─────────────────────────────────────────
-# iOS
-# ─────────────────────────────────────────
-platform :ios do
-
-  desc "Push a signed IPA to TestFlight for internal testing"
-  lane :beta do
-    # Required in CI to avoid interactive prompts and keychain conflicts
-    setup_ci if ENV["CI"]
-
-    # Use App Store Connect API key (preferred over password — no 2FA issues)
-    api_key = app_store_connect_api_key(
-      key_id:                ENV["APP_STORE_CONNECT_API_KEY_ID"],
-      issuer_id:             ENV["APP_STORE_CONNECT_ISSUER_ID"],
-      key_content:           ENV["APP_STORE_CONNECT_API_KEY"],  # base64-encoded .p8 content
-      is_key_content_base64: true,
-      in_house:              false
-    )
-
-    # Sync certificates and provisioning profiles from private Match repo
-    match(
-      type:    "appstore",
-      readonly: true,
-      api_key: api_key
-    )
-
-    # Build signed IPA
-    build_app(
-      workspace:      "ios/Runner.xcworkspace",
-      scheme:         "Runner",
-      configuration:  "Release",
-      export_method:  "app-store",
-      export_options: {
-        provisioningProfiles: {
-          "com.sportconnect.SportConnectApplication" =>
-            "match AppStore com.sportconnect.SportConnectApplication"
-        }
+      package_name:             CredentialsManager::AppfileConfig.try_fetch_value(:package_name),
+      track:                    track,
+      aab:                      "build/app/outputs/bundle/release/app-release.aab",
+      json_key_data:            ENV["PLAY_STORE_JSON_KEY"],
+      version_name:             version_name,
+      version_code:             build_number,
+      release_status:           track == "production" ? "completed" : "draft",
+      # Send changelog as release notes (English default; add more locales below)
+      release_notes: {
+        "en-US" => changelog[0, 500]   # Play Store caps release notes at 500 chars
       },
-      output_directory: "build/ios/ipa",
-      output_name:      "SportConnect.ipa"
+      skip_upload_apk:          true,
+      skip_upload_metadata:     true,
+      skip_upload_changelogs:   false,
+      skip_upload_images:       true,
+      skip_upload_screenshots:  true
     )
 
-    # Upload to TestFlight — skip waiting for Apple's processing
-    upload_to_testflight(
-      api_key:                          api_key,
-      ipa:                              "build/ios/ipa/SportConnect.ipa",
-      skip_waiting_for_build_processing: true,
-      notify_external_testers:          false   # internal only
-    )
+    UI.success("Successfully deployed #{version_name} (#{build_number}) to #{track}")
   end
 
-  desc "Submit the latest TestFlight build to App Store review"
-  lane :release do
-    setup_ci if ENV["CI"]
-
-    api_key = app_store_connect_api_key(
-      key_id:                ENV["APP_STORE_CONNECT_API_KEY_ID"],
-      issuer_id:             ENV["APP_STORE_CONNECT_ISSUER_ID"],
-      key_content:           ENV["APP_STORE_CONNECT_API_KEY"],
-      is_key_content_base64: true,
-      in_house:              false
-    )
-
-    deliver(
-      api_key:         api_key,
-      submit_for_review: true,
-      automatic_release: false,
-      force:             true,      # skip HTML preview
-      skip_screenshots:  true,
-      skip_metadata:     true
-    )
+  # ── Error handler ───────────────────────────────────────────────────────
+  error do |lane, exception, options|
+    UI.error("Lane #{lane} failed with: #{exception.message}")
+    # Re-raise so the CI job exits non-zero and the workflow failure
+    # notification fires correctly
+    raise exception
   end
 
 end

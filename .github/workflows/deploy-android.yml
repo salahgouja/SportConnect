@@ -1,6 +1,5 @@
 name: Deploy Android to Play Store
 
-# Trigger on version tags (e.g. v1.2.3) or manually via GitHub UI
 on:
   push:
     tags:
@@ -14,7 +13,15 @@ on:
         type: choice
         options:
           - internal
+          - alpha
+          - beta
           - production
+
+# Cancel any in-progress run for the same ref so we never have
+# two signing jobs racing each other
+concurrency:
+  group: deploy-android-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -25,31 +32,49 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ── Source ────────────────────────────────────────────────────────────
+      # ── Source ──────────────────────────────────────────────────────────
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0       # full history needed for changelog generation
 
-      # ── Java (required for Android Gradle builds) ─────────────────────────
+      # ── Java ────────────────────────────────────────────────────────────
       - name: Set up Java 21
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '21'
 
-      # ── Flutter ────────────────────────────────────────────────────────────
+      # ── Flutter ─────────────────────────────────────────────────────────
       - name: Set up Flutter (stable)
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
           cache: true
 
+      - name: Cache pub packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: pub-${{ runner.os }}-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
+
       - name: Install Flutter dependencies
         run: flutter pub get
 
-      # ── Android signing ────────────────────────────────────────────────────
-      # The build.gradle.kts reads android/key.properties + the .jks file it
-      # references. We recreate both from GitHub Secrets at build time so that
-      # signing credentials never live in the repository.
+      # ── Gradle cache ────────────────────────────────────────────────────
+      - name: Cache Gradle files
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      # ── Android signing ─────────────────────────────────────────────────
       - name: Decode upload keystore
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" \
@@ -64,26 +89,70 @@ jobs:
           storeFile=../upload-keystore.jks
           EOF
 
-      # ── Build ──────────────────────────────────────────────────────────────
+      # ── Build ────────────────────────────────────────────────────────────
       - name: Build signed Android App Bundle (AAB)
         run: flutter build appbundle --release
 
-      # ── Ruby / Fastlane ────────────────────────────────────────────────────
+      - name: Verify AAB exists
+        run: |
+          AAB=build/app/outputs/bundle/release/app-release.aab
+          if [ ! -f "$AAB" ]; then
+            echo "::error::AAB not found at $AAB"
+            exit 1
+          fi
+          echo "AAB size: $(du -sh $AAB | cut -f1)"
+
+      # ── Ruby / Fastlane ──────────────────────────────────────────────────
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.3'
-          bundler-cache: true   # caches the Gemfile.lock bundle automatically
+          bundler-cache: true
 
-      # ── Deploy ─────────────────────────────────────────────────────────────
-      - name: Upload AAB to Play Store internal track
+      # ── Resolve deploy track ─────────────────────────────────────────────
+      # For tag pushes, always deploy to internal first.
+      # For manual dispatch, use the chosen track.
+      - name: Set deploy track
+        id: track
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "track=internal" >> "$GITHUB_OUTPUT"
+          else
+            echo "track=${{ inputs.track }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ── Deploy ───────────────────────────────────────────────────────────
+      - name: Upload AAB to Play Store (${{ steps.track.outputs.track }})
         env:
           PLAY_STORE_JSON_KEY: ${{ secrets.PLAY_STORE_JSON_KEY }}
-        run: bundle exec fastlane android internal
+        run: bundle exec fastlane android deploy track:${{ steps.track.outputs.track }}
 
-      # ── Cleanup (security) ─────────────────────────────────────────────────
+      # ── Cleanup (always, even on failure) ────────────────────────────────
       - name: Remove keystore artifacts
         if: always()
         run: |
           rm -f android/upload-keystore.jks
           rm -f android/key.properties
+
+      # # ── Notify on failure ────────────────────────────────────────────────
+      # # Remove this step if you don't use Slack.
+      # # Add SLACK_WEBHOOK_URL to your repo secrets to enable it.
+      # - name: Notify Slack on failure
+      #   if: failure() && secrets.SLACK_WEBHOOK_URL != ''
+      #   uses: slackapi/slack-github-action@v1
+      #   with:
+      #     payload: |
+      #       {
+      #         "text": ":x: Android deploy failed for *${{ github.ref_name }}*",
+      #         "attachments": [{
+      #           "color": "danger",
+      #           "fields": [
+      #             { "title": "Workflow", "value": "${{ github.workflow }}", "short": true },
+      #             { "title": "Triggered by", "value": "${{ github.actor }}", "short": true },
+      #             { "title": "Run URL", "value": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" }
+      #           ]
+      #         }]
+      #       }
+      #   env:
+      #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      #     SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
