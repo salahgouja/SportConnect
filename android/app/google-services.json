@@ -48,10 +48,10 @@
               "client_type": 3
             },
             {
-              "client_id": "950804897667-92ufpn1kmot4pdplnmqat89ir7kbeg9i.apps.googleusercontent.com",
+              "client_id": "950804897667-6n80c99rgha62msa59b5mcdos8p8pm67.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.sportconnect.sportConnect"
+                "bundle_id": "com.sportconnect.SportConnectApplication"
               }
             }
           ]
