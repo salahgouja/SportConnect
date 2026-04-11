@@ -22,12 +22,25 @@ platform :android do
 
     UI.message("Deploying #{version_name} (#{build_number}) to #{track}")
 
-    # Build changelog from git log since the previous tag
-    changelog = changelog_from_git_commits(
-      between:         [last_git_tag(pattern: "v*~1"), "HEAD"],
-      pretty:          "- %s",
-      merge_commit_filtering: "exclude_merges"
-    )
+    # Build changelog from git log since the previous tag.
+    # Sort tags by version so we reliably get the second-most-recent one.
+    # Falls back to the full history when this is the very first tag.
+    all_tags = sh("git tag --sort=-version:refname", log: false)
+                 .split("\n").map(&:strip).reject(&:empty?)
+    previous_tag = all_tags.length > 1 ? all_tags[1] : nil
+
+    changelog = if previous_tag
+      changelog_from_git_commits(
+        between:                [previous_tag, "HEAD"],
+        pretty:                 "- %s",
+        merge_commit_filtering: "exclude_merges"
+      )
+    else
+      changelog_from_git_commits(
+        pretty:                 "- %s",
+        merge_commit_filtering: "exclude_merges"
+      )
+    end
     changelog = "No changes listed." if changelog.nil? || changelog.strip.empty?
 
     upload_to_play_store(
