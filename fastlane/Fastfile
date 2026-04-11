@@ -54,10 +54,12 @@ platform :android do
 
     # upload_to_play_store reads changelogs from the metadata directory tree —
     # it does not accept a release_notes parameter directly.
-    # Write the changelog file before uploading so it gets picked up.
-    changelog_dir = "fastlane/metadata/android/en-US/changelogs"
-    FileUtils.mkdir_p(changelog_dir)
-    File.write("#{changelog_dir}/#{build_number}.txt", changelog[0, 500])
+    # Write the changelog file for every supported locale before uploading.
+    %w[en-US fr-FR].each do |locale|
+      changelog_dir = "fastlane/metadata/android/#{locale}/changelogs"
+      FileUtils.mkdir_p(changelog_dir)
+      File.write("#{changelog_dir}/#{build_number}.txt", changelog[0, 500])
+    end
 
     upload_to_play_store(
       package_name:             CredentialsManager::AppfileConfig.try_fetch_value(:package_name),
