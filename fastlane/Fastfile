@@ -25,7 +25,11 @@ platform :android do
     # Build the AAB with the correct version code so the binary matches
     # what we report to the Play Store. This must happen after build_number
     # is computed or the embedded versionCode will always be 1.
-    sh("flutter build appbundle --release --build-number=#{build_number}")
+    # fastlane's sh() runs from the fastlane/ directory, so step one level
+    # up to the Flutter project root before invoking the build.
+    Dir.chdir("..") do
+      sh("flutter build appbundle --release --build-number=#{build_number}")
+    end
 
     # Build changelog from git log since the previous tag.
     # Sort tags by version so we reliably get the second-most-recent one.
