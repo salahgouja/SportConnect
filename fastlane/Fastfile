@@ -43,6 +43,13 @@ platform :android do
     end
     changelog = "No changes listed." if changelog.nil? || changelog.strip.empty?
 
+    # upload_to_play_store reads changelogs from the metadata directory tree —
+    # it does not accept a release_notes parameter directly.
+    # Write the changelog file before uploading so it gets picked up.
+    changelog_dir = "fastlane/metadata/android/en-US/changelogs"
+    FileUtils.mkdir_p(changelog_dir)
+    File.write("#{changelog_dir}/#{build_number}.txt", changelog[0, 500])
+
     upload_to_play_store(
       package_name:             CredentialsManager::AppfileConfig.try_fetch_value(:package_name),
       track:                    track,
@@ -51,10 +58,6 @@ platform :android do
       version_name:             version_name,
       version_code:             build_number,
       release_status:           track == "production" ? "completed" : "draft",
-      # Send changelog as release notes (English default; add more locales below)
-      release_notes: {
-        "en-US" => changelog[0, 500]   # Play Store caps release notes at 500 chars
-      },
       skip_upload_apk:          true,
       skip_upload_metadata:     true,
       skip_upload_changelogs:   false,
