@@ -90,17 +90,9 @@ jobs:
           EOF
 
       # ── Build ────────────────────────────────────────────────────────────
-      - name: Build signed Android App Bundle (AAB)
-        run: flutter build appbundle --release
-
-      - name: Verify AAB exists
-        run: |
-          AAB=build/app/outputs/bundle/release/app-release.aab
-          if [ ! -f "$AAB" ]; then
-            echo "::error::AAB not found at $AAB"
-            exit 1
-          fi
-          echo "AAB size: $(du -sh $AAB | cut -f1)"
+      # NOTE: The AAB is built inside the Fastfile (after the Play Store
+      # version code is fetched) so that --build-number matches the computed
+      # value. Do NOT add a separate flutter build step here.
 
       # ── Ruby / Fastlane ──────────────────────────────────────────────────
       - name: Set up Ruby
