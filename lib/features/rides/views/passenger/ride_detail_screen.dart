@@ -1077,8 +1077,9 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
     if (prefs.allowLuggage) score++;
     if (prefs.allowChat) score++;
     if (!prefs.allowSmoking) score++; // most passengers prefer non-smoking
-    if (prefs.maxDetourMinutes == null || prefs.maxDetourMinutes! <= 15)
+    if (prefs.maxDetourMinutes == null || prefs.maxDetourMinutes! <= 15) {
       score++;
+    }
     if (ride.remainingSeats > 1) score++; // spacious ride
 
     final pct = (score / total * 100).round();

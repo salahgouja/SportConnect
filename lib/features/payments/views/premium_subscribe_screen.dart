@@ -263,7 +263,7 @@ class _PremiumSubscribeScreenState extends State<PremiumSubscribeScreen> {
           physics: const BouncingScrollPhysics(),
           padding: EdgeInsets.symmetric(horizontal: 20.w),
           itemCount: _kBenefits.length,
-          separatorBuilder: (_, __) => SizedBox(width: 8.w),
+          separatorBuilder: (_, _) => SizedBox(width: 8.w),
           itemBuilder: (_, i) {
             final b = _kBenefits[i];
             return Container(

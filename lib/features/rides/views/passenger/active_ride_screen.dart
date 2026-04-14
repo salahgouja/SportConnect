@@ -190,7 +190,7 @@ class _PassengerActiveRideScreenState
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: messages.length,
-              separatorBuilder: (_, __) => SizedBox(width: 8.w),
+              separatorBuilder: (_, _) => SizedBox(width: 8.w),
               itemBuilder: (context, index) {
                 return ActionChip(
                   label: Text(
@@ -3436,8 +3436,8 @@ class _PulsingLocationMarker extends StatefulWidget {
     required this.innerSize,
     required this.iconSize,
     this.icon = Icons.navigation,
-    this.color = AppColors.primary,
     this.reverse = false,
+    this.color = AppColors.primary,
   });
 
   final double heading;

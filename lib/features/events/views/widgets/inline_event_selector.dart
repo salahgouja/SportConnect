@@ -277,7 +277,7 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
 
     return eventsAsync.when(
       loading: () => _shimmerRow(),
-      error: (_, __) => Padding(
+      error: (_, _) => Padding(
         padding: EdgeInsets.symmetric(vertical: 8.h),
         child: Text(
           'Could not load events',
@@ -421,7 +421,7 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: 3,
-        itemBuilder: (_, __) =>
+        itemBuilder: (_, _) =>
             Container(
                   width: 190.w,
                   margin: EdgeInsets.only(right: 10.w),

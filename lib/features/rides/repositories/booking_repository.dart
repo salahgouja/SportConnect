@@ -19,6 +19,7 @@ class BookingRepository implements IBookingRepository {
       );
 
   /// Create a new booking
+  @override
   Future<String> createBooking(RideBooking booking) async {
     // R-10: Validate the ride exists and is still accepting bookings.
     final rideDoc = await _firestore
@@ -54,12 +55,14 @@ class BookingRepository implements IBookingRepository {
   }
 
   /// Get booking by ID
+  @override
   Future<RideBooking?> getBookingById(String bookingId) async {
     final doc = await _bookingsCollection.doc(bookingId).get();
     return doc.data();
   }
 
   /// Stream booking by ID (real-time updates)
+  @override
   Stream<RideBooking?> streamBookingById(String bookingId) {
     return _bookingsCollection
         .doc(bookingId)
@@ -72,6 +75,7 @@ class BookingRepository implements IBookingRepository {
   /// Includes [driverId] in the query so that Firestore security rules can
   /// verify `resource.data.driverId == request.auth.uid` and allow the
   /// collection query (a query filtered only by rideId would be denied).
+  @override
   Future<List<RideBooking>> getBookingsByRideId(
     String rideId,
     String driverId,
@@ -88,6 +92,7 @@ class BookingRepository implements IBookingRepository {
   /// Stream bookings for a specific ride (driver-side, real-time).
   ///
   /// See [getBookingsByRideId] for the security-rule rationale.
+  @override
   Stream<List<RideBooking>> streamBookingsByRideId(
     String rideId,
     String driverId,
@@ -104,6 +109,7 @@ class BookingRepository implements IBookingRepository {
   ///
   /// Queries by [passengerId] so that Firestore security rules can verify
   /// `resource.data.passengerId == request.auth.uid`.
+  @override
   Future<RideBooking?> getPassengerBookingForRide(
     String rideId,
     String passengerId,
@@ -117,6 +123,7 @@ class BookingRepository implements IBookingRepository {
   }
 
   /// Get bookings for a specific passenger
+  @override
   Future<List<RideBooking>> getBookingsByPassengerId(String passengerId) async {
     final query = await _bookingsCollection
         .where('passengerId', isEqualTo: passengerId)
@@ -144,6 +151,7 @@ class BookingRepository implements IBookingRepository {
   }
 
   /// Stream bookings for a specific passenger (real-time)
+  @override
   Stream<List<RideBooking>> streamBookingsByPassengerId(String passengerId) {
     return _bookingsCollection
         .where('passengerId', isEqualTo: passengerId)
@@ -153,6 +161,7 @@ class BookingRepository implements IBookingRepository {
   }
 
   /// Update booking status
+  @override
   Future<void> updateBookingStatus({
     required String bookingId,
     required BookingStatus newStatus,
@@ -164,6 +173,7 @@ class BookingRepository implements IBookingRepository {
   }
 
   /// Update booking
+  @override
   Future<void> updateBooking(RideBooking booking) async {
     await _bookingsCollection
         .doc(booking.id)
@@ -190,6 +200,7 @@ class BookingRepository implements IBookingRepository {
   }
 
   /// Get active bookings (pending or accepted)
+  @override
   Stream<List<RideBooking>> streamActiveBookingsByPassengerId(
     String passengerId,
   ) {
@@ -202,6 +213,7 @@ class BookingRepository implements IBookingRepository {
   }
 
   /// Get pending bookings for a ride
+  @override
   Stream<List<RideBooking>> streamPendingBookingsByRideId(String rideId) {
     return _bookingsCollection
         .where('rideId', isEqualTo: rideId)

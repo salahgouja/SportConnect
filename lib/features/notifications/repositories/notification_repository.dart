@@ -205,6 +205,7 @@ class NotificationRepository implements INotificationRepository {
   }
 
   /// Send ride booking rejected notification
+  @override
   Future<void> sendRideBookingRejected({
     required String toUserId,
     required String driverName,
@@ -234,6 +235,7 @@ class NotificationRepository implements INotificationRepository {
   }
 
   /// Send ride cancelled notification to a passenger
+  @override
   Future<void> sendRideCancelled({
     required String toUserId,
     required String driverName,
@@ -347,6 +349,7 @@ class NotificationRepository implements INotificationRepository {
     );
   }
   /// Send event cancelled notification to a participant.
+  @override
   Future<void> sendEventCancelled({
     required String toUserId,
     required String organizerName,

@@ -19,6 +19,12 @@ class AuthRepository implements IAuthRepository {
   final FirebaseStorage _storage;
   final FirebaseFirestore _firestore;
 
+  /// One-time initialization future for GoogleSignIn.
+  /// google_sign_in v7 requires [GoogleSignIn.initialize] to be called exactly
+  /// once per app lifecycle — storing the Future here guarantees that.
+  final Future<void> _googleSignInInitialized =
+      GoogleSignIn.instance.initialize();
+
   /// Creates an [AuthRepository] with optional dependency injection.
   ///
   /// Defaults to production Firebase instances when no arguments are provided.
@@ -371,18 +377,22 @@ class AuthRepository implements IAuthRepository {
   @override
   Future<SocialSignInResult> signInWithGoogle() async {
     try {
-      GoogleSignIn googleSignIn = GoogleSignIn.instance;
+      // initialize() must be called exactly once per app lifecycle (v7 rule).
+      await _googleSignInInitialized;
 
-      // Initialize GoogleSignIn if needed (required in v7.x+)
-      await googleSignIn.initialize();
+      // authenticate() triggers the Credential Manager sheet.
+      // Throws GoogleSignInException on cancellation — never returns null.
+      final GoogleSignInAccount googleUser =
+          await GoogleSignIn.instance.authenticate();
 
-      // Use authenticate() instead of signIn() in v7.x+
-      // authenticate() returns non-nullable account, throws on cancellation
-      final GoogleSignInAccount googleUser = await googleSignIn.authenticate();
+      // v7 separates authentication (idToken) from authorization (accessToken).
+      // authorizeScopes() must be called explicitly to obtain the accessToken.
+      final clientAuth = await googleUser.authorizationClient
+          .authorizeScopes(['email', 'profile']);
 
-      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
       final credential = GoogleAuthProvider.credential(
-        idToken: googleAuth.idToken,
+        idToken: googleUser.authentication.idToken,
+        accessToken: clientAuth.accessToken,
       );
 
       final userCredential = await _auth.signInWithCredential(credential);
@@ -738,10 +748,8 @@ class AuthRepository implements IAuthRepository {
   @override
   Future<void> reauthenticateWithGoogle() async {
     try {
-      GoogleSignIn googleSignIn = GoogleSignIn.instance;
-
-      await googleSignIn.initialize();
-      final googleUser = await googleSignIn.authenticate();
+      await _googleSignInInitialized;
+      final googleUser = await GoogleSignIn.instance.authenticate();
 
       // FIX A-7: Verify the Google account email matches the current user's email
       final currentEmail = _auth.currentUser?.email;
@@ -754,9 +762,11 @@ class AuthRepository implements IAuthRepository {
         );
       }
 
-      final googleAuth = googleUser.authentication;
+      final clientAuth = await googleUser.authorizationClient
+          .authorizeScopes(['email', 'profile']);
       final credential = GoogleAuthProvider.credential(
-        idToken: googleAuth.idToken,
+        idToken: googleUser.authentication.idToken,
+        accessToken: clientAuth.accessToken,
       );
 
       final user = _auth.currentUser;

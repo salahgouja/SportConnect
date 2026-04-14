@@ -3322,7 +3322,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     );
 
     // Trigger route recalculation when the driver is detected off-route
-    if (isOffRoute && ride != null) {
+    if (isOffRoute) {
       unawaited(_recalculateRouteFromPosition(driverPosition, ride));
     }
   }

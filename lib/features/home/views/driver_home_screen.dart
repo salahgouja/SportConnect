@@ -757,7 +757,7 @@ class _DriverDashboard extends ConsumerWidget {
           _StatCard(
             icon: Icons.trending_up_rounded,
             iconColor: AppColors.info,
-            value: '${(driverStats.earningsThisMonth).toStringAsFixed(0)}',
+            value: (driverStats.earningsThisMonth).toStringAsFixed(0),
             label: l10n.driverThisMonth,
           ),
         ];

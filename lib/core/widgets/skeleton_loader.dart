@@ -30,8 +30,8 @@ class SkeletonLoader extends StatelessWidget {
         physics: const NeverScrollableScrollPhysics(),
         shrinkWrap: true,
         itemCount: itemCount,
-        separatorBuilder: (_, __) => SizedBox(height: 12.h),
-        itemBuilder: (_, __) => switch (type) {
+        separatorBuilder: (_, _) => SizedBox(height: 12.h),
+        itemBuilder: (_, _) => switch (type) {
           SkeletonType.rideCard => const _RideCardSkeleton(),
           SkeletonType.eventCard => const _EventCardSkeleton(),
           SkeletonType.chatTile => const _ChatTileSkeleton(),

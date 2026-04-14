@@ -250,7 +250,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       chatDetailViewModelProvider(_chatId, currentUser?.uid ?? ''),
     );
     TalkerService.info(
-      "the message is sent: $text and the replyToMessage is ${state.replyToMessage?.content} with id ${state.replyToMessage?.id} and the sender is ${currentUser?.displayName} and the sender photo url is ${currentUser?.photoUrl} and the chat id is ${_chatId} and the user id is ${currentUser?.uid}",
+      "the message is sent: $text and the replyToMessage is ${state.replyToMessage?.content} with id ${state.replyToMessage?.id} and the sender is ${currentUser?.displayName} and the sender photo url is ${currentUser?.photoUrl} and the chat id is $_chatId and the user id is ${currentUser?.uid}",
     );
 
     await viewModel.sendMessage(

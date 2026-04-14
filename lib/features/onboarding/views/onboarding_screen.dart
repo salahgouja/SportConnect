@@ -430,7 +430,7 @@ class _IllustrationState extends State<_Illustration>
       child:
           AnimatedBuilder(
                 animation: _ctrl,
-                builder: (_, __) => LayoutBuilder(
+                builder: (_, _) => LayoutBuilder(
                   builder: (_, constraints) {
                     final w = constraints.maxWidth;
                     final h = widget.height;

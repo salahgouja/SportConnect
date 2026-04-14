@@ -57,7 +57,7 @@ class EventAttendeesScreen extends ConsumerWidget {
           return ListView.separated(
             padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
             itemCount: event.participantIds.length,
-            separatorBuilder: (_, __) => SizedBox(height: 8.h),
+            separatorBuilder: (_, _) => SizedBox(height: 8.h),
             itemBuilder: (context, i) => _AttendeeCard(
               userId: event.participantIds[i],
               eventId: eventId,

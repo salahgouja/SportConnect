@@ -1682,7 +1682,7 @@ class _BlockedUsersScreenState extends ConsumerState<_BlockedUsersScreen> {
       body: blockedUsersAsync.when(
         loading: () =>
             const Center(child: CircularProgressIndicator.adaptive()),
-        error: (_, __) => Center(
+        error: (_, _) => Center(
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 24.w),
             child: Text(
@@ -1791,7 +1791,7 @@ class _BlockedUsersScreenState extends ConsumerState<_BlockedUsersScreen> {
                           physics: const AlwaysScrollableScrollPhysics(),
                           padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 20.h),
                           itemCount: filteredUsers.length,
-                          separatorBuilder: (_, __) => SizedBox(height: 10.h),
+                          separatorBuilder: (_, _) => SizedBox(height: 10.h),
                           itemBuilder: (context, index) {
                             final user = filteredUsers[index];
                             final displayName = user.displayName.isNotEmpty

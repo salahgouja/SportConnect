@@ -590,8 +590,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   Future<void> _saveProfile() async {
-    if (!_formKey.currentState!.saveAndValidate() || _currentUser == null)
+    if (!_formKey.currentState!.saveAndValidate() || _currentUser == null) {
       return;
+    }
 
     // Validate phone if entered
     final phoneError = _phoneKey.currentState?.validate();

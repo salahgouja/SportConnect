@@ -27,7 +27,6 @@ import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/view_models/driver_view_ride_view_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:sport_connect/core/utils/distance_formatter.dart';
 import 'package:sport_connect/core/services/deep_link_service.dart';
 
 /// Driver's dedicated screen for managing their ride and viewing booking requests

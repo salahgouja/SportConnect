@@ -50,6 +50,7 @@ class RideRepository implements IRideRepository {
   }
 
   /// Stream ride by ID (real-time updates)
+  @override
   Stream<RideModel?> streamRideById(String rideId) {
     return _ridesCollection.doc(rideId).snapshots().map((doc) => doc.data());
   }
@@ -65,6 +66,7 @@ class RideRepository implements IRideRepository {
   }
 
   /// Update ride with map (helper method)
+  @override
   Future<void> updateRideFields(
     String rideId,
     Map<String, dynamic> updates,
@@ -184,6 +186,7 @@ class RideRepository implements IRideRepository {
   // ==================== EXISTING METHODS ====================
 
   /// Get rides by driver
+  @override
   Future<List<RideModel>> getRidesByDriver(String driverId) async {
     final query = await _ridesCollection
         .where('driverId', isEqualTo: driverId)
@@ -206,6 +209,7 @@ class RideRepository implements IRideRepository {
   }
 
   /// Stream rides by driver (real-time)
+  @override
   Stream<List<RideModel>> streamRidesByDriver(String driverId) {
     return _ridesCollection
         .where('driverId', isEqualTo: driverId)
@@ -219,6 +223,7 @@ class RideRepository implements IRideRepository {
   ///
   /// Queries the bookings collection via [BookingRepository] to find
   /// rides the user is booked on, then fetches the ride documents.
+  @override
   Stream<List<RideModel>> streamRidesAsPassenger(String userId) {
     return _rideBookingsCollection
         .where('passengerId', isEqualTo: userId)
@@ -300,6 +305,7 @@ class RideRepository implements IRideRepository {
   /// query. We apply the departure-time inequality in Firestore (the most
   /// selective filter) and then post-filter by latitude/longitude in memory
   /// using the Haversine formula so we don't need a composite index.
+  @override
   Stream<List<RideModel>> streamNearbyRides({
     required double latitude,
     required double longitude,
@@ -329,6 +335,7 @@ class RideRepository implements IRideRepository {
   }
 
   /// Stream all active rides (for search screen)
+  @override
   Stream<List<RideModel>> streamActiveRides() {
     return _ridesCollection
         .where('status', isEqualTo: 'active')
@@ -346,6 +353,7 @@ class RideRepository implements IRideRepository {
   /// the driver accepts the booking (via [updateBookingStatus] with
   /// [BookingStatus.accepted]). This prevents over-restricting seat
   /// availability for rides that use manual acceptance.
+  @override
   Future<void> bookRide({
     required String rideId,
     required RideBooking booking,
@@ -367,6 +375,7 @@ class RideRepository implements IRideRepository {
   /// TOCTOU race condition. Capacity is only freed when the booking was
   /// previously `accepted` (seats were actually reserved). Rejecting or
   /// cancelling a still-pending booking must NOT decrement capacity.
+  @override
   Future<void> updateBookingStatus({
     required String rideId,
     required String bookingId,
@@ -402,7 +411,7 @@ class RideRepository implements IRideRepository {
     await _rideBookingsCollection.doc(bookingId).update({
       'status': newStatus.name,
       'respondedAt': DateTime.now(),
-      if (pickupOtp != null) 'pickupOtp': pickupOtp,
+      'pickupOtp': ?pickupOtp,
     });
 
     // If accepted, reserve the seats on the ride and add pickup waypoint.
@@ -470,6 +479,7 @@ class RideRepository implements IRideRepository {
   }
 
   /// Cancels a booking by delegating to [updateBookingStatus].
+  @override
   Future<void> cancelBooking({
     required String rideId,
     required String bookingId,
@@ -620,6 +630,7 @@ class RideRepository implements IRideRepository {
   /// - ~10x cheaper (charged per GB transferred, not per write operation)
   /// - ~50-150ms latency vs Firestore's ~300-1000ms for real-time
   /// - Designed for high-frequency data; no per-write billing pressure
+  @override
   Future<void> updateLiveLocation(
     String rideId,
     double latitude,
@@ -695,6 +706,7 @@ class RideRepository implements IRideRepository {
   }
 
   /// Stream rides linked to a specific event by eventId.
+  @override
   Stream<List<RideModel>> streamRidesByEventId(String eventId) {
     return _ridesCollection
         .where('eventId', isEqualTo: eventId)

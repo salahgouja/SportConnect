@@ -424,7 +424,7 @@ class _DriverRatePassengerScreenState
                   ),
                 ),
               ),
-              error: (_, __) => CircleAvatar(
+              error: (_, _) => CircleAvatar(
                 radius: 22.r,
                 backgroundColor: AppColors.primary.withAlpha(30),
                 child: Icon(
@@ -458,7 +458,7 @@ class _DriverRatePassengerScreenState
                         borderRadius: BorderRadius.circular(4.r),
                       ),
                     ),
-                    error: (_, __) => Text(
+                    error: (_, _) => Text(
                       'Passenger',
                       style: TextStyle(
                         fontSize: 14.sp,

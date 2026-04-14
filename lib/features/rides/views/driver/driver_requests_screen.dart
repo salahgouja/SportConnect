@@ -214,7 +214,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
         );
       },
       loading: () => Center(child: CircularProgressIndicator.adaptive(valueColor: AlwaysStoppedAnimation(AppColors.primary))),
-      error: (_, __) => Center(
+      error: (_, _) => Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -261,7 +261,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
         );
       },
       loading: () => Center(child: CircularProgressIndicator.adaptive(valueColor: AlwaysStoppedAnimation(AppColors.primary))),
-      error: (_, __) => Center(child: Icon(Icons.error_outline, size: 64.sp, color: AppColors.error)),
+      error: (_, _) => Center(child: Icon(Icons.error_outline, size: 64.sp, color: AppColors.error)),
     );
   }
 
@@ -290,7 +290,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
         );
       },
       loading: () => Center(child: CircularProgressIndicator.adaptive(valueColor: AlwaysStoppedAnimation(AppColors.primary))),
-      error: (_, __) => Center(child: Icon(Icons.error_outline, size: 64.sp, color: AppColors.error)),
+      error: (_, _) => Center(child: Icon(Icons.error_outline, size: 64.sp, color: AppColors.error)),
     );
   }
 

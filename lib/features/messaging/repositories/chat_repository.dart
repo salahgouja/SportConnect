@@ -171,6 +171,7 @@ class ChatRepository implements IChatRepository {
   }
 
   /// Get a ride group chat by ride ID.
+  @override
   Future<ChatModel?> getChatByRideId(String rideId) async {
     final query = await _chatsCollection
         .where('type', isEqualTo: ChatType.rideGroup.name)
@@ -261,6 +262,7 @@ class ChatRepository implements IChatRepository {
   }
 
   /// Mute/unmute chat
+  @override
   Future<void> toggleMute({
     required String chatId,
     required String odid,
@@ -398,6 +400,7 @@ class ChatRepository implements IChatRepository {
   }
 
   /// Stream messages for a chat
+  @override
   Stream<List<MessageModel>> streamMessages(String chatId, {int limit = 50}) {
     return _messagesCollection(chatId)
         .where('isDeleted', isEqualTo: false)
@@ -408,6 +411,7 @@ class ChatRepository implements IChatRepository {
   }
 
   /// Load more messages (pagination)
+  @override
   Future<List<MessageModel>> loadMoreMessages({
     required String chatId,
     required DateTime beforeTimestamp,
@@ -558,6 +562,7 @@ class ChatRepository implements IChatRepository {
   }
 
   /// Edit message
+  @override
   Future<void> editMessage({
     required String chatId,
     required String messageId,
@@ -571,6 +576,7 @@ class ChatRepository implements IChatRepository {
   }
 
   /// Add reaction to message
+  @override
   Future<void> addReaction({
     required String chatId,
     required String messageId,
@@ -597,6 +603,7 @@ class ChatRepository implements IChatRepository {
   // ==================== TYPING INDICATORS ====================
 
   /// Set typing status
+  @override
   Future<void> setTyping({
     required String chatId,
     required String odid,
@@ -628,6 +635,7 @@ class ChatRepository implements IChatRepository {
   }
 
   /// Stream typing indicators — only returns non-expired indicators (M-3).
+  @override
   Stream<List<TypingIndicator>> streamTypingIndicators(String chatId) {
     // FIX M-3: Filter server-side to only return indicators that have not
     // yet expired, so stale indicators from killed apps are invisible.

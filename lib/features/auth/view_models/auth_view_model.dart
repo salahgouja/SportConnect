@@ -49,6 +49,7 @@ class LoginUiViewModel extends Notifier<LoginUiState> {
     );
   }
 
+  @override
   LoginUiState? get stateOrNull {
     try {
       return state;

@@ -48,13 +48,13 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
       error: (e, _) =>
           _AchievementsErrorShell(l10n: l10n, message: e.toString()),
       data: (user) {
-        if (user == null)
+        if (user == null) {
           return _AchievementsErrorShell(
             l10n: l10n,
             message: l10n.signInToSeeYourRides,
           );
+        }
         final stats = user.gamification;
-        if (stats == null) return _AchievementsLoadingShell(l10n: l10n);
         return _AchievementsContent(
           user: user,
           stats: stats,

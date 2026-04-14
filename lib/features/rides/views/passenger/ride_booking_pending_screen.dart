@@ -55,7 +55,7 @@ class _RideBookingPendingScreenState
       pendingBookingViewModelProvider(widget.rideId).notifier,
     );
 
-    ref.listen(pendingBookingViewModelProvider(widget.rideId), (_, __) {
+    ref.listen(pendingBookingViewModelProvider(widget.rideId), (_, _) {
       final vm = ref.read(
         pendingBookingViewModelProvider(widget.rideId).notifier,
       );

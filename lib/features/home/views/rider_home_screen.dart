@@ -2047,8 +2047,9 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                                 SizedBox(width: 8.w),
                                 GestureDetector(
                                   onTap: () {
-                                    if (selectedSeats > 1)
+                                    if (selectedSeats > 1) {
                                       setModal(() => selectedSeats--);
+                                    }
                                   },
                                   child: Icon(
                                     Icons.remove_circle_outline,
@@ -2800,8 +2801,9 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
     final d = DateTime(date.year, date.month, date.day);
     final t = DateTime(today.year, today.month, today.day);
     if (d == t) return AppLocalizations.of(context).today;
-    if (d == t.add(const Duration(days: 1)))
+    if (d == t.add(const Duration(days: 1))) {
       return AppLocalizations.of(context).tomorrow;
+    }
     return '${date.day}/${date.month}';
   }
 

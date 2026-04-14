@@ -18,6 +18,7 @@ class DisputeRepository implements IDisputeRepository {
   static const _maxFilesPerUpload = 5;
 
   /// Submits a new dispute and returns the document ID.
+  @override
   Future<String> submitDispute({
     required String rideId,
     required String userId,
@@ -64,6 +65,7 @@ class DisputeRepository implements IDisputeRepository {
   }
 
   /// Uploads attachment files and updates the dispute document.
+  @override
   Future<List<String>> uploadAttachments({
     required String disputeId,
     required List<File> files,
@@ -163,8 +165,8 @@ class DisputeRepository implements IDisputeRepository {
         .doc(disputeId)
         .update({
           'status': status,
-          if (resolution != null) 'resolution': resolution,
-          if (resolvedByUid != null) 'resolvedByUid': resolvedByUid,
+          'resolution': ?resolution,
+          'resolvedByUid': ?resolvedByUid,
           'updatedAt': DateTime.now(),
         });
   }

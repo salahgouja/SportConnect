@@ -4,7 +4,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'dart:async';
-import 'dart:io';
 
 /// Incident report flow (#70)
 class IncidentReportSheet extends StatefulWidget {

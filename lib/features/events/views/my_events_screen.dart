@@ -119,7 +119,7 @@ class _CreatedTab extends ConsumerWidget {
 
     return stream.when(
       loading: () => const Center(child: CircularProgressIndicator.adaptive()),
-      error: (_, __) => _EmptyTab(message: l10n.unableToLoadEvents),
+      error: (_, _) => _EmptyTab(message: l10n.unableToLoadEvents),
       data: (events) {
         if (events.isEmpty) {
           return _EmptyTab(message: l10n.noCreatedEvents);
@@ -145,7 +145,7 @@ class _JoinedTab extends ConsumerWidget {
 
     return stream.when(
       loading: () => const Center(child: CircularProgressIndicator.adaptive()),
-      error: (_, __) => _EmptyTab(message: l10n.unableToLoadEvents),
+      error: (_, _) => _EmptyTab(message: l10n.unableToLoadEvents),
       data: (events) {
         if (events.isEmpty) {
           return _EmptyTab(message: l10n.noJoinedEvents);
@@ -175,7 +175,7 @@ class _EventListView extends StatelessWidget {
         100.h,
       ),
       itemCount: events.length,
-      separatorBuilder: (_, __) => SizedBox(height: 12.h),
+      separatorBuilder: (_, _) => SizedBox(height: 12.h),
       itemBuilder: (context, index) {
         final event = events[index];
         return _MyEventCard(event: event, dateFmt: _fmt)

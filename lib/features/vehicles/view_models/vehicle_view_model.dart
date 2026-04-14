@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';

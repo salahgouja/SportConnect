@@ -22,7 +22,7 @@ class FeedbackAnimations {
       barrierLabel: AppLocalizations.of(context).dismissSuccess,
       barrierColor: Colors.black54,
       transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (_, __, ___) => _FeedbackOverlay(
+      pageBuilder: (_, _, _) => _FeedbackOverlay(
         icon: Icons.check_circle_rounded,
         color: AppColors.success,
         message: message,
@@ -44,7 +44,7 @@ class FeedbackAnimations {
       barrierLabel: AppLocalizations.of(context).dismissError,
       barrierColor: Colors.black54,
       transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (_, __, ___) => _FeedbackOverlay(
+      pageBuilder: (_, _, _) => _FeedbackOverlay(
         icon: Icons.error_rounded,
         color: AppColors.error,
         message: message,
@@ -67,7 +67,7 @@ class FeedbackAnimations {
       barrierLabel: AppLocalizations.of(context).bookingRequestSent,
       barrierColor: Colors.black54,
       transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (_, __, ___) => _BookingConfirmationOverlay(
+      pageBuilder: (_, _, _) => _BookingConfirmationOverlay(
         rideInfo: rideInfo,
         dateTime: dateTime,
         onDismissed: onDismissed,

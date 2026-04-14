@@ -523,7 +523,7 @@ class VehiclePhotoMatchCard extends StatelessWidget {
                     width: 72.w,
                     height: 56.h,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => _placeholderIcon(),
+                    errorBuilder: (_, _, _) => _placeholderIcon(),
                   )
                 : _placeholderIcon(),
           ),

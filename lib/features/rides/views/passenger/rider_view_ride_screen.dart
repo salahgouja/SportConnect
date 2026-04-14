@@ -23,7 +23,6 @@ import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/features/reviews/view_models/review_view_model.dart';
 import 'package:sport_connect/features/reviews/models/review_model.dart';
-import 'package:sport_connect/core/utils/distance_formatter.dart';
 import 'package:sport_connect/core/services/deep_link_service.dart';
 
 /// Rider's personal ride view with booking and review sections.

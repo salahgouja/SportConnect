@@ -443,7 +443,7 @@ class EventListScreen extends ConsumerWidget {
       ),
       sliver: SliverList.separated(
         itemCount: events.length,
-        separatorBuilder: (_, __) => SizedBox(height: 12.h),
+        separatorBuilder: (_, _) => SizedBox(height: 12.h),
         itemBuilder: (context, index) {
           final event = events[index];
           return _EventCard(event: event)

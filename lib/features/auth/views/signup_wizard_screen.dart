@@ -982,12 +982,12 @@ class _StyledField extends StatelessWidget {
     required this.icon,
     required this.theme,
     this.obscure = false,
-    this.maxLines = 1,
     this.keyboardType,
     this.validator,
     this.suffix,
     this.capitalization = TextCapitalization.none,
     this.onChanged,
+    this.maxLines = 1,
   });
 
   @override

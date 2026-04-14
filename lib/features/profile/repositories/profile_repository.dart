@@ -37,6 +37,7 @@ class ProfileRepository implements IUserRepository {
   }
 
   /// Stream user profile
+  @override
   Stream<UserModel?> streamUser(String uid) {
     return _usersCollection.doc(uid).snapshots().map((doc) {
       if (!doc.exists) return null;
@@ -45,6 +46,7 @@ class ProfileRepository implements IUserRepository {
   }
 
   /// Update user profile
+  @override
   Future<void> updateProfile(String uid, Map<String, dynamic> updates) async {
     updates['updatedAt'] = DateTime.now();
     await _usersCollection.doc(uid).update(updates);
@@ -69,6 +71,7 @@ class ProfileRepository implements IUserRepository {
   }
 
   /// Update profile photo
+  @override
   Future<void> updateProfilePhoto(String uid, File file) async {
     final photoUrl = await uploadProfilePhoto(uid, file);
     await updateProfile(uid, {'photoUrl': photoUrl});
@@ -160,6 +163,7 @@ class ProfileRepository implements IUserRepository {
       );
 
   /// Add a vehicle (only for drivers)
+  @override
   Future<void> addVehicle(String uid, VehicleModel vehicle) async {
     final user = await getUserById(uid);
     if (user == null) {
@@ -181,6 +185,7 @@ class ProfileRepository implements IUserRepository {
   }
 
   /// Update a vehicle (only for drivers)
+  @override
   Future<void> updateVehicle(String uid, VehicleModel vehicle) async {
     final user = await getUserById(uid);
     if (user == null || user is! DriverModel) return;
@@ -190,6 +195,7 @@ class ProfileRepository implements IUserRepository {
   }
 
   /// Remove a vehicle (only for drivers)
+  @override
   Future<void> removeVehicle(String uid, String vehicleId) async {
     final user = await getUserById(uid);
     if (user == null || user is! DriverModel) return;
@@ -207,6 +213,7 @@ class ProfileRepository implements IUserRepository {
   /// Set default vehicle (only for drivers).
   /// G-6: Chunks writes into batches of 499 to stay within Firestore's
   /// 500-operation-per-batch limit for drivers with many vehicles.
+  @override
   Future<void> setDefaultVehicle(String uid, String vehicleId) async {
     final user = await getUserById(uid);
     if (user == null || user is! DriverModel) return;
@@ -230,6 +237,7 @@ class ProfileRepository implements IUserRepository {
   }
 
   /// Get vehicles for a driver
+  @override
   Future<List<VehicleModel>> getDriverVehicles(String uid) async {
     final user = await getUserById(uid);
     if (user == null || user is! DriverModel) return [];

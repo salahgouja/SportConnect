@@ -177,7 +177,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
             if (vehicleId != null) {
               ref
                   .read(driverOfferRideViewModelProvider.notifier)
-                  .setVehicle(vehicleId!);
+                  .setVehicle(vehicleId);
             }
           });
         }
@@ -1493,7 +1493,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                 onTap: () {
                   ref
                       .read(driverOfferRideViewModelProvider.notifier)
-                      .setVehicle(vehicle.id!);
+                      .setVehicle(vehicle.id);
                 },
                 child: Container(
                   width: 150.w,

@@ -84,8 +84,9 @@ class FormValidators {
 
   /// Validates a phone number string (digits only).
   static String? phone(String? value) {
-    if (value == null || value.trim().isEmpty)
+    if (value == null || value.trim().isEmpty) {
       return null; // Optional by default
+    }
     final digits = value.replaceAll(RegExp(r'[^\d]'), '');
     if (digits.length < 6) {
       return 'Phone number is too short';

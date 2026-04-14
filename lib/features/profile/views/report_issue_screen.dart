@@ -121,7 +121,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
   );
 
   // ignore: strict_raw_type
-  get _reportFormProvider => reportIssueFormViewModelProvider(_reportFormArgs);
+  ReportIssueFormViewModelProvider get _reportFormProvider => reportIssueFormViewModelProvider(_reportFormArgs);
 
   @override
   Widget build(BuildContext context) {

@@ -82,6 +82,7 @@ class DriverStatsRepository implements IDriverStatsRepository {
   }
 
   /// Streams accepted bookings for a driver.
+  @override
   Stream<List<RideBooking>> streamAcceptedRequests(String driverId) {
     return _rideBookingsCollection
         .where('driverId', isEqualTo: driverId)
@@ -93,6 +94,7 @@ class DriverStatsRepository implements IDriverStatsRepository {
   }
 
   /// Streams rejected/cancelled bookings for a driver.
+  @override
   Stream<List<RideBooking>> streamRejectedRequests(String driverId) {
     return _rideBookingsCollection
         .where('driverId', isEqualTo: driverId)
