@@ -22,8 +22,8 @@ class AuthRepository implements IAuthRepository {
   /// One-time initialization future for GoogleSignIn.
   /// google_sign_in v7 requires [GoogleSignIn.initialize] to be called exactly
   /// once per app lifecycle — storing the Future here guarantees that.
-  final Future<void> _googleSignInInitialized =
-      GoogleSignIn.instance.initialize();
+  final Future<void> _googleSignInInitialized = GoogleSignIn.instance
+      .initialize();
 
   /// Creates an [AuthRepository] with optional dependency injection.
   ///
@@ -382,17 +382,15 @@ class AuthRepository implements IAuthRepository {
 
       // authenticate() triggers the Credential Manager sheet.
       // Throws GoogleSignInException on cancellation — never returns null.
-      final GoogleSignInAccount googleUser =
-          await GoogleSignIn.instance.authenticate();
+      final GoogleSignInAccount googleUser = await GoogleSignIn.instance
+          .authenticate();
 
-      // v7 separates authentication (idToken) from authorization (accessToken).
-      // authorizeScopes() must be called explicitly to obtain the accessToken.
-      final clientAuth = await googleUser.authorizationClient
-          .authorizeScopes(['email', 'profile']);
-
+      // Firebase Auth only needs idToken. authorizeScopes() would open a
+      // second Credential Manager dialog that gets canceled, causing a
+      // spurious GoogleSignInException(canceled). accessToken is not needed
+      // for signInWithCredential — it is nullable in GoogleAuthProvider.
       final credential = GoogleAuthProvider.credential(
         idToken: googleUser.authentication.idToken,
-        accessToken: clientAuth.accessToken,
       );
 
       final userCredential = await _auth.signInWithCredential(credential);
@@ -762,11 +760,9 @@ class AuthRepository implements IAuthRepository {
         );
       }
 
-      final clientAuth = await googleUser.authorizationClient
-          .authorizeScopes(['email', 'profile']);
+      // idToken alone is sufficient for reauthentication.
       final credential = GoogleAuthProvider.credential(
         idToken: googleUser.authentication.idToken,
-        accessToken: clientAuth.accessToken,
       );
 
       final user = _auth.currentUser;
