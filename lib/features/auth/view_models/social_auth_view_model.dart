@@ -3,25 +3,25 @@ import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 
 class SocialAuthState {
   final bool isLoading;
-  final String? errorMessage;
+  final Object? error;
   final String? completedProvider;
 
   const SocialAuthState({
     this.isLoading = false,
-    this.errorMessage,
+    this.error,
     this.completedProvider,
   });
 
   SocialAuthState copyWith({
     bool? isLoading,
-    String? errorMessage,
+    Object? error,
     String? completedProvider,
     bool clearError = false,
     bool clearCompletedProvider = false,
   }) {
     return SocialAuthState(
       isLoading: isLoading ?? this.isLoading,
-      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      error: clearError ? null : (error ?? this.error),
       completedProvider: clearCompletedProvider
           ? null
           : (completedProvider ?? this.completedProvider),
@@ -46,7 +46,7 @@ class SocialAuthViewModel extends Notifier<SocialAuthState> {
       await ref.read(authActionsViewModelProvider).signInWithGoogle();
       state = state.copyWith(isLoading: false, completedProvider: 'google');
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      state = state.copyWith(isLoading: false, error: e);
     }
   }
 
@@ -63,7 +63,7 @@ class SocialAuthViewModel extends Notifier<SocialAuthState> {
       await ref.read(authActionsViewModelProvider).signInWithApple();
       state = state.copyWith(isLoading: false, completedProvider: 'apple');
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      state = state.copyWith(isLoading: false, error: e);
     }
   }
 }

@@ -238,17 +238,18 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
     });
 
     ref.listen(socialAuthViewModelProvider, (previous, next) {
-      if (next.errorMessage != null &&
-          next.errorMessage != previous?.errorMessage) {
-        final error = next.errorMessage!;
-        final isAccountExists = error.contains(
-          'account-exists-with-different-credential',
-        );
-        _showError(
-          isAccountExists
-              ? l10n.accountExistsError
-              : l10n.signUpFailedPleaseTry,
-        );
+      if (next.error != null && next.error != previous?.error) {
+        final e = next.error;
+        if (e is AuthException) {
+          if (e.code == 'google-sign-in-canceled') return; // silent
+          if (e.code == 'account-exists-with-different-credential') {
+            _showError(l10n.accountExistsError);
+            return;
+          }
+          _showError(e.message);
+          return;
+        }
+        _showError(l10n.signUpFailedPleaseTry);
       }
     });
 

@@ -8,6 +8,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:sport_connect/core/services/analytics_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_auth_repository.dart';
@@ -436,11 +437,28 @@ class AuthRepository implements IAuthRepository {
 
       throw Exception('Google sign-in failed: no user returned');
     } on GoogleSignInException catch (e) {
-      // GoogleSignIn v7.x throws GoogleSignInException instead of returning null
       TalkerService.error(
-        'Google sign in cancelled or failed: ${e.description}',
+        'GoogleSignInException: code=${e.code.name} description=${e.description}',
       );
-      throw Exception('Google sign-in cancelled by user: ${e.description}');
+      // User simply dismissed the sheet — not a real error, handle silently.
+      if (e.code == GoogleSignInExceptionCode.canceled) {
+        throw AuthException(
+          code: 'google-sign-in-canceled',
+          message: 'Sign-in was cancelled.',
+        );
+      }
+      // Any other code (clientConfigurationError, responseError, interrupted)
+      // is a genuine problem. Record to Crashlytics so it appears in the
+      // Firebase console without needing a device attached to a debugger.
+      AnalyticsService.instance.recordError(
+        e,
+        StackTrace.current,
+        reason: 'GoogleSignIn non-canceled: ${e.code.name}',
+      );
+      throw AuthException(
+        code: 'google-sign-in-failed',
+        message: 'Google sign-in failed (${e.code.name}). Please try again.',
+      );
     } on FirebaseAuthException catch (e) {
       TalkerService.error('Google sign in error: ${e.message}');
       throw _handleAuthException(e);

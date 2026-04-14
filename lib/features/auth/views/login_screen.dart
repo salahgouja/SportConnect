@@ -116,9 +116,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     });
 
     ref.listen(socialAuthViewModelProvider, (previous, next) {
-      if (next.errorMessage != null &&
-          next.errorMessage != previous?.errorMessage) {
-        final errorMessage = _getAuthErrorMessage(next.errorMessage);
+      if (next.error != null && next.error != previous?.error) {
+        final errorMessage = _getAuthErrorMessage(next.error);
+        if (errorMessage.isEmpty) return; // user canceled — no snackbar
         TalkerService.error('Social sign-in failed: $errorMessage');
         _showAdaptiveMessage(errorMessage, isError: true);
       }
@@ -589,6 +589,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     final l10n = AppLocalizations.of(context);
     if (error is AuthException) {
       switch (error.code) {
+        case 'google-sign-in-canceled':
+          return ''; // user dismissed — treat as silent, no snackbar
+        case 'google-sign-in-failed':
+          return error.message; // contains the raw code name for visibility
+        case 'account-disabled':
+          return 'Your account has been suspended. Please contact support.';
         case 'user-not-found':
           return l10n.loginErrorUserNotFound;
         case 'wrong-password' || 'invalid-credential':
