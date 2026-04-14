@@ -84,7 +84,7 @@ class AboutScreen extends ConsumerWidget {
             SizedBox(height: 4.h),
 
             Text(
-              'Version 1.0.0',
+              'Version 1.0.1',
               style: TextStyle(fontSize: 14.sp, color: AppColors.textTertiary),
             ).animate().fadeIn(delay: 150.ms),
 
@@ -174,7 +174,7 @@ class AboutScreen extends ConsumerWidget {
               onTap: () => showLicensePage(
                 context: context,
                 applicationName: 'SportConnect',
-                applicationVersion: '1.0.0',
+                applicationVersion: '1.0.1',
               ),
             ).animate().fadeIn(delay: 600.ms).slideX(begin: 0.05),
 
