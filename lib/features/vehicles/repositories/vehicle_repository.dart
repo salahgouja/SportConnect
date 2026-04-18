@@ -12,10 +12,9 @@ part 'vehicle_repository.g.dart';
 
 /// Vehicle Repository for Firestore operations
 class VehicleRepository implements IVehicleRepository {
+  VehicleRepository(this._firestore, this._storage);
   final FirebaseFirestore _firestore;
   final FirebaseStorage _storage;
-
-  VehicleRepository(this._firestore, this._storage);
 
   CollectionReference<VehicleModel> get _vehiclesCollection => _firestore
       .collection(AppConstants.vehiclesCollection)
@@ -153,14 +152,14 @@ class VehicleRepository implements IVehicleRepository {
       if (vehicle.imageUrl != null) {
         try {
           await _storage.refFromURL(vehicle.imageUrl!).delete();
-        } catch (_) {}
+        } on Exception catch (_) {}
       }
 
       // Delete additional images
       for (final url in vehicle.imageUrls) {
         try {
           await _storage.refFromURL(url).delete();
-        } catch (_) {}
+        } on Exception catch (_) {}
       }
     }
 
@@ -183,7 +182,7 @@ class VehicleRepository implements IVehicleRepository {
       Uint8List.fromList(imageBytes),
       SettableMetadata(contentType: 'image/jpeg'),
     );
-    return await ref.getDownloadURL();
+    return ref.getDownloadURL();
   }
 
   /// Update vehicle verification status

@@ -1,14 +1,16 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/services/location_service.dart';
 import 'package:sport_connect/core/services/map_service.dart';
+import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -20,12 +22,7 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 /// - Interactive map for precise location
 /// - Current location detection
 /// - Multiple map styles
-class MapLocationPicker extends StatefulWidget {
-  final String title;
-  final LatLng? initialLocation;
-  final String? countryCode; // 'fr' for France, null for all
-  final bool showQuickPicks;
-
+class MapLocationPicker extends ConsumerStatefulWidget {
   const MapLocationPicker({
     super.key,
     this.title = 'Select Location',
@@ -33,6 +30,10 @@ class MapLocationPicker extends StatefulWidget {
     this.countryCode,
     this.showQuickPicks = true,
   });
+  final String title;
+  final LatLng? initialLocation;
+  final String? countryCode; // 'fr' for France, null for all
+  final bool showQuickPicks;
 
   /// Show the location picker and return selected location
   static Future<LocationPickerResult?> show(
@@ -57,10 +58,10 @@ class MapLocationPicker extends StatefulWidget {
   }
 
   @override
-  State<MapLocationPicker> createState() => _MapLocationPickerState();
+  ConsumerState<MapLocationPicker> createState() => _MapLocationPickerState();
 }
 
-class _MapLocationPickerState extends State<MapLocationPicker>
+class _MapLocationPickerState extends ConsumerState<MapLocationPicker>
     with TickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   final MapController _mapController = MapController();
@@ -127,26 +128,24 @@ class _MapLocationPickerState extends State<MapLocationPicker>
     setState(() => _isLoadingLocation = true);
 
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!mounted) return;
-      if (!serviceEnabled) {
-        await Geolocator.openLocationSettings();
+      final svc = ref.read(locationServiceProvider);
+
+      if (!await svc.isServiceEnabled()) {
+        await svc.openLocationSettings();
         if (!mounted) return;
         setState(() => _isLoadingLocation = false);
         return;
       }
 
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (!mounted) return;
-
-      if (permission == LocationPermission.deniedForever) {
-        await Geolocator.openAppSettings();
+      if (await svc.isPermissionPermanentlyDenied()) {
+        await svc.openAppSettings();
         if (!mounted) return;
         setState(() => _isLoadingLocation = false);
         return;
       }
 
-      if (permission == LocationPermission.denied) {
+      if (!await svc.checkPermission()) {
+        if (!mounted) return;
         final accepted = await PermissionDialogHelper.showLocationRationale(
           context,
         );
@@ -155,17 +154,20 @@ class _MapLocationPickerState extends State<MapLocationPicker>
           setState(() => _isLoadingLocation = false);
           return;
         }
-        permission = await Geolocator.requestPermission();
+        final granted = await svc.requestPermission();
         if (!mounted) return;
-        if (permission == LocationPermission.denied ||
-            permission == LocationPermission.deniedForever) {
+        if (!granted) {
           setState(() => _isLoadingLocation = false);
           return;
         }
       }
 
-      Position position = await Geolocator.getCurrentPosition();
+      final position = await svc.getCurrentLocation();
       if (!mounted) return;
+      if (position == null) {
+        setState(() => _isLoadingLocation = false);
+        return;
+      }
       final location = LatLng(position.latitude, position.longitude);
 
       setState(() {
@@ -176,7 +178,7 @@ class _MapLocationPickerState extends State<MapLocationPicker>
       _mapController.move(location, 15);
       _reverseGeocode(location);
       _animateMarker();
-    } catch (e) {
+    } on Exception {
       if (mounted) setState(() => _isLoadingLocation = false);
     }
   }
@@ -186,7 +188,7 @@ class _MapLocationPickerState extends State<MapLocationPicker>
   }
 
   Future<void> _reverseGeocode(LatLng location) async {
-    final result = await MapService.reverseGeocode(location);
+    final result = await ref.read(mapServiceProvider).reverseGeocode(location);
     if (result != null && mounted) {
       setState(() {
         _selectedAddress = result.displayName;
@@ -210,12 +212,14 @@ class _MapLocationPickerState extends State<MapLocationPicker>
 
     setState(() => _isSearching = true);
 
-    final results = await MapService.searchPlaces(
-      query,
-      countryCode: widget.countryCode,
-      nearLocation: _selectedLocation,
-      limit: 8,
-    );
+    final results = await ref
+        .read(mapServiceProvider)
+        .searchPlaces(
+          query,
+          countryCode: widget.countryCode,
+          nearLocation: _selectedLocation,
+          limit: 8,
+        );
 
     if (mounted) {
       setState(() {
@@ -513,7 +517,7 @@ class _MapLocationPickerState extends State<MapLocationPicker>
                     SizedBox(
                           width: 20.w,
                           height: 20.w,
-                          child: CircularProgressIndicator.adaptive(
+                          child: const CircularProgressIndicator.adaptive(
                             strokeWidth: 2.5,
                             valueColor: AlwaysStoppedAnimation<Color>(
                               AppColors.primary,
@@ -697,8 +701,8 @@ class _MapLocationPickerState extends State<MapLocationPicker>
         _selectedLocation?.longitude == city.location.longitude;
 
     // Determine flag based on location (France)
-    final flag = '🇫🇷';
-    final country = 'France';
+    const flag = '🇫🇷';
+    const country = 'France';
 
     return GestureDetector(
       onTap: () => _selectCity(city),
@@ -771,9 +775,6 @@ class _MapLocationPickerState extends State<MapLocationPicker>
                   const LatLng(36.8, 10.18), // Default: Tunis
               initialZoom: _selectedLocation != null ? 14 : 6,
               onTap: (tapPosition, point) => _onMapTap(point),
-              interactionOptions: const InteractionOptions(
-                flags: InteractiveFlag.all,
-              ),
             ),
             children: [
               TileLayer(
@@ -926,7 +927,7 @@ class _MapLocationPickerState extends State<MapLocationPicker>
             ? SizedBox(
                 width: 22.w,
                 height: 22.w,
-                child: CircularProgressIndicator.adaptive(
+                child: const CircularProgressIndicator.adaptive(
                   strokeWidth: 2,
                   valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                 ),
@@ -1115,8 +1116,7 @@ class _MapLocationPickerState extends State<MapLocationPicker>
 
 /// Result returned from the location picker
 class LocationPickerResult {
+  const LocationPickerResult({required this.location, required this.address});
   final LatLng location;
   final String address;
-
-  const LocationPickerResult({required this.location, required this.address});
 }

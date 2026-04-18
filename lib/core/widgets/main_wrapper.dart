@@ -5,15 +5,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/l10n/generated/app_localizations.dart';
-
+import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
 import 'package:sport_connect/core/widgets/chat_widgets.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Main wrapper widget with bottom navigation
 ///
@@ -23,9 +22,8 @@ import 'package:sport_connect/features/auth/models/models.dart';
 /// - Haptic feedback on tab changes
 /// - Role-based tab switching
 class MainWrapper extends ConsumerStatefulWidget {
+  const MainWrapper({required this.navigationShell, super.key});
   final StatefulNavigationShell navigationShell;
-
-  const MainWrapper({super.key, required this.navigationShell});
 
   @override
   ConsumerState<MainWrapper> createState() => _MainWrapperState();
@@ -51,13 +49,10 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
     _premiumPromptHandledForUserId = user.uid;
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final promptKey = 'premium_prompt_seen_${user.uid}';
-      final hasSeenPrompt = prefs.getBool(promptKey) ?? false;
+      final settings = await ref.read(settingsRepositoryProvider.future);
+      if (settings.premiumPromptSeenFor(user.uid)) return;
 
-      if (hasSeenPrompt) return;
-
-      await prefs.setBool(promptKey, true);
+      await settings.setPremiumPromptSeen(user.uid);
       if (!mounted) return;
 
       await context.pushNamed(AppRoutes.premiumSubscribe.name);
@@ -68,14 +63,13 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    final userAsync = ref.watch(currentUserProvider);
-
-    userAsync.whenData((user) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _maybeShowPremiumPrompt(user);
+    final userAsync = ref.watch(currentUserProvider)
+      ..whenData((user) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          _maybeShowPremiumPrompt(user);
+        });
       });
-    });
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -153,17 +147,16 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
 /// - Active state indicator pill
 /// - Full semantic labels for screen readers
 class _CustomBottomNavBar extends StatelessWidget {
-  final bool isDriver;
-  final int activeIndex;
-  final ValueChanged<int> onTap;
-  final int _unreadChatCount;
-
   const _CustomBottomNavBar({
     required this.isDriver,
     required this.activeIndex,
     required this.onTap,
     int unreadChatCount = 0,
   }) : _unreadChatCount = unreadChatCount;
+  final bool isDriver;
+  final int activeIndex;
+  final ValueChanged<int> onTap;
+  final int _unreadChatCount;
 
   @override
   Widget build(BuildContext context) {
@@ -300,13 +293,6 @@ class _CustomBottomNavBar extends StatelessWidget {
 
 /// Individual navigation tab widget with full accessibility support
 class _NavBarTab extends StatelessWidget {
-  final _NavBarItem item;
-  final bool isActive;
-  final VoidCallback onTap;
-  final int index;
-  final int totalTabs;
-  final int badgeCount;
-
   const _NavBarTab({
     required this.item,
     required this.isActive,
@@ -315,6 +301,12 @@ class _NavBarTab extends StatelessWidget {
     required this.totalTabs,
     this.badgeCount = 0,
   });
+  final _NavBarItem item;
+  final bool isActive;
+  final VoidCallback onTap;
+  final int index;
+  final int totalTabs;
+  final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -405,13 +397,12 @@ class _NavBarTab extends StatelessWidget {
 
 /// Navigation bar item data
 class _NavBarItem {
-  final IconData icon;
-  final IconData activeIcon;
-  final String label;
-
   const _NavBarItem({
     required this.icon,
     required this.activeIcon,
     required this.label,
   });
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
 }

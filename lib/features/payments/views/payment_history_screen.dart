@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/analytics_payment_widgets.dart';
 import 'package:sport_connect/features/payments/models/payment_model.dart';
 import 'package:sport_connect/features/payments/view_models/payment_view_model.dart';
-import 'package:intl/intl.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:sport_connect/core/widgets/analytics_payment_widgets.dart';
 
 /// Payment History Screen - View all payment transactions for a rider
 class PaymentHistoryScreen extends ConsumerWidget {
@@ -481,7 +481,7 @@ class PaymentHistoryScreen extends ConsumerWidget {
     WidgetRef ref,
     PaymentTransaction payment,
   ) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -595,16 +595,53 @@ class PaymentHistoryScreen extends ConsumerWidget {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () {
-                          context.pop();
-                          RefundRequestSheet.show(
+                        onPressed: () async {
+                          await RefundRequestSheet.show(
                             context,
                             rideId: payment.rideId,
                             paidAmount: payment.amount,
-                            onSubmit: (request) {
-                              _requestRefund(context, ref, payment);
+                            onSubmit: (request) async {
+                              final success = await _requestRefund(
+                                context,
+                                ref,
+                                payment,
+                              );
+                              if (success) {
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.of(
+                                  context,
+                                ).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      AppLocalizations.of(
+                                        context,
+                                      ).refundRequestSubmitted,
+                                    ),
+                                    backgroundColor: AppColors.success,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                                context.pop();
+                              } else {
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.of(
+                                  context,
+                                ).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      AppLocalizations.of(
+                                        context,
+                                      ).refundRequestFailed,
+                                    ),
+                                    backgroundColor: AppColors.error,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              }
                             },
                           );
+                          if (!context.mounted) return;
+                          context.pop();
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.error.withValues(
@@ -646,7 +683,7 @@ class PaymentHistoryScreen extends ConsumerWidget {
                         ),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.primary,
-                          side: BorderSide(color: AppColors.primary),
+                          side: const BorderSide(color: AppColors.primary),
                           padding: EdgeInsets.symmetric(vertical: 16.h),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12.r),
@@ -688,13 +725,15 @@ class PaymentHistoryScreen extends ConsumerWidget {
   }
 }
 
-Future<void> _requestRefund(
+Future<bool> _requestRefund(
   BuildContext context,
   WidgetRef ref,
   PaymentTransaction payment,
 ) async {
+  if (!context.mounted) return false;
   final confirmed = await showDialog<bool>(
     context: context,
+    barrierDismissible: false,
     builder: (ctx) => AlertDialog.adaptive(
       title: Text(AppLocalizations.of(context).requestRefund),
       content: Text(
@@ -711,14 +750,14 @@ Future<void> _requestRefund(
           onPressed: () => Navigator.pop(ctx, true),
           child: Text(
             AppLocalizations.of(context).requestRefund,
-            style: TextStyle(color: AppColors.error),
+            style: const TextStyle(color: AppColors.error),
           ),
         ),
       ],
     ),
   );
 
-  if (confirmed != true) return;
+  if (confirmed != true) return false;
 
   try {
     await ref
@@ -727,7 +766,7 @@ Future<void> _requestRefund(
           paymentId: payment.id,
           reason: 'User requested refund',
         );
-    if (!context.mounted) return;
+    if (!context.mounted) return false;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(AppLocalizations.of(context).refundRequestSubmitted),
@@ -735,8 +774,8 @@ Future<void> _requestRefund(
         behavior: SnackBarBehavior.floating,
       ),
     );
-  } catch (_) {
-    if (!context.mounted) return;
+  } on Exception catch (_) {
+    if (!context.mounted) return false;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(AppLocalizations.of(context).refundRequestFailed),
@@ -745,4 +784,5 @@ Future<void> _requestRefund(
       ),
     );
   }
+  return true;
 }

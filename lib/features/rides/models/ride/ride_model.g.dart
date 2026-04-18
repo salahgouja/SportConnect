@@ -9,8 +9,6 @@ part of 'ride_model.dart';
 _RideModel _$RideModelFromJson(Map json) => _RideModel(
   id: json['id'] as String,
   driverId: json['driverId'] as String,
-  eventId: json['eventId'] as String?,
-  eventName: json['eventName'] as String?,
   route: RideRoute.fromJson(Map<String, dynamic>.from(json['route'] as Map)),
   schedule: RideSchedule.fromJson(
     Map<String, dynamic>.from(json['schedule'] as Map),
@@ -24,6 +22,8 @@ _RideModel _$RideModelFromJson(Map json) => _RideModel(
   preferences: RidePreferences.fromJson(
     Map<String, dynamic>.from(json['preferences'] as Map),
   ),
+  eventId: json['eventId'] as String?,
+  eventName: json['eventName'] as String?,
   status:
       $enumDecodeNullable(_$RideStatusEnumMap, json['status']) ??
       RideStatus.draft,
@@ -57,13 +57,13 @@ Map<String, dynamic> _$RideModelToJson(_RideModel instance) =>
     <String, dynamic>{
       'id': instance.id,
       'driverId': instance.driverId,
-      'eventId': instance.eventId,
-      'eventName': instance.eventName,
       'route': instance.route.toJson(),
       'schedule': instance.schedule.toJson(),
       'capacity': instance.capacity.toJson(),
       'pricing': instance.pricing.toJson(),
       'preferences': instance.preferences.toJson(),
+      'eventId': instance.eventId,
+      'eventName': instance.eventName,
       'status': _$RideStatusEnumMap[instance.status]!,
       'ridePhase': instance.ridePhase,
       'vehicleId': instance.vehicleId,

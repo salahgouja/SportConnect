@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/features/profile/view_models/help_center_view_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Help Center screen with FAQ sections and support access.
 ///
@@ -30,8 +30,8 @@ class HelpCenterScreen extends ConsumerWidget {
         ),
         _FAQ(
           'How do I switch between rider and driver?',
-          'Go to Profile → Settings → Switch Role. If you haven\'t '
-              'registered as a driver yet, you\'ll need to complete the '
+          "Go to Profile → Settings → Switch Role. If you haven't "
+              "registered as a driver yet, you'll need to complete the "
               'driver onboarding process.',
         ),
         _FAQ(
@@ -64,7 +64,7 @@ class HelpCenterScreen extends ConsumerWidget {
         ),
         _FAQ(
           'What if my ride is late?',
-          'You\'ll receive real-time updates on your ride status. If the '
+          "You'll receive real-time updates on your ride status. If the "
               'driver is significantly late, you can contact them directly '
               'through the in-app chat.',
         ),
@@ -259,7 +259,10 @@ class HelpCenterScreen extends ConsumerWidget {
         labelText: AppLocalizations.of(context).searchHelpArticles,
         hintText: AppLocalizations.of(context).searchHelpArticles,
         hintStyle: TextStyle(fontSize: 14.sp, color: AppColors.textTertiary),
-        prefixIcon: Icon(Icons.search_rounded, color: AppColors.textSecondary),
+        prefixIcon: const Icon(
+          Icons.search_rounded,
+          color: AppColors.textSecondary,
+        ),
         suffixIcon: uiState.searchQuery.isNotEmpty
             ? IconButton(
                 tooltip: AppLocalizations.of(context).clearSearchTooltip,
@@ -273,15 +276,15 @@ class HelpCenterScreen extends ConsumerWidget {
         fillColor: Colors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14.r),
-          borderSide: BorderSide(color: AppColors.border),
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14.r),
-          borderSide: BorderSide(color: AppColors.border),
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14.r),
-          borderSide: BorderSide(color: AppColors.primary),
+          borderSide: const BorderSide(color: AppColors.primary),
         ),
         contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
       ),
@@ -399,7 +402,7 @@ class HelpCenterScreen extends ConsumerWidget {
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
-          tilePadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 0),
+          tilePadding: EdgeInsets.symmetric(horizontal: 14.w),
           childrenPadding: EdgeInsets.fromLTRB(14.w, 0, 14.w, 12.h),
           title: Text(
             faq.question,
@@ -457,22 +460,20 @@ class HelpCenterScreen extends ConsumerWidget {
 }
 
 class _FAQCategory {
-  final String title;
-  final IconData icon;
-  final Color color;
-  final List<_FAQ> questions;
-
   const _FAQCategory({
     required this.title,
     required this.icon,
     required this.color,
     required this.questions,
   });
+  final String title;
+  final IconData icon;
+  final Color color;
+  final List<_FAQ> questions;
 }
 
 class _FAQ {
+  const _FAQ(this.question, this.answer);
   final String question;
   final String answer;
-
-  const _FAQ(this.question, this.answer);
 }

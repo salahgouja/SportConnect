@@ -9,6 +9,8 @@
 /// This file re-exports them for backward compatibility
 library;
 
+// Re-export converters from core
+export 'package:sport_connect/core/converters/timestamp_converter.dart';
 // Re-export from core (user models are now shared across features)
 export 'package:sport_connect/core/models/user/achievement.dart';
 export 'package:sport_connect/core/models/user/gamification_stats.dart';
@@ -16,12 +18,8 @@ export 'package:sport_connect/core/models/user/rating_breakdown.dart';
 export 'package:sport_connect/core/models/user/user_enums.dart';
 export 'package:sport_connect/core/models/user/user_model.dart';
 export 'package:sport_connect/core/models/user/user_preferences.dart';
-
-// Re-export converters from core
-export 'package:sport_connect/core/converters/timestamp_converter.dart';
-
+export 'package:sport_connect/features/auth/models/auth_exception.dart';
+export 'package:sport_connect/features/auth/models/social_sign_in_result.dart';
 // Auth-specific models (still in this feature)
 // Note: LeaderboardEntry moved to profile feature; re-exported for compatibility
 export 'package:sport_connect/features/profile/models/leaderboard_entry.dart';
-export 'package:sport_connect/features/auth/models/auth_exception.dart';
-export 'package:sport_connect/features/auth/models/social_sign_in_result.dart';

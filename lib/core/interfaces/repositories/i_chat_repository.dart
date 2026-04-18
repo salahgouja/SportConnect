@@ -17,7 +17,6 @@ abstract class IChatRepository {
     String? userPhoto1,
     String? userPhoto2,
   });
-  Stream<List<ChatModel>> getUserChats(String userId);
   Stream<List<ChatModel>> streamUserChats(String userId);
 
   // Message Operations
@@ -27,7 +26,6 @@ abstract class IChatRepository {
     required String messageId,
   });
   Future<void> markAsRead(String chatId, String userId);
-  Stream<List<MessageModel>> getChatMessages(String chatId, {int limit = 50});
   Stream<List<MessageModel>> streamMessages(String chatId, {int limit = 50});
   Future<List<MessageModel>> loadMoreMessages({
     required String chatId,
@@ -42,16 +40,14 @@ abstract class IChatRepository {
   Future<void> addReaction({
     required String chatId,
     required String messageId,
-    required String odid,
+    required String userId,
     required String reaction,
   });
 
   // Typing Indicators
-  Future<void> setTypingStatus(String chatId, String userId, bool isTyping);
-  Stream<Map<String, bool>> getTypingStatus(String chatId);
   Future<void> setTyping({
     required String chatId,
-    required String odid,
+    required String userId,
     required String displayName,
     required bool isTyping,
   });
@@ -60,7 +56,7 @@ abstract class IChatRepository {
   // Chat Actions
   Future<void> toggleMute({
     required String chatId,
-    required String odid,
+    required String userId,
     required bool mute,
   });
   Future<void> clearChat({required String chatId, required String userId});

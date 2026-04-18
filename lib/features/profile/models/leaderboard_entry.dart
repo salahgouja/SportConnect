@@ -7,12 +7,12 @@ part 'leaderboard_entry.g.dart';
 @freezed
 abstract class LeaderboardEntry with _$LeaderboardEntry {
   const factory LeaderboardEntry({
-    required String odid,
+    required String userId,
     required String displayName,
-    String? photoUrl,
     required int totalXP,
     required int level,
     required int rank,
+    String? photoUrl,
     @Default(0) int ridesThisMonth,
   }) = _LeaderboardEntry;
 

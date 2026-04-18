@@ -6,24 +6,23 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// XP Progress Bar
 class XPProgressBar extends StatelessWidget {
+  const XPProgressBar({
+    required this.currentXP,
+    required this.maxXP,
+    required this.level,
+    super.key,
+    this.showLabel = true,
+  });
   final int currentXP;
   final int maxXP;
   final int level;
   final bool showLabel;
 
-  const XPProgressBar({
-    super.key,
-    required this.currentXP,
-    required this.maxXP,
-    required this.level,
-    this.showLabel = true,
-  });
-
   @override
   Widget build(BuildContext context) {
     // 1. Safety check to ensure progress is between 0.0 and 1.0
-    final double safeMax = maxXP > 0 ? maxXP.toDouble() : 1.0;
-    final double progress = (currentXP / safeMax).clamp(0.0, 1.0);
+    final safeMax = maxXP > 0 ? maxXP.toDouble() : 1.0;
+    final progress = (currentXP / safeMax).clamp(0.0, 1.0);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -90,9 +89,7 @@ class XPProgressBar extends StatelessWidget {
 
             // 3. FIX: Calculate finite width instead of using infinity
             // If maxWidth is somehow infinite (unbounded), we default to 0 to prevent crash
-            final double fillWidth = maxWidth.isFinite
-                ? maxWidth * progress
-                : 0.0;
+            final fillWidth = maxWidth.isFinite ? maxWidth * progress : 0.0;
 
             return Container(
               height: 10.h,
@@ -116,7 +113,6 @@ class XPProgressBar extends StatelessWidget {
                         BoxShadow(
                           color: AppColors.xpGold.withValues(alpha: 0.4),
                           blurRadius: 8,
-                          offset: const Offset(0, 0),
                         ),
                       ],
                     ),
@@ -133,22 +129,21 @@ class XPProgressBar extends StatelessWidget {
 
 /// Achievement Badge
 class AchievementBadge extends StatelessWidget {
+  const AchievementBadge({
+    required this.icon,
+    required this.title,
+    required this.description,
+    super.key,
+    this.isUnlocked = true,
+    this.color,
+    this.onTap,
+  });
   final IconData icon;
   final String title;
   final String description;
   final bool isUnlocked;
   final Color? color;
   final VoidCallback? onTap;
-
-  const AchievementBadge({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.description,
-    this.isUnlocked = true,
-    this.color,
-    this.onTap,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -225,10 +220,9 @@ class AchievementBadge extends StatelessWidget {
 
 /// Streak Counter
 class StreakCounter extends StatelessWidget {
+  const StreakCounter({required this.days, super.key, this.isActive = true});
   final int days;
   final bool isActive;
-
-  const StreakCounter({super.key, required this.days, this.isActive = true});
 
   @override
   Widget build(BuildContext context) {
@@ -280,10 +274,9 @@ class StreakCounter extends StatelessWidget {
 
 /// Points Badge
 class PointsBadge extends StatelessWidget {
+  const PointsBadge({required this.points, super.key, this.animate = false});
   final int points;
   final bool animate;
-
-  const PointsBadge({super.key, required this.points, this.animate = false});
 
   @override
   Widget build(BuildContext context) {
@@ -321,20 +314,19 @@ class PointsBadge extends StatelessWidget {
 
 /// Leaderboard Position
 class LeaderboardPosition extends StatelessWidget {
+  const LeaderboardPosition({
+    required this.position,
+    required this.name,
+    required this.points,
+    super.key,
+    this.avatarUrl,
+    this.isCurrentUser = false,
+  });
   final int position;
   final String name;
   final int points;
   final String? avatarUrl;
   final bool isCurrentUser;
-
-  const LeaderboardPosition({
-    super.key,
-    required this.position,
-    required this.name,
-    required this.points,
-    this.avatarUrl,
-    this.isCurrentUser = false,
-  });
 
   Color get _positionColor {
     switch (position) {
@@ -439,6 +431,17 @@ class LeaderboardPosition extends StatelessWidget {
 
 /// Daily Challenge Card
 class DailyChallengeCard extends StatelessWidget {
+  const DailyChallengeCard({
+    required this.title,
+    required this.description,
+    required this.currentProgress,
+    required this.targetProgress,
+    required this.xpReward,
+    required this.icon,
+    super.key,
+    this.isCompleted = false,
+    this.onClaim,
+  });
   final String title;
   final String description;
   final int currentProgress;
@@ -447,18 +450,6 @@ class DailyChallengeCard extends StatelessWidget {
   final IconData icon;
   final bool isCompleted;
   final VoidCallback? onClaim;
-
-  const DailyChallengeCard({
-    super.key,
-    required this.title,
-    required this.description,
-    required this.currentProgress,
-    required this.targetProgress,
-    required this.xpReward,
-    required this.icon,
-    this.isCompleted = false,
-    this.onClaim,
-  });
 
   @override
   Widget build(BuildContext context) {

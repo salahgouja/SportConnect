@@ -2,20 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sport_connect/core/models/user/user_model.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Base widget that fetches passenger data and provides it to a builder
 /// Following database normalization - no denormalized passenger data in models
 class PassengerInfoWidget extends ConsumerWidget {
-  final String passengerId;
-  final Widget Function(BuildContext context, UserModel passenger) builder;
-
   const PassengerInfoWidget({
-    super.key,
     required this.passengerId,
     required this.builder,
+    super.key,
   });
+  final String passengerId;
+  final Widget Function(BuildContext context, UserModel passenger) builder;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -36,18 +35,17 @@ class PassengerInfoWidget extends ConsumerWidget {
 
 /// Displays passenger name with loading/error states
 class PassengerNameWidget extends ConsumerWidget {
-  final String passengerId;
-  final TextStyle? style;
-  final int? maxLines;
-  final TextOverflow? overflow;
-
   const PassengerNameWidget({
-    super.key,
     required this.passengerId,
+    super.key,
     this.style,
     this.maxLines,
     this.overflow,
   });
+  final String passengerId;
+  final TextStyle? style;
+  final int? maxLines;
+  final TextOverflow? overflow;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -78,14 +76,13 @@ class PassengerNameWidget extends ConsumerWidget {
 
 /// Displays passenger avatar with loading/error states
 class PassengerAvatarWidget extends ConsumerWidget {
-  final String passengerId;
-  final double radius;
-
   const PassengerAvatarWidget({
-    super.key,
     required this.passengerId,
+    super.key,
     this.radius = 20,
   });
+  final String passengerId;
+  final double radius;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -132,14 +129,13 @@ class PassengerAvatarWidget extends ConsumerWidget {
 
 /// Displays passenger phone number with loading/error states
 class PassengerPhoneWidget extends ConsumerWidget {
-  final String passengerId;
-  final TextStyle? style;
-
   const PassengerPhoneWidget({
-    super.key,
     required this.passengerId,
+    super.key,
     this.style,
   });
+  final String passengerId;
+  final TextStyle? style;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

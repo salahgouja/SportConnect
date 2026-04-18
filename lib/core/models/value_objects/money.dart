@@ -7,12 +7,11 @@ part 'money.g.dart';
 /// Ensures consistent handling of amounts across features
 @freezed
 abstract class Money with _$Money {
-  const Money._();
-
   const factory Money({
     required double amount,
     @Default('EUR') String currency,
   }) = _Money;
+  const Money._();
 
   factory Money.fromJson(Map<String, dynamic> json) => _$MoneyFromJson(json);
 
@@ -97,7 +96,7 @@ abstract class Money with _$Money {
       case 'EUR':
         return '€';
       case 'USD':
-        return '\$';
+        return r'$';
       case 'GBP':
         return '£';
       default:

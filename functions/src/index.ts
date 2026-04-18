@@ -7,6 +7,7 @@ import {
   onDocumentCreated,
   onDocumentUpdated,
 } from "firebase-functions/v2/firestore";
+import { onSchedule } from "firebase-functions/v2/scheduler";
 import { onRequest, onCall, HttpsError } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import { logger } from "firebase-functions/v2";
@@ -314,18 +315,62 @@ async function sendSupportMail({
 }
 
 // ============================================
+// Helper: Per-user rate limiter (Firestore-backed, atomic).
+//
+// Uses a sliding fixed-window counter stored under _rateLimits/{uid}:{action}.
+// One Firestore read + write per call — minimal cost.
+// Throws HttpsError("resource-exhausted") when the limit is exceeded.
+// ============================================
+
+async function checkRateLimit(
+  db: admin.firestore.Firestore,
+  uid: string,
+  action: string,
+  maxCalls: number,
+  windowSeconds: number,
+): Promise<void> {
+  const windowMs = windowSeconds * 1000;
+  const ref = db.collection("_rateLimits").doc(`${uid}:${action}`);
+
+  await db.runTransaction(async (tx) => {
+    const doc = await tx.get(ref);
+    const data = doc.data();
+    const windowStart = (data?.windowStart as number | undefined) ?? 0;
+    const count = (data?.count as number | undefined) ?? 0;
+    const now = Date.now();
+
+    if (now - windowStart < windowMs && count >= maxCalls) {
+      const resetIn = Math.ceil((windowStart + windowMs - now) / 1000);
+      throw new HttpsError(
+        "resource-exhausted",
+        `Too many requests. Try again in ${resetIn}s.`,
+      );
+    }
+
+    if (now - windowStart >= windowMs) {
+      tx.set(ref, { windowStart: now, count: 1 });
+    } else {
+      tx.update(ref, { count: admin.firestore.FieldValue.increment(1) });
+    }
+  });
+}
+
+// ============================================
 // Helper: Recompute driver_stats from the payments collection.
 // (CF-7) Called after every payment success AND after every refund so that
 // driver_stats always reflects NET (non-refunded) earnings.
-// Refunded payments have status "refunded", so they are excluded
-// automatically by the "succeeded" filter — no manual subtraction needed.
-// Also computes totalPlatformFees, totalStripeFees, and earningsThisYear
-// so the Dart EarningsSummary fast-path (P-2) can read a complete document.
+//
+// Optimisation: only scans payments from the start of the current year
+// (captures all time-windowed stats). All-time totals (totalEarnings,
+// totalRides) are maintained as incremental counters via FieldValue.increment
+// so callers must pass the delta for the current event.
 // ============================================
 
 async function recomputeDriverStats(
   db: admin.firestore.Firestore,
   driverId: string,
+  earningsDelta?: number,
+  ridesDelta?: number,
 ): Promise<void> {
   const now = new Date();
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -334,25 +379,26 @@ async function recomputeDriverStats(
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const yearStart = new Date(now.getFullYear(), 0, 1);
 
-  const allPaymentsSnap = await db
+  // Only scan this year — avoids a full collection scan that grows unbounded.
+  // Time-windowed buckets (today/week/month/year) are fully derived from this set.
+  const recentSnap = await db
     .collection("payments")
     .where("driverId", "==", driverId)
     .where("status", "==", "succeeded")
+    .where("createdAt", ">=", admin.firestore.Timestamp.fromDate(yearStart))
     .get();
 
-  let totalEarnings = 0;
   let totalPlatformFees = 0;
   let totalStripeFees = 0;
   let earningsToday = 0;
   let earningsThisWeek = 0;
   let earningsThisMonth = 0;
   let earningsThisYear = 0;
-  let totalRides = 0;
   let ridesToday = 0;
   let ridesThisWeek = 0;
   let ridesThisMonth = 0;
 
-  for (const doc of allPaymentsSnap.docs) {
+  for (const doc of recentSnap.docs) {
     const data = doc.data();
     const earnings = (data.driverEarnings as number) ?? 0;
     const platformFee = (data.platformFee as number) ?? 0;
@@ -361,13 +407,11 @@ async function recomputeDriverStats(
       (data.completedAt as admin.firestore.Timestamp | null)?.toDate() ??
       (data.createdAt as admin.firestore.Timestamp | null)?.toDate();
 
-    totalEarnings += earnings;
     totalPlatformFees += platformFee;
     totalStripeFees += stripeFee;
-    totalRides += 1;
+    earningsThisYear += earnings;
 
     if (completedAt) {
-      if (completedAt >= yearStart) earningsThisYear += earnings;
       if (completedAt >= monthStart) {
         earningsThisMonth += earnings;
         ridesThisMonth += 1;
@@ -384,26 +428,34 @@ async function recomputeDriverStats(
   }
 
   const statsRef = db.collection("driver_stats").doc(driverId);
-  await statsRef.set(
-    {
-      driverId,
-      totalEarnings,
-      totalPlatformFees,
-      totalStripeFees,
-      earningsToday,
-      earningsThisWeek,
-      earningsThisMonth,
-      earningsThisYear,
-      totalRides,
-      ridesToday,
-      ridesThisWeek,
-      ridesThisMonth,
-      lastUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    },
-    { merge: true },
-  );
 
-  logger.info("driver_stats recomputed", { driverId, totalEarnings, totalRides });
+  // Time-windowed fields are fully recomputed each call.
+  // totalEarnings / totalRides use FieldValue.increment so all-time data
+  // is never lost across year boundaries.
+  const updates: Record<string, unknown> = {
+    driverId,
+    totalPlatformFees,
+    totalStripeFees,
+    earningsToday,
+    earningsThisWeek,
+    earningsThisMonth,
+    earningsThisYear,
+    ridesToday,
+    ridesThisWeek,
+    ridesThisMonth,
+    lastUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  };
+
+  if (earningsDelta !== undefined) {
+    updates.totalEarnings = admin.firestore.FieldValue.increment(earningsDelta);
+  }
+  if (ridesDelta !== undefined) {
+    updates.totalRides = admin.firestore.FieldValue.increment(ridesDelta);
+  }
+
+  await statsRef.set(updates, { merge: true });
+
+  logger.info("driver_stats recomputed", { driverId, earningsDelta, ridesDelta });
 }
 
 // ============================================
@@ -840,16 +892,44 @@ export const onRideStatusChanged = onDocumentUpdated(
     }
 
     if (isCompleting) {
+      // GAP-1: Atomically mark all accepted bookings as completed
+      const completionBatch = db.batch();
+      bookingsSnap.docs.forEach((doc) => {
+        completionBatch.update(doc.ref, {
+          status: "completed",
+          // GAP-8/9: Flag for review prompt on next app open
+          reviewPromptPending: true,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      });
+      if (!bookingsSnap.empty) await completionBatch.commit();
+
+      // GAP-8/9: Send ride-complete push with review CTA
       await sendPushToMultipleUsers(
         passengerIds,
         "Ride Completed ✅",
-        "Your ride is complete. Don't forget to rate your driver!",
+        "Your ride is complete! Rate your driver and earn bonus XP.",
         {
-          type: "ride_update",
+          type: "ride_completed",
           referenceId: event.params.rideId,
           status: "completed",
         },
       );
+
+      // Notify driver their ride is done
+      const driverId = typeof after.driverId === "string" ? after.driverId : null;
+      if (driverId) {
+        await sendPushToUser(
+          driverId,
+          "Ride Completed 🏁",
+          `Great job! Your ride is complete. Earnings will be processed shortly.`,
+          {
+            type: "ride_completed",
+            referenceId: event.params.rideId,
+            status: "completed",
+          },
+        );
+      }
     }
   },
 );
@@ -1049,6 +1129,9 @@ export const createConnectedAccount = onCall(
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "User must be authenticated");
     }
+
+    // Rate limit: 3 account creations per user per hour
+    await checkRateLimit(admin.firestore(), request.auth.uid, "createConnectedAccount", 3, 3600);
 
     const {
       userId,
@@ -1335,20 +1418,22 @@ export const getAccountStatus = onCall(
     try {
       const account = await stripe.accounts.retrieve(accountId);
       const defaultCurrency = (account.default_currency ?? "eur").toLowerCase();
-      
+
       // Fetch balance for this connected account
       let availableBalance = 0;
       let pendingBalance = 0;
       try {
-        const balance = await stripe.balance.retrieve({ stripeAccount: accountId });
-        logger.info("Stripe balance retrieved", { 
-          accountId, 
+        const balance = await stripe.balance.retrieve({
+          stripeAccount: accountId,
+        });
+        logger.info("Stripe balance retrieved", {
+          accountId,
           availableCount: balance.available?.length,
           pendingCount: balance.pending?.length,
           rawAvailable: JSON.stringify(balance.available),
           rawPending: JSON.stringify(balance.pending),
         });
-        
+
         // CF-8: Sum ALL balance entries for the default currency, not just the
         // first one.  A connected account can have multiple entries per currency
         // (e.g. from different payment sources).  Using find() silently dropped
@@ -1359,18 +1444,23 @@ export const getAccountStatus = onCall(
           );
           if (matchingEntries.length > 0) {
             availableBalance =
-              matchingEntries.reduce((sum, b) => sum + (b.amount || 0), 0) / 100;
+              matchingEntries.reduce((sum, b) => sum + (b.amount || 0), 0) /
+              100;
           } else {
             // No entry for defaultCurrency: sum all entries of the first
             // currency found rather than taking only index 0.
-            const firstCurrency = (balance.available[0]?.currency || "").toLowerCase();
+            const firstCurrency = (
+              balance.available[0]?.currency || ""
+            ).toLowerCase();
             availableBalance =
               balance.available
-                .filter((b) => (b.currency || "").toLowerCase() === firstCurrency)
+                .filter(
+                  (b) => (b.currency || "").toLowerCase() === firstCurrency,
+                )
                 .reduce((sum, b) => sum + (b.amount || 0), 0) / 100;
           }
         }
-        
+
         // CF-8: Same sum-all approach for pending balances.
         if (balance.pending && balance.pending.length > 0) {
           const matchingEntries = balance.pending.filter(
@@ -1378,25 +1468,33 @@ export const getAccountStatus = onCall(
           );
           if (matchingEntries.length > 0) {
             pendingBalance =
-              matchingEntries.reduce((sum, b) => sum + (b.amount || 0), 0) / 100;
+              matchingEntries.reduce((sum, b) => sum + (b.amount || 0), 0) /
+              100;
           } else {
-            const firstCurrency = (balance.pending[0]?.currency || "").toLowerCase();
+            const firstCurrency = (
+              balance.pending[0]?.currency || ""
+            ).toLowerCase();
             pendingBalance =
               balance.pending
-                .filter((b) => (b.currency || "").toLowerCase() === firstCurrency)
+                .filter(
+                  (b) => (b.currency || "").toLowerCase() === firstCurrency,
+                )
                 .reduce((sum, b) => sum + (b.amount || 0), 0) / 100;
           }
         }
-        
-        logger.info("Calculated balances", { 
-          availableBalance, 
+
+        logger.info("Calculated balances", {
+          availableBalance,
           pendingBalance,
           defaultCurrency,
         });
       } catch (balanceError) {
-        logger.warn("Could not fetch balance for account", { accountId, error: balanceError });
+        logger.warn("Could not fetch balance for account", {
+          accountId,
+          error: balanceError,
+        });
       }
-      
+
       return {
         chargesEnabled: account.charges_enabled ?? false,
         payoutsEnabled: account.payouts_enabled ?? false,
@@ -1429,6 +1527,9 @@ export const createInstantPayout = onCall(
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "User must be authenticated");
     }
+
+    // Rate limit: 5 instant payouts per user per hour
+    await checkRateLimit(admin.firestore(), request.auth.uid, "createInstantPayout", 5, 3600);
 
     const { stripeAccountId, amount, currency = "eur" } = request.data;
 
@@ -1602,6 +1703,9 @@ export const getOrCreateCustomer = onCall(
       throw new HttpsError("unauthenticated", "User must be authenticated");
     }
 
+    // Rate limit: 10 calls per user per 60 s
+    await checkRateLimit(admin.firestore(), request.auth.uid, "getOrCreateCustomer", 10, 60);
+
     const { email, name, phone, existingCustomerId } = request.data;
 
     if (!email) {
@@ -1665,6 +1769,9 @@ export const createPaymentIntent = onCall(
       throw new HttpsError("unauthenticated", "User must be authenticated");
     }
 
+    // Rate limit: 10 payment intents per user per 60 s
+    await checkRateLimit(admin.firestore(), request.auth.uid, "createPaymentIntent", 10, 60);
+
     const {
       amount,
       currency = "eur",
@@ -1676,9 +1783,6 @@ export const createPaymentIntent = onCall(
       driverStripeAccountId,
       description,
       customerId,
-      // FIX: The client SDK's required API version must be passed from Flutter.
-      // The ephemeral key apiVersion must match the Flutter stripe package version,
-      // not the server's Stripe API version. Pass it as `stripeApiVersion`.
       stripeApiVersion,
     } = request.data;
 
@@ -1940,8 +2044,9 @@ export const stripeWebhook = onRequest(
             try {
               const paymentDoc = payments.docs[0]?.data();
               const driverEarnings = paymentDoc?.driverEarnings ?? 0;
-              const currency = (paymentDoc?.currency as string | undefined)
-                ?.toUpperCase() ?? "EUR";
+              const currency =
+                (paymentDoc?.currency as string | undefined)?.toUpperCase() ??
+                "EUR";
               const riderDisplayName =
                 (paymentDoc?.riderName as string | undefined) ?? "A passenger";
 
@@ -1975,13 +2080,13 @@ export const stripeWebhook = onRequest(
             }
           }
 
-          // CF-7: Delegate to shared helper that also includes
-          // totalPlatformFees, totalStripeFees, and earningsThisYear.
-          // Refunded payments are naturally excluded because their status is
-          // "refunded", so totalEarnings is always a net figure.
+          // CF-7: Recompute time-windowed stats; pass delta so all-time counters
+          // are updated incrementally rather than via a full collection scan.
           if (driverId) {
             try {
-              await recomputeDriverStats(db, driverId);
+              const driverEarningsDelta =
+                (payments.docs[0]?.data()?.driverEarnings as number) ?? 0;
+              await recomputeDriverStats(db, driverId, driverEarningsDelta, 1);
             } catch (statsError) {
               logger.error("Failed to update driver_stats", {
                 driverId,
@@ -1995,17 +2100,47 @@ export const stripeWebhook = onRequest(
 
         case "payment_intent.payment_failed": {
           const pi = event.data.object as Stripe.PaymentIntent;
-          const payments = await db
-            .collection("payments")
-            .where("paymentIntentId", "==", pi.id)
-            .get();
+          const [failedPayments, failedBookings] = await Promise.all([
+            db.collection("payments").where("paymentIntentId", "==", pi.id).get(),
+            db.collection("bookings").where("paymentIntentId", "==", pi.id).get(),
+          ]);
 
-          for (const doc of payments.docs) {
+          // Mark payment docs as failed
+          for (const doc of failedPayments.docs) {
             await doc.ref.update({
               status: "failed",
               failedAt: admin.firestore.FieldValue.serverTimestamp(),
               failureMessage:
                 pi.last_payment_error?.message || "Payment failed",
+            });
+          }
+
+          // GAP-3: Cancel related bookings + notify passengers
+          if (!failedBookings.empty) {
+            const bookingBatch = db.batch();
+            failedBookings.docs.forEach((doc) => {
+              bookingBatch.update(doc.ref, {
+                status: "rejected",
+                cancellationReason: "payment_failed",
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              });
+            });
+            await bookingBatch.commit();
+
+            for (const doc of failedBookings.docs) {
+              const passengerId = doc.data().passengerId as string | undefined;
+              if (passengerId) {
+                await sendPushToUser(
+                  passengerId,
+                  "Payment Failed ❌",
+                  "Your payment could not be processed. Your booking has been cancelled — please try again.",
+                  { type: "payment_failed", referenceId: doc.id },
+                );
+              }
+            }
+            logger.info("GAP-3: cancelled bookings after payment failure", {
+              paymentIntentId: pi.id,
+              count: failedBookings.size,
             });
           }
           break;
@@ -2164,7 +2299,9 @@ export const stripeWebhook = onRequest(
               updatedAt: admin.firestore.FieldValue.serverTimestamp(),
             });
           }
-          const driverId = payoutsSnap.docs[0]?.data().driverId as string | undefined;
+          const driverId = payoutsSnap.docs[0]?.data().driverId as
+            | string
+            | undefined;
           if (driverId) {
             await sendPushToUser(
               driverId,
@@ -2200,8 +2337,12 @@ export const stripeWebhook = onRequest(
 export const onBookingCancelled = onDocumentUpdated(
   { document: "bookings/{bookingId}", secrets: [stripeSecretKey] },
   async (event) => {
-    const before = event.data?.before.data() as Record<string, unknown> | undefined;
-    const after = event.data?.after.data() as Record<string, unknown> | undefined;
+    const before = event.data?.before.data() as
+      | Record<string, unknown>
+      | undefined;
+    const after = event.data?.after.data() as
+      | Record<string, unknown>
+      | undefined;
     if (!before || !after) return;
 
     const beforeStatus = typeof before.status === "string" ? before.status : "";
@@ -2219,6 +2360,32 @@ export const onBookingCancelled = onDocumentUpdated(
       logger.info("Booking cancelled without payment — no refund needed", {
         bookingId: event.params.bookingId,
       });
+      const db = admin.firestore();
+      const rideId = typeof after.rideId === "string" ? after.rideId : null;
+      const riderId = typeof after.riderId === "string" ? after.riderId : null;
+      if (rideId && riderId) {
+        const pendingPayments = await db
+          .collection("payments")
+          .where("rideId", "==", rideId)
+          .where("riderId", "==", riderId)
+          .where("status", "==", "pending")
+          .get();
+        if (!pendingPayments.empty) {
+          const batch = db.batch();
+          pendingPayments.docs.forEach((doc) => {
+            batch.update(doc.ref, {
+              status: "cancelled",
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+          });
+          await batch.commit();
+          logger.info("Marked pending payments as cancelled", {
+            bookingId: event.params.bookingId,
+            rideId,
+            count: pendingPayments.size,
+          });
+        }
+      }
       return;
     }
 
@@ -2229,6 +2396,29 @@ export const onBookingCancelled = onDocumentUpdated(
 
     const stripe = getStripeClient(stripeSecretKey.value().trim());
     const db = admin.firestore();
+
+    // GAP-11: No refund if ride is already in progress — prevents mid-trip abuse
+    const rideId = typeof after.rideId === "string" ? after.rideId : null;
+    if (rideId) {
+      const rideSnap = await db.collection("rides").doc(rideId).get();
+      const rideStatus = rideSnap.data()?.status as string | undefined;
+      if (rideStatus === "inProgress") {
+        logger.info("onBookingCancelled: ride inProgress — no refund issued", {
+          bookingId: event.params.bookingId,
+          rideId,
+        });
+        const passengerId = typeof after.passengerId === "string" ? after.passengerId : null;
+        if (passengerId) {
+          await sendPushToUser(
+            passengerId,
+            "Booking Cancelled",
+            "Your booking was cancelled after the ride started. Refunds are not available once a ride is in progress.",
+            { type: "ride_update", referenceId: event.params.bookingId },
+          );
+        }
+        return;
+      }
+    }
 
     try {
       // FIX CF-4: Use a Firestore transaction to atomically claim the
@@ -2272,13 +2462,11 @@ export const onBookingCancelled = onDocumentUpdated(
           });
         });
       } catch (txnErr) {
-        const msg =
-          txnErr instanceof Error ? txnErr.message : String(txnErr);
+        const msg = txnErr instanceof Error ? txnErr.message : String(txnErr);
         if (msg === "already_refunded" || msg === "payment_not_found") {
-          logger.info(
-            `onBookingCancelled: skipping refund — ${msg}`,
-            { paymentIntentId },
-          );
+          logger.info(`onBookingCancelled: skipping refund — ${msg}`, {
+            paymentIntentId,
+          });
           return;
         }
         throw txnErr;
@@ -2305,8 +2493,8 @@ export const onBookingCancelled = onDocumentUpdated(
         typeof after.passengerId === "string" ? after.passengerId : null;
       if (passengerId) {
         const refundAmount = (refund.amount ?? 0) / 100;
-        const currency = (paymentData.currency as string | undefined)
-          ?.toUpperCase() ?? "EUR";
+        const currency =
+          (paymentData.currency as string | undefined)?.toUpperCase() ?? "EUR";
         await sendPushToUser(
           passengerId,
           "Refund Processed ✅",
@@ -2322,6 +2510,7 @@ export const onBookingCancelled = onDocumentUpdated(
       // Notify driver that a passenger cancelled (for awareness)
       const driverId =
         typeof after.driverId === "string" ? after.driverId : null;
+      const driverEarnings = (paymentData.driverEarnings as number) ?? 0;
       if (driverId) {
         await sendPushToUser(
           driverId,
@@ -2335,7 +2524,6 @@ export const onBookingCancelled = onDocumentUpdated(
 
         // Decrement driver_connected_accounts.pendingBalance since the payment
         // that was pending will be reversed.
-        const driverEarnings = (paymentData.driverEarnings as number) ?? 0;
         const connectedRef = db
           .collection("driver_connected_accounts")
           .doc(driverId);
@@ -2355,13 +2543,11 @@ export const onBookingCancelled = onDocumentUpdated(
         amount: (refund.amount ?? 0) / 100,
       });
 
-      // CF-7: Recompute driver_stats after a refund so that totalEarnings
-      // correctly excludes this payment's driverEarnings.  The payment status
-      // was just updated to "refunded", so it will be excluded from the
-      // "succeeded" query inside recomputeDriverStats.
+      // CF-7: Recompute driver_stats after a refund.
+      // Pass negative delta so totalEarnings is decremented atomically.
       if (driverId) {
         try {
-          await recomputeDriverStats(db, driverId);
+          await recomputeDriverStats(db, driverId, -driverEarnings);
         } catch (statsError) {
           logger.warn("Failed to recompute driver_stats after refund", {
             driverId,
@@ -2402,8 +2588,7 @@ export const onRideCancelled = onDocumentUpdated(
       | undefined;
     if (!before || !after) return;
 
-    const beforeStatus =
-      typeof before.status === "string" ? before.status : "";
+    const beforeStatus = typeof before.status === "string" ? before.status : "";
     const afterStatus = typeof after.status === "string" ? after.status : "";
 
     // Only fire when a ride transitions TO cancelled
@@ -2414,14 +2599,40 @@ export const onRideCancelled = onDocumentUpdated(
     const stripe = getStripeClient(stripeSecretKey.value().trim());
 
     // Find all accepted bookings for this ride
-    const bookingsSnap = await db
-      .collection("bookings")
-      .where("rideId", "==", rideId)
-      .where("status", "==", "accepted")
-      .get();
+    const [bookingsSnap, pendingBookingsSnap] = await Promise.all([
+      db.collection("bookings").where("rideId", "==", rideId).where("status", "==", "accepted").get(),
+      db.collection("bookings").where("rideId", "==", rideId).where("status", "==", "pending").get(),
+    ]);
+
+    // GAP-15: Cancel pending bookings immediately (no payment to refund)
+    if (!pendingBookingsSnap.empty) {
+      const pendingBatch = db.batch();
+      pendingBookingsSnap.docs.forEach((doc) => {
+        pendingBatch.update(doc.ref, {
+          status: "cancelled",
+          cancellationReason: "ride_cancelled_by_driver",
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      });
+      await pendingBatch.commit();
+      const pendingPassengerIds = pendingBookingsSnap.docs
+        .map((d) => d.data().passengerId as string)
+        .filter(Boolean);
+      if (pendingPassengerIds.length > 0) {
+        const driverName = (after.driverName as string) || "The driver";
+        await sendPushToMultipleUsers(
+          pendingPassengerIds,
+          "Ride Cancelled",
+          `${driverName} cancelled the ride your booking request was for.`,
+          { type: "ride_update", referenceId: rideId, status: "cancelled" },
+        );
+      }
+    }
 
     if (bookingsSnap.empty) {
-      logger.info("onRideCancelled: no accepted bookings to refund", { rideId });
+      logger.info("onRideCancelled: no accepted bookings to refund", {
+        rideId,
+      });
       return;
     }
 
@@ -2536,6 +2747,40 @@ export const onRideCancelled = onDocumentUpdated(
         { type: "ride_update", referenceId: rideId, status: "cancelled" },
       );
     }
+
+    // GAP-5: Track driver cancellation rate (skip for event-triggered cancellations)
+    const driverId = typeof after.driverId === "string" ? after.driverId : null;
+    const isDriverCancellation =
+      (after.cancellationReason as string | undefined) !== "event_cancelled";
+    if (driverId && isDriverCancellation) {
+      try {
+        const driverRef = db.collection("users").doc(driverId);
+        await db.runTransaction(async (txn) => {
+          const snap = await txn.get(driverRef);
+          if (!snap.exists) return;
+          const data = snap.data()!;
+          const completedRides = (data.totalRidesAsDriver as number) ?? 0;
+          const prevCount = (data.cancellationCount as number) ?? 0;
+          const newCount = prevCount + 1;
+          const total = completedRides + newCount;
+          const rate = total > 0 ? newCount / total : 0;
+          txn.update(driverRef, {
+            cancellationCount: newCount,
+            cancellationRate: rate,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+        });
+        logger.info("GAP-5: updated driver cancellation rate", {
+          driverId,
+          rideId,
+        });
+      } catch (err) {
+        logger.warn("GAP-5: failed to update cancellation rate", {
+          driverId,
+          error: err,
+        });
+      }
+    }
   },
 );
 
@@ -2549,6 +2794,9 @@ export const syncDriverBalance = onCall(
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "User must be authenticated");
     }
+
+    // Rate limit: 20 balance syncs per user per 60 s
+    await checkRateLimit(admin.firestore(), request.auth.uid, "syncDriverBalance", 20, 60);
 
     const stripe = getStripeClient(stripeSecretKey.value().trim());
     const db = admin.firestore();
@@ -2576,42 +2824,43 @@ export const syncDriverBalance = onCall(
       }
 
       // Fetch balance from Stripe
-      const balance = await stripe.balance.retrieve({ stripeAccount: stripeAccountId });
+      const balance = await stripe.balance.retrieve({
+        stripeAccount: stripeAccountId,
+      });
 
       // Sum all available amounts
       let availableBalance = 0;
       if (balance.available && balance.available.length > 0) {
-        availableBalance = balance.available.reduce((sum, b) => sum + (b.amount || 0), 0) / 100;
+        availableBalance =
+          balance.available.reduce((sum, b) => sum + (b.amount || 0), 0) / 100;
       }
 
       // Sum all pending amounts
       let pendingBalance = 0;
       if (balance.pending && balance.pending.length > 0) {
-        pendingBalance = balance.pending.reduce((sum, b) => sum + (b.amount || 0), 0) / 100;
+        pendingBalance =
+          balance.pending.reduce((sum, b) => sum + (b.amount || 0), 0) / 100;
       }
 
-      logger.info("Synced balance for driver", { 
-        driverId, 
+      logger.info("Synced balance for driver", {
+        driverId,
         stripeAccountId,
-        availableBalance, 
+        availableBalance,
         pendingBalance,
       });
 
       // Upsert driver_connected_accounts — if the doc was never created
       // (e.g. onboarding completed via the webhook path) set it now.
-      await db
-        .collection("driver_connected_accounts")
-        .doc(driverId)
-        .set(
-          {
-            driverId,
-            stripeAccountId,
-            availableBalance,
-            pendingBalance,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          },
-          { merge: true },
-        );
+      await db.collection("driver_connected_accounts").doc(driverId).set(
+        {
+          driverId,
+          stripeAccountId,
+          availableBalance,
+          pendingBalance,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
 
       return {
         success: true,
@@ -2620,19 +2869,251 @@ export const syncDriverBalance = onCall(
       };
     } catch (error) {
       const e = error as { message?: string };
-      logger.error("syncDriverBalance failed", { 
-        driverId, 
+      logger.error("syncDriverBalance failed", {
+        driverId,
         error: e.message,
       });
-      
+
       if (error instanceof HttpsError) {
         throw error;
       }
-      
+
       throw new HttpsError(
         "internal",
         `Failed to sync balance: ${e.message ?? "unknown error"}`,
       );
     }
+  },
+);
+
+// ============================================
+// GAP-6: Scheduled — Expire Old Rides
+// Runs every 6 hours. Closes rides where departureTime < now-1h and status=active.
+// ============================================
+
+export const expireOldRides = onSchedule("every 6 hours", async () => {
+  const db = admin.firestore();
+  const cutoff = new Date(Date.now() - 60 * 60 * 1000); // 1 hour ago
+  const staleRides = await db
+    .collection("rides")
+    .where("status", "==", "active")
+    .where("schedule.departureTime", "<=", cutoff)
+    .get();
+
+  if (staleRides.empty) {
+    logger.info("expireOldRides: no stale rides found");
+    return;
+  }
+
+  for (const rideDoc of staleRides.docs) {
+    try {
+      // Setting status → cancelled triggers onRideCancelled which handles refunds
+      await rideDoc.ref.update({
+        status: "cancelled",
+        cancellationReason: "expired",
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      logger.info("expireOldRides: expired ride", { rideId: rideDoc.id });
+    } catch (err) {
+      logger.error("expireOldRides: failed to expire ride", {
+        rideId: rideDoc.id,
+        error: err,
+      });
+    }
+  }
+
+  logger.info("expireOldRides: done", { count: staleRides.size });
+});
+
+// ============================================
+// GAP-7: Scheduled — Expire Pending Bookings
+// Runs every 6 hours. Cancels pending bookings older than 48 h.
+// ============================================
+
+export const expirePendingBookings = onSchedule("every 6 hours", async () => {
+  const db = admin.firestore();
+  const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000); // 48 hours ago
+  const staleBookings = await db
+    .collection("bookings")
+    .where("status", "==", "pending")
+    .where("createdAt", "<=", cutoff)
+    .get();
+
+  if (staleBookings.empty) {
+    logger.info("expirePendingBookings: no stale bookings found");
+    return;
+  }
+
+  const batch = db.batch();
+  staleBookings.docs.forEach((doc) => {
+    batch.update(doc.ref, {
+      status: "cancelled",
+      cancellationReason: "expired_no_driver_response",
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  });
+  await batch.commit();
+
+  // Notify each affected passenger
+  for (const doc of staleBookings.docs) {
+    const passengerId = doc.data().passengerId as string | undefined;
+    if (passengerId) {
+      await sendPushToUser(
+        passengerId,
+        "Booking Request Expired",
+        "Your booking request was not accepted within 48 hours and has been automatically cancelled.",
+        {
+          type: "ride_update",
+          referenceId: doc.id,
+          status: "cancelled",
+        },
+      );
+    }
+  }
+
+  logger.info("expirePendingBookings: done", { count: staleBookings.size });
+});
+
+// ============================================
+// GAP-14: Trigger — Review Updated → Recalculate Rating
+// Fires when a review doc changes. Recomputes the reviewee's average rating.
+// ============================================
+
+export const onReviewUpdated = onDocumentUpdated(
+  "reviews/{reviewId}",
+  async (event) => {
+    const before = event.data?.before.data() as Record<string, unknown> | undefined;
+    const after = event.data?.after.data() as Record<string, unknown> | undefined;
+    if (!before || !after) return;
+
+    const oldRating = typeof before.rating === "number" ? before.rating : null;
+    const newRating = typeof after.rating === "number" ? after.rating : null;
+
+    // Only act when the numeric rating actually changed
+    if (oldRating === null || newRating === null || oldRating === newRating) return;
+
+    const revieweeId = typeof after.revieweeId === "string" ? after.revieweeId : null;
+    if (!revieweeId) return;
+
+    const db = admin.firestore();
+
+    // Recompute from all reviews for this user
+    const allReviews = await db
+      .collection("reviews")
+      .where("revieweeId", "==", revieweeId)
+      .get();
+
+    if (allReviews.empty) return;
+
+    const ratings = allReviews.docs.map((d) => (d.data().rating as number) ?? 0);
+    const avg = ratings.reduce((a, b) => a + b, 0) / ratings.length;
+    const rounded = Math.round(avg * 10) / 10;
+
+    await db.collection("users").doc(revieweeId).update({
+      averageRating: rounded,
+      totalReviews: ratings.length,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    logger.info("GAP-14: recalculated rating after review edit", {
+      revieweeId,
+      newAvg: rounded,
+      reviewCount: ratings.length,
+    });
+  },
+);
+
+// ============================================
+// Stripe: Customer Sheet Setup
+// Creates a SetupIntent + EphemeralKey for managing saved payment methods
+// ============================================
+
+export const createCustomerSheetSetup = onCall(
+  { secrets: [stripeSecretKey], cors: true },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "User must be authenticated");
+    }
+
+    const { stripeApiVersion } = request.data;
+    const userId = request.auth.uid;
+
+    const stripe = getStripeClient(stripeSecretKey.value().trim());
+    const db = admin.firestore();
+
+    // Get or verify the user's Stripe customer ID
+    const userDoc = await db.collection("users").doc(userId).get();
+    const userData = userDoc.data();
+
+    if (!userData) {
+      throw new HttpsError("not-found", "User not found");
+    }
+
+    let customerId: string | undefined = userData.stripeCustomerId;
+
+    // If user doesn't have a customer ID, create one
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: userData.email,
+        name: userData.displayName,
+        metadata: { userId },
+      });
+      customerId = customer.id;
+
+      await db.collection("users").doc(userId).update({
+        stripeCustomerId: customerId,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    } else {
+      // Verify the customer still exists
+      try {
+        const existing = await stripe.customers.retrieve(customerId);
+        if (existing.deleted) {
+          const customer = await stripe.customers.create({
+            email: userData.email,
+            name: userData.displayName,
+            metadata: { userId },
+          });
+          customerId = customer.id;
+          await db.collection("users").doc(userId).update({
+            stripeCustomerId: customerId,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+        }
+      } catch {
+        logger.info("Stored customer invalid, creating new one");
+        const customer = await stripe.customers.create({
+          email: userData.email,
+          name: userData.displayName,
+          metadata: { userId },
+        });
+        customerId = customer.id;
+        await db.collection("users").doc(userId).update({
+          stripeCustomerId: customerId,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      }
+    }
+
+    // Create SetupIntent for saving payment methods without charging
+    const setupIntent = await stripe.setupIntents.create({
+      customer: customerId,
+      automatic_payment_methods: { enabled: true },
+      metadata: { userId },
+    });
+
+    // Create ephemeral key for the customer
+    // Must use the client's SDK API version
+    const ephemeralKeyVersion = stripeApiVersion || "2025-12-15.clover";
+    const ephemeralKey = await stripe.ephemeralKeys.create(
+      { customer: customerId },
+      { apiVersion: ephemeralKeyVersion },
+    );
+
+    return {
+      setupIntentClientSecret: setupIntent.client_secret,
+      customerId,
+      ephemeralKeySecret: ephemeralKey.secret,
+    };
   },
 );

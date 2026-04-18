@@ -3,10 +3,11 @@ import 'dart:math' as math;
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/core/services/location_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
-import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 
 part 'event_view_model.g.dart';
@@ -416,7 +417,7 @@ class CreateEventFormViewModel extends _$CreateEventFormViewModel {
           created = created.copyWith(imageUrl: imageUrl);
           await repo.updateEvent(created);
           if (!ref.mounted) return null;
-        } catch (e, st) {
+        } on Exception catch (e, st) {
           TalkerService.error('createEvent image upload failed', e, st);
           warningMessage =
               'Event created, but the cover image could not be uploaded.';
@@ -437,7 +438,7 @@ class CreateEventFormViewModel extends _$CreateEventFormViewModel {
         event: created,
         warningMessage: warningMessage,
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('createEvent submit failed', e, st);
       if (!ref.mounted) return null;
       state = state.copyWith(
@@ -640,12 +641,24 @@ class EditEventFormViewModel extends _$EditEventFormViewModel {
     return const EditEventFormState();
   }
 
-  void initFromEvent(EventModel event) {
-    if (_originalEvent?.id == event.id && state.title.isNotEmpty) {
+  void initFromEventId(String eventId) {
+    if (_originalEvent?.id == eventId && state.title.isNotEmpty) {
       return;
     }
-    _originalEvent = event;
-    state = EditEventFormState.fromEvent(event);
+    final repo = ref.read(eventRepositoryProvider);
+    repo.getEventById(eventId).then((event) {
+      if (event != null && ref.mounted) {
+        _originalEvent = event;
+        state = EditEventFormState.fromEvent(event);
+      }
+    }).catchError((e, st) {
+      TalkerService.error('Failed to load event for editing', e, st);
+      if (ref.mounted) {
+        state = state.copyWith(
+          error: 'Unable to load event details. Please try again later.',
+        );
+      }
+    });
   }
 
   void setTitle(String value) =>
@@ -722,7 +735,7 @@ class EditEventFormViewModel extends _$EditEventFormViewModel {
   void setImageFile(File? value) {
     state = state.copyWith(
       imageFile: value,
-      removeExistingImage: value == null ? state.removeExistingImage : false,
+      removeExistingImage: value == null && state.removeExistingImage,
       isSaved: false,
       clearError: true,
     );
@@ -732,9 +745,7 @@ class EditEventFormViewModel extends _$EditEventFormViewModel {
     state = state.copyWith(
       imageFile: null,
       existingImageUrl: state.hasExistingImage ? null : state.existingImageUrl,
-      removeExistingImage: state.imageFile == null
-          ? true
-          : state.removeExistingImage,
+      removeExistingImage: state.imageFile == null || state.removeExistingImage,
       isSaved: false,
       clearError: true,
     );
@@ -805,9 +816,7 @@ class EditEventFormViewModel extends _$EditEventFormViewModel {
 
     try {
       final repo = ref.read(eventRepositoryProvider);
-      String? imageUrl = state.removeExistingImage
-          ? null
-          : state.existingImageUrl;
+      var imageUrl = state.removeExistingImage ? null : state.existingImageUrl;
       if (state.imageFile != null) {
         imageUrl = await repo.uploadEventImage(_eventId, state.imageFile!);
       }
@@ -839,7 +848,7 @@ class EditEventFormViewModel extends _$EditEventFormViewModel {
       );
       _originalEvent = updated;
       return updated;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('editEvent submit failed', e, st);
       state = state.copyWith(
         isSubmitting: false,
@@ -972,7 +981,7 @@ class EventSelectionViewModel extends _$EventSelectionViewModel {
       final created = event.copyWith(id: eventId);
       state = state.copyWith(isLoading: false, selectedEvent: created);
       return created;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('createEvent failed', e, st);
       if (!ref.mounted) return null;
       state = state.copyWith(
@@ -1048,7 +1057,7 @@ class EventDetailViewModel extends _$EventDetailViewModel {
         successMessage: 'You joined the event!',
       );
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('joinEvent failed', e, st);
       if (!ref.mounted) return false;
       state = state.copyWith(
@@ -1074,7 +1083,7 @@ class EventDetailViewModel extends _$EventDetailViewModel {
         successMessage: 'You left the event.',
       );
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('leaveEvent failed', e, st);
       if (!ref.mounted) return false;
       state = state.copyWith(
@@ -1103,7 +1112,7 @@ class EventDetailViewModel extends _$EventDetailViewModel {
       return await ref
           .read(eventRepositoryProvider)
           .ensureEventGroupChat(event: event, userId: userId);
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('ensureEventGroupChat failed', e, st);
       if (!ref.mounted) return null;
       state = state.copyWith(
@@ -1124,7 +1133,7 @@ class EventDetailViewModel extends _$EventDetailViewModel {
         successMessage: 'Event updated successfully.',
       );
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('updateEvent failed', e, st);
       if (!ref.mounted) return false;
       state = state.copyWith(
@@ -1144,7 +1153,7 @@ class EventDetailViewModel extends _$EventDetailViewModel {
       if (!ref.mounted) return null;
       state = state.copyWith(isLoading: false);
       return url;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('uploadImage failed', e, st);
       if (!ref.mounted) return null;
       state = state.copyWith(
@@ -1159,7 +1168,9 @@ class EventDetailViewModel extends _$EventDetailViewModel {
   Future<bool> cancelEvent({String? reason}) async {
     state = state.copyWith(isDeleting: true, clearError: true);
     try {
-      final event = await ref.read(eventRepositoryProvider).getEventById(eventId);
+      final event = await ref
+          .read(eventRepositoryProvider)
+          .getEventById(eventId);
       if (event == null) throw Exception('Event not found');
 
       await ref.read(eventRepositoryProvider).cancelEvent(eventId);
@@ -1170,14 +1181,19 @@ class EventDetailViewModel extends _$EventDetailViewModel {
         final notifRepo = ref.read(notificationRepositoryProvider);
         for (final uid in event.participantIds) {
           if (uid == organizer?.uid) continue; // don't notify the organiser
-          notifRepo.sendEventCancelled(
-            toUserId: uid,
-            organizerName: organizer?.displayName ?? event.organizerName ?? 'Organizer',
-            organizerPhoto: organizer?.photoUrl,
-            eventId: eventId,
-            eventTitle: event.title,
-            reason: reason,
-          ).catchError((_) {});
+          notifRepo
+              .sendEventCancelled(
+                toUserId: uid,
+                organizerName:
+                    organizer?.displayName ??
+                    event.organizerName ??
+                    'Organizer',
+                organizerPhoto: organizer?.photoUrl,
+                eventId: eventId,
+                eventTitle: event.title,
+                reason: reason,
+              )
+              .catchError((_) {});
         }
       }
 
@@ -1187,7 +1203,7 @@ class EventDetailViewModel extends _$EventDetailViewModel {
         successMessage: 'Event cancelled.',
       );
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('cancelEvent failed', e, st);
       if (!ref.mounted) return false;
       state = state.copyWith(
@@ -1206,7 +1222,7 @@ class EventDetailViewModel extends _$EventDetailViewModel {
       if (!ref.mounted) return false;
       state = state.copyWith(isDeleting: false);
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('deleteEvent failed', e, st);
       if (!ref.mounted) return false;
       state = state.copyWith(
@@ -1241,7 +1257,7 @@ class EventDetailViewModel extends _$EventDetailViewModel {
         successMessage: 'Ride status updated!',
       );
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('setRideStatus failed', e, st);
       if (!ref.mounted) return false;
       state = state.copyWith(
@@ -1267,7 +1283,7 @@ class EventDetailViewModel extends _$EventDetailViewModel {
         successMessage: 'Ride linked to event!',
       );
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('linkRide failed', e, st);
       if (!ref.mounted) return false;
       state = state.copyWith(isLoading: false, error: 'Unable to link ride.');
@@ -1290,7 +1306,7 @@ class EventDetailViewModel extends _$EventDetailViewModel {
         successMessage: 'Meetup point set!',
       );
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('setMeetupPin failed', e, st);
       if (!ref.mounted) return false;
       state = state.copyWith(
@@ -1318,7 +1334,7 @@ class EventDetailViewModel extends _$EventDetailViewModel {
         successMessage: 'Event chat created!',
       );
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('setChatGroup failed', e, st);
       if (!ref.mounted) return false;
       state = state.copyWith(
@@ -1357,13 +1373,15 @@ class EventListState {
   final int searchFieldKey;
   final bool isLoading;
   final String? error;
+
   /// Active radius filter in km — null means "everywhere".
   final double? radiusKm;
   final double? userLatitude;
   final double? userLongitude;
   final bool isLoadingLocation;
 
-  bool get hasLocationFilter => radiusKm != null && userLatitude != null && userLongitude != null;
+  bool get hasLocationFilter =>
+      radiusKm != null && userLatitude != null && userLongitude != null;
 
   EventListState copyWith({
     List<EventModel>? allEvents,
@@ -1456,6 +1474,27 @@ class EventListViewModel extends _$EventListViewModel {
     state = _withFiltersApplied();
   }
 
+  /// Fetches device location and applies radius filter — call from view.
+  Future<void> applyRadiusFilterWithLocation(double radiusKm) async {
+    try {
+      final position = await ref
+          .read(locationServiceProvider)
+          .getCurrentLocation();
+      if (position != null) {
+        setRadiusFilter(
+          radiusKm: radiusKm,
+          lat: position.latitude,
+          lng: position.longitude,
+        );
+      } else {
+        clearRadiusFilter();
+      }
+    } on Exception catch (e) {
+      TalkerService.error('Failed to get location for radius filter', e);
+      clearRadiusFilter();
+    }
+  }
+
   void clearRadiusFilter() {
     _radiusKm = null;
     _userLat = null;
@@ -1501,8 +1540,10 @@ class EventListViewModel extends _$EventListViewModel {
     if (_radiusKm != null && _userLat != null && _userLng != null) {
       filtered = filtered.where((e) {
         final dist = _haversineKm(
-          _userLat!, _userLng!,
-          e.location.latitude ?? 0, e.location.longitude ?? 0,
+          _userLat!,
+          _userLng!,
+          e.location.latitude ?? 0,
+          e.location.longitude ?? 0,
         );
         return dist <= _radiusKm!;
       }).toList();
@@ -1510,11 +1551,17 @@ class EventListViewModel extends _$EventListViewModel {
     return filtered;
   }
 
-  static double _haversineKm(double lat1, double lon1, double lat2, double lon2) {
+  static double _haversineKm(
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+  ) {
     const r = 6371.0;
     final dLat = (lat2 - lat1) * math.pi / 180;
     final dLon = (lon2 - lon1) * math.pi / 180;
-    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+    final a =
+        math.sin(dLat / 2) * math.sin(dLat / 2) +
         math.cos(lat1 * math.pi / 180) *
             math.cos(lat2 * math.pi / 180) *
             math.sin(dLon / 2) *

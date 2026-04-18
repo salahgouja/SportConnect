@@ -6,10 +6,9 @@ import 'package:sport_connect/core/theme/app_colors.dart';
 
 /// Unread badge count (#57)
 class UnreadBadge extends StatelessWidget {
+  const UnreadBadge({required this.count, required this.child, super.key});
   final int count;
   final Widget child;
-
-  const UnreadBadge({super.key, required this.count, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -31,20 +30,19 @@ class UnreadBadge extends StatelessWidget {
 
 /// Location pin message bubble (#59)
 class LocationPinBubble extends StatelessWidget {
+  const LocationPinBubble({
+    required this.latitude,
+    required this.longitude,
+    super.key,
+    this.label,
+    this.isMe = true,
+    this.onTap,
+  });
   final double latitude;
   final double longitude;
   final String? label;
   final bool isMe;
   final VoidCallback? onTap;
-
-  const LocationPinBubble({
-    super.key,
-    required this.latitude,
-    required this.longitude,
-    this.label,
-    this.isMe = true,
-    this.onTap,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -133,20 +131,19 @@ class LocationPinBubble extends StatelessWidget {
 
 /// Voice message player UI (#60)
 class VoiceMessagePlayer extends StatefulWidget {
+  const VoiceMessagePlayer({
+    required this.duration,
+    required this.onPlay,
+    required this.onPause,
+    super.key,
+    this.isMe = true,
+    this.positionStream,
+  });
   final Duration duration;
   final bool isMe;
   final VoidCallback onPlay;
   final VoidCallback onPause;
   final Stream<Duration>? positionStream;
-
-  const VoiceMessagePlayer({
-    super.key,
-    required this.duration,
-    this.isMe = true,
-    required this.onPlay,
-    required this.onPause,
-    this.positionStream,
-  });
 
   @override
   State<VoiceMessagePlayer> createState() => _VoiceMessagePlayerState();
@@ -207,7 +204,7 @@ class _VoiceMessagePlayerState extends State<VoiceMessagePlayer> {
             child: Container(
               width: 36.w,
               height: 36.w,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 color: AppColors.primary,
               ),
@@ -228,7 +225,7 @@ class _VoiceMessagePlayerState extends State<VoiceMessagePlayer> {
                   child: LinearProgressIndicator(
                     value: progress.clamp(0.0, 1.0),
                     backgroundColor: AppColors.border,
-                    valueColor: AlwaysStoppedAnimation(AppColors.primary),
+                    valueColor: const AlwaysStoppedAnimation(AppColors.primary),
                     minHeight: 3.h,
                   ),
                 ),

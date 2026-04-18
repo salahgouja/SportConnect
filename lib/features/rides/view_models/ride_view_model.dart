@@ -2,43 +2,40 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:riverpod/src/providers/stream_provider.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:uuid/uuid.dart';
-
-import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
-import 'package:sport_connect/features/rides/models/ride/ride_route.dart';
-import 'package:sport_connect/features/rides/models/ride/ride_schedule.dart';
-import 'package:sport_connect/features/rides/models/ride/ride_capacity.dart';
-import 'package:sport_connect/features/rides/models/ride/ride_pricing.dart';
-import 'package:sport_connect/features/rides/models/ride/ride_preferences.dart';
-import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
-import 'package:sport_connect/features/rides/models/ride_search_filters.dart';
+import 'package:sport_connect/core/models/location/location_point.dart';
+import 'package:sport_connect/core/models/value_objects/money.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/core/services/deep_link_service.dart';
 import 'package:sport_connect/core/services/map_service.dart';
 import 'package:sport_connect/core/services/routing_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
-import 'package:sport_connect/features/rides/services/ride_service.dart';
 import 'package:sport_connect/features/messaging/models/message_model.dart';
-import 'package:sport_connect/core/models/location/location_point.dart';
-import 'package:sport_connect/core/models/value_objects/money.dart';
+import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_capacity.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_preferences.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_pricing.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_route.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_schedule.dart';
+import 'package:sport_connect/features/rides/models/ride_search_filters.dart';
+import 'package:sport_connect/features/rides/repositories/booking_repository.dart'
+    show BookingRepository;
+import 'package:sport_connect/features/rides/repositories/dispute_repository.dart'
+    show DisputeRepository;
+import 'package:sport_connect/features/rides/services/ride_service.dart';
+import 'package:uuid/uuid.dart';
 
 part 'ride_view_model.g.dart';
 
 /// State for ride creation/editing
 class RideFormState {
-  final LocationPoint? origin;
-  final LocationPoint? destination;
-  final DateTime? departureTime;
-  final int availableSeats;
-  final double pricePerSeat;
-  final bool isLoading;
-  final String? error;
-
   const RideFormState({
     this.origin,
     this.destination,
@@ -48,6 +45,13 @@ class RideFormState {
     this.isLoading = false,
     this.error,
   });
+  final LocationPoint? origin;
+  final LocationPoint? destination;
+  final DateTime? departureTime;
+  final int availableSeats;
+  final double pricePerSeat;
+  final bool isLoading;
+  final String? error;
 
   RideFormState copyWith({
     LocationPoint? origin,
@@ -136,15 +140,19 @@ class RideDetailUiViewModel extends _$RideDetailUiViewModel {
           .map((wp) => LatLng(wp.location.latitude, wp.location.longitude))
           .toList();
 
-      final route = await RoutingService.getRoute(
-        origin: fromCoords,
-        destination: toCoords,
-        waypoints: waypoints.isNotEmpty ? waypoints : null,
-      );
+      final route = await ref
+          .read(routingServiceProvider)
+          .getRoute(
+            origin: fromCoords,
+            destination: toCoords,
+            waypoints: waypoints.isNotEmpty ? waypoints : null,
+          );
 
+      if (!ref.mounted) return null;
       state = state.copyWith(routeInfo: route, isLoadingRoute: false);
       return route;
-    } catch (_) {
+    } on Exception catch (_) {
+      if (!ref.mounted) return null;
       state = state.copyWith(isLoadingRoute: false);
       return null;
     }
@@ -169,6 +177,19 @@ class RideDetailUiViewModel extends _$RideDetailUiViewModel {
 
   void clearPickupLocation() {
     state = state.copyWith(clearPickupLocation: true);
+  }
+
+  Future<String> generateRideShareLink(RideModel ride) {
+    return ref
+        .read(deepLinkServiceProvider)
+        .generateRideLink(
+          rideId: ride.id,
+          fromCity: ride.origin.city ?? ride.origin.address,
+          toCity: ride.destination.city ?? ride.destination.address,
+          price: ride.pricePerSeat,
+          seats: ride.remainingSeats,
+          departureTime: ride.departureTime,
+        );
   }
 }
 
@@ -331,8 +352,6 @@ class RideActionsViewModel {
 }
 
 class CancellationReasonState {
-  static const _unset = Object();
-
   const CancellationReasonState({
     this.selectedReason,
     this.commentText = '',
@@ -341,6 +360,7 @@ class CancellationReasonState {
     this.validationMessage,
     this.errorMessage,
   });
+  static const _unset = Object();
 
   final String? selectedReason;
   final String commentText;
@@ -423,8 +443,10 @@ class CancellationReasonViewModel extends _$CancellationReasonViewModel {
           : selectedReason;
 
       await ref.read(rideActionsViewModelProvider).cancelRide(_rideId, reason);
+      if (!ref.mounted) return;
       state = state.copyWith(isSubmitting: false, isSubmitted: true);
-    } catch (_) {
+    } on Exception catch (_) {
+      if (!ref.mounted) return;
       state = state.copyWith(
         isSubmitting: false,
         errorMessage: 'Failed to cancel ride. Please try again.',
@@ -434,8 +456,6 @@ class CancellationReasonViewModel extends _$CancellationReasonViewModel {
 }
 
 class DisputeFormState {
-  static const _unset = Object();
-
   const DisputeFormState({
     this.selectedDisputeType,
     this.description = '',
@@ -446,6 +466,7 @@ class DisputeFormState {
     this.descriptionError,
     this.errorMessage,
   });
+  static const _unset = Object();
 
   final String? selectedDisputeType;
   final String description;
@@ -530,6 +551,7 @@ class DisputeFormViewModel extends _$DisputeFormViewModel {
     }
 
     final size = await file.length();
+    if (!ref.mounted) return;
     if (size > maxFileSizeBytes) {
       state = state.copyWith(errorMessage: 'File exceeds 10 MB limit');
       return;
@@ -597,8 +619,10 @@ class DisputeFormViewModel extends _$DisputeFormViewModel {
             rideSummary: rideSummary,
             attachments: state.attachedFiles,
           );
+      if (!ref.mounted) return;
       state = state.copyWith(isSubmitting: false, isSubmitted: true);
-    } catch (_) {
+    } on Exception catch (_) {
+      if (!ref.mounted) return;
       state = state.copyWith(
         isSubmitting: false,
         errorMessage: 'Failed to submit dispute. Please try again.',
@@ -618,12 +642,13 @@ Stream<({double latitude, double longitude})?> driverLiveLocation(
 
 /// Streams the driver's current ride phase from the ride Firestore document.
 /// Returns values like 'pickingUp', 'enRoute', 'arriving', 'completed'.
-final ridePhaseStreamProvider = StreamProvider.family<String?, String>((
-  ref,
-  rideId,
-) {
-  return ref.watch(rideRepositoryProvider).streamRidePhase(rideId);
-});
+final StreamProviderFamily<String?, String> ridePhaseStreamProvider =
+    StreamProvider.family<String?, String>((
+      ref,
+      rideId,
+    ) {
+      return ref.watch(rideRepositoryProvider).streamRidePhase(rideId);
+    });
 
 /// Ride Form View Model
 @Riverpod(keepAlive: true)
@@ -665,7 +690,7 @@ class RideFormViewModel extends _$RideFormViewModel {
       return null;
     }
 
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: true);
 
     try {
       final ride = RideModel(
@@ -685,16 +710,18 @@ class RideFormViewModel extends _$RideFormViewModel {
       final rideId = await ref
           .read(rideServiceProvider.notifier)
           .createRide(ride);
+      if (!ref.mounted) return null;
       state = state.copyWith(isLoading: false);
       return rideId;
-    } catch (e) {
+    } on Exception catch (e) {
+      if (!ref.mounted) return null;
       state = state.copyWith(isLoading: false, error: e.toString());
       return null;
     }
   }
 
   Future<String?> submitRideModel(RideModel ride) async {
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: true);
 
     try {
       final rideId = await ref
@@ -702,9 +729,9 @@ class RideFormViewModel extends _$RideFormViewModel {
           .createRide(ride);
 
       if (!ref.mounted) return rideId;
-      state = state.copyWith(isLoading: false, error: null);
+      state = state.copyWith(isLoading: false);
       return rideId;
-    } catch (e) {
+    } on Exception catch (e) {
       if (!ref.mounted) return null;
       state = state.copyWith(isLoading: false, error: e.toString());
       return null;
@@ -720,6 +747,34 @@ class RideFormViewModel extends _$RideFormViewModel {
 enum RideSearchResultViewMode { list, map }
 
 class RideSearchState {
+  RideSearchState({
+    this.rides = const [],
+    this.allSearchResults = const [],
+    this.isLoading = false,
+    this.error,
+    this.filters = const RideSearchFilters(),
+    this.hasMore = true,
+    this.draftOrigin,
+    this.draftDestination,
+    DateTime? draftDate,
+    this.draftSeats = 1,
+    this.selectedDateChip = 0,
+    this.hasSearched = false,
+    this.draftMaxPrice = 50,
+    this.draftFemaleOnly = false,
+    this.draftInstantBook = false,
+    this.draftVerifiedOnly = false,
+    this.draftPetFriendly = false,
+    this.draftNoSmoking = false,
+    this.draftMinRating = 0,
+    this.draftSortBy = 'recommended',
+    this.draftVehicleType = 'any',
+    this.isFilterPanelOpen = false,
+    this.resultViewMode = RideSearchResultViewMode.list,
+    this.visibleResultCount = 20,
+    this.lastCompletedQueryKey,
+    this.pendingQueryKey,
+  }) : draftDate = draftDate ?? DateTime.now();
   static const _unset = Object();
 
   final List<RideModel> rides;
@@ -752,35 +807,6 @@ class RideSearchState {
   final int visibleResultCount;
   final String? lastCompletedQueryKey;
   final String? pendingQueryKey;
-
-  RideSearchState({
-    this.rides = const [],
-    this.allSearchResults = const [],
-    this.isLoading = false,
-    this.error,
-    this.filters = const RideSearchFilters(),
-    this.hasMore = true,
-    this.draftOrigin,
-    this.draftDestination,
-    DateTime? draftDate,
-    this.draftSeats = 1,
-    this.selectedDateChip = 0,
-    this.hasSearched = false,
-    this.draftMaxPrice = 50,
-    this.draftFemaleOnly = false,
-    this.draftInstantBook = false,
-    this.draftVerifiedOnly = false,
-    this.draftPetFriendly = false,
-    this.draftNoSmoking = false,
-    this.draftMinRating = 0,
-    this.draftSortBy = 'recommended',
-    this.draftVehicleType = 'any',
-    this.isFilterPanelOpen = false,
-    this.resultViewMode = RideSearchResultViewMode.list,
-    this.visibleResultCount = 20,
-    this.lastCompletedQueryKey,
-    this.pendingQueryKey,
-  }) : draftDate = draftDate ?? DateTime.now();
 
   RideSearchState copyWith({
     List<RideModel>? rides,
@@ -859,7 +885,7 @@ class RideSearchState {
       draftVehicleType != 'any';
 
   int get activeFilterCount {
-    int count = 0;
+    var count = 0;
     if (draftMaxPrice < 50) count++;
     if (draftFemaleOnly) count++;
     if (draftInstantBook) count++;
@@ -997,23 +1023,18 @@ List<RideModel> _applyRideSearchPresentation(
   switch (state.draftSortBy) {
     case 'price_low':
       filtered.sort((a, b) => a.pricePerSeat.compareTo(b.pricePerSeat));
-      break;
     case 'price_high':
       filtered.sort((a, b) => b.pricePerSeat.compareTo(a.pricePerSeat));
-      break;
     case 'rating':
       filtered.sort((a, b) => b.averageRating.compareTo(a.averageRating));
-      break;
     case 'duration':
       filtered.sort(
         (a, b) => (a.durationMinutes ?? 1 << 20).compareTo(
           b.durationMinutes ?? 1 << 20,
         ),
       );
-      break;
     case 'departure':
       filtered.sort((a, b) => a.departureTime.compareTo(b.departureTime));
-      break;
     default:
       final now = DateTime.now();
       filtered.sort((a, b) {
@@ -1321,7 +1342,7 @@ class RideSearchViewModel extends _$RideSearchViewModel {
       );
 
       return null; // Success
-    } catch (e, _) {
+    } on Exception catch (e, _) {
       if (!ref.mounted || requestId != _latestSearchRequestId) return null;
       state = state.copyWith(
         isLoading: false,
@@ -1462,7 +1483,6 @@ class RideDetailViewModel extends _$RideDetailViewModel {
         passengerId: passengerId,
         driverId: ride.driverId,
         seatsBooked: seats,
-        status: BookingStatus.pending,
         note: note,
         pickupLocation: pickupLocation,
         createdAt: DateTime.now(),
@@ -1470,6 +1490,7 @@ class RideDetailViewModel extends _$RideDetailViewModel {
       await ref
           .read(rideRepositoryProvider)
           .bookRide(rideId: ride.id, booking: booking);
+      if (!ref.mounted) return false;
       state = state.copyWith(actionError: null);
 
       // Notify the driver that a new booking request has arrived.
@@ -1489,7 +1510,7 @@ class RideDetailViewModel extends _$RideDetailViewModel {
             rideName: '$origin → $dest',
           );
         }
-      } catch (_) {
+      } on Exception catch (_) {
         // Notification failure is non-fatal
       }
 
@@ -1497,13 +1518,15 @@ class RideDetailViewModel extends _$RideDetailViewModel {
       try {
         final profileRepo = ref.read(profileRepositoryProvider);
         await profileRepo.addXP(passengerId, 5);
-      } catch (_) {
+      } on Exception catch (_) {
         // XP failure is non-fatal
       }
 
+      if (!ref.mounted) return true;
       state = state.copyWith(isActing: false, actionError: null);
       return true;
-    } catch (e) {
+    } on Exception catch (e) {
+      if (!ref.mounted) return false;
       state = state.copyWith(isActing: false, actionError: e.toString());
       return false;
     }
@@ -1522,6 +1545,7 @@ class RideDetailViewModel extends _$RideDetailViewModel {
             bookingId: bookingId,
             newStatus: BookingStatus.accepted,
           );
+      if (!ref.mounted) return false;
 
       // 2. If the passenger specified a pickup location, add it as a
       //    RouteWaypoint so the driver can see the stop on the route card.
@@ -1547,14 +1571,16 @@ class RideDetailViewModel extends _$RideDetailViewModel {
         try {
           final profileRepo = ref.read(profileRepositoryProvider);
           await profileRepo.addXP(booking.passengerId, 10);
-        } catch (_) {
+        } on Exception catch (_) {
           // XP failure is non-fatal
         }
       }
 
+      if (!ref.mounted) return true;
       state = state.copyWith(isActing: false, actionError: null);
       return true;
-    } catch (e) {
+    } on Exception catch (e) {
+      if (!ref.mounted) return false;
       state = state.copyWith(isActing: false, actionError: e.toString());
       return false;
     }
@@ -1573,9 +1599,11 @@ class RideDetailViewModel extends _$RideDetailViewModel {
             newStatus: BookingStatus.rejected,
           );
 
+      if (!ref.mounted) return true;
       state = state.copyWith(isActing: false, actionError: null);
       return true;
-    } catch (e) {
+    } on Exception catch (e) {
+      if (!ref.mounted) return false;
       state = state.copyWith(isActing: false, actionError: e.toString());
       return false;
     }
@@ -1587,9 +1615,11 @@ class RideDetailViewModel extends _$RideDetailViewModel {
     try {
       state = state.copyWith(isActing: true, actionError: null);
       await ref.read(rideRepositoryProvider).startRide(ride.id);
+      if (!ref.mounted) return true;
       state = state.copyWith(isActing: false, actionError: null);
       return true;
-    } catch (e) {
+    } on Exception catch (e) {
+      if (!ref.mounted) return false;
       state = state.copyWith(isActing: false, actionError: e.toString());
       return false;
     }
@@ -1601,9 +1631,11 @@ class RideDetailViewModel extends _$RideDetailViewModel {
     try {
       state = state.copyWith(isActing: true, actionError: null);
       await ref.read(rideServiceProvider.notifier).completeRide(ride.id);
+      if (!ref.mounted) return true;
       state = state.copyWith(isActing: false, actionError: null);
       return true;
-    } catch (e) {
+    } on Exception catch (e) {
+      if (!ref.mounted) return false;
       state = state.copyWith(isActing: false, actionError: e.toString());
       return false;
     }
@@ -1615,9 +1647,11 @@ class RideDetailViewModel extends _$RideDetailViewModel {
     try {
       state = state.copyWith(isActing: true, actionError: null);
       await ref.read(rideServiceProvider.notifier).cancelRide(ride.id, reason);
+      if (!ref.mounted) return true;
       state = state.copyWith(isActing: false, actionError: null);
       return true;
-    } catch (e) {
+    } on Exception catch (e) {
+      if (!ref.mounted) return false;
       state = state.copyWith(isActing: false, actionError: e.toString());
       return false;
     }
@@ -1641,8 +1675,6 @@ enum ActiveRideLocationInitResult {
 
 /// Immutable state for active-ride screens that need live ride + bookings.
 class ActiveRideState {
-  static const _unset = Object();
-
   const ActiveRideState({
     this.ride = const AsyncValue.loading(),
     this.bookings = const [],
@@ -1697,6 +1729,7 @@ class ActiveRideState {
     // E4: Last driver location update time (for unavailable banner)
     this.lastDriverLocationUpdate,
   });
+  static const _unset = Object();
 
   final AsyncValue<RideModel?> ride;
   final List<RideBooking> bookings;
@@ -2067,7 +2100,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
       _startLocationStream();
       _updateDynamicEta(state.currentRide);
       return ActiveRideLocationInitResult.ready;
-    } catch (e, stackTrace) {
+    } on Exception catch (e, stackTrace) {
       TalkerService.error(
         'Error initializing active ride location',
         e,
@@ -2242,7 +2275,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
       _notifyPassengersDriverArrived(ride);
 
       return true;
-    } catch (e) {
+    } on Exception catch (e) {
       if (!ref.mounted) return false;
       state = state.copyWith(isProcessing: false, actionError: e.toString());
       return false;
@@ -2310,7 +2343,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
         phase: ActiveRidePhase.completed,
       );
       return true;
-    } catch (e) {
+    } on Exception catch (e) {
       if (!ref.mounted) return false;
       state = state.copyWith(isProcessing: false, actionError: e.toString());
       return false;
@@ -2328,7 +2361,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
 
       state = state.copyWith(isProcessing: false, actionError: null);
       return true;
-    } catch (e) {
+    } on Exception catch (e) {
       if (!ref.mounted) return false;
       state = state.copyWith(isProcessing: false, actionError: e.toString());
       return false;
@@ -2374,7 +2407,9 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     points.add(LatLng(ride.destination.latitude, ride.destination.longitude));
 
     // Use OSRM trip endpoint for optimal ordering
-    final tripResult = await RoutingService.getOptimalTrip(points: points);
+    final tripResult = await ref
+        .read(routingServiceProvider)
+        .getOptimalTrip(points: points);
     if (tripResult == null || !ref.mounted) {
       // Fallback: keep booking creation order
       state = state.copyWith(
@@ -2476,7 +2511,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
             passengerId: passengerId,
           );
       return true;
-    } catch (e) {
+    } on Exception catch (e) {
       if (!ref.mounted) return false;
       state = state.copyWith(actionError: e.toString());
       return false;
@@ -2516,7 +2551,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
         pickedUpPassengerIds: nextPickedUp,
       );
       return true;
-    } catch (e) {
+    } on Exception catch (e) {
       if (!ref.mounted) return false;
       state = state.copyWith(isProcessing: false, actionError: e.toString());
       return false;
@@ -2546,7 +2581,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
         'Driver: ${ride.driverId}\n'
         'Current location: $locStr\n'
         'Time: ${DateTime.now()}\n\n'
-        'Please contact authorities if I don\'t respond.';
+        "Please contact authorities if I don't respond.";
   }
 
   // ==================== 7D: QUICK MESSAGES ====================
@@ -2567,11 +2602,10 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
           senderId: senderId,
           senderName: senderName,
           content: message,
-          type: MessageType.text,
           createdAt: DateTime.now(),
         ),
       );
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to send quick message: $e');
     }
   }
@@ -2624,7 +2658,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
       await ref
           .read(rideRepositoryProvider)
           .recordActualDistance(ride.id, state.actualDistanceKm);
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to record actual distance: $e');
     }
   }
@@ -2668,7 +2702,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
 
       state = state.copyWith(isProcessing: false);
       return returnRideId;
-    } catch (e) {
+    } on Exception catch (e) {
       if (!ref.mounted) return null;
       state = state.copyWith(isProcessing: false, actionError: e.toString());
       return null;
@@ -2754,7 +2788,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
           .read(rideRepositoryProvider)
           .updateLiveLocation(rideId, lat, lng);
       await _clearPersistedLocation();
-    } catch (_) {
+    } on Exception catch (_) {
       // Will retry on next GPS update
     }
   }
@@ -2913,14 +2947,16 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
           )
           .toList(growable: false);
 
-      final routeInfo = await RoutingService.getRoute(
-        origin: LatLng(ride.origin.latitude, ride.origin.longitude),
-        destination: LatLng(
-          ride.destination.latitude,
-          ride.destination.longitude,
-        ),
-        waypoints: waypoints.isEmpty ? null : waypoints,
-      );
+      final routeInfo = await ref
+          .read(routingServiceProvider)
+          .getRoute(
+            origin: LatLng(ride.origin.latitude, ride.origin.longitude),
+            destination: LatLng(
+              ride.destination.latitude,
+              ride.destination.longitude,
+            ),
+            waypoints: waypoints.isEmpty ? null : waypoints,
+          );
 
       if (!ref.mounted || state.loadingRouteKey != routeKey) {
         return;
@@ -2934,7 +2970,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
       );
       _updateDynamicEta(ride);
       _updatePassengerRouteTracking(ride, state.driverLiveLocation);
-    } catch (e, stackTrace) {
+    } on Exception catch (e, stackTrace) {
       TalkerService.error(
         'Error loading active ride OSRM route',
         e,
@@ -2996,7 +3032,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     }
 
     // B4: Floor remaining distance at zero (driver may overshoot)
-    remainingDistance = math.max(0.0, remainingDistance);
+    remainingDistance = math.max(0, remainingDistance);
 
     final totalDistance = ride.distanceKm ?? ride.route.distanceKm ?? 0;
     final totalDuration =
@@ -3009,7 +3045,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     }
 
     final ratio = (remainingDistance / totalDistance).clamp(0.0, 1.0);
-    var rawEta = (ratio * totalDuration).round().clamp(0, 999);
+    final rawEta = (ratio * totalDuration).round().clamp(0, 999);
 
     // B6: EMA smoothing — cap single-update change to ±30%
     final smoothedEta = _smoothEta(rawEta);
@@ -3100,7 +3136,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     }
 
     // Compute cumulative distance from driver's nearest point to end of route.
-    final cumulativeFromDriver = <double>[0.0];
+    final cumulativeFromDriver = <double>[0];
     for (var i = driverNearestIdx + 1; i < routePoints.length; i++) {
       cumulativeFromDriver.add(
         cumulativeFromDriver.last +
@@ -3186,13 +3222,15 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     // routes with sparse OSRM geometry don't generate constant false positives.
     double totalRouteMeters = 0;
     for (var i = 0; i < routePoints.length - 1; i++) {
-      totalRouteMeters += _haversineKm(routePoints[i], routePoints[i + 1]) * 1000;
+      totalRouteMeters +=
+          _haversineKm(routePoints[i], routePoints[i + 1]) * 1000;
     }
     final avgSegmentMeters = totalRouteMeters / (routePoints.length - 1);
     // Threshold: 40% of avg segment length, clamped between 150 m and 400 m.
     final offRouteThreshold = (avgSegmentMeters * 0.4).clamp(150.0, 400.0);
 
-    final isOffRoute = minDistMeters.isFinite && minDistMeters > offRouteThreshold;
+    final isOffRoute =
+        minDistMeters.isFinite && minDistMeters > offRouteThreshold;
     if (isOffRoute != state.isOffRoute || isOffRoute) {
       state = state.copyWith(
         isOffRoute: isOffRoute,
@@ -3247,16 +3285,18 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
         .map((wp) => LatLng(wp.location.latitude, wp.location.longitude))
         .toList(growable: false);
 
-    RoutingService.clearRouteCache();
+    ref.read(routingServiceProvider).clearRouteCache();
 
-    final routeInfo = await RoutingService.getRoute(
-      origin: position,
-      destination: LatLng(
-        ride.destination.latitude,
-        ride.destination.longitude,
-      ),
-      waypoints: remainingWaypoints.isEmpty ? null : remainingWaypoints,
-    );
+    final routeInfo = await ref
+        .read(routingServiceProvider)
+        .getRoute(
+          origin: position,
+          destination: LatLng(
+            ride.destination.latitude,
+            ride.destination.longitude,
+          ),
+          waypoints: remainingWaypoints.isEmpty ? null : remainingWaypoints,
+        );
 
     if (!ref.mounted || routeInfo == null) return;
 
@@ -3282,8 +3322,8 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
       driverLiveLocation.latitude,
       driverLiveLocation.longitude,
     );
-    double minimumDistanceMeters = double.infinity;
-    final pts = state.osrmRoutePoints!;
+    var minimumDistanceMeters = double.infinity;
+    final pts = state.osrmRoutePoints ?? [];
     for (var i = 0; i < pts.length - 1; i++) {
       final d = _perpDistToSegmentMeters(driverPosition, pts[i], pts[i + 1]);
       if (d < minimumDistanceMeters) minimumDistanceMeters = d;
@@ -3298,7 +3338,8 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     final avgSeg = totalMeters / (pts.length - 1);
     final threshold = (avgSeg * 0.4).clamp(150.0, 400.0);
 
-    final isOffRoute = minimumDistanceMeters.isFinite && minimumDistanceMeters > threshold;
+    final isOffRoute =
+        minimumDistanceMeters.isFinite && minimumDistanceMeters > threshold;
     final newPassedIndices = _getPassedWaypointIndices(
       driverPosition,
       state.osrmRoutePoints!,
@@ -3495,7 +3536,8 @@ Stream<List<RideBooking>> bookingsByRide(Ref ref, String rideId) {
 }
 
 /// Real-time stream of passenger IDs the driver has confirmed as picked up.
-final pickedUpPassengersStreamProvider = StreamProvider.family
+final StreamProviderFamily<List<String>, String>
+pickedUpPassengersStreamProvider = StreamProvider.family
     .autoDispose<List<String>, String>((ref, rideId) {
       return ref.read(rideRepositoryProvider).streamPickedUpPassengers(rideId);
     });

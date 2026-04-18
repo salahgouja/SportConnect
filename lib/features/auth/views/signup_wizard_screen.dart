@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,13 +9,10 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:form_builder_validators/form_builder_validators.dart';
-import 'package:sport_connect/core/utils/form_validators.dart';
 import 'package:sport_connect/core/widgets/intl_phone_input.dart';
-import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/auth/view_models/social_auth_view_model.dart';
@@ -23,12 +21,6 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 // ─── Step Theme ───────────────────────────────────────────────────────────────
 
 class _StepTheme {
-  final Color bg;
-  final Color accent;
-  final Color card;
-  final Color text;
-  final String label;
-
   const _StepTheme({
     required this.bg,
     required this.accent,
@@ -36,6 +28,11 @@ class _StepTheme {
     required this.text,
     required this.label,
   });
+  final Color bg;
+  final Color accent;
+  final Color card;
+  final Color text;
+  final String label;
 }
 
 const _kBg = Color(0xFFF8FAF9);
@@ -79,16 +76,79 @@ class SignupWizardScreen extends ConsumerStatefulWidget {
 
 class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
   // ── Controllers & State ──
-  final List<GlobalKey<FormBuilderState>> _formKeys = List.generate(
-    3, // UX FIX: 3 steps
-    (_) => GlobalKey<FormBuilderState>(),
-  );
+  final List<FormGroup> _forms = [
+    // Step 0: Account Setup
+    FormGroup(
+      {
+        'name': FormControl<String>(
+          validators: [
+            Validators.required,
+            Validators.minLength(2),
+            Validators.maxLength(60),
+            Validators.delegate((control) {
+              final value = control.value as String?;
+              if (value == null || value.trim().isEmpty) return null;
+              final trimmed = value.trim();
+              if (RegExp('[0-9]').hasMatch(trimmed)) {
+                return {'name': 'Name cannot contain numbers'};
+              }
+              if (!RegExp(
+                r"^[\p{L}\s\-'.]+$",
+                unicode: true,
+              ).hasMatch(trimmed)) {
+                return {'name': 'Name contains invalid characters'};
+              }
+              return null;
+            }),
+          ],
+        ),
+        'email': FormControl<String>(
+          validators: [
+            Validators.required,
+            Validators.email,
+          ],
+        ),
+        'password': FormControl<String>(
+          validators: [
+            Validators.required,
+            Validators.minLength(8),
+            Validators.delegate((control) {
+              final value = control.value as String?;
+              if (value == null || value.isEmpty) return null;
+              if (!RegExp('[A-Z]').hasMatch(value)) {
+                return {'password': 'Include at least one uppercase letter'};
+              }
+              if (!RegExp('[a-z]').hasMatch(value)) {
+                return {'password': 'Include at least one lowercase letter'};
+              }
+              if (!RegExp('[0-9]').hasMatch(value)) {
+                return {'password': 'Include at least one number'};
+              }
+              return null;
+            }),
+          ],
+        ),
+        'confirm_password': FormControl<String>(
+          validators: [Validators.required],
+        ),
+      },
+      validators: [
+        Validators.mustMatch('password', 'confirm_password'),
+      ],
+    ),
+    // Step 1: Identity & Role
+    FormGroup({
+      'expertise': FormControl<Expertise>(),
+    }),
+    // Step 2: Profile
+    FormGroup({}),
+  ];
   final _phoneKey = GlobalKey<IntlPhoneInputState>();
 
   @override
   void initState() {
     super.initState();
-    // If the widget is re-mounted (e.g. they left and came back), our new local _formKeys
+    // If the widget is re-mounted (e.g. they left and came back), our new local _forms
     // will be completely blank. Invalidate the global step state to ensure they start at Step 0.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.invalidate(signupWizardUiViewModelProvider);
@@ -101,14 +161,13 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
   }
 
   // ── Navigation ──
-  void _goToStep(int target) async {
+  Future<void> _goToStep(int target) async {
     final uiState = ref.read(signupWizardUiViewModelProvider);
 
     // Validate current step
-    if (_formKeys[uiState.currentStep].currentState != null) {
-      if (!_formKeys[uiState.currentStep].currentState!.saveAndValidate()) {
-        return;
-      }
+    _forms[uiState.currentStep].markAllAsTouched();
+    if (!_forms[uiState.currentStep].valid) {
+      return;
     }
 
     // Step 0 validation: Legal Terms
@@ -170,14 +229,14 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
 
   Future<void> _handleSignup() async {
     final uiState = ref.read(signupWizardUiViewModelProvider);
-    final step0Values = _formKeys[0].currentState?.value ?? {};
+    final step0Values = _forms[0].value;
 
     final success = await ref
         .read(registerViewModelProvider.notifier)
         .register(
-          email: (step0Values['email'] as String).trim(),
-          password: step0Values['password'] as String,
-          displayName: (step0Values['name'] as String).trim(),
+          email: (step0Values['email'] as String? ?? '').trim(),
+          password: step0Values['password'] as String? ?? '',
+          displayName: (step0Values['name'] as String? ?? '').trim(),
           role: uiState.selectedRole,
           phone: uiState.phoneNumber,
           profileImage: uiState.profileImage,
@@ -232,7 +291,6 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             ? error.message
             : error.toString().replaceFirst('Exception: ', '');
         final safeMessage = msg.isNotEmpty ? msg : l10n.signUpFailedPleaseTry;
-        TalkerService.error('Signup failed: $safeMessage');
         _showError(safeMessage);
       }
     });
@@ -430,8 +488,8 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
     final l10n = AppLocalizations.of(context);
     final wizardUiState = ref.watch(signupWizardUiViewModelProvider);
     final socialState = ref.watch(socialAuthViewModelProvider);
-    return FormBuilder(
-      key: _formKeys[0],
+    return ReactiveForm(
+      formGroup: _forms[0],
       child: Column(
         key: const ValueKey('step1'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -447,7 +505,6 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             text: l10n.continueWithApple,
             height: 48.h,
             borderRadius: BorderRadius.circular(14.r),
-            style: SignInWithAppleButtonStyle.black,
           ),
           SizedBox(height: 24.h),
           _Divider(accent: theme.accent, label: 'Or continue with email'),
@@ -455,16 +512,17 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
 
           // Name
           _StyledField(
-            name: 'name',
+            formControlName: 'name',
             label: l10n.authFullName,
             hint: l10n.authFullNameHint,
             icon: Icons.person_outline_rounded,
-            validator: FormBuilderValidators.compose([
-              FormBuilderValidators.required(),
-              FormBuilderValidators.minLength(2),
-              FormBuilderValidators.maxLength(60),
-              (value) => FormValidators.name(value),
-            ]),
+            validationMessages: {
+              ValidationMessage.required: (_) => 'Full name is required',
+              ValidationMessage.minLength: (_) =>
+                  'Name must be at least 2 characters',
+              ValidationMessage.maxLength: (_) => 'Name is too long',
+              'name': (error) => error as String,
+            },
             theme: theme,
             capitalization: TextCapitalization.words,
           ),
@@ -472,33 +530,36 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
 
           // Email
           _StyledField(
-            name: 'email',
+            formControlName: 'email',
             label: l10n.authEmailAddress,
             hint: l10n.authEmailHint,
             icon: Icons.alternate_email_rounded,
             keyboardType: TextInputType.emailAddress,
-            validator: FormBuilderValidators.compose([
-              FormBuilderValidators.required(),
-              (value) => FormValidators.email(value),
-            ]),
+            validationMessages: {
+              ValidationMessage.required: (_) => 'Email is required',
+              ValidationMessage.email: (_) =>
+                  'Please enter a valid email address',
+            },
             theme: theme,
           ),
           SizedBox(height: 14.h),
 
           // Password
           _StyledField(
-            name: 'password',
+            formControlName: 'password',
             label: l10n.authCreatePassword,
             hint: l10n.authPasswordHint,
             icon: Icons.lock_outline_rounded,
             obscure: wizardUiState.obscurePassword,
-            onChanged: (v) => ref
+            onChanged: (control) => ref
                 .read(signupWizardUiViewModelProvider.notifier)
-                .setPasswordText(v ?? ''),
-            validator: FormBuilderValidators.compose([
-              FormBuilderValidators.required(),
-              (value) => FormValidators.password(value),
-            ]),
+                .setPasswordText(control.value ?? ''),
+            validationMessages: {
+              ValidationMessage.required: (_) => 'Password is required',
+              ValidationMessage.minLength: (_) =>
+                  'Password must be at least 8 characters',
+              'password': (error) => error as String,
+            },
             theme: theme,
             suffix: IconButton(
               tooltip: wizardUiState.obscurePassword
@@ -519,17 +580,15 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
 
           // Confirm Password
           _StyledField(
-            name: 'confirm_password',
+            formControlName: 'confirm_password',
             label: l10n.authConfirmPassword,
             hint: l10n.authConfirmPasswordHint,
             icon: Icons.lock_outline_rounded,
             obscure: wizardUiState.obscureConfirmPassword,
-            validator: (v) =>
-                v !=
-                    (_formKeys[0].currentState?.fields['password']?.value
-                        as String?)
-                ? 'Passwords do not match'
-                : null,
+            validationMessages: {
+              ValidationMessage.required: (_) => 'Please confirm your password',
+              ValidationMessage.mustMatch: (_) => 'Passwords do not match',
+            },
             theme: theme,
             suffix: IconButton(
               tooltip: wizardUiState.obscureConfirmPassword
@@ -545,6 +604,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                   .read(signupWizardUiViewModelProvider.notifier)
                   .toggleConfirmPasswordVisibility(),
             ),
+            maxLines: 1,
           ),
           SizedBox(height: 20.h),
 
@@ -575,8 +635,8 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
   Widget _buildStep2(_StepTheme theme) {
     final l10n = AppLocalizations.of(context);
     final wizardUiState = ref.watch(signupWizardUiViewModelProvider);
-    return FormBuilder(
-      key: _formKeys[1],
+    return ReactiveForm(
+      formGroup: _forms[1],
       child: Column(
         key: const ValueKey('step2'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -659,9 +719,8 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
           SizedBox(height: 16.h),
 
           // Expertise level
-          FormBuilderDropdown<Expertise>(
-            name: 'expertise',
-            initialValue: wizardUiState.expertise,
+          ReactiveDropdownField<Expertise>(
+            formControlName: 'expertise',
             decoration: InputDecoration(
               labelText: AppLocalizations.of(context).expertiseLevel,
               prefixIcon: Icon(
@@ -675,7 +734,8 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                 borderSide: BorderSide.none,
               ),
             ),
-            onChanged: (e) {
+            onChanged: (control) {
+              final e = control.value;
               if (e != null) {
                 ref
                     .read(signupWizardUiViewModelProvider.notifier)
@@ -698,8 +758,8 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
   Widget _buildStep3(_StepTheme theme) {
     final l10n = AppLocalizations.of(context);
     final wizardUiState = ref.watch(signupWizardUiViewModelProvider);
-    return FormBuilder(
-      key: _formKeys[2],
+    return ReactiveForm(
+      formGroup: _forms[2],
       child: Column(
         key: const ValueKey('step3'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -798,9 +858,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                 SizedBox(height: 8.h),
                 Text(
                   l10n.emailValue(
-                    (_formKeys[0].currentState?.fields['email']?.value
-                            as String? ??
-                        ''),
+                    _forms[0].control('email').value as String? ?? '',
                   ),
                   style: TextStyle(fontSize: 13.sp, color: theme.text),
                 ),
@@ -936,9 +994,9 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
 // ─── Helper Widgets ───────────────────────────────────────────────────────────
 
 class _SecurityBadge extends StatelessWidget {
+  const _SecurityBadge({required this.accent, required this.text});
   final Color accent;
   final String text;
-  const _SecurityBadge({required this.accent, required this.text});
 
   @override
   Widget build(BuildContext context) => Container(
@@ -964,40 +1022,40 @@ class _SecurityBadge extends StatelessWidget {
 }
 
 class _StyledField extends StatelessWidget {
-  final String name;
-  final String label, hint;
-  final IconData icon;
-  final bool obscure;
-  final int maxLines;
-  final TextInputType? keyboardType;
-  final String? Function(String?)? validator;
-  final Widget? suffix;
-  final _StepTheme theme;
-  final TextCapitalization capitalization;
-  final ValueChanged<String?>? onChanged;
-
   const _StyledField({
-    required this.name,
+    required this.formControlName,
     required this.label,
     required this.hint,
     required this.icon,
     required this.theme,
     this.obscure = false,
     this.keyboardType,
-    this.validator,
+    this.validationMessages,
     this.suffix,
     this.capitalization = TextCapitalization.none,
     this.onChanged,
     this.maxLines = 1,
   });
+  final String formControlName;
+  final String label;
+  final String hint;
+  final IconData icon;
+  final bool obscure;
+  final int maxLines;
+  final TextInputType? keyboardType;
+  final Map<String, String Function(Object)>? validationMessages;
+  final Widget? suffix;
+  final _StepTheme theme;
+  final TextCapitalization capitalization;
+  final void Function(FormControl<String>)? onChanged;
 
   @override
-  Widget build(BuildContext context) => FormBuilderTextField(
-    name: name,
+  Widget build(BuildContext context) => ReactiveTextField<String>(
+    formControlName: formControlName,
     obscureText: obscure,
     maxLines: maxLines,
     keyboardType: keyboardType,
-    validator: validator,
+    validationMessages: validationMessages,
     textCapitalization: capitalization,
     onChanged: onChanged,
     style: TextStyle(fontSize: 15.sp, color: theme.text),
@@ -1039,10 +1097,6 @@ class _StyledField extends StatelessWidget {
 // ─── Custom Inline DOB Picker ─────────────────────────────────────────────────
 
 class _DobPicker extends StatefulWidget {
-  final DateTime? selected;
-  final Color accent, textColor, cardBg;
-  final ValueChanged<DateTime> onPicked;
-
   const _DobPicker({
     required this.selected,
     required this.accent,
@@ -1050,6 +1104,11 @@ class _DobPicker extends StatefulWidget {
     required this.cardBg,
     required this.onPicked,
   });
+  final DateTime? selected;
+  final Color accent;
+  final Color textColor;
+  final Color cardBg;
+  final ValueChanged<DateTime> onPicked;
 
   @override
   State<_DobPicker> createState() => _DobPickerState();
@@ -1065,7 +1124,7 @@ class _DobPickerState extends State<_DobPicker>
   late FixedExtentScrollController _monthCtrl;
   late FixedExtentScrollController _yearCtrl;
 
-  static const double _itemH = 42.0;
+  static const double _itemH = 42;
   static const int _visibleItems = 3;
 
   late int _day;
@@ -1263,7 +1322,6 @@ class _DobPickerState extends State<_DobPicker>
                               controller: _dayCtrl,
                               itemExtent: _itemH,
                               physics: const FixedExtentScrollPhysics(),
-                              perspective: 0.003,
                               onSelectedItemChanged: (i) {
                                 setState(() => _day = i + 1);
                                 _emit();
@@ -1284,7 +1342,6 @@ class _DobPickerState extends State<_DobPicker>
                               controller: _monthCtrl,
                               itemExtent: _itemH,
                               physics: const FixedExtentScrollPhysics(),
-                              perspective: 0.003,
                               onSelectedItemChanged: (i) {
                                 setState(() => _month = i);
                                 _emit();
@@ -1305,7 +1362,6 @@ class _DobPickerState extends State<_DobPicker>
                               controller: _yearCtrl,
                               itemExtent: _itemH,
                               physics: const FixedExtentScrollPhysics(),
-                              perspective: 0.003,
                               onSelectedItemChanged: (i) {
                                 setState(() => _year = 1920 + i);
                                 _emit();
@@ -1419,9 +1475,9 @@ class _DobPickerState extends State<_DobPicker>
 }
 
 class _Divider extends StatelessWidget {
+  const _Divider({required this.accent, required this.label});
   final Color accent;
   final String label;
-  const _Divider({required this.accent, required this.label});
 
   @override
   Widget build(BuildContext context) => Row(
@@ -1440,9 +1496,9 @@ class _Divider extends StatelessWidget {
 }
 
 class _GoogleButton extends StatelessWidget {
+  const _GoogleButton({required this.onPressed, required this.l10n});
   final VoidCallback? onPressed;
   final AppLocalizations l10n;
-  const _GoogleButton({required this.onPressed, required this.l10n});
 
   @override
   Widget build(BuildContext context) => SizedBox(
@@ -1481,17 +1537,17 @@ class _GoogleButton extends StatelessWidget {
 }
 
 class _PasswordStrengthBar extends StatelessWidget {
+  const _PasswordStrengthBar({required this.password, required this.accent});
   final String password;
   final Color accent;
-  const _PasswordStrengthBar({required this.password, required this.accent});
 
   @override
   Widget build(BuildContext context) {
     final pw = password;
-    int s = 0;
+    var s = 0;
     if (pw.length >= 8) s++;
-    if (pw.contains(RegExp(r'[A-Z]'))) s++;
-    if (pw.contains(RegExp(r'[0-9]'))) s++;
+    if (pw.contains(RegExp('[A-Z]'))) s++;
+    if (pw.contains(RegExp('[0-9]'))) s++;
     if (pw.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) s++;
     final colors = [Colors.red, Colors.orange, Colors.lightBlue, Colors.green];
     final labels = ['Weak', 'Fair', 'Good', 'Strong'];
@@ -1535,9 +1591,6 @@ class _PasswordStrengthBar extends StatelessWidget {
 }
 
 class _TermsCard extends StatelessWidget {
-  final bool agreed;
-  final Color accent;
-  final VoidCallback onToggle, onTermsTap, onPrivacyTap;
   const _TermsCard({
     required this.agreed,
     required this.accent,
@@ -1545,6 +1598,11 @@ class _TermsCard extends StatelessWidget {
     required this.onTermsTap,
     required this.onPrivacyTap,
   });
+  final bool agreed;
+  final Color accent;
+  final VoidCallback onToggle;
+  final VoidCallback onTermsTap;
+  final VoidCallback onPrivacyTap;
 
   @override
   Widget build(BuildContext context) => Semantics(
@@ -1616,12 +1674,6 @@ class _TermsCard extends StatelessWidget {
 }
 
 class _RoleCard extends StatelessWidget {
-  final UserRole role;
-  final bool isSelected;
-  final Color accent;
-  final IconData icon;
-  final String title, desc;
-  final VoidCallback onTap;
   const _RoleCard({
     required this.role,
     required this.isSelected,
@@ -1631,6 +1683,13 @@ class _RoleCard extends StatelessWidget {
     required this.desc,
     required this.onTap,
   });
+  final UserRole role;
+  final bool isSelected;
+  final Color accent;
+  final IconData icon;
+  final String title;
+  final String desc;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) => Semantics(

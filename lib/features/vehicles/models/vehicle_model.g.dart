@@ -9,13 +9,13 @@ part of 'vehicle_model.dart';
 _VehicleModel _$VehicleModelFromJson(Map json) => _VehicleModel(
   id: json['id'] as String,
   ownerId: json['ownerId'] as String,
-  ownerName: json['ownerName'] as String? ?? 'Unknown',
-  ownerPhotoUrl: json['ownerPhotoUrl'] as String?,
   make: json['make'] as String,
   model: json['model'] as String,
   year: (json['year'] as num).toInt(),
   color: json['color'] as String,
   licensePlate: json['licensePlate'] as String,
+  ownerName: json['ownerName'] as String? ?? 'Unknown',
+  ownerPhotoUrl: json['ownerPhotoUrl'] as String?,
   type:
       $enumDecodeNullable(_$VehicleTypeEnumMap, json['type']) ??
       VehicleType.car,
@@ -55,13 +55,13 @@ Map<String, dynamic> _$VehicleModelToJson(_VehicleModel instance) =>
     <String, dynamic>{
       'id': instance.id,
       'ownerId': instance.ownerId,
-      'ownerName': instance.ownerName,
-      'ownerPhotoUrl': instance.ownerPhotoUrl,
       'make': instance.make,
       'model': instance.model,
       'year': instance.year,
       'color': instance.color,
       'licensePlate': instance.licensePlate,
+      'ownerName': instance.ownerName,
+      'ownerPhotoUrl': instance.ownerPhotoUrl,
       'type': _$VehicleTypeEnumMap[instance.type]!,
       'capacity': instance.capacity,
       'fuelType': _$FuelTypeEnumMap[instance.fuelType]!,

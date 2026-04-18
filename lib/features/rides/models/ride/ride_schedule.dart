@@ -7,8 +7,6 @@ part 'ride_schedule.g.dart';
 /// Ride schedule information
 @freezed
 abstract class RideSchedule with _$RideSchedule {
-  const RideSchedule._();
-
   const factory RideSchedule({
     @RequiredTimestampConverter() required DateTime departureTime,
     @TimestampConverter() DateTime? arrivalTime,
@@ -18,6 +16,7 @@ abstract class RideSchedule with _$RideSchedule {
     @Default([]) List<int> recurringDays,
     @TimestampConverter() DateTime? recurringEndDate,
   }) = _RideSchedule;
+  const RideSchedule._();
 
   factory RideSchedule.fromJson(Map<String, dynamic> json) =>
       _$RideScheduleFromJson(json);
@@ -51,10 +50,9 @@ abstract class RideSchedule with _$RideSchedule {
 
 /// Helper class for date ranges
 class DateTimeRange {
+  DateTimeRange({required this.start, required this.end});
   final DateTime start;
   final DateTime end;
-
-  DateTimeRange({required this.start, required this.end});
 
   bool contains(DateTime date) {
     return date.isAfter(start) && date.isBefore(end) ||

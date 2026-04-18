@@ -14,10 +14,9 @@ part 'profile_repository.g.dart';
 
 /// Profile Repository for user operations - Firebase only
 class ProfileRepository implements IUserRepository {
+  ProfileRepository(this._firestore, this._storage);
   final FirebaseFirestore _firestore;
   final FirebaseStorage _storage;
-
-  ProfileRepository(this._firestore, this._storage);
 
   CollectionReference<UserModel> get _usersCollection => _firestore
       .collection(AppConstants.usersCollection)
@@ -67,7 +66,7 @@ class ProfileRepository implements IUserRepository {
     );
 
     await ref.putFile(file, metadata);
-    return await ref.getDownloadURL();
+    return ref.getDownloadURL();
   }
 
   /// Update profile photo
@@ -88,7 +87,7 @@ class ProfileRepository implements IUserRepository {
           .child('profile.jpg');
       await ref.delete();
       await updateProfile(uid, {'photoUrl': null});
-    } catch (e) {
+    } on Exception {
       // Photo might not exist, ignore
     }
   }
@@ -287,7 +286,7 @@ class ProfileRepository implements IUserRepository {
     // FIX G-1: Cap XP/level progression at level 50.
     const maxLevel = 50;
 
-    var newTotalXP = totalXP + xp;
+    final newTotalXP = totalXP + xp;
     var newCurrentLevelXP = currentLevelXP + xp;
     var newLevel = level;
     var newXpToNextLevel = xpToNextLevel;
@@ -365,6 +364,14 @@ class ProfileRepository implements IUserRepository {
       'gamification.currentStreak': newCurrentStreak,
       'gamification.longestStreak': newLongestStreak,
       'gamification.lastRideDate': Timestamp.now(),
+    });
+  }
+
+  /// Reset streak to 0 (no-show / bad behaviour penalty).
+  @override
+  Future<void> resetStreak(String uid) async {
+    await _usersCollection.doc(uid).update({
+      'gamification.currentStreak': 0,
     });
   }
 
@@ -517,12 +524,12 @@ class ProfileRepository implements IUserRepository {
         .limit(limit)
         .get();
 
-    int rank = 0;
+    var rank = 0;
     return query.docs.map((doc) {
       rank++;
       final user = doc.data();
       return LeaderboardEntry(
-        odid: user.uid,
+        userId: user.uid,
         displayName: user.displayName,
         photoUrl: user.photoUrl,
         totalXP: user.totalXP,
@@ -581,7 +588,7 @@ class ProfileRepository implements IUserRepository {
     Future<void> runPrefixQuery(String value) async {
       if (value.isEmpty) return;
 
-      Query<UserModel> queryRef = _usersCollection
+      var queryRef = _usersCollection
           .where('displayName', isGreaterThanOrEqualTo: value)
           .where('displayName', isLessThanOrEqualTo: '$value\uf8ff');
 

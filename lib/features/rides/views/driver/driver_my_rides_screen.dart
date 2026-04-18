@@ -6,6 +6,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
@@ -14,6 +16,20 @@ import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/driver_view_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+
+final _pastDriverRidesProvider = StreamProvider<List<RideModel>>((ref) {
+  final userId = ref.watch(authStateProvider).value?.uid;
+  if (userId == null) return Stream.value([]);
+  return ref.watch(rideRepositoryProvider).streamRidesByDriver(userId).map(
+    (rides) => rides
+        .where(
+          (r) =>
+              r.status == RideStatus.completed ||
+              r.status == RideStatus.cancelled,
+        )
+        .toList(),
+  );
+});
 
 // ─────────────────────────────────────────────────────────────────
 // SCREEN ENTRY POINT
@@ -54,6 +70,12 @@ class DriverMyRidesScreen extends ConsumerWidget {
             SliverToBoxAdapter(
               child: _UpcomingRidesSection(
                 ridesAsync: driverState.upcomingRides,
+              ),
+            ),
+            // Past rides history
+            SliverToBoxAdapter(
+              child: _HistorySection(
+                ridesAsync: ref.watch(_pastDriverRidesProvider),
               ),
             ),
             SliverToBoxAdapter(child: SizedBox(height: 100.h)),
@@ -121,7 +143,7 @@ class _DriverSliverAppBar extends StatelessWidget {
           ],
         ),
         background: Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -153,7 +175,7 @@ class _ActiveRideBanner extends StatelessWidget {
         child: Container(
           padding: EdgeInsets.all(16.w),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
+            gradient: const LinearGradient(
               colors: [AppColors.primaryDark, AppColors.primary],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -299,12 +321,14 @@ class _PendingRequestsSection extends ConsumerWidget {
           ),
           SizedBox(height: 12.h),
           requestsAsync.when(
-            loading: () =>
-                SkeletonLoader(type: SkeletonType.compactTile, itemCount: 3),
+            loading: () => const SkeletonLoader(
+              type: SkeletonType.compactTile,
+              itemCount: 3,
+            ),
             error: (e, _) => _InlineError(message: l10n.couldNotLoadRequests),
             data: (requests) {
               if (requests.isEmpty) {
-                return _InlineEmpty(
+                return const _InlineEmpty(
                   icon: Icons.inbox_rounded,
                   label: 'No pending requests',
                 );
@@ -351,8 +375,10 @@ class _PendingRequestCard extends ConsumerWidget {
     final passengerPhoto = profile?.photoUrl;
     final passengerRating = profile?.rating.average ?? 0.0;
     final pricePerSeat = ride?.pricePerSeat ?? 0.0;
-    final pickupAddress = request.pickupLocation?.address ?? ride?.origin.address ?? '…';
-    final dropoffAddress = request.dropoffLocation?.address ?? ride?.destination.address ?? '…';
+    final pickupAddress =
+        request.pickupLocation?.address ?? ride?.origin.address ?? '…';
+    final dropoffAddress =
+        request.dropoffLocation?.address ?? ride?.destination.address ?? '…';
 
     return Container(
       margin: EdgeInsets.only(bottom: 10.h),
@@ -382,7 +408,11 @@ class _PendingRequestCard extends ConsumerWidget {
                     : null,
                 backgroundColor: AppColors.primarySurface,
                 child: passengerPhoto == null
-                    ? Icon(Icons.person_rounded, size: 20.sp, color: AppColors.primary)
+                    ? Icon(
+                        Icons.person_rounded,
+                        size: 20.sp,
+                        color: AppColors.primary,
+                      )
                     : null,
               ),
               SizedBox(width: 10.w),
@@ -400,7 +430,11 @@ class _PendingRequestCard extends ConsumerWidget {
                     ),
                     Row(
                       children: [
-                        Icon(Icons.star_rounded, size: 13.sp, color: AppColors.accent),
+                        Icon(
+                          Icons.star_rounded,
+                          size: 13.sp,
+                          color: AppColors.accent,
+                        ),
                         SizedBox(width: 3.w),
                         Text(
                           passengerRating.toStringAsFixed(1),
@@ -428,7 +462,10 @@ class _PendingRequestCard extends ConsumerWidget {
                   ),
                   Text(
                     '× ${request.seatsBooked} ${l10n.seatsCount(request.seatsBooked)}',
-                    style: TextStyle(fontSize: 11.sp, color: AppColors.textTertiary),
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      color: AppColors.textTertiary,
+                    ),
                   ),
                 ],
               ),
@@ -469,7 +506,7 @@ class _PendingRequestCard extends ConsumerWidget {
                   onPressed: () => _confirmDecline(context, passengerName),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.error,
-                    side: BorderSide(color: AppColors.error),
+                    side: const BorderSide(color: AppColors.error),
                     padding: EdgeInsets.symmetric(vertical: 10.h),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10.r),
@@ -477,7 +514,10 @@ class _PendingRequestCard extends ConsumerWidget {
                   ),
                   child: Text(
                     l10n.declineButton,
-                    style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
@@ -497,7 +537,10 @@ class _PendingRequestCard extends ConsumerWidget {
                   ),
                   child: Text(
                     l10n.acceptButton,
-                    style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w700),
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
@@ -513,7 +556,9 @@ class _PendingRequestCard extends ConsumerWidget {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog.adaptive(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.r),
+        ),
         title: Text(l10n.acceptRequestTitle),
         content: Text(l10n.acceptRequestMessage(passengerName)),
         actions: [
@@ -543,7 +588,9 @@ class _PendingRequestCard extends ConsumerWidget {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog.adaptive(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.r),
+        ),
         title: Text(l10n.declineRequestTitle),
         content: Text(l10n.declineRequestMessage),
         actions: [
@@ -658,8 +705,7 @@ class _UpcomingRidesSection extends StatelessWidget {
           ),
           SizedBox(height: 12.h),
           ridesAsync.when(
-            loading: () =>
-                SkeletonLoader(type: SkeletonType.rideCard, itemCount: 2),
+            loading: () => const SkeletonLoader(itemCount: 2),
             error: (e, _) => _InlineError(message: l10n.couldNotLoadRides),
             data: (rides) {
               if (rides.isEmpty) {
@@ -673,6 +719,169 @@ class _UpcomingRidesSection extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// HISTORY SECTION
+// ─────────────────────────────────────────────────────────────────
+
+class _HistorySection extends StatelessWidget {
+  const _HistorySection({required this.ridesAsync});
+  final AsyncValue<List<RideModel>> ridesAsync;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16.w, 24.h, 16.w, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 4.w,
+                height: 18.h,
+                decoration: BoxDecoration(
+                  color: AppColors.textTertiary,
+                  borderRadius: BorderRadius.circular(2.r),
+                ),
+              ),
+              SizedBox(width: 8.w),
+              Text(
+                l10n.history,
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12.h),
+          ridesAsync.when(
+            loading: () => const SkeletonLoader(
+              type: SkeletonType.compactTile,
+              itemCount: 3,
+            ),
+            error: (e, _) => _InlineError(message: l10n.couldNotLoadRides),
+            data: (rides) {
+              if (rides.isEmpty) {
+                return _InlineEmpty(
+                  icon: Icons.history_rounded,
+                  label: l10n.noRidesYetTitle,
+                );
+              }
+              return Column(
+                children: rides.asMap().entries.map((e) {
+                  return _HistoryRideCard(ride: e.value, index: e.key);
+                }).toList(),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HistoryRideCard extends StatelessWidget {
+  const _HistoryRideCard({required this.ride, required this.index});
+  final RideModel ride;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final isCancelled = ride.status == RideStatus.cancelled;
+    final date = DateFormat('d MMM · HH:mm').format(ride.departureTime);
+    final earnings = ride.pricing.pricePerSeat.amount * ride.capacity.booked;
+
+    return GestureDetector(
+      onTap: () => context.pushNamed(
+        AppRoutes.driverViewRide.name,
+        pathParameters: {'id': ride.id},
+      ),
+      child: Container(
+        margin: EdgeInsets.only(bottom: 8.h),
+        padding: EdgeInsets.all(14.w),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40.w,
+              height: 40.w,
+              decoration: BoxDecoration(
+                color: isCancelled
+                    ? AppColors.error.withValues(alpha: 0.1)
+                    : AppColors.successLight.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isCancelled
+                    ? Icons.cancel_outlined
+                    : Icons.check_circle_outline_rounded,
+                size: 20.sp,
+                color: isCancelled ? AppColors.error : AppColors.success,
+              ),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${ride.origin.address} → ${ride.destination.address}',
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 3.h),
+                  Text(
+                    date,
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  isCancelled
+                      ? '—'
+                      : l10n.value5(earnings.toStringAsFixed(0)),
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w700,
+                    color: isCancelled
+                        ? AppColors.textTertiary
+                        : AppColors.success,
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 16.sp,
+                  color: AppColors.textTertiary,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ).animate().fadeIn(delay: (index * 40).ms, duration: 300.ms),
     );
   }
 }

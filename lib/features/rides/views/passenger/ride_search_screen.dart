@@ -1,24 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:intl/intl.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/services/talker_service.dart';
+import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
-import 'package:sport_connect/core/widgets/utility_widgets.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
-import 'package:sport_connect/core/models/location/location_point.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
+import 'package:sport_connect/core/widgets/utility_widgets.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 
 /// Ride Search Screen with filters - Enhanced UI
 class RideSearchScreen extends ConsumerStatefulWidget {
@@ -72,7 +71,6 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
       if (next.error != null &&
           next.error != previous?.error &&
           context.mounted) {
-        TalkerService.debug('Ride search failed: ${next.error}');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -172,7 +170,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
       actions: [
         IconButton(
           tooltip: AppLocalizations.of(context).filters,
-          onPressed: () => _showAdvancedFilters(),
+          onPressed: _showAdvancedFilters,
           icon: Badge(
             isLabelVisible: _hasActiveFilters,
             backgroundColor: AppColors.warning,
@@ -225,7 +223,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                       height: 28.h,
                       margin: EdgeInsets.symmetric(vertical: 2.h),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
+                        gradient: const LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [AppColors.primary, AppColors.error],
@@ -269,7 +267,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                   onTap: _swapLocations,
                   child: Container(
                     padding: EdgeInsets.all(8.w),
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: AppColors.primarySurface,
                       shape: BoxShape.circle,
                     ),
@@ -372,10 +370,8 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
           builder: (context, child) {
             return Theme(
               data: Theme.of(context).copyWith(
-                colorScheme: ColorScheme.light(
+                colorScheme: const ColorScheme.light(
                   primary: AppColors.primary,
-                  onPrimary: Colors.white,
-                  surface: AppColors.cardBg,
                   onSurface: AppColors.textPrimary,
                 ),
               ),
@@ -1103,7 +1099,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
     if (_searchState.isFilterPanelOpen) return;
     HapticFeedback.mediumImpact();
     ref.read(rideSearchViewModelProvider.notifier).setFilterPanelOpen(true);
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -1124,9 +1120,9 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                 // Handle & Header
                 Container(
                   padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 16.h),
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     border: Border(
-                      bottom: BorderSide(color: AppColors.border, width: 1),
+                      bottom: BorderSide(color: AppColors.border),
                     ),
                   ),
                   child: Column(
@@ -1159,7 +1155,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                             },
                             child: Text(
                               AppLocalizations.of(context).reset,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -1415,10 +1411,10 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                 // Apply Button
                 Container(
                   padding: EdgeInsets.all(20.w),
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: AppColors.cardBg,
                     border: Border(
-                      top: BorderSide(color: AppColors.border, width: 1),
+                      top: BorderSide(color: AppColors.border),
                     ),
                   ),
                   child: SafeArea(
@@ -1568,7 +1564,6 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
       context,
       title: isFrom ? 'Select Pickup Location' : 'Select Destination',
       initialLocation: initialLocation,
-      showQuickPicks: true,
     );
 
     if (result != null) {
@@ -1618,8 +1613,8 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
 
   Widget _buildResultsList() {
     if (_resultsState.isLoading) {
-      return SliverFillRemaining(
-        child: SkeletonLoader(type: SkeletonType.rideCard, itemCount: 4),
+      return const SliverFillRemaining(
+        child: SkeletonLoader(),
       );
     }
 
@@ -1710,7 +1705,6 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
           color: ride.status == RideStatus.full
               ? AppColors.textSecondary.withValues(alpha: 0.3)
               : AppColors.border.withValues(alpha: 0.5),
-          width: 1,
         ),
       ),
       child: Material(
@@ -1754,7 +1748,6 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                                 children: [
                                   DriverRatingWidget(
                                     driverId: ride.driverId,
-                                    showIcon: true,
                                     style: TextStyle(
                                       fontSize: 12.sp,
                                       fontWeight: FontWeight.w500,
@@ -1762,7 +1755,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                                     ),
                                   ),
                                   SizedBox(width: 8.w),
-                                  Text(
+                                  const Text(
                                     '•',
                                     style: TextStyle(
                                       color: AppColors.textSecondary,
@@ -1831,7 +1824,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                               height: 24.h,
                               margin: EdgeInsets.symmetric(vertical: 4.h),
                               decoration: BoxDecoration(
-                                gradient: LinearGradient(
+                                gradient: const LinearGradient(
                                   begin: Alignment.topCenter,
                                   end: Alignment.bottomCenter,
                                   colors: [AppColors.primary, AppColors.error],
@@ -1860,7 +1853,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                                   Container(
                                     width: 8.w,
                                     height: 8.w,
-                                    decoration: BoxDecoration(
+                                    decoration: const BoxDecoration(
                                       color: AppColors.primary,
                                       shape: BoxShape.circle,
                                     ),
@@ -2038,7 +2031,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
   }
 
   void _showSortOptions() {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(

@@ -1,6 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
+import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/notifications/models/notification_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
@@ -36,7 +36,7 @@ class RideService extends _$RideService {
     try {
       final profileRepo = ref.read(profileRepositoryProvider);
       await profileRepo.addXP(ride.driverId, 10);
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to award ride creation XP: $e');
     }
 
@@ -117,7 +117,7 @@ class RideService extends _$RideService {
           await repo.cancelBooking(rideId: rideId, bookingId: booking.id);
         }
       }
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to cancel bookings for ride $rideId: $e');
     }
 
@@ -163,7 +163,7 @@ class RideService extends _$RideService {
           completedPassengerIds.add(booking.passengerId);
         }
       }
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to update booking statuses: $e');
     }
 
@@ -265,7 +265,7 @@ class RideService extends _$RideService {
       TalkerService.info(
         'Ride $rideId completed. XP awarded: $xp, earnings: $earnings',
       );
-    } catch (e) {
+    } on Exception catch (e) {
       // Stats failure should NOT roll back the completion
       TalkerService.error('Failed to record ride completion stats: $e');
     }
@@ -282,7 +282,7 @@ class RideService extends _$RideService {
 
   /// Calculate XP reward based on ride characteristics
   int calculateXpReward(RideModel ride) {
-    int xp = 50; // Base XP
+    var xp = 50; // Base XP
 
     // Distance bonus
     if (ride.route.distanceKm != null) {
@@ -343,7 +343,7 @@ class RideService extends _$RideService {
           reason: reason,
         );
       }
-    } catch (e) {
+    } on Exception catch (e) {
       // Notification failure should not break the main cancellation flow
       TalkerService.error('Failed to notify passengers of cancellation: $e');
     }
@@ -351,7 +351,7 @@ class RideService extends _$RideService {
 
   // ==================== 7B: NO-SHOW HANDLING ====================
 
-  /// Mark a passenger as no-show, cancel their booking, and notify them.
+  /// Mark a passenger as no-show, cancel their booking, deduct XP, reset streak, and notify them.
   Future<void> markPassengerNoShow({
     required String rideId,
     required String bookingId,
@@ -363,6 +363,15 @@ class RideService extends _$RideService {
       bookingId: bookingId,
       passengerId: passengerId,
     );
+
+    // GAP-13: Penalize no-show in gamification — deduct 20 XP + reset streak
+    try {
+      final profileRepo = ref.read(profileRepositoryProvider);
+      await profileRepo.addXP(passengerId, -20);
+      await profileRepo.resetStreak(passengerId);
+    } on Exception catch (e) {
+      TalkerService.error('Failed to apply no-show gamification penalty: $e');
+    }
 
     // Notify the passenger
     try {
@@ -383,14 +392,14 @@ class RideService extends _$RideService {
           title: 'Marked as No-Show',
           body:
               '$driverName marked you as no-show for "$origin → $dest". '
-              'Your booking has been cancelled.',
+              'Your booking has been cancelled and 20 XP deducted.',
           senderName: driverName,
           referenceId: rideId,
           referenceType: 'ride',
           priority: NotificationPriority.high,
         ),
       );
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to send no-show notification: $e');
     }
   }
@@ -406,7 +415,7 @@ class RideService extends _$RideService {
 
     final estimatedDuration = ride.durationMinutes ?? 120;
     final elapsed = DateTime.now().difference(actualDeparture).inMinutes;
-    final threshold = (estimatedDuration * 2).round();
+    final threshold = estimatedDuration * 2;
 
     if (elapsed > threshold) {
       return elapsed - estimatedDuration;
@@ -463,7 +472,7 @@ class RideService extends _$RideService {
           ),
         );
       }
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to send delay notifications: $e');
     }
   }

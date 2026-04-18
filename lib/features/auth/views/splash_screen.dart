@@ -1,9 +1,10 @@
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -81,7 +82,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             child: SizedBox(
               width: double.infinity,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const Spacer(flex: 3),
 
@@ -187,7 +187,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   Widget _buildLogoSection() {
     return Column(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         // Animated logo container with subtle pulse rings
         Stack(
@@ -206,7 +205,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       color: AppColors.primary.withValues(
                         alpha: 0.08 - _pulseController.value * 0.06,
                       ),
-                      width: 1,
                     ),
                   ),
                 );
@@ -239,7 +237,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   height: 100.w,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: LinearGradient(
+                    gradient: const LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [AppColors.primary, AppColors.primaryDark],
@@ -356,7 +354,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       height: 3.h,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(2.r),
-                        gradient: LinearGradient(
+                        gradient: const LinearGradient(
                           colors: [AppColors.primary, AppColors.primaryLight],
                         ),
                       ),

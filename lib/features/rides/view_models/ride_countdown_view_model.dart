@@ -82,11 +82,13 @@ class RideCountdownUiViewModel extends _$RideCountdownUiViewModel {
                 .toList()
           : null;
 
-      final routeInfo = await RoutingService.getRoute(
-        origin: origin,
-        destination: dest,
-        waypoints: waypoints,
-      );
+      final routeInfo = await ref
+          .read(routingServiceProvider)
+          .getRoute(
+            origin: origin,
+            destination: dest,
+            waypoints: waypoints,
+          );
 
       if (!ref.mounted) return;
 
@@ -95,7 +97,7 @@ class RideCountdownUiViewModel extends _$RideCountdownUiViewModel {
         osrmRouteRideId: ride.id,
         isLoadingOsrmRoute: false,
       );
-    } catch (_) {
+    } on Exception catch (_) {
       if (!ref.mounted) return;
 
       state = state.copyWith(isLoadingOsrmRoute: false);

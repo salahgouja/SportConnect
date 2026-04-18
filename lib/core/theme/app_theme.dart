@@ -20,34 +20,31 @@ class AppTheme {
   // ═══════════════════════════════════════════════════════════════════════════
 
   static ColorScheme get _colorScheme => ColorScheme.light(
-        primary: AppColors.primary,
-        primaryContainer: AppColors.primaryLight,
-        onPrimary: AppColors.textOnPrimary,
-        onPrimaryContainer: AppColors.primary,
-        secondary: AppColors.secondary,
-        secondaryContainer: AppColors.secondaryLight,
-        onSecondary: AppColors.textOnPrimary,
-        onSecondaryContainer: AppColors.secondary,
-        tertiary: AppColors.accent,
-        tertiaryContainer: AppColors.accentLight,
-        onTertiary: AppColors.textOnPrimary,
-        onTertiaryContainer: AppColors.accent,
-        error: AppColors.error,
-        errorContainer: AppColors.errorLight,
-        onError: Colors.white,
-        onErrorContainer: AppColors.error,
-        surface: AppColors.surface,
-        onSurface: AppColors.textPrimary,
-        onSurfaceVariant: AppColors.textSecondary,
-        outline: AppColors.border,
-        outlineVariant: AppColors.divider,
-        surfaceContainerHighest: AppColors.surfaceVariant,
-        inverseSurface: AppColors.textPrimary,
-        onInverseSurface: AppColors.surface,
-        inversePrimary: AppColors.primaryLight,
-        shadow: Colors.black.withValues(alpha: 0.08),
-        scrim: Colors.black.withValues(alpha: 0.4),
-      );
+    primary: AppColors.primary,
+    primaryContainer: AppColors.primaryLight,
+    onPrimaryContainer: AppColors.primary,
+    secondary: AppColors.secondary,
+    secondaryContainer: AppColors.secondaryLight,
+    onSecondary: AppColors.textOnPrimary,
+    onSecondaryContainer: AppColors.secondary,
+    tertiary: AppColors.accent,
+    tertiaryContainer: AppColors.accentLight,
+    onTertiary: AppColors.textOnPrimary,
+    onTertiaryContainer: AppColors.accent,
+    error: AppColors.error,
+    errorContainer: AppColors.errorLight,
+    onErrorContainer: AppColors.error,
+    onSurface: AppColors.textPrimary,
+    onSurfaceVariant: AppColors.textSecondary,
+    outline: AppColors.border,
+    outlineVariant: AppColors.divider,
+    surfaceContainerHighest: AppColors.surfaceVariant,
+    inverseSurface: AppColors.textPrimary,
+    onInverseSurface: AppColors.surface,
+    inversePrimary: AppColors.primaryLight,
+    shadow: Colors.black.withValues(alpha: 0.08),
+    scrim: Colors.black.withValues(alpha: 0.4),
+  );
 
   // ═══════════════════════════════════════════════════════════════════════════
   // TEXT THEME
@@ -68,7 +65,7 @@ class AppTheme {
       displayMedium: base.displayMedium?.copyWith(
         fontSize: 32.sp,
         fontWeight: FontWeight.w700,
-        letterSpacing: -1.0,
+        letterSpacing: -1,
         height: 1.16,
         color: AppColors.textPrimary,
       ),
@@ -324,19 +321,25 @@ class AppTheme {
       filled: true,
       fillColor: AppColors.surfaceVariant,
       contentPadding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 18.h),
-      border: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide.none),
-      enabledBorder: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide.none),
+      border: OutlineInputBorder(
+        borderRadius: radius,
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: radius,
+        borderSide: BorderSide.none,
+      ),
       focusedBorder: OutlineInputBorder(
         borderRadius: radius,
-        borderSide: BorderSide(color: AppColors.primary, width: 2),
+        borderSide: const BorderSide(color: AppColors.primary, width: 2),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: radius,
-        borderSide: BorderSide(color: AppColors.error, width: 1.5),
+        borderSide: const BorderSide(color: AppColors.error, width: 1.5),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: radius,
-        borderSide: BorderSide(color: AppColors.error, width: 2),
+        borderSide: const BorderSide(color: AppColors.error, width: 2),
       ),
       disabledBorder: OutlineInputBorder(
         borderRadius: radius,
@@ -403,7 +406,7 @@ class AppTheme {
         return Colors.transparent;
       }),
       checkColor: WidgetStateProperty.all(Colors.white),
-      side: BorderSide(color: AppColors.border, width: 1.5),
+      side: const BorderSide(color: AppColors.border, width: 1.5),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.r)),
     );
   }
@@ -473,7 +476,9 @@ class AppTheme {
       hoverElevation: PlatformAdaptive.isApple ? 0 : 8,
       highlightElevation: PlatformAdaptive.isApple ? 0 : 4,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(PlatformAdaptive.isApple ? 20.r : 16.r),
+        borderRadius: BorderRadius.circular(
+          PlatformAdaptive.isApple ? 20.r : 16.r,
+        ),
       ),
     );
   }
@@ -585,7 +590,10 @@ class AppTheme {
           fontFamily: 'Inter',
         ),
         iconTheme: IconThemeData(color: AppColors.textPrimary, size: 24.sp),
-        actionsIconTheme: IconThemeData(color: AppColors.textPrimary, size: 24.sp),
+        actionsIconTheme: IconThemeData(
+          color: AppColors.textPrimary,
+          size: 24.sp,
+        ),
         toolbarHeight: PlatformAdaptive.isApple ? 44 : 56,
       ),
 
@@ -624,8 +632,14 @@ class AppTheme {
         unselectedItemColor: AppColors.textTertiary,
         type: BottomNavigationBarType.fixed,
         elevation: 0,
-        selectedLabelStyle: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w500),
+        selectedLabelStyle: TextStyle(
+          fontSize: 12.sp,
+          fontWeight: FontWeight.w600,
+        ),
+        unselectedLabelStyle: TextStyle(
+          fontSize: 12.sp,
+          fontWeight: FontWeight.w500,
+        ),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.surface.withValues(
@@ -661,12 +675,19 @@ class AppTheme {
         selectedColor: AppColors.primary.withValues(alpha: 0.15),
         disabledColor: AppColors.surfaceVariant.withValues(alpha: 0.5),
         labelStyle: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w500),
-        secondaryLabelStyle: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w500, color: AppColors.primary),
+        secondaryLabelStyle: TextStyle(
+          fontSize: 13.sp,
+          fontWeight: FontWeight.w500,
+          color: AppColors.primary,
+        ),
         padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.chipRadius),
           side: PlatformAdaptive.isApple
-              ? BorderSide(color: AppColors.border.withValues(alpha: 0.15), width: 0.5)
+              ? BorderSide(
+                  color: AppColors.border.withValues(alpha: 0.15),
+                  width: 0.5,
+                )
               : BorderSide.none,
         ),
         showCheckmark: true,
@@ -674,7 +695,7 @@ class AppTheme {
       ),
 
       // ─── Surfaces ───
-      dividerTheme: DividerThemeData(
+      dividerTheme: const DividerThemeData(
         color: AppColors.divider,
         thickness: 1,
         space: 1,
@@ -800,18 +821,19 @@ extension AppThemeExtension on BuildContext {
   TextStyle get textLabelSm => textTheme.labelSmall!;
 
   // Semantic shortcuts.
-  TextStyle get textSmallBold => textTheme.bodySmall!.copyWith(fontWeight: FontWeight.w700);
+  TextStyle get textSmallBold =>
+      textTheme.bodySmall!.copyWith(fontWeight: FontWeight.w700);
   TextStyle get textCaption => textTheme.labelSmall!;
   TextStyle get textOverline => textTheme.labelSmall!.copyWith(
-        letterSpacing: 1.0,
-        fontSize: 10.sp,
-        fontWeight: FontWeight.w700,
-      );
+    letterSpacing: 1,
+    fontSize: 10.sp,
+    fontWeight: FontWeight.w700,
+  );
 
   // Brand gradient.
   LinearGradient get greenGradient => LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [colorScheme.primary, colorScheme.primary.withValues(alpha: 0.8)],
-      );
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [colorScheme.primary, colorScheme.primary.withValues(alpha: 0.8)],
+  );
 }

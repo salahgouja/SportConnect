@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/theme/platform_adaptive.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:sport_connect/core/theme/platform_adaptive.dart';
 
 /// Cancellation reason selection screen.
 ///
@@ -18,14 +18,13 @@ import 'package:sport_connect/core/theme/platform_adaptive.dart';
 /// - Cancellation policy warning
 /// - Confirmation dialog
 class CancellationReasonScreen extends ConsumerWidget {
-  final String rideId;
-  final bool isDriver;
-
   const CancellationReasonScreen({
-    super.key,
     required this.rideId,
+    super.key,
     this.isDriver = false,
   });
+  final String rideId;
+  final bool isDriver;
 
   List<_CancelReason> get _reasons => isDriver ? _driverReasons : _riderReasons;
 
@@ -291,7 +290,7 @@ class CancellationReasonScreen extends ConsumerWidget {
                   SizedBox(width: 12.w),
                   Expanded(
                     child: Text(
-                      'Please let us know why you\'re cancelling so we can '
+                      "Please let us know why you're cancelling so we can "
                       'improve our service.',
                       style: TextStyle(
                         fontSize: 13.sp,
@@ -370,15 +369,18 @@ class CancellationReasonScreen extends ConsumerWidget {
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12.r),
-                  borderSide: BorderSide(color: AppColors.border),
+                  borderSide: const BorderSide(color: AppColors.border),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12.r),
-                  borderSide: BorderSide(color: AppColors.border),
+                  borderSide: const BorderSide(color: AppColors.border),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12.r),
-                  borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+                  borderSide: const BorderSide(
+                    color: AppColors.primary,
+                    width: 1.5,
+                  ),
                 ),
               ),
             ).animate().fadeIn(delay: 650.ms),
@@ -517,11 +519,10 @@ class CancellationReasonScreen extends ConsumerWidget {
 }
 
 class _CancelReason {
+  const _CancelReason(this.title, this._staticIcon, this.description);
   final String title;
   final String description;
   final IconData? _staticIcon;
-
-  const _CancelReason(this.title, this._staticIcon, this.description);
 
   // This handles the runtime platform check
   IconData get icon {

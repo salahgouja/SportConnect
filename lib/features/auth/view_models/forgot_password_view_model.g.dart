@@ -42,7 +42,7 @@ final class ForgotPasswordViewModelProvider
 }
 
 String _$forgotPasswordViewModelHash() =>
-    r'0a389f0b84c3c632a4f7d4ef86ddeb554a0a2271';
+    r'aaf8e6fe1a215edc212a51b8cf10c4853ce11292';
 
 abstract class _$ForgotPasswordViewModel
     extends $Notifier<ForgotPasswordState> {

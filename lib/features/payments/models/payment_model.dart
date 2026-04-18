@@ -27,8 +27,6 @@ enum TransactionType { payment, refund, payout, platformFee, stripeFee }
 /// Payment Transaction Model
 @freezed
 abstract class PaymentTransaction with _$PaymentTransaction {
-  const PaymentTransaction._();
-
   const factory PaymentTransaction({
     required String id,
     required String rideId,
@@ -41,6 +39,9 @@ abstract class PaymentTransaction with _$PaymentTransaction {
     required double amount, // Total amount in dollars
     required String currency,
     required PaymentStatus status,
+    // Fee breakdown
+    required double platformFee,
+    required double driverEarnings,
     PaymentMethodType? paymentMethodType,
     String? paymentMethodLast4,
 
@@ -48,11 +49,7 @@ abstract class PaymentTransaction with _$PaymentTransaction {
     String? stripePaymentIntentId,
     String? stripeCustomerId,
     String? stripeChargeId,
-
-    // Fee breakdown
-    required double platformFee,
     @Default(0) double stripeFee,
-    required double driverEarnings,
     int? seatsBooked,
 
     // Timestamps
@@ -66,6 +63,7 @@ abstract class PaymentTransaction with _$PaymentTransaction {
     String? refundReason,
     @Default({}) Map<String, dynamic> metadata,
   }) = _PaymentTransaction;
+  const PaymentTransaction._();
 
   factory PaymentTransaction.fromJson(Map<String, dynamic> json) =>
       _$PaymentTransactionFromJson(json);
@@ -96,8 +94,6 @@ abstract class PaymentTransaction with _$PaymentTransaction {
 /// Driver Payout Model
 @freezed
 abstract class DriverPayout with _$DriverPayout {
-  const DriverPayout._();
-
   const factory DriverPayout({
     required String id,
     required String driverId,
@@ -126,6 +122,7 @@ abstract class DriverPayout with _$DriverPayout {
     bool? isInstantPayout,
     @Default({}) Map<String, dynamic> metadata,
   }) = _DriverPayout;
+  const DriverPayout._();
 
   factory DriverPayout.fromJson(Map<String, dynamic> json) =>
       _$DriverPayoutFromJson(json);
@@ -144,8 +141,6 @@ abstract class DriverPayout with _$DriverPayout {
 /// Driver Connected Account Model
 @freezed
 abstract class DriverConnectedAccount with _$DriverConnectedAccount {
-  const DriverConnectedAccount._();
-
   const factory DriverConnectedAccount({
     required String id,
     required String driverId,
@@ -180,6 +175,7 @@ abstract class DriverConnectedAccount with _$DriverConnectedAccount {
     @Default({}) Map<String, dynamic> requirements,
     @Default({}) Map<String, dynamic> metadata,
   }) = _DriverConnectedAccount;
+  const DriverConnectedAccount._();
 
   factory DriverConnectedAccount.fromJson(Map<String, dynamic> json) =>
       _$DriverConnectedAccountFromJson(json);
@@ -222,8 +218,6 @@ abstract class DriverConnectedAccount with _$DriverConnectedAccount {
 /// Rider Payment Method Model
 @freezed
 abstract class RiderPaymentMethod with _$RiderPaymentMethod {
-  const RiderPaymentMethod._();
-
   const factory RiderPaymentMethod({
     required String id,
     required String riderId,
@@ -243,6 +237,7 @@ abstract class RiderPaymentMethod with _$RiderPaymentMethod {
     @TimestampConverter() DateTime? createdAt,
     @TimestampConverter() DateTime? updatedAt,
   }) = _RiderPaymentMethod;
+  const RiderPaymentMethod._();
 
   factory RiderPaymentMethod.fromJson(Map<String, dynamic> json) =>
       _$RiderPaymentMethodFromJson(json);
@@ -265,8 +260,6 @@ abstract class RiderPaymentMethod with _$RiderPaymentMethod {
 /// Earnings Summary Model for drivers
 @freezed
 abstract class EarningsSummary with _$EarningsSummary {
-  const EarningsSummary._();
-
   const factory EarningsSummary({
     required String driverId,
 
@@ -295,6 +288,7 @@ abstract class EarningsSummary with _$EarningsSummary {
     @TimestampConverter() DateTime? lastUpdated,
     @TimestampConverter() DateTime? lastPayoutDate,
   }) = _EarningsSummary;
+  const EarningsSummary._();
 
   factory EarningsSummary.fromJson(Map<String, dynamic> json) =>
       _$EarningsSummaryFromJson(json);

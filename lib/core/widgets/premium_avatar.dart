@@ -1,21 +1,12 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Premium Avatar with border and badge
 class PremiumAvatar extends StatelessWidget {
-  final String? imageUrl;
-  final String? name;
-  final double size;
-  final bool hasBorder;
-  final Color? borderColor;
-  final Widget? badge;
-  final VoidCallback? onTap;
-  final Gradient? borderGradient;
-
   const PremiumAvatar({
     super.key,
     this.imageUrl,
@@ -27,6 +18,14 @@ class PremiumAvatar extends StatelessWidget {
     this.onTap,
     this.borderGradient,
   });
+  final String? imageUrl;
+  final String? name;
+  final double size;
+  final bool hasBorder;
+  final Color? borderColor;
+  final Widget? badge;
+  final VoidCallback? onTap;
+  final Gradient? borderGradient;
 
   @override
   Widget build(BuildContext context) {
@@ -75,7 +74,7 @@ class PremiumAvatar extends StatelessWidget {
   }
 
   Widget _buildPlaceholder() {
-    return Container(
+    return ColoredBox(
       color: AppColors.primary.withValues(alpha: 0.2),
       child: Center(
         child: name != null && name!.isNotEmpty
@@ -99,18 +98,17 @@ class PremiumAvatar extends StatelessWidget {
 
 /// Avatar with level badge
 class LevelAvatar extends StatelessWidget {
+  const LevelAvatar({
+    required this.level,
+    super.key,
+    this.imageUrl,
+    this.name,
+    this.size = 56,
+  });
   final String? imageUrl;
   final String? name;
   final int level;
   final double size;
-
-  const LevelAvatar({
-    super.key,
-    this.imageUrl,
-    this.name,
-    required this.level,
-    this.size = 56,
-  });
 
   Gradient get _levelGradient {
     if (level >= 50) return AppColors.diamondGradient;
@@ -162,13 +160,6 @@ class LevelAvatar extends StatelessWidget {
 
 /// Avatar Group for showing multiple users
 class AvatarGroup extends StatelessWidget {
-  final List<String?>? imageUrls;
-  final List<String?>? names;
-  final double size;
-  final int maxDisplay;
-  final int? extraCount;
-  final VoidCallback? onTap;
-
   const AvatarGroup({
     super.key,
     this.imageUrls,
@@ -178,6 +169,12 @@ class AvatarGroup extends StatelessWidget {
     this.extraCount,
     this.onTap,
   });
+  final List<String?>? imageUrls;
+  final List<String?>? names;
+  final double size;
+  final int maxDisplay;
+  final int? extraCount;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -245,12 +242,6 @@ class AvatarGroup extends StatelessWidget {
 
 /// Profile Avatar with edit button
 class EditableAvatar extends StatelessWidget {
-  final String? imageUrl;
-  final String? name;
-  final double size;
-  final VoidCallback? onEdit;
-  final bool isLoading;
-
   const EditableAvatar({
     super.key,
     this.imageUrl,
@@ -259,6 +250,11 @@ class EditableAvatar extends StatelessWidget {
     this.onEdit,
     this.isLoading = false,
   });
+  final String? imageUrl;
+  final String? name;
+  final double size;
+  final VoidCallback? onEdit;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -274,11 +270,11 @@ class EditableAvatar extends StatelessWidget {
         if (isLoading)
           Positioned.fill(
             child: Container(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.black38,
               ),
-              child: Center(
+              child: const Center(
                 child: CircularProgressIndicator.adaptive(
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   strokeWidth: 2,

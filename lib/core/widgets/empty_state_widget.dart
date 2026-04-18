@@ -8,23 +8,15 @@ import 'package:sport_connect/core/theme/app_colors.dart';
 /// Used across all list screens when no data is available.
 class EmptyStateWidget extends StatelessWidget {
   const EmptyStateWidget({
-    super.key,
     required this.icon,
     required this.title,
+    super.key,
     this.subtitle,
     this.actionLabel,
     this.onAction,
     this.iconColor,
     this.compact = false,
   });
-
-  final IconData icon;
-  final String title;
-  final String? subtitle;
-  final String? actionLabel;
-  final VoidCallback? onAction;
-  final Color? iconColor;
-  final bool compact;
 
   // ── Preset factories ──
 
@@ -55,7 +47,7 @@ class EmptyStateWidget extends StatelessWidget {
   factory EmptyStateWidget.noNotifications() => const EmptyStateWidget(
     icon: Icons.notifications_none_rounded,
     title: 'All caught up!',
-    subtitle: 'You\'ll see new notifications here',
+    subtitle: "You'll see new notifications here",
   );
 
   factory EmptyStateWidget.noReviews() => const EmptyStateWidget(
@@ -93,6 +85,14 @@ class EmptyStateWidget extends StatelessWidget {
     onAction: onRetry,
     iconColor: AppColors.error,
   );
+
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+  final Color? iconColor;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {

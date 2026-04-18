@@ -82,16 +82,20 @@ class RideCompletionUiViewModel extends _$RideCompletionUiViewModel {
                 )
                 .toList()
           : null;
-      final routeInfo = await RoutingService.getRoute(
-        origin: origin,
-        destination: dest,
-        waypoints: waypoints,
-      );
+      final routeInfo = await ref
+          .read(routingServiceProvider)
+          .getRoute(
+            origin: origin,
+            destination: dest,
+            waypoints: waypoints,
+          );
+      if (!ref.mounted) return;
       state = state.copyWith(
         osrmRoutePoints: routeInfo?.coordinates,
         isLoadingOsrmRoute: false,
       );
-    } catch (_) {
+    } on Exception catch (_) {
+      if (!ref.mounted) return;
       state = state.copyWith(isLoadingOsrmRoute: false);
     }
   }
@@ -104,6 +108,7 @@ class RideCompletionUiViewModel extends _$RideCompletionUiViewModel {
       final driverProfile = await ref.read(
         userProfileProvider(ride.driverId).future,
       );
+      if (!ref.mounted) return;
       final driverName = driverProfile?.displayName ?? 'Driver';
       final driverPhone = driverProfile?.phoneNumber;
       final currentUser = ref.read(currentUserProvider).value;
@@ -132,16 +137,19 @@ class RideCompletionUiViewModel extends _$RideCompletionUiViewModel {
         passengerName: passengerName,
       );
 
+      if (!ref.mounted) return;
       await Printing.sharePdf(
         bytes: pdfBytes,
         filename: 'SportConnect_Receipt_${ride.id.substring(0, 8)}.pdf',
       );
+      if (!ref.mounted) return;
       state = state.copyWith(isGeneratingPdf: false);
-    } catch (_) {
+    } on Exception catch (_) {
       try {
         final driverProfile = await ref.read(
           userProfileProvider(ride.driverId).future,
         );
+        if (!ref.mounted) return;
         final driverName = driverProfile?.displayName ?? 'Driver';
         final baseFare = ride.pricePerSeat;
         final serviceFee = (baseFare * 0.10).roundToDouble();
@@ -162,8 +170,10 @@ ${'=' * 30}
 Ride ID: ${ride.id}''';
 
         await SharePlus.instance.share(ShareParams(text: receipt));
+        if (!ref.mounted) return;
         state = state.copyWith(isGeneratingPdf: false);
-      } catch (e) {
+      } on Exception catch (e) {
+        if (!ref.mounted) return;
         state = state.copyWith(
           isGeneratingPdf: false,
           errorMessage: 'Unable to share receipt: $e',

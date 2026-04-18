@@ -9,7 +9,6 @@ import 'package:share_plus/share_plus.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
-import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
@@ -20,13 +19,12 @@ import 'package:sport_connect/features/events/models/event_model.dart';
 import 'package:sport_connect/features/events/view_models/event_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
-import 'package:url_launcher/url_launcher.dart';
-
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Full-screen event detail with hero banner, info sections and join/leave CTA.
 class EventDetailScreen extends ConsumerStatefulWidget {
-  const EventDetailScreen({super.key, required this.eventId});
+  const EventDetailScreen({required this.eventId, super.key});
 
   final String eventId;
 
@@ -309,7 +307,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                 // ── #32: Cost Split Badge ──
                 if (event.costSplitEnabled) ...[
                   SizedBox(height: 12.h),
-                  _CostSplitBadge().animate().fadeIn(
+                  const _CostSplitBadge().animate().fadeIn(
                     delay: 448.ms,
                     duration: 350.ms,
                   ),
@@ -349,9 +347,9 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                     icon: Icons.home_rounded,
                     style: PremiumButtonStyle.secondary,
                     fullWidth: true,
-                    onPressed: () {
+                    onPressed: () async {
                       HapticFeedback.lightImpact();
-                      context.push(
+                      await context.push(
                         AppRoutes.searchRides.path,
                         extra: {
                           'originAddress': event.location.address,
@@ -388,9 +386,9 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                       icon: Icons.add_road_rounded,
                       style: PremiumButtonStyle.ghost,
                       fullWidth: true,
-                      onPressed: () {
+                      onPressed: () async {
                         HapticFeedback.lightImpact();
-                        context.push(
+                        await context.push(
                           AppRoutes.driverOfferRide.path,
                           extra: {
                             'eventId': event.id,
@@ -439,11 +437,11 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
             color: Colors.white,
             size: 22.sp,
           ),
-          onPressed: () {
+          onPressed: () async {
             final dateStr = DateFormat(
               'EEE, MMM d · h:mm a',
             ).format(event.startsAt);
-            SharePlus.instance.share(
+            await SharePlus.instance.share(
               ShareParams(
                 text:
                     '${event.title} — ${event.type.label}\n'
@@ -458,8 +456,10 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         if (isOwner)
           IconButton(
             icon: Icon(Icons.edit_rounded, color: Colors.white, size: 22.sp),
-            onPressed: () =>
-                context.push('/events/${event.id}/edit', extra: event),
+            onPressed: () => context.pushNamed(
+              AppRoutes.editEvent.name,
+              pathParameters: {'id': event.id},
+            ),
           ),
         if (isOwner)
           IconButton(
@@ -474,7 +474,6 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
       ],
       flexibleSpace: FlexibleSpaceBar(
         background: _HeroBanner(event: event),
-        collapseMode: CollapseMode.parallax,
       ),
     );
   }
@@ -536,7 +535,10 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
           style: PremiumButtonStyle.secondary,
           fullWidth: true,
           onPressed: () =>
-              context.push('/events/${event.id}/edit', extra: event),
+              context.pushNamed(
+                AppRoutes.editEvent.name,
+                pathParameters: {'id': event.id},
+              ),
         ),
         SizedBox(height: 12.h),
         PremiumButton(
@@ -748,13 +750,13 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
   Future<void> _addToCalendar(EventModel event) async {
     try {
       final start = event.startsAt.toUtc().toIso8601String().replaceAll(
-        RegExp(r'[-:]'),
+        RegExp('[-:]'),
         '',
       );
       final end = (event.endsAt ?? event.startsAt.add(const Duration(hours: 2)))
           .toUtc()
           .toIso8601String()
-          .replaceAll(RegExp(r'[-:]'), '');
+          .replaceAll(RegExp('[-:]'), '');
       final title = Uri.encodeComponent(event.title);
       final location = Uri.encodeComponent(event.location.address);
       final details = Uri.encodeComponent(
@@ -786,7 +788,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                   RegExp(r'\.\d+Z$'),
                   'Z',
                 ) // Remove milliseconds (.000Z)
-                .replaceAll(RegExp(r'[-:]'), ''); // Remove dashes and colons
+                .replaceAll(RegExp('[-:]'), ''); // Remove dashes and colons
 
             // RRULE:FREQ=DAILY;UNTIL=20260630T235959Z
             // RRULE:FREQ=WEEKLY;UNTIL=20260630T235959Z
@@ -822,22 +824,21 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text(
+            const SnackBar(
+              content: Text(
                 'Could not open calendar. Please ensure Google Calendar is available.',
               ),
               backgroundColor: AppColors.error,
-              duration: const Duration(seconds: 3),
+              duration: Duration(seconds: 3),
             ),
           );
         }
       }
-    } catch (e) {
-      TalkerService.error('Failed to add event to calendar', e);
+    } on Exception catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error opening calendar: ${e.toString()}'),
+            content: Text('Error opening calendar: $e'),
             backgroundColor: AppColors.error,
             duration: const Duration(seconds: 3),
           ),
@@ -848,7 +849,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
 
   /// Show delete confirmation dialog before deleting event
   void _showDeleteConfirmation(EventModel event) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog.adaptive(
         title: const Text('Delete Event'),
@@ -863,13 +864,13 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                 padding: EdgeInsets.all(12.w),
                 decoration: BoxDecoration(
                   color: AppColors.error.withValues(alpha: 0.1),
-                  border: Border.all(color: AppColors.error, width: 1),
+                  border: Border.all(color: AppColors.error),
                   borderRadius: BorderRadius.circular(8.r),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       '⚠️ Recurring Event',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
@@ -937,12 +938,11 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
           if (mounted) context.pop();
         });
       }
-    } catch (e) {
-      TalkerService.error('Failed to delete event', e);
+    } on Exception catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error deleting event: ${e.toString()}'),
+            content: Text('Error deleting event: $e'),
             backgroundColor: AppColors.error,
             duration: const Duration(seconds: 3),
           ),

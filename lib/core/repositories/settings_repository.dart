@@ -5,21 +5,21 @@ import 'package:shared_preferences/shared_preferences.dart';
 ///
 /// Manages app-wide settings like language, theme, and preferences.
 class SettingsRepository {
+  SettingsRepository(this._prefs);
   static const String _languageCodeKey = 'language_code';
   static const String _notificationsEnabledKey = 'notifications_enabled';
   static const String _rideRemindersKey = 'ride_reminders';
   static const String _chatNotificationsKey = 'chat_notifications';
   static const String _marketingEmailsKey = 'marketing_emails';
-  static const String _autoAcceptRidesKey = 'auto_accept_rides';
   static const String _showLocationKey = 'show_location';
   static const String _publicProfileKey = 'public_profile';
   static const String _savedEmailKey = 'saved_email';
   static const String _rememberMeKey = 'remember_me';
   static const String _mapStyleKey = 'map_style';
+  static const String _notificationDialogShownKey = 'notification_dialog_shown';
+  static const String _premiumPromptPrefix = 'premium_prompt_seen_';
 
   final SharedPreferences _prefs;
-
-  SettingsRepository(this._prefs);
 
   // ============================================================
   // Language Settings
@@ -100,16 +100,6 @@ class SettingsRepository {
   // Privacy & Safety Settings
   // ============================================================
 
-  /// Whether auto-accept rides is enabled (defaults to false)
-  bool get autoAcceptRides {
-    return _prefs.getBool(_autoAcceptRidesKey) ?? false;
-  }
-
-  /// Save auto-accept rides preference
-  Future<void> setAutoAcceptRides(bool enabled) async {
-    await _prefs.setBool(_autoAcceptRidesKey, enabled);
-  }
-
   /// Whether to show real-time location during rides (defaults to true)
   bool get showLocation {
     return _prefs.getBool(_showLocationKey) ?? true;
@@ -162,5 +152,27 @@ class SettingsRepository {
   Future<void> clearCredentials() async {
     await _prefs.remove(_savedEmailKey);
     await _prefs.setBool(_rememberMeKey, false);
+  }
+
+  // ============================================================
+  // Notification Dialog
+  // ============================================================
+
+  bool get notificationDialogShown =>
+      _prefs.getBool(_notificationDialogShownKey) ?? false;
+
+  Future<void> setNotificationDialogShown({bool value = true}) async {
+    await _prefs.setBool(_notificationDialogShownKey, value);
+  }
+
+  // ============================================================
+  // Premium Prompt
+  // ============================================================
+
+  bool premiumPromptSeenFor(String uid) =>
+      _prefs.getBool('$_premiumPromptPrefix$uid') ?? false;
+
+  Future<void> setPremiumPromptSeen(String uid) async {
+    await _prefs.setBool('$_premiumPromptPrefix$uid', true);
   }
 }

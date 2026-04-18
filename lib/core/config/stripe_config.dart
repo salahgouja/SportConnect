@@ -19,7 +19,7 @@ class StripeConfig {
 
   /// Platform fee percentage (taken from each payment)
   /// Default: 15%
-  static const double platformFeePercent = 15.0;
+  static const double platformFeePercent = 15;
 
   /// Stripe processing fee percentage
   static const double stripeFeePercent = 2.9;

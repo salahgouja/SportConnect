@@ -2,51 +2,59 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
-import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
 import 'package:sport_connect/features/events/view_models/event_view_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Full-screen event editing form — pre-populated from an existing event.
 ///
 /// Expects an [EventModel] passed via GoRouter `extra`.
 /// On success, pops with the updated [EventModel].
 class EditEventScreen extends ConsumerStatefulWidget {
-  const EditEventScreen({super.key, required this.event});
+  const EditEventScreen({required this.eventId, super.key});
 
-  final EventModel event;
+  final String eventId;
 
   @override
   ConsumerState<EditEventScreen> createState() => _EditEventScreenState();
 }
 
 class _EditEventScreenState extends ConsumerState<EditEventScreen> {
-  final _formKey = GlobalKey<FormBuilderState>();
+  late final FormGroup _form;
 
   final _dateFmt = DateFormat('EEE, MMM d, yyyy');
   final _timeFmt = DateFormat('h:mm a');
 
   EditEventFormState get _formState =>
-      ref.watch(editEventFormViewModelProvider(widget.event.id));
+      ref.watch(editEventFormViewModelProvider(widget.eventId));
 
   EditEventFormViewModel get _formNotifier =>
-      ref.read(editEventFormViewModelProvider(widget.event.id).notifier);
+      ref.read(editEventFormViewModelProvider(widget.eventId).notifier);
 
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => _formNotifier.initFromEvent(widget.event));
+    _form = FormGroup({
+      'title': FormControl<String>(
+        value: '',
+        validators: [Validators.required, Validators.minLength(3)],
+      ),
+      'description': FormControl<String>(
+        value: '',
+      ),
+    });
+    _formNotifier.initFromEventId(widget.eventId);
   }
 
   @override
@@ -60,11 +68,11 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
   @override
   Widget build(BuildContext context) {
     final detailState = ref.watch(
-      eventDetailViewModelProvider(widget.event.id),
+      eventDetailViewModelProvider(widget.eventId),
     );
     final formState = _formState;
 
-    ref.listen(eventDetailViewModelProvider(widget.event.id), (previous, next) {
+    ref.listen(eventDetailViewModelProvider(widget.eventId), (previous, next) {
       if (next.error != null &&
           next.error != previous?.error &&
           context.mounted) {
@@ -74,7 +82,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
       }
     });
 
-    ref.listen(editEventFormViewModelProvider(widget.event.id), (
+    ref.listen(editEventFormViewModelProvider(widget.eventId), (
       previous,
       next,
     ) {
@@ -86,7 +94,9 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
         );
       }
       if (next.isSaved && previous?.isSaved != true && context.mounted) {
-        final updated = widget.event.copyWith(
+        final event =
+            ref.read(eventByIdProvider(widget.eventId)).value;
+        final updated = event?.copyWith(
           title: next.title.trim(),
           type: next.type,
           location: next.location!,
@@ -130,8 +140,8 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
         ),
         centerTitle: true,
       ),
-      body: FormBuilder(
-        key: _formKey,
+      body: ReactiveForm(
+        formGroup: _form,
         child: ListView(
           padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 32.h),
           children: [
@@ -215,37 +225,32 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
 
   // ── Fields ─────────────────────────────────────────────────
   Widget _buildTitleField() {
-    return FormBuilderTextField(
-      name: 'title',
-      initialValue: _formState.title,
+    return ReactiveTextField<String>(
+      formControlName: 'title',
       maxLength: 100,
       textCapitalization: TextCapitalization.words,
       decoration: _deco(
         AppLocalizations.of(context).eventTitleField,
         Icons.title_rounded,
       ),
-      onChanged: (value) => _formNotifier.setTitle(value ?? ''),
-      validator: FormBuilderValidators.compose([
-        FormBuilderValidators.required(
-          errorText: AppLocalizations.of(context).eventTitleRequired,
-        ),
-        FormBuilderValidators.minLength(
-          3,
-          errorText: AppLocalizations.of(context).eventTitleMinLength,
-        ),
-      ]),
+      onChanged: (control) => _formNotifier.setTitle(control.value ?? ''),
+      validationMessages: {
+        ValidationMessage.required: (_) =>
+            AppLocalizations.of(context).eventTitleRequired,
+        ValidationMessage.minLength: (_) =>
+            AppLocalizations.of(context).eventTitleMinLength,
+      },
     ).animate().fadeIn(duration: 250.ms, delay: 60.ms);
   }
 
   Widget _buildDescriptionField() {
-    return FormBuilderTextField(
-      name: 'description',
-      initialValue: _formState.description,
+    return ReactiveTextField<String>(
+      formControlName: 'description',
       maxLines: 3,
       minLines: 2,
       maxLength: 500,
       textCapitalization: TextCapitalization.sentences,
-      onChanged: (value) => _formNotifier.setDescription(value ?? ''),
+      onChanged: (control) => _formNotifier.setDescription(control.value ?? ''),
       decoration: _deco(
         AppLocalizations.of(context).eventDescriptionField,
         Icons.notes_rounded,
@@ -521,7 +526,6 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
         ),
         Slider.adaptive(
           value: _formState.maxParticipants.toDouble(),
-          min: 0,
           max: 100,
           divisions: 20,
           activeColor: AppColors.primary,
@@ -569,9 +573,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
         if (_formState.isRecurring) ...[
           SizedBox(height: 12.h),
           GestureDetector(
-            onTap: () {
-              _showRecurrencePatternPicker();
-            },
+            onTap: _showRecurrencePatternPicker,
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
               decoration: BoxDecoration(
@@ -652,11 +654,11 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
     ).animate().fadeIn(duration: 250.ms, delay: 280.ms);
   }
 
-  void _showRecurrencePatternPicker() {
-    final liveState = ref.read(editEventFormViewModelProvider(widget.event.id));
+  Future<void> _showRecurrencePatternPicker() async {
+    final liveState = ref.read(editEventFormViewModelProvider(widget.eventId));
     final patterns = liveState.applicablePatterns;
 
-    showModalBottomSheet(
+    await showModalBottomSheet<void>(
       context: context,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
@@ -806,7 +808,8 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
   }
 
   Future<void> _submit() async {
-    if (!(_formKey.currentState?.saveAndValidate() ?? false)) return;
+    _form.markAllAsTouched();
+    if (!_form.valid) return;
     if (_formState.location == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -901,15 +904,15 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
       contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14.r),
-        borderSide: BorderSide(color: AppColors.border),
+        borderSide: const BorderSide(color: AppColors.border),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14.r),
-        borderSide: BorderSide(color: AppColors.border),
+        borderSide: const BorderSide(color: AppColors.border),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14.r),
-        borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+        borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
       ),
     );
   }

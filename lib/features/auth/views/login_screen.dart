@@ -1,23 +1,20 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:reactive_forms/reactive_forms.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/core/utils/form_validators.dart';
-import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:sport_connect/core/widgets/utility_widgets.dart';
 import 'package:sport_connect/features/auth/models/auth_exception.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/auth/view_models/social_auth_view_model.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:sign_in_with_apple/sign_in_with_apple.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 /// Professional Login Screen with clean, modern design
 class LoginScreen extends ConsumerStatefulWidget {
@@ -29,7 +26,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen>
     with SingleTickerProviderStateMixin {
-  final _formKey = GlobalKey<FormBuilderState>();
+  late final FormGroup _form;
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -40,6 +37,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   @override
   void initState() {
     super.initState();
+    _form = FormGroup({
+      'email': FormControl<String>(
+        value: '',
+        validators: [Validators.required, Validators.email],
+      ),
+      'password': FormControl<String>(
+        validators: [Validators.required, Validators.minLength(8)],
+      ),
+    });
     _setupAnimations();
 
     SystemChrome.setSystemUIOverlayStyle(
@@ -56,16 +62,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       duration: const Duration(milliseconds: 800),
     );
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
     );
-
+    if (!mounted) return;
     _animationController.forward();
   }
 
   Future<void> _saveCredentials() async {
-    final email =
-        (_formKey.currentState?.fields['email']!.value as String? ?? '').trim();
+    final email = (_form.control('email').value as String? ?? '').trim();
     await ref.read(loginUiViewModelProvider.notifier).persistCredentials(email);
   }
 
@@ -78,17 +83,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Future<void> _handleLogin() async {
-    if (!_formKey.currentState!.saveAndValidate()) {
-      return;
-    }
+    _form.markAllAsTouched();
+    if (!_form.valid) return;
 
-    final email = (_formKey.currentState!.fields['email']!.value as String)
-        .trim();
-    final password = _formKey.currentState!.fields['password']!.value as String;
+    final email = (_form.control('email').value as String).trim();
+    final password = _form.control('password').value as String;
     final rememberMe = ref.read(loginUiViewModelProvider).rememberMe;
     final success = await ref
         .read(loginViewModelProvider.notifier)
-        .login(email, password, rememberMe);
+        .login(email, password, rememberMe: rememberMe);
     if (success) {
       await _saveCredentials();
     }
@@ -106,11 +109,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   Widget build(BuildContext context) {
     final loginState = ref.watch(loginViewModelProvider);
     final socialState = ref.watch(socialAuthViewModelProvider);
+    final loginUiState = ref.watch(loginUiViewModelProvider);
+    final savedEmail = loginUiState.savedEmail;
 
     ref.listen(loginViewModelProvider, (previous, next) {
       if (next.hasError && previous?.error != next.error) {
         final errorMessage = _getAuthErrorMessage(next.error);
-        TalkerService.error('Login failed: $errorMessage');
         _showAdaptiveMessage(errorMessage, isError: true);
       }
     });
@@ -119,7 +123,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       if (next.error != null && next.error != previous?.error) {
         final errorMessage = _getAuthErrorMessage(next.error);
         if (errorMessage.isEmpty) return; // user canceled — no snackbar
-        TalkerService.error('Social sign-in failed: $errorMessage');
         _showAdaptiveMessage(errorMessage, isError: true);
       }
     });
@@ -130,8 +133,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         child: SingleChildScrollView(
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 24.w),
-            child: FormBuilder(
-              key: _formKey,
+            child: ReactiveForm(
+              formGroup: _form,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -140,11 +143,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   SizedBox(height: 20.h),
                   _buildWelcomeText(),
                   SizedBox(height: 32.h),
-                  _buildEmailField(),
+                  _buildEmailField(savedEmail),
                   SizedBox(height: 16.h),
-                  _buildPasswordField(),
+                  _buildPasswordField(loginUiState),
                   SizedBox(height: 14.h),
-                  _buildOptionsRow(),
+                  _buildOptionsRow(loginUiState),
                   SizedBox(height: 12.h),
                   _buildSignInButton(loginState, socialState),
                   SizedBox(height: 24.h),
@@ -242,58 +245,58 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
   }
 
-  Widget _buildEmailField() {
+  Widget _buildEmailField(String savedEmail) {
     final emailLabel = AppLocalizations.of(context).email;
     final emailHint = AppLocalizations.of(context).enterYourEmail;
 
+    // Set initial value from saved credentials once
+    if (savedEmail.isNotEmpty &&
+        (_form.control('email').value as String? ?? '').isEmpty) {
+      _form.control('email').value = savedEmail;
+    }
+
     // The prefixIcon is purely decorative — excluded so SR does not read it.
-    return FormBuilderTextField(
-      name: 'email',
-      initialValue: ref.watch(loginUiViewModelProvider).savedEmail,
+    return ReactiveTextField<String>(
+      formControlName: 'email',
       focusNode: _emailFocus,
       keyboardType: TextInputType.emailAddress,
       textInputAction: TextInputAction.next,
-      validator: (value) => FormValidators.email(value),
-      autofillHints: const [AutofillHints.email],
-      autocorrect: false,
-      enableSuggestions: false,
-      onEditingComplete: () => _passwordFocus.requestFocus(),
+      validationMessages: {
+        ValidationMessage.required: (_) => 'Email is required',
+        ValidationMessage.email: (_) => 'Please enter a valid email address',
+      },
       decoration: InputDecoration(
         labelText: emailLabel,
         hintText: emailHint,
-        prefixIcon: ExcludeSemantics(child: const Icon(Icons.email_outlined)),
+        prefixIcon: const ExcludeSemantics(child: Icon(Icons.email_outlined)),
       ),
     ).animate().fadeIn(duration: 400.ms, delay: 350.ms);
   }
 
-  Widget _buildPasswordField() {
+  Widget _buildPasswordField(LoginUiState loginUiState) {
     final passwordLabel = AppLocalizations.of(context).password;
     final passwordHint = AppLocalizations.of(context).enterYourPassword;
     // Dynamic label reflects the current state so SR users know what the
     // button will do before they activate it.
-    final loginUiState = ref.watch(loginUiViewModelProvider);
     final toggleLabel = loginUiState.obscurePassword
         ? AppLocalizations.of(context).showPasswordTooltip
         : AppLocalizations.of(context).hidePasswordTooltip;
 
-    return FormBuilderTextField(
-      name: 'password',
+    return ReactiveTextField<String>(
+      formControlName: 'password',
       focusNode: _passwordFocus,
       obscureText: loginUiState.obscurePassword,
       textInputAction: TextInputAction.done,
-      validator: FormBuilderValidators.compose([
-        FormBuilderValidators.required(),
-        FormBuilderValidators.minLength(8),
-      ]),
-      autofillHints: const [AutofillHints.password],
-      autocorrect: false,
-      enableSuggestions: false,
-      onEditingComplete: () => _handleLogin(),
+      validationMessages: {
+        ValidationMessage.required: (_) => 'Password is required',
+        ValidationMessage.minLength: (_) =>
+            'Password must be at least 8 characters',
+      },
       decoration: InputDecoration(
         labelText: passwordLabel,
         hintText: passwordHint,
-        prefixIcon: ExcludeSemantics(
-          child: const Icon(Icons.lock_outline_rounded),
+        prefixIcon: const ExcludeSemantics(
+          child: Icon(Icons.lock_outline_rounded),
         ),
         suffixIcon: IconButton(
           // `tooltip` is used by both TalkBack and VoiceOver as the button's
@@ -312,9 +315,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     ).animate().fadeIn(duration: 400.ms, delay: 400.ms);
   }
 
-  Widget _buildOptionsRow() {
+  Widget _buildOptionsRow(LoginUiState loginUiState) {
     final rememberMeLabel = AppLocalizations.of(context).rememberMe;
-    final loginUiState = ref.watch(loginUiViewModelProvider);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -334,7 +336,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     HapticFeedback.selectionClick();
                     ref
                         .read(loginUiViewModelProvider.notifier)
-                        .setRememberMe(value ?? false);
+                        .setRememberMe(enabled: value ?? false);
                   },
                   visualDensity: VisualDensity.compact,
                 ),
@@ -420,7 +422,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               text: AppLocalizations.of(context).continueWithApple,
               height: 44.h,
               borderRadius: BorderRadius.circular(14.r),
-              style: SignInWithAppleButtonStyle.black,
             ).animate().fadeIn(duration: 300.ms, delay: 300.ms),
           ],
         ),
@@ -435,9 +436,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   color: Colors.white.withValues(alpha: 0.7),
                   borderRadius: BorderRadius.circular(14.r),
                 ),
-                child: Center(
-                  child: const CircularProgressIndicator.adaptive(
-                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                child: const Center(
+                  child: CircularProgressIndicator.adaptive(
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      AppColors.primary,
+                    ),
                   ),
                 ),
               ),
@@ -448,8 +451,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Widget _buildGoogleButton(SocialAuthState socialState) {
-    final double buttonHeight = 40.h;
-    final double iconGap = 10.w;
+    final buttonHeight = 40.h;
+    final iconGap = 10.w;
     final label = AppLocalizations.of(context).continueWithGoogle;
 
     return SizedBox(
@@ -468,7 +471,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14.r),
           ),
-          side: const BorderSide(color: Color(0xFF747775), width: 1.0),
+          side: const BorderSide(color: Color(0xFF747775)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -558,7 +561,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             TextSpan(
               text: AppLocalizations.of(context).termsOfServiceTitle,
               semanticsLabel: AppLocalizations.of(context).termsLinkSemantics,
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppColors.primary,
                 fontWeight: FontWeight.w600,
                 decoration: TextDecoration.underline,
@@ -570,7 +573,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             TextSpan(
               text: AppLocalizations.of(context).privacyPolicyTitle,
               semanticsLabel: AppLocalizations.of(context).privacyLinkSemantics,
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppColors.primary,
                 fontWeight: FontWeight.w600,
                 decoration: TextDecoration.underline,
@@ -638,7 +641,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         content: Text(message),
         behavior: SnackBarBehavior.floating,
         backgroundColor: isError ? Colors.red.shade600 : AppColors.success,
-        duration: const Duration(seconds: 4),
         margin: EdgeInsets.all(16.w),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12.r),

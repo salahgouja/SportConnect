@@ -1,5 +1,7 @@
 import 'package:latlong2/latlong.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sport_connect/core/constants/app_constants.dart';
+import 'package:sport_connect/core/services/deep_link_service.dart';
 import 'package:sport_connect/core/services/routing_service.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 
@@ -56,13 +58,17 @@ class RiderViewRideUiViewModel extends _$RiderViewRideUiViewModel {
       final waypoints = ride.route.waypoints
           .map((wp) => LatLng(wp.location.latitude, wp.location.longitude))
           .toList(growable: false);
-      final info = await RoutingService.getRoute(
-        origin: origin,
-        destination: dest,
-        waypoints: waypoints.isEmpty ? null : waypoints,
-      );
+      final info = await ref
+          .read(routingServiceProvider)
+          .getRoute(
+            origin: origin,
+            destination: dest,
+            waypoints: waypoints.isEmpty ? null : waypoints,
+          );
+      if (!ref.mounted) return;
       state = state.copyWith(routeInfo: info, isLoadingRoute: false);
-    } catch (_) {
+    } on Exception catch (_) {
+      if (!ref.mounted) return;
       state = state.copyWith(isLoadingRoute: false);
     }
   }
@@ -74,5 +80,22 @@ class RiderViewRideUiViewModel extends _$RiderViewRideUiViewModel {
 
   void setNote(String value) {
     state = state.copyWith(note: value);
+  }
+
+  Future<String> generateRideShareLink(RideModel ride) async {
+    try {
+      return await ref
+          .read(deepLinkServiceProvider)
+          .generateRideLink(
+            rideId: ride.id,
+            fromCity: ride.origin.city ?? ride.origin.address,
+            toCity: ride.destination.city ?? ride.destination.address,
+            price: ride.pricePerSeat,
+            seats: ride.remainingSeats,
+            departureTime: ride.departureTime,
+          );
+    } on Exception {
+      return 'https://${AppConstants.hostingDomain}/ride/${ride.id}';
+    }
   }
 }

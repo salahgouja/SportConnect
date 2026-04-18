@@ -1,6 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
+import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 
@@ -12,13 +12,13 @@ sealed class Result<T> {
 }
 
 class Success<T> extends Result<T> {
-  final T data;
   const Success(this.data);
+  final T data;
 }
 
 class Failure<T> extends Result<T> {
-  final String message;
   const Failure(this.message);
+  final String message;
 }
 
 /// Booking action service — handles driver accept/reject of pending bookings.
@@ -47,7 +47,7 @@ class RideRequestService extends _$RideRequestService {
 
       await _sendAcceptedNotification(booking);
       return Success(booking.copyWith(status: BookingStatus.accepted));
-    } catch (e) {
+    } on Exception catch (e) {
       return Failure('Failed to accept booking: $e');
     }
   }
@@ -72,7 +72,7 @@ class RideRequestService extends _$RideRequestService {
 
       await _sendRejectedNotification(booking, reason);
       return Success(booking.copyWith(status: BookingStatus.rejected));
-    } catch (e) {
+    } on Exception catch (e) {
       return Failure('Failed to reject booking: $e');
     }
   }
@@ -97,7 +97,7 @@ class RideRequestService extends _$RideRequestService {
         rideId: booking.rideId,
         rideName: _formatRideName(ride),
       );
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to send accepted notification: $e');
     }
   }
@@ -124,7 +124,7 @@ class RideRequestService extends _$RideRequestService {
         rideName: _formatRideName(ride),
         reason: reason,
       );
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to send rejected notification: $e');
     }
   }

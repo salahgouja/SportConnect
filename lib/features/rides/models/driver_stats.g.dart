@@ -49,10 +49,10 @@ _EarningsTransaction _$EarningsTransactionFromJson(Map json) =>
       rideId: json['rideId'] as String,
       amount: (json['amount'] as num).toDouble(),
       description: json['description'] as String,
+      createdAt: const RequiredTimestampConverter().fromJson(json['createdAt']),
       type:
           $enumDecodeNullable(_$TransactionTypeEnumMap, json['type']) ??
           TransactionType.ride,
-      createdAt: const RequiredTimestampConverter().fromJson(json['createdAt']),
     );
 
 Map<String, dynamic> _$EarningsTransactionToJson(
@@ -62,8 +62,8 @@ Map<String, dynamic> _$EarningsTransactionToJson(
   'rideId': instance.rideId,
   'amount': instance.amount,
   'description': instance.description,
-  'type': _$TransactionTypeEnumMap[instance.type]!,
   'createdAt': const RequiredTimestampConverter().toJson(instance.createdAt),
+  'type': _$TransactionTypeEnumMap[instance.type]!,
 };
 
 const _$TransactionTypeEnumMap = {

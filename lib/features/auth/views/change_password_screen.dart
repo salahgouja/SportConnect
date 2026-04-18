@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/core/utils/form_validators.dart';
 import 'package:sport_connect/core/widgets/glass_panel.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/auth/view_models/change_password_view_model.dart';
@@ -25,13 +24,43 @@ class ChangePasswordScreen extends ConsumerStatefulWidget {
 }
 
 class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
-  final _formKey = GlobalKey<FormBuilderState>();
+  final _form = FormGroup(
+    {
+      'new_password': FormControl<String>(
+        validators: [
+          Validators.required,
+          Validators.minLength(8),
+          Validators.delegate((control) {
+            final value = control.value as String?;
+            if (value == null || value.isEmpty) return null;
+            if (!RegExp('[A-Z]').hasMatch(value)) {
+              return {'password': 'Include at least one uppercase letter'};
+            }
+            if (!RegExp('[a-z]').hasMatch(value)) {
+              return {'password': 'Include at least one lowercase letter'};
+            }
+            if (!RegExp('[0-9]').hasMatch(value)) {
+              return {'password': 'Include at least one number'};
+            }
+            return null;
+          }),
+        ],
+      ),
+      'confirm_password': FormControl<String>(
+        validators: [Validators.required],
+      ),
+    },
+    validators: [
+      Validators.mustMatch('new_password', 'confirm_password'),
+    ],
+  );
 
   Future<void> _changePassword() async {
-    if (!_formKey.currentState!.saveAndValidate()) return;
+    _form.markAllAsTouched();
+    if (!_form.valid) return;
     await ref
         .read(changePasswordViewModelProvider.notifier)
-        .submit(_formKey.currentState!.fields['new_password']!.value as String);
+        .submit(_form.control('new_password').value as String);
   }
 
   @override
@@ -42,10 +71,12 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
     ref.listen(changePasswordViewModelProvider, (previous, next) async {
       if (next.requiresReauth && previous?.requiresReauth != true) {
         final success = await showReauthDialog(context, ref);
+        if (!mounted) return;
         if (success) {
           await ref
               .read(changePasswordViewModelProvider.notifier)
               .retryAfterReauth();
+          if (!mounted) return;
         } else {
           ref
               .read(changePasswordViewModelProvider.notifier)
@@ -54,11 +85,11 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
       }
 
       if (next.errorMessage != null &&
-          next.errorMessage != previous?.errorMessage) {
+          next.errorMessage != previous?.errorMessage &&
+          context.mounted) {
         final errorText = next.errorMessage == 'weak-password'
             ? l10n.changePasswordWeakError
             : l10n.changePasswordGenericError;
-
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorText),
@@ -103,8 +134,8 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
   }
 
   Widget _buildFormState(AppLocalizations l10n, ChangePasswordState vmState) {
-    return FormBuilder(
-      key: _formKey,
+    return ReactiveForm(
+      formGroup: _form,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -113,7 +144,6 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
           // Icon
           GlassPanel(
                 padding: EdgeInsets.all(20.w),
-                radius: 20,
                 color: AppColors.surface.withValues(alpha: 0.62),
                 borderColor: AppColors.primary.withValues(alpha: 0.2),
                 child: Icon(
@@ -151,8 +181,8 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
 
           SizedBox(height: 36.h),
 
-          FormBuilderTextField(
-            name: 'new_password',
+          ReactiveTextField<String>(
+            formControlName: 'new_password',
             decoration: InputDecoration(
               labelText: l10n.changePasswordNew,
               hintText: l10n.changePasswordNewHint,
@@ -173,13 +203,18 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               ),
             ),
             obscureText: vmState.obscureNewPassword,
-            validator: (value) => FormValidators.password(value),
+            validationMessages: {
+              ValidationMessage.required: (_) => 'Password is required',
+              ValidationMessage.minLength: (_) =>
+                  'Password must be at least 8 characters',
+              'password': (error) => error as String,
+            },
           ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1),
 
           SizedBox(height: 20.h),
 
-          FormBuilderTextField(
-            name: 'confirm_password',
+          ReactiveTextField<String>(
+            formControlName: 'confirm_password',
             decoration: InputDecoration(
               labelText: l10n.changePasswordConfirm,
               hintText: l10n.changePasswordConfirmHint,
@@ -200,12 +235,10 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               ),
             ),
             obscureText: vmState.obscureConfirmPassword,
-            validator: FormValidators.confirmPassword(
-              () =>
-                  _formKey.currentState?.fields['new_password']?.value
-                      as String? ??
-                  '',
-            ),
+            validationMessages: {
+              ValidationMessage.required: (_) => 'Please confirm your password',
+              ValidationMessage.mustMatch: (_) => 'Passwords do not match',
+            },
           ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1),
 
           SizedBox(height: 32.h),

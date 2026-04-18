@@ -1,6 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/converters/timestamp_converter.dart';
+import 'package:sport_connect/core/models/location/location_point.dart';
 
 part 'ride_route.freezed.dart';
 part 'ride_route.g.dart';
@@ -21,8 +21,6 @@ abstract class RouteWaypoint with _$RouteWaypoint {
 /// Ride route information
 @freezed
 abstract class RideRoute with _$RideRoute {
-  const RideRoute._();
-
   const factory RideRoute({
     required LocationPoint origin,
     required LocationPoint destination,
@@ -31,6 +29,7 @@ abstract class RideRoute with _$RideRoute {
     int? durationMinutes,
     String? polylineEncoded,
   }) = _RideRoute;
+  const RideRoute._();
 
   factory RideRoute.fromJson(Map<String, dynamic> json) =>
       _$RideRouteFromJson(json);

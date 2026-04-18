@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
+import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
@@ -33,9 +33,8 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 /// - Share receipt
 /// - Rating & review CTA
 class RideCompletionScreen extends ConsumerStatefulWidget {
+  const RideCompletionScreen({required this.rideId, super.key});
   final String rideId;
-
-  const RideCompletionScreen({super.key, required this.rideId});
 
   @override
   ConsumerState<RideCompletionScreen> createState() =>
@@ -354,7 +353,6 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                               HapticFeedback.lightImpact();
                               context.push(AppRoutes.driverEarnings.path);
                             },
-                            style: PremiumButtonStyle.primary,
                             icon: Icons.attach_money_rounded,
                           ),
                         ).animate().fadeIn(delay: 720.ms);
@@ -534,14 +532,14 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                 polylines: [
                   Polyline(
                     points: routePoints,
-                    strokeWidth: 6.0,
+                    strokeWidth: 6,
                     color: Colors.white,
-                    borderStrokeWidth: 2.0,
+                    borderStrokeWidth: 2,
                     borderColor: Colors.white,
                   ),
                   Polyline(
                     points: routePoints,
-                    strokeWidth: 4.0,
+                    strokeWidth: 4,
                     color: AppColors.success,
                   ),
                 ],
@@ -754,7 +752,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
           if (ride.route.distanceKm != null ||
               ride.route.durationMinutes != null) ...[
             SizedBox(height: 12.h),
-            Divider(height: 1, color: AppColors.border),
+            const Divider(height: 1, color: AppColors.border),
             SizedBox(height: 12.h),
             Row(
               children: [
@@ -778,7 +776,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                   _buildStatDivider(),
                   _buildStatItem(
                     Icons.speed_rounded,
-                    '${((ride.route.distanceKm! / (ride.route.durationMinutes! / 60))).round()} km/h',
+                    '${(ride.route.distanceKm! / (ride.route.durationMinutes! / 60)).round()} km/h',
                     'Avg Speed',
                   ),
                 ],
@@ -985,7 +983,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
         builder: (context, displayName, photoUrl, rating) {
           return Row(
             children: [
-              PremiumAvatar(imageUrl: photoUrl, name: displayName, size: 48),
+              PremiumAvatar(imageUrl: photoUrl, name: displayName),
               SizedBox(width: 16.w),
               Expanded(
                 child: Column(
@@ -1053,11 +1051,11 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                       pathParameters: {'id': chat.id},
                       extra: driverUser,
                     );
-                  } catch (e) {
+                  } on Exception {
                     if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text(
+                      const SnackBar(
+                        content: Text(
                           'Failed to open chat. Please try again.',
                         ),
                         backgroundColor: AppColors.error,

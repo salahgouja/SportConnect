@@ -1,4 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'driver_settings_view_model.g.dart';
 
 class DriverSettingsState {
   const DriverSettingsState({
@@ -44,14 +47,14 @@ class DriverSettingsState {
   }
 }
 
-class DriverSettingsViewModel extends Notifier<DriverSettingsState> {
+@riverpod
+class DriverSettingsViewModel extends _$DriverSettingsViewModel {
   @override
   DriverSettingsState build() => const DriverSettingsState();
 
   void setAllowInstantBooking(bool value) {
     state = state.copyWith(allowInstantBooking: value);
   }
-
 
   void setShowOnMap(bool value) {
     state = state.copyWith(showOnMap: value);
@@ -81,8 +84,3 @@ class DriverSettingsViewModel extends Notifier<DriverSettingsState> {
     state = state.copyWith(navigationApp: value);
   }
 }
-
-final driverSettingsViewModelProvider =
-    NotifierProvider<DriverSettingsViewModel, DriverSettingsState>(
-      DriverSettingsViewModel.new,
-    );

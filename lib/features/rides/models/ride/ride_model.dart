@@ -2,11 +2,11 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:sport_connect/core/converters/timestamp_converter.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
-import 'ride_route.dart';
-import 'ride_pricing.dart';
-import 'ride_capacity.dart';
-import 'ride_schedule.dart';
-import 'ride_preferences.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_capacity.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_preferences.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_pricing.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_route.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_schedule.dart';
 
 part 'ride_model.freezed.dart';
 part 'ride_model.g.dart';
@@ -21,20 +21,17 @@ enum RideStatus { draft, active, full, inProgress, completed, cancelled }
 /// so the view layer doesn't need hundreds of changes.
 @freezed
 abstract class RideModel with _$RideModel {
-  const RideModel._();
-
   const factory RideModel({
     required String id,
     required String driverId,
-    String? eventId,
-    String? eventName,
-
     // Composed sub-models
     required RideRoute route,
     required RideSchedule schedule,
     required RideCapacity capacity,
     required RidePricing pricing,
     required RidePreferences preferences,
+    String? eventId,
+    String? eventName,
 
     // Status
     @Default(RideStatus.draft) RideStatus status,
@@ -65,6 +62,7 @@ abstract class RideModel with _$RideModel {
     @TimestampConverter() DateTime? createdAt,
     @TimestampConverter() DateTime? updatedAt,
   }) = _RideModel;
+  const RideModel._();
 
   factory RideModel.fromJson(Map<String, dynamic> json) =>
       _$RideModelFromJson(json);

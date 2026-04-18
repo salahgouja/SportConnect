@@ -2,8 +2,8 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
@@ -11,17 +11,6 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Premium App Bar with gradient and animations
 class PremiumAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final String? title;
-  final Widget? titleWidget;
-  final List<Widget>? actions;
-  final Widget? leading;
-  final bool showBackButton;
-  final VoidCallback? onBackPressed;
-  final bool useGradient;
-  final bool centerTitle;
-  final double elevation;
-  final PreferredSizeWidget? bottom;
-
   const PremiumAppBar({
     super.key,
     this.title,
@@ -35,6 +24,16 @@ class PremiumAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.elevation = 0,
     this.bottom,
   });
+  final String? title;
+  final Widget? titleWidget;
+  final List<Widget>? actions;
+  final Widget? leading;
+  final bool showBackButton;
+  final VoidCallback? onBackPressed;
+  final bool useGradient;
+  final bool centerTitle;
+  final double elevation;
+  final PreferredSizeWidget? bottom;
 
   @override
   Size get preferredSize =>
@@ -229,17 +228,9 @@ class PremiumAppBar extends StatelessWidget implements PreferredSizeWidget {
 
 /// Premium Hero Header with gradient background
 class PremiumHeroHeader extends StatelessWidget {
-  final String title;
-  final String? subtitle;
-  final Widget? child;
-  final double height;
-  final List<Widget>? actions;
-  final bool showBackButton;
-  final VoidCallback? onBackPressed;
-
   const PremiumHeroHeader({
-    super.key,
     required this.title,
+    super.key,
     this.subtitle,
     this.child,
     this.height = 200,
@@ -247,6 +238,13 @@ class PremiumHeroHeader extends StatelessWidget {
     this.showBackButton = false,
     this.onBackPressed,
   });
+  final String title;
+  final String? subtitle;
+  final Widget? child;
+  final double height;
+  final List<Widget>? actions;
+  final bool showBackButton;
+  final VoidCallback? onBackPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -395,16 +393,15 @@ class PremiumHeroHeader extends StatelessWidget {
 
 /// Premium Bottom Navigation Bar
 class PremiumBottomNav extends StatelessWidget {
-  final int currentIndex;
-  final ValueChanged<int> onTap;
-  final List<PremiumNavItem> items;
-
   const PremiumBottomNav({
-    super.key,
     required this.currentIndex,
     required this.onTap,
     required this.items,
+    super.key,
   });
+  final int currentIndex;
+  final ValueChanged<int> onTap;
+  final List<PremiumNavItem> items;
 
   @override
   Widget build(BuildContext context) {
@@ -530,31 +527,29 @@ class PremiumBottomNav extends StatelessWidget {
 }
 
 class PremiumNavItem {
-  final IconData icon;
-  final IconData activeIcon;
-  final String label;
-  final int? badge;
-
   const PremiumNavItem({
     required this.icon,
     required this.activeIcon,
     required this.label,
     this.badge,
   });
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  final int? badge;
 }
 
 /// Premium Tab Bar
 class PremiumTabBar extends StatelessWidget implements PreferredSizeWidget {
+  const PremiumTabBar({
+    required this.controller,
+    required this.tabs,
+    super.key,
+    this.isScrollable = false,
+  });
   final TabController controller;
   final List<String> tabs;
   final bool isScrollable;
-
-  const PremiumTabBar({
-    super.key,
-    required this.controller,
-    required this.tabs,
-    this.isScrollable = false,
-  });
 
   @override
   Size get preferredSize => Size.fromHeight(48.h);
@@ -600,20 +595,19 @@ class PremiumTabBar extends StatelessWidget implements PreferredSizeWidget {
 
 /// Premium Segmented Control
 class PremiumSegmentedControl<T> extends StatelessWidget {
+  const PremiumSegmentedControl({
+    required this.value,
+    required this.options,
+    required this.labelBuilder,
+    required this.onChanged,
+    super.key,
+    this.expand = true,
+  });
   final T value;
   final List<T> options;
   final String Function(T) labelBuilder;
   final ValueChanged<T> onChanged;
   final bool expand;
-
-  const PremiumSegmentedControl({
-    super.key,
-    required this.value,
-    required this.options,
-    required this.labelBuilder,
-    required this.onChanged,
-    this.expand = true,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -671,18 +665,17 @@ class PremiumSegmentedControl<T> extends StatelessWidget {
 
 /// Premium action icon button for app bars
 class PremiumActionButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback? onTap;
-  final int? badge;
-  final bool isLight;
-
   const PremiumActionButton({
-    super.key,
     required this.icon,
+    super.key,
     this.onTap,
     this.badge,
     this.isLight = false,
   });
+  final IconData icon;
+  final VoidCallback? onTap;
+  final int? badge;
+  final bool isLight;
 
   @override
   Widget build(BuildContext context) {

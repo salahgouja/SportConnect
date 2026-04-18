@@ -441,15 +441,14 @@ class PayoutDetailScreen extends ConsumerWidget {
 }
 
 class _PayoutStatusInfo {
-  final String label;
-  final String description;
-  final IconData icon;
-  final Color color;
-
   const _PayoutStatusInfo({
     required this.label,
     required this.description,
     required this.icon,
     required this.color,
   });
+  final String label;
+  final String description;
+  final IconData icon;
+  final Color color;
 }

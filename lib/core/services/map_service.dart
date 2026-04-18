@@ -1,91 +1,75 @@
 import 'dart:async';
+
 import 'package:dio/dio.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:flutter_map/flutter_map.dart' show LatLngBounds;
+import 'package:latlong2/latlong.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sport_connect/core/constants/app_constants.dart';
+import 'package:sport_connect/core/services/http_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 
-/// Map Service for Open Source Map Features
+part 'map_service.g.dart';
+
+/// Injectable map service using free OSM-based APIs.
 ///
-/// All features are FREE for commercial use worldwide
-///
-/// Open Source Services Used:
-/// - OpenStreetMap (ODbL License) - Map tiles
-/// - Nominatim (ODbL License) - Geocoding & Search
-/// - OSRM (BSD License) - Routing
-/// - Overpass API (ODbL License) - POI Search
+/// Obtain via [mapServiceProvider] — do not construct directly.
 class MapService {
-  static final Dio _dio = Dio(
-    BaseOptions(
-      connectTimeout: const Duration(seconds: 15),
-      receiveTimeout: const Duration(seconds: 15),
-    ),
-  )..addTalkerInterceptor();
+  MapService(this._dio);
+
+  final Dio _dio;
 
   // ═══════════════════════════════════════════════════════════════
-  // FREE MAP TILE PROVIDERS (Worldwide Coverage)
+  // MAP TILE PROVIDERS
   // ═══════════════════════════════════════════════════════════════
 
-  /// Available map styles - all free and open source
   static const Map<String, MapTileProvider> tileProviders = {
     'standard': MapTileProvider(
       name: 'OpenStreetMap Standard',
-      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      urlTemplate: AppConstants.osmStandardTileUrl,
       attribution: '© OpenStreetMap contributors',
       license: 'ODbL',
     ),
     'humanitarian': MapTileProvider(
       name: 'Humanitarian (HOT)',
-      urlTemplate: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+      urlTemplate: AppConstants.osmHotTileUrl,
       subdomains: ['a', 'b', 'c'],
       attribution: '© OpenStreetMap contributors, Tiles by HOT',
       license: 'ODbL',
     ),
-    'cycle': MapTileProvider(
-      name: 'OpenCycleMap',
-      urlTemplate: 'https://{s}.tile.thunderforest.com/cycle/{z}/{x}/{y}.png',
-      subdomains: ['a', 'b', 'c'],
-      attribution: '© OpenStreetMap contributors, Tiles by Thunderforest',
-      license: 'CC-BY-SA',
-      requiresApiKey: true,
-    ),
     'terrain': MapTileProvider(
       name: 'OpenTopoMap',
-      urlTemplate: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+      urlTemplate: AppConstants.openTopoTileUrl,
       subdomains: ['a', 'b', 'c'],
       attribution: '© OpenStreetMap contributors, SRTM, OpenTopoMap',
       license: 'CC-BY-SA',
     ),
     'dark': MapTileProvider(
       name: 'CartoDB Dark',
-      urlTemplate:
-          'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+      urlTemplate: AppConstants.cartoDarkTileUrl,
       subdomains: ['a', 'b', 'c', 'd'],
       attribution: '© OpenStreetMap contributors, © CARTO',
       license: 'CC-BY 3.0',
     ),
     'light': MapTileProvider(
       name: 'CartoDB Positron',
-      urlTemplate:
-          'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+      urlTemplate: AppConstants.cartoLightTileUrl,
       subdomains: ['a', 'b', 'c', 'd'],
       attribution: '© OpenStreetMap contributors, © CARTO',
       license: 'CC-BY 3.0',
     ),
     'watercolor': MapTileProvider(
       name: 'Stamen Watercolor',
-      urlTemplate:
-          'https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.jpg',
+      urlTemplate: AppConstants.stadiaWatercolorTileUrl,
       attribution: '© OpenStreetMap contributors, Map tiles by Stamen Design',
       license: 'CC-BY 3.0',
     ),
   };
 
   // ═══════════════════════════════════════════════════════════════
-  // GEOCODING (Address Search) - Nominatim (Free, Unlimited, Worldwide)
+  // GEOCODING — Nominatim
   // ═══════════════════════════════════════════════════════════════
 
-  /// Search for places by name (works everywhere)
-  static Future<List<SearchResult>> searchPlaces(
+  Future<List<SearchResult>> searchPlaces(
     String query, {
     LatLng? nearLocation,
     String? countryCode,
@@ -97,44 +81,42 @@ class MapService {
         'format': 'json',
         'addressdetails': 1,
         'limit': limit,
-        'accept-language': 'en,fr,ar', // Support English, French, Arabic
+        'accept-language': 'en,fr,ar',
       };
-
       if (nearLocation != null) {
         params['lat'] = nearLocation.latitude;
         params['lon'] = nearLocation.longitude;
       }
-
       if (countryCode != null) {
         params['countrycodes'] = countryCode;
       }
-
-      final response = await _dio.get(
-        'https://nominatim.openstreetmap.org/search',
+      final response = await _dio.get<List<dynamic>>(
+        '${AppConstants.nominatimBaseUrl}/search',
         queryParameters: params,
         options: Options(
-          headers: {
-            'User-Agent': 'SportConnect/1.0 (contact@sportconnect.app)',
-          },
+          headers: {'User-Agent': AppConstants.userAgent},
         ),
       );
-
       if (response.statusCode == 200) {
-        final List<dynamic> data = response.data;
-        return data.map((item) => SearchResult.fromNominatim(item)).toList();
+        final data = response.data!;
+        return data
+            .map(
+              (item) =>
+                  SearchResult.fromNominatim(item as Map<String, dynamic>),
+            )
+            .toList();
       }
       return [];
-    } catch (e, stackTrace) {
+    } on Exception catch (e, stackTrace) {
       TalkerService.error('Place search failed', e, stackTrace);
       return [];
     }
   }
 
-  /// Reverse geocode - get address from coordinates
-  static Future<SearchResult?> reverseGeocode(LatLng location) async {
+  Future<SearchResult?> reverseGeocode(LatLng location) async {
     try {
-      final response = await _dio.get(
-        'https://nominatim.openstreetmap.org/reverse',
+      final response = await _dio.get<Map<String, dynamic>>(
+        '${AppConstants.nominatimBaseUrl}/reverse',
         queryParameters: {
           'lat': location.latitude,
           'lon': location.longitude,
@@ -143,50 +125,45 @@ class MapService {
           'accept-language': 'en,fr,ar',
         },
         options: Options(
-          headers: {
-            'User-Agent': 'SportConnect/1.0 (contact@sportconnect.app)',
-          },
+          headers: {'User-Agent': AppConstants.userAgent},
         ),
       );
-
       if (response.statusCode == 200 && response.data != null) {
-        return SearchResult.fromNominatim(response.data);
+        return SearchResult.fromNominatim(response.data!);
       }
       return null;
-    } catch (e, stackTrace) {
+    } on Exception catch (e, stackTrace) {
       TalkerService.error('Reverse geocode failed', e, stackTrace);
       return null;
     }
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // POI SEARCH - Overpass API (Free, Unlimited, Worldwide)
+  // POI SEARCH — Overpass API
   // ═══════════════════════════════════════════════════════════════
 
-  /// Search for Points of Interest near a location
-  /// Works perfectly in worldwide
-  static Future<List<PointOfInterest>> searchPOI({
+  Future<List<PointOfInterest>> searchPOI({
     required LatLng center,
     required double radiusMeters,
     required POIType type,
   }) async {
     try {
       final overpassQuery = _buildOverpassQuery(center, radiusMeters, type);
-
-      final response = await _dio.post(
-        'https://overpass-api.de/api/interpreter',
+      final response = await _dio.post<Map<String, dynamic>>(
+        AppConstants.overpassApiUrl,
         data: overpassQuery,
         options: Options(
           headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         ),
       );
-
       if (response.statusCode == 200) {
-        final elements = response.data['elements'] as List<dynamic>? ?? [];
-        return elements.map((e) => PointOfInterest.fromOverpass(e)).toList();
+        final elements = response.data!['elements'] as List<dynamic>? ?? [];
+        return elements
+            .map((e) => PointOfInterest.fromOverpass(e as Map<String, dynamic>))
+            .toList();
       }
       return [];
-    } catch (e, stackTrace) {
+    } on Exception catch (e, stackTrace) {
       TalkerService.error('POI search failed', e, stackTrace);
       return [];
     }
@@ -200,7 +177,6 @@ class MapService {
     final lat = center.latitude;
     final lon = center.longitude;
     final tags = _getOverpassTags(type);
-
     return '''
 [out:json][timeout:25];
 (
@@ -240,30 +216,22 @@ out skel qt;
   // DISTANCE & BOUNDS CALCULATIONS
   // ═══════════════════════════════════════════════════════════════
 
-  /// Calculate distance between two points in kilometers
   static double calculateDistance(LatLng from, LatLng to) {
     const distance = Distance();
     return distance.as(LengthUnit.Kilometer, from, to);
   }
 
-  /// Calculate bounding box for a set of points
   static LatLngBounds getBounds(List<LatLng> points) {
-    if (points.isEmpty) {
-      throw ArgumentError('Points list cannot be empty');
-    }
+    if (points.isEmpty) throw ArgumentError('Points list cannot be empty');
     return LatLngBounds.fromPoints(points);
   }
 
-  /// Get center point of bounds
-  static LatLng getBoundsCenter(LatLngBounds bounds) {
-    return bounds.center;
-  }
+  static LatLng getBoundsCenter(LatLngBounds bounds) => bounds.center;
 
   // ═══════════════════════════════════════════════════════════════
-  // POPULAR LOCATIONS - France
+  // POPULAR LOCATIONS
   // ═══════════════════════════════════════════════════════════════
 
-  /// Major cities in France
   static const List<PopularLocation> franceCities = [
     PopularLocation(name: 'Paris', location: LatLng(48.8566, 2.3522)),
     PopularLocation(name: 'Lyon', location: LatLng(45.7640, 4.8357)),
@@ -282,37 +250,24 @@ out skel qt;
 // DATA MODELS
 // ═══════════════════════════════════════════════════════════════
 
-/// Map tile provider configuration
 class MapTileProvider {
+  const MapTileProvider({
+    required this.name,
+    required this.urlTemplate,
+    required this.attribution,
+    required this.license,
+    this.subdomains,
+    this.requiresApiKey = false,
+  });
   final String name;
   final String urlTemplate;
   final List<String>? subdomains;
   final String attribution;
   final String license;
   final bool requiresApiKey;
-
-  const MapTileProvider({
-    required this.name,
-    required this.urlTemplate,
-    this.subdomains,
-    required this.attribution,
-    required this.license,
-    this.requiresApiKey = false,
-  });
 }
 
-/// Search result from Nominatim
 class SearchResult {
-  final String placeId;
-  final String displayName;
-  final LatLng location;
-  final String? addressType;
-  final String? city;
-  final String? country;
-  final String? countryCode;
-  final String? road;
-  final String? postcode;
-
   SearchResult({
     required this.placeId,
     required this.displayName,
@@ -329,47 +284,52 @@ class SearchResult {
     final address = json['address'] as Map<String, dynamic>?;
     return SearchResult(
       placeId: json['place_id']?.toString() ?? '',
-      displayName: json['display_name'] ?? '',
+      displayName: json['display_name'] as String? ?? '',
       location: LatLng(
         double.parse(json['lat']?.toString() ?? '0'),
         double.parse(json['lon']?.toString() ?? '0'),
       ),
-      addressType: json['type'],
-      city: address?['city'] ?? address?['town'] ?? address?['village'],
-      country: address?['country'],
-      countryCode: address?['country_code'],
-      road: address?['road'],
-      postcode: address?['postcode'],
+      addressType: json['type'] as String?,
+      city:
+          address?['city'] as String? ??
+          address?['town'] as String? ??
+          address?['village'] as String?,
+      country: address?['country'] as String?,
+      countryCode: address?['country_code'] as String?,
+      road: address?['road'] as String?,
+      postcode: address?['postcode'] as String?,
     );
   }
 
-  /// Get short display name (city, country)
+  final String placeId;
+  final String displayName;
+  final LatLng location;
+  final String? addressType;
+  final String? city;
+  final String? country;
+  final String? countryCode;
+  final String? road;
+  final String? postcode;
+
   String get shortName {
-    if (city != null && country != null) {
-      return '$city, $country';
-    }
+    if (city != null && country != null) return '$city, $country';
     return displayName.split(',').take(2).join(',');
   }
 }
 
-/// Point of Interest from Overpass
 class PointOfInterest {
-  final String id;
-  final LatLng location;
-  final String? name;
-  final String? amenityType;
-  final Map<String, String> tags;
-
   PointOfInterest({
     required this.id,
     required this.location,
+    required this.tags,
     this.name,
     this.amenityType,
-    required this.tags,
   });
 
   factory PointOfInterest.fromOverpass(Map<String, dynamic> json) {
-    final tags = Map<String, String>.from(json['tags'] ?? {});
+    final tags = Map<String, String>.from(
+      (json['tags'] as Map<String, dynamic>?) ?? {},
+    );
     return PointOfInterest(
       id: json['id']?.toString() ?? '',
       location: LatLng(
@@ -381,12 +341,17 @@ class PointOfInterest {
       tags: tags,
     );
   }
+
+  final String id;
+  final LatLng location;
+  final String? name;
+  final String? amenityType;
+  final Map<String, String> tags;
 }
 
-/// POI types for search
 enum POIType {
   sportsFacility,
-  sportsCenter, // Alias for sportsFacility
+  sportsCenter,
   university,
   parking,
   gasStation,
@@ -397,10 +362,13 @@ enum POIType {
   all,
 }
 
-/// Popular location preset
 class PopularLocation {
+  const PopularLocation({required this.name, required this.location});
   final String name;
   final LatLng location;
+}
 
-  const PopularLocation({required this.name, required this.location});
+@Riverpod(keepAlive: true)
+MapService mapService(Ref ref) {
+  return MapService(ref.watch(httpServiceProvider).dio);
 }

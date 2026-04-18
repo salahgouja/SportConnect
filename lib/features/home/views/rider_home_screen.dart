@@ -1,30 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/services/talker_service.dart';
+import 'package:sport_connect/core/constants/app_constants.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
+import 'package:sport_connect/core/widgets/misc_feature_widgets.dart';
+import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
-import 'package:sport_connect/features/home/models/home_models.dart';
+import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/home/view_models/home_view_model.dart';
 import 'package:sport_connect/features/home/view_models/rider_home_view_model.dart';
-import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
-import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
-import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
-import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/features/home/views/widgets/rider_home_feed.dart';
+import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
+import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:sport_connect/core/widgets/misc_feature_widgets.dart';
 
 class RiderHomeScreen extends ConsumerStatefulWidget {
   const RiderHomeScreen({super.key});
@@ -49,12 +46,10 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
 
   // ── Map tile sources ───────────────────────────────────────
   final Map<String, String> _mapStyles = {
-    'standard': 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    'terrain': 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-    'dark':
-        'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png',
-    'satellite':
-        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    'standard': AppConstants.osmStandardTileUrl,
+    'terrain': AppConstants.openTopoTileUrl,
+    'dark': AppConstants.stadiaDarkTileUrl,
+    'satellite': AppConstants.arcgisSatelliteTileUrl,
   };
 
   // ─────────────────────────────────────────────────────────────
@@ -91,12 +86,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
     final vm = ref.read(riderHomeViewModelProvider.notifier);
     vm.setAcquiringLocation();
 
-    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      vm.setLocationServiceDisabled();
-      return;
-    }
-
+    if (!mounted) return;
     final accepted = await PermissionDialogHelper.showLocationRationale(
       context,
     );
@@ -105,19 +95,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
       return;
     }
 
-    final permission = await Geolocator.requestPermission();
-
-    if (permission == LocationPermission.denied) {
-      vm.setLocationDeniedSoft();
-      return;
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      vm.setLocationDeniedHard();
-      return;
-    }
-
-    await vm.acquireLocationAndShowMap();
+    await vm.handleLocationPermissionRequest();
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -126,36 +104,20 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
 
   Future<void> _requestNotificationPermission() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final alreadyAsked = prefs.getBool('notification_dialog_shown') ?? false;
-      final settings = await FirebaseMessaging.instance
-          .getNotificationSettings();
-      final status = settings.authorizationStatus;
+      final vm = ref.read(riderHomeViewModelProvider.notifier);
+      if (!await vm.shouldAskNotificationPermission()) return;
 
-      if (status == AuthorizationStatus.authorized ||
-          status == AuthorizationStatus.provisional) {
-        return;
-      }
-      if (status == AuthorizationStatus.denied && alreadyAsked) return;
-
-      await Future.delayed(const Duration(seconds: 1));
+      await Future<void>.delayed(const Duration(seconds: 1));
       if (!mounted) return;
 
       final accepted = await PermissionDialogHelper.showNotificationRationale(
         context,
       );
-      await prefs.setBool('notification_dialog_shown', true);
-
+      await vm.markNotificationDialogShown();
       if (!accepted) return;
 
-      await FirebaseMessaging.instance.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
-    } catch (e) {
-      TalkerService.error('Failed to request notification permission', e);
-    }
+      await vm.requestNotificationPermission();
+    } on Exception catch (_) {}
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -208,7 +170,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
               _mapController.move(next.currentLocation!, next.currentZoom);
               vm.updateLastMapMoveTime(DateTime.now());
             }
-          } catch (e) {
+          } on Exception {
             // MapController not ready yet; will retry on next location update
           }
         });
@@ -241,7 +203,6 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 32.w),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const Spacer(flex: 2),
 
@@ -249,7 +210,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
             Container(
               width: 120.w,
               height: 120.w,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppColors.primarySurface,
                 shape: BoxShape.circle,
               ),
@@ -392,7 +353,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
           Container(
             width: 80.w,
             height: 80.w,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppColors.primarySurface,
               shape: BoxShape.circle,
             ),
@@ -402,8 +363,10 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                 SizedBox(
                   width: 56.w,
                   height: 56.w,
-                  child: CircularProgressIndicator.adaptive(
-                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                  child: const CircularProgressIndicator.adaptive(
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      AppColors.primary,
+                    ),
                     strokeWidth: 3,
                   ),
                 ),
@@ -442,7 +405,6 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
         padding: EdgeInsets.symmetric(horizontal: 32.w),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
               width: 100.w,
@@ -565,7 +527,9 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () => Geolocator.openAppSettings(),
+                onPressed: () => ref
+                    .read(riderHomeViewModelProvider.notifier)
+                    .openLocationAppSettings(),
                 icon: Icon(Icons.settings_rounded, size: 20.sp),
                 label: Text(
                   l10n.openSettings,
@@ -650,7 +614,9 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () async {
-                  await Geolocator.openLocationSettings();
+                  await ref
+                      .read(riderHomeViewModelProvider.notifier)
+                      .openLocationSettings();
                   // Re-check after returning from settings
                   if (mounted) {
                     ref
@@ -714,7 +680,6 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
     final currentZoom = vmState.currentZoom;
     final selectedMapStyle = vmState.selectedMapStyle;
     final showNearbyDrivers = vmState.showNearbyDrivers;
-    final showHotspots = vmState.showHotspots;
     final showDistanceRadius = vmState.showDistanceRadius;
     final searchRadius = vmState.searchRadius;
     final activeRoute = vmState.activeRoute;
@@ -731,7 +696,6 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
           ref.read(riderHomeViewModelProvider.notifier).applyFilter(rides),
     );
     final homeVmState = ref.watch(homeViewModelProvider);
-    final hotspots = homeVmState.hotspots;
     final user = homeVmState.user;
 
     return Stack(
@@ -752,7 +716,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
           ),
           children: [
             TileLayer(
-              urlTemplate: _mapStyles[selectedMapStyle]!,
+              urlTemplate: _mapStyles[selectedMapStyle],
               userAgentPackageName: 'com.sportconnect.app',
             ),
 
@@ -779,24 +743,6 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
             if (showNearbyDrivers)
               filteredNearbyRides.when(
                 data: (rides) => MarkerLayer(markers: _buildRideMarkers(rides)),
-                loading: () => const MarkerLayer(markers: []),
-                error: (_, _) => const MarkerLayer(markers: []),
-              ),
-
-            if (showHotspots)
-              hotspots.when(
-                data: (spots) => MarkerLayer(
-                  markers: spots
-                      .map(
-                        (h) => Marker(
-                          point: h.location.toLatLng(),
-                          width: 80.w,
-                          height: 40.h,
-                          child: _buildHotspotMarker(h),
-                        ),
-                      )
-                      .toList(),
-                ),
                 loading: () => const MarkerLayer(markers: []),
                 error: (_, _) => const MarkerLayer(markers: []),
               ),
@@ -920,9 +866,11 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                     SizedBox(
                       width: 18.w,
                       height: 18.w,
-                      child: CircularProgressIndicator.adaptive(
+                      child: const CircularProgressIndicator.adaptive(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppColors.primary,
+                        ),
                       ),
                     ),
                     SizedBox(width: 12.w),
@@ -1001,7 +949,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
   // Map widgets
   // ─────────────────────────────────────────────────────────────
 
-  Widget _buildTopControls(AsyncValue<dynamic> user) {
+  Widget _buildTopControls(AsyncValue<UserModel?> user) {
     final l10n = AppLocalizations.of(context);
     // Watch unread notifications count from your provider
     // final unreadCount = ref.watch(unreadNotificationsCountProvider).value ?? 0;
@@ -1157,7 +1105,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
           itemBuilder: (context, index) {
             final f = filters[index];
             final isSelected = selectedFilter == f['id'];
-            final count = f['count'] as int;
+            final count = f['count']! as int;
 
             return Padding(
               padding: EdgeInsets.only(right: 8.w),
@@ -1170,7 +1118,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                     HapticFeedback.selectionClick();
                     ref
                         .read(riderHomeViewModelProvider.notifier)
-                        .setFilter(f['id'] as String);
+                        .setFilter(f['id']! as String);
                   },
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
@@ -1188,7 +1136,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                     child: Row(
                       children: [
                         Icon(
-                          f['icon'] as IconData,
+                          f['icon']! as IconData,
                           size: 14.sp,
                           color: isSelected
                               ? Colors.white
@@ -1196,7 +1144,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                         ),
                         SizedBox(width: 5.w),
                         Text(
-                          f['label'] as String,
+                          f['label']! as String,
                           style: TextStyle(
                             fontSize: 12.sp,
                             fontWeight: FontWeight.w600,
@@ -1244,7 +1192,6 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
   Widget _buildMapControls(RiderHomeState vmState) {
     final l10n = AppLocalizations.of(context);
     final showDistanceRadius = vmState.showDistanceRadius;
-    final showHotspots = vmState.showHotspots;
     final showNearbyDrivers = vmState.showNearbyDrivers;
     final currentLocation = vmState.currentLocation;
     final currentZoom = vmState.currentZoom;
@@ -1268,16 +1215,6 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
               ref
                   .read(riderHomeViewModelProvider.notifier)
                   .toggleDistanceRadius();
-            },
-          ),
-          SizedBox(height: 8.h),
-          _buildMapControl(
-            icon: Icons.place_outlined,
-            isActive: showHotspots,
-            tooltip: l10n.hotspots,
-            onTap: () {
-              HapticFeedback.selectionClick();
-              ref.read(riderHomeViewModelProvider.notifier).toggleHotspots();
             },
           ),
           SizedBox(height: 8.h),
@@ -1306,9 +1243,9 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
           _buildMapControl(
             icon: Icons.my_location,
             tooltip: 'My Location',
-            onTap: () {
+            onTap: () async {
               HapticFeedback.selectionClick();
-              ref
+              await ref
                   .read(riderHomeViewModelProvider.notifier)
                   .refetchCurrentLocation();
             },
@@ -1463,34 +1400,6 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
           ),
         )
         .toList();
-  }
-
-  Widget _buildHotspotMarker(Hotspot hotspot) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-      decoration: BoxDecoration(
-        color: AppColors.success.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(12.r),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 4),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.place, color: Colors.white, size: 14.sp),
-          SizedBox(width: 4.w),
-          Text(
-            AppLocalizations.of(context).value2(hotspot.rideCount),
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: 11.sp,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildRadiusSlider(RiderHomeState vmState) {
@@ -1721,7 +1630,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
               onPressed: () {
                 ref.read(riderHomeViewModelProvider.notifier).clearRoutes();
               },
-              icon: Icon(Icons.close, color: AppColors.textSecondary),
+              icon: const Icon(Icons.close, color: AppColors.textSecondary),
             ),
           ],
         ),
@@ -1735,7 +1644,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
 
   void _showMapStylePicker() {
     final l10n = AppLocalizations.of(context);
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
@@ -1832,10 +1741,10 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
     final outerContext = context;
     final fromCtrl = TextEditingController();
     final toCtrl = TextEditingController();
-    DateTime selectedDate = DateTime.now();
-    int selectedSeats = 1;
+    var selectedDate = DateTime.now();
+    var selectedSeats = 1;
 
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -1948,7 +1857,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                               ),
                             ),
                           ),
-                          Divider(color: AppColors.border, height: 1),
+                          const Divider(color: AppColors.border, height: 1),
                           TextField(
                             controller: toCtrl,
                             onChanged: (_) => setModal(() {}),
@@ -2143,9 +2052,11 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                             loading: () => SizedBox(
                               width: 16.w,
                               height: 16.w,
-                              child: CircularProgressIndicator.adaptive(
+                              child: const CircularProgressIndicator.adaptive(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppColors.primary,
+                                ),
                               ),
                             ),
                             error: (_, _) => const SizedBox.shrink(),
@@ -2223,9 +2134,11 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                                 _buildSearchRideCard(filtered[i], ctx),
                           );
                         },
-                        loading: () => Center(
+                        loading: () => const Center(
                           child: CircularProgressIndicator.adaptive(
-                            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.primary,
+                            ),
                           ),
                         ),
                         error: (_, _) => Center(
@@ -2509,7 +2422,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
 
   void _showRideDetails(RideModel ride) {
     HapticFeedback.mediumImpact();
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       shape: RoundedRectangleBorder(
@@ -2537,7 +2450,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                         Container(
                           width: 10.w,
                           height: 10.w,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             color: AppColors.primary,
                             shape: BoxShape.circle,
                           ),
@@ -2816,9 +2729,9 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
 // ─────────────────────────────────────────────────────────────
 
 class _NotificationBadge extends StatelessWidget {
+  const _NotificationBadge({required this.count, required this.child});
   final int count;
   final Widget child;
-  const _NotificationBadge({required this.count, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -2832,7 +2745,7 @@ class _NotificationBadge extends StatelessWidget {
           right: -4,
           child: Container(
             padding: EdgeInsets.all(3.w),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppColors.error,
               shape: BoxShape.circle,
             ),

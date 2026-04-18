@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
+import 'package:sport_connect/core/services/push_notification_service.dart';
+import 'package:sport_connect/core/providers/settings_provider.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/theme/platform_adaptive.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/auth/views/reauth_dialog.dart';
+import 'package:sport_connect/features/profile/view_models/driver_settings_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:sport_connect/core/providers/settings_provider.dart';
-import 'package:sport_connect/core/theme/platform_adaptive.dart';
-import 'package:sport_connect/features/profile/view_models/driver_settings_view_model.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -55,8 +55,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ref.watch(rideRemindersProviderProvider).value ?? true;
     final chatNotifications =
         ref.watch(chatNotificationsProviderProvider).value ?? true;
-    final autoAcceptRides =
-        ref.watch(autoAcceptRidesProviderProvider).value ?? false;
     final showLocation = ref.watch(showLocationProviderProvider).value ?? true;
     final publicProfile =
         ref.watch(publicProfileProviderProvider).value ?? true;
@@ -154,7 +152,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               title: 'Notification Permission',
               subtitle: 'Re-allow push notifications for this device',
               icon: Icons.notifications_none_rounded,
-              onTap: _resetAndRequestNotificationPermission,
+              onTap: () => _resetAndRequestNotificationPermission(context),
             ),
           ]),
 
@@ -209,18 +207,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onChanged: (v) =>
                   ref.read(showLocationProviderProvider.notifier).setEnabled(v),
             ),
-            if (isDriver) ...[
-              _buildDivider(),
-              _buildSwitchTile(
-                title: l10n.settingsAutoAcceptRides,
-                subtitle: l10n.settingsAutoAcceptRidesDesc,
-                value: autoAcceptRides,
-                icon: Icons.check_circle_outline_rounded,
-                onChanged: (v) => ref
-                    .read(autoAcceptRidesProviderProvider.notifier)
-                    .setEnabled(v),
-              ),
-            ],
             _buildDivider(),
             _buildNavTile(
               title: l10n.settingsBlockedUsers,
@@ -293,6 +279,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               title: l10n.settingsPaymentMethods,
               subtitle: l10n.settingsPaymentMethodsDesc,
               icon: Icons.payment_outlined,
+              onTap: () => context.push(AppRoutes.managePaymentMethods.path),
+            ),
+            _buildDivider(),
+            _buildNavTile(
+              title: l10n.paymentHistory,
+              subtitle: 'View your past rides and charges',
+              icon: Icons.receipt_long_rounded,
               onTap: () => context.push(AppRoutes.paymentHistory.path),
             ),
             _buildDivider(),
@@ -408,14 +401,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Widget _buildDriverCard({
     required AppLocalizations l10n,
-    required dynamic driverSettings,
-    required dynamic driverNotifier,
+    required DriverSettingsState driverSettings,
+    required DriverSettingsViewModel driverNotifier,
   }) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border(left: BorderSide(color: AppColors.secondary, width: 3)),
+        border: const Border(
+          left: BorderSide(color: AppColors.secondary, width: 3),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -581,7 +576,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  // ── Cards ────────────────────────────────────────────────────────────────────
+  // ── Cards ──────────────────────────────────────────────────────────────────
 
   Widget _buildCard(List<Widget> children) {
     return Container(
@@ -620,7 +615,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  // ── Tiles ────────────────────────────────────────────────────────────────────
+  // ── Tiles ──────────────────────────────────────────────────────────────────
 
   Widget _buildSwitchTile({
     required String title,
@@ -683,9 +678,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Widget _buildNavTile({
     required String title,
-    String? subtitle,
     required IconData icon,
     required VoidCallback onTap,
+    String? subtitle,
     Color? color,
   }) {
     final c = color ?? AppColors.textSecondary;
@@ -809,11 +804,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Widget _buildDropdownTile({
     required String title,
-    String? subtitle,
     required String value,
     required List<String> options,
     required IconData icon,
     required ValueChanged<String?> onChanged,
+    String? subtitle,
   }) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
@@ -1032,7 +1027,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  // ── Footer ───────────────────────────────────────────────────────────────────
+  // ── Footer ─────────────────────────────────────────────────────────────────
 
   Widget _buildFooter(AppLocalizations l10n) {
     return Column(
@@ -1068,17 +1063,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  // ── Notification permission ───────────────────────────────────────────────────
+  // ── Notification permission ────────────────────────────────────────────────
 
-  Future<void> _resetAndRequestNotificationPermission() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('notification_dialog_shown', false);
+  Future<void> _resetAndRequestNotificationPermission(
+    BuildContext context,
+  ) async {
+    final pns = ref.read(pushNotificationServiceProvider);
+    final settings = await ref.read(settingsRepositoryProvider.future);
+    await settings.setNotificationDialogShown(value: false);
 
-    final status = (await FirebaseMessaging.instance.getNotificationSettings())
-        .authorizationStatus;
-
-    if (status == AuthorizationStatus.authorized ||
-        status == AuthorizationStatus.provisional) {
+    if (await pns.hasPermission()) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1095,45 +1089,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       return;
     }
 
-    if (status == AuthorizationStatus.denied) {
-      final result = await FirebaseMessaging.instance.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
-      if (!context.mounted) return;
-      final granted =
-          result.authorizationStatus == AuthorizationStatus.authorized ||
-          result.authorizationStatus == AuthorizationStatus.provisional;
-      if (!granted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              'Notifications are blocked. Please enable them in Settings > App > Notifications.',
-            ),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-          ),
-        );
-      }
-      return;
-    }
-
     if (!context.mounted) return;
     final accepted = await PermissionDialogHelper.showNotificationRationale(
       context,
     );
-    await prefs.setBool('notification_dialog_shown', true);
+    await settings.setNotificationDialogShown();
     if (!accepted) return;
 
-    await FirebaseMessaging.instance.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+    await pns.requestPermission();
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -1159,7 +1122,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   void _showDataExportDialog() {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
@@ -1223,7 +1186,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   void _showDataProcessingNotice() {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
@@ -1350,7 +1313,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   void _showWithdrawConsentDialog() {
-    showDialog(
+    showDialog<void>(
       context: context,
       barrierLabel: AppLocalizations.of(context).withdrawConsent,
       builder: (context) => AlertDialog.adaptive(
@@ -1395,7 +1358,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onPressed: () => Navigator.pop(context),
             child: Text(
               AppLocalizations.of(context).actionClose,
-              style: TextStyle(color: AppColors.primary),
+              style: const TextStyle(color: AppColors.primary),
             ),
           ),
         ],
@@ -1404,7 +1367,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   void _showLogoutDialog() {
-    showDialog(
+    showDialog<void>(
       context: context,
       barrierLabel: AppLocalizations.of(context).settingsLogout,
       builder: (context) => AlertDialog.adaptive(
@@ -1438,8 +1401,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   void _showDeleteAccountDialog() {
-    String confirmText = '';
-    showDialog(
+    var confirmText = '';
+    showDialog<void>(
       context: context,
       barrierLabel: AppLocalizations.of(context).settingsDeleteAccount,
       builder: (dialogContext) => StatefulBuilder(
@@ -1449,7 +1412,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           title: Row(
             children: [
-              Icon(Icons.warning_amber_rounded, color: AppColors.error),
+              const Icon(Icons.warning_amber_rounded, color: AppColors.error),
               SizedBox(width: 8.w),
               Flexible(
                 child: Text(
@@ -1525,7 +1488,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   confirmText == AppLocalizations.of(context).deleteKeyword
                   ? () async {
                       dialogContext.pop();
-                      showDialog(
+                      await showDialog<void>(
                         context: context,
                         barrierDismissible: false,
                         builder: (_) => const Center(
@@ -1543,7 +1506,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           if (e.code == 'requires-recent-login') {
                             final ok = await showReauthDialog(context, ref);
                             if (!ok || !context.mounted) return;
-                            showDialog(
+                            await showDialog<void>(
                               context: context,
                               barrierDismissible: false,
                               builder: (_) => const Center(
@@ -1555,7 +1518,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                   .read(authActionsViewModelProvider)
                                   .deleteAccount();
                               if (context.mounted) context.pop();
-                            } catch (retryErr) {
+                            } on Exception catch (retryErr) {
                               if (context.mounted) {
                                 context.pop();
                                 ScaffoldMessenger.of(context).showSnackBar(
@@ -1583,7 +1546,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ),
                           );
                         }
-                      } catch (e) {
+                      } on Exception catch (e) {
                         if (context.mounted) {
                           context.pop();
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -1811,26 +1774,27 @@ class _BlockedUsersScreenState extends ConsumerState<_BlockedUsersScreen> {
                               ),
                               child: Row(
                                 children: [
-                                  user.photoUrl != null
-                                      ? CircleAvatar(
-                                          radius: 20.r,
-                                          backgroundImage: NetworkImage(
-                                            user.photoUrl!,
-                                          ),
-                                        )
-                                      : CircleAvatar(
-                                          radius: 20.r,
-                                          backgroundColor: AppColors.primary
-                                              .withValues(alpha: 0.14),
-                                          child: Text(
-                                            displayName[0].toUpperCase(),
-                                            style: TextStyle(
-                                              color: AppColors.primary,
-                                              fontWeight: FontWeight.w700,
-                                              fontSize: 13.sp,
-                                            ),
-                                          ),
+                                  if (user.photoUrl != null)
+                                    CircleAvatar(
+                                      radius: 20.r,
+                                      backgroundImage: NetworkImage(
+                                        user.photoUrl!,
+                                      ),
+                                    )
+                                  else
+                                    CircleAvatar(
+                                      radius: 20.r,
+                                      backgroundColor: AppColors.primary
+                                          .withValues(alpha: 0.14),
+                                      child: Text(
+                                        displayName[0].toUpperCase(),
+                                        style: TextStyle(
+                                          color: AppColors.primary,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 13.sp,
                                         ),
+                                      ),
+                                    ),
                                   SizedBox(width: 12.w),
                                   Expanded(
                                     child: Column(
@@ -1918,7 +1882,7 @@ class _BlockedUsersScreenState extends ConsumerState<_BlockedUsersScreen> {
                                             behavior: SnackBarBehavior.floating,
                                           ),
                                         );
-                                      } catch (_) {
+                                      } on Exception catch (_) {
                                         if (!mounted) return;
                                         ScaffoldMessenger.of(
                                           context,

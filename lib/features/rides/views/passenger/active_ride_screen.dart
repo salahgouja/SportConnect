@@ -1,34 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/core/services/location_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
+import 'package:sport_connect/core/widgets/misc_feature_widgets.dart';
+import 'package:sport_connect/core/widgets/ride_feature_widgets.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
+import 'package:sport_connect/features/payments/view_models/payment_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
-import 'package:sport_connect/features/payments/view_models/payment_view_model.dart';
-import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:sport_connect/core/widgets/ride_feature_widgets.dart';
 import 'package:sport_connect/features/vehicles/repositories/vehicle_repository.dart';
-import 'package:sport_connect/core/widgets/misc_feature_widgets.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Active Ride Screen  - shows real-time ride status from Firestore
 class PassengerActiveRideScreen extends ConsumerStatefulWidget {
+  const PassengerActiveRideScreen({required this.rideId, super.key});
   final String rideId;
-
-  const PassengerActiveRideScreen({super.key, required this.rideId});
 
   @override
   ConsumerState<PassengerActiveRideScreen> createState() =>
@@ -67,41 +66,35 @@ class _PassengerActiveRideScreenState
   }
 
   Future<void> _fetchPassengerLocation() async {
-    // AR-6: Check permission status before attempting to get position so we
-    // can surface a meaningful prompt instead of silently dropping the pin.
-    final permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.deniedForever) {
+    final svc = ref.read(locationServiceProvider);
+
+    if (await svc.isPermissionPermanentlyDenied()) {
+      if (mounted) setState(() => _locationPermissionDeniedForever = true);
+      return;
+    }
+
+    final granted = await svc.requestPermission();
+    if (!granted) {
       if (mounted) {
-        setState(() => _locationPermissionDeniedForever = true);
+        setState(() async {
+          _locationPermissionDeniedForever = await svc
+              .isPermissionPermanentlyDenied();
+        });
       }
       return;
     }
-    if (permission == LocationPermission.denied) {
-      final requested = await Geolocator.requestPermission();
-      if (requested == LocationPermission.denied ||
-          requested == LocationPermission.deniedForever) {
-        if (mounted) {
-          setState(
-            () => _locationPermissionDeniedForever =
-                requested == LocationPermission.deniedForever,
-          );
-        }
-        return;
-      }
-    }
 
     try {
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.medium,
-        ),
-      );
-      if (mounted) {
-        setState(() {
-          _passengerLocation = LatLng(position.latitude, position.longitude);
-        });
+      final position = await svc.getCurrentLocation();
+      if (mounted && position != null) {
+        setState(
+          () => _passengerLocation = LatLng(
+            position.latitude,
+            position.longitude,
+          ),
+        );
       }
-    } catch (_) {
+    } on Exception catch (_) {
       // Location not available — pin simply won't show
     }
   }
@@ -148,7 +141,7 @@ class _PassengerActiveRideScreenState
     ActiveRideState rideState,
   ) {
     final messages = [
-      'I\'m at the pickup',
+      "I'm at the pickup",
       'Running late',
       'Wrong location',
       'On my way',
@@ -449,7 +442,7 @@ class _PassengerActiveRideScreenState
                   .when(
                     data: (driver) => _buildDriverInfo(context, driver, ride),
                     loading: () => const Padding(
-                      padding: EdgeInsets.all(20.0),
+                      padding: EdgeInsets.all(20),
                       child: Center(
                         child: CircularProgressIndicator.adaptive(),
                       ),
@@ -653,6 +646,7 @@ class _PassengerActiveRideScreenState
                         iconSize: 16.w,
                         icon: Icons.directions_car,
                         reverse: true,
+                        color: AppColors.primary,
                       ),
                     ),
                   // Origin marker
@@ -925,14 +919,14 @@ class _PassengerActiveRideScreenState
                   SizedBox(
                     width: 14.w,
                     height: 14.w,
-                    child: CircularProgressIndicator.adaptive(
+                    child: const CircularProgressIndicator.adaptive(
                       strokeWidth: 2,
                       valueColor: AlwaysStoppedAnimation(Colors.white70),
                     ),
                   ),
                   SizedBox(width: 8.w),
                   Text(
-                    'Waiting for driver\'s location…',
+                    "Waiting for driver's location…",
                     style: TextStyle(fontSize: 12.sp, color: Colors.white70),
                   ),
                 ],
@@ -947,7 +941,7 @@ class _PassengerActiveRideScreenState
             left: 16.w,
             right: 16.w,
             child: GestureDetector(
-              onTap: () => Geolocator.openAppSettings(),
+              onTap: () => ref.read(locationServiceProvider).openAppSettings(),
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
                 decoration: BoxDecoration(
@@ -1095,22 +1089,18 @@ class _PassengerActiveRideScreenState
           label = l10n.headingToPickup;
           icon = Icons.person_pin_circle;
         }
-        break;
       case ActiveRidePhase.enRoute:
         color = AppColors.primary;
         label = l10n.tripInProgress;
         icon = Icons.navigation;
-        break;
       case ActiveRidePhase.arriving:
         color = AppColors.success;
         label = l10n.headingToDestination;
         icon = Icons.near_me;
-        break;
       case ActiveRidePhase.completed:
         color = AppColors.success;
         label = l10n.rideCompleted;
         icon = Icons.check_circle;
-        break;
     }
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
@@ -1927,7 +1917,6 @@ class _PassengerActiveRideScreenState
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 20.w),
             child: Row(
-              mainAxisSize: MainAxisSize.max,
               children: [
                 // Share button
                 Expanded(
@@ -2185,7 +2174,7 @@ class _PassengerActiveRideScreenState
 
   Widget _buildHeader(BuildContext context, RideModel ride) {
     return Container(
-      decoration: BoxDecoration(gradient: AppColors.heroGradient),
+      decoration: const BoxDecoration(gradient: AppColors.heroGradient),
       child: SafeArea(
         bottom: false,
         child: Padding(
@@ -2238,37 +2227,31 @@ class _PassengerActiveRideScreenState
         textColor = AppColors.textSecondary;
         label = 'Draft';
         icon = Icons.edit_outlined;
-        break;
       case RideStatus.active:
         bgColor = AppColors.info.withValues(alpha: 0.2);
         textColor = AppColors.info;
         label = 'Active';
         icon = Icons.check_circle_outline;
-        break;
       case RideStatus.full:
         bgColor = AppColors.warning.withValues(alpha: 0.2);
         textColor = AppColors.warning;
         label = 'Full';
         icon = Icons.people;
-        break;
       case RideStatus.inProgress:
         bgColor = AppColors.success.withValues(alpha: 0.2);
         textColor = AppColors.success;
         label = 'In Progress';
         icon = Icons.directions_car;
-        break;
       case RideStatus.completed:
         bgColor = AppColors.success.withValues(alpha: 0.2);
         textColor = AppColors.success;
         label = 'Completed';
         icon = Icons.done_all;
-        break;
       case RideStatus.cancelled:
         bgColor = AppColors.error.withValues(alpha: 0.2);
         textColor = AppColors.error;
         label = 'Cancelled';
         icon = Icons.cancel_outlined;
-        break;
     }
 
     return Container(
@@ -2623,12 +2606,11 @@ class _PassengerActiveRideScreenState
             height: 24.h,
             width: 2,
             margin: EdgeInsets.symmetric(vertical: 4.h),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               border: Border(
                 left: BorderSide(
                   color: AppColors.border,
                   width: 2,
-                  style: BorderStyle.solid,
                 ),
               ),
             ),
@@ -2730,7 +2712,6 @@ class _PassengerActiveRideScreenState
                               ? AppColors.success
                               : AppColors.border,
                           width: 2,
-                          style: BorderStyle.solid,
                         ),
                       ),
                     ),
@@ -2818,7 +2799,7 @@ class _PassengerActiveRideScreenState
             ),
           ],
           SizedBox(height: 16.h),
-          Divider(color: AppColors.border),
+          const Divider(color: AppColors.border),
           SizedBox(height: 12.h),
           // Ride info row
           Row(
@@ -3089,7 +3070,6 @@ class _PassengerActiveRideScreenState
               text: AppLocalizations.of(context).rateAndReview,
               icon: Icons.star_outline,
               onPressed: () => _showRatingDialog(context, ride),
-              style: PremiumButtonStyle.primary,
             ),
         ],
       ),
@@ -3129,12 +3109,12 @@ class _PassengerActiveRideScreenState
             photoUrl: recipientPhotoUrl,
           );
 
-      context.pushNamed(
+      await context.pushNamed(
         AppRoutes.chatDetail.name,
         pathParameters: {'id': chat.id},
         extra: receiverUser,
       );
-    } catch (e) {
+    } on Exception {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -3145,7 +3125,7 @@ class _PassengerActiveRideScreenState
     }
   }
 
-  void _callDriver(String? phoneNumber) async {
+  Future<void> _callDriver(String? phoneNumber) async {
     if (phoneNumber == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -3155,7 +3135,7 @@ class _PassengerActiveRideScreenState
       return;
     }
 
-    final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
+    final phoneUri = Uri(scheme: 'tel', path: phoneNumber);
     try {
       if (await canLaunchUrl(phoneUri)) {
         await launchUrl(phoneUri);
@@ -3168,7 +3148,7 @@ class _PassengerActiveRideScreenState
           );
         }
       }
-    } catch (e) {
+    } on Exception {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -3179,8 +3159,8 @@ class _PassengerActiveRideScreenState
     }
   }
 
-  void _showCancelDialog(BuildContext context, RideModel ride) {
-    showDialog(
+  Future<void> _showCancelDialog(BuildContext context, RideModel ride) async {
+    await showDialog<void>(
       context: context,
       barrierLabel: AppLocalizations.of(context).cancelRide,
       builder: (ctx) => AlertDialog.adaptive(
@@ -3192,9 +3172,9 @@ class _PassengerActiveRideScreenState
             child: Text(AppLocalizations.of(context).keepRide),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               ctx.pop();
-              _cancelRide(ride);
+              await _cancelRide(ride);
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
             child: Text(AppLocalizations.of(context).cancelRide2),
@@ -3204,7 +3184,7 @@ class _PassengerActiveRideScreenState
     );
   }
 
-  void _cancelRide(RideModel ride) async {
+  Future<void> _cancelRide(RideModel ride) async {
     try {
       final currentUser = ref.read(currentUserProvider).value;
       if (currentUser == null) return;
@@ -3244,7 +3224,7 @@ class _PassengerActiveRideScreenState
                 paymentId: myBooking.paymentIntentId!,
                 reason: 'User cancelled ride',
               );
-        } catch (e) {
+        } on Exception catch (e) {
           debugPrint('Failed to refund: $e');
         }
       }
@@ -3259,7 +3239,7 @@ class _PassengerActiveRideScreenState
         );
         context.pop();
       }
-    } catch (e) {
+    } on Exception catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -3278,10 +3258,10 @@ class _PassengerActiveRideScreenState
       userProfileProvider(ride.driverId).future,
     );
 
-    if (!mounted) return;
+    if (!context.mounted) return;
 
     // Navigate to the submit review screen for the driver
-    context.push(
+    await context.push(
       '${AppRoutes.submitReview.path}'
       '?rideId=${ride.id}'
       '&revieweeId=${ride.driverId}'
@@ -3314,7 +3294,7 @@ class _PassengerActiveRideScreenState
   }
 
   Widget _buildProgressBar(RideModel ride, ActiveRideState rideState) {
-    double progress = 0.0;
+    var progress = 0.0;
     if (ride.distanceKm != null && ride.distanceKm! > 0) {
       final remaining = rideState.remainingDistanceKm ?? ride.distanceKm!;
       progress = ((ride.distanceKm! - remaining) / ride.distanceKm!).clamp(
@@ -3339,7 +3319,7 @@ class _PassengerActiveRideScreenState
                 ),
               ),
               Text(
-                '${(progress * 100).toInt()}%',
+                '${progress * 100}%',
                 style: TextStyle(
                   fontSize: 13.sp,
                   fontWeight: FontWeight.w700,
@@ -3437,7 +3417,7 @@ class _PulsingLocationMarker extends StatefulWidget {
     required this.iconSize,
     this.icon = Icons.navigation,
     this.reverse = false,
-    this.color = AppColors.primary,
+    this.color = AppColors.primaryDark,
   });
 
   final double heading;
@@ -3522,10 +3502,10 @@ class _PulsingLocationMarkerState extends State<_PulsingLocationMarker>
 
 class InfoItem extends StatelessWidget {
   const InfoItem({
-    super.key,
     required this.icon,
     required this.value,
     required this.label,
+    super.key,
   });
   final IconData icon;
   final String value;

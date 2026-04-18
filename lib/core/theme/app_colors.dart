@@ -215,8 +215,8 @@ class AppColors {
     end: Alignment.bottomRight,
     colors: [
       const Color(0xFFFFFFFF).withValues(alpha: 0.30),
-      const Color(0xFFFFFFFF).withValues(alpha: 0.0),
-      const Color(0xFFFFFFFF).withValues(alpha: 0.0),
+      const Color(0xFFFFFFFF).withValues(alpha: 0),
+      const Color(0xFFFFFFFF).withValues(alpha: 0),
       const Color(0xFFFFFFFF).withValues(alpha: 0.08),
     ],
     stops: const [0.0, 0.3, 0.7, 1.0],

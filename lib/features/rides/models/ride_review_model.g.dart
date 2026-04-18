@@ -10,9 +10,9 @@ _RideReviewModel _$RideReviewModelFromJson(Map json) => _RideReviewModel(
   id: json['id'] as String,
   reviewerId: json['reviewerId'] as String,
   reviewerName: json['reviewerName'] as String,
-  reviewerPhotoUrl: json['reviewerPhotoUrl'] as String?,
   revieweeId: json['revieweeId'] as String,
   rating: (json['rating'] as num).toDouble(),
+  reviewerPhotoUrl: json['reviewerPhotoUrl'] as String?,
   comment: json['comment'] as String?,
   tags:
       (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ??
@@ -25,9 +25,9 @@ Map<String, dynamic> _$RideReviewModelToJson(_RideReviewModel instance) =>
       'id': instance.id,
       'reviewerId': instance.reviewerId,
       'reviewerName': instance.reviewerName,
-      'reviewerPhotoUrl': instance.reviewerPhotoUrl,
       'revieweeId': instance.revieweeId,
       'rating': instance.rating,
+      'reviewerPhotoUrl': instance.reviewerPhotoUrl,
       'comment': instance.comment,
       'tags': instance.tags,
       'createdAt': const TimestampConverter().toJson(instance.createdAt),

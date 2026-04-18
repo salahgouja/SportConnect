@@ -1,44 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:sport_connect/core/animations/feedback_animations.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/features/events/views/widgets/inline_event_selector.dart';
-import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
-import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
-import 'package:sport_connect/features/rides/view_models/driver_offer_ride_view_model.dart';
-import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/models/user/user_model.dart';
-import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:intl/intl.dart';
-import 'package:sport_connect/features/vehicles/view_models/vehicle_view_model.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:sport_connect/features/events/models/event_model.dart';
-import 'package:sport_connect/core/widgets/rating_and_profile_widgets.dart';
 import 'package:sport_connect/core/widgets/ride_feature_widgets.dart';
-import 'package:sport_connect/core/animations/feedback_animations.dart';
+import 'package:sport_connect/features/events/models/event_model.dart';
+import 'package:sport_connect/features/events/views/widgets/inline_event_selector.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
+import 'package:sport_connect/features/rides/view_models/driver_offer_ride_view_model.dart';
+import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
+import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
+import 'package:sport_connect/features/vehicles/view_models/vehicle_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 class DriverOfferRideScreen extends ConsumerStatefulWidget {
-  final RideModel? existingRide;
-
-  /// When provided the screen fetches the ride by ID so the edit route
-  /// works correctly even after a hot-restart or deep-link (no state.extra).
-  final String? existingRideId;
-  final bool isEditMode;
-
   const DriverOfferRideScreen({
     super.key,
     this.existingRide,
     this.existingRideId,
     this.isEditMode = false,
   });
+  final RideModel? existingRide;
+
+  /// When provided the screen fetches the ride by ID so the edit route
+  /// works correctly even after a hot-restart or deep-link (no state.extra).
+  final String? existingRideId;
+  final bool isEditMode;
 
   @override
   ConsumerState<DriverOfferRideScreen> createState() =>
@@ -83,7 +81,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
     if (id == null) return null;
     try {
       return vehicles.firstWhere((v) => v.id == id);
-    } catch (_) {
+    } on Exception catch (_) {
       return null;
     }
   }
@@ -226,7 +224,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
             children: [
               Container(
                 padding: EdgeInsets.all(20.w),
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: AppColors.primarySurface,
                   shape: BoxShape.circle,
                 ),
@@ -353,7 +351,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
     final topPad = MediaQuery.of(context).padding.top;
     return Container(
       padding: EdgeInsets.fromLTRB(20.w, topPad + 12.h, 20.w, 16.h),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.background,
         border: Border(bottom: BorderSide(color: AppColors.borderLight)),
       ),
@@ -716,9 +714,6 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
             options: MapOptions(
               initialCenter: center,
               initialZoom: 10,
-              interactionOptions: const InteractionOptions(
-                flags: InteractiveFlag.all,
-              ),
 
               onMapReady: () {
                 final allPoints = [
@@ -745,14 +740,14 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                 polylines: [
                   Polyline(
                     points: routePoints,
-                    strokeWidth: 6.0,
+                    strokeWidth: 6,
                     color: Colors.white,
-                    borderStrokeWidth: 2.0,
+                    borderStrokeWidth: 2,
                     borderColor: Colors.white,
                   ),
                   Polyline(
                     points: routePoints,
-                    strokeWidth: 4.0,
+                    strokeWidth: 4,
                     color: AppColors.primary,
                   ),
                 ],
@@ -814,9 +809,11 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                 child: SizedBox(
                   width: 16.w,
                   height: 16.w,
-                  child: CircularProgressIndicator.adaptive(
+                  child: const CircularProgressIndicator.adaptive(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      AppColors.primary,
+                    ),
                   ),
                 ),
               ),
@@ -829,11 +826,11 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   Widget _buildLocationTile({
     required String title,
     required String value,
-    LocationPoint? location,
     required String placeholder,
     required IconData icon,
     required Color color,
     required VoidCallback onTap,
+    LocationPoint? location,
   }) {
     return InkWell(
       onTap: onTap,
@@ -1102,10 +1099,8 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                     builder: (context, child) {
                       return Theme(
                         data: Theme.of(context).copyWith(
-                          colorScheme: ColorScheme.light(
+                          colorScheme: const ColorScheme.light(
                             primary: AppColors.primary,
-                            onPrimary: Colors.white,
-                            surface: AppColors.cardBg,
                             onSurface: AppColors.textPrimary,
                           ),
                         ),
@@ -1268,7 +1263,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
           Container(
             width: 26.w,
             height: 26.w,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppColors.warningSurface,
               shape: BoxShape.circle,
             ),
@@ -1720,7 +1715,6 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.start,
       children: [
         Text(
           l10n.availableSeatsLabel,
@@ -1739,7 +1733,6 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
           scrollDirection: Axis.horizontal,
           padding: EdgeInsets.zero,
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.start,
             children: [
               for (int i = 1; i <= maxSeats; i++)
                 GestureDetector(
@@ -2040,7 +2033,6 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
           SizedBox(height: 8.h),
           Slider.adaptive(
             value: (_maxDetourMinutes ?? 0).toDouble(),
-            min: 0,
             max: 60,
             divisions: 12,
             label: _maxDetourMinutes != null
@@ -2183,7 +2175,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
 
     return Container(
       padding: EdgeInsets.fromLTRB(20.w, 14.h, 20.w, 0),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.background,
         border: Border(top: BorderSide(color: AppColors.borderLight)),
       ),
@@ -2221,13 +2213,12 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
               children: [
                 if (_currentStep > 0)
                   Expanded(
-                    flex: 1,
                     child: Padding(
                       padding: EdgeInsets.only(right: 14.w),
                       child: OutlinedButton(
                         onPressed: _goToPreviousStep,
                         style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: AppColors.border),
+                          side: const BorderSide(color: AppColors.border),
                           padding: EdgeInsets.symmetric(vertical: 14.h),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12.r),
@@ -2268,7 +2259,9 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                             width: 18.w,
                             child: const CircularProgressIndicator.adaptive(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                             ),
                           )
                         : Text(
@@ -2370,7 +2363,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
     ref.read(driverOfferRideViewModelProvider.notifier).swapLocations();
   }
 
-  void _selectDate() async {
+  Future<void> _selectDate() async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final eventEnd = _selectedEvent?.endsAt;
@@ -2395,7 +2388,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
     }
   }
 
-  void _selectTime() async {
+  Future<void> _selectTime() async {
     final result = await showTimePicker(
       context: context,
       initialTime: _departureTime ?? TimeOfDay.now(),

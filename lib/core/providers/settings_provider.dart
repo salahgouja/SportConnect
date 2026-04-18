@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
+import 'package:sport_connect/core/repositories/settings_repository.dart'
+    show SettingsRepository;
 
 part 'settings_provider.g.dart';
 
@@ -105,23 +107,6 @@ class ChatNotificationsProvider extends _$ChatNotificationsProvider {
   }
 }
 
-/// Provider for auto-accept rides setting
-@riverpod
-class AutoAcceptRidesProvider extends _$AutoAcceptRidesProvider {
-  @override
-  Future<bool> build() async {
-    final repository = await ref.watch(settingsRepositoryProvider.future);
-    return repository.autoAcceptRides;
-  }
-
-  /// Set auto-accept rides enabled/disabled
-  Future<void> setEnabled(bool enabled) async {
-    final repository = await ref.read(settingsRepositoryProvider.future);
-    await repository.setAutoAcceptRides(enabled);
-    state = AsyncValue.data(enabled);
-  }
-}
-
 /// Provider for show location setting
 @riverpod
 class ShowLocationProvider extends _$ShowLocationProvider {
@@ -161,10 +146,9 @@ class PublicProfileProvider extends _$PublicProfileProvider {
 /// Wraps [SettingsRepository.savedEmail] and [SettingsRepository.rememberMe]
 /// so the login screen never imports the repository layer directly.
 class SavedCredentials {
+  const SavedCredentials({this.email, this.rememberMe = false});
   final String? email;
   final bool rememberMe;
-
-  const SavedCredentials({this.email, this.rememberMe = false});
 }
 
 @riverpod

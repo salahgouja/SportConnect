@@ -9,9 +9,8 @@ part 'notification_repository.g.dart';
 
 /// Notification Repository for Firestore operations
 class NotificationRepository implements INotificationRepository {
-  final FirebaseFirestore _firestore;
-
   NotificationRepository(this._firestore);
+  final FirebaseFirestore _firestore;
 
   CollectionReference<NotificationModel> get _notificationsCollection =>
       _firestore
@@ -158,9 +157,9 @@ class NotificationRepository implements INotificationRepository {
     required String toUserId,
     required String fromUserId,
     required String fromUserName,
-    String? fromUserPhoto,
     required String rideId,
     required String rideName,
+    String? fromUserPhoto,
   }) async {
     await createNotification(
       NotificationModel(
@@ -184,9 +183,9 @@ class NotificationRepository implements INotificationRepository {
   Future<void> sendRideBookingAccepted({
     required String toUserId,
     required String driverName,
-    String? driverPhoto,
     required String rideId,
     required String rideName,
+    String? driverPhoto,
   }) async {
     await createNotification(
       NotificationModel(
@@ -209,9 +208,9 @@ class NotificationRepository implements INotificationRepository {
   Future<void> sendRideBookingRejected({
     required String toUserId,
     required String driverName,
-    String? driverPhoto,
     required String rideId,
     required String rideName,
+    String? driverPhoto,
     String? reason,
   }) async {
     final body = reason != null && reason.isNotEmpty
@@ -239,9 +238,9 @@ class NotificationRepository implements INotificationRepository {
   Future<void> sendRideCancelled({
     required String toUserId,
     required String driverName,
-    String? driverPhoto,
     required String rideId,
     required String rideName,
+    String? driverPhoto,
     String? reason,
   }) async {
     final body = reason != null && reason.isNotEmpty
@@ -270,9 +269,9 @@ class NotificationRepository implements INotificationRepository {
     required String toUserId,
     required String fromUserId,
     required String fromUserName,
-    String? fromUserPhoto,
     required String chatId,
     required String messagePreview,
+    String? fromUserPhoto,
   }) async {
     await createNotification(
       NotificationModel(
@@ -304,7 +303,6 @@ class NotificationRepository implements INotificationRepository {
         type: NotificationType.achievementUnlocked,
         title: 'Achievement Unlocked! 🏆',
         body: 'You earned "$achievementName" - $achievementDescription',
-        priority: NotificationPriority.normal,
       ),
     );
   }
@@ -322,7 +320,6 @@ class NotificationRepository implements INotificationRepository {
         type: NotificationType.levelUp,
         title: 'Level Up! 🎉',
         body: 'Congratulations! You reached Level $newLevel. Keep riding!',
-        priority: NotificationPriority.normal,
       ),
     );
   }
@@ -331,9 +328,9 @@ class NotificationRepository implements INotificationRepository {
   Future<void> sendDriverArrivedAtPickup({
     required String toUserId,
     required String driverName,
-    String? driverPhoto,
     required String rideId,
     required String rideName,
+    String? driverPhoto,
   }) async {
     await createNotification(
       NotificationModel(
@@ -348,14 +345,15 @@ class NotificationRepository implements INotificationRepository {
       ),
     );
   }
+
   /// Send event cancelled notification to a participant.
   @override
   Future<void> sendEventCancelled({
     required String toUserId,
     required String organizerName,
-    String? organizerPhoto,
     required String eventId,
     required String eventTitle,
+    String? organizerPhoto,
     String? reason,
   }) async {
     final body = reason != null && reason.isNotEmpty

@@ -43,7 +43,7 @@ final class DriverOfferRideViewModelProvider
 }
 
 String _$driverOfferRideViewModelHash() =>
-    r'9cde24379ac19f3b7216c9b347e2878a5ad03ad4';
+    r'a22f5f3edba4c4f7bb4d17467c21a739e095ffaf';
 
 abstract class _$DriverOfferRideViewModel
     extends $Notifier<DriverOfferRideFormState> {

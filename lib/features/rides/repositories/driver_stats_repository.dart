@@ -12,9 +12,8 @@ part 'driver_stats_repository.g.dart';
 
 /// Driver Stats Repository
 class DriverStatsRepository implements IDriverStatsRepository {
-  final FirebaseFirestore _firestore;
-
   DriverStatsRepository(this._firestore);
+  final FirebaseFirestore _firestore;
 
   CollectionReference<DriverStats> get _driverStatsCollection => _firestore
       .collection(AppConstants.driverStatsCollection)
@@ -98,7 +97,10 @@ class DriverStatsRepository implements IDriverStatsRepository {
   Stream<List<RideBooking>> streamRejectedRequests(String driverId) {
     return _rideBookingsCollection
         .where('driverId', isEqualTo: driverId)
-        .where('status', whereIn: [BookingStatus.rejected.name, BookingStatus.cancelled.name])
+        .where(
+          'status',
+          whereIn: [BookingStatus.rejected.name, BookingStatus.cancelled.name],
+        )
         .orderBy('createdAt', descending: true)
         .limit(50)
         .snapshots()
@@ -179,7 +181,7 @@ class DriverStatsRepository implements IDriverStatsRepository {
     required double earnings,
     required double distanceKm,
   }) async {
-    DriverStats? currentStats = await getDriverStats(driverId);
+    final currentStats = await getDriverStats(driverId);
     final updatedStats = currentStats.copyWith(
       totalRides: currentStats.totalRides + 1,
       ridesToday: currentStats.ridesToday + 1, // new
@@ -191,7 +193,7 @@ class DriverStatsRepository implements IDriverStatsRepository {
       earningsThisMonth: currentStats.earningsThisMonth + earnings,
       totalDistance: currentStats.totalDistance + distanceKm,
       lastRideAt: DateTime.now(),
-    );  
+    );
     await _driverStatsCollection
         .doc(driverId)
         .set(updatedStats, SetOptions(merge: true));
@@ -202,7 +204,7 @@ class DriverStatsRepository implements IDriverStatsRepository {
 Stream<DriverStats> driverStats(Ref ref) {
   final user = ref.watch(authStateProvider).value;
   if (user == null) {
-    return Stream.value(DriverStats(driverId: ''));
+    return Stream.value(const DriverStats());
   }
   return ref.watch(driverStatsRepositoryProvider).streamDriverStats(user.uid);
 }
@@ -211,21 +213,27 @@ Stream<DriverStats> driverStats(Ref ref) {
 Stream<List<RideBooking>> pendingRideRequests(Ref ref) {
   final user = ref.watch(authStateProvider).value;
   if (user == null) return Stream.value([]);
-  return ref.watch(driverStatsRepositoryProvider).streamPendingRequests(user.uid);
+  return ref
+      .watch(driverStatsRepositoryProvider)
+      .streamPendingRequests(user.uid);
 }
 
 @riverpod
 Stream<List<RideBooking>> acceptedRideRequests(Ref ref) {
   final user = ref.watch(authStateProvider).value;
   if (user == null) return Stream.value([]);
-  return ref.watch(driverStatsRepositoryProvider).streamAcceptedRequests(user.uid);
+  return ref
+      .watch(driverStatsRepositoryProvider)
+      .streamAcceptedRequests(user.uid);
 }
 
 @riverpod
 Stream<List<RideBooking>> rejectedRideRequests(Ref ref) {
   final user = ref.watch(authStateProvider).value;
   if (user == null) return Stream.value([]);
-  return ref.watch(driverStatsRepositoryProvider).streamRejectedRequests(user.uid);
+  return ref
+      .watch(driverStatsRepositoryProvider)
+      .streamRejectedRequests(user.uid);
 }
 
 @riverpod

@@ -3,6 +3,10 @@ import 'dart:async';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart' show MaterialApp;
+import 'package:go_router/go_router.dart' show GoRouter;
+import 'package:sport_connect/core/services/firebase_service.dart'
+    show FirebaseService;
 import 'package:sport_connect/core/services/talker_service.dart';
 
 /// Centralized analytics and crash-reporting service.
@@ -45,7 +49,7 @@ class AnalyticsService {
   Future<void> logEvent(String name, {Map<String, Object>? parameters}) async {
     try {
       await _analytics.logEvent(name: name, parameters: parameters);
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Analytics logEvent failed', e);
     }
   }

@@ -16,18 +16,6 @@ part 'onboarding_view_model.g.dart';
 /// - `'finalized'` – driver setup finalized → navigate to driver home
 /// - `'finalizedStripe'` – driver setup finalized → navigate to stripe onboarding
 class OnboardingState {
-  final bool isLoading;
-  final String? completedAction;
-  final String? errorMessage;
-  final int driverCurrentStep;
-  final bool driverProfilePopulated;
-  final bool riderProfilePopulated;
-  final String? driverPhoneNumber;
-  final String? driverCity;
-  final String? riderPhoneNumber;
-  final String? riderCity;
-  final String? riderCountry;
-
   const OnboardingState({
     this.isLoading = false,
     this.completedAction,
@@ -41,6 +29,17 @@ class OnboardingState {
     this.riderCity,
     this.riderCountry,
   });
+  final bool isLoading;
+  final String? completedAction;
+  final String? errorMessage;
+  final int driverCurrentStep;
+  final bool driverProfilePopulated;
+  final bool riderProfilePopulated;
+  final String? driverPhoneNumber;
+  final String? driverCity;
+  final String? riderPhoneNumber;
+  final String? riderCity;
+  final String? riderCountry;
 
   bool get isSuccess => completedAction != null;
 
@@ -150,7 +149,7 @@ class OnboardingViewModel extends _$OnboardingViewModel {
       if (!ref.mounted) return;
 
       state = state.copyWith(isLoading: false, completedAction: 'riderDone');
-    } catch (e) {
+    } on Exception catch (e) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
@@ -172,7 +171,7 @@ class OnboardingViewModel extends _$OnboardingViewModel {
           .updateProfile(uid, profileJson);
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, completedAction: 'profileSaved');
-    } catch (e) {
+    } on Exception catch (e) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
@@ -189,7 +188,7 @@ class OnboardingViewModel extends _$OnboardingViewModel {
       await ref.read(profileActionsViewModelProvider).addVehicle(uid, vehicle);
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, completedAction: 'vehicleSaved');
-    } catch (e) {
+    } on Exception catch (e) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }

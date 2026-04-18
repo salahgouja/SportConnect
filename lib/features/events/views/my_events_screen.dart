@@ -92,6 +92,7 @@ class _MyEventsScreenState extends ConsumerState<MyEventsScreen>
       ),
       floatingActionButton:
           FloatingActionButton(
+            heroTag: null,
             onPressed: () => context.push(AppRoutes.createEvent.path),
             backgroundColor: AppColors.primary,
             child: Icon(Icons.add_rounded, size: 24.sp),
@@ -201,7 +202,10 @@ class _MyEventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PremiumCard(
-      onTap: () => context.push('/events/${event.id}'),
+      onTap: () => context.pushNamed(
+        AppRoutes.eventDetail.name,
+        pathParameters: {'id': event.id},
+      ),
       child: Row(
         children: [
           // ── Sport icon ──
@@ -341,7 +345,10 @@ class _EmptyTab extends StatelessWidget {
               icon: Icons.explore_rounded,
               size: PremiumButtonSize.small,
               style: PremiumButtonStyle.ghost,
-              onPressed: () => context.push(AppRoutes.events.path),
+              onPressed: () => context.goNamed(
+                AppRoutes.events.name,
+                extra: {'resetBranch': true},
+              ),
             ),
           ],
         ),

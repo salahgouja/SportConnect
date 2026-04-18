@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -11,20 +12,19 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Monthly ride summary card (#92)
 class MonthlyRideSummary extends StatelessWidget {
-  final int totalRides;
-  final double totalSpent;
-  final double totalEarned;
-  final double totalDistance;
-  final String month;
-
   const MonthlyRideSummary({
-    super.key,
     required this.totalRides,
     required this.totalSpent,
     required this.totalEarned,
     required this.totalDistance,
     required this.month,
+    super.key,
   });
+  final int totalRides;
+  final double totalSpent;
+  final double totalEarned;
+  final double totalDistance;
+  final String month;
 
   @override
   Widget build(BuildContext context) {
@@ -154,9 +154,8 @@ class MonthlyRideSummary extends StatelessWidget {
 
 /// Ride cost history chart (#94) — simple bar chart
 class RideCostHistoryChart extends StatelessWidget {
+  const RideCostHistoryChart({required this.data, super.key});
   final List<MonthlyCost> data;
-
-  const RideCostHistoryChart({super.key, required this.data});
 
   @override
   Widget build(BuildContext context) {
@@ -241,9 +240,9 @@ class RideCostHistoryChart extends StatelessWidget {
 }
 
 class MonthlyCost {
+  const MonthlyCost(this.label, this.amount);
   final String label;
   final double amount;
-  const MonthlyCost(this.label, this.amount);
 }
 
 /// Payment receipt PDF generator (#99)
@@ -266,7 +265,7 @@ class PaymentReceiptGenerator {
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
-        build: (pw.Context context) {
+        build: (context) {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
@@ -282,14 +281,20 @@ class PaymentReceiptGenerator {
                   ),
                   pw.Text(
                     'Payment Receipt',
-                    style: pw.TextStyle(fontSize: 16, color: PdfColors.grey700),
+                    style: const pw.TextStyle(
+                      fontSize: 16,
+                      color: PdfColors.grey700,
+                    ),
                   ),
                 ],
               ),
               pw.SizedBox(height: 8),
               pw.Text(
                 'Receipt #$receiptId',
-                style: pw.TextStyle(fontSize: 12, color: PdfColors.grey600),
+                style: const pw.TextStyle(
+                  fontSize: 12,
+                  color: PdfColors.grey600,
+                ),
               ),
               pw.Divider(),
               pw.SizedBox(height: 12),
@@ -358,7 +363,7 @@ class PaymentReceiptGenerator {
         children: [
           pw.Text(
             label,
-            style: pw.TextStyle(fontSize: 12, color: PdfColors.grey700),
+            style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey700),
           ),
           pw.Flexible(
             child: pw.Text(
@@ -403,16 +408,15 @@ class PaymentReceiptGenerator {
 
 /// Refund request flow (#100)
 class RefundRequestSheet extends StatefulWidget {
-  final String rideId;
-  final double paidAmount;
-  final ValueChanged<RefundRequest> onSubmit;
-
   const RefundRequestSheet({
-    super.key,
     required this.rideId,
     required this.paidAmount,
     required this.onSubmit,
+    super.key,
   });
+  final String rideId;
+  final double paidAmount;
+  final ValueChanged<RefundRequest> onSubmit;
 
   static Future<void> show(
     BuildContext context, {
@@ -420,22 +424,18 @@ class RefundRequestSheet extends StatefulWidget {
     required double paidAmount,
     required ValueChanged<RefundRequest> onSubmit,
   }) {
-    return showModalBottomSheet(
+    return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+
       barrierLabel: AppLocalizations.of(context).requestRefund,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
       ),
-      builder: (_) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: RefundRequestSheet(
-          rideId: rideId,
-          paidAmount: paidAmount,
-          onSubmit: onSubmit,
-        ),
+      builder: (_) => RefundRequestSheet(
+        rideId: rideId,
+        paidAmount: paidAmount,
+        onSubmit: onSubmit,
       ),
     );
   }
@@ -547,7 +547,7 @@ class _RefundRequestSheetState extends State<RefundRequestSheet> {
                           amount: widget.paidAmount,
                         ),
                       );
-                      Navigator.pop(context);
+                      Navigator.of(context).pop();
                     },
               child: Text(AppLocalizations.of(context).submitRefundRequest),
             ),
@@ -588,15 +588,14 @@ extension RefundReasonL10n on RefundReason {
 }
 
 class RefundRequest {
-  final String rideId;
-  final RefundReason reason;
-  final String details;
-  final double amount;
-
   const RefundRequest({
     required this.rideId,
     required this.reason,
     required this.details,
     required this.amount,
   });
+  final String rideId;
+  final RefundReason reason;
+  final String details;
+  final double amount;
 }

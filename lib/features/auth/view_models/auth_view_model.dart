@@ -1,10 +1,10 @@
 import 'dart:io';
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sport_connect/core/providers/settings_provider.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
+import 'package:sport_connect/core/providers/settings_provider.dart';
 import 'package:sport_connect/core/services/analytics_service.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 
@@ -34,7 +34,8 @@ class LoginUiState {
   }
 }
 
-class LoginUiViewModel extends Notifier<LoginUiState> {
+@riverpod
+class LoginUiViewModel extends _$LoginUiViewModel {
   @override
   LoginUiState build() {
     final savedCredentials = ref.watch(savedCredentialsProvider);
@@ -45,21 +46,11 @@ class LoginUiViewModel extends Notifier<LoginUiState> {
           ? (credentials?.email ?? '')
           : '',
       rememberMe: credentials?.rememberMe ?? false,
-      obscurePassword: stateOrNull?.obscurePassword ?? true,
     );
   }
 
-  @override
-  LoginUiState? get stateOrNull {
-    try {
-      return state;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  void setRememberMe(bool value) {
-    state = state.copyWith(rememberMe: value);
+  void setRememberMe({required bool enabled}) {
+    state = state.copyWith(rememberMe: enabled);
   }
 
   void togglePasswordVisibility() {
@@ -75,9 +66,6 @@ class LoginUiViewModel extends Notifier<LoginUiState> {
     }
   }
 }
-
-final loginUiViewModelProvider =
-    NotifierProvider<LoginUiViewModel, LoginUiState>(LoginUiViewModel.new);
 
 class SignupWizardUiState {
   const SignupWizardUiState({
@@ -136,7 +124,8 @@ class SignupWizardUiState {
   }
 }
 
-class SignupWizardUiViewModel extends Notifier<SignupWizardUiState> {
+@riverpod
+class SignupWizardUiViewModel extends _$SignupWizardUiViewModel {
   @override
   SignupWizardUiState build() => const SignupWizardUiState();
 
@@ -190,18 +179,17 @@ class SignupWizardUiViewModel extends Notifier<SignupWizardUiState> {
   }
 }
 
-final signupWizardUiViewModelProvider =
-    NotifierProvider<SignupWizardUiViewModel, SignupWizardUiState>(
-      SignupWizardUiViewModel.new,
-    );
-
 /// Login view model
 @riverpod
 class LoginViewModel extends _$LoginViewModel {
   @override
   AsyncValue<void> build() => const AsyncValue.data(null);
 
-  Future<bool> login(String email, String password, bool rememberMe) async {
+  Future<bool> login(
+    String email,
+    String password, {
+    bool rememberMe = false,
+  }) async {
     state = const AsyncValue.loading();
     try {
       await ref
@@ -214,7 +202,7 @@ class LoginViewModel extends _$LoginViewModel {
       AnalyticsService.instance.logLogin('email');
       state = const AsyncValue.data(null);
       return true;
-    } catch (e, stackTrace) {
+    } on Exception catch (e, stackTrace) {
       if (!ref.mounted) return false;
 
       state = AsyncValue.error(e, stackTrace);
@@ -225,7 +213,8 @@ class LoginViewModel extends _$LoginViewModel {
   Future<void> resetPassword(String email) async {
     try {
       await ref.read(authRepositoryProvider).sendPasswordResetEmail(email);
-    } catch (e, stackTrace) {
+    } on Exception catch (e, stackTrace) {
+      if (!ref.mounted) rethrow;
       state = AsyncValue.error(e, stackTrace);
       // Rethrow so calling widgets (e.g. ForgotPasswordScreen) can also
       // handle the error directly (e.g. show a snackbar with the message).
@@ -276,7 +265,7 @@ class RegisterViewModel extends _$RegisterViewModel {
       AnalyticsService.instance.logSignUp('email');
       state = const AsyncValue.data(null);
       return true;
-    } catch (e, stackTrace) {
+    } on Exception catch (e, stackTrace) {
       if (!ref.mounted) return false;
 
       state = AsyncValue.error(e, stackTrace);

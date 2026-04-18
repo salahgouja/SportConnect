@@ -87,6 +87,9 @@ abstract class IRideRepository {
     String rideId,
   );
 
+  /// Removes the RTDB live-location node for [rideId] (call on ride end).
+  Future<void> clearLiveLocation(String rideId);
+
   /// Streams the driver's current ride phase (pickingUp, enRoute, arriving, completed).
   Stream<String?> streamRidePhase(String rideId);
 

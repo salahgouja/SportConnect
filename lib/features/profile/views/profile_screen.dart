@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/core/widgets/gamification_widgets.dart';
+import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/rating_and_profile_widgets.dart';
 import 'package:sport_connect/core/widgets/safety_widgets.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
@@ -16,18 +17,16 @@ import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:sport_connect/core/providers/user_providers.dart';
 
 /// Profile Screen - Clean carpooling-style design
 class ProfileScreen extends ConsumerWidget {
-  final String? userId;
-
   const ProfileScreen({super.key, this.userId});
+  final String? userId;
 
   bool get _isOwnProfile => userId == null;
 
   int _calculateCompletionFields(UserModel user) {
-    int count = 0;
+    var count = 0;
     if (user.displayName.isNotEmpty) count++;
     if (user.photoUrl != null && user.photoUrl!.isNotEmpty) count++;
     if (user.isPhoneVerified) count++;
@@ -150,7 +149,16 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ),
           actions: [
-            if (_isOwnProfile)
+            if (_isOwnProfile) ...[
+              IconButton(
+                tooltip: AppLocalizations.of(context).actionSearch,
+                onPressed: () => context.push(AppRoutes.profileSearch.path),
+                icon: Icon(
+                  Icons.search_rounded,
+                  color: AppColors.textPrimary,
+                  size: 24.sp,
+                ),
+              ),
               IconButton(
                 tooltip: AppLocalizations.of(context).navSettings,
                 onPressed: () => context.push(AppRoutes.settings.path),
@@ -160,6 +168,7 @@ class ProfileScreen extends ConsumerWidget {
                   size: 24.sp,
                 ),
               ),
+            ],
             if (!_isOwnProfile)
               PopupMenuButton<String>(
                 icon: Icon(
@@ -167,9 +176,9 @@ class ProfileScreen extends ConsumerWidget {
                   color: AppColors.textPrimary,
                   size: 24.sp,
                 ),
-                onSelected: (value) {
+                onSelected: (value) async {
                   if (value == 'report') {
-                    context.push(
+                    await context.push<void>(
                       AppRoutes.reportIssue.path,
                       extra: {
                         'reportedUserId': userId,
@@ -329,9 +338,9 @@ class ProfileScreen extends ConsumerWidget {
               ),
               if (_isOwnProfile)
                 GestureDetector(
-                  onTap: () {
+                  onTap: () async {
                     HapticFeedback.lightImpact();
-                    context.push(AppRoutes.editProfile.path);
+                    await context.push<void>(AppRoutes.editProfile.path);
                   },
                   child: Container(
                     padding: EdgeInsets.all(8.w),
@@ -370,7 +379,13 @@ class ProfileScreen extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (rating.average > 0) ...[
-                Container(
+                GestureDetector(
+                  onTap: () => context.push(
+                    '${AppRoutes.reviewsList.path.replaceFirst(':userId', user.uid)}'
+                    '?userName=${Uri.encodeComponent(user.displayName)}'
+                    '${user.photoUrl != null ? '&userPhotoUrl=${Uri.encodeComponent(user.photoUrl!)}' : ''}',
+                  ),
+                  child: Container(
                   padding: EdgeInsets.symmetric(
                     horizontal: 10.w,
                     vertical: 4.h,
@@ -398,6 +413,7 @@ class ProfileScreen extends ConsumerWidget {
                       ),
                     ],
                   ),
+                ),
                 ),
                 SizedBox(width: 12.w),
               ],
@@ -503,7 +519,7 @@ class ProfileScreen extends ConsumerWidget {
   /// Ride statistics section
   Widget _buildRideStats(BuildContext context, UserModel user) {
     // Get gamification stats based on user type
-    final int totalRides = user.totalRides;
+    final totalRides = user.totalRides;
     final double totalDistance;
     final int currentStreak;
 
@@ -902,7 +918,7 @@ class ProfileScreen extends ConsumerWidget {
 
   /// Shows a confirmation dialog to block a user
   void _showBlockUserDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
+    showDialog<void>(
       context: context,
       barrierLabel: AppLocalizations.of(context).blockUserDialogTitle,
       builder: (ctx) => AlertDialog.adaptive(
@@ -942,7 +958,7 @@ class ProfileScreen extends ConsumerWidget {
                   );
                   context.pop();
                 }
-              } catch (e) {
+              } on Exception {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -1050,12 +1066,6 @@ class ProfileScreen extends ConsumerWidget {
 }
 
 class _MenuItem {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final Color color;
-  final VoidCallback onTap;
-
   _MenuItem({
     required this.icon,
     required this.title,
@@ -1063,4 +1073,10 @@ class _MenuItem {
     required this.color,
     required this.onTap,
   });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+  final VoidCallback onTap;
 }

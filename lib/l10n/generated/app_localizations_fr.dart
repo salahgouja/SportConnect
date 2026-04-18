@@ -124,6 +124,19 @@ class AppLocalizationsFr extends AppLocalizations {
   String get settingsPaymentMethodsDesc => 'Gérer vos options de paiement';
 
   @override
+  String get managePaymentMethodsDesc =>
+      'Ajoutez, supprimez ou modifiez vos moyens de paiement enregistrés pour un paiement plus rapide.';
+
+  @override
+  String get selectedPaymentMethod => 'Moyen de paiement sélectionné';
+
+  @override
+  String get changePaymentMethod => 'Changer de moyen de paiement';
+
+  @override
+  String get addPaymentMethod => 'Ajouter un moyen de paiement';
+
+  @override
   String get settingsVerifyAccount => 'Vérifier le compte';
 
   @override

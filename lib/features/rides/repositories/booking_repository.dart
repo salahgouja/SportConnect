@@ -6,9 +6,8 @@ import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 /// Repository for managing ride bookings
 /// Bookings are now stored separately from rides for better scalability
 class BookingRepository implements IBookingRepository {
-  final FirebaseFirestore _firestore;
-
   BookingRepository(this._firestore);
+  final FirebaseFirestore _firestore;
 
   CollectionReference<RideBooking> get _bookingsCollection => _firestore
       .collection(AppConstants.bookingsCollection)

@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
@@ -20,11 +19,11 @@ import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_countdown_view_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class RideCountdownScreen extends ConsumerStatefulWidget {
+  const RideCountdownScreen({required this.bookingId, super.key});
   final String bookingId;
-
-  const RideCountdownScreen({super.key, required this.bookingId});
 
   @override
   ConsumerState<RideCountdownScreen> createState() =>
@@ -222,7 +221,6 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
       body: SingleChildScrollView(
         padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Booking confirmed badge
             _buildStatusBadge().animate().fadeIn(delay: 100.ms),
@@ -370,14 +368,14 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
                 polylines: [
                   Polyline(
                     points: routePoints,
-                    strokeWidth: 6.0,
+                    strokeWidth: 6,
                     color: Colors.white,
-                    borderStrokeWidth: 2.0,
+                    borderStrokeWidth: 2,
                     borderColor: Colors.white,
                   ),
                   Polyline(
                     points: routePoints,
-                    strokeWidth: 4.0,
+                    strokeWidth: 4,
                     color: AppColors.primary,
                   ),
                 ],
@@ -663,7 +661,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
         pathParameters: {'id': chat.id},
         extra: driverUser,
       );
-    } catch (_) {
+    } on Exception catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -693,7 +691,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri);
       }
-    } catch (_) {
+    } on Exception catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -832,7 +830,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
     // Compute estimated arrival time
     final durationMin = ride.route.durationMinutes;
     final arrivalTime = durationMin != null
-        ? ride.departureTime.add(Duration(minutes: durationMin.round()))
+        ? ride.departureTime.add(Duration(minutes: durationMin))
         : null;
 
     return Container(
@@ -916,7 +914,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
           // Estimated arrival row
           if (arrivalTime != null) ...[
             SizedBox(height: 12.h),
-            Divider(height: 1, color: AppColors.divider),
+            const Divider(height: 1, color: AppColors.divider),
             SizedBox(height: 12.h),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,

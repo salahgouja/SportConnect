@@ -36,7 +36,7 @@ final class RideServiceProvider
   RideService create() => RideService();
 }
 
-String _$rideServiceHash() => r'ce07c475491cc72d6b83eccc78900dc387c32dd9';
+String _$rideServiceHash() => r'35db0f3a25e08487223d01cc2e4a5392b38ec9a0';
 
 /// Ride service - handles ride business logic
 

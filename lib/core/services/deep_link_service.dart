@@ -7,23 +7,22 @@ import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
+import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/messaging/models/message_model.dart';
-import 'package:sport_connect/core/services/talker_service.dart';
 
 part 'deep_link_service.g.dart';
 
 /// Route handler helper class.
 class _RouteHandler {
-  final RegExp pattern;
-  final String routeName;
-  final String? paramKey;
-
   const _RouteHandler({
     required this.pattern,
     required this.routeName,
     this.paramKey,
   });
+  final RegExp pattern;
+  final String routeName;
+  final String? paramKey;
 }
 
 /// Handles incoming deep links and routes them to the appropriate screen.
@@ -118,7 +117,7 @@ class DeepLinkService {
       await _initializeAppLinks(router);
 
       TalkerService.info('✅ Deep link service initialized');
-    } catch (e, stackTrace) {
+    } on Exception catch (e, stackTrace) {
       TalkerService.error('❌ Failed to initialize deep links', e, stackTrace);
     }
   }
@@ -276,7 +275,7 @@ class DeepLinkService {
       }
       // For any other resource type, default to allowing navigation.
       return true;
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('_resourceExists check failed', e);
       return true; // fail-open — let destination screen handle the error
     }
@@ -311,7 +310,7 @@ class DeepLinkService {
       final otherParticipant = currentUserId == null
           ? null
           : chat.getOtherParticipant(currentUserId);
-      final participantId = otherParticipant?.odid;
+      final participantId = otherParticipant?.userId;
 
       if (participantId != null && participantId.isNotEmpty) {
         final fullUser = await _usersCollection
@@ -335,7 +334,7 @@ class DeepLinkService {
         ),
         chatType: ChatType.private,
       );
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to resolve chat receiver from deep link', e);
       return (receiver: null, chatType: ChatType.private);
     }

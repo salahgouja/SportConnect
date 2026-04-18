@@ -11,9 +11,9 @@ import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 /// Adapts based on [RideStatus] and [BookingStatus].
 class RideProgressTimeline extends StatelessWidget {
   const RideProgressTimeline({
-    super.key,
     required this.rideStatus,
     required this.bookingStatus,
+    super.key,
     this.compact = false,
   });
 
@@ -88,30 +88,30 @@ class RideProgressTimeline extends StatelessWidget {
 
   List<_StepData> _buildSteps() {
     return [
-      _StepData(
+      const _StepData(
         icon: Icons.check_circle_outline_rounded,
         label: 'Booked',
         subtitle: 'Ride confirmed',
       ),
-      _StepData(
+      const _StepData(
         icon: Icons.directions_car_rounded,
         label: 'Driver Left',
         subtitle: 'On the way to pickup',
       ),
-      _StepData(
+      const _StepData(
         icon: Icons.pin_drop_rounded,
         label: 'Arriving',
         subtitle: 'Almost at pickup point',
       ),
-      _StepData(
+      const _StepData(
         icon: Icons.moving_rounded,
         label: 'Riding',
         subtitle: 'En route to destination',
       ),
-      _StepData(
+      const _StepData(
         icon: Icons.flag_rounded,
         label: 'Arrived',
-        subtitle: 'You\'ve reached your destination',
+        subtitle: "You've reached your destination",
       ),
     ];
   }

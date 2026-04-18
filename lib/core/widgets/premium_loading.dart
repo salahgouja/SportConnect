@@ -1,20 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 
 /// Premium loading indicator with multiple styles
 class PremiumLoader extends StatelessWidget {
-  final double size;
-  final Color? color;
-  final LoaderStyle style;
-
   const PremiumLoader({
     super.key,
     this.size = 40,
     this.color,
     this.style = LoaderStyle.spinner,
   });
+  final double size;
+  final Color? color;
+  final LoaderStyle style;
 
   @override
   Widget build(BuildContext context) {
@@ -137,16 +136,15 @@ enum LoaderStyle { spinner, dots, pulse, ring }
 
 /// Full screen loading overlay
 class PremiumLoadingOverlay extends StatelessWidget {
-  final String? message;
-  final bool isVisible;
-  final Widget child;
-
   const PremiumLoadingOverlay({
+    required this.child,
     super.key,
     this.message,
     this.isVisible = false,
-    required this.child,
   });
+  final String? message;
+  final bool isVisible;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
@@ -154,7 +152,7 @@ class PremiumLoadingOverlay extends StatelessWidget {
       children: [
         child,
         if (isVisible)
-          Container(
+          ColoredBox(
             color: Colors.black.withValues(alpha: 0.5),
             child: Center(
               child:
@@ -204,18 +202,17 @@ class PremiumLoadingOverlay extends StatelessWidget {
 
 /// Skeleton shimmer effect for loading states
 class SkeletonShimmer extends StatelessWidget {
-  final Widget child;
-  final bool isLoading;
-  final Color? baseColor;
-  final Color? highlightColor;
-
   const SkeletonShimmer({
-    super.key,
     required this.child,
+    super.key,
     this.isLoading = true,
     this.baseColor,
     this.highlightColor,
   });
+  final Widget child;
+  final bool isLoading;
+  final Color? baseColor;
+  final Color? highlightColor;
 
   @override
   Widget build(BuildContext context) {
@@ -232,16 +229,15 @@ class SkeletonShimmer extends StatelessWidget {
 
 /// Skeleton box placeholder
 class SkeletonBox extends StatelessWidget {
-  final double? width;
-  final double? height;
-  final double borderRadius;
-
   const SkeletonBox({
     super.key,
     this.width,
     this.height,
     this.borderRadius = 12,
   });
+  final double? width;
+  final double? height;
+  final double borderRadius;
 
   @override
   Widget build(BuildContext context) {
@@ -263,9 +259,8 @@ class SkeletonBox extends StatelessWidget {
 
 /// Skeleton circle placeholder
 class SkeletonCircle extends StatelessWidget {
-  final double size;
-
   const SkeletonCircle({super.key, this.size = 48});
+  final double size;
 
   @override
   Widget build(BuildContext context) {
@@ -287,14 +282,13 @@ class SkeletonCircle extends StatelessWidget {
 
 /// Skeleton text line placeholder
 class SkeletonLine extends StatelessWidget {
-  final double width;
-  final double height;
-
   const SkeletonLine({
     super.key,
     this.width = double.infinity,
     this.height = 14,
   });
+  final double width;
+  final double height;
 
   @override
   Widget build(BuildContext context) {
@@ -308,9 +302,8 @@ class SkeletonLine extends StatelessWidget {
 
 /// Pre-built skeleton for ride cards
 class RideCardSkeleton extends StatelessWidget {
-  final int delay;
-
   const RideCardSkeleton({super.key, this.delay = 0});
+  final int delay;
 
   @override
   Widget build(BuildContext context) {
@@ -368,11 +361,11 @@ class RideCardSkeleton extends StatelessWidget {
                     children: [
                       SkeletonLine(width: 100.w, height: 12),
                       SizedBox(height: 4.h),
-                      SkeletonLine(width: 140.w, height: 14),
+                      SkeletonLine(width: 140.w),
                       SizedBox(height: 16.h),
                       SkeletonLine(width: 100.w, height: 12),
                       SizedBox(height: 4.h),
-                      SkeletonLine(width: 130.w, height: 14),
+                      SkeletonLine(width: 130.w),
                     ],
                   ),
                 ),
@@ -385,7 +378,7 @@ class RideCardSkeleton extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               SkeletonBox(width: 100.w, height: 36.h, borderRadius: 10),
-              SkeletonBox(width: 110.w, height: 44.h, borderRadius: 12),
+              SkeletonBox(width: 110.w, height: 44.h),
             ],
           ),
         ],
@@ -416,7 +409,7 @@ class ProfileCardSkeleton extends StatelessWidget {
           SizedBox(height: 16.h),
           SkeletonLine(width: 140.w, height: 18),
           SizedBox(height: 8.h),
-          SkeletonLine(width: 100.w, height: 14),
+          SkeletonLine(width: 100.w),
           SizedBox(height: 20.h),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -452,14 +445,13 @@ class ProfileCardSkeleton extends StatelessWidget {
 
 /// Pre-built skeleton for message items
 class MessageItemSkeleton extends StatelessWidget {
-  final bool isOwnMessage;
-  final int delay;
-
   const MessageItemSkeleton({
     super.key,
     this.isOwnMessage = false,
     this.delay = 0,
   });
+  final bool isOwnMessage;
+  final int delay;
 
   @override
   Widget build(BuildContext context) {
@@ -490,9 +482,9 @@ class MessageItemSkeleton extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SkeletonLine(width: 150.w, height: 14),
+                  SkeletonLine(width: 150.w),
                   SizedBox(height: 6.h),
-                  SkeletonLine(width: 100.w, height: 14),
+                  SkeletonLine(width: 100.w),
                 ],
               ),
             ),
@@ -508,16 +500,15 @@ class MessageItemSkeleton extends StatelessWidget {
 
 /// Skeleton list view builder
 class SkeletonListView extends StatelessWidget {
+  const SkeletonListView({
+    required this.itemBuilder,
+    super.key,
+    this.itemCount = 5,
+    this.padding,
+  });
   final int itemCount;
   final Widget Function(BuildContext, int) itemBuilder;
   final EdgeInsetsGeometry? padding;
-
-  const SkeletonListView({
-    super.key,
-    this.itemCount = 5,
-    required this.itemBuilder,
-    this.padding,
-  });
 
   @override
   Widget build(BuildContext context) {

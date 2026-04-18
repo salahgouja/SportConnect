@@ -47,7 +47,7 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
               ),
               SizedBox(height: 16.h),
               Text(
-                'Two-factor authentication adds an extra layer of security to your account. To log in, you\'ll need to provide your password and a verification code.',
+                "Two-factor authentication adds an extra layer of security to your account. To log in, you'll need to provide your password and a verification code.",
                 style: TextStyle(
                   fontSize: 16.sp,
                   color: AppColors.textSecondary,

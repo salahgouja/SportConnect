@@ -107,8 +107,7 @@ class _RidesContent extends StatelessWidget {
             .where(
               (r) =>
                   r.status == RideStatus.completed ||
-                  r.status == RideStatus.cancelled ||
-                  r.departureTime.isBefore(now),
+                  r.status == RideStatus.cancelled,
             )
             .toList()
           ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
@@ -127,6 +126,7 @@ class _RidesContent extends StatelessWidget {
             if (active.isNotEmpty) _ActiveSection(rides: active),
             _TabBody(
               tabController: tabController,
+              active: active,
               upcoming: upcoming,
               history: history,
             ),
@@ -157,40 +157,54 @@ class _SliverHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final canPop = context.canPop();
+
     return SliverAppBar(
-      expandedHeight: 140.h,
+      expandedHeight: 130,
       pinned: true,
-      backgroundColor: AppColors.primary,
+      automaticallyImplyLeading: false, // ← stops Flutter reserving space
+      leading: canPop
+          ? IconButton(
+              tooltip: l10n.goBackTooltip,
+              icon: Icon(
+                Icons.adaptive.arrow_back_rounded,
+                color: Colors.white,
+                size: 22.sp,
+              ),
+              onPressed: () => context.pop(),
+            )
+          : null,
+      backgroundColor: AppColors.primaryDark,
       foregroundColor: Colors.white,
       flexibleSpace: FlexibleSpaceBar(
-        titlePadding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 56.h),
-        title: FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.myTrips,
-                style: TextStyle(
-                  fontSize: 22.sp,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
+        // left padding: 56 when back button present, 20 when not
+        titlePadding: EdgeInsets.only(
+          left: canPop ? 50 : 20,
+          bottom: 60,
+        ),
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.myTrips,
+              style: TextStyle(
+                fontSize: 17.sp,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
               ),
-              Text(
-                '$rideCount ${l10n.navRides.toLowerCase()}',
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  color: Colors.white.withValues(alpha: 0.8),
-                ),
+            ),
+            Text(
+              '$rideCount ${l10n.navRides.toLowerCase()}',
+              style: TextStyle(
+                fontSize: 10.sp,
+                color: Colors.white.withValues(alpha: 0.8),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
         background: Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -201,7 +215,7 @@ class _SliverHeader extends StatelessWidget {
       ),
       bottom: PreferredSize(
         preferredSize: Size.fromHeight(48.h),
-        child: Container(
+        child: ColoredBox(
           color: AppColors.primary,
           child: TabBar(
             controller: tabController,
@@ -229,11 +243,13 @@ class _SliverHeader extends StatelessWidget {
 class _TabBody extends StatelessWidget {
   const _TabBody({
     required this.tabController,
+    required this.active,
     required this.upcoming,
     required this.history,
   });
 
   final TabController tabController;
+  final List<RideModel> active;
   final List<RideModel> upcoming;
   final List<RideModel> history;
 
@@ -243,7 +259,7 @@ class _TabBody extends StatelessWidget {
       child: TabBarView(
         controller: tabController,
         children: [
-          _ActiveTab(rides: upcoming),
+          _ActiveTab(rides: active),
           _UpcomingTab(rides: upcoming),
           _HistoryTab(rides: history),
         ],
@@ -291,7 +307,7 @@ class _ActiveRideCard extends StatelessWidget {
         margin: EdgeInsets.only(bottom: 12.h),
         padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
+          gradient: const LinearGradient(
             colors: [AppColors.primaryDark, AppColors.primary],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -641,7 +657,7 @@ class _HistoryTab extends StatelessWidget {
     }
 
     // Group by month
-    final Map<String, List<RideModel>> grouped = {};
+    final grouped = <String, List<RideModel>>{};
     for (final ride in rides) {
       final key = DateFormat('MMMM yyyy').format(ride.departureTime);
       grouped.putIfAbsent(key, () => []).add(ride);
@@ -892,7 +908,7 @@ class _EmptyState extends StatelessWidget {
                     Container(
                       width: 72.w,
                       height: 72.w,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: AppColors.primarySurface,
                         shape: BoxShape.circle,
                       ),
@@ -948,9 +964,9 @@ class _RidesLoadingShell extends StatelessWidget {
         padding: EdgeInsets.all(16.w),
         child: Column(
           children: [
-            SkeletonLoader(type: SkeletonType.rideCard, itemCount: 1),
+            const SkeletonLoader(itemCount: 1),
             SizedBox(height: 12.h),
-            SkeletonLoader(type: SkeletonType.compactTile, itemCount: 4),
+            const SkeletonLoader(type: SkeletonType.compactTile),
           ],
         ),
       ),
@@ -1047,7 +1063,6 @@ class _SignInPromptShell extends StatelessWidget {
               PremiumButton(
                 text: l10n.logIn,
                 onPressed: () => context.go(AppRoutes.login.path),
-                style: PremiumButtonStyle.primary,
               ),
             ],
           ),

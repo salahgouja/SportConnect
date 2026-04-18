@@ -3,18 +3,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// Custom text field with consistent styling
 class CustomTextField extends StatelessWidget {
-  final TextEditingController? controller;
-  final String? label;
-  final String? hint;
-  final String? Function(String?)? validator;
-  final TextInputType? keyboardType;
-  final bool obscureText;
-  final Widget? suffixIcon;
-  final Widget? prefixIcon;
-  final int? maxLines;
-  final bool enabled;
-  final void Function(String)? onChanged;
-
   const CustomTextField({
     super.key,
     this.controller,
@@ -29,6 +17,17 @@ class CustomTextField extends StatelessWidget {
     this.enabled = true,
     this.onChanged,
   });
+  final TextEditingController? controller;
+  final String? label;
+  final String? hint;
+  final String? Function(String?)? validator;
+  final TextInputType? keyboardType;
+  final bool obscureText;
+  final Widget? suffixIcon;
+  final Widget? prefixIcon;
+  final int? maxLines;
+  final bool enabled;
+  final void Function(String)? onChanged;
 
   @override
   Widget build(BuildContext context) {

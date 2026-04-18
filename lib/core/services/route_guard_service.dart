@@ -8,18 +8,11 @@ import 'package:sport_connect/features/auth/models/models.dart';
 /// following the Single Responsibility Principle (SRP).
 
 class RouteGuardService {
-  final bool isLoading;
-  final bool isOnboardingLoading;
-  final bool hasCompletedOnboarding;
-  final UserModel? user;
-  final bool isEmailVerified;
-  final bool hasVerifiableEmail;
-
   const RouteGuardService({
     required this.isLoading,
+    required this.user,
     this.isOnboardingLoading = false,
     this.hasCompletedOnboarding = false,
-    required this.user,
     this.isEmailVerified = false,
     this.hasVerifiableEmail = false,
   });
@@ -41,6 +34,12 @@ class RouteGuardService {
       hasVerifiableEmail: hasVerifiableEmail,
     );
   }
+  final bool isLoading;
+  final bool isOnboardingLoading;
+  final bool hasCompletedOnboarding;
+  final UserModel? user;
+  final bool isEmailVerified;
+  final bool hasVerifiableEmail;
 
   /// Get the current user if logged in
   bool get isLoggedIn => user != null;
@@ -51,17 +50,17 @@ class RouteGuardService {
   /// Check if driver has completed onboarding (has vehicles)
   bool get hasCompletedDriverOnboarding {
     if (!isDriver) return true;
-    return (user as DriverModel).vehicleIds.isNotEmpty;
+    return (user! as DriverModel).vehicleIds.isNotEmpty;
   }
 
   /// Check if driver has completed Stripe payout onboarding
   bool get hasCompletedStripeOnboarding {
     if (!isDriver) return true;
-    return (user as DriverModel).isStripeOnboarded;
+    return (user! as DriverModel).isStripeOnboarded;
   }
 
   bool get _driverHasPersistedProfileData {
-    final driver = user is DriverModel ? user as DriverModel : null;
+    final driver = user is DriverModel ? user! as DriverModel : null;
     if (driver == null) return false;
 
     return (driver.phoneNumber?.isNotEmpty ?? false) ||

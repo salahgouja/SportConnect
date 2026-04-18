@@ -1,10 +1,11 @@
 import 'dart:ui';
+
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/config/app_config.dart';
+import 'package:sport_connect/core/services/talker_service.dart';
 
 part 'stripe_service.g.dart';
 
@@ -19,9 +20,9 @@ StripeService stripeService(Ref ref) => StripeService();
 /// - Uses Firebase Firestore for data storage
 /// - All sensitive operations handled server-side for security
 class StripeService {
-  static final StripeService _instance = StripeService._internal();
   factory StripeService() => _instance;
   StripeService._internal();
+  static final StripeService _instance = StripeService._internal();
 
   late FirebaseFunctions _functions;
 
@@ -64,7 +65,7 @@ class StripeService {
         e.message ?? 'Function call failed',
         code: e.code,
       );
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Error calling function $name: $e');
       throw StripePaymentException('Failed to call function: $e');
     }
@@ -81,7 +82,7 @@ class StripeService {
     required String riderName,
     required String driverId,
     required String driverName,
-    required double amount, // Total amount in main currency unit (e.g., euros)
+    required double amount,
     required String currency,
     String? customerId,
     String? existingCustomerId,
@@ -103,7 +104,7 @@ class StripeService {
       });
 
       return response;
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Error creating payment intent: $e');
       if (e is StripePaymentException) rethrow;
       throw StripePaymentException('Failed to create payment: $e');
@@ -145,42 +146,45 @@ class StripeService {
           // Apple Pay — shown automatically on iOS when device has a card
           // applePay: PaymentSheetApplePay(
           //   merchantCountryCode: merchantCountryCode,
+          //   buttonType: PlatformButtonType.book,
           // ),
           // Google Pay — shown automatically on Android when device has a card
           googlePay: PaymentSheetGooglePay(
             merchantCountryCode: merchantCountryCode,
             currencyCode: currencyUpper,
             testEnv: kDebugMode,
+            buttonType: PlatformButtonType.book,
           ),
+          returnURL: 'flutterstripe://redirect',
           // Allow SEPA direct debit and other delayed payment methods
           allowsDelayedPaymentMethods: true,
           // Collect billing details for fraud prevention
           billingDetailsCollectionConfiguration:
               const BillingDetailsCollectionConfiguration(
-            name: CollectionMode.automatic,
-            email: CollectionMode.never,
-            phone: CollectionMode.never,
-            address: AddressCollectionMode.never,
-          ),
-          appearance: PaymentSheetAppearance(
+                name: CollectionMode.automatic,
+                email: CollectionMode.never,
+                phone: CollectionMode.never,
+                address: AddressCollectionMode.never,
+              ),
+          appearance: const PaymentSheetAppearance(
             colors: PaymentSheetAppearanceColors(
-              primary: const Color(0xFF1E88E5),
-              background: const Color(0xFFF8FAFF),
-              componentBackground: const Color(0xFFFFFFFF),
-              componentBorder: const Color(0xFFE0E7FF),
-              componentText: const Color(0xFF1A1A2E),
-              primaryText: const Color(0xFF1A1A2E),
-              secondaryText: const Color(0xFF6B7280),
-              placeholderText: const Color(0xFF9CA3AF),
-              icon: const Color(0xFF1E88E5),
-              error: const Color(0xFFEF4444),
+              primary: Color(0xFF1E88E5),
+              background: Color(0xFFF8FAFF),
+              componentBackground: Color(0xFFFFFFFF),
+              componentBorder: Color(0xFFE0E7FF),
+              componentText: Color(0xFF1A1A2E),
+              primaryText: Color(0xFF1A1A2E),
+              secondaryText: Color(0xFF6B7280),
+              placeholderText: Color(0xFF9CA3AF),
+              icon: Color(0xFF1E88E5),
+              error: Color(0xFFEF4444),
             ),
-            shapes: const PaymentSheetShape(
+            shapes: PaymentSheetShape(
               borderRadius: 12,
               borderWidth: 1.5,
               shadow: PaymentSheetShadowParams(opacity: 0.04),
             ),
-            primaryButton: const PaymentSheetPrimaryButtonAppearance(
+            primaryButton: PaymentSheetPrimaryButtonAppearance(
               shapes: PaymentSheetPrimaryButtonShape(blurRadius: 0),
               colors: PaymentSheetPrimaryButtonTheme(
                 light: PaymentSheetPrimaryButtonThemeColors(
@@ -207,7 +211,7 @@ class StripeService {
       }
       TalkerService.error('Stripe error: $msg');
       throw StripePaymentException(msg.isNotEmpty ? msg : 'Payment failed');
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Payment error: $e');
       throw StripePaymentException('Payment processing failed');
     }
@@ -233,7 +237,7 @@ class StripeService {
       });
 
       return response;
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Error creating/getting customer: $e');
       if (e is StripePaymentException) rethrow;
       throw StripePaymentException('Failed to create customer: $e');
@@ -270,7 +274,7 @@ class StripeService {
       });
 
       return response;
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Error creating connected account: $e');
       if (e is StripePaymentException) rethrow;
       throw StripePaymentException('Failed to create account: $e');
@@ -292,7 +296,7 @@ class StripeService {
       });
 
       return response;
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Error creating account link: $e');
       if (e is StripePaymentException) rethrow;
       throw StripePaymentException('Failed to create account link: $e');
@@ -310,7 +314,7 @@ class StripeService {
       });
 
       return response;
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Error getting account status: $e');
       if (e is StripePaymentException) rethrow;
       throw StripePaymentException('Failed to get account status: $e');
@@ -322,7 +326,7 @@ class StripeService {
     try {
       final response = await _callFunction('syncDriverBalance', {});
       return response;
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Error syncing balance: $e');
       if (e is StripePaymentException) rethrow;
       throw StripePaymentException('Failed to sync balance: $e');
@@ -347,7 +351,7 @@ class StripeService {
       });
 
       return response;
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Error creating instant payout: $e');
       if (e is StripePaymentException) rethrow;
       throw StripePaymentException('Payout failed: $e');
@@ -369,7 +373,7 @@ class StripeService {
       });
 
       return response;
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Error processing refund: $e');
       if (e is StripePaymentException) rethrow;
       throw StripePaymentException('Refund failed: $e');
@@ -397,14 +401,79 @@ class StripeService {
 
   /// Check if service is properly initialized
   bool get isInitialized => Stripe.publishableKey.isNotEmpty;
+
+  // ── Customer Sheet (beta) ─────────────────────────────────
+
+  /// Fetch SetupIntent + EphemeralKey from Cloud Function
+  Future<Map<String, dynamic>> _createCustomerSheetSetup() async {
+    return _callFunction('createCustomerSheetSetup', {});
+  }
+
+  /// Initialize and present the Customer Sheet for managing saved payment methods.
+  ///
+  /// Returns the selected payment option (brand + last4), or null if dismissed.
+  Future<CustomerSheetResult?> presentCustomerSheet() async {
+    final setup = await _createCustomerSheetSetup();
+    final setupIntentClientSecret = setup['setupIntentClientSecret'] as String;
+    final customerId = setup['customerId'] as String;
+    final ephemeralKeySecret = setup['ephemeralKeySecret'] as String;
+
+    await Stripe.instance.initCustomerSheet(
+      customerSheetInitParams: CustomerSheetInitParams(
+        setupIntentClientSecret: setupIntentClientSecret,
+        merchantDisplayName: 'SportConnect',
+        customerId: customerId,
+        customerEphemeralKeySecret: ephemeralKeySecret,
+        returnURL: 'flutterstripe://redirect',
+        billingDetailsCollectionConfiguration:
+            const BillingDetailsCollectionConfiguration(
+              name: CollectionMode.automatic,
+              email: CollectionMode.never,
+              phone: CollectionMode.never,
+              address: AddressCollectionMode.never,
+            ),
+        appearance: const PaymentSheetAppearance(
+          colors: PaymentSheetAppearanceColors(
+            primary: Color(0xFF40916C),
+            background: Color(0xFFF8FAF9),
+            componentBackground: Color(0xFFFFFFFF),
+            componentBorder: Color(0xFFD8E4DD),
+            componentText: Color(0xFF1B2E24),
+            primaryText: Color(0xFF1B2E24),
+            secondaryText: Color(0xFF6B7280),
+            placeholderText: Color(0xFF9CA3AF),
+            icon: Color(0xFF40916C),
+            error: Color(0xFFC1666B),
+          ),
+          shapes: PaymentSheetShape(
+            borderRadius: 12,
+            borderWidth: 1.5,
+            shadow: PaymentSheetShadowParams(opacity: 0.04),
+          ),
+          primaryButton: PaymentSheetPrimaryButtonAppearance(
+            shapes: PaymentSheetPrimaryButtonShape(blurRadius: 0),
+            colors: PaymentSheetPrimaryButtonTheme(
+              light: PaymentSheetPrimaryButtonThemeColors(
+                background: Color(0xFF40916C),
+                text: Color(0xFFFFFFFF),
+                border: Color(0xFF40916C),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final result = await Stripe.instance.presentCustomerSheet();
+    return result;
+  }
 }
 
 /// Custom exception for Stripe payment errors
 class StripePaymentException implements Exception {
+  StripePaymentException(this.message, {this.code});
   final String message;
   final String? code;
-
-  StripePaymentException(this.message, {this.code});
 
   @override
   String toString() => code != null ? '[$code] $message' : message;

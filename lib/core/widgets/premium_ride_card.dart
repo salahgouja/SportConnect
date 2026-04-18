@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
@@ -11,6 +11,24 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 /// Premium Ride Card - Modern, animated ride listing card
 /// Used throughout the app for consistent ride display
 class PremiumRideCard extends StatefulWidget {
+  const PremiumRideCard({
+    required this.driver,
+    required this.from,
+    required this.to,
+    required this.departureTime,
+    required this.duration,
+    required this.price,
+    required this.availableSeats,
+    required this.carModel,
+    super.key,
+    this.isVerified = false,
+    this.driverImageUrl,
+    this.amenities,
+    this.onTap,
+    this.onBook,
+    this.showBookButton = true,
+    this.animationDelay,
+  });
   final DriverModel driver;
   final String from;
   final String to;
@@ -26,25 +44,6 @@ class PremiumRideCard extends StatefulWidget {
   final VoidCallback? onBook;
   final bool showBookButton;
   final int? animationDelay;
-
-  const PremiumRideCard({
-    super.key,
-    required this.driver,
-    required this.from,
-    required this.to,
-    required this.departureTime,
-    required this.duration,
-    required this.price,
-    required this.availableSeats,
-    this.isVerified = false,
-    required this.carModel,
-    this.driverImageUrl,
-    this.amenities,
-    this.onTap,
-    this.onBook,
-    this.showBookButton = true,
-    this.animationDelay,
-  });
 
   @override
   State<PremiumRideCard> createState() => _PremiumRideCardState();
@@ -164,7 +163,6 @@ class _PremiumRideCardState extends State<PremiumRideCard>
                 name: widget.driver.displayName,
                 imageUrl: widget.driver.photoUrl,
                 level: (widget.driver.totalRides / 10).floor(),
-                size: 56,
               ),
             ),
             if (widget.isVerified)
@@ -360,7 +358,7 @@ class _PremiumRideCardState extends State<PremiumRideCard>
                 height: 30.h,
                 margin: EdgeInsets.symmetric(vertical: 4.h),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
+                  gradient: const LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
@@ -376,7 +374,7 @@ class _PremiumRideCardState extends State<PremiumRideCard>
                 width: 14.w,
                 height: 14.w,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
+                  gradient: const LinearGradient(
                     colors: [AppColors.error, AppColors.errorDark],
                   ),
                   shape: BoxShape.circle,
@@ -678,22 +676,21 @@ class _PremiumRideCardState extends State<PremiumRideCard>
 
 /// Compact version of the ride card for lists
 class CompactRideCard extends StatelessWidget {
+  const CompactRideCard({
+    required this.from,
+    required this.to,
+    required this.time,
+    required this.price,
+    required this.seats,
+    super.key,
+    this.onTap,
+  });
   final String from;
   final String to;
   final String time;
   final double price;
   final int seats;
   final VoidCallback? onTap;
-
-  const CompactRideCard({
-    super.key,
-    required this.from,
-    required this.to,
-    required this.time,
-    required this.price,
-    required this.seats,
-    this.onTap,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -727,7 +724,7 @@ class CompactRideCard extends StatelessWidget {
                       Container(
                         width: 10.w,
                         height: 10.w,
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           color: AppColors.success,
                           shape: BoxShape.circle,
                         ),
@@ -740,7 +737,7 @@ class CompactRideCard extends StatelessWidget {
                       Container(
                         width: 10.w,
                         height: 10.w,
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           color: AppColors.error,
                           shape: BoxShape.circle,
                         ),

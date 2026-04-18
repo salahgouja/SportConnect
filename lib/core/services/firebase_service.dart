@@ -1,17 +1,17 @@
-import 'package:firebase_app_check/firebase_app_check.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sport_connect/core/config/app_config.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/services/i_firebase_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
-import 'package:sport_connect/firebase_options.dart';
-import 'package:sport_connect/core/config/app_config.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/firebase_options.dart';
 
 part 'firebase_service.g.dart';
 
@@ -84,7 +84,7 @@ class FirebaseService implements IFirebaseService {
 
       // Notification permissions are now requested from the UI layer
       // after showing a rationale dialog (2025 store compliance).
-    } catch (e, stackTrace) {
+    } on Exception catch (e, stackTrace) {
       TalkerService.error('Firebase initialization failed', e, stackTrace);
       rethrow;
     }
@@ -111,7 +111,7 @@ class FirebaseService implements IFirebaseService {
       );
 
       TalkerService.info('🔧 All Firebase emulators connected successfully!');
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to connect to emulators', e);
       TalkerService.warning('Falling back to production Firebase services');
     }

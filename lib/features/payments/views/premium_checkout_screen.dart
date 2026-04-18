@@ -127,7 +127,7 @@ class _PremiumCheckoutScreenState extends ConsumerState<PremiumCheckoutScreen> {
                 style: PremiumButtonStyle.gold,
                 isLoading: state.isProcessing,
                 fullWidth: true,
-                onPressed: () => _onSubscribePressed(),
+                onPressed: _onSubscribePressed,
               ),
               SizedBox(height: 10.h),
               Center(

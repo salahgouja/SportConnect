@@ -1,27 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
 
 /// Premium Card with various styles
 class PremiumCard extends StatefulWidget {
-  final Widget child;
-  final VoidCallback? onTap;
-  final EdgeInsetsGeometry? padding;
-  final EdgeInsetsGeometry? margin;
-  final PremiumCardStyle style;
-  final double? width;
-  final double? height;
-  final bool showBorder;
-  final Color? backgroundColor;
-  final Gradient? gradient;
-  final double borderRadius;
-
   const PremiumCard({
-    super.key,
     required this.child,
+    super.key,
     this.onTap,
     this.padding,
     this.margin,
@@ -33,6 +21,17 @@ class PremiumCard extends StatefulWidget {
     this.gradient,
     this.borderRadius = 20,
   });
+  final Widget child;
+  final VoidCallback? onTap;
+  final EdgeInsetsGeometry? padding;
+  final EdgeInsetsGeometry? margin;
+  final PremiumCardStyle style;
+  final double? width;
+  final double? height;
+  final bool showBorder;
+  final Color? backgroundColor;
+  final Gradient? gradient;
+  final double borderRadius;
 
   @override
   State<PremiumCard> createState() => _PremiumCardState();
@@ -171,6 +170,17 @@ enum PremiumCardStyle { elevated, flat, gradient, glass, outlined }
 
 /// Premium List Tile with modern design
 class PremiumListTile extends StatelessWidget {
+  const PremiumListTile({
+    required this.title,
+    super.key,
+    this.leading,
+    this.subtitle,
+    this.trailing,
+    this.onTap,
+    this.showDivider = true,
+    this.showChevron = true,
+    this.accentColor,
+  });
   final Widget? leading;
   final String title;
   final String? subtitle;
@@ -179,18 +189,6 @@ class PremiumListTile extends StatelessWidget {
   final bool showDivider;
   final bool showChevron;
   final Color? accentColor;
-
-  const PremiumListTile({
-    super.key,
-    this.leading,
-    required this.title,
-    this.subtitle,
-    this.trailing,
-    this.onTap,
-    this.showDivider = true,
-    this.showChevron = true,
-    this.accentColor,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -220,7 +218,7 @@ class PremiumListTile extends StatelessWidget {
                     child: Center(
                       child: leading is IconData
                           ? Icon(
-                              leading as IconData,
+                              leading! as IconData,
                               color: accentColor ?? AppColors.primary,
                               size: 22.sp,
                             )
@@ -280,20 +278,19 @@ class PremiumListTile extends StatelessWidget {
 
 /// Premium Icon Container
 class PremiumIconContainer extends StatelessWidget {
-  final IconData icon;
-  final double size;
-  final Color? color;
-  final Gradient? gradient;
-  final bool showShadow;
-
   const PremiumIconContainer({
-    super.key,
     required this.icon,
+    super.key,
     this.size = 48,
     this.color,
     this.gradient,
     this.showShadow = true,
   });
+  final IconData icon;
+  final double size;
+  final Color? color;
+  final Gradient? gradient;
+  final bool showShadow;
 
   @override
   Widget build(BuildContext context) {
@@ -329,17 +326,9 @@ class PremiumIconContainer extends StatelessWidget {
 
 /// Premium Info Banner
 class PremiumInfoBanner extends StatelessWidget {
-  final String message;
-  final String? title;
-  final IconData? icon;
-  final PremiumBannerType type;
-  final VoidCallback? onClose;
-  final VoidCallback? onAction;
-  final String? actionLabel;
-
   const PremiumInfoBanner({
-    super.key,
     required this.message,
+    super.key,
     this.title,
     this.icon,
     this.type = PremiumBannerType.info,
@@ -347,6 +336,13 @@ class PremiumInfoBanner extends StatelessWidget {
     this.onAction,
     this.actionLabel,
   });
+  final String message;
+  final String? title;
+  final IconData? icon;
+  final PremiumBannerType type;
+  final VoidCallback? onClose;
+  final VoidCallback? onAction;
+  final String? actionLabel;
 
   Color get _color {
     switch (type) {
@@ -451,6 +447,17 @@ enum PremiumBannerType { info, success, warning, error }
 
 /// Premium Stats Card
 class PremiumStatsCard extends StatelessWidget {
+  const PremiumStatsCard({
+    required this.title,
+    required this.value,
+    required this.icon,
+    super.key,
+    this.subtitle,
+    this.color,
+    this.gradient,
+    this.trend,
+    this.isTrendPositive = true,
+  });
   final String title;
   final String value;
   final String? subtitle;
@@ -459,18 +466,6 @@ class PremiumStatsCard extends StatelessWidget {
   final Gradient? gradient;
   final String? trend;
   final bool isTrendPositive;
-
-  const PremiumStatsCard({
-    super.key,
-    required this.title,
-    required this.value,
-    this.subtitle,
-    required this.icon,
-    this.color,
-    this.gradient,
-    this.trend,
-    this.isTrendPositive = true,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -561,20 +556,19 @@ class PremiumStatsCard extends StatelessWidget {
 
 /// Premium Empty State
 class PremiumEmptyState extends StatelessWidget {
+  const PremiumEmptyState({
+    required this.icon,
+    required this.title,
+    super.key,
+    this.message,
+    this.actionLabel,
+    this.onAction,
+  });
   final IconData icon;
   final String title;
   final String? message;
   final String? actionLabel;
   final VoidCallback? onAction;
-
-  const PremiumEmptyState({
-    super.key,
-    required this.icon,
-    required this.title,
-    this.message,
-    this.actionLabel,
-    this.onAction,
-  });
 
   @override
   Widget build(BuildContext context) {

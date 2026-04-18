@@ -259,8 +259,6 @@ extension EventTypeX on EventType {
 
 @freezed
 abstract class EventModel with _$EventModel {
-  const EventModel._();
-
   const factory EventModel({
     required String id,
     required String creatorId,
@@ -309,6 +307,7 @@ abstract class EventModel with _$EventModel {
     @TimestampConverter() DateTime? createdAt,
     @TimestampConverter() DateTime? updatedAt,
   }) = _EventModel;
+  const EventModel._();
 
   factory EventModel.fromJson(Map<String, dynamic> json) =>
       _$EventModelFromJson(json);

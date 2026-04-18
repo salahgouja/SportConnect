@@ -1,23 +1,22 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sport_connect/features/onboarding/models/onboarding_model.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
+import 'package:sport_connect/features/onboarding/models/onboarding_model.dart';
 import 'package:sport_connect/features/onboarding/repositories/onboarding_repository.dart';
 
 part 'onboarding_view_model.g.dart';
 
 /// State for the onboarding screen
 class OnboardingState {
-  final int currentPageIndex;
-  final bool isLastPage;
-  final bool isCompleting;
-  final String? errorMessage;
-
   const OnboardingState({
     this.currentPageIndex = 0,
     this.isLastPage = false,
     this.isCompleting = false,
     this.errorMessage,
   });
+  final int currentPageIndex;
+  final bool isLastPage;
+  final bool isCompleting;
+  final String? errorMessage;
 
   OnboardingState copyWith({
     int? currentPageIndex,
@@ -72,7 +71,7 @@ class OnboardingViewModel extends _$OnboardingViewModel {
 
   /// Complete onboarding
   Future<bool> completeOnboarding() async {
-    state = state.copyWith(isCompleting: true, errorMessage: null);
+    state = state.copyWith(isCompleting: true);
 
     try {
       final repository = await ref.read(onboardingRepositoryProvider.future);
@@ -86,7 +85,7 @@ class OnboardingViewModel extends _$OnboardingViewModel {
       if (!ref.mounted) return true;
       state = state.copyWith(isCompleting: false);
       return true;
-    } catch (e) {
+    } on Exception catch (e) {
       if (!ref.mounted) return false;
       state = state.copyWith(
         isCompleting: false,
@@ -98,6 +97,6 @@ class OnboardingViewModel extends _$OnboardingViewModel {
 
   /// Clear error
   void clearError() {
-    state = state.copyWith(errorMessage: null);
+    state = state.copyWith();
   }
 }

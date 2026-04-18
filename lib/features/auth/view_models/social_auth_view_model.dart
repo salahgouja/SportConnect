@@ -1,16 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 
-class SocialAuthState {
-  final bool isLoading;
-  final Object? error;
-  final String? completedProvider;
+part 'social_auth_view_model.g.dart';
 
+class SocialAuthState {
   const SocialAuthState({
     this.isLoading = false,
     this.error,
     this.completedProvider,
   });
+  final bool isLoading;
+  final Object? error;
+  final String? completedProvider;
 
   SocialAuthState copyWith({
     bool? isLoading,
@@ -29,7 +31,8 @@ class SocialAuthState {
   }
 }
 
-class SocialAuthViewModel extends Notifier<SocialAuthState> {
+@riverpod
+class SocialAuthViewModel extends _$SocialAuthViewModel {
   @override
   SocialAuthState build() => const SocialAuthState();
 
@@ -44,8 +47,10 @@ class SocialAuthViewModel extends Notifier<SocialAuthState> {
 
     try {
       await ref.read(authActionsViewModelProvider).signInWithGoogle();
+      if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, completedProvider: 'google');
-    } catch (e) {
+    } on Exception catch (e) {
+      if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, error: e);
     }
   }
@@ -61,14 +66,11 @@ class SocialAuthViewModel extends Notifier<SocialAuthState> {
 
     try {
       await ref.read(authActionsViewModelProvider).signInWithApple();
+      if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, completedProvider: 'apple');
-    } catch (e) {
+    } on Exception catch (e) {
+      if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, error: e);
     }
   }
 }
-
-final socialAuthViewModelProvider =
-    NotifierProvider<SocialAuthViewModel, SocialAuthState>(
-      SocialAuthViewModel.new,
-    );

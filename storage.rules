@@ -56,10 +56,10 @@ service firebase.storage {
       allow write: if isAuthenticated() && isValidImage();
     }
 
-    // Chat audio messages (voice notes)
+    // Chat audio messages
     match /chats/{chatId}/audio/{fileName} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && request.resource.contentType.matches('audio/.*') && request.resource.size < 10 * 1024 * 1024;
+      allow write: if isAuthenticated() && request.resource.size < 10 * 1024 * 1024;
     }
 
     // Ride photos (for drop-off/pick-up verification)

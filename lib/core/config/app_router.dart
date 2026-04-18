@@ -2,61 +2,52 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/config/page_transitions.dart'
     hide NoTransitionPage;
-import 'package:sport_connect/core/config/routes/route_params.dart';
-import 'package:sport_connect/core/config/routes/ride_routes.dart';
-import 'package:sport_connect/core/config/routes/profile_routes.dart';
 import 'package:sport_connect/core/config/routes/events_routes.dart';
+import 'package:sport_connect/core/config/routes/profile_routes.dart';
+import 'package:sport_connect/core/config/routes/ride_routes.dart';
+import 'package:sport_connect/core/config/routes/route_params.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/analytics_service.dart';
 import 'package:sport_connect/core/services/route_guard_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/main_wrapper.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
-
+import 'package:sport_connect/features/auth/views/change_password_screen.dart';
+import 'package:sport_connect/features/auth/views/driver_onboarding_screen.dart';
+import 'package:sport_connect/features/auth/views/email_verification_screen.dart';
+import 'package:sport_connect/features/auth/views/forgot_password_screen.dart';
 // Feature imports - Auth
 import 'package:sport_connect/features/auth/views/login_screen.dart';
+import 'package:sport_connect/features/auth/views/rider_onboarding_screen.dart';
+import 'package:sport_connect/features/auth/views/role_selection_screen.dart';
 import 'package:sport_connect/features/auth/views/signup_wizard_screen.dart';
 import 'package:sport_connect/features/auth/views/splash_screen.dart';
-import 'package:sport_connect/features/auth/views/role_selection_screen.dart';
-import 'package:sport_connect/features/auth/views/driver_onboarding_screen.dart';
-import 'package:sport_connect/features/auth/views/rider_onboarding_screen.dart';
-import 'package:sport_connect/features/auth/views/forgot_password_screen.dart';
-import 'package:sport_connect/features/auth/views/email_verification_screen.dart';
-import 'package:sport_connect/features/auth/views/change_password_screen.dart';
 import 'package:sport_connect/features/events/views/event_list_screen.dart';
-
+import 'package:sport_connect/features/home/views/driver_home_screen.dart';
 // Feature imports - Home
 import 'package:sport_connect/features/home/views/rider_home_screen.dart';
-import 'package:sport_connect/features/home/views/driver_home_screen.dart';
-
-// Feature imports - Profile (used in StatefulShellRoute)
-import 'package:sport_connect/features/profile/views/profile_screen.dart';
-
-// Feature imports - Messaging
-import 'package:sport_connect/features/messaging/views/chat_list_screen.dart';
-import 'package:sport_connect/features/messaging/views/chat_detail_screen.dart';
-
-// Feature imports - Rides (used in StatefulShellRoute)
-import 'package:sport_connect/features/rides/views/passenger/rider_my_rides_screen.dart';
-import 'package:sport_connect/features/rides/views/driver/driver_my_rides_screen.dart';
-
-// Feature imports - Reviews
-import 'package:sport_connect/features/reviews/models/review_model.dart';
-import 'package:sport_connect/features/reviews/views/submit_review_screen.dart';
-import 'package:sport_connect/features/reviews/views/reviews_list_screen.dart';
-
 // Feature imports - Other
 import 'package:sport_connect/features/legal/views/legal_screen.dart';
-import 'package:sport_connect/features/onboarding/views/onboarding_screen.dart';
+import 'package:sport_connect/features/messaging/views/chat_detail_screen.dart';
+// Feature imports - Messaging
+import 'package:sport_connect/features/messaging/views/chat_list_screen.dart';
 import 'package:sport_connect/features/onboarding/repositories/onboarding_repository.dart';
+import 'package:sport_connect/features/onboarding/views/onboarding_screen.dart';
 import 'package:sport_connect/features/payments/views/driver_earnings_screen.dart';
 import 'package:sport_connect/features/payments/views/premium_checkout_screen.dart';
 import 'package:sport_connect/features/payments/views/premium_subscribe_screen.dart';
-
+// Feature imports - Profile (used in StatefulShellRoute)
+import 'package:sport_connect/features/profile/views/profile_screen.dart';
+// Feature imports - Reviews
+import 'package:sport_connect/features/reviews/models/review_model.dart';
+import 'package:sport_connect/features/reviews/views/reviews_list_screen.dart';
+import 'package:sport_connect/features/reviews/views/submit_review_screen.dart';
+import 'package:sport_connect/features/rides/views/driver/driver_my_rides_screen.dart';
+// Feature imports - Rides (used in StatefulShellRoute)
+import 'package:sport_connect/features/rides/views/passenger/rider_my_rides_screen.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 part 'app_router.g.dart';
@@ -104,7 +95,7 @@ GoRouter appRouter(Ref ref) {
         onboardingState,
         state,
         isEmailVerified: firebaseUser?.emailVerified ?? false,
-        hasVerifiableEmail: (firebaseUser?.email?.isNotEmpty ?? false),
+        hasVerifiableEmail: firebaseUser?.email?.isNotEmpty ?? false,
       );
     },
     routes: _buildRoutes(),

@@ -206,7 +206,7 @@ IEventRepository eventRepository(Ref ref) {
 
 // ---------------------------------------------------------------------------
 // 🏠  Home  —  keepAlive: false (auto-dispose)
-// Nearby-rides and hotspot streams are only needed while the home tab is
+// Nearby-rides are only needed while the home tab is
 // visible; auto-dispose is appropriate.
 // ---------------------------------------------------------------------------
 

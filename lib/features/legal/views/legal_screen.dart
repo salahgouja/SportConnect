@@ -12,7 +12,7 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 enum LegalDocumentType { terms, privacy }
 
 class LegalScreen extends ConsumerWidget {
-  const LegalScreen({super.key, required this.type});
+  const LegalScreen({required this.type, super.key});
 
   final LegalDocumentType type;
 
@@ -92,10 +92,7 @@ class LegalScreen extends ConsumerWidget {
               initialSettings: InAppWebViewSettings(
                 javaScriptEnabled: false,
                 disableContextMenu: true,
-                supportZoom: true,
                 useOnLoadResource: false,
-                transparentBackground: false,
-                disableHorizontalScroll: false,
               ),
               onLoadStop: (controller, url) {
                 ref
@@ -109,14 +106,16 @@ class LegalScreen extends ConsumerWidget {
               },
             ),
             if (uiState.isLoading)
-              Container(
+              ColoredBox(
                 color: Colors.white,
                 child: Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      CircularProgressIndicator.adaptive(
-                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                      const CircularProgressIndicator.adaptive(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppColors.primary,
+                        ),
                         strokeWidth: 2.5,
                       ),
                       SizedBox(height: 16.h),

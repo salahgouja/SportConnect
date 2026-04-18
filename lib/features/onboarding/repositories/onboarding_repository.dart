@@ -6,13 +6,12 @@ part 'onboarding_repository.g.dart';
 
 /// Repository for onboarding preferences
 class OnboardingRepository {
+  OnboardingRepository(this._prefs);
   static const String _onboardingCompleteKey = 'onboarding_complete';
   static const String _lastOnboardingVersionKey = 'last_onboarding_version';
   static const int currentOnboardingVersion = 1;
 
   final SharedPreferences _prefs;
-
-  OnboardingRepository(this._prefs);
 
   /// Check if onboarding has been completed
   bool get isOnboardingComplete {

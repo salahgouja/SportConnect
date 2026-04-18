@@ -1,20 +1,19 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:form_builder_validators/form_builder_validators.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/core/utils/form_validators.dart';
+import 'package:sport_connect/core/widgets/address_autocomplete_field.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/core/widgets/intl_phone_input.dart';
-import 'package:sport_connect/core/widgets/address_autocomplete_field.dart';
-import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
+import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -27,7 +26,28 @@ class EditProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
-  final _formKey = GlobalKey<FormBuilderState>();
+  final _form = FormGroup({
+    'name': FormControl<String>(
+      validators: [
+        Validators.required,
+        Validators.minLength(2),
+        Validators.maxLength(60),
+        Validators.delegate((control) {
+          final value = control.value as String?;
+          if (value == null || value.trim().isEmpty) return null;
+          final trimmed = value.trim();
+          if (RegExp('[0-9]').hasMatch(trimmed)) {
+            return {'name': 'Name cannot contain numbers'};
+          }
+          if (!RegExp(r"^[\p{L}\s\-'.]+$", unicode: true).hasMatch(trimmed)) {
+            return {'name': 'Name contains invalid characters'};
+          }
+          return null;
+        }),
+      ],
+    ),
+    'email': FormControl<String>(),
+  });
   final _phoneKey = GlobalKey<IntlPhoneInputState>();
   final _cityKey = GlobalKey<AddressAutocompleteFieldState>();
 
@@ -50,7 +70,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           'update your profile picture.',
     );
     if (!accepted) return;
-    final XFile? image = await _imagePicker.pickImage(
+    final image = await _imagePicker.pickImage(
       source: ImageSource.gallery,
     );
     if (image != null) {
@@ -78,6 +98,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       _currentUser = user;
       _populateFromUser(user);
       _isPopulated = true;
+      _form.valueChanges.listen((_) {
+        ref.read(profileEditViewModelProvider(user.uid).notifier).markChanged();
+      });
       Future.microtask(() {
         ref
             .read(profileEditViewModelProvider(user.uid).notifier)
@@ -116,7 +139,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
     final isDriver = _currentUser?.isDriver ?? false;
     final selectedGender = editState.gender ?? 'Male';
-    final selectedDateOfBirth = editState.dateOfBirth ?? DateTime(1990, 1, 1);
+    final selectedDateOfBirth = editState.dateOfBirth ?? DateTime(1990);
 
     return SafeArea(
       top: false,
@@ -248,17 +271,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: 20.w),
-                  child: FormBuilder(
-                    key: _formKey,
-                    onChanged: () {
-                      ref
-                          .read(
-                            profileEditViewModelProvider(
-                              _currentUser!.uid,
-                            ).notifier,
-                          )
-                          .markChanged();
-                    },
+                  child: ReactiveForm(
+                    formGroup: _form,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -267,8 +281,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         ),
                         _buildContainer(
                           children: [
-                            FormBuilderTextField(
-                              name: 'name',
+                            ReactiveTextField<String>(
+                              formControlName: 'name',
                               decoration: InputDecoration(
                                 labelText: AppLocalizations.of(
                                   context,
@@ -277,20 +291,21 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                   Icons.person_outline_rounded,
                                 ),
                               ),
-                              validator: FormBuilderValidators.compose([
-                                FormBuilderValidators.required(
-                                  errorText: AppLocalizations.of(
-                                    context,
-                                  ).requiredField,
-                                ),
-                                FormBuilderValidators.minLength(2),
-                                FormBuilderValidators.maxLength(60),
-                                (value) => FormValidators.name(value),
-                              ]),
+                              validationMessages: {
+                                ValidationMessage.required: (_) =>
+                                    AppLocalizations.of(
+                                      context,
+                                    ).requiredField,
+                                ValidationMessage.minLength: (_) =>
+                                    'Name must be at least 2 characters',
+                                ValidationMessage.maxLength: (_) =>
+                                    'Name is too long',
+                                'name': (error) => error as String,
+                              },
                             ),
                             SizedBox(height: 16.h),
-                            FormBuilderTextField(
-                              name: 'email',
+                            ReactiveTextField<String>(
+                              formControlName: 'email',
                               decoration: InputDecoration(
                                 labelText: AppLocalizations.of(
                                   context,
@@ -300,7 +315,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                 fillColor: AppColors.background,
                               ),
                               readOnly: true,
-                              enabled: false,
                             ),
                             SizedBox(height: 16.h),
                             IntlPhoneInput(
@@ -472,11 +486,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     }
     return PremiumAvatar(
       name:
-          (_formKey.currentState?.fields['name']!.value as String? ??
+          _form.control('name').value as String? ??
           _currentUser?.displayName ??
-          ''),
+          '',
       size: 110,
-      hasBorder: false,
       borderColor: Colors.transparent,
     );
   }
@@ -579,18 +592,16 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   void _populateFromUser(UserModel user) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _formKey.currentState?.patchValue({
+      _form.patchValue({
         'name': user.displayName,
         'email': user.email,
-        'phone': user.phoneNumber ?? '',
-        'city': user.city ?? '',
-        'country': user.country ?? '',
       });
     });
   }
 
   Future<void> _saveProfile() async {
-    if (!_formKey.currentState!.saveAndValidate() || _currentUser == null) {
+    _form.markAllAsTouched();
+    if (!_form.valid || _currentUser == null) {
       return;
     }
 
@@ -599,7 +610,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     if (phoneError != null) return;
 
     try {
-      final formValues = _formKey.currentState!.value;
+      final formValues = _form.value;
       final editState = ref.read(
         profileEditViewModelProvider(_currentUser!.uid),
       );
@@ -649,7 +660,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             newPhotoFile: editState.newPhotoFile,
             removePhoto: editState.imageRemoved,
           );
-    } catch (e) {
+    } on Exception catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -664,7 +675,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   // (These methods are identical to the previous version, omitted for brevity but required in the final file)
 
   void _changeProfilePicture() {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.surface,
       shape: RoundedRectangleBorder(
@@ -701,14 +712,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12.r),
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.camera_alt_rounded,
                     color: AppColors.primary,
                   ),
                 ),
                 title: Text(
                   AppLocalizations.of(context).takePhoto,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary,
                   ),
@@ -723,7 +734,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                             'new profile photo.',
                       );
                   if (!accepted) return;
-                  final XFile? image = await _imagePicker.pickImage(
+                  final image = await _imagePicker.pickImage(
                     source: ImageSource.camera,
                   );
                   if (image != null) {
@@ -744,14 +755,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     color: AppColors.secondary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12.r),
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.photo_library_rounded,
                     color: AppColors.secondary,
                   ),
                 ),
                 title: Text(
                   AppLocalizations.of(context).chooseFromGallery,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary,
                   ),
@@ -772,11 +783,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       color: AppColors.error.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12.r),
                     ),
-                    child: Icon(Icons.delete_rounded, color: AppColors.error),
+                    child: const Icon(
+                      Icons.delete_rounded,
+                      color: AppColors.error,
+                    ),
                   ),
                   title: Text(
                     AppLocalizations.of(context).removePhoto,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontWeight: FontWeight.w600,
                       color: AppColors.error,
                     ),
@@ -801,7 +815,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final currentGender =
         ref.read(profileEditViewModelProvider(_currentUser!.uid)).gender ??
         'Male';
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.surface,
       shape: RoundedRectangleBorder(
@@ -844,7 +858,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   ),
                   title: Text(
                     gender,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontWeight: FontWeight.w500,
                       color: AppColors.textPrimary,
                     ),
@@ -863,14 +877,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     );
   }
 
-  void _selectDateOfBirth() async {
+  Future<void> _selectDateOfBirth() async {
     final editNotifier = ref.read(
       profileEditViewModelProvider(_currentUser!.uid).notifier,
     );
     final currentDate =
         ref.read(profileEditViewModelProvider(_currentUser!.uid)).dateOfBirth ??
-        DateTime(1990, 1, 1);
-    final DateTime? picked = await showDatePicker(
+        DateTime(1990);
+    final picked = await showDatePicker(
       context: context,
       initialDate: currentDate,
       firstDate: DateTime(1920),
@@ -878,13 +892,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
+            colorScheme: const ColorScheme.light(
               primary: AppColors.primary,
-              onPrimary: Colors.white,
-              surface: AppColors.surface,
               onSurface: AppColors.textPrimary,
             ),
-            dialogTheme: DialogThemeData(backgroundColor: AppColors.surface),
+            dialogTheme: const DialogThemeData(
+              backgroundColor: AppColors.surface,
+            ),
           ),
           child: child!,
         );

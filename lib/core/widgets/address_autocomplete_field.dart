@@ -1,10 +1,12 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/services/map_service.dart';
+import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -18,20 +20,7 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 /// - Supports initial value and location
 /// - Accessible labels and semantics
 /// - Can be used for both city-only and full address inputs
-class AddressAutocompleteField extends StatefulWidget {
-  final String? label;
-  final String? hint;
-  final String? initialValue;
-  final LatLng? initialLocation;
-  final ValueChanged<AddressResult>? onSelected;
-  final bool showMapPicker;
-  final String? countryCode;
-  final Color? accentColor;
-  final Color? fillColor;
-  final bool enabled;
-  final bool cityOnly;
-  final String? Function(String?)? validator;
-
+class AddressAutocompleteField extends ConsumerStatefulWidget {
   const AddressAutocompleteField({
     super.key,
     this.label,
@@ -47,13 +36,26 @@ class AddressAutocompleteField extends StatefulWidget {
     this.cityOnly = false,
     this.validator,
   });
+  final String? label;
+  final String? hint;
+  final String? initialValue;
+  final LatLng? initialLocation;
+  final ValueChanged<AddressResult>? onSelected;
+  final bool showMapPicker;
+  final String? countryCode;
+  final Color? accentColor;
+  final Color? fillColor;
+  final bool enabled;
+  final bool cityOnly;
+  final String? Function(String?)? validator;
 
   @override
-  State<AddressAutocompleteField> createState() =>
+  ConsumerState<AddressAutocompleteField> createState() =>
       AddressAutocompleteFieldState();
 }
 
-class AddressAutocompleteFieldState extends State<AddressAutocompleteField> {
+class AddressAutocompleteFieldState
+    extends ConsumerState<AddressAutocompleteField> {
   late final TextEditingController _controller;
   final FocusNode _focusNode = FocusNode();
   final LayerLink _layerLink = LayerLink();
@@ -124,11 +126,13 @@ class AddressAutocompleteFieldState extends State<AddressAutocompleteField> {
   Future<void> _searchPlaces(String query) async {
     if (!mounted) return;
     setState(() => _isSearching = true);
-    final results = await MapService.searchPlaces(
-      query,
-      countryCode: widget.countryCode,
-      limit: 6,
-    );
+    final results = await ref
+        .read(mapServiceProvider)
+        .searchPlaces(
+          query,
+          countryCode: widget.countryCode,
+          limit: 6,
+        );
     if (!mounted) return;
     setState(() {
       _suggestions = results;
@@ -204,7 +208,7 @@ class AddressAutocompleteFieldState extends State<AddressAutocompleteField> {
   }
 
   OverlayEntry _buildOverlay() {
-    final renderBox = context.findRenderObject() as RenderBox;
+    final renderBox = context.findRenderObject()! as RenderBox;
     final size = renderBox.size;
 
     return OverlayEntry(
@@ -364,17 +368,16 @@ class AddressAutocompleteFieldState extends State<AddressAutocompleteField> {
 // ─── Supporting Widgets ───────────────────────────────────────────────────────
 
 class _SuggestionTile extends StatelessWidget {
-  final SearchResult result;
-  final bool cityOnly;
-  final Color accentColor;
-  final VoidCallback onTap;
-
   const _SuggestionTile({
     required this.result,
     required this.cityOnly,
     required this.accentColor,
     required this.onTap,
   });
+  final SearchResult result;
+  final bool cityOnly;
+  final Color accentColor;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -441,12 +444,6 @@ class _SuggestionTile extends StatelessWidget {
 
 /// Result from address autocomplete selection.
 class AddressResult {
-  final String address;
-  final String fullAddress;
-  final LatLng location;
-  final String? city;
-  final String? country;
-
   const AddressResult({
     required this.address,
     required this.fullAddress,
@@ -454,4 +451,9 @@ class AddressResult {
     this.city,
     this.country,
   });
+  final String address;
+  final String fullAddress;
+  final LatLng location;
+  final String? city;
+  final String? country;
 }

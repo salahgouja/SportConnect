@@ -1,3 +1,4 @@
+import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sport_connect/core/widgets/intl_phone_input.dart';
 
 /// Centralized form validation utilities for the app.
@@ -10,6 +11,22 @@ import 'package:sport_connect/core/widgets/intl_phone_input.dart';
 /// - Generic required/length/pattern validators
 class FormValidators {
   FormValidators._();
+
+  // ── Reactive Forms Bridge ───────────────────────────────────────
+
+  /// Bridges a classic `String? Function(String?)` validator to a
+  /// reactive_forms [Validator]. Returns `{errorKey: errorMessage}` on
+  /// failure so [validationMessages] can extract the message with
+  /// `(error) => error as String`.
+  static Validator<dynamic> reactive(
+    String? Function(String?) validator,
+    String errorKey,
+  ) {
+    return Validators.delegate((AbstractControl<dynamic> control) {
+      final error = validator(control.value as String?);
+      return error != null ? {errorKey: error} : null;
+    });
+  }
 
   // ── Generic ─────────────────────────────────────────────────────────
 
@@ -55,7 +72,7 @@ class FormValidators {
     if (trimmed.length > 60) {
       return 'Name is too long';
     }
-    if (RegExp(r'[0-9]').hasMatch(trimmed)) {
+    if (RegExp('[0-9]').hasMatch(trimmed)) {
       return 'Name cannot contain numbers';
     }
     if (!RegExp(r"^[\p{L}\s\-'.]+$", unicode: true).hasMatch(trimmed)) {
@@ -129,13 +146,13 @@ class FormValidators {
     if (value.length < 8) {
       return 'Password must be at least 8 characters';
     }
-    if (!RegExp(r'[A-Z]').hasMatch(value)) {
+    if (!RegExp('[A-Z]').hasMatch(value)) {
       return 'Include at least one uppercase letter';
     }
-    if (!RegExp(r'[a-z]').hasMatch(value)) {
+    if (!RegExp('[a-z]').hasMatch(value)) {
       return 'Include at least one lowercase letter';
     }
-    if (!RegExp(r'[0-9]').hasMatch(value)) {
+    if (!RegExp('[0-9]').hasMatch(value)) {
       return 'Include at least one number';
     }
     return null;
@@ -158,10 +175,10 @@ class FormValidators {
 
   /// Returns password strength score 0-4.
   static int passwordStrength(String password) {
-    int score = 0;
+    var score = 0;
     if (password.length >= 8) score++;
-    if (RegExp(r'[A-Z]').hasMatch(password)) score++;
-    if (RegExp(r'[0-9]').hasMatch(password)) score++;
+    if (RegExp('[A-Z]').hasMatch(password)) score++;
+    if (RegExp('[0-9]').hasMatch(password)) score++;
     if (RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password)) score++;
     return score;
   }
@@ -260,7 +277,7 @@ class FormValidators {
     if (value.trim().length > 100) {
       return 'City name is too long';
     }
-    if (RegExp(r'[0-9]').hasMatch(value)) {
+    if (RegExp('[0-9]').hasMatch(value)) {
       return 'City name cannot contain numbers';
     }
     return null;

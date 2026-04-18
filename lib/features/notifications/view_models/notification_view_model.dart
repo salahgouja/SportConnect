@@ -1,12 +1,20 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/features/notifications/models/notification_model.dart';
-import 'package:sport_connect/core/providers/repository_providers.dart';
 
 part 'notification_view_model.g.dart';
 
 /// State for managing notifications UI
 class NotificationState {
+  const NotificationState({
+    this.isLoading = false,
+    this.errorMessage,
+    this.selectedNotificationIds = const [],
+    this.filter = NotificationFilter.all,
+    this.userId,
+    this.notifications = const AsyncLoading(),
+  });
   final bool isLoading;
   final String? errorMessage;
   final List<String> selectedNotificationIds;
@@ -17,15 +25,6 @@ class NotificationState {
 
   /// Live notifications for the current user, driven via [ref.listen].
   final AsyncValue<List<NotificationModel>> notifications;
-
-  const NotificationState({
-    this.isLoading = false,
-    this.errorMessage,
-    this.selectedNotificationIds = const [],
-    this.filter = NotificationFilter.all,
-    this.userId,
-    this.notifications = const AsyncLoading(),
-  });
 
   NotificationState copyWith({
     bool? isLoading,
@@ -93,13 +92,15 @@ class NotificationViewModel extends _$NotificationViewModel {
     final userId = _getCurrentUserId();
     if (userId == null) return;
 
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    state = state.copyWith(isLoading: true);
 
     try {
       final repository = ref.read(notificationRepositoryProvider);
       await repository.markAsRead(notificationId);
+      if (!ref.mounted) return;
       state = state.copyWith(isLoading: false);
-    } catch (e) {
+    } on Exception catch (e) {
+      if (!ref.mounted) return;
       state = state.copyWith(
         isLoading: false,
         errorMessage: 'Failed to mark as read: $e',
@@ -112,13 +113,15 @@ class NotificationViewModel extends _$NotificationViewModel {
     final userId = _getCurrentUserId();
     if (userId == null) return;
 
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    state = state.copyWith(isLoading: true);
 
     try {
       final repository = ref.read(notificationRepositoryProvider);
       await repository.markAllAsRead(userId);
+      if (!ref.mounted) return;
       state = state.copyWith(isLoading: false);
-    } catch (e) {
+    } on Exception catch (e) {
+      if (!ref.mounted) return;
       state = state.copyWith(
         isLoading: false,
         errorMessage: 'Failed to mark all as read: $e',
@@ -131,13 +134,15 @@ class NotificationViewModel extends _$NotificationViewModel {
     final userId = _getCurrentUserId();
     if (userId == null) return;
 
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    state = state.copyWith(isLoading: true);
 
     try {
       final repository = ref.read(notificationRepositoryProvider);
       await repository.archiveAll(userId);
+      if (!ref.mounted) return;
       state = state.copyWith(isLoading: false);
-    } catch (e) {
+    } on Exception catch (e) {
+      if (!ref.mounted) return;
       state = state.copyWith(
         isLoading: false,
         errorMessage: 'Failed to clear notifications: $e',
@@ -147,13 +152,15 @@ class NotificationViewModel extends _$NotificationViewModel {
 
   /// Delete a notification
   Future<void> deleteNotification(String notificationId) async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    state = state.copyWith(isLoading: true);
 
     try {
       final repository = ref.read(notificationRepositoryProvider);
       await repository.archiveNotification(notificationId);
+      if (!ref.mounted) return;
       state = state.copyWith(isLoading: false);
-    } catch (e) {
+    } on Exception catch (e) {
+      if (!ref.mounted) return;
       state = state.copyWith(
         isLoading: false,
         errorMessage: 'Failed to delete notification: $e',
@@ -181,15 +188,17 @@ class NotificationViewModel extends _$NotificationViewModel {
   Future<void> deleteSelected() async {
     if (state.selectedNotificationIds.isEmpty) return;
 
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    state = state.copyWith(isLoading: true);
 
     try {
       final repository = ref.read(notificationRepositoryProvider);
       for (final id in state.selectedNotificationIds) {
         await repository.archiveNotification(id);
       }
+      if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, selectedNotificationIds: []);
-    } catch (e) {
+    } on Exception catch (e) {
+      if (!ref.mounted) return;
       state = state.copyWith(
         isLoading: false,
         errorMessage: 'Failed to delete notifications: $e',
@@ -199,7 +208,7 @@ class NotificationViewModel extends _$NotificationViewModel {
 
   /// Clear error message
   void clearError() {
-    state = state.copyWith(errorMessage: null);
+    state = state.copyWith();
   }
 }
 

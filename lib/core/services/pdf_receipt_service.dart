@@ -1,7 +1,8 @@
 import 'dart:typed_data';
+
+import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:intl/intl.dart';
 
 /// Generates PDF receipts for rides.
 ///
@@ -402,7 +403,7 @@ class PdfReceiptService {
       padding: const pw.EdgeInsets.all(20),
       decoration: pw.BoxDecoration(
         color: background ? primaryColor.shade(0.95) : null,
-        border: pw.Border.all(color: lightGray, width: 1),
+        border: pw.Border.all(color: lightGray),
         borderRadius: pw.BorderRadius.circular(12),
       ),
       child: child,
@@ -527,15 +528,14 @@ class PdfReceiptService {
 
 /// Represents a trip in the earnings report.
 class EarningsTrip {
-  final DateTime date;
-  final String from;
-  final String to;
-  final double earnings;
-
   const EarningsTrip({
     required this.date,
     required this.from,
     required this.to,
     required this.earnings,
   });
+  final DateTime date;
+  final String from;
+  final String to;
+  final double earnings;
 }

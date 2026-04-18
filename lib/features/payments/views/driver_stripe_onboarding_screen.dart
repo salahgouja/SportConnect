@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
-import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/payments/view_models/payment_view_model.dart';
@@ -82,7 +81,7 @@ class _DriverStripeOnboardingScreenState
         ),
         backgroundColor: AppColors.background,
         elevation: 0,
-        iconTheme: IconThemeData(color: AppColors.textPrimary),
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
       body: SafeArea(
         child: Padding(
@@ -190,7 +189,10 @@ class _DriverStripeOnboardingScreenState
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.error_outline, color: AppColors.error),
+                              const Icon(
+                                Icons.error_outline,
+                                color: AppColors.error,
+                              ),
                               SizedBox(width: 12.w),
                               Expanded(
                                 child: Text(
@@ -219,7 +221,7 @@ class _DriverStripeOnboardingScreenState
                               SizedBox(
                                 width: 20.w,
                                 height: 20.w,
-                                child: CircularProgressIndicator.adaptive(
+                                child: const CircularProgressIndicator.adaptive(
                                   strokeWidth: 2,
                                   valueColor: AlwaysStoppedAnimation<Color>(
                                     AppColors.primary,
@@ -257,7 +259,6 @@ class _DriverStripeOnboardingScreenState
                     onboardingState.isLoading || onboardingState.isVerifying
                     ? null
                     : _startOnboarding,
-                style: PremiumButtonStyle.primary,
               ).animate().fadeIn(delay: 800.ms).slideY(begin: 0.2),
 
               SizedBox(height: 12.h),
@@ -352,13 +353,10 @@ class _DriverStripeOnboardingScreenState
         ),
         backgroundColor: AppColors.background,
         elevation: 0,
-        iconTheme: IconThemeData(color: AppColors.textPrimary),
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
         leading: IconButton(
           icon: const Icon(Icons.close),
-          onPressed: () {
-            // Confirm before closing
-            _showCancelConfirmation();
-          },
+          onPressed: _showCancelConfirmation,
         ),
         bottom: onboardingState.webViewProgress < 1.0
             ? PreferredSize(
@@ -366,7 +364,9 @@ class _DriverStripeOnboardingScreenState
                 child: LinearProgressIndicator(
                   value: onboardingState.webViewProgress,
                   backgroundColor: AppColors.border.withValues(alpha: 0.2),
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                    AppColors.primary,
+                  ),
                 ),
               )
             : null,
@@ -378,16 +378,10 @@ class _DriverStripeOnboardingScreenState
               url: WebUri(onboardingState.onboardingUrl!),
             ),
             initialSettings: InAppWebViewSettings(
-              javaScriptEnabled: true,
-              domStorageEnabled: true,
               useShouldOverrideUrlLoading: true,
-              // Security settings
-              allowFileAccessFromFileURLs: false,
-              allowUniversalAccessFromFileURLs: false,
               // UX improvements
               supportZoom: false,
               builtInZoomControls: false,
-              displayZoomControls: false,
             ),
             onWebViewCreated: (controller) {
               // Controller available for future use if needed
@@ -397,12 +391,8 @@ class _DriverStripeOnboardingScreenState
                   .read(driverStripeOnboardingFlowViewModelProvider.notifier)
                   .setWebViewProgress(progress / 100);
             },
-            onLoadStart: (controller, url) {
-              TalkerService.debug('Loading: $url');
-            },
+            onLoadStart: (controller, url) {},
             onLoadStop: (controller, url) async {
-              TalkerService.debug('Loaded: $url');
-
               final urlStr = url?.toString() ?? '';
 
               // Check for completion URLs
@@ -419,7 +409,6 @@ class _DriverStripeOnboardingScreenState
               }
             },
             onReceivedError: (controller, request, error) {
-              TalkerService.error('Error loading: ${error.description}');
               ref
                   .read(driverStripeOnboardingFlowViewModelProvider.notifier)
                   .failWebViewLoad(
@@ -472,13 +461,13 @@ class _DriverStripeOnboardingScreenState
           // Loading overlay (only shown initially)
           if (onboardingState.webViewProgress < 1.0 &&
               onboardingState.webViewProgress == 0.0)
-            Container(
+            ColoredBox(
               color: AppColors.background,
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    CircularProgressIndicator.adaptive(
+                    const CircularProgressIndicator.adaptive(
                       valueColor: AlwaysStoppedAnimation<Color>(
                         AppColors.primary,
                       ),

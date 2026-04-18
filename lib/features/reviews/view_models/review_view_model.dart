@@ -1,18 +1,12 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/features/reviews/models/review_model.dart';
-import 'package:sport_connect/core/providers/repository_providers.dart';
 
 part 'review_view_model.g.dart';
 
 /// State for the review submission form
 class ReviewFormState {
-  final int rating;
-  final String comment;
-  final List<ReviewTag> selectedTags;
-  final bool isSubmitting;
-  final String? error;
-
   const ReviewFormState({
     this.rating = 0,
     this.comment = '',
@@ -20,6 +14,11 @@ class ReviewFormState {
     this.isSubmitting = false,
     this.error,
   });
+  final int rating;
+  final String comment;
+  final List<ReviewTag> selectedTags;
+  final bool isSubmitting;
+  final String? error;
 
   ReviewFormState copyWith({
     int? rating,
@@ -42,13 +41,6 @@ class ReviewFormState {
 
 /// State for the reviews list screen
 class ReviewsListState {
-  final List<ReviewModel> reviews;
-  final RatingStats? stats;
-  final bool isLoading;
-  final String? error;
-  final ReviewType? filterType;
-  final bool hasMore;
-
   const ReviewsListState({
     this.reviews = const [],
     this.stats,
@@ -57,6 +49,12 @@ class ReviewsListState {
     this.filterType,
     this.hasMore = true,
   });
+  final List<ReviewModel> reviews;
+  final RatingStats? stats;
+  final bool isLoading;
+  final String? error;
+  final ReviewType? filterType;
+  final bool hasMore;
 
   ReviewsListState copyWith({
     List<ReviewModel>? reviews,
@@ -123,15 +121,15 @@ class ReviewFormViewModel extends _$ReviewFormViewModel {
     required String rideId,
     required String revieweeId,
     required String revieweeName,
-    String? revieweePhotoUrl,
     required ReviewType type,
+    String? revieweePhotoUrl,
   }) async {
     if (!state.isValid) {
       state = state.copyWith(error: 'Please provide a rating');
       return false;
     }
 
-    state = state.copyWith(isSubmitting: true, error: null);
+    state = state.copyWith(isSubmitting: true);
 
     try {
       final currentUser = ref.read(currentUserProvider).value;
@@ -166,17 +164,19 @@ class ReviewFormViewModel extends _$ReviewFormViewModel {
       try {
         final profileRepo = ref.read(profileRepositoryProvider);
         await profileRepo.addXP(currentUser.uid, 15);
-      } catch (_) {
+      } on Exception catch (_) {
         // XP failure is non-fatal
       }
 
+      if (!ref.mounted) return true;
       // Reset form after successful submission
       state = const ReviewFormState();
       return true;
-    } catch (e) {
+    } on Exception catch (e) {
+      if (!ref.mounted) return false;
       state = state.copyWith(
         isSubmitting: false,
-        error: 'Failed to submit review: ${e.toString()}',
+        error: 'Failed to submit review: $e',
       );
       return false;
     }
@@ -202,13 +202,11 @@ class ReviewsListViewModel extends _$ReviewsListViewModel {
       return ReviewsListState(
         reviews: reviews,
         stats: stats,
-        isLoading: false,
         hasMore: reviews.length >= _pageSize,
       );
-    } catch (e) {
+    } on Exception catch (e) {
       return ReviewsListState(
-        isLoading: false,
-        error: 'Failed to load reviews: ${e.toString()}',
+        error: 'Failed to load reviews: $e',
       );
     }
   }
@@ -252,12 +250,12 @@ class ReviewsListViewModel extends _$ReviewsListViewModel {
           hasMore: more.length >= _pageSize,
         ),
       );
-    } catch (e) {
+    } on Exception catch (e) {
       if (!ref.mounted) return;
       state = AsyncValue.data(
         current.copyWith(
           isLoading: false,
-          error: 'Failed to load more: ${e.toString()}',
+          error: 'Failed to load more: $e',
         ),
       );
     }
@@ -283,9 +281,11 @@ class ReviewResponseViewModel extends _$ReviewResponseViewModel {
       final repo = ref.read(reviewRepositoryProvider);
       await repo.respondToReview(currentUser.uid, reviewId, response);
 
+      if (!ref.mounted) return true;
       state = const AsyncValue.data(null);
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
+      if (!ref.mounted) return false;
       state = AsyncValue.error(e, st);
       return false;
     }

@@ -1,10 +1,10 @@
 import 'dart:io';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:sport_connect/core/widgets/address_autocomplete_field.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/core/widgets/address_autocomplete_field.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 
@@ -12,19 +12,6 @@ part 'profile_view_model.g.dart';
 
 /// Profile Edit State
 class ProfileEditState {
-  final String displayName;
-  final String? phoneNumber;
-  final DateTime? dateOfBirth;
-  final String? gender;
-  final Expertise expertise;
-  final AddressResult? cityResult;
-  final File? newPhotoFile;
-  final bool imageRemoved;
-  final bool hasChanges;
-  final bool isLoading;
-  final bool isSaved;
-  final String? error;
-
   const ProfileEditState({
     this.displayName = '',
     this.phoneNumber,
@@ -39,6 +26,28 @@ class ProfileEditState {
     this.isSaved = false,
     this.error,
   });
+
+  factory ProfileEditState.fromUser(UserModel user) {
+    return ProfileEditState(
+      displayName: user.displayName,
+      phoneNumber: user.phoneNumber,
+      dateOfBirth: user.dateOfBirth,
+      gender: user.gender,
+      expertise: user.expertise,
+    );
+  }
+  final String displayName;
+  final String? phoneNumber;
+  final DateTime? dateOfBirth;
+  final String? gender;
+  final Expertise expertise;
+  final AddressResult? cityResult;
+  final File? newPhotoFile;
+  final bool imageRemoved;
+  final bool hasChanges;
+  final bool isLoading;
+  final bool isSaved;
+  final String? error;
 
   ProfileEditState copyWith({
     String? displayName,
@@ -73,32 +82,9 @@ class ProfileEditState {
       error: error,
     );
   }
-
-  factory ProfileEditState.fromUser(UserModel user) {
-    return ProfileEditState(
-      displayName: user.displayName,
-      phoneNumber: user.phoneNumber,
-      dateOfBirth: user.dateOfBirth,
-      gender: user.gender,
-      expertise: user.expertise,
-      hasChanges: false,
-    );
-  }
 }
 
 class ContactSupportState {
-  static const defaultCategory = 'General';
-
-  final String selectedCategory;
-  final String subject;
-  final String message;
-  final List<File> attachedFiles;
-  final bool isSubmitting;
-  final bool isSubmitted;
-  final String? errorMessage;
-  final String? subjectError;
-  final String? messageError;
-
   const ContactSupportState({
     this.selectedCategory = defaultCategory,
     this.subject = '',
@@ -110,6 +96,17 @@ class ContactSupportState {
     this.subjectError,
     this.messageError,
   });
+  static const defaultCategory = 'General';
+
+  final String selectedCategory;
+  final String subject;
+  final String message;
+  final List<File> attachedFiles;
+  final bool isSubmitting;
+  final bool isSubmitted;
+  final String? errorMessage;
+  final String? subjectError;
+  final String? messageError;
 
   ContactSupportState copyWith({
     String? selectedCategory,
@@ -161,8 +158,6 @@ class ReportIssueFormArgs {
 }
 
 class ReportIssueFormState {
-  static const _unset = Object();
-
   const ReportIssueFormState({
     this.selectedType,
     this.severity = 'medium',
@@ -174,6 +169,7 @@ class ReportIssueFormState {
     this.descriptionError,
     this.errorMessage,
   });
+  static const _unset = Object();
 
   final String? selectedType;
   final String severity;
@@ -437,6 +433,7 @@ class ReportIssueFormViewModel extends _$ReportIssueFormViewModel {
     }
 
     final size = await file.length();
+    if (!ref.mounted) return;
     if (size > maxFileSizeBytes) {
       state = state.copyWith(errorMessage: 'File exceeds 10 MB limit');
       return;
@@ -509,8 +506,10 @@ class ReportIssueFormViewModel extends _$ReportIssueFormViewModel {
             attachments: state.attachedFiles,
           );
 
+      if (!ref.mounted) return;
       state = state.copyWith(isSubmitting: false, isSubmitted: true);
-    } catch (_) {
+    } on Exception catch (_) {
+      if (!ref.mounted) return;
       state = state.copyWith(
         isSubmitting: false,
         errorMessage: 'Failed to submit report. Please try again.',
@@ -575,7 +574,11 @@ class ProfileEditViewModel extends _$ProfileEditViewModel {
   }
 
   void setExpertise(Expertise expertise) {
-    state = state.copyWith(expertise: expertise, hasChanges: true, isSaved: false);
+    state = state.copyWith(
+      expertise: expertise,
+      hasChanges: true,
+      isSaved: false,
+    );
   }
 
   void setCityResult(AddressResult? result) {
@@ -612,7 +615,7 @@ class ProfileEditViewModel extends _$ProfileEditViewModel {
       return false;
     }
 
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: true);
 
     try {
       final repository = ref.read(profileRepositoryProvider);
@@ -639,7 +642,7 @@ class ProfileEditViewModel extends _$ProfileEditViewModel {
         hasChanges: false,
       );
       return true;
-    } catch (e) {
+    } on Exception catch (e) {
       if (!ref.mounted) return false;
       state = state.copyWith(isLoading: false, error: e.toString());
       return false;
@@ -651,10 +654,10 @@ class ProfileEditViewModel extends _$ProfileEditViewModel {
     File? newPhotoFile,
     bool removePhoto = false,
   }) async {
-    state = state.copyWith(isLoading: true, isSaved: false, error: null);
+    state = state.copyWith(isLoading: true, isSaved: false);
 
     try {
-      String? photoUrl = updatedUser.photoUrl;
+      var photoUrl = updatedUser.photoUrl;
 
       if (newPhotoFile != null) {
         photoUrl = await ref
@@ -678,11 +681,10 @@ class ProfileEditViewModel extends _$ProfileEditViewModel {
       state = state.copyWith(
         isLoading: false,
         isSaved: true,
-        error: null,
         hasChanges: false,
       );
       return true;
-    } catch (e) {
+    } on Exception catch (e) {
       if (!ref.mounted) return false;
       state = state.copyWith(
         isLoading: false,
@@ -736,6 +738,7 @@ class ContactSupportViewModel extends _$ContactSupportViewModel {
     }
 
     final size = await file.length();
+    if (!ref.mounted) return;
     if (size > maxFileSizeBytes) {
       state = state.copyWith(errorMessage: 'File exceeds 10 MB limit');
       return;
@@ -807,7 +810,7 @@ class ContactSupportViewModel extends _$ContactSupportViewModel {
 
       if (!ref.mounted) return;
       state = state.copyWith(isSubmitting: false, isSubmitted: true);
-    } catch (e) {
+    } on Exception {
       if (!ref.mounted) return;
       state = state.copyWith(
         isSubmitting: false,
@@ -842,7 +845,7 @@ class SocialActionsViewModel extends _$SocialActionsViewModel {
           isBlocked: currentUser.blockedUsers.contains(targetUserId),
         );
       }
-    } catch (e) {
+    } on Exception {
       // Ignore errors
     }
   }
@@ -863,10 +866,10 @@ class SocialActionsViewModel extends _$SocialActionsViewModel {
       state = state.copyWith(
         isBlocked: !state.isBlocked,
         // When blocking, clear follow status; when unblocking, preserve it.
-        isFollowing: state.isBlocked ? state.isFollowing : false,
+        isFollowing: state.isBlocked && state.isFollowing,
         isLoading: false,
       );
-    } catch (e) {
+    } on Exception catch (e) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, error: e.toString());
     }
@@ -874,17 +877,16 @@ class SocialActionsViewModel extends _$SocialActionsViewModel {
 }
 
 class SocialState {
-  final bool isFollowing;
-  final bool isBlocked;
-  final bool isLoading;
-  final String? error;
-
   const SocialState({
     this.isFollowing = false,
     this.isBlocked = false,
     this.isLoading = false,
     this.error,
   });
+  final bool isFollowing;
+  final bool isBlocked;
+  final bool isLoading;
+  final String? error;
 
   SocialState copyWith({
     bool? isFollowing,
@@ -910,56 +912,56 @@ class VehicleViewModel extends _$VehicleViewModel {
   }
 
   Future<void> addVehicle(VehicleModel vehicle) async {
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: true);
 
     try {
       final repository = ref.read(profileRepositoryProvider);
       await repository.addVehicle(uid, vehicle);
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false);
-    } catch (e) {
+    } on Exception catch (e) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
   Future<void> updateVehicle(VehicleModel vehicle) async {
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: true);
 
     try {
       final repository = ref.read(profileRepositoryProvider);
       await repository.updateVehicle(uid, vehicle);
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false);
-    } catch (e) {
+    } on Exception catch (e) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
   Future<void> removeVehicle(String vehicleId) async {
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: true);
 
     try {
       final repository = ref.read(profileRepositoryProvider);
       await repository.removeVehicle(uid, vehicleId);
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false);
-    } catch (e) {
+    } on Exception catch (e) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
   Future<void> setDefault(String vehicleId) async {
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: true);
 
     try {
       final repository = ref.read(profileRepositoryProvider);
       await repository.setDefaultVehicle(uid, vehicleId);
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false);
-    } catch (e) {
+    } on Exception catch (e) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, error: e.toString());
     }
@@ -967,10 +969,9 @@ class VehicleViewModel extends _$VehicleViewModel {
 }
 
 class VehicleState {
+  const VehicleState({this.isLoading = false, this.error});
   final bool isLoading;
   final String? error;
-
-  const VehicleState({this.isLoading = false, this.error});
 
   VehicleState copyWith({bool? isLoading, String? error}) {
     return VehicleState(isLoading: isLoading ?? this.isLoading, error: error);

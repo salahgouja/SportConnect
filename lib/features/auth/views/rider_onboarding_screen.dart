@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:form_builder_validators/form_builder_validators.dart';
-import 'package:sport_connect/core/utils/form_validators.dart';
+import 'package:sport_connect/core/widgets/address_autocomplete_field.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/core/widgets/glass_panel.dart';
 import 'package:sport_connect/core/widgets/intl_phone_input.dart';
-import 'package:sport_connect/core/widgets/address_autocomplete_field.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/onboarding_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -26,17 +24,56 @@ class RiderOnboardingScreen extends ConsumerStatefulWidget {
 }
 
 class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
-  final _formKey = GlobalKey<FormBuilderState>();
+  final _form = FormGroup({
+    'name': FormControl<String>(
+      validators: [
+        Validators.required,
+        Validators.minLength(2),
+        Validators.maxLength(60),
+        Validators.delegate((control) {
+          final value = control.value as String?;
+          if (value == null || value.trim().isEmpty) return null;
+          final trimmed = value.trim();
+          if (RegExp('[0-9]').hasMatch(trimmed)) {
+            return {'name': 'Name cannot contain numbers'};
+          }
+          if (!RegExp(r"^[\p{L}\s\-'.]+$", unicode: true).hasMatch(trimmed)) {
+            return {'name': 'Name contains invalid characters'};
+          }
+          return null;
+        }),
+      ],
+    ),
+    'gender': FormControl<String>(validators: [Validators.required]),
+    'dob': FormControl<DateTime>(
+      validators: [
+        Validators.required,
+        Validators.delegate((control) {
+          final value = control.value as DateTime?;
+          if (value == null) return null;
+          final age = DateTime.now().difference(value).inDays ~/ 365;
+          if (age < 18) return {'minAge': true};
+          return null;
+        }),
+      ],
+    ),
+    'expertise': FormControl<Expertise>(
+      value: Expertise.rookie,
+      validators: [Validators.required],
+    ),
+    'terms': FormControl<bool>(
+      value: false,
+      validators: [Validators.requiredTrue],
+    ),
+  });
   final _phoneKey = GlobalKey<IntlPhoneInputState>();
   final _cityKey = GlobalKey<AddressAutocompleteFieldState>();
 
   bool _didScheduleProfilePrefill = false;
 
   void _populateProfileFields(UserModel user) {
-    _formKey.currentState?.patchValue({
+    _form.patchValue({
       'name': user.displayName,
-      'phone': user.phoneNumber ?? '',
-      'city': user.city ?? '',
       'gender': user.gender,
       'dob': user.dateOfBirth,
       'expertise': user.expertise,
@@ -53,25 +90,28 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
       );
       return;
     }
-    if (!_formKey.currentState!.saveAndValidate()) return;
+    if (!_form.valid) {
+      _form.markAllAsTouched();
+      return;
+    }
 
     // Validate external widgets
     final phoneValid = _phoneKey.currentState?.validate() ?? true;
     final cityValid = _cityKey.currentState?.validate() ?? true;
     if (phoneValid != true || cityValid != true) return;
 
-    final values = _formKey.currentState!.value;
+    final values = _form.value;
     final phoneStr = vmState.riderPhoneNumber;
     final cityStr = vmState.riderCity ?? _cityKey.currentState?.text;
     final updatedUser = currentUser.map(
       rider: (rider) => rider.copyWith(
-        displayName: values['name'],
+        displayName: values['name'] as String? ?? '',
         phoneNumber: phoneStr,
         city: cityStr,
         country: vmState.riderCountry,
-        gender: values['gender'],
-        dateOfBirth: values['dob'],
-        expertise: values['expertise'] ?? Expertise.rookie,
+        gender: values['gender'] as String?,
+        dateOfBirth: values['dob'] as DateTime?,
+        expertise: (values['expertise'] as Expertise?) ?? Expertise.rookie,
       ),
       driver: (driver) => driver,
     );
@@ -135,9 +175,8 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
         child: Semantics(
           container: true,
           label: 'Rider onboarding form',
-          child: FormBuilder(
-            key: _formKey,
-            autovalidateMode: AutovalidateMode.disabled,
+          child: ReactiveForm(
+            formGroup: _form,
             child: SingleChildScrollView(
               padding: EdgeInsets.all(20.w),
               child: Column(
@@ -145,7 +184,6 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
                 children: [
                   GlassPanel(
                     padding: EdgeInsets.all(20.w),
-                    radius: 20,
                     color: AppColors.surface.withValues(alpha: 0.62),
                     borderColor: AppColors.primary.withValues(alpha: 0.2),
                     child: Column(
@@ -179,25 +217,21 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
                   ),
                   SizedBox(height: 20.h),
                   // Full name
-                  FormBuilderTextField(
-                    name: 'name',
+                  ReactiveTextField<String>(
+                    formControlName: 'name',
                     decoration: InputDecoration(
                       labelText: l10n.authFullName,
                       hintText: l10n.authFullNameHint,
-                      prefixIcon: Icon(Icons.person_rounded),
+                      prefixIcon: const Icon(Icons.person_rounded),
                     ),
                     textInputAction: TextInputAction.next,
-                    validator: FormBuilderValidators.compose([
-                      FormBuilderValidators.required(
-                        errorText: l10n.nameRequiredError,
-                      ),
-                      FormBuilderValidators.minLength(
-                        2,
-                        errorText: l10n.nameMinLengthError,
-                      ),
-                      FormBuilderValidators.maxLength(60),
-                      (value) => FormValidators.name(value),
-                    ]),
+                    validationMessages: {
+                      ValidationMessage.required: (_) => l10n.nameRequiredError,
+                      ValidationMessage.minLength: (_) =>
+                          l10n.nameMinLengthError,
+                      ValidationMessage.maxLength: (_) => 'Name is too long',
+                      'name': (error) => error as String,
+                    },
                   ).animate().fadeIn(duration: 400.ms, delay: 50.ms),
 
                   SizedBox(height: 16.h),
@@ -245,8 +279,8 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
                   SizedBox(height: 16.h),
 
                   // Gender dropdown
-                  FormBuilderDropdown<String>(
-                    name: 'gender',
+                  ReactiveDropdownField<String>(
+                    formControlName: 'gender',
                     decoration: InputDecoration(labelText: l10n.gender),
                     items: [
                       DropdownMenuItem(
@@ -258,47 +292,58 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
                         child: Text(l10n.genderFemale),
                       ),
                     ],
-                    validator: FormBuilderValidators.required(
-                      errorText: l10n.driverGenderRequired,
-                    ),
+                    validationMessages: {
+                      ValidationMessage.required: (_) =>
+                          l10n.driverGenderRequired,
+                    },
                   ),
                   SizedBox(height: 16.h),
 
                   // Date of birth
-                  FormBuilderDateTimePicker(
-                    name: 'dob',
-                    inputType: InputType.date,
-                    decoration: InputDecoration(
-                      labelText: l10n.authDateOfBirth,
-                    ),
+                  ReactiveDatePicker<DateTime>(
+                    formControlName: 'dob',
+                    firstDate: DateTime(1950),
                     lastDate: DateTime(
                       DateTime.now().year - 18,
                       DateTime.now().month,
                       DateTime.now().day,
                     ),
-                    firstDate: DateTime(1950),
-                    validator: FormBuilderValidators.compose([
-                      FormBuilderValidators.required(
-                        errorText: l10n.authDobError,
-                      ),
-                      (value) {
-                        if (value == null) return null;
-                        final age =
-                            DateTime.now().difference(value).inDays ~/ 365;
-                        if (age < 18) return l10n.authDobMinAge;
-                        return null;
-                      },
-                    ]),
+                    builder: (context, picker, child) {
+                      final value = picker.value;
+                      final control = picker.control;
+                      final showError = control.touched && control.invalid;
+                      String? errorText;
+                      if (showError) {
+                        if (control.hasError(ValidationMessage.required)) {
+                          errorText = l10n.authDobError;
+                        } else if (control.hasError('minAge')) {
+                          errorText = l10n.authDobMinAge;
+                        }
+                      }
+                      return InkWell(
+                        onTap: picker.showPicker,
+                        child: InputDecorator(
+                          decoration: InputDecoration(
+                            labelText: l10n.authDateOfBirth,
+                            errorText: errorText,
+                          ),
+                          child: Text(
+                            value != null
+                                ? '${value.day}/${value.month}/${value.year}'
+                                : l10n.authDobPrompt,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                   SizedBox(height: 16.h),
 
                   // Expertise level
-                  FormBuilderDropdown<Expertise>(
-                    name: 'expertise',
-                    initialValue: Expertise.rookie,
+                  ReactiveDropdownField<Expertise>(
+                    formControlName: 'expertise',
                     decoration: InputDecoration(
                       labelText: l10n.expertiseLevel,
-                      prefixIcon: Icon(Icons.workspace_premium_rounded),
+                      prefixIcon: const Icon(Icons.workspace_premium_rounded),
                     ),
                     items: Expertise.values
                         .map(
@@ -308,20 +353,17 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
                           ),
                         )
                         .toList(),
-                    validator: FormBuilderValidators.required(
-                      errorText: l10n.expertiseLevelRequired,
-                    ),
+                    validationMessages: {
+                      ValidationMessage.required: (_) =>
+                          l10n.expertiseLevelRequired,
+                    },
                   ),
                   SizedBox(height: 20.h),
 
                   // Terms checkbox
-                  FormBuilderCheckbox(
-                    name: 'terms',
+                  ReactiveCheckboxListTile(
+                    formControlName: 'terms',
                     title: Text(l10n.driverTermsLabel),
-                    validator: FormBuilderValidators.equal(
-                      true,
-                      errorText: l10n.driverTermsRequired,
-                    ),
                   ),
 
                   SizedBox(height: 28.h),

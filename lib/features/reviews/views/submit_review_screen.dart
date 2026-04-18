@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
@@ -13,20 +13,19 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Screen for submitting a review after a ride
 class SubmitReviewScreen extends ConsumerStatefulWidget {
+  const SubmitReviewScreen({
+    required this.rideId,
+    required this.revieweeId,
+    required this.revieweeName,
+    required this.reviewType,
+    super.key,
+    this.revieweePhotoUrl,
+  });
   final String rideId;
   final String revieweeId;
   final String revieweeName;
   final String? revieweePhotoUrl;
   final ReviewType reviewType;
-
-  const SubmitReviewScreen({
-    super.key,
-    required this.rideId,
-    required this.revieweeId,
-    required this.revieweeName,
-    this.revieweePhotoUrl,
-    required this.reviewType,
-  });
 
   @override
   ConsumerState<SubmitReviewScreen> createState() => _SubmitReviewScreenState();
@@ -57,7 +56,6 @@ class _SubmitReviewScreenState extends ConsumerState<SubmitReviewScreen> {
           : SingleChildScrollView(
               padding: EdgeInsets.all(16.r),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   // User being reviewed
                   _buildUserCard()
@@ -348,7 +346,7 @@ class _SubmitReviewScreenState extends ConsumerState<SubmitReviewScreen> {
       textCapitalization: TextCapitalization.sentences,
       decoration: InputDecoration(
         hintText: AppLocalizations.of(context).shareYourExperience,
-        hintStyle: TextStyle(color: AppColors.textTertiary),
+        hintStyle: const TextStyle(color: AppColors.textTertiary),
         helperText: AppLocalizations.of(context).specificFeedbackHelps,
         helperStyle: TextStyle(color: AppColors.textTertiary, fontSize: 11.sp),
         filled: true,
@@ -359,10 +357,10 @@ class _SubmitReviewScreenState extends ConsumerState<SubmitReviewScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide(color: AppColors.primary),
+          borderSide: const BorderSide(color: AppColors.primary),
         ),
         contentPadding: EdgeInsets.all(16.r),
-        counterStyle: TextStyle(color: AppColors.textTertiary),
+        counterStyle: const TextStyle(color: AppColors.textTertiary),
       ),
       style: TextStyle(color: AppColors.textPrimary, fontSize: 14.sp),
     );

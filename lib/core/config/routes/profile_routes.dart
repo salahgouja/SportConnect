@@ -1,26 +1,27 @@
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/config/page_transitions.dart';
 import 'package:sport_connect/core/config/routes/route_config.dart';
 import 'package:sport_connect/core/config/routes/route_params.dart';
-import 'package:sport_connect/core/config/page_transitions.dart';
-import 'package:sport_connect/features/profile/views/user_search_screen.dart';
-import 'package:sport_connect/features/profile/views/profile_screen.dart';
-import 'package:sport_connect/features/profile/views/settings_screen.dart';
-import 'package:sport_connect/features/profile/views/edit_profile_screen.dart';
-import 'package:sport_connect/features/profile/views/achievements_screen.dart';
-import 'package:sport_connect/features/vehicles/views/vehicle_management_screen.dart';
-import 'package:sport_connect/features/profile/views/driver_documents_screen.dart';
-import 'package:sport_connect/features/profile/views/tax_documents_screen.dart';
-import 'package:sport_connect/features/profile/views/background_check_screen.dart';
-import 'package:sport_connect/features/profile/views/two_factor_auth_screen.dart';
-import 'package:sport_connect/features/profile/views/help_center_screen.dart';
-import 'package:sport_connect/features/profile/views/contact_support_screen.dart';
-import 'package:sport_connect/features/profile/views/report_issue_screen.dart';
-import 'package:sport_connect/features/profile/views/about_screen.dart';
 import 'package:sport_connect/features/notifications/views/notifications_screen.dart';
-import 'package:sport_connect/features/payments/views/payment_history_screen.dart';
 import 'package:sport_connect/features/payments/views/driver_stripe_onboarding_screen.dart';
+import 'package:sport_connect/features/payments/views/manage_payment_methods_screen.dart';
+import 'package:sport_connect/features/payments/views/payment_history_screen.dart';
 import 'package:sport_connect/features/payments/views/payout_detail_screen.dart';
+import 'package:sport_connect/features/profile/views/about_screen.dart';
+import 'package:sport_connect/features/profile/views/achievements_screen.dart';
+import 'package:sport_connect/features/profile/views/background_check_screen.dart';
+import 'package:sport_connect/features/profile/views/contact_support_screen.dart';
+import 'package:sport_connect/features/profile/views/driver_documents_screen.dart';
+import 'package:sport_connect/features/profile/views/edit_profile_screen.dart';
+import 'package:sport_connect/features/profile/views/help_center_screen.dart';
+import 'package:sport_connect/features/profile/views/profile_screen.dart';
+import 'package:sport_connect/features/profile/views/report_issue_screen.dart';
+import 'package:sport_connect/features/profile/views/settings_screen.dart';
+import 'package:sport_connect/features/profile/views/tax_documents_screen.dart';
+import 'package:sport_connect/features/profile/views/two_factor_auth_screen.dart';
+import 'package:sport_connect/features/profile/views/user_search_screen.dart';
+import 'package:sport_connect/features/vehicles/views/vehicle_management_screen.dart';
 
 /// Profile and related features module routes
 class ProfileRoutes implements RouteConfig {
@@ -106,6 +107,16 @@ class ProfileRoutes implements RouteConfig {
         pageBuilder: (context, state) => SlideRightTransitionPage(
           key: state.pageKey,
           child: const PaymentHistoryScreen(),
+        ),
+      ),
+
+      // Manage Payment Methods (Customer Sheet)
+      GoRoute(
+        path: AppRoutes.managePaymentMethods.path,
+        name: AppRoutes.managePaymentMethods.name,
+        pageBuilder: (context, state) => SlideRightTransitionPage(
+          key: state.pageKey,
+          child: const ManagePaymentMethodsScreen(),
         ),
       ),
 

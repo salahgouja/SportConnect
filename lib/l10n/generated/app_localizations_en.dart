@@ -120,6 +120,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsPaymentMethodsDesc => 'Manage your payment options';
 
   @override
+  String get managePaymentMethodsDesc =>
+      'Add, remove, or update saved payment methods for faster checkout.';
+
+  @override
+  String get selectedPaymentMethod => 'Selected Payment Method';
+
+  @override
+  String get changePaymentMethod => 'Change Payment Method';
+
+  @override
+  String get addPaymentMethod => 'Add Payment Method';
+
+  @override
   String get settingsVerifyAccount => 'Verify Account';
 
   @override

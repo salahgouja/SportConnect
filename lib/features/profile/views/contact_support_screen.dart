@@ -2,11 +2,12 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
@@ -30,6 +31,7 @@ class ContactSupportScreen extends ConsumerStatefulWidget {
 
 class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
   final _imagePicker = ImagePicker();
+  late final FormGroup _form;
 
   static const _categories = [
     'General',
@@ -41,6 +43,27 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
     'Feature Request',
     'Other',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _form = FormGroup({
+      'subject': FormControl<String>(
+        value: '',
+        validators: [Validators.required, Validators.minLength(3)],
+      ),
+      'message': FormControl<String>(
+        value: '',
+        validators: [Validators.required, Validators.minLength(10)],
+      ),
+    });
+  }
+
+  @override
+  void dispose() {
+    _form.dispose();
+    super.dispose();
+  }
 
   Future<void> _pickFiles() async {
     final source = await showModalBottomSheet<ImageSource>(
@@ -84,6 +107,8 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
   }
 
   Future<void> _submitTicket() async {
+    _form.markAllAsTouched();
+    if (_form.invalid) return;
     final user = ref.read(currentUserProvider).value;
     await ref
         .read(contactSupportViewModelProvider.notifier)
@@ -150,7 +175,9 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
     AppLocalizations l10n,
     ContactSupportState supportState,
   ) {
-    return Column(
+    return ReactiveForm(
+      formGroup: _form,
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(height: 8.h),
@@ -239,17 +266,22 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
         SizedBox(height: 20.h),
 
         // Subject
-        TextField(
+        ReactiveTextField<String>(
+          formControlName: 'subject',
           maxLength: 100,
-          onChanged: ref
-              .read(contactSupportViewModelProvider.notifier)
-              .setSubject,
           textCapitalization: TextCapitalization.sentences,
+          onChanged: (control) => ref
+              .read(contactSupportViewModelProvider.notifier)
+              .setSubject(control.value ?? ''),
+          validationMessages: {
+            ValidationMessage.required: (_) => 'Please enter a subject',
+            ValidationMessage.minLength: (_) =>
+                'Subject must be at least 3 characters',
+          },
           decoration: InputDecoration(
             labelText: l10n.subjectLabel,
             hintText: l10n.subjectHint,
             prefixIcon: const Icon(Icons.subject_rounded),
-            errorText: supportState.subjectError,
           ),
         ).animate().fadeIn(delay: 200.ms),
 
@@ -265,16 +297,21 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
           ),
         ),
         SizedBox(height: 8.h),
-        TextField(
+        ReactiveTextField<String>(
+          formControlName: 'message',
           maxLines: 6,
           maxLength: 2000,
-          onChanged: ref
-              .read(contactSupportViewModelProvider.notifier)
-              .setMessage,
           textCapitalization: TextCapitalization.sentences,
+          onChanged: (control) => ref
+              .read(contactSupportViewModelProvider.notifier)
+              .setMessage(control.value ?? ''),
+          validationMessages: {
+            ValidationMessage.required: (_) => 'Please describe your issue',
+            ValidationMessage.minLength: (_) =>
+                'Please provide at least 10 characters',
+          },
           decoration: InputDecoration(
             hintText: l10n.messageFieldHint,
-            errorText: supportState.messageError,
             hintStyle: TextStyle(
               fontSize: 14.sp,
               color: AppColors.textTertiary,
@@ -283,19 +320,22 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
             fillColor: Colors.white,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.border),
+              borderSide: const BorderSide(color: AppColors.border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.border),
+              borderSide: const BorderSide(color: AppColors.border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+              borderSide: const BorderSide(
+                color: AppColors.primary,
+                width: 1.5,
+              ),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.error),
+              borderSide: const BorderSide(color: AppColors.error),
             ),
           ),
         ).animate().fadeIn(delay: 300.ms),
@@ -312,7 +352,6 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
               borderRadius: BorderRadius.circular(12.r),
               border: Border.all(
                 color: AppColors.border,
-                style: BorderStyle.solid,
               ),
             ),
             child: Row(
@@ -454,6 +493,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
 
         SizedBox(height: 32.h),
       ],
+    ),
     );
   }
 

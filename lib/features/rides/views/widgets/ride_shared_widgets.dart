@@ -6,6 +6,13 @@ import 'package:sport_connect/core/theme/app_colors.dart';
 ///
 /// Used in route cards across ride detail, rider view, and search screens.
 class RideRouteTimeline extends StatelessWidget {
+  const RideRouteTimeline({
+    super.key,
+    this.lineHeight = 40,
+    this.dotSize = 12,
+    this.iconSize = 20,
+  });
+
   /// Height of the gradient connector line.
   final double lineHeight;
 
@@ -15,13 +22,6 @@ class RideRouteTimeline extends StatelessWidget {
   /// Size of the destination icon.
   final double iconSize;
 
-  const RideRouteTimeline({
-    super.key,
-    this.lineHeight = 40,
-    this.dotSize = 12,
-    this.iconSize = 20,
-  });
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -30,7 +30,7 @@ class RideRouteTimeline extends StatelessWidget {
         Container(
           width: dotSize.w,
           height: dotSize.w,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: AppColors.success,
             shape: BoxShape.circle,
           ),
@@ -38,7 +38,7 @@ class RideRouteTimeline extends StatelessWidget {
         Container(
           width: 2.w,
           height: lineHeight.h,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -60,6 +60,14 @@ class RideRouteTimeline extends StatelessWidget {
 ///
 /// Used in route cards to display duration, distance, and seats.
 class RideInfoChip extends StatelessWidget {
+  const RideInfoChip({
+    required this.icon,
+    required this.value,
+    required this.label,
+    super.key,
+    this.iconColor,
+  });
+
   /// Icon displayed at the top.
   final IconData icon;
 
@@ -71,14 +79,6 @@ class RideInfoChip extends StatelessWidget {
 
   /// Icon color. Defaults to [AppColors.primary].
   final Color? iconColor;
-
-  const RideInfoChip({
-    super.key,
-    required this.icon,
-    required this.value,
-    required this.label,
-    this.iconColor,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -108,6 +108,15 @@ class RideInfoChip extends StatelessWidget {
 ///
 /// Used for departure time, price, and other structured information.
 class RideDetailInfoRow extends StatelessWidget {
+  const RideDetailInfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    super.key,
+    this.iconBackground,
+    this.iconColor,
+  });
+
   /// Leading icon.
   final IconData icon;
 
@@ -122,15 +131,6 @@ class RideDetailInfoRow extends StatelessWidget {
 
   /// Icon color. Defaults to [AppColors.primary].
   final Color? iconColor;
-
-  const RideDetailInfoRow({
-    super.key,
-    required this.icon,
-    required this.label,
-    required this.value,
-    this.iconBackground,
-    this.iconColor,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -178,6 +178,13 @@ class RideDetailInfoRow extends StatelessWidget {
 ///
 /// Used in ride detail and driver view screens for pets, smoking, luggage, etc.
 class RideAmenityChip extends StatelessWidget {
+  const RideAmenityChip({
+    required this.icon,
+    required this.label,
+    required this.isAllowed,
+    super.key,
+  });
+
   /// Icon representing the amenity.
   final IconData icon;
 
@@ -186,13 +193,6 @@ class RideAmenityChip extends StatelessWidget {
 
   /// Whether the amenity is allowed.
   final bool isAllowed;
-
-  const RideAmenityChip({
-    super.key,
-    required this.icon,
-    required this.label,
-    required this.isAllowed,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -239,6 +239,13 @@ class RideAmenityChip extends StatelessWidget {
 ///
 /// Shows verification, experience, and other badges.
 class RideDriverBadge extends StatelessWidget {
+  const RideDriverBadge({
+    required this.icon,
+    required this.label,
+    required this.color,
+    super.key,
+  });
+
   /// Badge icon.
   final IconData icon;
 
@@ -247,13 +254,6 @@ class RideDriverBadge extends StatelessWidget {
 
   /// Badge accent color.
   final Color color;
-
-  const RideDriverBadge({
-    super.key,
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -286,6 +286,14 @@ class RideDriverBadge extends StatelessWidget {
 ///
 /// Used in ride summary cards and trip stat sections.
 class RideTripStat extends StatelessWidget {
+  const RideTripStat({
+    required this.label,
+    required this.value,
+    super.key,
+    this.icon,
+    this.iconColor,
+  });
+
   /// The stat label (e.g. "Distance").
   final String label;
 
@@ -297,14 +305,6 @@ class RideTripStat extends StatelessWidget {
 
   /// Color for the icon. Defaults to [AppColors.primary].
   final Color? iconColor;
-
-  const RideTripStat({
-    super.key,
-    required this.label,
-    required this.value,
-    this.icon,
-    this.iconColor,
-  });
 
   @override
   Widget build(BuildContext context) {

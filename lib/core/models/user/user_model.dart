@@ -1,10 +1,10 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:sport_connect/core/converters/timestamp_converter.dart';
 
-import 'gamification_stats.dart';
-import 'rating_breakdown.dart';
-import 'user_enums.dart';
-import 'user_preferences.dart';
+import 'package:sport_connect/core/models/user/gamification_stats.dart';
+import 'package:sport_connect/core/models/user/rating_breakdown.dart';
+import 'package:sport_connect/core/models/user/user_enums.dart';
+import 'package:sport_connect/core/models/user/user_preferences.dart';
 
 part 'user_model.freezed.dart';
 part 'user_model.g.dart';
@@ -24,7 +24,7 @@ sealed class UserModel with _$UserModel {
     String? phoneNumber,
     @TimestampConverter() DateTime? dateOfBirth,
     String? gender,
-    @Default("") String fcmToken,
+    @Default('') String fcmToken,
 
     // Address & location
     String? address,
@@ -78,7 +78,7 @@ sealed class UserModel with _$UserModel {
     String? phoneNumber,
     @TimestampConverter() DateTime? dateOfBirth,
     String? gender,
-    @Default("") String fcmToken,
+    @Default('') String fcmToken,
 
     // Address & location
     String? address,
@@ -182,7 +182,7 @@ extension UserModelLogic on UserModel {
 
   /// Profile completion check
   bool get isProfileComplete {
-    final bool basicInfo =
+    final basicInfo =
         displayName.isNotEmpty &&
         photoUrl != null &&
         phoneNumber != null &&

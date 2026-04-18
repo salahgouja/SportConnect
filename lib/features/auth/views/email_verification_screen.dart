@@ -62,9 +62,10 @@ class EmailVerificationScreen extends ConsumerWidget {
           child: Column(
             children: [
               const Spacer(flex: 2),
-              vmState.isEmailVerified
-                  ? _buildVerifiedState(l10n)
-                  : _buildPendingState(l10n, vmState.userEmail),
+              if (vmState.isEmailVerified)
+                _buildVerifiedState(l10n)
+              else
+                _buildPendingState(l10n, vmState.userEmail),
               const Spacer(flex: 3),
               if (!vmState.isEmailVerified) ...[
                 SizedBox(
@@ -122,7 +123,7 @@ class EmailVerificationScreen extends ConsumerWidget {
       children: [
         Container(
               padding: EdgeInsets.all(28.w),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppColors.primarySurface,
                 shape: BoxShape.circle,
               ),
@@ -179,7 +180,7 @@ class EmailVerificationScreen extends ConsumerWidget {
             SizedBox(
               width: 16.w,
               height: 16.w,
-              child: CircularProgressIndicator.adaptive(
+              child: const CircularProgressIndicator.adaptive(
                 strokeWidth: 2,
                 valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
               ),

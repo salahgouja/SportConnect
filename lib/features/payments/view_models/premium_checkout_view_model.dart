@@ -1,24 +1,26 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
-import 'package:sport_connect/core/services/stripe_service.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/core/services/stripe_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/payments/models/premium_plan.dart';
 import 'package:sport_connect/features/payments/services/premium_iap_service.dart';
 
-class PremiumCheckoutState {
-  final PremiumPlan selectedPlan;
-  final bool isProcessing;
-  final bool isCompleted;
-  final String? errorMessage;
+part 'premium_checkout_view_model.g.dart';
 
+class PremiumCheckoutState {
   const PremiumCheckoutState({
     this.selectedPlan = PremiumPlan.monthly,
     this.isProcessing = false,
     this.isCompleted = false,
     this.errorMessage,
   });
+  final PremiumPlan selectedPlan;
+  final bool isProcessing;
+  final bool isCompleted;
+  final String? errorMessage;
 
   PremiumCheckoutState copyWith({
     PremiumPlan? selectedPlan,
@@ -36,7 +38,8 @@ class PremiumCheckoutState {
   }
 }
 
-class PremiumCheckoutViewModel extends Notifier<PremiumCheckoutState> {
+@riverpod
+class PremiumCheckoutViewModel extends _$PremiumCheckoutViewModel {
   @override
   PremiumCheckoutState build() => const PremiumCheckoutState();
 
@@ -62,7 +65,7 @@ class PremiumCheckoutViewModel extends Notifier<PremiumCheckoutState> {
     state = state.copyWith(isProcessing: true, clearError: true);
 
     try {
-      String premiumSource = 'stripe_fallback';
+      var premiumSource = 'stripe_fallback';
       String? premiumTransactionId;
 
       final iapService = ref.read(premiumIapServiceProvider);
@@ -101,7 +104,7 @@ class PremiumCheckoutViewModel extends Notifier<PremiumCheckoutState> {
       ref.invalidate(currentUserProvider);
       state = state.copyWith(isProcessing: false, isCompleted: true);
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Premium checkout failed', e, st);
       if (!ref.mounted) return false;
       state = state.copyWith(
@@ -127,7 +130,7 @@ class PremiumCheckoutViewModel extends Notifier<PremiumCheckoutState> {
             phone: currentUser.phoneNumber,
             existingCustomerId: existingCustomerId,
           );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       // Keep premium activation successful even if Stripe metadata sync fails.
       TalkerService.warning(
         'Premium purchase succeeded but Stripe customer sync failed: $e',
@@ -140,9 +143,3 @@ class PremiumCheckoutViewModel extends Notifier<PremiumCheckoutState> {
 final premiumIapServiceProvider = Provider<PremiumIapService>(
   (ref) => PremiumIapService(),
 );
-
-final premiumCheckoutViewModelProvider =
-    NotifierProvider.autoDispose<
-      PremiumCheckoutViewModel,
-      PremiumCheckoutState
-    >(PremiumCheckoutViewModel.new);

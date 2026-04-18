@@ -1,40 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Premium Text Field with modern design and animations
 class PremiumTextField extends StatefulWidget {
-  final String? label;
-  final String? hint;
-  final String? helperText;
-  final String? errorText;
-  final TextEditingController? controller;
-  final FocusNode? focusNode;
-  final IconData? prefixIcon;
-  final IconData? suffixIcon;
-  final Widget? prefix;
-  final Widget? suffix;
-  final VoidCallback? onSuffixTap;
-  final ValueChanged<String>? onChanged;
-  final ValueChanged<String>? onSubmitted;
-  final VoidCallback? onTap;
-  final bool obscureText;
-  final bool readOnly;
-  final bool enabled;
-  final bool autofocus;
-  final TextInputType? keyboardType;
-  final TextInputAction? textInputAction;
-  final List<TextInputFormatter>? inputFormatters;
-  final int? maxLines;
-  final int? maxLength;
-  final bool showCounter;
-  final String? Function(String?)? validator;
-  final bool showGlow;
-
   const PremiumTextField({
     super.key,
     this.label,
@@ -64,6 +37,32 @@ class PremiumTextField extends StatefulWidget {
     this.validator,
     this.showGlow = true,
   });
+  final String? label;
+  final String? hint;
+  final String? helperText;
+  final String? errorText;
+  final TextEditingController? controller;
+  final FocusNode? focusNode;
+  final IconData? prefixIcon;
+  final IconData? suffixIcon;
+  final Widget? prefix;
+  final Widget? suffix;
+  final VoidCallback? onSuffixTap;
+  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onSubmitted;
+  final VoidCallback? onTap;
+  final bool obscureText;
+  final bool readOnly;
+  final bool enabled;
+  final bool autofocus;
+  final TextInputType? keyboardType;
+  final TextInputAction? textInputAction;
+  final List<TextInputFormatter>? inputFormatters;
+  final int? maxLines;
+  final int? maxLength;
+  final bool showCounter;
+  final String? Function(String?)? validator;
+  final bool showGlow;
 
   @override
   State<PremiumTextField> createState() => _PremiumTextFieldState();
@@ -316,18 +315,6 @@ class _PremiumTextFieldState extends State<PremiumTextField>
 
 /// Premium Search Field with enhanced styling
 class PremiumSearchField extends StatefulWidget {
-  final TextEditingController? controller;
-  final String? hint;
-  final ValueChanged<String>? onChanged;
-  final ValueChanged<String>? onSubmitted;
-  final VoidCallback? onClear;
-  final VoidCallback? onTap;
-  final bool autofocus;
-  final bool readOnly;
-  final bool showFilterButton;
-  final VoidCallback? onFilterTap;
-  final int? filterCount;
-
   const PremiumSearchField({
     super.key,
     this.controller,
@@ -342,6 +329,17 @@ class PremiumSearchField extends StatefulWidget {
     this.onFilterTap,
     this.filterCount,
   });
+  final TextEditingController? controller;
+  final String? hint;
+  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onSubmitted;
+  final VoidCallback? onClear;
+  final VoidCallback? onTap;
+  final bool autofocus;
+  final bool readOnly;
+  final bool showFilterButton;
+  final VoidCallback? onFilterTap;
+  final int? filterCount;
 
   @override
   State<PremiumSearchField> createState() => _PremiumSearchFieldState();
@@ -481,7 +479,7 @@ class _PremiumSearchFieldState extends State<PremiumSearchField> {
                         top: -6,
                         child: Container(
                           padding: EdgeInsets.all(4.w),
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             color: AppColors.error,
                             shape: BoxShape.circle,
                           ),
@@ -511,12 +509,6 @@ class _PremiumSearchFieldState extends State<PremiumSearchField> {
 
 /// Premium OTP/PIN input field
 class PremiumPinField extends StatefulWidget {
-  final int length;
-  final ValueChanged<String>? onChanged;
-  final ValueChanged<String>? onCompleted;
-  final bool obscureText;
-  final TextEditingController? controller;
-
   const PremiumPinField({
     super.key,
     this.length = 6,
@@ -525,6 +517,11 @@ class PremiumPinField extends StatefulWidget {
     this.obscureText = false,
     this.controller,
   });
+  final int length;
+  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onCompleted;
+  final bool obscureText;
+  final TextEditingController? controller;
 
   @override
   State<PremiumPinField> createState() => _PremiumPinFieldState();

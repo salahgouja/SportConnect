@@ -6,17 +6,16 @@ part 'role_selection_view_model.g.dart';
 
 /// State for the role-selection screen.
 class RoleSelectionState {
-  final bool isLoading;
-  final bool isSuccess;
-  final UserRole? selectedRole;
-  final String? errorMessage;
-
   const RoleSelectionState({
     this.isLoading = false,
     this.isSuccess = false,
     this.selectedRole,
     this.errorMessage,
   });
+  final bool isLoading;
+  final bool isSuccess;
+  final UserRole? selectedRole;
+  final String? errorMessage;
 
   RoleSelectionState copyWith({
     bool? isLoading,
@@ -61,7 +60,7 @@ class RoleSelectionViewModel extends _$RoleSelectionViewModel {
         isSuccess: true,
         clearError: true,
       );
-    } catch (e) {
+    } on Exception catch (e) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }

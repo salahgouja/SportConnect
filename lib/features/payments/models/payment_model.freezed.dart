@@ -17,9 +17,9 @@ mixin _$PaymentTransaction {
 
  String get id; String get rideId; String get riderId; String get riderName; String get driverId; String get driverName;// Payment details
  double get amount;// Total amount in dollars
- String get currency; PaymentStatus get status; PaymentMethodType? get paymentMethodType; String? get paymentMethodLast4;// Stripe IDs
- String? get stripePaymentIntentId; String? get stripeCustomerId; String? get stripeChargeId;// Fee breakdown
- double get platformFee; double get stripeFee; double get driverEarnings; int? get seatsBooked;// Timestamps
+ String get currency; PaymentStatus get status;// Fee breakdown
+ double get platformFee; double get driverEarnings; PaymentMethodType? get paymentMethodType; String? get paymentMethodLast4;// Stripe IDs
+ String? get stripePaymentIntentId; String? get stripeCustomerId; String? get stripeChargeId; double get stripeFee; int? get seatsBooked;// Timestamps
 @TimestampConverter() DateTime? get createdAt;@TimestampConverter() DateTime? get updatedAt;@TimestampConverter() DateTime? get completedAt;@TimestampConverter() DateTime? get refundedAt;// Additional info
  String? get failureReason; String? get refundReason; Map<String, dynamic> get metadata;
 /// Create a copy of PaymentTransaction
@@ -34,16 +34,16 @@ $PaymentTransactionCopyWith<PaymentTransaction> get copyWith => _$PaymentTransac
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PaymentTransaction&&(identical(other.id, id) || other.id == id)&&(identical(other.rideId, rideId) || other.rideId == rideId)&&(identical(other.riderId, riderId) || other.riderId == riderId)&&(identical(other.riderName, riderName) || other.riderName == riderName)&&(identical(other.driverId, driverId) || other.driverId == driverId)&&(identical(other.driverName, driverName) || other.driverName == driverName)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.currency, currency) || other.currency == currency)&&(identical(other.status, status) || other.status == status)&&(identical(other.paymentMethodType, paymentMethodType) || other.paymentMethodType == paymentMethodType)&&(identical(other.paymentMethodLast4, paymentMethodLast4) || other.paymentMethodLast4 == paymentMethodLast4)&&(identical(other.stripePaymentIntentId, stripePaymentIntentId) || other.stripePaymentIntentId == stripePaymentIntentId)&&(identical(other.stripeCustomerId, stripeCustomerId) || other.stripeCustomerId == stripeCustomerId)&&(identical(other.stripeChargeId, stripeChargeId) || other.stripeChargeId == stripeChargeId)&&(identical(other.platformFee, platformFee) || other.platformFee == platformFee)&&(identical(other.stripeFee, stripeFee) || other.stripeFee == stripeFee)&&(identical(other.driverEarnings, driverEarnings) || other.driverEarnings == driverEarnings)&&(identical(other.seatsBooked, seatsBooked) || other.seatsBooked == seatsBooked)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.completedAt, completedAt) || other.completedAt == completedAt)&&(identical(other.refundedAt, refundedAt) || other.refundedAt == refundedAt)&&(identical(other.failureReason, failureReason) || other.failureReason == failureReason)&&(identical(other.refundReason, refundReason) || other.refundReason == refundReason)&&const DeepCollectionEquality().equals(other.metadata, metadata));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PaymentTransaction&&(identical(other.id, id) || other.id == id)&&(identical(other.rideId, rideId) || other.rideId == rideId)&&(identical(other.riderId, riderId) || other.riderId == riderId)&&(identical(other.riderName, riderName) || other.riderName == riderName)&&(identical(other.driverId, driverId) || other.driverId == driverId)&&(identical(other.driverName, driverName) || other.driverName == driverName)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.currency, currency) || other.currency == currency)&&(identical(other.status, status) || other.status == status)&&(identical(other.platformFee, platformFee) || other.platformFee == platformFee)&&(identical(other.driverEarnings, driverEarnings) || other.driverEarnings == driverEarnings)&&(identical(other.paymentMethodType, paymentMethodType) || other.paymentMethodType == paymentMethodType)&&(identical(other.paymentMethodLast4, paymentMethodLast4) || other.paymentMethodLast4 == paymentMethodLast4)&&(identical(other.stripePaymentIntentId, stripePaymentIntentId) || other.stripePaymentIntentId == stripePaymentIntentId)&&(identical(other.stripeCustomerId, stripeCustomerId) || other.stripeCustomerId == stripeCustomerId)&&(identical(other.stripeChargeId, stripeChargeId) || other.stripeChargeId == stripeChargeId)&&(identical(other.stripeFee, stripeFee) || other.stripeFee == stripeFee)&&(identical(other.seatsBooked, seatsBooked) || other.seatsBooked == seatsBooked)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.completedAt, completedAt) || other.completedAt == completedAt)&&(identical(other.refundedAt, refundedAt) || other.refundedAt == refundedAt)&&(identical(other.failureReason, failureReason) || other.failureReason == failureReason)&&(identical(other.refundReason, refundReason) || other.refundReason == refundReason)&&const DeepCollectionEquality().equals(other.metadata, metadata));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hashAll([runtimeType,id,rideId,riderId,riderName,driverId,driverName,amount,currency,status,paymentMethodType,paymentMethodLast4,stripePaymentIntentId,stripeCustomerId,stripeChargeId,platformFee,stripeFee,driverEarnings,seatsBooked,createdAt,updatedAt,completedAt,refundedAt,failureReason,refundReason,const DeepCollectionEquality().hash(metadata)]);
+int get hashCode => Object.hashAll([runtimeType,id,rideId,riderId,riderName,driverId,driverName,amount,currency,status,platformFee,driverEarnings,paymentMethodType,paymentMethodLast4,stripePaymentIntentId,stripeCustomerId,stripeChargeId,stripeFee,seatsBooked,createdAt,updatedAt,completedAt,refundedAt,failureReason,refundReason,const DeepCollectionEquality().hash(metadata)]);
 
 @override
 String toString() {
-  return 'PaymentTransaction(id: $id, rideId: $rideId, riderId: $riderId, riderName: $riderName, driverId: $driverId, driverName: $driverName, amount: $amount, currency: $currency, status: $status, paymentMethodType: $paymentMethodType, paymentMethodLast4: $paymentMethodLast4, stripePaymentIntentId: $stripePaymentIntentId, stripeCustomerId: $stripeCustomerId, stripeChargeId: $stripeChargeId, platformFee: $platformFee, stripeFee: $stripeFee, driverEarnings: $driverEarnings, seatsBooked: $seatsBooked, createdAt: $createdAt, updatedAt: $updatedAt, completedAt: $completedAt, refundedAt: $refundedAt, failureReason: $failureReason, refundReason: $refundReason, metadata: $metadata)';
+  return 'PaymentTransaction(id: $id, rideId: $rideId, riderId: $riderId, riderName: $riderName, driverId: $driverId, driverName: $driverName, amount: $amount, currency: $currency, status: $status, platformFee: $platformFee, driverEarnings: $driverEarnings, paymentMethodType: $paymentMethodType, paymentMethodLast4: $paymentMethodLast4, stripePaymentIntentId: $stripePaymentIntentId, stripeCustomerId: $stripeCustomerId, stripeChargeId: $stripeChargeId, stripeFee: $stripeFee, seatsBooked: $seatsBooked, createdAt: $createdAt, updatedAt: $updatedAt, completedAt: $completedAt, refundedAt: $refundedAt, failureReason: $failureReason, refundReason: $refundReason, metadata: $metadata)';
 }
 
 
@@ -54,7 +54,7 @@ abstract mixin class $PaymentTransactionCopyWith<$Res>  {
   factory $PaymentTransactionCopyWith(PaymentTransaction value, $Res Function(PaymentTransaction) _then) = _$PaymentTransactionCopyWithImpl;
 @useResult
 $Res call({
- String id, String rideId, String riderId, String riderName, String driverId, String driverName, double amount, String currency, PaymentStatus status, PaymentMethodType? paymentMethodType, String? paymentMethodLast4, String? stripePaymentIntentId, String? stripeCustomerId, String? stripeChargeId, double platformFee, double stripeFee, double driverEarnings, int? seatsBooked,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? updatedAt,@TimestampConverter() DateTime? completedAt,@TimestampConverter() DateTime? refundedAt, String? failureReason, String? refundReason, Map<String, dynamic> metadata
+ String id, String rideId, String riderId, String riderName, String driverId, String driverName, double amount, String currency, PaymentStatus status, double platformFee, double driverEarnings, PaymentMethodType? paymentMethodType, String? paymentMethodLast4, String? stripePaymentIntentId, String? stripeCustomerId, String? stripeChargeId, double stripeFee, int? seatsBooked,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? updatedAt,@TimestampConverter() DateTime? completedAt,@TimestampConverter() DateTime? refundedAt, String? failureReason, String? refundReason, Map<String, dynamic> metadata
 });
 
 
@@ -71,7 +71,7 @@ class _$PaymentTransactionCopyWithImpl<$Res>
 
 /// Create a copy of PaymentTransaction
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? rideId = null,Object? riderId = null,Object? riderName = null,Object? driverId = null,Object? driverName = null,Object? amount = null,Object? currency = null,Object? status = null,Object? paymentMethodType = freezed,Object? paymentMethodLast4 = freezed,Object? stripePaymentIntentId = freezed,Object? stripeCustomerId = freezed,Object? stripeChargeId = freezed,Object? platformFee = null,Object? stripeFee = null,Object? driverEarnings = null,Object? seatsBooked = freezed,Object? createdAt = freezed,Object? updatedAt = freezed,Object? completedAt = freezed,Object? refundedAt = freezed,Object? failureReason = freezed,Object? refundReason = freezed,Object? metadata = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? rideId = null,Object? riderId = null,Object? riderName = null,Object? driverId = null,Object? driverName = null,Object? amount = null,Object? currency = null,Object? status = null,Object? platformFee = null,Object? driverEarnings = null,Object? paymentMethodType = freezed,Object? paymentMethodLast4 = freezed,Object? stripePaymentIntentId = freezed,Object? stripeCustomerId = freezed,Object? stripeChargeId = freezed,Object? stripeFee = null,Object? seatsBooked = freezed,Object? createdAt = freezed,Object? updatedAt = freezed,Object? completedAt = freezed,Object? refundedAt = freezed,Object? failureReason = freezed,Object? refundReason = freezed,Object? metadata = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,rideId: null == rideId ? _self.rideId : rideId // ignore: cast_nullable_to_non_nullable
@@ -82,14 +82,14 @@ as String,driverName: null == driverName ? _self.driverName : driverName // igno
 as String,amount: null == amount ? _self.amount : amount // ignore: cast_nullable_to_non_nullable
 as double,currency: null == currency ? _self.currency : currency // ignore: cast_nullable_to_non_nullable
 as String,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as PaymentStatus,paymentMethodType: freezed == paymentMethodType ? _self.paymentMethodType : paymentMethodType // ignore: cast_nullable_to_non_nullable
+as PaymentStatus,platformFee: null == platformFee ? _self.platformFee : platformFee // ignore: cast_nullable_to_non_nullable
+as double,driverEarnings: null == driverEarnings ? _self.driverEarnings : driverEarnings // ignore: cast_nullable_to_non_nullable
+as double,paymentMethodType: freezed == paymentMethodType ? _self.paymentMethodType : paymentMethodType // ignore: cast_nullable_to_non_nullable
 as PaymentMethodType?,paymentMethodLast4: freezed == paymentMethodLast4 ? _self.paymentMethodLast4 : paymentMethodLast4 // ignore: cast_nullable_to_non_nullable
 as String?,stripePaymentIntentId: freezed == stripePaymentIntentId ? _self.stripePaymentIntentId : stripePaymentIntentId // ignore: cast_nullable_to_non_nullable
 as String?,stripeCustomerId: freezed == stripeCustomerId ? _self.stripeCustomerId : stripeCustomerId // ignore: cast_nullable_to_non_nullable
 as String?,stripeChargeId: freezed == stripeChargeId ? _self.stripeChargeId : stripeChargeId // ignore: cast_nullable_to_non_nullable
-as String?,platformFee: null == platformFee ? _self.platformFee : platformFee // ignore: cast_nullable_to_non_nullable
-as double,stripeFee: null == stripeFee ? _self.stripeFee : stripeFee // ignore: cast_nullable_to_non_nullable
-as double,driverEarnings: null == driverEarnings ? _self.driverEarnings : driverEarnings // ignore: cast_nullable_to_non_nullable
+as String?,stripeFee: null == stripeFee ? _self.stripeFee : stripeFee // ignore: cast_nullable_to_non_nullable
 as double,seatsBooked: freezed == seatsBooked ? _self.seatsBooked : seatsBooked // ignore: cast_nullable_to_non_nullable
 as int?,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
@@ -183,10 +183,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String rideId,  String riderId,  String riderName,  String driverId,  String driverName,  double amount,  String currency,  PaymentStatus status,  PaymentMethodType? paymentMethodType,  String? paymentMethodLast4,  String? stripePaymentIntentId,  String? stripeCustomerId,  String? stripeChargeId,  double platformFee,  double stripeFee,  double driverEarnings,  int? seatsBooked, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt, @TimestampConverter()  DateTime? completedAt, @TimestampConverter()  DateTime? refundedAt,  String? failureReason,  String? refundReason,  Map<String, dynamic> metadata)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String rideId,  String riderId,  String riderName,  String driverId,  String driverName,  double amount,  String currency,  PaymentStatus status,  double platformFee,  double driverEarnings,  PaymentMethodType? paymentMethodType,  String? paymentMethodLast4,  String? stripePaymentIntentId,  String? stripeCustomerId,  String? stripeChargeId,  double stripeFee,  int? seatsBooked, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt, @TimestampConverter()  DateTime? completedAt, @TimestampConverter()  DateTime? refundedAt,  String? failureReason,  String? refundReason,  Map<String, dynamic> metadata)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PaymentTransaction() when $default != null:
-return $default(_that.id,_that.rideId,_that.riderId,_that.riderName,_that.driverId,_that.driverName,_that.amount,_that.currency,_that.status,_that.paymentMethodType,_that.paymentMethodLast4,_that.stripePaymentIntentId,_that.stripeCustomerId,_that.stripeChargeId,_that.platformFee,_that.stripeFee,_that.driverEarnings,_that.seatsBooked,_that.createdAt,_that.updatedAt,_that.completedAt,_that.refundedAt,_that.failureReason,_that.refundReason,_that.metadata);case _:
+return $default(_that.id,_that.rideId,_that.riderId,_that.riderName,_that.driverId,_that.driverName,_that.amount,_that.currency,_that.status,_that.platformFee,_that.driverEarnings,_that.paymentMethodType,_that.paymentMethodLast4,_that.stripePaymentIntentId,_that.stripeCustomerId,_that.stripeChargeId,_that.stripeFee,_that.seatsBooked,_that.createdAt,_that.updatedAt,_that.completedAt,_that.refundedAt,_that.failureReason,_that.refundReason,_that.metadata);case _:
   return orElse();
 
 }
@@ -204,10 +204,10 @@ return $default(_that.id,_that.rideId,_that.riderId,_that.riderName,_that.driver
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String rideId,  String riderId,  String riderName,  String driverId,  String driverName,  double amount,  String currency,  PaymentStatus status,  PaymentMethodType? paymentMethodType,  String? paymentMethodLast4,  String? stripePaymentIntentId,  String? stripeCustomerId,  String? stripeChargeId,  double platformFee,  double stripeFee,  double driverEarnings,  int? seatsBooked, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt, @TimestampConverter()  DateTime? completedAt, @TimestampConverter()  DateTime? refundedAt,  String? failureReason,  String? refundReason,  Map<String, dynamic> metadata)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String rideId,  String riderId,  String riderName,  String driverId,  String driverName,  double amount,  String currency,  PaymentStatus status,  double platformFee,  double driverEarnings,  PaymentMethodType? paymentMethodType,  String? paymentMethodLast4,  String? stripePaymentIntentId,  String? stripeCustomerId,  String? stripeChargeId,  double stripeFee,  int? seatsBooked, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt, @TimestampConverter()  DateTime? completedAt, @TimestampConverter()  DateTime? refundedAt,  String? failureReason,  String? refundReason,  Map<String, dynamic> metadata)  $default,) {final _that = this;
 switch (_that) {
 case _PaymentTransaction():
-return $default(_that.id,_that.rideId,_that.riderId,_that.riderName,_that.driverId,_that.driverName,_that.amount,_that.currency,_that.status,_that.paymentMethodType,_that.paymentMethodLast4,_that.stripePaymentIntentId,_that.stripeCustomerId,_that.stripeChargeId,_that.platformFee,_that.stripeFee,_that.driverEarnings,_that.seatsBooked,_that.createdAt,_that.updatedAt,_that.completedAt,_that.refundedAt,_that.failureReason,_that.refundReason,_that.metadata);case _:
+return $default(_that.id,_that.rideId,_that.riderId,_that.riderName,_that.driverId,_that.driverName,_that.amount,_that.currency,_that.status,_that.platformFee,_that.driverEarnings,_that.paymentMethodType,_that.paymentMethodLast4,_that.stripePaymentIntentId,_that.stripeCustomerId,_that.stripeChargeId,_that.stripeFee,_that.seatsBooked,_that.createdAt,_that.updatedAt,_that.completedAt,_that.refundedAt,_that.failureReason,_that.refundReason,_that.metadata);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -224,10 +224,10 @@ return $default(_that.id,_that.rideId,_that.riderId,_that.riderName,_that.driver
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String rideId,  String riderId,  String riderName,  String driverId,  String driverName,  double amount,  String currency,  PaymentStatus status,  PaymentMethodType? paymentMethodType,  String? paymentMethodLast4,  String? stripePaymentIntentId,  String? stripeCustomerId,  String? stripeChargeId,  double platformFee,  double stripeFee,  double driverEarnings,  int? seatsBooked, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt, @TimestampConverter()  DateTime? completedAt, @TimestampConverter()  DateTime? refundedAt,  String? failureReason,  String? refundReason,  Map<String, dynamic> metadata)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String rideId,  String riderId,  String riderName,  String driverId,  String driverName,  double amount,  String currency,  PaymentStatus status,  double platformFee,  double driverEarnings,  PaymentMethodType? paymentMethodType,  String? paymentMethodLast4,  String? stripePaymentIntentId,  String? stripeCustomerId,  String? stripeChargeId,  double stripeFee,  int? seatsBooked, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt, @TimestampConverter()  DateTime? completedAt, @TimestampConverter()  DateTime? refundedAt,  String? failureReason,  String? refundReason,  Map<String, dynamic> metadata)?  $default,) {final _that = this;
 switch (_that) {
 case _PaymentTransaction() when $default != null:
-return $default(_that.id,_that.rideId,_that.riderId,_that.riderName,_that.driverId,_that.driverName,_that.amount,_that.currency,_that.status,_that.paymentMethodType,_that.paymentMethodLast4,_that.stripePaymentIntentId,_that.stripeCustomerId,_that.stripeChargeId,_that.platformFee,_that.stripeFee,_that.driverEarnings,_that.seatsBooked,_that.createdAt,_that.updatedAt,_that.completedAt,_that.refundedAt,_that.failureReason,_that.refundReason,_that.metadata);case _:
+return $default(_that.id,_that.rideId,_that.riderId,_that.riderName,_that.driverId,_that.driverName,_that.amount,_that.currency,_that.status,_that.platformFee,_that.driverEarnings,_that.paymentMethodType,_that.paymentMethodLast4,_that.stripePaymentIntentId,_that.stripeCustomerId,_that.stripeChargeId,_that.stripeFee,_that.seatsBooked,_that.createdAt,_that.updatedAt,_that.completedAt,_that.refundedAt,_that.failureReason,_that.refundReason,_that.metadata);case _:
   return null;
 
 }
@@ -239,7 +239,7 @@ return $default(_that.id,_that.rideId,_that.riderId,_that.riderName,_that.driver
 @JsonSerializable()
 
 class _PaymentTransaction extends PaymentTransaction {
-  const _PaymentTransaction({required this.id, required this.rideId, required this.riderId, required this.riderName, required this.driverId, required this.driverName, required this.amount, required this.currency, required this.status, this.paymentMethodType, this.paymentMethodLast4, this.stripePaymentIntentId, this.stripeCustomerId, this.stripeChargeId, required this.platformFee, this.stripeFee = 0, required this.driverEarnings, this.seatsBooked, @TimestampConverter() this.createdAt, @TimestampConverter() this.updatedAt, @TimestampConverter() this.completedAt, @TimestampConverter() this.refundedAt, this.failureReason, this.refundReason, final  Map<String, dynamic> metadata = const {}}): _metadata = metadata,super._();
+  const _PaymentTransaction({required this.id, required this.rideId, required this.riderId, required this.riderName, required this.driverId, required this.driverName, required this.amount, required this.currency, required this.status, required this.platformFee, required this.driverEarnings, this.paymentMethodType, this.paymentMethodLast4, this.stripePaymentIntentId, this.stripeCustomerId, this.stripeChargeId, this.stripeFee = 0, this.seatsBooked, @TimestampConverter() this.createdAt, @TimestampConverter() this.updatedAt, @TimestampConverter() this.completedAt, @TimestampConverter() this.refundedAt, this.failureReason, this.refundReason, final  Map<String, dynamic> metadata = const {}}): _metadata = metadata,super._();
   factory _PaymentTransaction.fromJson(Map<String, dynamic> json) => _$PaymentTransactionFromJson(json);
 
 @override final  String id;
@@ -253,16 +253,16 @@ class _PaymentTransaction extends PaymentTransaction {
 // Total amount in dollars
 @override final  String currency;
 @override final  PaymentStatus status;
+// Fee breakdown
+@override final  double platformFee;
+@override final  double driverEarnings;
 @override final  PaymentMethodType? paymentMethodType;
 @override final  String? paymentMethodLast4;
 // Stripe IDs
 @override final  String? stripePaymentIntentId;
 @override final  String? stripeCustomerId;
 @override final  String? stripeChargeId;
-// Fee breakdown
-@override final  double platformFee;
 @override@JsonKey() final  double stripeFee;
-@override final  double driverEarnings;
 @override final  int? seatsBooked;
 // Timestamps
 @override@TimestampConverter() final  DateTime? createdAt;
@@ -293,16 +293,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PaymentTransaction&&(identical(other.id, id) || other.id == id)&&(identical(other.rideId, rideId) || other.rideId == rideId)&&(identical(other.riderId, riderId) || other.riderId == riderId)&&(identical(other.riderName, riderName) || other.riderName == riderName)&&(identical(other.driverId, driverId) || other.driverId == driverId)&&(identical(other.driverName, driverName) || other.driverName == driverName)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.currency, currency) || other.currency == currency)&&(identical(other.status, status) || other.status == status)&&(identical(other.paymentMethodType, paymentMethodType) || other.paymentMethodType == paymentMethodType)&&(identical(other.paymentMethodLast4, paymentMethodLast4) || other.paymentMethodLast4 == paymentMethodLast4)&&(identical(other.stripePaymentIntentId, stripePaymentIntentId) || other.stripePaymentIntentId == stripePaymentIntentId)&&(identical(other.stripeCustomerId, stripeCustomerId) || other.stripeCustomerId == stripeCustomerId)&&(identical(other.stripeChargeId, stripeChargeId) || other.stripeChargeId == stripeChargeId)&&(identical(other.platformFee, platformFee) || other.platformFee == platformFee)&&(identical(other.stripeFee, stripeFee) || other.stripeFee == stripeFee)&&(identical(other.driverEarnings, driverEarnings) || other.driverEarnings == driverEarnings)&&(identical(other.seatsBooked, seatsBooked) || other.seatsBooked == seatsBooked)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.completedAt, completedAt) || other.completedAt == completedAt)&&(identical(other.refundedAt, refundedAt) || other.refundedAt == refundedAt)&&(identical(other.failureReason, failureReason) || other.failureReason == failureReason)&&(identical(other.refundReason, refundReason) || other.refundReason == refundReason)&&const DeepCollectionEquality().equals(other._metadata, _metadata));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PaymentTransaction&&(identical(other.id, id) || other.id == id)&&(identical(other.rideId, rideId) || other.rideId == rideId)&&(identical(other.riderId, riderId) || other.riderId == riderId)&&(identical(other.riderName, riderName) || other.riderName == riderName)&&(identical(other.driverId, driverId) || other.driverId == driverId)&&(identical(other.driverName, driverName) || other.driverName == driverName)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.currency, currency) || other.currency == currency)&&(identical(other.status, status) || other.status == status)&&(identical(other.platformFee, platformFee) || other.platformFee == platformFee)&&(identical(other.driverEarnings, driverEarnings) || other.driverEarnings == driverEarnings)&&(identical(other.paymentMethodType, paymentMethodType) || other.paymentMethodType == paymentMethodType)&&(identical(other.paymentMethodLast4, paymentMethodLast4) || other.paymentMethodLast4 == paymentMethodLast4)&&(identical(other.stripePaymentIntentId, stripePaymentIntentId) || other.stripePaymentIntentId == stripePaymentIntentId)&&(identical(other.stripeCustomerId, stripeCustomerId) || other.stripeCustomerId == stripeCustomerId)&&(identical(other.stripeChargeId, stripeChargeId) || other.stripeChargeId == stripeChargeId)&&(identical(other.stripeFee, stripeFee) || other.stripeFee == stripeFee)&&(identical(other.seatsBooked, seatsBooked) || other.seatsBooked == seatsBooked)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.completedAt, completedAt) || other.completedAt == completedAt)&&(identical(other.refundedAt, refundedAt) || other.refundedAt == refundedAt)&&(identical(other.failureReason, failureReason) || other.failureReason == failureReason)&&(identical(other.refundReason, refundReason) || other.refundReason == refundReason)&&const DeepCollectionEquality().equals(other._metadata, _metadata));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hashAll([runtimeType,id,rideId,riderId,riderName,driverId,driverName,amount,currency,status,paymentMethodType,paymentMethodLast4,stripePaymentIntentId,stripeCustomerId,stripeChargeId,platformFee,stripeFee,driverEarnings,seatsBooked,createdAt,updatedAt,completedAt,refundedAt,failureReason,refundReason,const DeepCollectionEquality().hash(_metadata)]);
+int get hashCode => Object.hashAll([runtimeType,id,rideId,riderId,riderName,driverId,driverName,amount,currency,status,platformFee,driverEarnings,paymentMethodType,paymentMethodLast4,stripePaymentIntentId,stripeCustomerId,stripeChargeId,stripeFee,seatsBooked,createdAt,updatedAt,completedAt,refundedAt,failureReason,refundReason,const DeepCollectionEquality().hash(_metadata)]);
 
 @override
 String toString() {
-  return 'PaymentTransaction(id: $id, rideId: $rideId, riderId: $riderId, riderName: $riderName, driverId: $driverId, driverName: $driverName, amount: $amount, currency: $currency, status: $status, paymentMethodType: $paymentMethodType, paymentMethodLast4: $paymentMethodLast4, stripePaymentIntentId: $stripePaymentIntentId, stripeCustomerId: $stripeCustomerId, stripeChargeId: $stripeChargeId, platformFee: $platformFee, stripeFee: $stripeFee, driverEarnings: $driverEarnings, seatsBooked: $seatsBooked, createdAt: $createdAt, updatedAt: $updatedAt, completedAt: $completedAt, refundedAt: $refundedAt, failureReason: $failureReason, refundReason: $refundReason, metadata: $metadata)';
+  return 'PaymentTransaction(id: $id, rideId: $rideId, riderId: $riderId, riderName: $riderName, driverId: $driverId, driverName: $driverName, amount: $amount, currency: $currency, status: $status, platformFee: $platformFee, driverEarnings: $driverEarnings, paymentMethodType: $paymentMethodType, paymentMethodLast4: $paymentMethodLast4, stripePaymentIntentId: $stripePaymentIntentId, stripeCustomerId: $stripeCustomerId, stripeChargeId: $stripeChargeId, stripeFee: $stripeFee, seatsBooked: $seatsBooked, createdAt: $createdAt, updatedAt: $updatedAt, completedAt: $completedAt, refundedAt: $refundedAt, failureReason: $failureReason, refundReason: $refundReason, metadata: $metadata)';
 }
 
 
@@ -313,7 +313,7 @@ abstract mixin class _$PaymentTransactionCopyWith<$Res> implements $PaymentTrans
   factory _$PaymentTransactionCopyWith(_PaymentTransaction value, $Res Function(_PaymentTransaction) _then) = __$PaymentTransactionCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String rideId, String riderId, String riderName, String driverId, String driverName, double amount, String currency, PaymentStatus status, PaymentMethodType? paymentMethodType, String? paymentMethodLast4, String? stripePaymentIntentId, String? stripeCustomerId, String? stripeChargeId, double platformFee, double stripeFee, double driverEarnings, int? seatsBooked,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? updatedAt,@TimestampConverter() DateTime? completedAt,@TimestampConverter() DateTime? refundedAt, String? failureReason, String? refundReason, Map<String, dynamic> metadata
+ String id, String rideId, String riderId, String riderName, String driverId, String driverName, double amount, String currency, PaymentStatus status, double platformFee, double driverEarnings, PaymentMethodType? paymentMethodType, String? paymentMethodLast4, String? stripePaymentIntentId, String? stripeCustomerId, String? stripeChargeId, double stripeFee, int? seatsBooked,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? updatedAt,@TimestampConverter() DateTime? completedAt,@TimestampConverter() DateTime? refundedAt, String? failureReason, String? refundReason, Map<String, dynamic> metadata
 });
 
 
@@ -330,7 +330,7 @@ class __$PaymentTransactionCopyWithImpl<$Res>
 
 /// Create a copy of PaymentTransaction
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? rideId = null,Object? riderId = null,Object? riderName = null,Object? driverId = null,Object? driverName = null,Object? amount = null,Object? currency = null,Object? status = null,Object? paymentMethodType = freezed,Object? paymentMethodLast4 = freezed,Object? stripePaymentIntentId = freezed,Object? stripeCustomerId = freezed,Object? stripeChargeId = freezed,Object? platformFee = null,Object? stripeFee = null,Object? driverEarnings = null,Object? seatsBooked = freezed,Object? createdAt = freezed,Object? updatedAt = freezed,Object? completedAt = freezed,Object? refundedAt = freezed,Object? failureReason = freezed,Object? refundReason = freezed,Object? metadata = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? rideId = null,Object? riderId = null,Object? riderName = null,Object? driverId = null,Object? driverName = null,Object? amount = null,Object? currency = null,Object? status = null,Object? platformFee = null,Object? driverEarnings = null,Object? paymentMethodType = freezed,Object? paymentMethodLast4 = freezed,Object? stripePaymentIntentId = freezed,Object? stripeCustomerId = freezed,Object? stripeChargeId = freezed,Object? stripeFee = null,Object? seatsBooked = freezed,Object? createdAt = freezed,Object? updatedAt = freezed,Object? completedAt = freezed,Object? refundedAt = freezed,Object? failureReason = freezed,Object? refundReason = freezed,Object? metadata = null,}) {
   return _then(_PaymentTransaction(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,rideId: null == rideId ? _self.rideId : rideId // ignore: cast_nullable_to_non_nullable
@@ -341,14 +341,14 @@ as String,driverName: null == driverName ? _self.driverName : driverName // igno
 as String,amount: null == amount ? _self.amount : amount // ignore: cast_nullable_to_non_nullable
 as double,currency: null == currency ? _self.currency : currency // ignore: cast_nullable_to_non_nullable
 as String,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as PaymentStatus,paymentMethodType: freezed == paymentMethodType ? _self.paymentMethodType : paymentMethodType // ignore: cast_nullable_to_non_nullable
+as PaymentStatus,platformFee: null == platformFee ? _self.platformFee : platformFee // ignore: cast_nullable_to_non_nullable
+as double,driverEarnings: null == driverEarnings ? _self.driverEarnings : driverEarnings // ignore: cast_nullable_to_non_nullable
+as double,paymentMethodType: freezed == paymentMethodType ? _self.paymentMethodType : paymentMethodType // ignore: cast_nullable_to_non_nullable
 as PaymentMethodType?,paymentMethodLast4: freezed == paymentMethodLast4 ? _self.paymentMethodLast4 : paymentMethodLast4 // ignore: cast_nullable_to_non_nullable
 as String?,stripePaymentIntentId: freezed == stripePaymentIntentId ? _self.stripePaymentIntentId : stripePaymentIntentId // ignore: cast_nullable_to_non_nullable
 as String?,stripeCustomerId: freezed == stripeCustomerId ? _self.stripeCustomerId : stripeCustomerId // ignore: cast_nullable_to_non_nullable
 as String?,stripeChargeId: freezed == stripeChargeId ? _self.stripeChargeId : stripeChargeId // ignore: cast_nullable_to_non_nullable
-as String?,platformFee: null == platformFee ? _self.platformFee : platformFee // ignore: cast_nullable_to_non_nullable
-as double,stripeFee: null == stripeFee ? _self.stripeFee : stripeFee // ignore: cast_nullable_to_non_nullable
-as double,driverEarnings: null == driverEarnings ? _self.driverEarnings : driverEarnings // ignore: cast_nullable_to_non_nullable
+as String?,stripeFee: null == stripeFee ? _self.stripeFee : stripeFee // ignore: cast_nullable_to_non_nullable
 as double,seatsBooked: freezed == seatsBooked ? _self.seatsBooked : seatsBooked // ignore: cast_nullable_to_non_nullable
 as int?,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable

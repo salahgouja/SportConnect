@@ -11,7 +11,7 @@ import 'package:sport_connect/features/messaging/view_models/chat_view_model.dar
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 
 class EventAttendeesScreen extends ConsumerWidget {
-  const EventAttendeesScreen({super.key, required this.eventId});
+  const EventAttendeesScreen({required this.eventId, super.key});
 
   final String eventId;
 
@@ -33,13 +33,21 @@ class EventAttendeesScreen extends ConsumerWidget {
           eventAsync.value != null
               ? 'Attendees (${eventAsync.value!.participantIds.length})'
               : 'Attendees',
-          style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+          style: TextStyle(
+            fontSize: 18.sp,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
         ),
       ),
       body: eventAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator.adaptive()),
-        error: (e, _) => Center(
-          child: Text('Failed to load attendees', style: TextStyle(color: AppColors.error)),
+        loading: () =>
+            const Center(child: CircularProgressIndicator.adaptive()),
+        error: (e, _) => const Center(
+          child: Text(
+            'Failed to load attendees',
+            style: TextStyle(color: AppColors.error),
+          ),
         ),
         data: (event) {
           if (event == null || event.participantIds.isEmpty) {
@@ -47,9 +55,19 @@ class EventAttendeesScreen extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.group_off_rounded, size: 48.sp, color: AppColors.textTertiary),
+                  Icon(
+                    Icons.group_off_rounded,
+                    size: 48.sp,
+                    color: AppColors.textTertiary,
+                  ),
                   SizedBox(height: 12.h),
-                  Text('No attendees yet', style: TextStyle(fontSize: 15.sp, color: AppColors.textSecondary)),
+                  Text(
+                    'No attendees yet',
+                    style: TextStyle(
+                      fontSize: 15.sp,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
                 ],
               ),
             );
@@ -87,7 +105,13 @@ class _AttendeeCard extends ConsumerWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(14.r),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -95,9 +119,15 @@ class _AttendeeCard extends ConsumerWidget {
           CircleAvatar(
             radius: 24.r,
             backgroundColor: AppColors.primarySurface,
-            backgroundImage: profile?.photoUrl != null ? NetworkImage(profile!.photoUrl!) : null,
+            backgroundImage: profile?.photoUrl != null
+                ? NetworkImage(profile!.photoUrl!)
+                : null,
             child: profile?.photoUrl == null
-                ? Icon(Icons.person_rounded, size: 22.sp, color: AppColors.primary)
+                ? Icon(
+                    Icons.person_rounded,
+                    size: 22.sp,
+                    color: AppColors.primary,
+                  )
                 : null,
           ),
           SizedBox(width: 12.w),
@@ -111,19 +141,33 @@ class _AttendeeCard extends ConsumerWidget {
                     Flexible(
                       child: Text(
                         profile?.displayName ?? '…',
-                        style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     if (isSelf) ...[
                       SizedBox(width: 6.w),
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 6.w,
+                          vertical: 2.h,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.primary.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(6.r),
                         ),
-                        child: Text('You', style: TextStyle(fontSize: 10.sp, fontWeight: FontWeight.w600, color: AppColors.primary)),
+                        child: Text(
+                          'You',
+                          style: TextStyle(
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                          ),
+                        ),
                       ),
                     ],
                   ],
@@ -132,19 +176,33 @@ class _AttendeeCard extends ConsumerWidget {
                 Row(
                   children: [
                     if (profile?.expertise != null) ...[
-                      Icon(Icons.fitness_center_rounded, size: 12.sp, color: AppColors.textTertiary),
+                      Icon(
+                        Icons.fitness_center_rounded,
+                        size: 12.sp,
+                        color: AppColors.textTertiary,
+                      ),
                       SizedBox(width: 3.w),
                       Text(
                         profile!.expertise.displayName,
-                        style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                       SizedBox(width: 10.w),
                     ],
-                    Icon(Icons.star_rounded, size: 12.sp, color: AppColors.accent),
+                    Icon(
+                      Icons.star_rounded,
+                      size: 12.sp,
+                      color: AppColors.accent,
+                    ),
                     SizedBox(width: 3.w),
                     Text(
                       (profile?.rating.average ?? 0.0).toStringAsFixed(1),
-                      style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ],
                 ),
@@ -155,7 +213,11 @@ class _AttendeeCard extends ConsumerWidget {
           if (!isSelf)
             IconButton(
               onPressed: () => _openChat(context, ref, profile, currentUser),
-              icon: Icon(Icons.chat_bubble_outline_rounded, size: 20.sp, color: AppColors.primary),
+              icon: Icon(
+                Icons.chat_bubble_outline_rounded,
+                size: 20.sp,
+                color: AppColors.primary,
+              ),
               tooltip: 'Message',
               style: IconButton.styleFrom(
                 backgroundColor: AppColors.primary.withValues(alpha: 0.08),
@@ -175,24 +237,28 @@ class _AttendeeCard extends ConsumerWidget {
   ) async {
     if (profile == null || currentUser == null) return;
     try {
-      final chat = await ref.read(getOrCreateChatProvider(
-        userId1: currentUser.uid,
-        userId2: userId,
-        userName1: currentUser.displayName,
-        userName2: profile.displayName,
-        userPhoto1: currentUser.photoUrl,
-        userPhoto2: profile.photoUrl,
-      ).future);
+      final chat = await ref.read(
+        getOrCreateChatProvider(
+          userId1: currentUser.uid,
+          userId2: userId,
+          userName1: currentUser.displayName,
+          userName2: profile.displayName,
+          userPhoto1: currentUser.photoUrl,
+          userPhoto2: profile.photoUrl,
+        ).future,
+      );
       if (!context.mounted) return;
-      context.pushNamed(
+      await context.pushNamed(
         AppRoutes.chatDetail.name,
         pathParameters: {'id': chat.id},
         extra: profile,
       );
-    } catch (_) {
+    } on Exception catch (_) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to open chat. Please try again.')),
+          const SnackBar(
+            content: Text('Failed to open chat. Please try again.'),
+          ),
         );
       }
     }

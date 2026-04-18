@@ -1,7 +1,10 @@
-import 'dart:async';
-import 'package:geolocator/geolocator.dart';
+import 'dart:async' show StreamSubscription, unawaited;
+import 'package:geolocator/geolocator.dart' show Position;
 import 'package:latlong2/latlong.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
+import 'package:sport_connect/core/services/location_service.dart';
+import 'package:sport_connect/core/services/push_notification_service.dart';
 import 'package:sport_connect/core/services/routing_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
@@ -40,7 +43,6 @@ class RiderHomeState {
     this.currentZoom = 14,
     this.selectedMapStyle = 'standard',
     this.showNearbyDrivers = true,
-    this.showHotspots = true,
     this.showDistanceRadius = false,
     this.searchRadius = 5.0,
     this.selectedFilter = 'all',
@@ -65,7 +67,6 @@ class RiderHomeState {
   final double currentZoom;
   final String selectedMapStyle;
   final bool showNearbyDrivers;
-  final bool showHotspots;
   final bool showDistanceRadius;
   final double searchRadius;
 
@@ -91,7 +92,6 @@ class RiderHomeState {
     double? currentZoom,
     String? selectedMapStyle,
     bool? showNearbyDrivers,
-    bool? showHotspots,
     bool? showDistanceRadius,
     double? searchRadius,
     String? selectedFilter,
@@ -111,7 +111,6 @@ class RiderHomeState {
       currentZoom: currentZoom ?? this.currentZoom,
       selectedMapStyle: selectedMapStyle ?? this.selectedMapStyle,
       showNearbyDrivers: showNearbyDrivers ?? this.showNearbyDrivers,
-      showHotspots: showHotspots ?? this.showHotspots,
       showDistanceRadius: showDistanceRadius ?? this.showDistanceRadius,
       searchRadius: searchRadius ?? this.searchRadius,
       selectedFilter: selectedFilter ?? this.selectedFilter,
@@ -127,14 +126,9 @@ class RiderHomeState {
   RiderHomeState clearLocation() {
     return RiderHomeState(
       locationState: locationState,
-      currentLocation: null,
-      userHeading: 0.0,
-      nearbyQueryAnchor: null,
-      lastMapMoveAt: null,
       currentZoom: currentZoom,
       selectedMapStyle: selectedMapStyle,
       showNearbyDrivers: showNearbyDrivers,
-      showHotspots: showHotspots,
       showDistanceRadius: showDistanceRadius,
       searchRadius: searchRadius,
       selectedFilter: selectedFilter,
@@ -157,15 +151,9 @@ class RiderHomeState {
       currentZoom: currentZoom,
       selectedMapStyle: selectedMapStyle,
       showNearbyDrivers: showNearbyDrivers,
-      showHotspots: showHotspots,
       showDistanceRadius: showDistanceRadius,
       searchRadius: searchRadius,
       selectedFilter: selectedFilter,
-      activeRoute: null,
-      alternativeRoutes: const [],
-      isLoadingRoute: false,
-      showRouteInfo: false,
-      selectedRouteIndex: 0,
       showMapView: showMapView,
     );
   }
@@ -191,30 +179,44 @@ class RiderHomeViewModel extends _$RiderHomeViewModel {
 
   /// Check initial location permission state on cold start
   Future<void> checkInitialLocationState() async {
-    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
+    final svc = ref.read(locationServiceProvider);
+    if (!await svc.isServiceEnabled()) {
       state = state.copyWith(
         locationState: LocationPermissionState.serviceDisabled,
       );
       return;
     }
-
-    final permission = await Geolocator.checkPermission();
-
-    if (permission == LocationPermission.always ||
-        permission == LocationPermission.whileInUse) {
-      // Already granted — go straight to acquiring
-      await acquireLocationAndShowMap();
-      return;
-    }
-
-    if (permission == LocationPermission.deniedForever) {
+    if (await svc.isPermissionPermanentlyDenied()) {
       state = state.copyWith(locationState: LocationPermissionState.deniedHard);
       return;
     }
-
-    // First launch or soft-denied previously
+    if (await svc.checkPermission()) {
+      await acquireLocationAndShowMap();
+      return;
+    }
     state = state.copyWith(locationState: LocationPermissionState.unknown);
+  }
+
+  /// Full OS permission request flow — called after UI rationale dialog accepted.
+  Future<void> handleLocationPermissionRequest() async {
+    final svc = ref.read(locationServiceProvider);
+    if (!await svc.isServiceEnabled()) {
+      state = state.copyWith(
+        locationState: LocationPermissionState.serviceDisabled,
+      );
+      return;
+    }
+    final granted = await svc.requestPermission();
+    if (granted) {
+      await acquireLocationAndShowMap();
+      return;
+    }
+    final hardDenied = await svc.isPermissionPermanentlyDenied();
+    state = state.copyWith(
+      locationState: hardDenied
+          ? LocationPermissionState.deniedHard
+          : LocationPermissionState.deniedSoft,
+    );
   }
 
   /// Transition to acquiring state (called when user taps "Allow Location")
@@ -237,125 +239,133 @@ class RiderHomeViewModel extends _$RiderHomeViewModel {
     );
   }
 
+  // ============================================================================
+  // Notification Permission
+  // ============================================================================
+
+  /// True if we should prompt — false if already granted or dialog was shown before.
+  Future<bool> shouldAskNotificationPermission() async {
+    if (await ref.read(pushNotificationServiceProvider).hasPermission()) {
+      return false;
+    }
+    final settings = await ref.read(settingsRepositoryProvider.future);
+    return !settings.notificationDialogShown;
+  }
+
+  Future<void> markNotificationDialogShown() async {
+    final settings = await ref.read(settingsRepositoryProvider.future);
+    await settings.setNotificationDialogShown();
+  }
+
+  Future<void> requestNotificationPermission() async {
+    await ref.read(pushNotificationServiceProvider).requestPermission();
+  }
+
+  Future<void> openLocationAppSettings() =>
+      ref.read(locationServiceProvider).openAppSettings();
+
+  Future<void> openLocationSettings() =>
+      ref.read(locationServiceProvider).openLocationSettings();
+
   /// Acquire GPS location and transition to ready state
   Future<void> acquireLocationAndShowMap() async {
-    // Stay in acquiring if not already
     if (state.locationState != LocationPermissionState.acquiring) {
       state = state.copyWith(locationState: LocationPermissionState.acquiring);
     }
 
     try {
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 10),
-        ),
-      );
+      final locationService = ref.read(locationServiceProvider);
+      final position = await locationService.getCurrentLocation();
 
-      final loc = LatLng(position.latitude, position.longitude);
+      if (position != null) {
+        final loc = LatLng(position.latitude, position.longitude);
+        state = state.copyWith(
+          currentLocation: loc,
+          nearbyQueryAnchor: loc,
+          userHeading: position.heading,
+          locationState: LocationPermissionState.ready,
+        );
+      } else {
+        state = state.copyWith(locationState: LocationPermissionState.ready);
+      }
 
-      state = state.copyWith(
-        currentLocation: loc,
-        nearbyQueryAnchor: loc,
-        userHeading: position.heading,
-        locationState: LocationPermissionState.ready,
-      );
-
-      // Start continuous tracking
       _startLocationStream();
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to get initial position: $e');
-      // GPS timed out but permission granted — show map anyway
-      state = state.copyWith(
-        currentLocation: null,
-        locationState: LocationPermissionState.ready,
-      );
+      state = state.copyWith(locationState: LocationPermissionState.ready);
       _startLocationStream();
     }
   }
 
   /// Refresh current location without full acquisition
-  /// Useful for manual \"center on me\" button in map controls
   Future<void> refetchCurrentLocation() async {
-    if (state.locationState != LocationPermissionState.ready) {
-      return;
-    }
+    if (state.locationState != LocationPermissionState.ready) return;
 
     try {
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 10),
-        ),
-      );
-
-      final loc = LatLng(position.latitude, position.longitude);
-
+      final position = await ref
+          .read(locationServiceProvider)
+          .getCurrentLocation();
+      if (position == null) return;
       state = state.copyWith(
-        currentLocation: loc,
+        currentLocation: LatLng(position.latitude, position.longitude),
         userHeading: position.heading,
       );
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to refetch location: $e');
     }
   }
 
   /// Start continuous GPS tracking stream
   void _startLocationStream() {
-    _positionStreamSubscription?.cancel();
-    const settings = LocationSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 20,
-    );
+    unawaited(_positionStreamSubscription?.cancel());
+    final locationService = ref.read(locationServiceProvider);
 
-    _positionStreamSubscription =
-        Geolocator.getPositionStream(locationSettings: settings).listen(
-          (Position position) {
-            final next = LatLng(position.latitude, position.longitude);
+    _positionStreamSubscription = locationService.getLocationStream().listen(
+      (position) {
+        final next = LatLng(position.latitude, position.longitude);
 
-            // Skip tiny movements to avoid unnecessary rebuilds
-            final current = state.currentLocation;
-            if (current != null) {
-              final moved = Geolocator.distanceBetween(
+        final current = state.currentLocation;
+        if (current != null) {
+          final movedMeters =
+              locationService.calculateDistance(
                 current.latitude,
                 current.longitude,
                 next.latitude,
                 next.longitude,
-              );
-              final headingDelta = (state.userHeading - position.heading).abs();
-              if (moved < 12 && headingDelta < 8) return;
-            }
+              ) *
+              1000;
+          final headingDelta = (state.userHeading - position.heading).abs();
+          if (movedMeters < 12 && headingDelta < 8) return;
+        }
 
-            // Update location
-            var newState = state.copyWith(
-              currentLocation: next,
-              userHeading: position.heading,
-            );
-
-            // Refresh Firestore query anchor every 1 km
-            final anchor = state.nearbyQueryAnchor;
-            if (anchor == null ||
-                Geolocator.distanceBetween(
-                      anchor.latitude,
-                      anchor.longitude,
-                      next.latitude,
-                      next.longitude,
-                    ) >=
-                    1000) {
-              newState = newState.copyWith(nearbyQueryAnchor: next);
-            }
-
-            state = newState;
-          },
-          onError: (e) {
-            TalkerService.error('Location stream error: $e');
-          },
+        var newState = state.copyWith(
+          currentLocation: next,
+          userHeading: position.heading,
         );
+
+        final anchor = state.nearbyQueryAnchor;
+        if (anchor == null ||
+            locationService.calculateDistance(
+                  anchor.latitude,
+                  anchor.longitude,
+                  next.latitude,
+                  next.longitude,
+                ) >=
+                1.0) {
+          newState = newState.copyWith(nearbyQueryAnchor: next);
+        }
+
+        state = newState;
+      },
+      onError: (Object e) {
+        TalkerService.error('Location stream error: $e');
+      },
+    );
   }
 
   /// Stop location tracking (cleanup)
   void stopLocationTracking() {
-    _positionStreamSubscription?.cancel();
+    unawaited(_positionStreamSubscription?.cancel());
     _positionStreamSubscription = null;
   }
 
@@ -378,11 +388,6 @@ class RiderHomeViewModel extends _$RiderHomeViewModel {
   /// Toggle nearby drivers visibility
   void toggleNearbyDrivers() {
     state = state.copyWith(showNearbyDrivers: !state.showNearbyDrivers);
-  }
-
-  /// Toggle hotspots visibility
-  void toggleHotspots() {
-    state = state.copyWith(showHotspots: !state.showHotspots);
   }
 
   /// Toggle distance radius circle

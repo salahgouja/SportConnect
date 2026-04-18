@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sport_connect/core/models/models.dart';
-import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Reusable widget that fetches and displays driver information by ID
 /// Follows single source of truth principle - no denormalized data
 class DriverInfoWidget extends ConsumerWidget {
+  const DriverInfoWidget({required this.driverId, super.key, this.builder});
   final String driverId;
   final Widget Function(
     BuildContext context,
@@ -15,8 +16,6 @@ class DriverInfoWidget extends ConsumerWidget {
     RatingBreakdown rating,
   )?
   builder;
-
-  const DriverInfoWidget({super.key, required this.driverId, this.builder});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -30,7 +29,7 @@ class DriverInfoWidget extends ConsumerWidget {
                 context,
                 AppLocalizations.of(context).unknownDriver,
                 null,
-                RatingBreakdown(),
+                const RatingBreakdown(),
               ) ??
               Text(AppLocalizations.of(context).unknownDriver);
         }
@@ -58,10 +57,9 @@ class DriverInfoWidget extends ConsumerWidget {
 
 /// Widget specifically for displaying driver name
 class DriverNameWidget extends ConsumerWidget {
+  const DriverNameWidget({required this.driverId, super.key, this.style});
   final String driverId;
   final TextStyle? style;
-
-  const DriverNameWidget({super.key, required this.driverId, this.style});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -74,14 +72,13 @@ class DriverNameWidget extends ConsumerWidget {
 
 /// Widget for displaying driver avatar
 class DriverAvatarWidget extends ConsumerWidget {
-  final String driverId;
-  final double radius;
-
   const DriverAvatarWidget({
-    super.key,
     required this.driverId,
+    super.key,
     this.radius = 20,
   });
+  final String driverId;
+  final double radius;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -100,16 +97,15 @@ class DriverAvatarWidget extends ConsumerWidget {
 
 /// Widget for displaying driver rating
 class DriverRatingWidget extends ConsumerWidget {
-  final String driverId;
-  final bool showIcon;
-  final TextStyle? style;
-
   const DriverRatingWidget({
-    super.key,
     required this.driverId,
+    super.key,
     this.showIcon = true,
     this.style,
   });
+  final String driverId;
+  final bool showIcon;
+  final TextStyle? style;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

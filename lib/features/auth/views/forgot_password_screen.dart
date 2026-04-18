@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:go_router/go_router.dart';
+import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/core/utils/form_validators.dart';
 import 'package:sport_connect/core/widgets/glass_panel.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/auth/view_models/forgot_password_view_model.dart';
@@ -24,12 +23,16 @@ class ForgotPasswordScreen extends ConsumerStatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
-  final _formKey = GlobalKey<FormBuilderState>();
+  final _form = FormGroup({
+    'email': FormControl<String>(
+      validators: [Validators.required, Validators.email],
+    ),
+  });
 
   Future<void> _sendResetEmail() async {
-    if (!(_formKey.currentState?.saveAndValidate() ?? false)) return;
-    final email = (_formKey.currentState!.fields['email']!.value as String)
-        .trim();
+    _form.markAllAsTouched();
+    if (!_form.valid) return;
+    final email = (_form.control('email').value as String).trim();
     await ref
         .read(forgotPasswordViewModelProvider.notifier)
         .sendResetEmail(email);
@@ -79,8 +82,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   }
 
   Widget _buildFormState(AppLocalizations l10n, ForgotPasswordState vmState) {
-    return FormBuilder(
-      key: _formKey,
+    return ReactiveForm(
+      formGroup: _form,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -89,7 +92,6 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           // Icon
           GlassPanel(
                 padding: EdgeInsets.all(20.w),
-                radius: 20,
                 color: AppColors.surface.withValues(alpha: 0.62),
                 borderColor: AppColors.primary.withValues(alpha: 0.2),
                 child: Icon(
@@ -127,19 +129,18 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
           SizedBox(height: 36.h),
 
-          FormBuilderTextField(
-            name: 'email',
+          ReactiveTextField<String>(
+            formControlName: 'email',
             decoration: InputDecoration(
               labelText: l10n.authEmail,
               hintText: l10n.authEmailHint,
               prefixIcon: const Icon(Icons.email_outlined),
             ),
             keyboardType: TextInputType.emailAddress,
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return l10n.forgotPasswordEmailRequired;
-              }
-              return FormValidators.email(value);
+            validationMessages: {
+              ValidationMessage.required: (_) => 'Email is required',
+              ValidationMessage.email: (_) =>
+                  'Please enter a valid email address',
             },
           ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1),
 

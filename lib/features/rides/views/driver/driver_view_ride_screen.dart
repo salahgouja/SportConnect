@@ -1,40 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
-import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/passenger_info_widget.dart';
-
+import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/ride_feature_widgets.dart';
 import 'package:sport_connect/core/widgets/safety_widgets.dart';
-
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
-import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/driver_view_ride_view_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:sport_connect/core/services/deep_link_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Driver's dedicated screen for managing their ride and viewing booking requests
 /// Features: ride stats, booking management, passenger list, ride controls
 class DriverViewRideScreen extends ConsumerStatefulWidget {
+  const DriverViewRideScreen({required this.rideId, super.key});
   final String rideId;
-
-  const DriverViewRideScreen({super.key, required this.rideId});
 
   @override
   ConsumerState<DriverViewRideScreen> createState() =>
@@ -91,7 +88,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       data: (ride) => ride != null
           ? _buildContent(ride, vmState.bookings, vmState, uiState)
           : _buildErrorState(AppLocalizations.of(context).rideNotFound),
-      loading: () => _buildLoadingState(),
+      loading: _buildLoadingState,
       error: (error, _) => _buildErrorState(error.toString()),
     );
   }
@@ -311,7 +308,6 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
   ) {
     return SliverAppBar(
       expandedHeight: 200.h,
-      floating: false,
       pinned: true,
       backgroundColor: AppColors.primary,
       leading: IconButton(
@@ -382,9 +378,9 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                               ride.destination.longitude,
                             ),
                           ],
-                      strokeWidth: 6.0,
+                      strokeWidth: 6,
                       color: Colors.white,
-                      borderStrokeWidth: 2.0,
+                      borderStrokeWidth: 2,
                       borderColor: Colors.white,
                     ),
                     Polyline(
@@ -397,7 +393,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                               ride.destination.longitude,
                             ),
                           ],
-                      strokeWidth: 4.0,
+                      strokeWidth: 4,
                       color: AppColors.primary,
                     ),
                   ],
@@ -722,7 +718,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                   Container(
                     width: 12.w,
                     height: 12.w,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: AppColors.primary,
                       shape: BoxShape.circle,
                     ),
@@ -730,7 +726,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                   Container(
                     width: 2.w,
                     height: 40.h,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
@@ -966,16 +962,20 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
   Widget _buildPreferencesCard(RideModel ride) {
     final prefs = <MapEntry<IconData, String>>[];
     if (ride.allowLuggage) {
-      prefs.add(MapEntry(Icons.luggage_rounded, 'Luggage OK'));
+      prefs.add(const MapEntry(Icons.luggage_rounded, 'Luggage OK'));
     }
-    if (ride.allowPets) prefs.add(MapEntry(Icons.pets_rounded, 'Pets OK'));
+    if (ride.allowPets) {
+      prefs.add(const MapEntry(Icons.pets_rounded, 'Pets OK'));
+    }
     if (!ride.allowSmoking) {
-      prefs.add(MapEntry(Icons.smoke_free_rounded, 'No smoking'));
+      prefs.add(const MapEntry(Icons.smoke_free_rounded, 'No smoking'));
     }
     if (ride.isWomenOnly) {
-      prefs.add(MapEntry(Icons.female_rounded, 'Women only'));
+      prefs.add(const MapEntry(Icons.female_rounded, 'Women only'));
     }
-    if (ride.allowChat) prefs.add(MapEntry(Icons.chat_rounded, 'Chat enabled'));
+    if (ride.allowChat) {
+      prefs.add(const MapEntry(Icons.chat_rounded, 'Chat enabled'));
+    }
 
     if (prefs.isEmpty) return const SizedBox.shrink();
 
@@ -1531,7 +1531,6 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                 child: PremiumButton(
                   text: AppLocalizations.of(context).startRide,
                   onPressed: () => _startRide(ride),
-                  style: PremiumButtonStyle.primary,
                   icon: Icons.play_arrow_rounded,
                 ),
               )
@@ -1556,7 +1555,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
   double _calculateEarnings(RideModel ride, List<RideBooking> bookings) {
     return bookings
         .where((b) => b.status == BookingStatus.accepted)
-        .fold(0.0, (sum, b) => sum + (ride.pricePerSeat * b.seatsBooked));
+        .fold(0, (sum, b) => sum + (ride.pricePerSeat * b.seatsBooked));
   }
 
   String _timeAgo(DateTime? date) {
@@ -1568,7 +1567,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
   }
 
   void _showRideOptions(RideModel ride) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.cardBg,
       shape: RoundedRectangleBorder(
@@ -1600,7 +1599,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
               },
             ),
             ListTile(
-              leading: Icon(Icons.copy_rounded, color: AppColors.info),
+              leading: const Icon(Icons.copy_rounded, color: AppColors.info),
               title: Text(AppLocalizations.of(context).duplicateRide),
               onTap: () {
                 Navigator.pop(context);
@@ -1609,7 +1608,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
             ),
             if (ride.status == RideStatus.inProgress)
               ListTile(
-                leading: Icon(
+                leading: const Icon(
                   Icons.report_problem_rounded,
                   color: AppColors.warning,
                 ),
@@ -1635,10 +1634,13 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
               ),
             if (ride.status == RideStatus.active)
               ListTile(
-                leading: Icon(Icons.cancel_rounded, color: AppColors.error),
+                leading: const Icon(
+                  Icons.cancel_rounded,
+                  color: AppColors.error,
+                ),
                 title: Text(
                   AppLocalizations.of(context).cancelRide2,
-                  style: TextStyle(color: AppColors.error),
+                  style: const TextStyle(color: AppColors.error),
                 ),
                 onTap: () {
                   Navigator.pop(context);
@@ -1653,7 +1655,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
   }
 
   void _showPassengerOptions(RideModel ride, RideBooking booking) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.cardBg,
       shape: RoundedRectangleBorder(
@@ -1674,7 +1676,10 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
             ),
             SizedBox(height: 20.h),
             ListTile(
-              leading: Icon(Icons.person_rounded, color: AppColors.primary),
+              leading: const Icon(
+                Icons.person_rounded,
+                color: AppColors.primary,
+              ),
               title: Text(AppLocalizations.of(context).viewProfile),
               onTap: () {
                 Navigator.pop(context);
@@ -1687,7 +1692,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
               },
             ),
             ListTile(
-              leading: Icon(Icons.call_rounded, color: AppColors.success),
+              leading: const Icon(Icons.call_rounded, color: AppColors.success),
               title: Text(AppLocalizations.of(context).callPassenger),
               onTap: () {
                 Navigator.pop(context);
@@ -1695,10 +1700,10 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
               },
             ),
             ListTile(
-              leading: Icon(Icons.cancel_rounded, color: AppColors.error),
+              leading: const Icon(Icons.cancel_rounded, color: AppColors.error),
               title: Text(
                 AppLocalizations.of(context).removePassenger,
-                style: TextStyle(color: AppColors.error),
+                style: const TextStyle(color: AppColors.error),
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -1748,7 +1753,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
           ],
         ),
       );
-    } catch (_) {
+    } on Exception catch (_) {
       _showErrorMessage('Could not confirm booking. Please try again.');
     }
   }
@@ -1784,7 +1789,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
             onPressed: () => Navigator.pop(context, true),
             child: Text(
               AppLocalizations.of(context).decline,
-              style: TextStyle(color: AppColors.error),
+              style: const TextStyle(color: AppColors.error),
             ),
           ),
         ],
@@ -1804,7 +1809,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       if (!success) {
         _showErrorMessage('Could not decline booking. Please try again.');
       }
-    } catch (_) {
+    } on Exception catch (_) {
       _showErrorMessage('Could not decline booking. Please try again.');
     }
   }
@@ -1834,7 +1839,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
           backgroundColor: AppColors.textPrimary,
         );
       }
-    } catch (e) {
+    } on Exception {
       _showInfoSnackBar(
         content: Text(AppLocalizations.of(context).failedToLaunchDialer),
         backgroundColor: AppColors.textPrimary,
@@ -1869,7 +1874,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
             onPressed: () => Navigator.pop(context, true),
             child: Text(
               AppLocalizations.of(context).remove,
-              style: TextStyle(color: AppColors.error),
+              style: const TextStyle(color: AppColors.error),
             ),
           ),
         ],
@@ -1886,7 +1891,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
             bookingId: booking.id,
             newStatus: BookingStatus.cancelled,
           );
-    } catch (_) {
+    } on Exception catch (_) {
       _showErrorMessage('Could not remove passenger. Please try again.');
     }
   }
@@ -1943,7 +1948,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
         pathParameters: {'id': chat.id},
         extra: passengerUser,
       );
-    } catch (_) {
+    } on Exception catch (_) {
       _showErrorMessage('Failed to open chat. Please try again.');
     }
   }
@@ -1955,19 +1960,17 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
 
   Future<void> _shareRide(RideModel ride) async {
     HapticFeedback.lightImpact();
+    final l10n = AppLocalizations.of(context);
 
     try {
       // Generate shareable HTTPS link via app_links
-      final dynamicLink = await DeepLinkService.instance.generateRideLink(
-        rideId: ride.id,
-        fromCity: ride.origin.city ?? ride.origin.address,
-        toCity: ride.destination.city ?? ride.destination.address,
-        price: ride.pricePerSeat,
-        seats: ride.remainingSeats,
-        departureTime: ride.departureTime,
-      );
+      final dynamicLink = await ref
+          .read(driverRideScreenUiViewModelProvider(widget.rideId).notifier)
+          .generateRideShareLink(ride);
 
-      final shareText = AppLocalizations.of(context).rideShareText(
+      if (!mounted) return;
+
+      final shareText = l10n.rideShareText(
         ride.origin.city ?? ride.origin.address,
         ride.destination.city ?? ride.destination.address,
         DateFormat('MMM d, h:mm a').format(ride.departureTime),
@@ -1979,22 +1982,23 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       await SharePlus.instance.share(
         ShareParams(
           text: shareText,
-          subject: AppLocalizations.of(context).rideShareSubject,
+          subject: l10n.rideShareSubject,
         ),
       );
-    } catch (e) {
+    } on Exception {
+      if (!mounted) return;
       // Fallback to basic share with HTTPS link
       await SharePlus.instance.share(
         ShareParams(
-          text: AppLocalizations.of(context).rideShareText(
+          text: l10n.rideShareText(
             ride.origin.city ?? ride.origin.address,
             ride.destination.city ?? ride.destination.address,
             DateFormat('MMM d, h:mm a').format(ride.departureTime),
             ride.pricePerSeat.toStringAsFixed(0),
             ride.remainingSeats,
-            'https://${DeepLinkService.hostingDomain}/ride/${ride.id}',
+            'https://${AppConstants.hostingDomain}/ride/${ride.id}',
           ),
-          subject: AppLocalizations.of(context).rideShareSubject,
+          subject: l10n.rideShareSubject,
         ),
       );
     }
@@ -2038,7 +2042,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       if (context.mounted) {
         context.push('${AppRoutes.driverActiveRide.path}?rideId=${ride.id}');
       }
-    } catch (_) {
+    } on Exception catch (_) {
       _showErrorMessage('Could not start ride. Please try again.');
     }
   }
@@ -2076,55 +2080,23 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
         content: Text(AppLocalizations.of(context).rideCompleted),
         backgroundColor: AppColors.textPrimary,
       );
-    } catch (_) {
+    } on Exception catch (_) {
       _showErrorMessage('Could not complete ride. Please try again.');
     }
   }
 
   Future<void> _cancelRide(RideModel ride) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog.adaptive(
-        title: Text(AppLocalizations.of(context).cancelRide2),
-        content: Text(AppLocalizations.of(context).areYouSureYouWant8),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(AppLocalizations.of(context).keepRide),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(
-              AppLocalizations.of(context).cancelRide2,
-              style: TextStyle(color: AppColors.error),
-            ),
-          ),
-        ],
-      ),
+    final cancelled = await context.push<bool>(
+      '${AppRoutes.cancellationReason.path.replaceFirst(':id', ride.id)}?isDriver=true',
     );
-
-    if (confirmed != true) return;
-
-    try {
-      final success = await ref
-          .read(rideDetailViewModelProvider(ride.id).notifier)
-          .cancelRide(reason: 'Cancelled by driver');
-      if (!success) {
-        _showErrorMessage('Could not cancel ride. Please try again.');
-        return;
-      }
-      if (context.mounted) context.pop();
-    } catch (_) {
-      _showErrorMessage('Could not cancel ride. Please try again.');
-    }
+    if (cancelled == true && mounted) context.pop();
   }
 }
 
 // Tab bar delegate for sticky tabs
 class _TabBarDelegate extends SliverPersistentHeaderDelegate {
-  final TabBar tabBar;
-
   _TabBarDelegate({required this.tabBar});
+  final TabBar tabBar;
 
   @override
   double get minExtent => tabBar.preferredSize.height;
@@ -2138,7 +2110,7 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    return Container(color: AppColors.background, child: tabBar);
+    return ColoredBox(color: AppColors.background, child: tabBar);
   }
 
   @override

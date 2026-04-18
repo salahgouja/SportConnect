@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+import 'package:intl/intl.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/models/user/user_model.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/theme/platform_adaptive.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
-import 'package:sport_connect/core/models/user/user_model.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/notifications/models/notification_model.dart';
 import 'package:sport_connect/features/notifications/view_models/notification_view_model.dart';
-import 'package:intl/intl.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:sport_connect/core/theme/platform_adaptive.dart';
 
 /// Notifications Screen with Firestore real-time updates
 class NotificationsScreen extends ConsumerStatefulWidget {
@@ -57,7 +57,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     super.dispose();
   }
 
-  void _markAllAsRead() async {
+  Future<void> _markAllAsRead() async {
     await ref.read(notificationViewModelProvider.notifier).markAllAsRead();
     _showStatusSnackBar(
       AppLocalizations.of(context).allNotificationsMarkedAsRead,
@@ -72,7 +72,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     final scaffoldContext =
         context; // capture outer context to avoid using a deactivated dialog context
 
-    showDialog(
+    showDialog<void>(
       context: scaffoldContext,
       barrierLabel: AppLocalizations.of(context).clearAllNotifications,
       builder: (dialogContext) => AlertDialog.adaptive(
@@ -125,7 +125,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             child: Text(
               AppLocalizations.of(context).clearAll,
-              style: TextStyle(color: Colors.white),
+              style: const TextStyle(color: Colors.white),
             ),
           ),
         ],
@@ -615,7 +615,6 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
             pathParameters: {'id': notification.referenceId!},
           );
         }
-        break;
       case NotificationType.newMessage:
       case NotificationType.newGroupMessage:
         if (notification.referenceId != null) {
@@ -623,7 +622,6 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
           // We need to fetch the chat to get participant info, then navigate
           _navigateToChatFromNotification(notification.referenceId!);
         }
-        break;
       case NotificationType.newFollower:
       case NotificationType.followAccepted:
         if (notification.senderId != null) {
@@ -632,7 +630,6 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
             pathParameters: {'userId': notification.senderId!},
           );
         }
-        break;
       default:
         break;
     }
@@ -659,7 +656,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
         // For group chats or if other participant is missing, use chat title
         final otherParticipant = chat.getOtherParticipant(userId);
         final receiverUser = UserModel.rider(
-          uid: otherParticipant?.odid ?? chatId,
+          uid: otherParticipant?.userId ?? chatId,
           email: '',
           displayName: title,
           photoUrl: photoUrl,
@@ -671,7 +668,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
           extra: receiverUser,
         );
       }
-    } catch (e) {
+    } on Exception {
       _showStatusSnackBar(
         AppLocalizations.of(context).couldNotOpenChat,
         backgroundColor: AppColors.error,
@@ -681,15 +678,14 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
 }
 
 class _NotificationTile extends StatelessWidget {
-  final NotificationModel notification;
-  final VoidCallback onTap;
-  final VoidCallback onDismiss;
-
   const _NotificationTile({
     required this.notification,
     required this.onTap,
     required this.onDismiss,
   });
+  final NotificationModel notification;
+  final VoidCallback onTap;
+  final VoidCallback onDismiss;
 
   @override
   Widget build(BuildContext context) {
@@ -760,7 +756,7 @@ class _NotificationTile extends StatelessWidget {
                           Container(
                             width: 8.w,
                             height: 8.w,
-                            decoration: BoxDecoration(
+                            decoration: const BoxDecoration(
                               color: AppColors.primary,
                               shape: BoxShape.circle,
                             ),
@@ -815,27 +811,22 @@ class _NotificationTile extends StatelessWidget {
       case NotificationType.rideCompleted:
         iconData = Icons.directions_car_rounded;
         iconColor = AppColors.primary;
-        break;
       case NotificationType.rideBookingRejected:
       case NotificationType.rideBookingCancelled:
       case NotificationType.rideCancelled:
         iconData = Icons.cancel_rounded;
         iconColor = AppColors.error;
-        break;
       case NotificationType.newMessage:
       case NotificationType.newGroupMessage:
         iconData = Icons.message_rounded;
         iconColor = AppColors.info;
-        break;
       case NotificationType.achievementUnlocked:
       case NotificationType.levelUp:
         iconData = Icons.emoji_events_rounded;
         iconColor = AppColors.warning;
-        break;
       case NotificationType.xpEarned:
         iconData = Icons.star_rounded;
         iconColor = AppColors.warning;
-        break;
       default:
         iconData = Icons.notifications_rounded;
         iconColor = AppColors.textSecondary;

@@ -44,27 +44,27 @@ abstract class INotificationRepository {
     required String toUserId,
     required String fromUserId,
     required String fromUserName,
-    String? fromUserPhoto,
     required String rideId,
     required String rideName,
+    String? fromUserPhoto,
   });
 
   /// Send ride booking accepted notification
   Future<void> sendRideBookingAccepted({
     required String toUserId,
     required String driverName,
-    String? driverPhoto,
     required String rideId,
     required String rideName,
+    String? driverPhoto,
   });
 
   /// Send ride booking rejected notification
   Future<void> sendRideBookingRejected({
     required String toUserId,
     required String driverName,
-    String? driverPhoto,
     required String rideId,
     required String rideName,
+    String? driverPhoto,
     String? reason,
   });
 
@@ -72,9 +72,9 @@ abstract class INotificationRepository {
   Future<void> sendRideCancelled({
     required String toUserId,
     required String driverName,
-    String? driverPhoto,
     required String rideId,
     required String rideName,
+    String? driverPhoto,
     String? reason,
   });
 
@@ -83,9 +83,9 @@ abstract class INotificationRepository {
     required String toUserId,
     required String fromUserId,
     required String fromUserName,
-    String? fromUserPhoto,
     required String chatId,
     required String messagePreview,
+    String? fromUserPhoto,
   });
 
   /// Send achievement notification
@@ -105,17 +105,17 @@ abstract class INotificationRepository {
   Future<void> sendDriverArrivedAtPickup({
     required String toUserId,
     required String driverName,
-    String? driverPhoto,
     required String rideId,
     required String rideName,
+    String? driverPhoto,
   });
 
   Future<void> sendEventCancelled({
     required String toUserId,
     required String organizerName,
-    String? organizerPhoto,
     required String eventId,
     required String eventTitle,
+    String? organizerPhoto,
     String? reason,
   });
 }

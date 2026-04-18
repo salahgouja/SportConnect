@@ -7,12 +7,6 @@ part 'forgot_password_view_model.g.dart';
 
 /// State for the forgot-password screen.
 class ForgotPasswordState {
-  final bool isLoading;
-  final bool emailSent;
-  final int resendCooldown;
-  final String sentEmail;
-  final String? errorMessage;
-
   const ForgotPasswordState({
     this.isLoading = false,
     this.emailSent = false,
@@ -20,6 +14,11 @@ class ForgotPasswordState {
     this.sentEmail = '',
     this.errorMessage,
   });
+  final bool isLoading;
+  final bool emailSent;
+  final int resendCooldown;
+  final String sentEmail;
+  final String? errorMessage;
 
   ForgotPasswordState copyWith({
     bool? isLoading,
@@ -63,7 +62,7 @@ class ForgotPasswordViewModel extends _$ForgotPasswordViewModel {
         sentEmail: email,
       );
       _startCooldown();
-    } catch (e) {
+    } on Exception catch (e) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }

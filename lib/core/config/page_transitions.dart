@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 /// Provides smooth, premium-feeling animations
 
 Widget _wrapWithRouteSafeArea(Widget child) {
-  return SafeArea(top: true, bottom: true, child: child);
+  return SafeArea(child: child);
 }
 
 /// Fade transition - gentle and elegant
@@ -82,7 +82,7 @@ class ScaleTransitionPage<T> extends CustomTransitionPage<T> {
         reverseTransitionDuration: const Duration(milliseconds: 250),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           final wrappedChild = _wrapWithRouteSafeArea(child);
-          final scaleAnimation = Tween<double>(begin: 0.92, end: 1.0).animate(
+          final scaleAnimation = Tween<double>(begin: 0.92, end: 1).animate(
             CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
           );
 
@@ -107,14 +107,14 @@ class ZoomFadeTransitionPage<T> extends CustomTransitionPage<T> {
         reverseTransitionDuration: const Duration(milliseconds: 350),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           final wrappedChild = _wrapWithRouteSafeArea(child);
-          final scaleAnimation = Tween<double>(begin: 0.95, end: 1.0).animate(
+          final scaleAnimation = Tween<double>(begin: 0.95, end: 1).animate(
             CurvedAnimation(parent: animation, curve: Curves.easeOutQuart),
           );
 
-          final fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+          final fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
             CurvedAnimation(
               parent: animation,
-              curve: const Interval(0.0, 0.65, curve: Curves.easeOut),
+              curve: const Interval(0, 0.65, curve: Curves.easeOut),
             ),
           );
 
@@ -146,10 +146,10 @@ class SharedAxisTransitionPage<T> extends CustomTransitionPage<T> {
                  CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
                );
 
-           final fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+           final fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
              CurvedAnimation(
                parent: animation,
-               curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+               curve: const Interval(0, 0.6, curve: Curves.easeOut),
              ),
            );
 

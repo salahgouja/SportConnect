@@ -12,15 +12,14 @@ part 'reauth_view_model.g.dart';
 /// - `'google'`
 /// - `'generic'`
 class ReauthState {
-  final bool isLoading;
-  final bool isSuccess;
-  final String? errorCode;
-
   const ReauthState({
     this.isLoading = false,
     this.isSuccess = false,
     this.errorCode,
   });
+  final bool isLoading;
+  final bool isSuccess;
+  final String? errorCode;
 
   ReauthState copyWith({
     bool? isLoading,
@@ -52,7 +51,7 @@ class ReauthViewModel extends _$ReauthViewModel {
           .reauthenticateWithPassword(password);
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, isSuccess: true);
-    } catch (e) {
+    } on Exception catch (e) {
       if (!ref.mounted) return;
       state = state.copyWith(
         isLoading: false,
@@ -69,7 +68,7 @@ class ReauthViewModel extends _$ReauthViewModel {
       await ref.read(authActionsViewModelProvider).reauthenticateWithGoogle();
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, isSuccess: true);
-    } catch (_) {
+    } on Exception catch (_) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, errorCode: 'google');
     }

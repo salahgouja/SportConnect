@@ -15,9 +15,9 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ReviewModel {
 
- String get id; String get rideId; String get reviewerId; String get reviewerName; String? get reviewerPhotoUrl; String get revieweeId; String get revieweeName; String? get revieweePhotoUrl; ReviewType get type; double get rating; String? get comment; List<String> get tags;// Store as strings for Firestore compatibility
+ String get id; String get rideId; String get reviewerId; String get reviewerName; String get revieweeId; String get revieweeName; ReviewType get type; double get rating;@RequiredTimestampConverter() DateTime get createdAt; String? get reviewerPhotoUrl; String? get revieweePhotoUrl; String? get comment; List<String> get tags;// Store as strings for Firestore compatibility
  bool get isVisible; String? get response;// Response from the person being reviewed
-@TimestampConverter() DateTime? get responseAt;@RequiredTimestampConverter() DateTime get createdAt;@TimestampConverter() DateTime? get updatedAt;
+@TimestampConverter() DateTime? get responseAt;@TimestampConverter() DateTime? get updatedAt;
 /// Create a copy of ReviewModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -30,16 +30,16 @@ $ReviewModelCopyWith<ReviewModel> get copyWith => _$ReviewModelCopyWithImpl<Revi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ReviewModel&&(identical(other.id, id) || other.id == id)&&(identical(other.rideId, rideId) || other.rideId == rideId)&&(identical(other.reviewerId, reviewerId) || other.reviewerId == reviewerId)&&(identical(other.reviewerName, reviewerName) || other.reviewerName == reviewerName)&&(identical(other.reviewerPhotoUrl, reviewerPhotoUrl) || other.reviewerPhotoUrl == reviewerPhotoUrl)&&(identical(other.revieweeId, revieweeId) || other.revieweeId == revieweeId)&&(identical(other.revieweeName, revieweeName) || other.revieweeName == revieweeName)&&(identical(other.revieweePhotoUrl, revieweePhotoUrl) || other.revieweePhotoUrl == revieweePhotoUrl)&&(identical(other.type, type) || other.type == type)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.comment, comment) || other.comment == comment)&&const DeepCollectionEquality().equals(other.tags, tags)&&(identical(other.isVisible, isVisible) || other.isVisible == isVisible)&&(identical(other.response, response) || other.response == response)&&(identical(other.responseAt, responseAt) || other.responseAt == responseAt)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ReviewModel&&(identical(other.id, id) || other.id == id)&&(identical(other.rideId, rideId) || other.rideId == rideId)&&(identical(other.reviewerId, reviewerId) || other.reviewerId == reviewerId)&&(identical(other.reviewerName, reviewerName) || other.reviewerName == reviewerName)&&(identical(other.revieweeId, revieweeId) || other.revieweeId == revieweeId)&&(identical(other.revieweeName, revieweeName) || other.revieweeName == revieweeName)&&(identical(other.type, type) || other.type == type)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.reviewerPhotoUrl, reviewerPhotoUrl) || other.reviewerPhotoUrl == reviewerPhotoUrl)&&(identical(other.revieweePhotoUrl, revieweePhotoUrl) || other.revieweePhotoUrl == revieweePhotoUrl)&&(identical(other.comment, comment) || other.comment == comment)&&const DeepCollectionEquality().equals(other.tags, tags)&&(identical(other.isVisible, isVisible) || other.isVisible == isVisible)&&(identical(other.response, response) || other.response == response)&&(identical(other.responseAt, responseAt) || other.responseAt == responseAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,rideId,reviewerId,reviewerName,reviewerPhotoUrl,revieweeId,revieweeName,revieweePhotoUrl,type,rating,comment,const DeepCollectionEquality().hash(tags),isVisible,response,responseAt,createdAt,updatedAt);
+int get hashCode => Object.hash(runtimeType,id,rideId,reviewerId,reviewerName,revieweeId,revieweeName,type,rating,createdAt,reviewerPhotoUrl,revieweePhotoUrl,comment,const DeepCollectionEquality().hash(tags),isVisible,response,responseAt,updatedAt);
 
 @override
 String toString() {
-  return 'ReviewModel(id: $id, rideId: $rideId, reviewerId: $reviewerId, reviewerName: $reviewerName, reviewerPhotoUrl: $reviewerPhotoUrl, revieweeId: $revieweeId, revieweeName: $revieweeName, revieweePhotoUrl: $revieweePhotoUrl, type: $type, rating: $rating, comment: $comment, tags: $tags, isVisible: $isVisible, response: $response, responseAt: $responseAt, createdAt: $createdAt, updatedAt: $updatedAt)';
+  return 'ReviewModel(id: $id, rideId: $rideId, reviewerId: $reviewerId, reviewerName: $reviewerName, revieweeId: $revieweeId, revieweeName: $revieweeName, type: $type, rating: $rating, createdAt: $createdAt, reviewerPhotoUrl: $reviewerPhotoUrl, revieweePhotoUrl: $revieweePhotoUrl, comment: $comment, tags: $tags, isVisible: $isVisible, response: $response, responseAt: $responseAt, updatedAt: $updatedAt)';
 }
 
 
@@ -50,7 +50,7 @@ abstract mixin class $ReviewModelCopyWith<$Res>  {
   factory $ReviewModelCopyWith(ReviewModel value, $Res Function(ReviewModel) _then) = _$ReviewModelCopyWithImpl;
 @useResult
 $Res call({
- String id, String rideId, String reviewerId, String reviewerName, String? reviewerPhotoUrl, String revieweeId, String revieweeName, String? revieweePhotoUrl, ReviewType type, double rating, String? comment, List<String> tags, bool isVisible, String? response,@TimestampConverter() DateTime? responseAt,@RequiredTimestampConverter() DateTime createdAt,@TimestampConverter() DateTime? updatedAt
+ String id, String rideId, String reviewerId, String reviewerName, String revieweeId, String revieweeName, ReviewType type, double rating,@RequiredTimestampConverter() DateTime createdAt, String? reviewerPhotoUrl, String? revieweePhotoUrl, String? comment, List<String> tags, bool isVisible, String? response,@TimestampConverter() DateTime? responseAt,@TimestampConverter() DateTime? updatedAt
 });
 
 
@@ -67,25 +67,25 @@ class _$ReviewModelCopyWithImpl<$Res>
 
 /// Create a copy of ReviewModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? rideId = null,Object? reviewerId = null,Object? reviewerName = null,Object? reviewerPhotoUrl = freezed,Object? revieweeId = null,Object? revieweeName = null,Object? revieweePhotoUrl = freezed,Object? type = null,Object? rating = null,Object? comment = freezed,Object? tags = null,Object? isVisible = null,Object? response = freezed,Object? responseAt = freezed,Object? createdAt = null,Object? updatedAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? rideId = null,Object? reviewerId = null,Object? reviewerName = null,Object? revieweeId = null,Object? revieweeName = null,Object? type = null,Object? rating = null,Object? createdAt = null,Object? reviewerPhotoUrl = freezed,Object? revieweePhotoUrl = freezed,Object? comment = freezed,Object? tags = null,Object? isVisible = null,Object? response = freezed,Object? responseAt = freezed,Object? updatedAt = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,rideId: null == rideId ? _self.rideId : rideId // ignore: cast_nullable_to_non_nullable
 as String,reviewerId: null == reviewerId ? _self.reviewerId : reviewerId // ignore: cast_nullable_to_non_nullable
 as String,reviewerName: null == reviewerName ? _self.reviewerName : reviewerName // ignore: cast_nullable_to_non_nullable
-as String,reviewerPhotoUrl: freezed == reviewerPhotoUrl ? _self.reviewerPhotoUrl : reviewerPhotoUrl // ignore: cast_nullable_to_non_nullable
-as String?,revieweeId: null == revieweeId ? _self.revieweeId : revieweeId // ignore: cast_nullable_to_non_nullable
+as String,revieweeId: null == revieweeId ? _self.revieweeId : revieweeId // ignore: cast_nullable_to_non_nullable
 as String,revieweeName: null == revieweeName ? _self.revieweeName : revieweeName // ignore: cast_nullable_to_non_nullable
-as String,revieweePhotoUrl: freezed == revieweePhotoUrl ? _self.revieweePhotoUrl : revieweePhotoUrl // ignore: cast_nullable_to_non_nullable
-as String?,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
+as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as ReviewType,rating: null == rating ? _self.rating : rating // ignore: cast_nullable_to_non_nullable
-as double,comment: freezed == comment ? _self.comment : comment // ignore: cast_nullable_to_non_nullable
+as double,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as DateTime,reviewerPhotoUrl: freezed == reviewerPhotoUrl ? _self.reviewerPhotoUrl : reviewerPhotoUrl // ignore: cast_nullable_to_non_nullable
+as String?,revieweePhotoUrl: freezed == revieweePhotoUrl ? _self.revieweePhotoUrl : revieweePhotoUrl // ignore: cast_nullable_to_non_nullable
+as String?,comment: freezed == comment ? _self.comment : comment // ignore: cast_nullable_to_non_nullable
 as String?,tags: null == tags ? _self.tags : tags // ignore: cast_nullable_to_non_nullable
 as List<String>,isVisible: null == isVisible ? _self.isVisible : isVisible // ignore: cast_nullable_to_non_nullable
 as bool,response: freezed == response ? _self.response : response // ignore: cast_nullable_to_non_nullable
 as String?,responseAt: freezed == responseAt ? _self.responseAt : responseAt // ignore: cast_nullable_to_non_nullable
-as DateTime?,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
-as DateTime,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,
   ));
 }
@@ -171,10 +171,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String rideId,  String reviewerId,  String reviewerName,  String? reviewerPhotoUrl,  String revieweeId,  String revieweeName,  String? revieweePhotoUrl,  ReviewType type,  double rating,  String? comment,  List<String> tags,  bool isVisible,  String? response, @TimestampConverter()  DateTime? responseAt, @RequiredTimestampConverter()  DateTime createdAt, @TimestampConverter()  DateTime? updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String rideId,  String reviewerId,  String reviewerName,  String revieweeId,  String revieweeName,  ReviewType type,  double rating, @RequiredTimestampConverter()  DateTime createdAt,  String? reviewerPhotoUrl,  String? revieweePhotoUrl,  String? comment,  List<String> tags,  bool isVisible,  String? response, @TimestampConverter()  DateTime? responseAt, @TimestampConverter()  DateTime? updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ReviewModel() when $default != null:
-return $default(_that.id,_that.rideId,_that.reviewerId,_that.reviewerName,_that.reviewerPhotoUrl,_that.revieweeId,_that.revieweeName,_that.revieweePhotoUrl,_that.type,_that.rating,_that.comment,_that.tags,_that.isVisible,_that.response,_that.responseAt,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.rideId,_that.reviewerId,_that.reviewerName,_that.revieweeId,_that.revieweeName,_that.type,_that.rating,_that.createdAt,_that.reviewerPhotoUrl,_that.revieweePhotoUrl,_that.comment,_that.tags,_that.isVisible,_that.response,_that.responseAt,_that.updatedAt);case _:
   return orElse();
 
 }
@@ -192,10 +192,10 @@ return $default(_that.id,_that.rideId,_that.reviewerId,_that.reviewerName,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String rideId,  String reviewerId,  String reviewerName,  String? reviewerPhotoUrl,  String revieweeId,  String revieweeName,  String? revieweePhotoUrl,  ReviewType type,  double rating,  String? comment,  List<String> tags,  bool isVisible,  String? response, @TimestampConverter()  DateTime? responseAt, @RequiredTimestampConverter()  DateTime createdAt, @TimestampConverter()  DateTime? updatedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String rideId,  String reviewerId,  String reviewerName,  String revieweeId,  String revieweeName,  ReviewType type,  double rating, @RequiredTimestampConverter()  DateTime createdAt,  String? reviewerPhotoUrl,  String? revieweePhotoUrl,  String? comment,  List<String> tags,  bool isVisible,  String? response, @TimestampConverter()  DateTime? responseAt, @TimestampConverter()  DateTime? updatedAt)  $default,) {final _that = this;
 switch (_that) {
 case _ReviewModel():
-return $default(_that.id,_that.rideId,_that.reviewerId,_that.reviewerName,_that.reviewerPhotoUrl,_that.revieweeId,_that.revieweeName,_that.revieweePhotoUrl,_that.type,_that.rating,_that.comment,_that.tags,_that.isVisible,_that.response,_that.responseAt,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.rideId,_that.reviewerId,_that.reviewerName,_that.revieweeId,_that.revieweeName,_that.type,_that.rating,_that.createdAt,_that.reviewerPhotoUrl,_that.revieweePhotoUrl,_that.comment,_that.tags,_that.isVisible,_that.response,_that.responseAt,_that.updatedAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -212,10 +212,10 @@ return $default(_that.id,_that.rideId,_that.reviewerId,_that.reviewerName,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String rideId,  String reviewerId,  String reviewerName,  String? reviewerPhotoUrl,  String revieweeId,  String revieweeName,  String? revieweePhotoUrl,  ReviewType type,  double rating,  String? comment,  List<String> tags,  bool isVisible,  String? response, @TimestampConverter()  DateTime? responseAt, @RequiredTimestampConverter()  DateTime createdAt, @TimestampConverter()  DateTime? updatedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String rideId,  String reviewerId,  String reviewerName,  String revieweeId,  String revieweeName,  ReviewType type,  double rating, @RequiredTimestampConverter()  DateTime createdAt,  String? reviewerPhotoUrl,  String? revieweePhotoUrl,  String? comment,  List<String> tags,  bool isVisible,  String? response, @TimestampConverter()  DateTime? responseAt, @TimestampConverter()  DateTime? updatedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _ReviewModel() when $default != null:
-return $default(_that.id,_that.rideId,_that.reviewerId,_that.reviewerName,_that.reviewerPhotoUrl,_that.revieweeId,_that.revieweeName,_that.revieweePhotoUrl,_that.type,_that.rating,_that.comment,_that.tags,_that.isVisible,_that.response,_that.responseAt,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.rideId,_that.reviewerId,_that.reviewerName,_that.revieweeId,_that.revieweeName,_that.type,_that.rating,_that.createdAt,_that.reviewerPhotoUrl,_that.revieweePhotoUrl,_that.comment,_that.tags,_that.isVisible,_that.response,_that.responseAt,_that.updatedAt);case _:
   return null;
 
 }
@@ -227,19 +227,20 @@ return $default(_that.id,_that.rideId,_that.reviewerId,_that.reviewerName,_that.
 @JsonSerializable()
 
 class _ReviewModel extends ReviewModel {
-  const _ReviewModel({required this.id, required this.rideId, required this.reviewerId, required this.reviewerName, this.reviewerPhotoUrl, required this.revieweeId, required this.revieweeName, this.revieweePhotoUrl, required this.type, required this.rating, this.comment, final  List<String> tags = const [], this.isVisible = true, this.response, @TimestampConverter() this.responseAt, @RequiredTimestampConverter() required this.createdAt, @TimestampConverter() this.updatedAt}): _tags = tags,super._();
+  const _ReviewModel({required this.id, required this.rideId, required this.reviewerId, required this.reviewerName, required this.revieweeId, required this.revieweeName, required this.type, required this.rating, @RequiredTimestampConverter() required this.createdAt, this.reviewerPhotoUrl, this.revieweePhotoUrl, this.comment, final  List<String> tags = const [], this.isVisible = true, this.response, @TimestampConverter() this.responseAt, @TimestampConverter() this.updatedAt}): _tags = tags,super._();
   factory _ReviewModel.fromJson(Map<String, dynamic> json) => _$ReviewModelFromJson(json);
 
 @override final  String id;
 @override final  String rideId;
 @override final  String reviewerId;
 @override final  String reviewerName;
-@override final  String? reviewerPhotoUrl;
 @override final  String revieweeId;
 @override final  String revieweeName;
-@override final  String? revieweePhotoUrl;
 @override final  ReviewType type;
 @override final  double rating;
+@override@RequiredTimestampConverter() final  DateTime createdAt;
+@override final  String? reviewerPhotoUrl;
+@override final  String? revieweePhotoUrl;
 @override final  String? comment;
  final  List<String> _tags;
 @override@JsonKey() List<String> get tags {
@@ -253,7 +254,6 @@ class _ReviewModel extends ReviewModel {
 @override final  String? response;
 // Response from the person being reviewed
 @override@TimestampConverter() final  DateTime? responseAt;
-@override@RequiredTimestampConverter() final  DateTime createdAt;
 @override@TimestampConverter() final  DateTime? updatedAt;
 
 /// Create a copy of ReviewModel
@@ -269,16 +269,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ReviewModel&&(identical(other.id, id) || other.id == id)&&(identical(other.rideId, rideId) || other.rideId == rideId)&&(identical(other.reviewerId, reviewerId) || other.reviewerId == reviewerId)&&(identical(other.reviewerName, reviewerName) || other.reviewerName == reviewerName)&&(identical(other.reviewerPhotoUrl, reviewerPhotoUrl) || other.reviewerPhotoUrl == reviewerPhotoUrl)&&(identical(other.revieweeId, revieweeId) || other.revieweeId == revieweeId)&&(identical(other.revieweeName, revieweeName) || other.revieweeName == revieweeName)&&(identical(other.revieweePhotoUrl, revieweePhotoUrl) || other.revieweePhotoUrl == revieweePhotoUrl)&&(identical(other.type, type) || other.type == type)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.comment, comment) || other.comment == comment)&&const DeepCollectionEquality().equals(other._tags, _tags)&&(identical(other.isVisible, isVisible) || other.isVisible == isVisible)&&(identical(other.response, response) || other.response == response)&&(identical(other.responseAt, responseAt) || other.responseAt == responseAt)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ReviewModel&&(identical(other.id, id) || other.id == id)&&(identical(other.rideId, rideId) || other.rideId == rideId)&&(identical(other.reviewerId, reviewerId) || other.reviewerId == reviewerId)&&(identical(other.reviewerName, reviewerName) || other.reviewerName == reviewerName)&&(identical(other.revieweeId, revieweeId) || other.revieweeId == revieweeId)&&(identical(other.revieweeName, revieweeName) || other.revieweeName == revieweeName)&&(identical(other.type, type) || other.type == type)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.reviewerPhotoUrl, reviewerPhotoUrl) || other.reviewerPhotoUrl == reviewerPhotoUrl)&&(identical(other.revieweePhotoUrl, revieweePhotoUrl) || other.revieweePhotoUrl == revieweePhotoUrl)&&(identical(other.comment, comment) || other.comment == comment)&&const DeepCollectionEquality().equals(other._tags, _tags)&&(identical(other.isVisible, isVisible) || other.isVisible == isVisible)&&(identical(other.response, response) || other.response == response)&&(identical(other.responseAt, responseAt) || other.responseAt == responseAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,rideId,reviewerId,reviewerName,reviewerPhotoUrl,revieweeId,revieweeName,revieweePhotoUrl,type,rating,comment,const DeepCollectionEquality().hash(_tags),isVisible,response,responseAt,createdAt,updatedAt);
+int get hashCode => Object.hash(runtimeType,id,rideId,reviewerId,reviewerName,revieweeId,revieweeName,type,rating,createdAt,reviewerPhotoUrl,revieweePhotoUrl,comment,const DeepCollectionEquality().hash(_tags),isVisible,response,responseAt,updatedAt);
 
 @override
 String toString() {
-  return 'ReviewModel(id: $id, rideId: $rideId, reviewerId: $reviewerId, reviewerName: $reviewerName, reviewerPhotoUrl: $reviewerPhotoUrl, revieweeId: $revieweeId, revieweeName: $revieweeName, revieweePhotoUrl: $revieweePhotoUrl, type: $type, rating: $rating, comment: $comment, tags: $tags, isVisible: $isVisible, response: $response, responseAt: $responseAt, createdAt: $createdAt, updatedAt: $updatedAt)';
+  return 'ReviewModel(id: $id, rideId: $rideId, reviewerId: $reviewerId, reviewerName: $reviewerName, revieweeId: $revieweeId, revieweeName: $revieweeName, type: $type, rating: $rating, createdAt: $createdAt, reviewerPhotoUrl: $reviewerPhotoUrl, revieweePhotoUrl: $revieweePhotoUrl, comment: $comment, tags: $tags, isVisible: $isVisible, response: $response, responseAt: $responseAt, updatedAt: $updatedAt)';
 }
 
 
@@ -289,7 +289,7 @@ abstract mixin class _$ReviewModelCopyWith<$Res> implements $ReviewModelCopyWith
   factory _$ReviewModelCopyWith(_ReviewModel value, $Res Function(_ReviewModel) _then) = __$ReviewModelCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String rideId, String reviewerId, String reviewerName, String? reviewerPhotoUrl, String revieweeId, String revieweeName, String? revieweePhotoUrl, ReviewType type, double rating, String? comment, List<String> tags, bool isVisible, String? response,@TimestampConverter() DateTime? responseAt,@RequiredTimestampConverter() DateTime createdAt,@TimestampConverter() DateTime? updatedAt
+ String id, String rideId, String reviewerId, String reviewerName, String revieweeId, String revieweeName, ReviewType type, double rating,@RequiredTimestampConverter() DateTime createdAt, String? reviewerPhotoUrl, String? revieweePhotoUrl, String? comment, List<String> tags, bool isVisible, String? response,@TimestampConverter() DateTime? responseAt,@TimestampConverter() DateTime? updatedAt
 });
 
 
@@ -306,25 +306,25 @@ class __$ReviewModelCopyWithImpl<$Res>
 
 /// Create a copy of ReviewModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? rideId = null,Object? reviewerId = null,Object? reviewerName = null,Object? reviewerPhotoUrl = freezed,Object? revieweeId = null,Object? revieweeName = null,Object? revieweePhotoUrl = freezed,Object? type = null,Object? rating = null,Object? comment = freezed,Object? tags = null,Object? isVisible = null,Object? response = freezed,Object? responseAt = freezed,Object? createdAt = null,Object? updatedAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? rideId = null,Object? reviewerId = null,Object? reviewerName = null,Object? revieweeId = null,Object? revieweeName = null,Object? type = null,Object? rating = null,Object? createdAt = null,Object? reviewerPhotoUrl = freezed,Object? revieweePhotoUrl = freezed,Object? comment = freezed,Object? tags = null,Object? isVisible = null,Object? response = freezed,Object? responseAt = freezed,Object? updatedAt = freezed,}) {
   return _then(_ReviewModel(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,rideId: null == rideId ? _self.rideId : rideId // ignore: cast_nullable_to_non_nullable
 as String,reviewerId: null == reviewerId ? _self.reviewerId : reviewerId // ignore: cast_nullable_to_non_nullable
 as String,reviewerName: null == reviewerName ? _self.reviewerName : reviewerName // ignore: cast_nullable_to_non_nullable
-as String,reviewerPhotoUrl: freezed == reviewerPhotoUrl ? _self.reviewerPhotoUrl : reviewerPhotoUrl // ignore: cast_nullable_to_non_nullable
-as String?,revieweeId: null == revieweeId ? _self.revieweeId : revieweeId // ignore: cast_nullable_to_non_nullable
+as String,revieweeId: null == revieweeId ? _self.revieweeId : revieweeId // ignore: cast_nullable_to_non_nullable
 as String,revieweeName: null == revieweeName ? _self.revieweeName : revieweeName // ignore: cast_nullable_to_non_nullable
-as String,revieweePhotoUrl: freezed == revieweePhotoUrl ? _self.revieweePhotoUrl : revieweePhotoUrl // ignore: cast_nullable_to_non_nullable
-as String?,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
+as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as ReviewType,rating: null == rating ? _self.rating : rating // ignore: cast_nullable_to_non_nullable
-as double,comment: freezed == comment ? _self.comment : comment // ignore: cast_nullable_to_non_nullable
+as double,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as DateTime,reviewerPhotoUrl: freezed == reviewerPhotoUrl ? _self.reviewerPhotoUrl : reviewerPhotoUrl // ignore: cast_nullable_to_non_nullable
+as String?,revieweePhotoUrl: freezed == revieweePhotoUrl ? _self.revieweePhotoUrl : revieweePhotoUrl // ignore: cast_nullable_to_non_nullable
+as String?,comment: freezed == comment ? _self.comment : comment // ignore: cast_nullable_to_non_nullable
 as String?,tags: null == tags ? _self._tags : tags // ignore: cast_nullable_to_non_nullable
 as List<String>,isVisible: null == isVisible ? _self.isVisible : isVisible // ignore: cast_nullable_to_non_nullable
 as bool,response: freezed == response ? _self.response : response // ignore: cast_nullable_to_non_nullable
 as String?,responseAt: freezed == responseAt ? _self.responseAt : responseAt // ignore: cast_nullable_to_non_nullable
-as DateTime?,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
-as DateTime,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,
   ));
 }
@@ -634,7 +634,7 @@ as DateTime?,
 /// @nodoc
 mixin _$CreateReviewRequest {
 
- String get rideId; String get revieweeId; String get revieweeName; String? get revieweePhotoUrl; ReviewType get type; double get rating; String? get comment; List<String> get tags;
+ String get rideId; String get revieweeId; String get revieweeName; ReviewType get type; double get rating; String? get revieweePhotoUrl; String? get comment; List<String> get tags;
 /// Create a copy of CreateReviewRequest
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -647,16 +647,16 @@ $CreateReviewRequestCopyWith<CreateReviewRequest> get copyWith => _$CreateReview
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CreateReviewRequest&&(identical(other.rideId, rideId) || other.rideId == rideId)&&(identical(other.revieweeId, revieweeId) || other.revieweeId == revieweeId)&&(identical(other.revieweeName, revieweeName) || other.revieweeName == revieweeName)&&(identical(other.revieweePhotoUrl, revieweePhotoUrl) || other.revieweePhotoUrl == revieweePhotoUrl)&&(identical(other.type, type) || other.type == type)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.comment, comment) || other.comment == comment)&&const DeepCollectionEquality().equals(other.tags, tags));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CreateReviewRequest&&(identical(other.rideId, rideId) || other.rideId == rideId)&&(identical(other.revieweeId, revieweeId) || other.revieweeId == revieweeId)&&(identical(other.revieweeName, revieweeName) || other.revieweeName == revieweeName)&&(identical(other.type, type) || other.type == type)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.revieweePhotoUrl, revieweePhotoUrl) || other.revieweePhotoUrl == revieweePhotoUrl)&&(identical(other.comment, comment) || other.comment == comment)&&const DeepCollectionEquality().equals(other.tags, tags));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,rideId,revieweeId,revieweeName,revieweePhotoUrl,type,rating,comment,const DeepCollectionEquality().hash(tags));
+int get hashCode => Object.hash(runtimeType,rideId,revieweeId,revieweeName,type,rating,revieweePhotoUrl,comment,const DeepCollectionEquality().hash(tags));
 
 @override
 String toString() {
-  return 'CreateReviewRequest(rideId: $rideId, revieweeId: $revieweeId, revieweeName: $revieweeName, revieweePhotoUrl: $revieweePhotoUrl, type: $type, rating: $rating, comment: $comment, tags: $tags)';
+  return 'CreateReviewRequest(rideId: $rideId, revieweeId: $revieweeId, revieweeName: $revieweeName, type: $type, rating: $rating, revieweePhotoUrl: $revieweePhotoUrl, comment: $comment, tags: $tags)';
 }
 
 
@@ -667,7 +667,7 @@ abstract mixin class $CreateReviewRequestCopyWith<$Res>  {
   factory $CreateReviewRequestCopyWith(CreateReviewRequest value, $Res Function(CreateReviewRequest) _then) = _$CreateReviewRequestCopyWithImpl;
 @useResult
 $Res call({
- String rideId, String revieweeId, String revieweeName, String? revieweePhotoUrl, ReviewType type, double rating, String? comment, List<String> tags
+ String rideId, String revieweeId, String revieweeName, ReviewType type, double rating, String? revieweePhotoUrl, String? comment, List<String> tags
 });
 
 
@@ -684,15 +684,15 @@ class _$CreateReviewRequestCopyWithImpl<$Res>
 
 /// Create a copy of CreateReviewRequest
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? rideId = null,Object? revieweeId = null,Object? revieweeName = null,Object? revieweePhotoUrl = freezed,Object? type = null,Object? rating = null,Object? comment = freezed,Object? tags = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? rideId = null,Object? revieweeId = null,Object? revieweeName = null,Object? type = null,Object? rating = null,Object? revieweePhotoUrl = freezed,Object? comment = freezed,Object? tags = null,}) {
   return _then(_self.copyWith(
 rideId: null == rideId ? _self.rideId : rideId // ignore: cast_nullable_to_non_nullable
 as String,revieweeId: null == revieweeId ? _self.revieweeId : revieweeId // ignore: cast_nullable_to_non_nullable
 as String,revieweeName: null == revieweeName ? _self.revieweeName : revieweeName // ignore: cast_nullable_to_non_nullable
-as String,revieweePhotoUrl: freezed == revieweePhotoUrl ? _self.revieweePhotoUrl : revieweePhotoUrl // ignore: cast_nullable_to_non_nullable
-as String?,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
+as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as ReviewType,rating: null == rating ? _self.rating : rating // ignore: cast_nullable_to_non_nullable
-as double,comment: freezed == comment ? _self.comment : comment // ignore: cast_nullable_to_non_nullable
+as double,revieweePhotoUrl: freezed == revieweePhotoUrl ? _self.revieweePhotoUrl : revieweePhotoUrl // ignore: cast_nullable_to_non_nullable
+as String?,comment: freezed == comment ? _self.comment : comment // ignore: cast_nullable_to_non_nullable
 as String?,tags: null == tags ? _self.tags : tags // ignore: cast_nullable_to_non_nullable
 as List<String>,
   ));
@@ -779,10 +779,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String rideId,  String revieweeId,  String revieweeName,  String? revieweePhotoUrl,  ReviewType type,  double rating,  String? comment,  List<String> tags)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String rideId,  String revieweeId,  String revieweeName,  ReviewType type,  double rating,  String? revieweePhotoUrl,  String? comment,  List<String> tags)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CreateReviewRequest() when $default != null:
-return $default(_that.rideId,_that.revieweeId,_that.revieweeName,_that.revieweePhotoUrl,_that.type,_that.rating,_that.comment,_that.tags);case _:
+return $default(_that.rideId,_that.revieweeId,_that.revieweeName,_that.type,_that.rating,_that.revieweePhotoUrl,_that.comment,_that.tags);case _:
   return orElse();
 
 }
@@ -800,10 +800,10 @@ return $default(_that.rideId,_that.revieweeId,_that.revieweeName,_that.revieweeP
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String rideId,  String revieweeId,  String revieweeName,  String? revieweePhotoUrl,  ReviewType type,  double rating,  String? comment,  List<String> tags)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String rideId,  String revieweeId,  String revieweeName,  ReviewType type,  double rating,  String? revieweePhotoUrl,  String? comment,  List<String> tags)  $default,) {final _that = this;
 switch (_that) {
 case _CreateReviewRequest():
-return $default(_that.rideId,_that.revieweeId,_that.revieweeName,_that.revieweePhotoUrl,_that.type,_that.rating,_that.comment,_that.tags);case _:
+return $default(_that.rideId,_that.revieweeId,_that.revieweeName,_that.type,_that.rating,_that.revieweePhotoUrl,_that.comment,_that.tags);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -820,10 +820,10 @@ return $default(_that.rideId,_that.revieweeId,_that.revieweeName,_that.revieweeP
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String rideId,  String revieweeId,  String revieweeName,  String? revieweePhotoUrl,  ReviewType type,  double rating,  String? comment,  List<String> tags)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String rideId,  String revieweeId,  String revieweeName,  ReviewType type,  double rating,  String? revieweePhotoUrl,  String? comment,  List<String> tags)?  $default,) {final _that = this;
 switch (_that) {
 case _CreateReviewRequest() when $default != null:
-return $default(_that.rideId,_that.revieweeId,_that.revieweeName,_that.revieweePhotoUrl,_that.type,_that.rating,_that.comment,_that.tags);case _:
+return $default(_that.rideId,_that.revieweeId,_that.revieweeName,_that.type,_that.rating,_that.revieweePhotoUrl,_that.comment,_that.tags);case _:
   return null;
 
 }
@@ -835,15 +835,15 @@ return $default(_that.rideId,_that.revieweeId,_that.revieweeName,_that.revieweeP
 @JsonSerializable()
 
 class _CreateReviewRequest implements CreateReviewRequest {
-  const _CreateReviewRequest({required this.rideId, required this.revieweeId, required this.revieweeName, this.revieweePhotoUrl, required this.type, required this.rating, this.comment, final  List<String> tags = const []}): _tags = tags;
+  const _CreateReviewRequest({required this.rideId, required this.revieweeId, required this.revieweeName, required this.type, required this.rating, this.revieweePhotoUrl, this.comment, final  List<String> tags = const []}): _tags = tags;
   factory _CreateReviewRequest.fromJson(Map<String, dynamic> json) => _$CreateReviewRequestFromJson(json);
 
 @override final  String rideId;
 @override final  String revieweeId;
 @override final  String revieweeName;
-@override final  String? revieweePhotoUrl;
 @override final  ReviewType type;
 @override final  double rating;
+@override final  String? revieweePhotoUrl;
 @override final  String? comment;
  final  List<String> _tags;
 @override@JsonKey() List<String> get tags {
@@ -866,16 +866,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CreateReviewRequest&&(identical(other.rideId, rideId) || other.rideId == rideId)&&(identical(other.revieweeId, revieweeId) || other.revieweeId == revieweeId)&&(identical(other.revieweeName, revieweeName) || other.revieweeName == revieweeName)&&(identical(other.revieweePhotoUrl, revieweePhotoUrl) || other.revieweePhotoUrl == revieweePhotoUrl)&&(identical(other.type, type) || other.type == type)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.comment, comment) || other.comment == comment)&&const DeepCollectionEquality().equals(other._tags, _tags));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CreateReviewRequest&&(identical(other.rideId, rideId) || other.rideId == rideId)&&(identical(other.revieweeId, revieweeId) || other.revieweeId == revieweeId)&&(identical(other.revieweeName, revieweeName) || other.revieweeName == revieweeName)&&(identical(other.type, type) || other.type == type)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.revieweePhotoUrl, revieweePhotoUrl) || other.revieweePhotoUrl == revieweePhotoUrl)&&(identical(other.comment, comment) || other.comment == comment)&&const DeepCollectionEquality().equals(other._tags, _tags));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,rideId,revieweeId,revieweeName,revieweePhotoUrl,type,rating,comment,const DeepCollectionEquality().hash(_tags));
+int get hashCode => Object.hash(runtimeType,rideId,revieweeId,revieweeName,type,rating,revieweePhotoUrl,comment,const DeepCollectionEquality().hash(_tags));
 
 @override
 String toString() {
-  return 'CreateReviewRequest(rideId: $rideId, revieweeId: $revieweeId, revieweeName: $revieweeName, revieweePhotoUrl: $revieweePhotoUrl, type: $type, rating: $rating, comment: $comment, tags: $tags)';
+  return 'CreateReviewRequest(rideId: $rideId, revieweeId: $revieweeId, revieweeName: $revieweeName, type: $type, rating: $rating, revieweePhotoUrl: $revieweePhotoUrl, comment: $comment, tags: $tags)';
 }
 
 
@@ -886,7 +886,7 @@ abstract mixin class _$CreateReviewRequestCopyWith<$Res> implements $CreateRevie
   factory _$CreateReviewRequestCopyWith(_CreateReviewRequest value, $Res Function(_CreateReviewRequest) _then) = __$CreateReviewRequestCopyWithImpl;
 @override @useResult
 $Res call({
- String rideId, String revieweeId, String revieweeName, String? revieweePhotoUrl, ReviewType type, double rating, String? comment, List<String> tags
+ String rideId, String revieweeId, String revieweeName, ReviewType type, double rating, String? revieweePhotoUrl, String? comment, List<String> tags
 });
 
 
@@ -903,15 +903,15 @@ class __$CreateReviewRequestCopyWithImpl<$Res>
 
 /// Create a copy of CreateReviewRequest
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? rideId = null,Object? revieweeId = null,Object? revieweeName = null,Object? revieweePhotoUrl = freezed,Object? type = null,Object? rating = null,Object? comment = freezed,Object? tags = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? rideId = null,Object? revieweeId = null,Object? revieweeName = null,Object? type = null,Object? rating = null,Object? revieweePhotoUrl = freezed,Object? comment = freezed,Object? tags = null,}) {
   return _then(_CreateReviewRequest(
 rideId: null == rideId ? _self.rideId : rideId // ignore: cast_nullable_to_non_nullable
 as String,revieweeId: null == revieweeId ? _self.revieweeId : revieweeId // ignore: cast_nullable_to_non_nullable
 as String,revieweeName: null == revieweeName ? _self.revieweeName : revieweeName // ignore: cast_nullable_to_non_nullable
-as String,revieweePhotoUrl: freezed == revieweePhotoUrl ? _self.revieweePhotoUrl : revieweePhotoUrl // ignore: cast_nullable_to_non_nullable
-as String?,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
+as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as ReviewType,rating: null == rating ? _self.rating : rating // ignore: cast_nullable_to_non_nullable
-as double,comment: freezed == comment ? _self.comment : comment // ignore: cast_nullable_to_non_nullable
+as double,revieweePhotoUrl: freezed == revieweePhotoUrl ? _self.revieweePhotoUrl : revieweePhotoUrl // ignore: cast_nullable_to_non_nullable
+as String?,comment: freezed == comment ? _self.comment : comment // ignore: cast_nullable_to_non_nullable
 as String?,tags: null == tags ? _self._tags : tags // ignore: cast_nullable_to_non_nullable
 as List<String>,
   ));

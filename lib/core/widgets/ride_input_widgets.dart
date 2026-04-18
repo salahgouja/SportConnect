@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 
 // ─── Seats Stepper Widget ─────────────────────────────────────────────────────
@@ -14,17 +14,9 @@ import 'package:sport_connect/core/theme/app_colors.dart';
 /// - Visual min/max bounds indication
 /// - Accessible labels
 class SeatsStepper extends StatelessWidget {
-  final int value;
-  final int min;
-  final int max;
-  final ValueChanged<int>? onChanged;
-  final String? label;
-  final Color? accentColor;
-  final bool enabled;
-
   const SeatsStepper({
-    super.key,
     required this.value,
+    super.key,
     this.min = 1,
     this.max = 8,
     this.onChanged,
@@ -32,6 +24,13 @@ class SeatsStepper extends StatelessWidget {
     this.accentColor,
     this.enabled = true,
   });
+  final int value;
+  final int min;
+  final int max;
+  final ValueChanged<int>? onChanged;
+  final String? label;
+  final Color? accentColor;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -129,17 +128,16 @@ class SeatsStepper extends StatelessWidget {
 }
 
 class _StepButton extends StatelessWidget {
-  final IconData icon;
-  final bool enabled;
-  final Color accent;
-  final VoidCallback onTap;
-
   const _StepButton({
     required this.icon,
     required this.enabled,
     required this.accent,
     required this.onTap,
   });
+  final IconData icon;
+  final bool enabled;
+  final Color accent;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -177,17 +175,6 @@ class _StepButton extends StatelessWidget {
 /// - Optional suggested price display
 /// - Animated error states
 class PriceInput extends StatefulWidget {
-  final double? initialValue;
-  final ValueChanged<double?>? onChanged;
-  final String? label;
-  final String currency;
-  final double? suggestedPrice;
-  final double? minPrice;
-  final double? maxPrice;
-  final Color? accentColor;
-  final bool enabled;
-  final String? Function(double?)? validator;
-
   const PriceInput({
     super.key,
     this.initialValue,
@@ -201,6 +188,16 @@ class PriceInput extends StatefulWidget {
     this.enabled = true,
     this.validator,
   });
+  final double? initialValue;
+  final ValueChanged<double?>? onChanged;
+  final String? label;
+  final String currency;
+  final double? suggestedPrice;
+  final double? minPrice;
+  final double? maxPrice;
+  final Color? accentColor;
+  final bool enabled;
+  final String? Function(double?)? validator;
 
   @override
   State<PriceInput> createState() => PriceInputState();
@@ -411,15 +408,6 @@ class PriceInputState extends State<PriceInput> {
 /// Shows date and time in separate tappable chips.
 /// Validates that chosen time is in the future and not too soon.
 class DateTimePickerField extends StatelessWidget {
-  final DateTime? selectedDate;
-  final TimeOfDay? selectedTime;
-  final ValueChanged<DateTime>? onDateChanged;
-  final ValueChanged<TimeOfDay>? onTimeChanged;
-  final String? label;
-  final Color? accentColor;
-  final int minMinutesFromNow;
-  final String? error;
-
   const DateTimePickerField({
     super.key,
     this.selectedDate,
@@ -431,6 +419,14 @@ class DateTimePickerField extends StatelessWidget {
     this.minMinutesFromNow = 30,
     this.error,
   });
+  final DateTime? selectedDate;
+  final TimeOfDay? selectedTime;
+  final ValueChanged<DateTime>? onDateChanged;
+  final ValueChanged<TimeOfDay>? onTimeChanged;
+  final String? label;
+  final Color? accentColor;
+  final int minMinutesFromNow;
+  final String? error;
 
   @override
   Widget build(BuildContext context) {
@@ -540,12 +536,6 @@ class DateTimePickerField extends StatelessWidget {
 }
 
 class _DateTimeChip extends StatelessWidget {
-  final IconData icon;
-  final String text;
-  final Color accent;
-  final bool hasError;
-  final VoidCallback onTap;
-
   const _DateTimeChip({
     required this.icon,
     required this.text,
@@ -553,6 +543,11 @@ class _DateTimeChip extends StatelessWidget {
     required this.hasError,
     required this.onTap,
   });
+  final IconData icon;
+  final String text;
+  final Color accent;
+  final bool hasError;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -602,22 +597,21 @@ class _DateTimeChip extends StatelessWidget {
 
 /// A toggle chip for ride preferences (pets, smoking, luggage, etc.)
 class PreferenceToggle extends StatelessWidget {
+  const PreferenceToggle({
+    required this.label,
+    required this.icon,
+    required this.value,
+    super.key,
+    this.onChanged,
+    this.accentColor,
+    this.enabled = true,
+  });
   final String label;
   final IconData icon;
   final bool value;
   final ValueChanged<bool>? onChanged;
   final Color? accentColor;
   final bool enabled;
-
-  const PreferenceToggle({
-    super.key,
-    required this.label,
-    required this.icon,
-    required this.value,
-    this.onChanged,
-    this.accentColor,
-    this.enabled = true,
-  });
 
   @override
   Widget build(BuildContext context) {

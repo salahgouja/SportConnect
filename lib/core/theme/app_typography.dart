@@ -19,7 +19,7 @@ class AppTypography {
   static TextStyle displayMedium = TextStyle(
     fontSize: 32.sp,
     fontWeight: FontWeight.w700,
-    letterSpacing: -1.0,
+    letterSpacing: -1,
     height: 1.2,
   );
 
@@ -145,7 +145,7 @@ class AppTypography {
   static TextStyle levelText = TextStyle(
     fontSize: 20.sp,
     fontWeight: FontWeight.w800,
-    letterSpacing: 1.0,
+    letterSpacing: 1,
   );
 
   static TextStyle badgeText = TextStyle(

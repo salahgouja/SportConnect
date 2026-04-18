@@ -1,5 +1,5 @@
-import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/interfaces/services/i_location_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
@@ -15,6 +15,15 @@ class LocationServiceImpl implements ILocationService {
     _instance ??= LocationServiceImpl._();
     return _instance!;
   }
+
+  @override
+  Future<bool> isServiceEnabled() => Geolocator.isLocationServiceEnabled();
+
+  @override
+  Future<void> openAppSettings() => Geolocator.openAppSettings();
+
+  @override
+  Future<void> openLocationSettings() => Geolocator.openLocationSettings();
 
   @override
   Future<bool> checkPermission() async {
@@ -76,10 +85,10 @@ class LocationServiceImpl implements ILocationService {
   @override
   Future<Position?> getCurrentLocation() async {
     try {
-      bool hasPermission = await requestPermission();
+      final hasPermission = await requestPermission();
       if (!hasPermission) return null;
 
-      Position position = await Geolocator.getCurrentPosition(
+      final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
 
@@ -87,7 +96,7 @@ class LocationServiceImpl implements ILocationService {
         'Current position: ${position.latitude}, ${position.longitude}',
       );
       return position;
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to get current position', e);
       return null;
     }
@@ -111,13 +120,13 @@ class LocationServiceImpl implements ILocationService {
   @override
   Future<String?> getAddressFromCoordinates(double lat, double lon) async {
     try {
-      List<Placemark> placemarks = await placemarkFromCoordinates(lat, lon);
+      final placemarks = await placemarkFromCoordinates(lat, lon);
 
       if (placemarks.isNotEmpty) {
-        Placemark place = placemarks.first;
+        final place = placemarks.first;
         return '${place.street}, ${place.locality}, ${place.country}';
       }
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to get address from coordinates', e);
     }
     return null;
@@ -126,9 +135,9 @@ class LocationServiceImpl implements ILocationService {
   @override
   Future<Position?> getCoordinatesFromAddress(String address) async {
     try {
-      List<Location> locations = await locationFromAddress(address);
+      final locations = await locationFromAddress(address);
       if (locations.isNotEmpty) {
-        Location location = locations.first;
+        final location = locations.first;
         // Convert Location to Position
         return Position(
           latitude: location.latitude,
@@ -143,7 +152,7 @@ class LocationServiceImpl implements ILocationService {
           headingAccuracy: 0,
         );
       }
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to get coordinates from address', e);
     }
     return null;

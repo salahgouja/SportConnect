@@ -19,19 +19,9 @@ enum ButtonSize { small, medium, large }
 
 /// Custom elevated button with loading state and premium design
 class PremiumButton extends StatefulWidget {
-  final String text;
-  final VoidCallback? onPressed;
-  final bool isLoading;
-  final PremiumButtonStyle style;
-  final ButtonSize size;
-  final IconData? icon;
-  final bool iconRight;
-  final double? width;
-  final Widget? child;
-
   const PremiumButton({
-    super.key,
     required this.text,
+    super.key,
     this.onPressed,
     this.isLoading = false,
     this.style = PremiumButtonStyle.primary,
@@ -41,6 +31,15 @@ class PremiumButton extends StatefulWidget {
     this.width,
     this.child,
   });
+  final String text;
+  final VoidCallback? onPressed;
+  final bool isLoading;
+  final PremiumButtonStyle style;
+  final ButtonSize size;
+  final IconData? icon;
+  final bool iconRight;
+  final double? width;
+  final Widget? child;
 
   @override
   State<PremiumButton> createState() => _PremiumButtonState();
@@ -59,7 +58,7 @@ class _PremiumButtonState extends State<PremiumButton>
       duration: const Duration(milliseconds: 100),
     );
     _scaleAnimation = Tween<double>(
-      begin: 1.0,
+      begin: 1,
       end: 0.95,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
@@ -244,18 +243,17 @@ class _PremiumButtonState extends State<PremiumButton>
 
 /// Gradient Icon Button
 class GradientIconButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback? onPressed;
-  final double size;
-  final Gradient gradient;
-
   const GradientIconButton({
-    super.key,
     required this.icon,
+    super.key,
     this.onPressed,
     this.size = 48,
     this.gradient = AppColors.primaryGradient,
   });
+  final IconData icon;
+  final VoidCallback? onPressed;
+  final double size;
+  final Gradient gradient;
 
   @override
   Widget build(BuildContext context) {
@@ -279,11 +277,10 @@ class GradientIconButton extends StatelessWidget {
 
 /// Floating Action Button with gradient
 class PremiumFAB extends StatelessWidget {
+  const PremiumFAB({required this.icon, super.key, this.onPressed, this.label});
   final IconData icon;
   final VoidCallback? onPressed;
   final String? label;
-
-  const PremiumFAB({super.key, required this.icon, this.onPressed, this.label});
 
   @override
   Widget build(BuildContext context) {

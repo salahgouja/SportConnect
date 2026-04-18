@@ -1,12 +1,12 @@
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/config/routes/route_config.dart';
 import 'package:sport_connect/core/config/page_transitions.dart';
+import 'package:sport_connect/core/config/routes/route_config.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
 import 'package:sport_connect/features/events/views/create_event_screen.dart';
+import 'package:sport_connect/features/events/views/edit_event_screen.dart';
 import 'package:sport_connect/features/events/views/event_attendees_screen.dart';
 import 'package:sport_connect/features/events/views/event_detail_screen.dart';
-import 'package:sport_connect/features/events/views/edit_event_screen.dart';
 import 'package:sport_connect/features/events/views/my_events_screen.dart';
 
 /// Events module routes
@@ -71,10 +71,10 @@ class EventsRoutes implements RouteConfig {
         path: AppRoutes.editEvent.path,
         name: AppRoutes.editEvent.name,
         pageBuilder: (context, state) {
-          final event = state.extra as EventModel;
+          final eventId = state.pathParameters['id']!;
           return SlideUpTransitionPage(
             key: state.pageKey,
-            child: EditEventScreen(event: event),
+            child: EditEventScreen(eventId: eventId),
           );
         },
       ),

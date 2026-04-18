@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
-import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/features/profile/view_models/user_search_view_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Premium User Search Screen with autocomplete
 class UserSearchScreen extends ConsumerWidget {
@@ -254,7 +254,7 @@ class UserSearchScreen extends ConsumerWidget {
           SizedBox(
             width: 48.w,
             height: 48.w,
-            child: CircularProgressIndicator.adaptive(
+            child: const CircularProgressIndicator.adaptive(
               strokeWidth: 3,
               valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
             ),
@@ -430,10 +430,9 @@ class UserSearchScreen extends ConsumerWidget {
 
 /// User card widget
 class _UserCard extends StatelessWidget {
+  const _UserCard({required this.user, required this.onTap});
   final UserModel user;
   final VoidCallback onTap;
-
-  const _UserCard({required this.user, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -571,11 +570,9 @@ class _UserCard extends StatelessWidget {
       case UserRole.driver:
         badgeColor = const Color(0xFF11998e);
         icon = Icons.drive_eta_rounded;
-        break;
       case UserRole.rider:
         badgeColor = const Color(0xFF667eea);
         icon = Icons.person_pin_circle_rounded;
-        break;
     }
 
     return Container(

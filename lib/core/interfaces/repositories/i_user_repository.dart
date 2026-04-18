@@ -44,6 +44,9 @@ abstract class IUserRepository {
   /// Add XP to user. Returns the new level if a level-up occurred, or null.
   Future<int?> addXP(String uid, int xp);
   Future<void> updateStreak(String uid);
+
+  /// Reset streak to 0 (no-show penalty).
+  Future<void> resetStreak(String uid);
   Future<void> updateRideStats({
     required String uid,
     required bool asDriver,

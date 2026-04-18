@@ -1,14 +1,25 @@
 import 'dart:io';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
-import 'package:sport_connect/features/vehicles/repositories/vehicle_repository.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
+import 'package:sport_connect/features/vehicles/repositories/vehicle_repository.dart';
 
 part 'vehicle_view_model.g.dart';
 
 /// Vehicle state for managing vehicle-related UI state
 class VehicleState {
+  const VehicleState({
+    this.isLoading = false,
+    this.isSuccess = false,
+    this.errorMessage,
+    this.selectedVehicle,
+    this.actionType,
+    this.actionMessage,
+    this.userId,
+    this.vehicles = const AsyncLoading(),
+  });
   final bool isLoading;
   final bool isSuccess;
   final String? errorMessage;
@@ -21,17 +32,6 @@ class VehicleState {
 
   /// Live list of the user's vehicles, driven via [ref.listen].
   final AsyncValue<List<VehicleModel>> vehicles;
-
-  const VehicleState({
-    this.isLoading = false,
-    this.isSuccess = false,
-    this.errorMessage,
-    this.selectedVehicle,
-    this.actionType,
-    this.actionMessage,
-    this.userId,
-    this.vehicles = const AsyncLoading(),
-  });
 
   VehicleState copyWith({
     bool? isLoading,
@@ -92,7 +92,6 @@ class VehicleViewModel extends _$VehicleViewModel {
   Future<bool> createVehicle(VehicleModel vehicle) async {
     state = state.copyWith(
       isLoading: true,
-      errorMessage: null,
       isSuccess: false,
       clearAction: true,
     );
@@ -110,6 +109,7 @@ class VehicleViewModel extends _$VehicleViewModel {
 
       final vehicleId = await repository.createVehicle(vehicleWithOwner);
 
+      if (!ref.mounted) return true;
       state = state.copyWith(
         isLoading: false,
         isSuccess: true,
@@ -122,7 +122,8 @@ class VehicleViewModel extends _$VehicleViewModel {
       ref.invalidate(userVehiclesStreamProvider(userId));
 
       return true;
-    } catch (e) {
+    } on Exception catch (e) {
+      if (!ref.mounted) return false;
       state = state.copyWith(
         isLoading: false,
         isSuccess: false,
@@ -136,7 +137,6 @@ class VehicleViewModel extends _$VehicleViewModel {
   Future<bool> updateVehicle(VehicleModel vehicle) async {
     state = state.copyWith(
       isLoading: true,
-      errorMessage: null,
       isSuccess: false,
       clearAction: true,
     );
@@ -151,6 +151,7 @@ class VehicleViewModel extends _$VehicleViewModel {
 
       await repository.updateVehicle(vehicle);
 
+      if (!ref.mounted) return true;
       state = state.copyWith(
         isLoading: false,
         isSuccess: true,
@@ -163,7 +164,8 @@ class VehicleViewModel extends _$VehicleViewModel {
       ref.invalidate(userVehiclesStreamProvider(userId));
 
       return true;
-    } catch (e) {
+    } on Exception catch (e) {
+      if (!ref.mounted) return false;
       state = state.copyWith(
         isLoading: false,
         isSuccess: false,
@@ -177,7 +179,6 @@ class VehicleViewModel extends _$VehicleViewModel {
   Future<bool> deleteVehicle(String vehicleId) async {
     state = state.copyWith(
       isLoading: true,
-      errorMessage: null,
       isSuccess: false,
       clearAction: true,
     );
@@ -193,6 +194,7 @@ class VehicleViewModel extends _$VehicleViewModel {
       // Block deletion if the vehicle is used by an active/in-progress ride
       final rideRepo = ref.read(rideRepositoryProvider);
       final inUse = await rideRepo.hasActiveRidesForVehicle(vehicleId);
+      if (!ref.mounted) return false;
       if (inUse) {
         state = state.copyWith(
           isLoading: false,
@@ -205,10 +207,10 @@ class VehicleViewModel extends _$VehicleViewModel {
 
       await repository.deleteVehicle(vehicleId);
 
+      if (!ref.mounted) return true;
       state = state.copyWith(
         isLoading: false,
         isSuccess: true,
-        selectedVehicle: null,
         actionType: 'deleted',
         actionMessage: 'Vehicle deleted successfully',
       );
@@ -217,7 +219,8 @@ class VehicleViewModel extends _$VehicleViewModel {
       ref.invalidate(userVehiclesStreamProvider(userId));
 
       return true;
-    } catch (e) {
+    } on Exception catch (e) {
+      if (!ref.mounted) return false;
       state = state.copyWith(
         isLoading: false,
         isSuccess: false,
@@ -231,7 +234,6 @@ class VehicleViewModel extends _$VehicleViewModel {
   Future<bool> setActiveVehicle(String vehicleId) async {
     state = state.copyWith(
       isLoading: true,
-      errorMessage: null,
       isSuccess: false,
       clearAction: true,
     );
@@ -246,6 +248,7 @@ class VehicleViewModel extends _$VehicleViewModel {
 
       await repository.setActiveVehicle(userId, vehicleId);
 
+      if (!ref.mounted) return true;
       state = state.copyWith(
         isLoading: false,
         isSuccess: true,
@@ -258,7 +261,8 @@ class VehicleViewModel extends _$VehicleViewModel {
       ref.invalidate(activeVehicleStreamProvider(userId));
 
       return true;
-    } catch (e) {
+    } on Exception catch (e) {
+      if (!ref.mounted) return false;
       state = state.copyWith(
         isLoading: false,
         isSuccess: false,
@@ -277,7 +281,7 @@ class VehicleViewModel extends _$VehicleViewModel {
     required String vehicleId,
     required File imageFile,
   }) async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    state = state.copyWith(isLoading: true);
 
     try {
       final repository = ref.read(vehicleRepositoryProvider);
@@ -290,10 +294,12 @@ class VehicleViewModel extends _$VehicleViewModel {
         imageBytes: imageBytes,
       );
 
+      if (!ref.mounted) return imageUrl;
       state = state.copyWith(isLoading: false, isSuccess: true);
 
       return imageUrl;
-    } catch (e) {
+    } on Exception catch (e) {
+      if (!ref.mounted) return null;
       state = state.copyWith(
         isLoading: false,
         errorMessage: 'Failed to upload image: $e',
@@ -310,7 +316,6 @@ class VehicleViewModel extends _$VehicleViewModel {
   }) async {
     state = state.copyWith(
       isLoading: true,
-      errorMessage: null,
       isSuccess: false,
     );
 
@@ -323,6 +328,7 @@ class VehicleViewModel extends _$VehicleViewModel {
         note: note,
       );
 
+      if (!ref.mounted) return true;
       state = state.copyWith(isLoading: false, isSuccess: true);
 
       // Refresh vehicle if we have userId
@@ -332,7 +338,8 @@ class VehicleViewModel extends _$VehicleViewModel {
       }
 
       return true;
-    } catch (e) {
+    } on Exception catch (e) {
+      if (!ref.mounted) return false;
       state = state.copyWith(
         isLoading: false,
         isSuccess: false,
@@ -355,6 +362,7 @@ class VehicleViewModel extends _$VehicleViewModel {
         newRating: rating,
       );
 
+      if (!ref.mounted) return true;
       // Refresh vehicle if we have userId
       final userId = _getCurrentUserId();
       if (userId != null) {
@@ -362,7 +370,8 @@ class VehicleViewModel extends _$VehicleViewModel {
       }
 
       return true;
-    } catch (e) {
+    } on Exception catch (e) {
+      if (!ref.mounted) return false;
       state = state.copyWith(
         errorMessage: 'Failed to update vehicle stats: $e',
       );
@@ -372,7 +381,7 @@ class VehicleViewModel extends _$VehicleViewModel {
 
   /// Clear any error messages
   void clearError() {
-    state = state.copyWith(errorMessage: null);
+    state = state.copyWith();
   }
 
   /// Clear success state
@@ -387,6 +396,6 @@ class VehicleViewModel extends _$VehicleViewModel {
 
   /// Clear selected vehicle
   void clearSelectedVehicle() {
-    state = state.copyWith(selectedVehicle: null);
+    state = state.copyWith();
   }
 }

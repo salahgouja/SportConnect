@@ -274,57 +274,6 @@ abstract class _$ChatNotificationsProvider extends $AsyncNotifier<bool> {
   }
 }
 
-/// Provider for auto-accept rides setting
-
-@ProviderFor(AutoAcceptRidesProvider)
-final autoAcceptRidesProviderProvider = AutoAcceptRidesProviderProvider._();
-
-/// Provider for auto-accept rides setting
-final class AutoAcceptRidesProviderProvider
-    extends $AsyncNotifierProvider<AutoAcceptRidesProvider, bool> {
-  /// Provider for auto-accept rides setting
-  AutoAcceptRidesProviderProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'autoAcceptRidesProviderProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$autoAcceptRidesProviderHash();
-
-  @$internal
-  @override
-  AutoAcceptRidesProvider create() => AutoAcceptRidesProvider();
-}
-
-String _$autoAcceptRidesProviderHash() =>
-    r'c96fa0a0a38be6fbaecdc112f70458935a70b793';
-
-/// Provider for auto-accept rides setting
-
-abstract class _$AutoAcceptRidesProvider extends $AsyncNotifier<bool> {
-  FutureOr<bool> build();
-  @$mustCallSuper
-  @override
-  void runBuild() {
-    final ref = this.ref as $Ref<AsyncValue<bool>, bool>;
-    final element =
-        ref.element
-            as $ClassProviderElement<
-              AnyNotifier<AsyncValue<bool>, bool>,
-              AsyncValue<bool>,
-              Object?,
-              Object?
-            >;
-    element.handleCreate(ref, build);
-  }
-}
-
 /// Provider for show location setting
 
 @ProviderFor(ShowLocationProvider)

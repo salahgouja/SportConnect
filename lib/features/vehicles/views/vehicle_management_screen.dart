@@ -1,21 +1,20 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/core/utils/form_validators.dart';
+import 'package:sport_connect/core/theme/platform_adaptive.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
+import 'package:sport_connect/features/vehicles/view_models/vehicle_management_view_model.dart';
 import 'package:sport_connect/features/vehicles/view_models/vehicle_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:sport_connect/core/theme/platform_adaptive.dart';
-import 'package:sport_connect/features/vehicles/view_models/vehicle_management_view_model.dart';
 
 /// Vehicle Management Screen - manage driver vehicles in Firestore
 class VehicleManagementScreen extends ConsumerStatefulWidget {
@@ -237,7 +236,7 @@ class _VehicleManagementScreenState
   }
 
   void _showAddVehicleSheet(BuildContext context) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -259,7 +258,7 @@ class _VehicleManagementScreenState
   }
 
   void _showEditVehicleSheet(BuildContext context, VehicleModel vehicle) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -278,7 +277,7 @@ class _VehicleManagementScreenState
   }
 
   void _showVehicleDetails(VehicleModel vehicle) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -286,14 +285,14 @@ class _VehicleManagementScreenState
     );
   }
 
-  void _setActiveVehicle(String userId, String vehicleId) async {
+  Future<void> _setActiveVehicle(String userId, String vehicleId) async {
     await ref
         .read(vehicleViewModelProvider.notifier)
         .setActiveVehicle(vehicleId);
   }
 
   void _confirmDeleteVehicle(VehicleModel vehicle) {
-    showDialog(
+    showDialog<void>(
       context: context,
       barrierLabel: AppLocalizations.of(context).deleteVehicle,
       builder: (context) => AlertDialog.adaptive(
@@ -319,7 +318,7 @@ class _VehicleManagementScreenState
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             child: Text(
               AppLocalizations.of(context).actionDelete,
-              style: TextStyle(color: Colors.white),
+              style: const TextStyle(color: Colors.white),
             ),
           ),
         ],
@@ -329,12 +328,6 @@ class _VehicleManagementScreenState
 }
 
 class _VehicleCard extends StatelessWidget {
-  final VehicleModel vehicle;
-  final VoidCallback onTap;
-  final VoidCallback onSetActive;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-
   const _VehicleCard({
     required this.vehicle,
     required this.onTap,
@@ -342,6 +335,11 @@ class _VehicleCard extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
   });
+  final VehicleModel vehicle;
+  final VoidCallback onTap;
+  final VoidCallback onSetActive;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -469,7 +467,7 @@ class _VehicleCard extends StatelessWidget {
                 ),
 
                 SizedBox(height: 12.h),
-                Divider(color: AppColors.divider),
+                const Divider(color: AppColors.divider),
                 SizedBox(height: 8.h),
 
                 // Actions
@@ -578,10 +576,9 @@ class _VehicleCard extends StatelessWidget {
 }
 
 class _InfoChip extends StatelessWidget {
+  const _InfoChip({required this.icon, required this.label});
   final IconData icon;
   final String label;
-
-  const _InfoChip({required this.icon, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -607,23 +604,77 @@ class _InfoChip extends StatelessWidget {
 }
 
 class _AddVehicleSheet extends ConsumerStatefulWidget {
+  const _AddVehicleSheet({required this.onSave, this.vehicle});
   final VehicleModel? vehicle;
   final Function(VehicleModel) onSave;
-
-  const _AddVehicleSheet({this.vehicle, required this.onSave});
 
   @override
   ConsumerState<_AddVehicleSheet> createState() => _AddVehicleSheetState();
 }
 
 class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
-  final _formKey = GlobalKey<FormBuilderState>();
+  late final FormGroup _form;
 
   String get _providerKey => widget.vehicle?.id ?? '__new_vehicle__';
 
   @override
   void initState() {
     super.initState();
+    final v = widget.vehicle;
+    _form = FormGroup({
+      'make': FormControl<String>(
+        value: v?.make ?? '',
+        validators: [Validators.required],
+      ),
+      'model': FormControl<String>(
+        value: v?.model ?? '',
+        validators: [Validators.required],
+      ),
+      'year': FormControl<String>(
+        value: v?.year.toString() ?? '',
+        validators: [
+          Validators.required,
+          Validators.delegate((control) {
+            final value = control.value as String?;
+            if (value == null || value.trim().isEmpty) return null;
+            final year = int.tryParse(value.trim());
+            if (year == null) {
+              return {'vehicleYear': 'Please enter a valid year'};
+            }
+            if (year < 1980) return {'vehicleYear': 'Vehicle is too old'};
+            if (year > DateTime.now().year) {
+              return {'vehicleYear': 'Invalid year'};
+            }
+            return null;
+          }),
+        ],
+      ),
+      'color': FormControl<String>(
+        value: v?.color ?? '',
+        validators: [Validators.required],
+      ),
+      'license_plate': FormControl<String>(
+        value: v?.licensePlate ?? '',
+        validators: [
+          Validators.required,
+          Validators.delegate((control) {
+            final value = control.value as String?;
+            if (value == null || value.trim().isEmpty) return null;
+            final trimmed = value.trim().toUpperCase();
+            if (trimmed.length < 2) {
+              return {'licensePlate': 'License plate is too short'};
+            }
+            if (trimmed.length > 12) {
+              return {'licensePlate': 'License plate is too long'};
+            }
+            if (!RegExp(r'^[A-Z0-9\-\s]+$').hasMatch(trimmed)) {
+              return {'licensePlate': 'Invalid license plate format'};
+            }
+            return null;
+          }),
+        ],
+      ),
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final container = ProviderScope.containerOf(context, listen: false);
@@ -650,8 +701,9 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
     }
   }
 
-  void _save() async {
-    if (!_formKey.currentState!.saveAndValidate()) return;
+  Future<void> _save() async {
+    _form.markAllAsTouched();
+    if (!_form.valid) return;
 
     final container = ProviderScope.containerOf(context, listen: false);
     final notifier = container.read(
@@ -662,7 +714,7 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
     );
     notifier.setLoading(true);
 
-    final values = _formKey.currentState!.value;
+    final values = _form.value;
     final vehicle = VehicleModel(
       id: widget.vehicle?.id ?? '',
       ownerId: widget.vehicle?.ownerId ?? '',
@@ -732,7 +784,7 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
                 IconButton(
                   tooltip: AppLocalizations.of(context).actionClose,
                   onPressed: () => context.pop(),
-                  icon: Icon(Icons.close, color: AppColors.textSecondary),
+                  icon: const Icon(Icons.close, color: AppColors.textSecondary),
                 ),
               ],
             ),
@@ -742,8 +794,8 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
           Expanded(
             child: SingleChildScrollView(
               padding: EdgeInsets.symmetric(horizontal: 20.w),
-              child: FormBuilder(
-                key: _formKey,
+              child: ReactiveForm(
+                formGroup: _form,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -792,8 +844,7 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
 
                     // Make
                     _buildTextField(
-                      name: 'make',
-                      initialValue: widget.vehicle?.make ?? '',
+                      formControlName: 'make',
                       label: AppLocalizations.of(context).make,
                       hint: 'e.g., Toyota',
                       icon: Icons.business,
@@ -802,8 +853,7 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
 
                     // Model
                     _buildTextField(
-                      name: 'model',
-                      initialValue: widget.vehicle?.model ?? '',
+                      formControlName: 'model',
                       label: AppLocalizations.of(context).model,
                       hint: 'e.g., Camry',
                       icon: Icons.directions_car,
@@ -815,21 +865,24 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
                       children: [
                         Expanded(
                           child: _buildTextField(
-                            name: 'year',
-                            initialValue: widget.vehicle?.year.toString() ?? '',
+                            formControlName: 'year',
                             label: AppLocalizations.of(context).year,
                             hint: 'e.g., 2022',
                             icon: Icons.calendar_today,
                             keyboardType: TextInputType.number,
-                            customValidator: (value) =>
-                                FormValidators.vehicleYear(value),
+                            validationMessages: {
+                              ValidationMessage.required: (_) =>
+                                  AppLocalizations.of(context).pleaseEnterValue(
+                                    AppLocalizations.of(context).year,
+                                  ),
+                              'vehicleYear': (error) => error as String,
+                            },
                           ),
                         ),
                         SizedBox(width: 16.w),
                         Expanded(
                           child: _buildTextField(
-                            name: 'color',
-                            initialValue: widget.vehicle?.color ?? '',
+                            formControlName: 'color',
                             label: AppLocalizations.of(context).color,
                             hint: 'e.g., Silver',
                             icon: Icons.color_lens,
@@ -841,13 +894,17 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
 
                     // License plate
                     _buildTextField(
-                      name: 'license_plate',
-                      initialValue: widget.vehicle?.licensePlate ?? '',
+                      formControlName: 'license_plate',
                       label: AppLocalizations.of(context).licensePlate,
                       hint: 'e.g., ABC 1234',
                       icon: Icons.credit_card,
-                      customValidator: (value) =>
-                          FormValidators.licensePlate(value),
+                      validationMessages: {
+                        ValidationMessage.required: (_) =>
+                            AppLocalizations.of(context).pleaseEnterValue(
+                              AppLocalizations.of(context).licensePlate,
+                            ),
+                        'licensePlate': (error) => error as String,
+                      },
                     ),
                     SizedBox(height: 24.h),
 
@@ -978,7 +1035,7 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
           // Save button
           Container(
             padding: EdgeInsets.all(20.w),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppColors.surface,
               border: Border(top: BorderSide(color: AppColors.border)),
             ),
@@ -1025,17 +1082,15 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
   }
 
   Widget _buildTextField({
-    required String name,
+    required String formControlName,
     required String label,
     required String hint,
     required IconData icon,
-    String? initialValue,
     TextInputType? keyboardType,
-    String? Function(String?)? customValidator,
+    Map<String, String Function(Object)>? validationMessages,
   }) {
-    return FormBuilderTextField(
-      name: name,
-      initialValue: initialValue,
+    return ReactiveTextField<String>(
+      formControlName: formControlName,
       keyboardType: keyboardType,
       decoration: InputDecoration(
         labelText: label,
@@ -1045,30 +1100,30 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
         fillColor: AppColors.background,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide(color: AppColors.border),
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide(color: AppColors.border),
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide(color: AppColors.primary, width: 2),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
       ),
-      validator:
-          customValidator ??
-          FormBuilderValidators.required(
-            errorText: AppLocalizations.of(context).pleaseEnterValue(label),
-          ),
+      validationMessages:
+          validationMessages ??
+          {
+            ValidationMessage.required: (_) =>
+                AppLocalizations.of(context).pleaseEnterValue(label),
+          },
     );
   }
 }
 
 class _VehicleDetailsSheet extends StatelessWidget {
-  final VehicleModel vehicle;
-
   const _VehicleDetailsSheet({required this.vehicle});
+  final VehicleModel vehicle;
 
   @override
   Widget build(BuildContext context) {

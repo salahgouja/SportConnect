@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -7,21 +6,17 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Walking distance and directions to pickup point (#19, #45)
 class WalkingDistanceCard extends StatelessWidget {
-  final double distanceMeters;
-  final int walkingMinutes;
-  final VoidCallback? onGetDirections;
-
   const WalkingDistanceCard({
-    super.key,
     required this.distanceMeters,
     required this.walkingMinutes,
+    super.key,
     this.onGetDirections,
   });
 
   /// Estimate walking minutes from distance (avg 80m/min)
   factory WalkingDistanceCard.fromDistance({
-    Key? key,
     required double distanceMeters,
+    Key? key,
     VoidCallback? onGetDirections,
   }) {
     return WalkingDistanceCard(
@@ -31,6 +26,9 @@ class WalkingDistanceCard extends StatelessWidget {
       onGetDirections: onGetDirections,
     );
   }
+  final double distanceMeters;
+  final int walkingMinutes;
+  final VoidCallback? onGetDirections;
 
   String get _formattedDistance {
     if (distanceMeters >= 1000) {
@@ -107,14 +105,13 @@ class WalkingDistanceCard extends StatelessWidget {
 
 /// Estimated wait time display (#51)
 class EstimatedWaitTime extends StatelessWidget {
-  final int waitMinutes;
-  final bool isDriverEnRoute;
-
   const EstimatedWaitTime({
-    super.key,
     required this.waitMinutes,
+    super.key,
     this.isDriverEnRoute = false,
   });
+  final int waitMinutes;
+  final bool isDriverEnRoute;
 
   @override
   Widget build(BuildContext context) {
@@ -160,16 +157,15 @@ class EstimatedWaitTime extends StatelessWidget {
 
 /// Pickup pin drop widget (#44)
 class PickupPinDropCard extends StatelessWidget {
+  const PickupPinDropCard({
+    required this.onDropPin,
+    super.key,
+    this.currentAddress,
+    this.onClearPin,
+  });
   final String? currentAddress;
   final VoidCallback onDropPin;
   final VoidCallback? onClearPin;
-
-  const PickupPinDropCard({
-    super.key,
-    this.currentAddress,
-    required this.onDropPin,
-    this.onClearPin,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -282,24 +278,23 @@ class NoShowDialog {
 
 /// Vehicle quick switch bottom sheet (#41)
 class VehicleQuickSwitchSheet extends StatelessWidget {
+  const VehicleQuickSwitchSheet({
+    required this.vehicles,
+    required this.onSelect,
+    super.key,
+    this.currentVehicleId,
+  });
   final List<VehicleOption> vehicles;
   final String? currentVehicleId;
   final ValueChanged<String> onSelect;
 
-  const VehicleQuickSwitchSheet({
-    super.key,
-    required this.vehicles,
-    this.currentVehicleId,
-    required this.onSelect,
-  });
-
   static Future<void> show(
     BuildContext context, {
     required List<VehicleOption> vehicles,
-    String? currentVehicleId,
     required ValueChanged<String> onSelect,
+    String? currentVehicleId,
   }) {
-    return showModalBottomSheet(
+    return showModalBottomSheet<void>(
       context: context,
       barrierLabel: AppLocalizations.of(context).switchVehicle,
       shape: RoundedRectangleBorder(
@@ -375,7 +370,7 @@ class VehicleQuickSwitchSheet extends StatelessWidget {
       ),
       subtitle: Text(vehicle.plate),
       trailing: isSelected
-          ? Icon(Icons.check_circle_rounded, color: AppColors.primary)
+          ? const Icon(Icons.check_circle_rounded, color: AppColors.primary)
           : null,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
     );
@@ -384,27 +379,25 @@ class VehicleQuickSwitchSheet extends StatelessWidget {
 
 /// Simple vehicle option model
 class VehicleOption {
-  final String id;
-  final String name;
-  final String plate;
-
   const VehicleOption({
     required this.id,
     required this.name,
     required this.plate,
   });
+  final String id;
+  final String name;
+  final String plate;
 }
 
 /// Ladies-only ride filter UI chip (#64)
 class LadiesOnlyFilter extends StatelessWidget {
-  final bool isEnabled;
-  final ValueChanged<bool> onChanged;
-
   const LadiesOnlyFilter({
-    super.key,
     required this.isEnabled,
     required this.onChanged,
+    super.key,
   });
+  final bool isEnabled;
+  final ValueChanged<bool> onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -443,16 +436,15 @@ class LadiesOnlyFilter extends StatelessWidget {
 
 /// Ride sharing link widget (#67)
 class RideSharingLink extends StatelessWidget {
+  const RideSharingLink({
+    required this.rideId,
+    required this.onShare,
+    super.key,
+    this.onCopyLink,
+  });
   final String rideId;
   final VoidCallback onShare;
   final VoidCallback? onCopyLink;
-
-  const RideSharingLink({
-    super.key,
-    required this.rideId,
-    required this.onShare,
-    this.onCopyLink,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -489,20 +481,19 @@ class RideSharingLink extends StatelessWidget {
 
 /// Vehicle photo match card (#68)
 class VehiclePhotoMatchCard extends StatelessWidget {
+  const VehiclePhotoMatchCard({
+    required this.vehicleMake,
+    required this.vehicleModel,
+    required this.vehicleColor,
+    required this.licensePlate,
+    super.key,
+    this.vehiclePhotoUrl,
+  });
   final String? vehiclePhotoUrl;
   final String vehicleMake;
   final String vehicleModel;
   final String vehicleColor;
   final String licensePlate;
-
-  const VehiclePhotoMatchCard({
-    super.key,
-    this.vehiclePhotoUrl,
-    required this.vehicleMake,
-    required this.vehicleModel,
-    required this.vehicleColor,
-    required this.licensePlate,
-  });
 
   @override
   Widget build(BuildContext context) {

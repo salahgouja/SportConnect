@@ -8,10 +8,10 @@ import 'package:sport_connect/core/theme/app_colors.dart';
 /// #72: Rating Breakdown Display
 class RatingBreakdownWidget extends StatelessWidget {
   const RatingBreakdownWidget({
-    super.key,
     required this.distribution,
     required this.totalReviews,
     required this.averageRating,
+    super.key,
   });
 
   /// Map of star count (5, 4, 3, 2, 1) to number of reviews
@@ -112,7 +112,7 @@ class RatingBreakdownWidget extends StatelessWidget {
                           child: LinearProgressIndicator(
                             value: percentage,
                             backgroundColor: AppColors.border,
-                            valueColor: AlwaysStoppedAnimation(
+                            valueColor: const AlwaysStoppedAnimation(
                               AppColors.xpGold,
                             ),
                             minHeight: 6.h,
@@ -146,9 +146,9 @@ class RatingBreakdownWidget extends StatelessWidget {
 /// #96: Profile Completion Progress Bar
 class ProfileCompletionBar extends StatelessWidget {
   const ProfileCompletionBar({
-    super.key,
     required this.completedFields,
     required this.totalFields,
+    super.key,
     this.missingHint,
     this.onTap,
   });
@@ -212,7 +212,7 @@ class ProfileCompletionBar extends StatelessWidget {
                 builder: (_, value, _) => LinearProgressIndicator(
                   value: value,
                   backgroundColor: AppColors.border,
-                  valueColor: AlwaysStoppedAnimation(AppColors.primary),
+                  valueColor: const AlwaysStoppedAnimation(AppColors.primary),
                   minHeight: 8.h,
                 ),
               ),
@@ -237,10 +237,10 @@ class ProfileCompletionBar extends StatelessWidget {
 /// #65/#66: Verification Badge Row — shows ID, phone, email, driver license badges
 class VerificationBadges extends StatelessWidget {
   const VerificationBadges({
-    super.key,
     required this.isIdVerified,
     required this.isPhoneVerified,
     required this.isEmailVerified,
+    super.key,
     this.isDriverLicenseVerified = false,
     this.compact = false,
   });
@@ -255,21 +255,29 @@ class VerificationBadges extends StatelessWidget {
   Widget build(BuildContext context) {
     final badges = <_BadgeInfo>[
       if (isIdVerified)
-        _BadgeInfo(
+        const _BadgeInfo(
           Icons.verified_user_rounded,
           'ID Verified',
           AppColors.success,
         ),
       if (isDriverLicenseVerified)
-        _BadgeInfo(Icons.badge_rounded, 'License Verified', AppColors.info),
+        const _BadgeInfo(
+          Icons.badge_rounded,
+          'License Verified',
+          AppColors.info,
+        ),
       if (isPhoneVerified)
-        _BadgeInfo(
+        const _BadgeInfo(
           Icons.phone_android_rounded,
           'Phone Verified',
           AppColors.primary,
         ),
       if (isEmailVerified)
-        _BadgeInfo(Icons.email_rounded, 'Email Verified', AppColors.secondary),
+        const _BadgeInfo(
+          Icons.email_rounded,
+          'Email Verified',
+          AppColors.secondary,
+        ),
     ];
 
     if (badges.isEmpty) return const SizedBox.shrink();

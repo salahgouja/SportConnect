@@ -1,44 +1,44 @@
 import 'dart:async';
 import 'dart:io';
+
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
-import 'package:geocoding/geocoding.dart' as geocoding;
-import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:audioplayers/audioplayers.dart';
-import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:record/record.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/services/talker_service.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/core/services/location_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/theme/platform_adaptive.dart';
+import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/messaging/models/message_model.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
-import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:sport_connect/core/theme/platform_adaptive.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:v_chat_voice_player/v_chat_voice_player.dart';
+import 'package:v_platform/v_platform.dart';
 
-/// Chat Detail Screen with real-time Firestore messaging
+/// Chat Detail Screen with real-time Firestore messaging.
 class ChatDetailScreen extends ConsumerStatefulWidget {
+  const ChatDetailScreen({
+    required this.chatId,
+    required this.receiver,
+    super.key,
+    this.isGroup = false,
+  });
+
   final String chatId;
   final UserModel receiver;
   final bool isGroup;
-
-  const ChatDetailScreen({
-    super.key,
-    required this.chatId,
-    required this.receiver,
-    this.isGroup = false,
-  });
 
   @override
   ConsumerState<ChatDetailScreen> createState() => _ChatDetailScreenState();
@@ -50,15 +50,20 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   final ScrollController _scrollController = ScrollController();
   final FocusNode _focusNode = FocusNode();
   final AudioRecorder _audioRecorder = AudioRecorder();
+
   Timer? _recordingTimer;
   late String _activeChatId;
   late UserModel _resolvedReceiver;
   bool _isResolvingReceiver = false;
 
+  // ── Convenience getters ──────────────────────────────────────────────────
+
   UserModel? get currentUser => ref.read(currentUserProvider).value;
   String get _chatId => _activeChatId;
   bool get _isDraftChat => isDraftChatId(_activeChatId);
   UserModel get _receiver => _resolvedReceiver;
+
+  // ── Snack-bar helpers ────────────────────────────────────────────────────
 
   void _showStatusSnackBar(
     Widget content, {
@@ -98,6 +103,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     );
   }
 
+  // ── Lifecycle ────────────────────────────────────────────────────────────
+
   @override
   void initState() {
     super.initState();
@@ -120,30 +127,37 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     super.dispose();
   }
 
+  // ── Scroll / text listeners ──────────────────────────────────────────────
+
   void _onScroll() {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
-      // Load more messages when near the end
-      final viewModel = ref.read(
-        chatDetailViewModelProvider(_chatId, currentUser?.uid ?? '').notifier,
-      );
-      viewModel.loadMoreMessages();
+      ref
+          .read(
+            chatDetailViewModelProvider(
+              _chatId,
+              currentUser?.uid ?? '',
+            ).notifier,
+          )
+          .loadMoreMessages();
     }
   }
 
   void _onTextChanged() {
-    final viewModel = ref.read(
-      chatDetailViewModelProvider(_chatId, currentUser?.uid ?? '').notifier,
-    );
-    viewModel.handleComposerTextChanged(
-      _messageController.text,
-      currentUser?.displayName ?? 'User',
-    );
+    ref
+        .read(
+          chatDetailViewModelProvider(_chatId, currentUser?.uid ?? '').notifier,
+        )
+        .handleComposerTextChanged(
+          _messageController.text,
+          currentUser?.displayName ?? 'User',
+        );
   }
+
+  // ── Chat persistence ─────────────────────────────────────────────────────
 
   Future<bool> _ensurePersistedChat() async {
     if (!_isDraftChat) return true;
-
     final user = currentUser;
     if (user == null) return false;
     if (_receiver.uid.isEmpty) return false;
@@ -159,16 +173,11 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
             userPhoto1: user.photoUrl,
             userPhoto2: _receiver.photoUrl,
           );
-
       if (!mounted) return false;
-
-      setState(() {
-        _activeChatId = chat.id;
-      });
-
+      setState(() => _activeChatId = chat.id);
       ref.invalidate(userChatsProvider(user.uid));
       return true;
-    } catch (_) {
+    } on Exception {
       if (!mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -184,11 +193,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   }
 
   Future<void> _resolveReceiverIfNeeded() async {
-    if (_isResolvingReceiver) return;
-    if (widget.isGroup) return;
-    if (_receiver.uid.isNotEmpty) return;
-    if (_isDraftChat) return;
-
+    if (_isResolvingReceiver || widget.isGroup) return;
+    if (_receiver.uid.isNotEmpty || _isDraftChat) return;
     final user = currentUser;
     if (user == null) return;
 
@@ -198,15 +204,13 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
           .read(chatActionsViewModelProvider)
           .getChatById(_chatId);
       if (!mounted || chat == null) return;
-
       final other = chat.getOtherParticipant(user.uid);
       final fallbackId = chat.participantIds.firstWhere(
         (id) => id != user.uid,
         orElse: () => '',
       );
-      final resolvedUid = other?.odid ?? fallbackId;
+      final resolvedUid = other?.userId ?? fallbackId;
       if (resolvedUid.isEmpty) return;
-
       setState(() {
         _resolvedReceiver = UserModel.rider(
           uid: resolvedUid,
@@ -230,175 +234,132 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     }
   }
 
+  // ── Send operations ──────────────────────────────────────────────────────
+
   Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
     if (!await _ensurePersistedChat()) return;
+
     HapticFeedback.lightImpact();
     _messageController.clear();
-    ref
-        .read(
-          chatDetailViewModelProvider(_chatId, currentUser?.uid ?? '').notifier,
-        )
-        .setEmojiPickerVisible(false);
 
-    final viewModel = ref.read(
+    final notifier = ref.read(
       chatDetailViewModelProvider(_chatId, currentUser?.uid ?? '').notifier,
     );
-
-    final state = ref.read(
+    final chatState = ref.read(
       chatDetailViewModelProvider(_chatId, currentUser?.uid ?? ''),
     );
-    TalkerService.info(
-      "the message is sent: $text and the replyToMessage is ${state.replyToMessage?.content} with id ${state.replyToMessage?.id} and the sender is ${currentUser?.displayName} and the sender photo url is ${currentUser?.photoUrl} and the chat id is $_chatId and the user id is ${currentUser?.uid}",
-    );
 
-    await viewModel.sendMessage(
+    notifier.setEmojiPickerVisible(false);
+
+    await notifier.sendMessage(
       content: text,
       senderName: currentUser?.displayName ?? 'User',
       senderPhotoUrl: currentUser?.photoUrl,
-      replyToMessageId: state.replyToMessage?.id,
-      replyToContent: state.replyToMessage?.content,
+      replyToMessageId: chatState.replyToMessage?.id,
+      replyToContent: chatState.replyToMessage?.content,
     );
 
-    viewModel.clearReply();
+    notifier.clearReply();
     _scrollToBottom();
   }
 
-  Future<void> _sendImage() async {
+  // FIX: Unified — replaces duplicated _sendImage + _sendImageFromCamera.
+  Future<void> _sendImageFromSource(ImageSource source) async {
+    final l10n = AppLocalizations.of(context);
+    final customMessage = source == ImageSource.gallery
+        ? 'Access to your photo library is needed to send images in this chat. '
+              'Your photos are only shared when you choose to send them.'
+        : 'Camera access is needed to take and send photos in this chat.';
+
     final accepted = await PermissionDialogHelper.showCameraRationale(
       context,
-      customMessage:
-          'Access to your photo library is needed to send '
-          'images in this chat. Your photos are only shared '
-          'when you choose to send them.',
+      customMessage: customMessage,
     );
     if (!accepted) return;
 
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-
+    final pickedFile = await ImagePicker().pickImage(source: source);
     if (pickedFile == null) return;
     if (!await _ensurePersistedChat()) return;
 
     HapticFeedback.lightImpact();
-    _showSendingSnackBar(AppLocalizations.of(context).sendingImage);
+    if (!context.mounted) return;
+    _showSendingSnackBar(l10n.sendingImage);
 
     try {
-      final file = File(pickedFile.path);
-      final fileName =
-          '${DateTime.now().millisecondsSinceEpoch}_${pickedFile.name}';
-      final viewModel = ref.read(
+      final notifier = ref.read(
         chatDetailViewModelProvider(_chatId, currentUser?.uid ?? '').notifier,
       );
-      final viewState = ref.read(
-        chatDetailViewModelProvider(_chatId, currentUser?.uid ?? ''),
-      );
-
-      final success = await viewModel.sendImageMessage(
-        imageFile: file,
-        fileName: fileName,
+      final success = await notifier.sendImageMessage(
+        imageFile: File(pickedFile.path),
+        fileName: '${DateTime.now().millisecondsSinceEpoch}_${pickedFile.name}',
         senderName: currentUser?.displayName ?? 'User',
         senderPhotoUrl: currentUser?.photoUrl,
       );
 
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
       if (!success) {
-        final errorMessage = viewState.error ?? 'Failed to send image';
+        final error =
+            ref
+                .read(
+                  chatDetailViewModelProvider(_chatId, currentUser?.uid ?? ''),
+                )
+                .error ??
+            'Failed to send image';
         _showStatusSnackBar(
-          Text(
-            AppLocalizations.of(context).failedToSendImageValue(errorMessage),
-          ),
+          Text(l10n.failedToSendImageValue(error)),
           backgroundColor: AppColors.error,
         );
         return;
       }
       _scrollToBottom();
-    } catch (e) {
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      _showStatusSnackBar(
-        Text(AppLocalizations.of(context).failedToSendImageValue(e)),
-        backgroundColor: AppColors.error,
-      );
-    }
-  }
-
-  Future<void> _sendImageFromCamera() async {
-    final accepted = await PermissionDialogHelper.showCameraRationale(
-      context,
-      customMessage:
-          'Camera access is needed to take and send '
-          'photos in this chat.',
-    );
-    if (!accepted) return;
-
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.camera);
-
-    if (pickedFile == null) return;
-    if (!await _ensurePersistedChat()) return;
-
-    HapticFeedback.lightImpact();
-    _showSendingSnackBar(AppLocalizations.of(context).sendingImage);
-
-    try {
-      final file = File(pickedFile.path);
-      final fileName =
-          '${DateTime.now().millisecondsSinceEpoch}_${pickedFile.name}';
-      final viewModel = ref.read(
-        chatDetailViewModelProvider(_chatId, currentUser?.uid ?? '').notifier,
-      );
-      final viewState = ref.read(
-        chatDetailViewModelProvider(_chatId, currentUser?.uid ?? ''),
-      );
-
-      final success = await viewModel.sendImageMessage(
-        imageFile: file,
-        fileName: fileName,
-        senderName: currentUser?.displayName ?? 'User',
-        senderPhotoUrl: currentUser?.photoUrl,
-      );
-
+    } on Exception catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      if (!success) {
-        final errorMessage = viewState.error ?? 'Failed to send image';
-        _showStatusSnackBar(
-          Text(
-            AppLocalizations.of(context).failedToSendImageValue(errorMessage),
-          ),
-          backgroundColor: AppColors.error,
-        );
-        return;
-      }
-      _scrollToBottom();
-    } catch (e) {
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       _showStatusSnackBar(
-        Text(AppLocalizations.of(context).failedToSendImageValue(e)),
+        Text(l10n.failedToSendImageValue(e)),
         backgroundColor: AppColors.error,
       );
     }
   }
 
-  /// Start voice recording
+  // ── Recording ────────────────────────────────────────────────────────────
+
   Future<void> _startRecording() async {
     try {
       final accepted = await PermissionDialogHelper.showMicrophoneRationale(
         context,
       );
       if (!accepted) return;
-      if (await _audioRecorder.hasPermission()) {
-        final directory = await getTemporaryDirectory();
-        final path =
-            '${directory.path}/audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
 
-        await _audioRecorder.start(
-          const RecordConfig(encoder: AudioEncoder.aacLc),
-          path: path,
-        );
+      if (!await _audioRecorder.hasPermission()) return;
 
+      final directory = await getTemporaryDirectory();
+      final path =
+          '${directory.path}/audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
+
+      // FIX: Specify encoder explicitly for reliability across platforms.
+      await _audioRecorder.start(
+        const RecordConfig(),
+        path: path,
+      );
+
+      ref
+          .read(
+            chatDetailViewModelProvider(
+              _chatId,
+              currentUser?.uid ?? '',
+            ).notifier,
+          )
+          .beginRecording(path);
+
+      _recordingTimer = Timer.periodic(const Duration(milliseconds: 100), (
+        timer,
+      ) {
+        if (!mounted) return;
         ref
             .read(
               chatDetailViewModelProvider(
@@ -406,28 +367,12 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                 currentUser?.uid ?? '',
               ).notifier,
             )
-            .beginRecording(path);
+            .updateRecordingDuration(Duration(milliseconds: timer.tick * 100));
+      });
 
-        // Start recording timer (updates every 100ms for smooth UI)
-        _recordingTimer = Timer.periodic(const Duration(milliseconds: 100), (
-          timer,
-        ) {
-          if (!mounted) return;
-          ref
-              .read(
-                chatDetailViewModelProvider(
-                  _chatId,
-                  currentUser?.uid ?? '',
-                ).notifier,
-              )
-              .updateRecordingDuration(
-                Duration(milliseconds: timer.tick * 100),
-              );
-        });
-
-        HapticFeedback.mediumImpact();
-      }
-    } catch (e) {
+      HapticFeedback.mediumImpact();
+    } on Exception {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(AppLocalizations.of(context).recordingFailedError),
@@ -437,36 +382,21 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     }
   }
 
-  /// Stop voice recording and send
   Future<void> _stopRecording() async {
+    final notifier = ref.read(
+      chatDetailViewModelProvider(_chatId, currentUser?.uid ?? '').notifier,
+    );
     try {
       final path = await _audioRecorder.stop();
       _recordingTimer?.cancel();
-
       if (path != null && context.mounted) {
         await _sendAudioMessage(path);
       }
-
-      ref
-          .read(
-            chatDetailViewModelProvider(
-              _chatId,
-              currentUser?.uid ?? '',
-            ).notifier,
-          )
-          .clearRecording();
-
+      notifier.clearRecording();
       HapticFeedback.mediumImpact();
-    } catch (e) {
-      ref
-          .read(
-            chatDetailViewModelProvider(
-              _chatId,
-              currentUser?.uid ?? '',
-            ).notifier,
-          )
-          .clearRecording();
-
+    } on Exception {
+      notifier.clearRecording();
+      if (!mounted) return;
       _showStatusSnackBar(
         Row(
           children: [
@@ -484,23 +414,17 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     }
   }
 
-  /// Cancel voice recording
   Future<void> _cancelRecording() async {
     try {
       await _audioRecorder.stop();
       _recordingTimer?.cancel();
-
-      // Delete the recording file
       final recordingPath = ref
           .read(chatDetailViewModelProvider(_chatId, currentUser?.uid ?? ''))
           .recordingPath;
       if (recordingPath != null) {
         final file = File(recordingPath);
-        if (await file.exists()) {
-          await file.delete();
-        }
+        if (await file.exists()) await file.delete();
       }
-
       ref
           .read(
             chatDetailViewModelProvider(
@@ -509,70 +433,73 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
             ).notifier,
           )
           .clearRecording();
-
       HapticFeedback.lightImpact();
-    } catch (e) {
-      // Silently fail
+    } on Exception {
+      // Silently discard — user-initiated cancel, nothing to recover.
     }
   }
 
-  /// Send audio message
   Future<void> _sendAudioMessage(String audioPath) async {
     if (!await _ensurePersistedChat()) return;
     HapticFeedback.lightImpact();
+    if (!context.mounted) return;
     _showSendingSnackBar(AppLocalizations.of(context).sendingVoiceMessage);
 
     try {
       final file = File(audioPath);
-      final fileName = 'audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
-      final viewModel = ref.read(
+      final notifier = ref.read(
         chatDetailViewModelProvider(_chatId, currentUser?.uid ?? '').notifier,
       );
-      final viewState = ref.read(
-        chatDetailViewModelProvider(_chatId, currentUser?.uid ?? ''),
-      );
-
-      final duration = viewState.recordingDuration;
+      final duration = ref
+          .read(chatDetailViewModelProvider(_chatId, currentUser?.uid ?? ''))
+          .recordingDuration;
       final durationText =
           '${duration.inMinutes}:${(duration.inSeconds % 60).toString().padLeft(2, '0')}';
 
-      final success = await viewModel.sendAudioMessage(
+      final success = await notifier.sendAudioMessage(
         audioFile: file,
-        fileName: fileName,
+        fileName: 'audio_${DateTime.now().millisecondsSinceEpoch}.m4a',
         durationText: durationText,
         senderName: currentUser?.displayName ?? 'User',
         senderPhotoUrl: currentUser?.photoUrl,
       );
 
-      if (await file.exists()) {
-        await file.delete();
-      }
+      if (await file.exists()) await file.delete();
 
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      if (!success) {
-        throw Exception(viewState.error ?? 'Failed to send voice message');
-      }
 
+      if (!success) {
+        throw Exception(
+          ref
+                  .read(
+                    chatDetailViewModelProvider(
+                      _chatId,
+                      currentUser?.uid ?? '',
+                    ),
+                  )
+                  .error ??
+              'Failed to send voice message',
+        );
+      }
       _scrollToBottom();
-    } catch (e) {
+    } on Exception catch (e) {
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
-      // Provide user-friendly error message
-      String errorMessage = 'Failed to send voice message';
-      if (e.toString().contains('permission') || e.toString().contains('403')) {
-        errorMessage =
-            'Permission denied. Please check your connection and try again.';
-      } else if (e.toString().contains('network')) {
-        errorMessage = 'Network error. Please check your internet connection.';
-      }
+      final errorText =
+          e.toString().contains('permission') || e.toString().contains('403')
+          ? 'Permission denied. Please check your connection and try again.'
+          : e.toString().contains('network')
+          ? 'Network error. Please check your internet connection.'
+          : 'Failed to send voice message';
 
       _showStatusSnackBar(
         Row(
           children: [
             const Icon(Icons.error_outline, color: Colors.white),
             SizedBox(width: 12.w),
-            Expanded(child: Text(errorMessage)),
+            Expanded(child: Text(errorText)),
           ],
         ),
         backgroundColor: AppColors.error,
@@ -582,43 +509,48 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
           onPressed: () => _sendAudioMessage(audioPath),
         ),
       );
-
-      // Log error for debugging
-      TalkerService.error('Audio upload failed', e);
     }
   }
 
+  // ── Emoji picker ─────────────────────────────────────────────────────────
+
   void _toggleEmojiPicker() {
-    final chatState = ref.read(
-      chatDetailViewModelProvider(_chatId, currentUser?.uid ?? ''),
+    final showing = ref
+        .read(chatDetailViewModelProvider(_chatId, currentUser?.uid ?? ''))
+        .showEmojiPicker;
+    final notifier = ref.read(
+      chatDetailViewModelProvider(_chatId, currentUser?.uid ?? '').notifier,
     );
-    if (chatState.showEmojiPicker) {
-      ref
-          .read(
-            chatDetailViewModelProvider(
-              _chatId,
-              currentUser?.uid ?? '',
-            ).notifier,
-          )
-          .setEmojiPickerVisible(false);
+
+    if (showing) {
+      notifier.setEmojiPickerVisible(false);
       _focusNode.requestFocus();
     } else {
       _focusNode.unfocus();
-      ref
-          .read(
-            chatDetailViewModelProvider(
-              _chatId,
-              currentUser?.uid ?? '',
-            ).notifier,
-          )
-          .setEmojiPickerVisible(true);
+      notifier.setEmojiPickerVisible(true);
     }
   }
+
+  // ── Options sheets ───────────────────────────────────────────────────────
 
   void _showOptionsSheet({required bool isReceiverBlocked}) {
     final l10n = AppLocalizations.of(context);
 
-    // iOS: Use CupertinoActionSheet per HIG guidelines.
+    void onViewProfile() {
+      final receiverId = _receiver.uid;
+      if (receiverId.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.failedToLoadChats),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+      context.push(AppRoutes.driverProfile.path.replaceFirst(':id', receiverId), extra: _receiver);
+    }
+
     if (PlatformAdaptive.isApple) {
       showCupertinoModalPopup<void>(
         context: context,
@@ -627,18 +559,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
             CupertinoActionSheetAction(
               onPressed: () {
                 ctx.pop();
-                final receiverId = _receiver.uid;
-                if (receiverId.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(l10n.failedToLoadChats),
-                      backgroundColor: AppColors.error,
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                  return;
-                }
-                context.push('/driver/profile/$receiverId', extra: _receiver);
+                onViewProfile();
               },
               child: Text(l10n.viewProfile),
             ),
@@ -688,11 +609,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       return;
     }
 
-    // Android: Material bottom sheet
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
+      builder: (ctx) => Container(
         padding: EdgeInsets.all(20.w),
         decoration: BoxDecoration(
           color: AppColors.cardBg,
@@ -701,64 +621,35 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 40.w,
-              height: 4.h,
-              decoration: BoxDecoration(
-                color: AppColors.divider,
-                borderRadius: BorderRadius.circular(2.r),
-              ),
-            ),
+            _buildSheetHandle(),
             SizedBox(height: 20.h),
             _buildOptionItem(
               Icons.person_outline_rounded,
-              AppLocalizations.of(context).viewProfile,
+              l10n.viewProfile,
               () {
-                context.pop();
-                final receiverId = _receiver.uid;
-                if (receiverId.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        AppLocalizations.of(context).failedToLoadChats,
-                      ),
-                      backgroundColor: AppColors.error,
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                  return;
-                }
-                context.push(
-                  '/driver/profile/$receiverId',
-                  extra: _receiver,
-                );
+                ctx.pop();
+                onViewProfile();
               },
             ),
             _buildOptionItem(
               Icons.notifications_off_outlined,
-              AppLocalizations.of(context).muteNotifications,
+              l10n.muteNotifications,
               () {
-                context.pop();
+                ctx.pop();
                 _muteChat();
               },
             ),
-            _buildOptionItem(
-              Icons.flag_outlined,
-              AppLocalizations.of(context).reportUser,
-              () {
-                context.pop();
-                _reportUser();
-              },
-            ),
+            _buildOptionItem(Icons.flag_outlined, l10n.reportUser, () {
+              ctx.pop();
+              _reportUser();
+            }),
             _buildOptionItem(
               isReceiverBlocked
                   ? Icons.person_remove_outlined
                   : Icons.block_rounded,
-              isReceiverBlocked
-                  ? AppLocalizations.of(context).unblockUser
-                  : AppLocalizations.of(context).blockUser,
+              isReceiverBlocked ? l10n.unblockUser : l10n.blockUser,
               () {
-                context.pop();
+                ctx.pop();
                 if (isReceiverBlocked) {
                   _confirmUnblockUser();
                 } else {
@@ -767,15 +658,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
               },
               isDestructive: !isReceiverBlocked,
             ),
-            _buildOptionItem(
-              Icons.delete_outline_rounded,
-              AppLocalizations.of(context).clearChat,
-              () {
-                context.pop();
-                _confirmClearChat();
-              },
-              isDestructive: true,
-            ),
+            _buildOptionItem(Icons.delete_outline_rounded, l10n.clearChat, () {
+              ctx.pop();
+              _confirmClearChat();
+            }, isDestructive: true),
             SizedBox(height: 10.h),
           ],
         ),
@@ -806,8 +692,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       );
       return;
     }
-
-    showDialog(
+    showDialog<void>(
       context: context,
       barrierLabel: AppLocalizations.of(context).blockUserDialogTitle,
       builder: (dialogContext) => AlertDialog.adaptive(
@@ -829,38 +714,37 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
             onPressed: () async {
               dialogContext.pop();
               try {
-                final chatController = ref.read(chatActionsViewModelProvider);
-                await chatController.blockUser(
-                  chatId: _isDraftChat ? null : _chatId,
-                  userId: currentUser!.uid,
-                  blockedUserId: _receiver.uid,
+                await ref
+                    .read(chatActionsViewModelProvider)
+                    .blockUser(
+                      chatId: _isDraftChat ? null : _chatId,
+                      userId: currentUser!.uid,
+                      blockedUserId: _receiver.uid,
+                    );
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      AppLocalizations.of(
+                        context,
+                      ).blockedUserSuccess(_receiver.displayName),
+                    ),
+                    backgroundColor: AppColors.success,
+                    behavior: SnackBarBehavior.floating,
+                  ),
                 );
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        AppLocalizations.of(
-                          context,
-                        ).blockedUserSuccess(_receiver.displayName),
-                      ),
-                      backgroundColor: AppColors.success,
-                      behavior: SnackBarBehavior.floating,
+                context.pop();
+              } on Exception {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      AppLocalizations.of(context).couldNotBlockUserTryAgain,
                     ),
-                  );
-                  context.pop(); // Leave the chat
-                }
-              } catch (_) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        AppLocalizations.of(context).couldNotBlockUserTryAgain,
-                      ),
-                      backgroundColor: AppColors.error,
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
+                    backgroundColor: AppColors.error,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
@@ -887,8 +771,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       );
       return;
     }
-
-    showDialog(
+    showDialog<void>(
       context: context,
       barrierLabel: AppLocalizations.of(context).unblockUser,
       builder: (dialogContext) => AlertDialog.adaptive(
@@ -910,35 +793,32 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
             onPressed: () async {
               dialogContext.pop();
               try {
-                final chatController = ref.read(chatActionsViewModelProvider);
-                await chatController.unblockUser(
-                  chatId: _isDraftChat ? null : _chatId,
-                  userId: currentUser!.uid,
-                  blockedUserId: _receiver.uid,
+                await ref
+                    .read(chatActionsViewModelProvider)
+                    .unblockUser(
+                      chatId: _isDraftChat ? null : _chatId,
+                      userId: currentUser!.uid,
+                      blockedUserId: _receiver.uid,
+                    );
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(AppLocalizations.of(context).userUnblocked),
+                    backgroundColor: AppColors.success,
+                    behavior: SnackBarBehavior.floating,
+                  ),
                 );
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(AppLocalizations.of(context).userUnblocked),
-                      backgroundColor: AppColors.success,
-                      behavior: SnackBarBehavior.floating,
+              } on Exception {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      AppLocalizations.of(context).couldNotUnblockUserTryAgain,
                     ),
-                  );
-                }
-              } catch (_) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        AppLocalizations.of(
-                          context,
-                        ).couldNotUnblockUserTryAgain,
-                      ),
-                      backgroundColor: AppColors.error,
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
+                    backgroundColor: AppColors.error,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
               }
             },
             child: Text(AppLocalizations.of(context).actionUnblock),
@@ -981,13 +861,14 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     );
   }
 
-  void _muteChat() async {
-    final chatController = ref.read(chatActionsViewModelProvider);
-    await chatController.toggleMute(
-      chatId: _chatId,
-      userId: currentUser!.uid,
-      mute: true,
-    );
+  Future<void> _muteChat() async {
+    await ref
+        .read(chatActionsViewModelProvider)
+        .toggleMute(
+          chatId: _chatId,
+          userId: currentUser!.uid,
+          mute: true,
+        );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -1001,7 +882,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   }
 
   void _confirmClearChat() {
-    showDialog(
+    showDialog<void>(
       context: context,
       barrierLabel: AppLocalizations.of(context).clearChat,
       builder: (dialogContext) => AlertDialog.adaptive(
@@ -1019,32 +900,31 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
             onPressed: () async {
               dialogContext.pop();
               try {
-                final chatController = ref.read(chatActionsViewModelProvider);
-                await chatController.clearChat(
-                  chatId: _chatId,
-                  userId: currentUser!.uid,
+                await ref
+                    .read(chatActionsViewModelProvider)
+                    .clearChat(
+                      chatId: _chatId,
+                      userId: currentUser!.uid,
+                    );
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(AppLocalizations.of(context).chatCleared),
+                    backgroundColor: AppColors.success,
+                    behavior: SnackBarBehavior.floating,
+                  ),
                 );
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(AppLocalizations.of(context).chatCleared),
-                      backgroundColor: AppColors.success,
-                      behavior: SnackBarBehavior.floating,
+              } on Exception {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      AppLocalizations.of(context).couldNotClearChatTryAgain,
                     ),
-                  );
-                }
-              } catch (_) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        AppLocalizations.of(context).couldNotClearChatTryAgain,
-                      ),
-                      backgroundColor: AppColors.error,
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
+                    backgroundColor: AppColors.error,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
@@ -1057,6 +937,17 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       ),
     );
   }
+
+  // ── Small reusable builders ──────────────────────────────────────────────
+
+  Widget _buildSheetHandle() => Container(
+    width: 40.w,
+    height: 4.h,
+    decoration: BoxDecoration(
+      color: AppColors.divider,
+      borderRadius: BorderRadius.circular(2.r),
+    ),
+  );
 
   Widget _buildOptionItem(
     IconData icon,
@@ -1083,6 +974,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     );
   }
 
+  // ── build ────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
     if (currentUser == null) {
@@ -1092,9 +985,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     }
 
     if (_receiver.uid.isEmpty && !_isResolvingReceiver) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _resolveReceiverIfNeeded();
-      });
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _resolveReceiverIfNeeded(),
+      );
     }
 
     final chatState = ref.watch(
@@ -1104,24 +997,24 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     final isReceiverBlocked =
         blockedIdsAsync.value?.contains(_receiver.uid) ?? false;
 
-    // Mark messages as read only when a new message arrives (count changed or
-    // last message ID changed) to avoid an excessive Firestore write on every
-    // state update.
-    ref.listen(chatDetailViewModelProvider(_chatId, currentUser!.uid), (
-      previous,
-      next,
-    ) {
-      if (next.messages.isNotEmpty &&
-          (previous == null ||
-              previous.messages.length != next.messages.length ||
-              previous.messages.first.id != next.messages.first.id)) {
-        ref
-            .read(
-              chatDetailViewModelProvider(_chatId, currentUser!.uid).notifier,
-            )
-            .markVisibleMessagesAsRead();
-      }
-    });
+    // FIX: ref.listen in build is correct for ConsumerStatefulWidget —
+    // Riverpod deduplicates it across rebuilds. Delegate read side-effect
+    // to the notifier's markVisibleMessagesAsRead instead of doing it inline.
+    ref.listen(
+      chatDetailViewModelProvider(_chatId, currentUser!.uid),
+      (prev, next) {
+        if (next.messages.isNotEmpty &&
+            (prev == null ||
+                prev.messages.isEmpty ||
+                prev.messages.first.id != next.messages.first.id)) {
+          ref
+              .read(
+                chatDetailViewModelProvider(_chatId, currentUser!.uid).notifier,
+              )
+              .markVisibleMessagesAsRead();
+        }
+      },
+    );
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -1131,7 +1024,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
           Column(
             children: [
               if (isReceiverBlocked) _buildBlockedBanner(),
-              // Messages list
               Expanded(
                 child: GestureDetector(
                   onTap: () {
@@ -1154,40 +1046,29 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                       : _buildMessagesList(chatState),
                 ),
               ),
-
-              // Typing indicator
-              if (chatState.typingUsers.isNotEmpty)
-                _buildTypingIndicator(chatState),
-
-              // Reply preview
+              if (chatState.typingUsers.isNotEmpty) _buildTypingIndicator(),
               if (chatState.replyToMessage != null)
                 _buildReplyPreview(chatState.replyToMessage!),
-
-              // Input area
               if (!isReceiverBlocked) _buildInputArea(),
-
-              // Emoji picker
               if (!isReceiverBlocked && chatState.showEmojiPicker)
                 SizedBox(
                   height: 280.h,
                   child: EmojiPicker(
                     textEditingController: _messageController,
-                    onEmojiSelected: (category, emoji) {
-                      // Insert emoji at cursor position
+                    onEmojiSelected: (_, emoji) {
                       final text = _messageController.text;
-                      final selection = _messageController.selection;
-                      final newText = text.replaceRange(
-                        selection.start,
-                        selection.end,
-                        emoji.emoji,
-                      );
-                      _messageController.text = newText;
-                      _messageController.selection = TextSelection.collapsed(
-                        offset: selection.start + emoji.emoji.length,
-                      );
+                      final sel = _messageController.selection;
+                      _messageController
+                        ..text = text.replaceRange(
+                          sel.start,
+                          sel.end,
+                          emoji.emoji,
+                        )
+                        ..selection = TextSelection.collapsed(
+                          offset: sel.start + emoji.emoji.length,
+                        );
                     },
                     onBackspacePressed: () {
-                      // Handle backspace when emoji picker is open
                       _messageController
                         ..text = _messageController.text.characters
                             .skipLast(1)
@@ -1198,13 +1079,11 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                     },
                     config: Config(
                       height: 280.h,
-                      checkPlatformCompatibility: true,
-                      emojiViewConfig: EmojiViewConfig(
-                        emojiSizeMax: 28,
+                      emojiViewConfig: const EmojiViewConfig(
                         backgroundColor: AppColors.cardBg,
                         columns: 8,
                       ),
-                      categoryViewConfig: CategoryViewConfig(
+                      categoryViewConfig: const CategoryViewConfig(
                         backgroundColor: AppColors.cardBg,
                         indicatorColor: AppColors.primary,
                         iconColor: AppColors.textTertiary,
@@ -1213,7 +1092,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                       bottomActionBarConfig: const BottomActionBarConfig(
                         enabled: false,
                       ),
-                      searchViewConfig: SearchViewConfig(
+                      searchViewConfig: const SearchViewConfig(
                         backgroundColor: AppColors.cardBg,
                         buttonIconColor: AppColors.textSecondary,
                       ),
@@ -1222,86 +1101,13 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                 ).animate().fadeIn(duration: 200.ms).slideY(begin: 0.2),
             ],
           ),
-
-          // Recording indicator banner at top
-          if (chatState.isRecording)
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFE91E63), Color(0xFFF44336)],
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                          width: 12.w,
-                          height: 12.w,
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                          ),
-                        )
-                        .animate(onPlay: (controller) => controller.repeat())
-                        .fadeIn(duration: 600.ms)
-                        .then()
-                        .fadeOut(duration: 600.ms),
-                    SizedBox(width: 12.w),
-                    Icon(Icons.mic, color: Colors.white, size: 20.sp),
-                    SizedBox(width: 8.w),
-                    Text(
-                      AppLocalizations.of(context).recording,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 15.sp,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      '${chatState.recordingDuration.inMinutes}:${(chatState.recordingDuration.inSeconds % 60).toString().padLeft(2, '0')}',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 15.sp,
-                        fontWeight: FontWeight.w600,
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                      ),
-                    ),
-                    SizedBox(width: 12.w),
-                    GestureDetector(
-                      onTap: _cancelRecording,
-                      child: Container(
-                        padding: EdgeInsets.all(6.w),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(6.r),
-                        ),
-                        child: Icon(
-                          Icons.close,
-                          color: Colors.white,
-                          size: 18.sp,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ).animate().slideY(begin: -1).fadeIn(),
-            ),
+          if (chatState.isRecording) _buildRecordingBanner(chatState),
         ],
       ),
     );
   }
+
+  // ── Screen sections ──────────────────────────────────────────────────────
 
   Widget _buildEmptyState() {
     return Center(
@@ -1352,7 +1158,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     return ListView.builder(
       controller: _scrollController,
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-      reverse: true, // Latest messages at bottom
+      reverse: true,
       itemCount: chatState.messages.length + (chatState.isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {
         if (chatState.isLoadingMore && index == chatState.messages.length) {
@@ -1363,14 +1169,12 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
             ),
           );
         }
-
         final message = chatState.messages[index];
         final isMe = message.senderId == currentUser!.uid;
         final showAvatar =
             !isMe &&
             (index == chatState.messages.length - 1 ||
                 chatState.messages[index + 1].senderId != message.senderId);
-
         return _buildMessageBubble(message, isMe, showAvatar, index);
       },
     );
@@ -1400,12 +1204,13 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       titleSpacing: 0,
       title: Row(
         children: [
-          _receiver.photoUrl != null
-              ? CircleAvatar(
-                  radius: 20.r,
-                  backgroundImage: NetworkImage(_receiver.photoUrl!),
-                )
-              : PremiumAvatar(name: _receiver.displayName, size: 40),
+          if (_receiver.photoUrl != null)
+            CircleAvatar(
+              radius: 20.r,
+              backgroundImage: NetworkImage(_receiver.photoUrl!),
+            )
+          else
+            PremiumAvatar(name: _receiver.displayName, size: 40),
           SizedBox(width: 12.w),
           Expanded(
             child: Column(
@@ -1475,7 +1280,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     );
   }
 
-  Widget _buildTypingIndicator(ChatDetailState chatState) {
+  // FIX: Uses _TypingDot widget — properly loops via AnimationController.
+  Widget _buildTypingIndicator() {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       child: Row(
@@ -1490,11 +1296,11 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
             ),
             child: Row(
               children: [
-                _buildTypingDot(0),
+                const _TypingDot(index: 0),
                 SizedBox(width: 4.w),
-                _buildTypingDot(1),
+                const _TypingDot(index: 1),
                 SizedBox(width: 4.w),
-                _buildTypingDot(2),
+                const _TypingDot(index: 2),
               ],
             ),
           ),
@@ -1503,37 +1309,19 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     ).animate().fadeIn(duration: 220.ms);
   }
 
-  Widget _buildTypingDot(int index) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 400 + (index * 200)),
-      builder: (context, value, child) {
-        return Container(
-          width: 8.w,
-          height: 8.w,
-          decoration: BoxDecoration(
-            color: AppColors.textTertiary.withValues(
-              alpha: 0.5 + (value * 0.5),
-            ),
-            shape: BoxShape.circle,
-          ),
-        );
-      },
-    );
-  }
-
   Widget _buildReplyPreview(MessageModel message) {
-    final viewModel = ref.read(
+    final notifier = ref.read(
       chatDetailViewModelProvider(_chatId, currentUser!.uid).notifier,
     );
-
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 16.w),
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
         color: AppColors.surfaceVariant.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12.r),
-        border: Border(left: BorderSide(color: AppColors.primary, width: 3)),
+        border: const Border(
+          left: BorderSide(color: AppColors.primary, width: 3),
+        ),
       ),
       child: Row(
         children: [
@@ -1566,7 +1354,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
           ),
           IconButton(
             tooltip: AppLocalizations.of(context).clearReply,
-            onPressed: () => viewModel.clearReply(),
+            onPressed: notifier.clearReply,
             icon: Icon(
               Icons.close_rounded,
               color: AppColors.textSecondary,
@@ -1578,6 +1366,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     );
   }
 
+  // FIX: Delegates message-type rendering to extracted widgets.
+  // Each widget is self-contained and testable independently.
   Widget _buildMessageBubble(
     MessageModel message,
     bool isMe,
@@ -1611,35 +1401,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                           ? CrossAxisAlignment.end
                           : CrossAxisAlignment.start,
                       children: [
-                        // Reply indicator
                         if (message.replyToContent != null)
-                          Container(
-                            margin: EdgeInsets.only(bottom: 4.h),
-                            padding: EdgeInsets.all(8.w),
-                            decoration: BoxDecoration(
-                              color: AppColors.surfaceVariant.withValues(
-                                alpha: 0.3,
-                              ),
-                              borderRadius: BorderRadius.circular(8.r),
-                              border: Border(
-                                left: BorderSide(
-                                  color: AppColors.primary,
-                                  width: 2,
-                                ),
-                              ),
-                            ),
-                            child: Text(
-                              message.replyToContent!,
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                color: AppColors.textSecondary,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-
-                        // Message content
+                          _ReplyIndicator(content: message.replyToContent!),
                         Container(
                           constraints: BoxConstraints(maxWidth: 300.w),
                           padding: EdgeInsets.symmetric(
@@ -1688,276 +1451,17 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              // Image message
-                              if (message.type == MessageType.image &&
-                                  message.imageUrl != null)
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(12.r),
-                                  child: Image.network(
-                                    message.imageUrl!,
-                                    width: 200.w,
-                                    fit: BoxFit.cover,
-                                    loadingBuilder: (context, child, loadingProgress) {
-                                      if (loadingProgress == null) return child;
-                                      return Container(
-                                        width: 200.w,
-                                        height: 150.h,
-                                        color: AppColors.surfaceVariant,
-                                        child: Center(
-                                          child: CircularProgressIndicator.adaptive(
-                                            value:
-                                                loadingProgress
-                                                        .expectedTotalBytes !=
-                                                    null
-                                                ? loadingProgress
-                                                          .cumulativeBytesLoaded /
-                                                      loadingProgress
-                                                          .expectedTotalBytes!
-                                                : null,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                )
-                              // Location message
-                              else if (message.type == MessageType.location &&
-                                  message.latitude != null &&
-                                  message.longitude != null)
-                                GestureDetector(
-                                  onTap: () => _openLocationInMaps(
-                                    message.latitude!,
-                                    message.longitude!,
-                                    message.content,
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      // Map preview using OpenStreetMap static image
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(
-                                          12.r,
-                                        ),
-                                        child: Stack(
-                                          children: [
-                                            Image.network(
-                                              'https://staticmap.openstreetmap.de/staticmap.php?center=${message.latitude},${message.longitude}&zoom=15&size=200x120&maptype=osmarenderer&markers=${message.latitude},${message.longitude},red-pushpin',
-                                              width: 200.w,
-                                              height: 120.h,
-                                              fit: BoxFit.cover,
-                                              errorBuilder:
-                                                  (context, error, stackTrace) {
-                                                    return Container(
-                                                      width: 200.w,
-                                                      height: 120.h,
-                                                      color: AppColors
-                                                          .surfaceVariant,
-                                                      child: Column(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .center,
-                                                        children: [
-                                                          Icon(
-                                                            Icons.map_rounded,
-                                                            size: 32.sp,
-                                                            color: isMe
-                                                                ? Colors.white70
-                                                                : AppColors
-                                                                      .textSecondary,
-                                                          ),
-                                                          SizedBox(height: 4.h),
-                                                          Text(
-                                                            AppLocalizations.of(
-                                                              context,
-                                                            ).tapToOpenMap,
-                                                            style: TextStyle(
-                                                              fontSize: 11.sp,
-                                                              color: isMe
-                                                                  ? Colors
-                                                                        .white70
-                                                                  : AppColors
-                                                                        .textSecondary,
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    );
-                                                  },
-                                              loadingBuilder:
-                                                  (
-                                                    context,
-                                                    child,
-                                                    loadingProgress,
-                                                  ) {
-                                                    if (loadingProgress ==
-                                                        null) {
-                                                      return child;
-                                                    }
-                                                    return Container(
-                                                      width: 200.w,
-                                                      height: 120.h,
-                                                      color: AppColors
-                                                          .surfaceVariant,
-                                                      child: const Center(
-                                                        child:
-                                                            CircularProgressIndicator.adaptive(
-                                                              strokeWidth: 2,
-                                                            ),
-                                                      ),
-                                                    );
-                                                  },
-                                            ),
-                                            // Tap to open indicator
-                                            Positioned(
-                                              right: 8.w,
-                                              top: 8.h,
-                                              child: Container(
-                                                padding: EdgeInsets.symmetric(
-                                                  horizontal: 8.w,
-                                                  vertical: 4.h,
-                                                ),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.black54,
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                        12.r,
-                                                      ),
-                                                ),
-                                                child: Row(
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  children: [
-                                                    Icon(
-                                                      Icons.open_in_new,
-                                                      size: 12.sp,
-                                                      color: Colors.white,
-                                                    ),
-                                                    SizedBox(width: 4.w),
-                                                    Text(
-                                                      AppLocalizations.of(
-                                                        context,
-                                                      ).open,
-                                                      style: TextStyle(
-                                                        fontSize: 12.sp,
-                                                        color: Colors.white,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      SizedBox(height: 8.h),
-                                      // Location name/address
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            Icons.location_on_rounded,
-                                            size: 16.sp,
-                                            color: isMe
-                                                ? Colors.white70
-                                                : const Color(0xFF4CAF50),
-                                          ),
-                                          SizedBox(width: 4.w),
-                                          Flexible(
-                                            child: Text(
-                                              message.content.replaceFirst(
-                                                '📍 ',
-                                                '',
-                                              ),
-                                              style: TextStyle(
-                                                fontSize: 13.sp,
-                                                color: isMe
-                                                    ? Colors.white
-                                                    : AppColors.textPrimary,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                )
-                              // Audio message
-                              else if (message.type == MessageType.audio &&
-                                  message.imageUrl !=
-                                      null) // Using imageUrl field for audio URL
-                                _AudioMessagePlayer(
-                                  audioUrl: message.imageUrl!,
-                                  isMe: isMe,
-                                )
-                              else
-                                Text(
-                                  message.isDeleted
-                                      ? AppLocalizations.of(
-                                          context,
-                                        ).thisMessageWasDeleted
-                                      : message.content,
-                                  style: TextStyle(
-                                    fontSize: 15.sp,
-                                    color: isMe
-                                        ? Colors.white
-                                        : AppColors.textPrimary,
-                                    fontStyle: message.isDeleted
-                                        ? FontStyle.italic
-                                        : FontStyle.normal,
-                                    height: 1.4,
-                                  ),
-                                ),
+                              _MessageContent(
+                                message: message,
+                                isMe: isMe,
+                                onLocationTap: _openLocationInMaps,
+                              ),
                               SizedBox(height: 4.h),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (message.isEdited)
-                                    Padding(
-                                      padding: EdgeInsets.only(right: 4.w),
-                                      child: Text(
-                                        AppLocalizations.of(context).edited,
-                                        style: TextStyle(
-                                          fontSize: 12.sp,
-                                          color: isMe
-                                              ? Colors.white.withValues(
-                                                  alpha: 0.6,
-                                                )
-                                              : AppColors.textTertiary,
-                                        ),
-                                      ),
-                                    ),
-                                  Text(
-                                    _formatTime(message.createdAt),
-                                    style: TextStyle(
-                                      fontSize: 11.sp,
-                                      color: isMe
-                                          ? Colors.white.withValues(alpha: 0.7)
-                                          : AppColors.textTertiary,
-                                    ),
-                                  ),
-                                  if (isMe) ...[
-                                    SizedBox(width: 4.w),
-                                    Icon(
-                                      message.status == MessageStatus.read
-                                          ? Icons.done_all_rounded
-                                          : message.status ==
-                                                MessageStatus.delivered
-                                          ? Icons.done_all_rounded
-                                          : Icons.done_rounded,
-                                      size: 14.sp,
-                                      color:
-                                          message.status == MessageStatus.read
-                                          ? Colors.lightBlueAccent
-                                          : Colors.white.withValues(alpha: 0.7),
-                                    ),
-                                  ],
-                                ],
+                              _MessageMetaRow(
+                                message: message,
+                                isMe: isMe,
+                                // FIX: Convert to local time before formatting.
+                                formattedTime: _formatTime(message.createdAt),
                               ),
                             ],
                           ),
@@ -1981,13 +1485,13 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
 
   void _showMessageOptions(MessageModel message) {
     final isMe = message.senderId == currentUser!.uid;
-    final viewModel = ref.read(
+    final notifier = ref.read(
       chatDetailViewModelProvider(_chatId, currentUser!.uid).notifier,
     );
     final l10n = AppLocalizations.of(context);
 
     void onReply() {
-      viewModel.setReplyTo(message);
+      notifier.setReplyTo(message);
       _focusNode.requestFocus();
     }
 
@@ -2004,7 +1508,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
 
     Future<void> onDelete() async {
       try {
-        await viewModel.deleteMessage(message.id);
+        await notifier.deleteMessage(message.id);
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -2013,7 +1517,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
             behavior: SnackBarBehavior.floating,
           ),
         );
-      } catch (_) {
+      } on Exception {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -2025,7 +1529,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       }
     }
 
-    // iOS: CupertinoActionSheet per HIG
     if (PlatformAdaptive.isApple) {
       showCupertinoModalPopup<void>(
         context: context,
@@ -2072,11 +1575,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       return;
     }
 
-    // Android: Material bottom sheet
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
+      builder: (ctx) => Container(
         padding: EdgeInsets.all(20.w),
         decoration: BoxDecoration(
           color: AppColors.cardBg,
@@ -2085,45 +1587,26 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 40.w,
-              height: 4.h,
-              decoration: BoxDecoration(
-                color: AppColors.divider,
-                borderRadius: BorderRadius.circular(2.r),
-              ),
-            ),
+            _buildSheetHandle(),
             SizedBox(height: 20.h),
-            _buildOptionItem(
-              Icons.reply_rounded,
-              l10n.reply,
-              () {
-                context.pop();
-                onReply();
-              },
-            ),
-            _buildOptionItem(
-              Icons.copy_rounded,
-              l10n.copy,
-              () {
-                context.pop();
-                onCopy();
-              },
-            ),
+            _buildOptionItem(Icons.reply_rounded, l10n.reply, () {
+              ctx.pop();
+              onReply();
+            }),
+            _buildOptionItem(Icons.copy_rounded, l10n.copy, () {
+              ctx.pop();
+              onCopy();
+            }),
             if (isMe && !message.isDeleted) ...[
-              _buildOptionItem(
-                Icons.edit_rounded,
-                l10n.actionEdit,
-                () {
-                  context.pop();
-                  _showEditDialog(message);
-                },
-              ),
+              _buildOptionItem(Icons.edit_rounded, l10n.actionEdit, () {
+                ctx.pop();
+                _showEditDialog(message);
+              }),
               _buildOptionItem(
                 Icons.delete_outline_rounded,
                 l10n.actionDelete,
                 () {
-                  context.pop();
+                  ctx.pop();
                   onDelete();
                 },
                 isDestructive: true,
@@ -2138,11 +1621,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
 
   void _showEditDialog(MessageModel message) {
     final controller = TextEditingController(text: message.content);
-
-    showDialog(
+    showDialog<void>(
       context: context,
       barrierLabel: AppLocalizations.of(context).editMessage,
-      builder: (context) => AlertDialog.adaptive(
+      builder: (ctx) => AlertDialog.adaptive(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
@@ -2159,21 +1641,25 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         ),
         actions: [
           TextButton(
-            onPressed: () => context.pop(),
+            onPressed: () => ctx.pop(),
             child: Text(AppLocalizations.of(context).actionCancel),
           ),
           ElevatedButton(
             onPressed: () {
-              final viewModel = ref.read(
-                chatDetailViewModelProvider(_chatId, currentUser!.uid).notifier,
-              );
-              viewModel.editMessage(message.id, controller.text);
-              context.pop();
+              ref
+                  .read(
+                    chatDetailViewModelProvider(
+                      _chatId,
+                      currentUser!.uid,
+                    ).notifier,
+                  )
+                  .editMessage(message.id, controller.text);
+              ctx.pop();
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
             child: Text(
               AppLocalizations.of(context).actionSave,
-              style: TextStyle(color: Colors.white),
+              style: const TextStyle(color: Colors.white),
             ),
           ),
         ],
@@ -2181,24 +1667,24 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     );
   }
 
+  // FIX: Convert Firestore UTC DateTime to local before displaying.
   String _formatTime(DateTime? dateTime) {
     if (dateTime == null) return '';
-    return '${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
+    final local = dateTime.toLocal();
+    return '${local.hour}:${local.minute.toString().padLeft(2, '0')}';
   }
+
+  // ── Input area ───────────────────────────────────────────────────────────
 
   Widget _buildInputArea() {
     final chatState = ref.watch(
       chatDetailViewModelProvider(_chatId, currentUser!.uid),
     );
-
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
         border: Border(
-          top: BorderSide(
-            color: AppColors.border.withValues(alpha: 0.75),
-            width: 1,
-          ),
+          top: BorderSide(color: AppColors.border.withValues(alpha: 0.75)),
         ),
         boxShadow: [
           BoxShadow(
@@ -2215,7 +1701,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              // Attachment
               IconButton(
                 tooltip: AppLocalizations.of(context).attachFile,
                 onPressed: () {
@@ -2238,7 +1723,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                 ),
               ),
               SizedBox(width: 8.w),
-              // Text field with reactive focus border
               Expanded(
                 child: ListenableBuilder(
                   listenable: _focusNode,
@@ -2310,7 +1794,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                           textInputAction: TextInputAction.newline,
                         ),
                       ),
-                      // Emoji / keyboard toggle
                       IconButton(
                         tooltip: chatState.showEmojiPicker
                             ? AppLocalizations.of(context).showKeyboard
@@ -2333,12 +1816,11 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                 ),
               ),
               SizedBox(width: 8.w),
-              // Send / Mic / Stop — rebuilt reactively when text changes
               ValueListenableBuilder<TextEditingValue>(
                 valueListenable: _messageController,
                 builder: (context, value, _) {
                   final hasText = value.text.trim().isNotEmpty;
-                  final showPrimaryAction = hasText || chatState.isRecording;
+                  final showPrimary = hasText || chatState.isRecording;
                   return Semantics(
                     button: true,
                     label: chatState.isRecording
@@ -2348,8 +1830,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                         : AppLocalizations.of(context).recordVoiceMessage,
                     child: GestureDetector(
                       onTap: () {
-                        // Recording takes priority over send so tapping while
-                        // recording always stops it regardless of typed text.
                         if (chatState.isRecording) {
                           _stopRecording();
                         } else if (hasText) {
@@ -2369,14 +1849,12 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                                     Color(0xFFF44336),
                                   ],
                                 )
-                              : showPrimaryAction
+                              : showPrimary
                               ? AppColors.primaryGradient
                               : null,
-                          color: showPrimaryAction
-                              ? null
-                              : AppColors.surfaceVariant,
+                          color: showPrimary ? null : AppColors.surfaceVariant,
                           borderRadius: BorderRadius.circular(14.r),
-                          boxShadow: showPrimaryAction
+                          boxShadow: showPrimary
                               ? [
                                   BoxShadow(
                                     color:
@@ -2396,7 +1874,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                               : hasText
                               ? Icons.send_rounded
                               : Icons.mic_rounded,
-                          color: showPrimaryAction
+                          color: showPrimary
                               ? Colors.white
                               : AppColors.textSecondary,
                           size: 22.sp,
@@ -2413,33 +1891,31 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     );
   }
 
-  void _showAttachmentOptions() {
+  Future<void> _showAttachmentOptions() async {
     final l10n = AppLocalizations.of(context);
-
-    // iOS: CupertinoActionSheet per HIG
     if (PlatformAdaptive.isApple) {
-      showCupertinoModalPopup<void>(
+      await showCupertinoModalPopup<void>(
         context: context,
         builder: (ctx) => CupertinoActionSheet(
           actions: [
             CupertinoActionSheetAction(
-              onPressed: () {
+              onPressed: () async {
                 ctx.pop();
-                _sendImageFromCamera();
+                await _sendImageFromSource(ImageSource.camera);
               },
               child: Text(l10n.camera),
             ),
             CupertinoActionSheetAction(
-              onPressed: () {
+              onPressed: () async {
                 ctx.pop();
-                _sendImage();
+                await _sendImageFromSource(ImageSource.gallery);
               },
               child: Text(l10n.gallery),
             ),
             CupertinoActionSheetAction(
-              onPressed: () {
+              onPressed: () async {
                 ctx.pop();
-                _shareLocation();
+                await _shareLocation();
               },
               child: Text(l10n.location),
             ),
@@ -2453,11 +1929,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       return;
     }
 
-    // Android: Material bottom sheet with icon grid
-    showModalBottomSheet(
+    await showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
+      builder: (ctx) => Container(
         padding: EdgeInsets.all(24.w),
         decoration: BoxDecoration(
           color: AppColors.cardBg,
@@ -2466,42 +1941,35 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 40.w,
-              height: 4.h,
-              decoration: BoxDecoration(
-                color: AppColors.divider,
-                borderRadius: BorderRadius.circular(2.r),
-              ),
-            ),
+            _buildSheetHandle(),
             SizedBox(height: 24.h),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _buildAttachmentOption(
                   Icons.camera_alt_rounded,
-                  AppLocalizations.of(context).camera,
+                  l10n.camera,
                   const Color(0xFFE91E63),
                   () {
-                    context.pop();
-                    _sendImageFromCamera();
+                    ctx.pop();
+                    _sendImageFromSource(ImageSource.camera);
                   },
                 ),
                 _buildAttachmentOption(
                   Icons.photo_rounded,
-                  AppLocalizations.of(context).gallery,
+                  l10n.gallery,
                   const Color(0xFF9C27B0),
                   () {
-                    context.pop();
-                    _sendImage();
+                    ctx.pop();
+                    _sendImageFromSource(ImageSource.gallery);
                   },
                 ),
                 _buildAttachmentOption(
                   Icons.location_on_rounded,
-                  AppLocalizations.of(context).location,
+                  l10n.location,
                   const Color(0xFF4CAF50),
                   () {
-                    context.pop();
+                    ctx.pop();
                     _shareLocation();
                   },
                 ),
@@ -2547,134 +2015,125 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     );
   }
 
-  /// Share current location as a message
+  // FIX: Permission checks happen BEFORE the spinner.
+  // Dialog is NOT awaited — closed programmatically after getting position.
+  // Duplicate permission checks inside the try block removed.
   Future<void> _shareLocation() async {
-    if (!await _ensurePersistedChat()) return;
-    HapticFeedback.mediumImpact();
+    final l10n = AppLocalizations.of(context);
 
-    // Show rationale before requesting location
     final accepted = await PermissionDialogHelper.showLocationSharingRationale(
       context,
     );
     if (!accepted) return;
 
-    // Show loading indicator
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => Center(
-        child: Container(
-          padding: EdgeInsets.all(24.w),
-          decoration: BoxDecoration(
-            color: AppColors.cardBg,
-            borderRadius: BorderRadius.circular(16.r),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator.adaptive(
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-              ),
-              SizedBox(height: 16.h),
-              Text(
-                AppLocalizations.of(context).gettingYourLocation,
-                style: TextStyle(color: AppColors.textPrimary, fontSize: 14.sp),
-              ),
-            ],
+    final svc = ref.read(locationServiceProvider);
+    if (!await svc.isServiceEnabled()) {
+      if (!mounted) return;
+      _showLocationError('Please enable location services');
+      return;
+    }
+    if (!await svc.checkPermission()) {
+      final granted = await svc.requestPermission();
+      if (!granted) {
+        if (!mounted) return;
+        _showLocationError('Location permission required');
+        return;
+      }
+    }
+
+    if (!await _ensurePersistedChat()) return;
+    if (!mounted) return;
+
+    // FIX: Do NOT await the dialog — we close it programmatically below.
+    // Awaiting it would deadlock because barrierDismissible is false.
+    unawaited(
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => Center(
+          child: Container(
+            padding: EdgeInsets.all(24.w),
+            decoration: BoxDecoration(
+              color: AppColors.cardBg,
+              borderRadius: BorderRadius.circular(16.r),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator.adaptive(
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                ),
+                SizedBox(height: 16.h),
+                Text(
+                  l10n.gettingYourLocation,
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 14.sp,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
 
     try {
-      // Check and request location permission
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          if (mounted) Navigator.of(context).pop();
-          _showLocationError('Location permission denied');
-          return;
-        }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        if (mounted) Navigator.of(context).pop();
-        _showLocationError(
-          'Location permission permanently denied. Please enable in settings.',
-        );
+      final position = await ref
+          .read(locationServiceProvider)
+          .getCurrentLocation();
+      if (!mounted) return;
+      if (position == null) {
+        Navigator.of(context).pop();
+        _showLocationError('Could not get your location');
         return;
       }
 
-      // Check if location services are enabled
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        if (mounted) Navigator.of(context).pop();
-        _showLocationError('Please enable location services');
-        return;
-      }
+      final locationName =
+          await ref
+              .read(locationServiceProvider)
+              .getAddressFromCoordinates(
+                position.latitude,
+                position.longitude,
+              ) ??
+          '${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}';
 
-      // Get current position
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close loading dialog.
 
-      // Try to get address from coordinates
-      String locationName = 'My Location';
-      try {
-        final placemarks = await geocoding.placemarkFromCoordinates(
-          position.latitude,
-          position.longitude,
-        );
-        if (placemarks.isNotEmpty) {
-          final place = placemarks.first;
-          locationName = [
-            place.street,
-            place.locality,
-            place.country,
-          ].where((s) => s != null && s.isNotEmpty).join(', ');
-        }
-      } catch (_) {
-        // Failed to get address, use coordinates
-        locationName =
-            '${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}';
-      }
+      final success = await ref
+          .read(
+            chatDetailViewModelProvider(
+              _chatId,
+              currentUser?.uid ?? '',
+            ).notifier,
+          )
+          .sendLocationMessage(
+            content: locationName,
+            latitude: position.latitude,
+            longitude: position.longitude,
+            senderName: currentUser?.displayName ?? 'User',
+            senderPhotoUrl: currentUser?.photoUrl,
+          );
 
-      if (!context.mounted) return;
-      Navigator.of(context).pop(); // Close loading dialog
-
-      // Send location message
-      final viewModel = ref.read(
-        chatDetailViewModelProvider(_chatId, currentUser?.uid ?? '').notifier,
-      );
-
-      final success = await viewModel.sendLocationMessage(
-        content: locationName,
-        latitude: position.latitude,
-        longitude: position.longitude,
-        senderName: currentUser?.displayName ?? 'User',
-        senderPhotoUrl: currentUser?.photoUrl,
-      );
-
-      if (success && context.mounted) {
+      if (success && mounted) {
         HapticFeedback.lightImpact();
         _showStatusSnackBar(
           Row(
             children: [
               const Icon(Icons.check_circle, color: Colors.white, size: 20),
               SizedBox(width: 8.w),
-              Text(AppLocalizations.of(context).locationShared),
+              Text(l10n.locationShared),
             ],
           ),
           backgroundColor: Colors.green,
           duration: const Duration(seconds: 2),
         );
       }
-    } catch (e) {
-      if (context.mounted) {
-        Navigator.of(context).pop();
-        _showLocationError('Failed to get location: ${e.toString()}');
-      }
+    } on Exception catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      _showLocationError('Failed to get location: $e');
     }
   }
 
@@ -2693,68 +2152,48 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         action: SnackBarAction(
           label: 'Settings',
           textColor: Colors.white,
-          onPressed: () => Geolocator.openLocationSettings(),
+          onPressed: () =>
+              ref.read(locationServiceProvider).openLocationSettings(),
         ),
       ),
     );
   }
 
-  /// Opens location in external maps app (Google Maps, Apple Maps, etc.)
   Future<void> _openLocationInMaps(double lat, double lng, String label) async {
     HapticFeedback.lightImpact();
-
-    // Encode label for URL
     final encodedLabel = Uri.encodeComponent(label.replaceFirst('📍 ', ''));
-
-    // Build URLs for different platforms
-    // Google Maps URL (works on Android and iOS if Google Maps is installed)
     final googleMapsUrl = Uri.parse(
       'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
     );
-
-    // Apple Maps URL (iOS only)
     final appleMapsUrl = Uri.parse(
       'https://maps.apple.com/?ll=$lat,$lng&q=$encodedLabel',
     );
-
-    // Geo URI (universal, opens default maps app)
     final geoUrl = Uri.parse('geo:$lat,$lng?q=$lat,$lng($encodedLabel)');
 
     try {
-      // Try different URL schemes based on platform
-      bool launched = false;
-
-      // First, try the geo URI on Android (opens default maps app)
+      var launched = false;
       if (Platform.isAndroid) {
-        if (await canLaunchUrl(geoUrl)) {
-          launched = await launchUrl(geoUrl);
-        }
-        // Fallback to Google Maps
+        if (await canLaunchUrl(geoUrl)) launched = await launchUrl(geoUrl);
         if (!launched && await canLaunchUrl(googleMapsUrl)) {
           launched = await launchUrl(
             googleMapsUrl,
             mode: LaunchMode.externalApplication,
           );
         }
-      }
-      // On iOS, try Apple Maps first
-      else if (Platform.isIOS) {
+      } else if (Platform.isIOS) {
         if (await canLaunchUrl(appleMapsUrl)) {
           launched = await launchUrl(
             appleMapsUrl,
             mode: LaunchMode.externalApplication,
           );
         }
-        // Fallback to Google Maps web
         if (!launched && await canLaunchUrl(googleMapsUrl)) {
           launched = await launchUrl(
             googleMapsUrl,
             mode: LaunchMode.externalApplication,
           );
         }
-      }
-      // Web or other platforms - use Google Maps
-      else {
+      } else {
         if (await canLaunchUrl(googleMapsUrl)) {
           launched = await launchUrl(
             googleMapsUrl,
@@ -2764,8 +2203,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       }
 
       if (!launched && context.mounted) {
-        // Copy coordinates as fallback
-        Clipboard.setData(ClipboardData(text: '$lat, $lng'));
+        await Clipboard.setData(ClipboardData(text: '$lat, $lng'));
         _showStatusSnackBar(
           Row(
             children: [
@@ -2778,176 +2216,626 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
           duration: const Duration(seconds: 2),
         );
       }
-    } catch (e) {
-      if (context.mounted) {
-        _showStatusSnackBar(
-          Text(AppLocalizations.of(context).couldNotOpenMapsValue(e)),
-          backgroundColor: AppColors.error,
-        );
-      }
+    } on Exception catch (e) {
+      if (!context.mounted) return;
+      _showStatusSnackBar(
+        Text(AppLocalizations.of(context).couldNotOpenMapsValue(e)),
+        backgroundColor: AppColors.error,
+      );
     }
+  }
+
+  // ── Recording banner ─────────────────────────────────────────────────────
+
+  Widget _buildRecordingBanner(ChatDetailState chatState) {
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFE91E63), Color(0xFFF44336)],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+                  width: 12.w,
+                  height: 12.w,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                )
+                .animate(onPlay: (c) => c.repeat())
+                .fadeIn(duration: 600.ms)
+                .then()
+                .fadeOut(duration: 600.ms),
+            SizedBox(width: 12.w),
+            Icon(Icons.mic, color: Colors.white, size: 20.sp),
+            SizedBox(width: 8.w),
+            Text(
+              AppLocalizations.of(context).recording,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 15.sp,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              '${chatState.recordingDuration.inMinutes}:'
+              '${(chatState.recordingDuration.inSeconds % 60).toString().padLeft(2, '0')}',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 15.sp,
+                fontWeight: FontWeight.w600,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+            SizedBox(width: 12.w),
+            GestureDetector(
+              onTap: _cancelRecording,
+              child: Container(
+                padding: EdgeInsets.all(6.w),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(6.r),
+                ),
+                child: Icon(Icons.close, color: Colors.white, size: 18.sp),
+              ),
+            ),
+          ],
+        ),
+      ).animate().slideY(begin: -1).fadeIn(),
+    );
   }
 }
 
-/// Audio message player widget
-class _AudioMessagePlayer extends StatefulWidget {
-  final String audioUrl;
+// ── Extracted message content widgets ────────────────────────────────────────
+
+/// Routes to the correct content widget based on [MessageModel.type].
+class _MessageContent extends StatelessWidget {
+  const _MessageContent({
+    required this.message,
+    required this.isMe,
+    required this.onLocationTap,
+  });
+
+  final MessageModel message;
+  final bool isMe;
+  final void Function(double lat, double lng, String label) onLocationTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return switch (message.type) {
+      MessageType.image when message.mediaUrl != null => _ImageMessageContent(
+        mediaUrl: message.mediaUrl!,
+      ),
+      MessageType.location
+          when message.latitude != null && message.longitude != null =>
+        _LocationMessageContent(
+          message: message,
+          isMe: isMe,
+          onTap: () => onLocationTap(
+            message.latitude!,
+            message.longitude!,
+            message.content,
+          ),
+        ),
+      MessageType.audio when message.mediaUrl != null => _AudioMessagePlayer(
+        message: message,
+        audioUrl: message.mediaUrl!,
+        isMe: isMe,
+      ),
+      _ => _TextMessageContent(message: message, isMe: isMe),
+    };
+  }
+}
+
+/// Network image with loading shimmer.
+class _ImageMessageContent extends StatelessWidget {
+  const _ImageMessageContent({required this.mediaUrl});
+
+  final String mediaUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12.r),
+      child: Image.network(
+        mediaUrl,
+        width: 200.w,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return Container(
+            width: 200.w,
+            height: 150.h,
+            color: AppColors.surfaceVariant,
+            child: Center(
+              child: CircularProgressIndicator.adaptive(
+                value: progress.expectedTotalBytes != null
+                    ? progress.cumulativeBytesLoaded /
+                          progress.expectedTotalBytes!
+                    : null,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Static map preview + address label. Tappable to open in maps app.
+class _LocationMessageContent extends StatelessWidget {
+  const _LocationMessageContent({
+    required this.message,
+    required this.isMe,
+    required this.onTap,
+  });
+
+  final MessageModel message;
+  final bool isMe;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final mapUrl =
+        'https://staticmap.openstreetmap.de/staticmap.php'
+        '?center=${message.latitude},${message.longitude}'
+        '&zoom=15&size=200x120&maptype=osmarenderer'
+        '&markers=${message.latitude},${message.longitude},red-pushpin';
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12.r),
+            child: Stack(
+              children: [
+                Image.network(
+                  mapUrl,
+                  width: 200.w,
+                  height: 120.h,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => Container(
+                    width: 200.w,
+                    height: 120.h,
+                    color: AppColors.surfaceVariant,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.map_rounded,
+                          size: 32.sp,
+                          color: isMe
+                              ? Colors.white70
+                              : AppColors.textSecondary,
+                        ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          AppLocalizations.of(context).tapToOpenMap,
+                          style: TextStyle(
+                            fontSize: 11.sp,
+                            color: isMe
+                                ? Colors.white70
+                                : AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  loadingBuilder: (_, child, progress) => progress == null
+                      ? child
+                      : Container(
+                          width: 200.w,
+                          height: 120.h,
+                          color: AppColors.surfaceVariant,
+                          child: const Center(
+                            child: CircularProgressIndicator.adaptive(
+                              strokeWidth: 2,
+                            ),
+                          ),
+                        ),
+                ),
+                Positioned(
+                  right: 8.w,
+                  top: 8.h,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 8.w,
+                      vertical: 4.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.open_in_new,
+                          size: 12.sp,
+                          color: Colors.white,
+                        ),
+                        SizedBox(width: 4.w),
+                        Text(
+                          AppLocalizations.of(context).open,
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.location_on_rounded,
+                size: 16.sp,
+                color: isMe ? Colors.white70 : const Color(0xFF4CAF50),
+              ),
+              SizedBox(width: 4.w),
+              Flexible(
+                child: Text(
+                  message.content.replaceFirst('📍 ', ''),
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    color: isMe ? Colors.white : AppColors.textPrimary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Plain text or deleted-message placeholder.
+class _TextMessageContent extends StatelessWidget {
+  const _TextMessageContent({required this.message, required this.isMe});
+
+  final MessageModel message;
   final bool isMe;
 
-  const _AudioMessagePlayer({required this.audioUrl, required this.isMe});
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      message.isDeleted
+          ? AppLocalizations.of(context).thisMessageWasDeleted
+          : message.content,
+      style: TextStyle(
+        fontSize: 15.sp,
+        color: isMe ? Colors.white : AppColors.textPrimary,
+        fontStyle: message.isDeleted ? FontStyle.italic : FontStyle.normal,
+        height: 1.4,
+      ),
+    );
+  }
+}
+
+/// Timestamp + edited flag + read-receipt icon row.
+class _MessageMetaRow extends StatelessWidget {
+  const _MessageMetaRow({
+    required this.message,
+    required this.isMe,
+    required this.formattedTime,
+  });
+
+  final MessageModel message;
+  final bool isMe;
+  final String formattedTime;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (message.isEdited)
+          Padding(
+            padding: EdgeInsets.only(right: 4.w),
+            child: Text(
+              AppLocalizations.of(context).edited,
+              style: TextStyle(
+                fontSize: 12.sp,
+                color: isMe
+                    ? Colors.white.withValues(alpha: 0.6)
+                    : AppColors.textTertiary,
+              ),
+            ),
+          ),
+        Text(
+          formattedTime,
+          style: TextStyle(
+            fontSize: 11.sp,
+            color: isMe
+                ? Colors.white.withValues(alpha: 0.7)
+                : AppColors.textTertiary,
+          ),
+        ),
+        if (isMe) ...[
+          SizedBox(width: 4.w),
+          Icon(
+            // delivered and read both show double-tick; color distinguishes them.
+            message.status == MessageStatus.read ||
+                    message.status == MessageStatus.delivered
+                ? Icons.done_all_rounded
+                : Icons.done_rounded,
+            size: 14.sp,
+            color: message.status == MessageStatus.read
+                ? Colors.lightBlueAccent
+                : Colors.white.withValues(alpha: 0.7),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Quoted-message strip shown above a bubble when replying.
+class _ReplyIndicator extends StatelessWidget {
+  const _ReplyIndicator({required this.content});
+
+  final String content;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 4.h),
+      padding: EdgeInsets.all(8.w),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(8.r),
+        border: const Border(
+          left: BorderSide(color: AppColors.primary, width: 2),
+        ),
+      ),
+      child: Text(
+        content,
+        style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+}
+
+// ── Audio player ──────────────────────────────────────────────────────────────
+
+// ── Audio player ──────────────────────────────────────────────────────────────
+
+class _AudioMessagePlayer extends StatefulWidget {
+  const _AudioMessagePlayer({
+    required this.audioUrl,
+    required this.isMe,
+    required this.message,
+  });
+
+  final String audioUrl;
+  final bool isMe;
+  final MessageModel message;
 
   @override
   State<_AudioMessagePlayer> createState() => _AudioMessagePlayerState();
 }
 
 class _AudioMessagePlayerState extends State<_AudioMessagePlayer> {
-  final AudioPlayer _audioPlayer = AudioPlayer();
-  bool _isPlaying = false;
-  Duration _duration = Duration.zero;
-  Duration _position = Duration.zero;
+  late VVoiceMessageController _controller;
 
   @override
   void initState() {
     super.initState();
-    _initPlayer();
-  }
-
-  void _initPlayer() {
-    _audioPlayer.onPlayerStateChanged.listen((state) {
-      if (mounted) {
-        setState(() {
-          _isPlaying = state == PlayerState.playing;
-        });
-      }
-    });
-
-    _audioPlayer.onDurationChanged.listen((duration) {
-      if (mounted) {
-        setState(() {
-          _duration = duration;
-        });
-      }
-    });
-
-    _audioPlayer.onPositionChanged.listen((position) {
-      if (mounted) {
-        setState(() {
-          _position = position;
-        });
-      }
-    });
-
-    _audioPlayer.onPlayerComplete.listen((_) {
-      if (mounted) {
-        setState(() {
-          _position = Duration.zero;
-          _isPlaying = false;
-        });
-      }
-    });
+    _controller = VVoiceMessageController(
+      id: widget.message.id,
+      audioSrc: VPlatformFile.fromUrl(networkUrl: widget.audioUrl),
+      maxDuration: const Duration(minutes: 10),
+      onComplete: (_) => HapticFeedback.lightImpact(),
+      onPlaying: (_) => HapticFeedback.selectionClick(),
+      onPause: (_) {},
+    );
   }
 
   @override
   void dispose() {
-    _audioPlayer.dispose();
+    _controller.dispose();
     super.dispose();
-  }
-
-  Future<void> _togglePlayPause() async {
-    if (_isPlaying) {
-      await _audioPlayer.pause();
-    } else {
-      await _audioPlayer.play(UrlSource(widget.audioUrl));
-    }
-  }
-
-  String _formatDuration(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    final minutes = twoDigits(duration.inMinutes.remainder(60));
-    final seconds = twoDigits(duration.inSeconds.remainder(60));
-    return '$minutes:$seconds';
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Play/pause button
-          GestureDetector(
-            onTap: _togglePlayPause,
-            child: Container(
-              padding: EdgeInsets.all(8.w),
-              decoration: BoxDecoration(
-                color: widget.isMe
-                    ? Colors.white.withValues(alpha: 0.2)
-                    : AppColors.primary.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                _isPlaying ? Icons.pause : Icons.play_arrow,
-                color: widget.isMe ? Colors.white : AppColors.primary,
-                size: 20.sp,
-              ),
-            ),
+    final senderName = widget.message.senderName;
+    final initials = senderName
+        .trim()
+        .split(' ')
+        .take(2)
+        .map((e) => e.isNotEmpty ? e[0].toUpperCase() : '')
+        .join();
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 2.h),
+      child: VVoiceMessageView(
+        controller: _controller,
+
+        // ── Colors ────────────────────────────────────────────────────────
+        colorConfig: VoiceColorConfig(
+          activeSliderColor: widget.isMe ? Colors.white : AppColors.primary,
+          notActiveSliderColor: widget.isMe
+              ? Colors.white.withValues(alpha: 0.35)
+              : AppColors.divider,
+        ),
+
+        // ── Container ─────────────────────────────────────────────────────
+        containerConfig: VoiceContainerConfig(
+          backgroundColor: Colors.transparent,
+          borderRadius: 0,
+          containerPadding: EdgeInsets.symmetric(
+            horizontal: 6.w,
+            vertical: 6.h,
           ),
-          SizedBox(width: 12.w),
-          // Waveform/progress
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  height: 3.h,
-                  decoration: BoxDecoration(
-                    color: widget.isMe
-                        ? Colors.white.withValues(alpha: 0.3)
-                        : AppColors.divider,
-                    borderRadius: BorderRadius.circular(2.r),
-                  ),
-                  child: FractionallySizedBox(
-                    alignment: Alignment.centerLeft,
-                    widthFactor: _duration.inMilliseconds > 0
-                        ? _position.inMilliseconds / _duration.inMilliseconds
-                        : 0,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: widget.isMe ? Colors.white : AppColors.primary,
-                        borderRadius: BorderRadius.circular(2.r),
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 4.h),
-                Text(
-                  _duration.inMilliseconds > 0
-                      ? _formatDuration(_position)
-                      : '0:00',
-                  style: TextStyle(
-                    fontSize: 11.sp,
-                    color: widget.isMe
-                        ? Colors.white.withValues(alpha: 0.7)
-                        : AppColors.textTertiary,
-                  ),
-                ),
-              ],
-            ),
+        ),
+
+        // ── Play / Pause button ───────────────────────────────────────────
+        buttonConfig: VoiceButtonConfig(
+          buttonColor: widget.isMe
+              ? Colors.white.withValues(alpha: 0.18)
+              : AppColors.primary.withValues(alpha: 0.08),
+          buttonIconColor: widget.isMe ? Colors.white : AppColors.primary,
+          buttonSize: 40.w,
+          useSimplePlayIcon: true,
+          simpleIconSize: 20.sp,
+        ),
+
+        // ── Waveform visualizer ───────────────────────────────────────────
+        visualizerConfig: VoiceVisualizerConfig(
+          showVisualizer: true,
+          height: 32.h,
+          barCount: 45,
+          barSpacing: 2,
+          minBarHeight: 4,
+          useRandomHeights: true, // unique pattern per message
+          enableBarAnimations: true, // animates bars while playing
+        ),
+
+        // ── Speed control ─────────────────────────────────────────────────
+        speedConfig: VoiceSpeedConfig(
+          showSpeedControl: true,
+          speedButtonColor: widget.isMe
+              ? Colors.white.withValues(alpha: 0.18)
+              : AppColors.primary.withValues(alpha: 0.08),
+          speedButtonTextColor: widget.isMe ? Colors.white : AppColors.primary,
+          speedButtonBorderRadius: 8,
+          speedButtonPadding: EdgeInsets.symmetric(
+            horizontal: 7.w,
+            vertical: 3.h,
           ),
-          SizedBox(width: 8.w),
-          // Duration
-          Text(
-            _duration.inMilliseconds > 0 ? _formatDuration(_duration) : '0:00',
-            style: TextStyle(
-              fontSize: 12.sp,
-              color: widget.isMe
-                  ? Colors.white.withValues(alpha: 0.7)
-                  : AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
-            ),
+        ),
+
+        // ── Avatar ────────────────────────────────────────────────────────
+        // shows sender avatar with mic icon + played/unplayed status badge
+        avatarConfig: VoiceAvatarConfig(
+          avatarSize: 36.w,
+          micIconSize: 13.sp,
+          userAvatar: widget.isMe
+              ? const SizedBox.shrink() // no avatar on sent side
+              : (widget.message.senderPhotoUrl != null &&
+                        widget.message.senderPhotoUrl!.isNotEmpty
+                    ? CircleAvatar(
+                        radius: 18.r,
+                        backgroundImage: NetworkImage(
+                          widget.message.senderPhotoUrl!,
+                        ),
+                      )
+                    : CircleAvatar(
+                        radius: 18.r,
+                        backgroundColor: AppColors.primary.withValues(
+                          alpha: 0.12,
+                        ),
+                        child: Text(
+                          initials,
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      )),
+        ),
+
+        // ── Text / counter ────────────────────────────────────────────────
+        textConfig: VoiceTextConfig(
+          counterTextStyle: TextStyle(
+            fontSize: 11.sp,
+            fontWeight: FontWeight.w500,
+            fontFeatures: const [FontFeature.tabularFigures()],
+            color: widget.isMe
+                ? Colors.white.withValues(alpha: 0.7)
+                : AppColors.textSecondary,
           ),
-        ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Typing dot ────────────────────────────────────────────────────────────────
+
+/// A single animated dot for the typing indicator.
+/// Uses [AnimationController] with repeat() so it loops indefinitely.
+class _TypingDot extends StatefulWidget {
+  const _TypingDot({required this.index});
+
+  final int index;
+
+  @override
+  State<_TypingDot> createState() => _TypingDotState();
+}
+
+class _TypingDotState extends State<_TypingDot>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    )..repeat(reverse: true);
+
+    _opacity = CurvedAnimation(
+      parent: _controller,
+      curve: Interval(
+        (widget.index * 0.2).clamp(0.0, 1.0),
+        (widget.index * 0.2 + 0.6).clamp(0.0, 1.0),
+        curve: Curves.easeInOut,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _opacity.drive(Tween(begin: 0.3, end: 1)),
+      child: Container(
+        width: 8.w,
+        height: 8.w,
+        decoration: const BoxDecoration(
+          color: AppColors.textTertiary,
+          shape: BoxShape.circle,
+        ),
       ),
     );
   }

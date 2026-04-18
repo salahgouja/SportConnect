@@ -8,12 +8,12 @@ part of 'chat_view_model.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// User Chats Stream Provider
+/// Live stream of the user's chat list, ordered by last message time.
 
 @ProviderFor(userChats)
 final userChatsProvider = UserChatsFamily._();
 
-/// User Chats Stream Provider
+/// Live stream of the user's chat list, ordered by last message time.
 
 final class UserChatsProvider
     extends
@@ -23,7 +23,7 @@ final class UserChatsProvider
           Stream<List<ChatModel>>
         >
     with $FutureModifier<List<ChatModel>>, $StreamProvider<List<ChatModel>> {
-  /// User Chats Stream Provider
+  /// Live stream of the user's chat list, ordered by last message time.
   UserChatsProvider._({
     required UserChatsFamily super.from,
     required String super.argument,
@@ -68,9 +68,9 @@ final class UserChatsProvider
   }
 }
 
-String _$userChatsHash() => r'f8cd7fee8280fc23f8f921e5810dc51c631bc22b';
+String _$userChatsHash() => r'4338cfcd270cd9738dbaa2e45a2b4e81dcf791e4';
 
-/// User Chats Stream Provider
+/// Live stream of the user's chat list, ordered by last message time.
 
 final class UserChatsFamily extends $Family
     with $FunctionalFamilyOverride<Stream<List<ChatModel>>, String> {
@@ -83,7 +83,7 @@ final class UserChatsFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// User Chats Stream Provider
+  /// Live stream of the user's chat list, ordered by last message time.
 
   UserChatsProvider call(String userId) =>
       UserChatsProvider._(argument: userId, from: this);
@@ -92,15 +92,183 @@ final class UserChatsFamily extends $Family
   String toString() => r'userChatsProvider';
 }
 
-/// Chat Detail View Model
+/// Messages stream for a single chat, filtered to non-deleted only.
+
+@ProviderFor(chatMessages)
+final chatMessagesProvider = ChatMessagesFamily._();
+
+/// Messages stream for a single chat, filtered to non-deleted only.
+
+final class ChatMessagesProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<MessageModel>>,
+          List<MessageModel>,
+          Stream<List<MessageModel>>
+        >
+    with
+        $FutureModifier<List<MessageModel>>,
+        $StreamProvider<List<MessageModel>> {
+  /// Messages stream for a single chat, filtered to non-deleted only.
+  ChatMessagesProvider._({
+    required ChatMessagesFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'chatMessagesProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$chatMessagesHash();
+
+  @override
+  String toString() {
+    return r'chatMessagesProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<MessageModel>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<MessageModel>> create(Ref ref) {
+    final argument = this.argument as String;
+    return chatMessages(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is ChatMessagesProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$chatMessagesHash() => r'd6faceff95e4e7eb9d6bae1fcaafad4773203e7e';
+
+/// Messages stream for a single chat, filtered to non-deleted only.
+
+final class ChatMessagesFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<MessageModel>>, String> {
+  ChatMessagesFamily._()
+    : super(
+        retry: null,
+        name: r'chatMessagesProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Messages stream for a single chat, filtered to non-deleted only.
+
+  ChatMessagesProvider call(String chatId) =>
+      ChatMessagesProvider._(argument: chatId, from: this);
+
+  @override
+  String toString() => r'chatMessagesProvider';
+}
+
+/// Typing indicators stream for a single chat, non-expired only.
+
+@ProviderFor(chatTyping)
+final chatTypingProvider = ChatTypingFamily._();
+
+/// Typing indicators stream for a single chat, non-expired only.
+
+final class ChatTypingProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<TypingIndicator>>,
+          List<TypingIndicator>,
+          Stream<List<TypingIndicator>>
+        >
+    with
+        $FutureModifier<List<TypingIndicator>>,
+        $StreamProvider<List<TypingIndicator>> {
+  /// Typing indicators stream for a single chat, non-expired only.
+  ChatTypingProvider._({
+    required ChatTypingFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'chatTypingProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$chatTypingHash();
+
+  @override
+  String toString() {
+    return r'chatTypingProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<TypingIndicator>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<TypingIndicator>> create(Ref ref) {
+    final argument = this.argument as String;
+    return chatTyping(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is ChatTypingProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$chatTypingHash() => r'dc6e881844129fcd96a609e322b4542f8e4453f1';
+
+/// Typing indicators stream for a single chat, non-expired only.
+
+final class ChatTypingFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<TypingIndicator>>, String> {
+  ChatTypingFamily._()
+    : super(
+        retry: null,
+        name: r'chatTypingProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Typing indicators stream for a single chat, non-expired only.
+
+  ChatTypingProvider call(String chatId) =>
+      ChatTypingProvider._(argument: chatId, from: this);
+
+  @override
+  String toString() => r'chatTypingProvider';
+}
 
 @ProviderFor(ChatDetailViewModel)
 final chatDetailViewModelProvider = ChatDetailViewModelFamily._();
 
-/// Chat Detail View Model
 final class ChatDetailViewModelProvider
     extends $NotifierProvider<ChatDetailViewModel, ChatDetailState> {
-  /// Chat Detail View Model
   ChatDetailViewModelProvider._({
     required ChatDetailViewModelFamily super.from,
     required (String, String) super.argument,
@@ -146,9 +314,7 @@ final class ChatDetailViewModelProvider
 }
 
 String _$chatDetailViewModelHash() =>
-    r'e093936273592f4dc5ff0a4588d2c04d813e1878';
-
-/// Chat Detail View Model
+    r'920028a5e9cf3d7252cfb0568a252010411a0d45';
 
 final class ChatDetailViewModelFamily extends $Family
     with
@@ -168,8 +334,6 @@ final class ChatDetailViewModelFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Chat Detail View Model
-
   ChatDetailViewModelProvider call(String chatId, String currentUserId) =>
       ChatDetailViewModelProvider._(
         argument: (chatId, currentUserId),
@@ -179,8 +343,6 @@ final class ChatDetailViewModelFamily extends $Family
   @override
   String toString() => r'chatDetailViewModelProvider';
 }
-
-/// Chat Detail View Model
 
 abstract class _$ChatDetailViewModel extends $Notifier<ChatDetailState> {
   late final _$args = ref.$arg as (String, String);
@@ -204,12 +366,14 @@ abstract class _$ChatDetailViewModel extends $Notifier<ChatDetailState> {
   }
 }
 
-/// Create or get private chat
+/// Returns an existing direct chat or a local draft. The draft is persisted
+/// to Firestore on first message send.
 
 @ProviderFor(getOrCreateChat)
 final getOrCreateChatProvider = GetOrCreateChatFamily._();
 
-/// Create or get private chat
+/// Returns an existing direct chat or a local draft. The draft is persisted
+/// to Firestore on first message send.
 
 final class GetOrCreateChatProvider
     extends
@@ -219,7 +383,8 @@ final class GetOrCreateChatProvider
           FutureOr<ChatModel>
         >
     with $FutureModifier<ChatModel>, $FutureProvider<ChatModel> {
-  /// Create or get private chat
+  /// Returns an existing direct chat or a local draft. The draft is persisted
+  /// to Firestore on first message send.
   GetOrCreateChatProvider._({
     required GetOrCreateChatFamily super.from,
     required ({
@@ -288,9 +453,10 @@ final class GetOrCreateChatProvider
   }
 }
 
-String _$getOrCreateChatHash() => r'6c35570b1d7d98b8d8c2579d488b963159ff4493';
+String _$getOrCreateChatHash() => r'47ac931225ce77e4b9437c46d58b4d2baa35a032';
 
-/// Create or get private chat
+/// Returns an existing direct chat or a local draft. The draft is persisted
+/// to Firestore on first message send.
 
 final class GetOrCreateChatFamily extends $Family
     with
@@ -314,7 +480,8 @@ final class GetOrCreateChatFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Create or get private chat
+  /// Returns an existing direct chat or a local draft. The draft is persisted
+  /// to Firestore on first message send.
 
   GetOrCreateChatProvider call({
     required String userId1,
@@ -339,12 +506,12 @@ final class GetOrCreateChatFamily extends $Family
   String toString() => r'getOrCreateChatProvider';
 }
 
-/// Fetch the ride group chat for a given ride ID, or null if none exists.
+/// Fetches the ride group chat for [rideId], or null if none exists.
 
 @ProviderFor(rideChatByRideId)
 final rideChatByRideIdProvider = RideChatByRideIdFamily._();
 
-/// Fetch the ride group chat for a given ride ID, or null if none exists.
+/// Fetches the ride group chat for [rideId], or null if none exists.
 
 final class RideChatByRideIdProvider
     extends
@@ -354,7 +521,7 @@ final class RideChatByRideIdProvider
           FutureOr<ChatModel?>
         >
     with $FutureModifier<ChatModel?>, $FutureProvider<ChatModel?> {
-  /// Fetch the ride group chat for a given ride ID, or null if none exists.
+  /// Fetches the ride group chat for [rideId], or null if none exists.
   RideChatByRideIdProvider._({
     required RideChatByRideIdFamily super.from,
     required String super.argument,
@@ -398,9 +565,9 @@ final class RideChatByRideIdProvider
   }
 }
 
-String _$rideChatByRideIdHash() => r'bf68791f02ef532ec899a008d727c0208e0c12ae';
+String _$rideChatByRideIdHash() => r'6e3be780290c8d5f663870c558c286804a7544b7';
 
-/// Fetch the ride group chat for a given ride ID, or null if none exists.
+/// Fetches the ride group chat for [rideId], or null if none exists.
 
 final class RideChatByRideIdFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<ChatModel?>, String> {
@@ -413,7 +580,7 @@ final class RideChatByRideIdFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Fetch the ride group chat for a given ride ID, or null if none exists.
+  /// Fetches the ride group chat for [rideId], or null if none exists.
 
   RideChatByRideIdProvider call({required String rideId}) =>
       RideChatByRideIdProvider._(argument: rideId, from: this);

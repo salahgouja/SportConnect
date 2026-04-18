@@ -44,9 +44,9 @@ abstract class EarningsTransaction with _$EarningsTransaction {
     required String rideId,
     required double amount,
     required String description,
+    @RequiredTimestampConverter() required DateTime createdAt,
     @Default(TransactionType.ride)
     TransactionType type, // ride, bonus, refund, payout
-    @RequiredTimestampConverter() required DateTime createdAt,
   }) = _EarningsTransaction;
 
   factory EarningsTransaction.fromJson(Map<String, dynamic> json) =>

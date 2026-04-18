@@ -7,22 +7,22 @@ part of 'leaderboard_entry.dart';
 // **************************************************************************
 
 _LeaderboardEntry _$LeaderboardEntryFromJson(Map json) => _LeaderboardEntry(
-  odid: json['odid'] as String,
+  userId: json['userId'] as String,
   displayName: json['displayName'] as String,
-  photoUrl: json['photoUrl'] as String?,
   totalXP: (json['totalXP'] as num).toInt(),
   level: (json['level'] as num).toInt(),
   rank: (json['rank'] as num).toInt(),
+  photoUrl: json['photoUrl'] as String?,
   ridesThisMonth: (json['ridesThisMonth'] as num?)?.toInt() ?? 0,
 );
 
 Map<String, dynamic> _$LeaderboardEntryToJson(_LeaderboardEntry instance) =>
     <String, dynamic>{
-      'odid': instance.odid,
+      'userId': instance.userId,
       'displayName': instance.displayName,
-      'photoUrl': instance.photoUrl,
       'totalXP': instance.totalXP,
       'level': instance.level,
       'rank': instance.rank,
+      'photoUrl': instance.photoUrl,
       'ridesThisMonth': instance.ridesThisMonth,
     };

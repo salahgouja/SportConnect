@@ -3,8 +3,8 @@ import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/models/user/user_model.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/routing_service.dart';
@@ -96,8 +96,7 @@ class PendingBookingState {
   RideBooking? get booking => bookingData;
 
   bool get isAcceptedNeedsPayment =>
-      booking?.status == BookingStatus.accepted &&
-      booking?.paidAt == null;
+      booking?.status == BookingStatus.accepted && booking?.paidAt == null;
 
   bool get isPending => booking?.status == BookingStatus.pending;
 
@@ -314,14 +313,16 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
           )
           .toList(growable: false);
 
-      final routeInfo = await RoutingService.getRoute(
-        origin: LatLng(ride.origin.latitude, ride.origin.longitude),
-        destination: LatLng(
-          ride.destination.latitude,
-          ride.destination.longitude,
-        ),
-        waypoints: waypoints.isEmpty ? null : waypoints,
-      );
+      final routeInfo = await ref
+          .read(routingServiceProvider)
+          .getRoute(
+            origin: LatLng(ride.origin.latitude, ride.origin.longitude),
+            destination: LatLng(
+              ride.destination.latitude,
+              ride.destination.longitude,
+            ),
+            waypoints: waypoints.isEmpty ? null : waypoints,
+          );
 
       if (!ref.mounted) {
         return;
@@ -337,7 +338,7 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
         loadingRouteKey: null,
         isLoadingOsrmRoute: false,
       );
-    } catch (error, stackTrace) {
+    } on Exception catch (error, stackTrace) {
       TalkerService.error(
         'Error loading pending booking OSRM route',
         error,
@@ -470,7 +471,7 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
               bookingId: booking.id,
               paymentIntentId: paymentIntentId,
             );
-      } catch (_) {
+      } on Exception catch (_) {
         // Best effort only.
       }
 
@@ -504,7 +505,7 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
       _enqueueEffect(
         PendingBookingEffect.snackbar('Payment failed: ${error.message}'),
       );
-    } catch (error, stackTrace) {
+    } on Exception catch (error, stackTrace) {
       TalkerService.error('Pending booking payment failed', error, stackTrace);
       if (!ref.mounted) {
         return;
@@ -543,7 +544,7 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
         isCancelling: false,
       );
       _enqueueEffect(const PendingBookingEffect.navigateMyRides());
-    } catch (error, stackTrace) {
+    } on Exception catch (error, stackTrace) {
       TalkerService.error(
         'Pending booking cancellation failed',
         error,

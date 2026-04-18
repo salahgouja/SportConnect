@@ -2,6 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/features/auth/repositories/auth_repository.dart'
+    show AuthRepository;
 
 part 'user_providers.g.dart';
 

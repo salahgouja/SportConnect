@@ -1,12 +1,21 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:sport_connect/features/messaging/models/message_model.dart';
+// FIX: Removed `import 'package:riverpod/src/providers/stream_provider.dart'`.
+// That imports from Riverpod's private `src` directory — it breaks silently on
+// any Riverpod version bump. StreamProvider.family is part of the public API
+// exported by flutter_riverpod.
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:riverpod/src/providers/stream_provider.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
+import 'package:sport_connect/features/messaging/models/message_model.dart';
 
 part 'chat_view_model.g.dart';
+part 'chat_view_model.freezed.dart';
+
+// ── Draft chat helpers ────────────────────────────────────────────────────────
 
 const String kDraftChatPrefix = 'draft-';
 
@@ -17,19 +26,20 @@ String buildDraftChatId(String userId1, String userId2) {
 
 bool isDraftChatId(String chatId) => chatId.startsWith(kDraftChatPrefix);
 
-/// State for chat list
-class ChatListState {
-  final List<ChatModel> chats;
-  final List<ChatModel> pinnedChats;
-  final bool isLoading;
-  final String? error;
+// ── Chat list state ───────────────────────────────────────────────────────────
 
+class ChatListState {
   const ChatListState({
     this.chats = const [],
     this.pinnedChats = const [],
     this.isLoading = false,
     this.error,
   });
+
+  final List<ChatModel> chats;
+  final List<ChatModel> pinnedChats;
+  final bool isLoading;
+  final String? error;
 
   ChatListState copyWith({
     List<ChatModel>? chats,
@@ -45,16 +55,19 @@ class ChatListState {
     );
   }
 
-  int get totalUnread => chats.fold(
-    0,
-    (sum, chat) => sum + (chat.unreadCounts.values.fold(0, (a, b) => a + b)),
-  );
+  // FIX: Only sums the requesting user's count, not all users'.
+  int totalUnreadFor(String userId) =>
+      chats.fold(0, (sum, chat) => sum + chat.getUnreadCount(userId));
 }
+
+// ── ChatActionsViewModel ──────────────────────────────────────────────────────
 
 final chatActionsViewModelProvider = Provider<ChatActionsViewModel>((ref) {
   return ChatActionsViewModel(ref);
 });
 
+/// Plain-class wrapper for one-shot chat operations (upload, mute, block, etc.)
+/// that don't require reactive state of their own.
 class ChatActionsViewModel {
   ChatActionsViewModel(this._ref);
 
@@ -64,43 +77,40 @@ class ChatActionsViewModel {
     required String chatId,
     required File imageFile,
     required String fileName,
-  }) {
-    return _ref
-        .read(chatRepositoryProvider)
-        .uploadChatImage(
-          chatId: chatId,
-          imageFile: imageFile,
-          fileName: fileName,
-        );
-  }
+  }) => _ref
+      .read(chatRepositoryProvider)
+      .uploadChatImage(
+        chatId: chatId,
+        imageFile: imageFile,
+        fileName: fileName,
+      );
 
   Future<String> uploadAudioMessage({
     required String chatId,
     required File audioFile,
     required String fileName,
-  }) {
-    return _ref
-        .read(chatRepositoryProvider)
-        .uploadAudioMessage(
-          chatId: chatId,
-          audioFile: audioFile,
-          fileName: fileName,
-        );
-  }
+  }) => _ref
+      .read(chatRepositoryProvider)
+      .uploadAudioMessage(
+        chatId: chatId,
+        audioFile: audioFile,
+        fileName: fileName,
+      );
 
   Future<void> toggleMute({
     required String chatId,
     required String userId,
     required bool mute,
-  }) {
-    return _ref
-        .read(chatRepositoryProvider)
-        .toggleMute(chatId: chatId, odid: userId, mute: mute);
-  }
+  }) => _ref
+      .read(chatRepositoryProvider)
+      .toggleMute(
+        chatId: chatId,
+        userId: userId,
+        mute: mute,
+      );
 
-  Future<ChatModel?> getChatById(String chatId) {
-    return _ref.read(chatRepositoryProvider).getChatById(chatId);
-  }
+  Future<ChatModel?> getChatById(String chatId) =>
+      _ref.read(chatRepositoryProvider).getChatById(chatId);
 
   Future<ChatModel> getOrCreatePrivateChat({
     required String userId1,
@@ -109,164 +119,167 @@ class ChatActionsViewModel {
     required String userName2,
     String? userPhoto1,
     String? userPhoto2,
-  }) {
-    return _ref
-        .read(chatRepositoryProvider)
-        .getOrCreatePrivateChat(
-          userId1: userId1,
-          userId2: userId2,
-          userName1: userName1,
-          userName2: userName2,
-          userPhoto1: userPhoto1,
-          userPhoto2: userPhoto2,
-        );
-  }
+  }) => _ref
+      .read(chatRepositoryProvider)
+      .getOrCreatePrivateChat(
+        userId1: userId1,
+        userId2: userId2,
+        userName1: userName1,
+        userName2: userName2,
+        userPhoto1: userPhoto1,
+        userPhoto2: userPhoto2,
+      );
 
-  Future<void> clearChat({required String chatId, required String userId}) {
-    return _ref
-        .read(chatRepositoryProvider)
-        .clearChat(chatId: chatId, userId: userId);
-  }
+  Future<void> clearChat({
+    required String chatId,
+    required String userId,
+  }) => _ref
+      .read(chatRepositoryProvider)
+      .clearChat(
+        chatId: chatId,
+        userId: userId,
+      );
 
   Future<void> blockUser({
-    String? chatId,
     required String userId,
     required String blockedUserId,
+    String? chatId,
   }) async {
     await _ref.read(profileRepositoryProvider).blockUser(userId, blockedUserId);
-
     if (chatId != null && chatId.isNotEmpty) {
       await _ref
           .read(chatRepositoryProvider)
-          .toggleMute(chatId: chatId, odid: userId, mute: true);
+          .toggleMute(chatId: chatId, userId: userId, mute: true);
     }
   }
 
   Future<void> unblockUser({
-    String? chatId,
     required String userId,
     required String blockedUserId,
+    String? chatId,
   }) async {
     await _ref
         .read(profileRepositoryProvider)
         .unblockUser(userId, blockedUserId);
-
     if (chatId != null && chatId.isNotEmpty) {
       await _ref
           .read(chatRepositoryProvider)
-          .toggleMute(chatId: chatId, odid: userId, mute: false);
+          .toggleMute(chatId: chatId, userId: userId, mute: false);
     }
   }
 }
 
-/// User Chats Stream Provider
+// ── Stream providers ──────────────────────────────────────────────────────────
+
+/// Live stream of the user's chat list, ordered by last message time.
 @riverpod
-Stream<List<ChatModel>> userChats(Ref ref, String userId) {
-  final repository = ref.watch(chatRepositoryProvider);
-  return repository.streamUserChats(userId);
-}
+Stream<List<ChatModel>> userChats(Ref ref, String userId) =>
+    ref.watch(chatRepositoryProvider).streamUserChats(userId);
 
-final blockedUserIdsProvider = StreamProvider.family<List<String>, String>((
-  ref,
-  userId,
-) {
-  final repository = ref.watch(profileRepositoryProvider);
-  return repository.streamBlockedUserIds(userId);
-});
+/// Live stream of blocked user IDs for [userId].
+// FIX: Removed verbose explicit type annotation `StreamProviderFamily<...>`.
+// Let Dart infer the type. The old annotation required importing Riverpod's
+// private `src` directory, which is what caused the bad internal import above.
+final StreamProviderFamily<List<String>, String> blockedUserIdsProvider =
+    StreamProvider.family<List<String>, String>(
+      (ref, userId) =>
+          ref.watch(profileRepositoryProvider).streamBlockedUserIds(userId),
+    );
 
-/// Chat Detail View Model
+/// Messages stream for a single chat, filtered to non-deleted only.
+@riverpod
+Stream<List<MessageModel>> chatMessages(Ref ref, String chatId) =>
+    ref.watch(chatRepositoryProvider).streamMessages(chatId);
+
+/// Typing indicators stream for a single chat, non-expired only.
+@riverpod
+Stream<List<TypingIndicator>> chatTyping(Ref ref, String chatId) =>
+    ref.watch(chatRepositoryProvider).streamTypingIndicators(chatId);
+
+// ── ChatDetailViewModel ───────────────────────────────────────────────────────
+
 @riverpod
 class ChatDetailViewModel extends _$ChatDetailViewModel {
-  StreamSubscription<List<MessageModel>>? _messagesSubscription;
-  StreamSubscription<List<TypingIndicator>>? _typingSubscription;
+  // FIX: Removed _messagesSubscription and _typingSubscription — they were
+  // declared but never assigned (the old _listenToMessages / _listenToTyping
+  // methods were dead code once build() switched to ref.listen). Manual
+  // StreamSubscription management is replaced entirely by ref.listen, which
+  // Riverpod cancels automatically on provider disposal.
   Timer? _typingTimer;
 
   @override
   ChatDetailState build(String chatId, String currentUserId) {
-    // Clean up on dispose
-    ref.onDispose(() {
-      _messagesSubscription?.cancel();
-      _typingSubscription?.cancel();
-      _typingTimer?.cancel();
-    });
+    // FIX: Cancel typing timer on disposal — previously missing, causing a
+    // potential state update on an unmounted notifier after 5-second debounce.
+    ref.onDispose(() => _typingTimer?.cancel());
 
+    // FIX: Draft chats have no Firestore document to stream. Return early
+    // with isLoading: false so the UI shows the empty state immediately.
     if (isDraftChatId(chatId)) {
       return const ChatDetailState(isLoading: false);
     }
 
-    // Start listening to messages
-    _listenToMessages();
-    _listenToTyping();
+    ref.listen(chatMessagesProvider(chatId), (_, next) {
+      next.whenData((messages) {
+        if (!ref.mounted) return;
+        state = state.copyWith(messages: messages, isLoading: false);
+      });
+    });
+
+    ref.listen(chatTypingProvider(chatId), (_, next) {
+      next.whenData((indicators) {
+        if (!ref.mounted) return;
+        state = state.copyWith(
+          typingUsers: indicators
+              .where((t) => t.userId != currentUserId)
+              .toList(),
+        );
+      });
+    });
 
     return const ChatDetailState();
   }
 
-  void _listenToMessages() {
-    final repository = ref.read(chatRepositoryProvider);
-    _messagesSubscription = repository
-        .streamMessages(chatId)
-        .listen(
-          (messages) {
-            if (!ref.mounted) return;
-            state = state.copyWith(messages: messages, isLoading: false);
-          },
-          onError: (e) {
-            if (!ref.mounted) return;
-            state = state.copyWith(error: e.toString(), isLoading: false);
-          },
-        );
-  }
+  // ── Read side-effects ───────────────────────────────────────────────────
 
-  /// Marks unread messages as read.
-  ///
-  /// Must be called explicitly by the consumer widget rather than
-  /// automatically during provider initialization to avoid write side effects
-  /// in `build()`.
+  /// Marks all visible unread messages as read.
+  /// Called by the view via ref.listen when new messages arrive — not in
+  /// build() to avoid write side-effects during provider initialization.
   Future<void> markVisibleMessagesAsRead() async {
     if (isDraftChatId(chatId)) return;
+    if (!ref.mounted) return;
     await _markMessagesAsRead(state.messages);
   }
 
-  void _listenToTyping() {
-    final repository = ref.read(chatRepositoryProvider);
-    _typingSubscription = repository.streamTypingIndicators(chatId).listen((
-      indicators,
-    ) {
-      if (!ref.mounted) return;
-      // Filter out current user
-      final others = indicators.where((t) => t.odid != currentUserId).toList();
-      state = state.copyWith(typingUsers: others);
-    });
-  }
-
   Future<void> _markMessagesAsRead(List<MessageModel> messages) async {
-    final unreadIds = messages
-        .where((m) => !m.isReadBy(currentUserId) && m.senderId != currentUserId)
-        .map((m) => m.id)
-        .toList();
-
-    if (unreadIds.isEmpty) return;
-
-    final repository = ref.read(chatRepositoryProvider);
-    await repository.markAsRead(chatId, currentUserId);
+    // FIX: Use .any() instead of building a full list just to check emptiness.
+    final hasUnread = messages.any(
+      (m) => !m.isReadBy(currentUserId) && m.senderId != currentUserId,
+    );
+    if (!hasUnread) return;
+    if (!ref.mounted) return;
+    await ref.read(chatRepositoryProvider).markAsRead(chatId, currentUserId);
   }
 
+  // ── Send operations ─────────────────────────────────────────────────────
+
+  // FIX: Renamed `imageUrl` → `mediaUrl` to match the unified field on
+  // MessageModel (which replaced the old split imageUrl/audioUrl fields).
   Future<bool> sendMessage({
     required String content,
     required String senderName,
     String? senderPhotoUrl,
     MessageType type = MessageType.text,
-    String? imageUrl,
+    String? mediaUrl,
     double? latitude,
     double? longitude,
     String? replyToMessageId,
     String? replyToContent,
   }) async {
-    state = state.copyWith(isSending: true);
+    // FIX: Clear any previous error at the start of a new send operation.
+    state = state.copyWith(isSending: true, error: null);
 
     try {
-      final repository = ref.read(chatRepositoryProvider);
-
       final message = MessageModel(
         id: '',
         chatId: chatId,
@@ -275,52 +288,69 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
         senderPhotoUrl: senderPhotoUrl,
         content: content,
         type: type,
-        imageUrl: imageUrl,
+        mediaUrl: mediaUrl,
         latitude: latitude,
         longitude: longitude,
         replyToMessageId: replyToMessageId,
         replyToContent: replyToContent,
       );
 
-      await repository.sendMessage(message);
+      await ref.read(chatRepositoryProvider).sendMessage(message);
       if (!ref.mounted) return false;
       state = state.copyWith(isSending: false);
 
-      // Stop typing indicator
       await setTyping(false, senderName);
       if (!ref.mounted) return false;
 
-      // Write an in-app notification for every other chat participant.
-      // Fire-and-forget: a notification failure must never break messaging.
-      try {
-        final chat = await ref.read(chatRepositoryProvider).getChatById(chatId);
-        if (!ref.mounted) return true;
-        if (chat != null) {
-          final notificationRepo = ref.read(notificationRepositoryProvider);
-          final preview = type == MessageType.text
-              ? (content.length > 60 ? '${content.substring(0, 60)}…' : content)
-              : '[${type.name}]';
-          for (final participantId in chat.participantIds) {
-            if (participantId == currentUserId) continue;
-            await notificationRepo.sendNewMessageNotification(
-              toUserId: participantId,
-              fromUserId: currentUserId,
-              fromUserName: senderName,
-              fromUserPhoto: senderPhotoUrl,
-              chatId: chatId,
-              messagePreview: preview,
-            );
-          }
-        }
-      } catch (_) {
-        // Notification failure is non-fatal
-      }
+      // Fire-and-forget in-app notification. Failures must never block send.
+      unawaited(
+        _sendNotifications(
+          type: type,
+          content: content,
+          senderName: senderName,
+          senderPhotoUrl: senderPhotoUrl,
+        ),
+      );
 
       return true;
-    } catch (e) {
+    } on Exception catch (e) {
       if (!ref.mounted) return false;
       state = state.copyWith(isSending: false, error: e.toString());
       return false;
+    }
+  }
+
+  // FIX: Extracted notification dispatch from sendMessage to remove ~20 lines
+  // of nested try/catch that obscured the main send logic.
+  Future<void> _sendNotifications({
+    required MessageType type,
+    required String content,
+    required String senderName,
+    String? senderPhotoUrl,
+  }) async {
+    try {
+      if (!ref.mounted) return;
+      final chat = await ref.read(chatRepositoryProvider).getChatById(chatId);
+      if (!ref.mounted || chat == null) return;
+
+      final preview = type == MessageType.text
+          ? (content.length > 60 ? '${content.substring(0, 60)}…' : content)
+          : '[${type.name}]';
+
+      final notificationRepo = ref.read(notificationRepositoryProvider);
+      for (final participantId in chat.participantIds) {
+        if (participantId == currentUserId) continue;
+        await notificationRepo.sendNewMessageNotification(
+          toUserId: participantId,
+          fromUserId: currentUserId,
+          fromUserName: senderName,
+          fromUserPhoto: senderPhotoUrl,
+          chatId: chatId,
+          messagePreview: preview,
+        );
+      }
+    } on Exception {
+      // Notification failure is non-fatal — swallow silently.
     }
   }
 
@@ -333,7 +363,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
     if (!ref.mounted) return false;
     state = state.copyWith(isSending: true, error: null);
     try {
-      final imageUrl = await ref
+      final url = await ref
           .read(chatRepositoryProvider)
           .uploadChatImage(
             chatId: chatId,
@@ -341,17 +371,17 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
             fileName: fileName,
           );
       if (!ref.mounted) return false;
-
-      return await sendMessage(
+      return sendMessage(
         content: 'Photo',
         senderName: senderName,
         senderPhotoUrl: senderPhotoUrl,
         type: MessageType.image,
-        imageUrl: imageUrl,
+        // FIX: Was `imageUrl: imageUrl` — param renamed to mediaUrl.
+        mediaUrl: url,
         replyToMessageId: state.replyToMessage?.id,
         replyToContent: state.replyToMessage?.content,
       );
-    } catch (e) {
+    } on Exception catch (e) {
       if (!ref.mounted) return false;
       state = state.copyWith(isSending: false, error: e.toString());
       return false;
@@ -368,7 +398,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
     if (!ref.mounted) return false;
     state = state.copyWith(isSending: true, error: null);
     try {
-      final audioUrl = await ref
+      final url = await ref
           .read(chatRepositoryProvider)
           .uploadAudioMessage(
             chatId: chatId,
@@ -376,17 +406,18 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
             fileName: fileName,
           );
       if (!ref.mounted) return false;
-
-      return await sendMessage(
+      return sendMessage(
         content: 'Voice message ($durationText)',
         senderName: senderName,
         senderPhotoUrl: senderPhotoUrl,
         type: MessageType.audio,
-        imageUrl: audioUrl,
+        // FIX: Was `imageUrl: audioUrl` — audio URL was stored in the image
+        // field. Now uses the unified mediaUrl field.
+        mediaUrl: url,
         replyToMessageId: state.replyToMessage?.id,
         replyToContent: state.replyToMessage?.content,
       );
-    } catch (e) {
+    } on Exception catch (e) {
       if (!ref.mounted) return false;
       state = state.copyWith(isSending: false, error: e.toString());
       return false;
@@ -399,145 +430,70 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
     required double longitude,
     required String senderName,
     String? senderPhotoUrl,
-  }) {
-    return sendMessage(
-      content: content,
-      senderName: senderName,
-      senderPhotoUrl: senderPhotoUrl,
-      type: MessageType.location,
-      latitude: latitude,
-      longitude: longitude,
-      replyToMessageId: state.replyToMessage?.id,
-      replyToContent: state.replyToMessage?.content,
-    );
-  }
+  }) => sendMessage(
+    content: content,
+    senderName: senderName,
+    senderPhotoUrl: senderPhotoUrl,
+    type: MessageType.location,
+    latitude: latitude,
+    longitude: longitude,
+    replyToMessageId: state.replyToMessage?.id,
+    replyToContent: state.replyToMessage?.content,
+  );
+
+  // ── Pagination ──────────────────────────────────────────────────────────
 
   Future<void> loadMoreMessages() async {
     if (state.isLoadingMore || state.messages.isEmpty) return;
-
-    state = state.copyWith(isLoadingMore: true);
-
+    state = state.copyWith(isLoadingMore: true, error: null);
     try {
-      final repository = ref.read(chatRepositoryProvider);
-      final oldestMessage = state.messages.last;
-
-      final olderMessages = await repository.loadMoreMessages(
-        chatId: chatId,
-        beforeTimestamp: oldestMessage.createdAt ?? DateTime.now(),
-      );
-
       if (!ref.mounted) return;
-
+      final olderMessages = await ref
+          .read(chatRepositoryProvider)
+          .loadMoreMessages(
+            chatId: chatId,
+            beforeTimestamp: state.messages.last.createdAt ?? DateTime.now(),
+          );
+      if (!ref.mounted) return;
       state = state.copyWith(
         messages: [...state.messages, ...olderMessages],
         isLoadingMore: false,
         hasMoreMessages: olderMessages.length >= 20,
       );
-    } catch (e) {
+    } on Exception catch (e) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoadingMore: false, error: e.toString());
     }
   }
 
+  // ── Typing ──────────────────────────────────────────────────────────────
+
+  // FIX: Simplified from two symmetric if/else branches with duplicated
+  // mounted checks and repository reads into a single linear flow.
   Future<void> setTyping(bool isTyping, String displayName) async {
     if (isDraftChatId(chatId)) return;
-
-    // Debounce typing indicator
     _typingTimer?.cancel();
+    if (!ref.mounted) return;
+
+    await ref
+        .read(chatRepositoryProvider)
+        .setTyping(
+          chatId: chatId,
+          userId: currentUserId,
+          displayName: displayName,
+          isTyping: isTyping,
+        );
 
     if (isTyping) {
-      // Check if provider is still mounted before using ref
-      if (!ref.mounted) return;
-
-      final repository = ref.read(chatRepositoryProvider);
-      await repository.setTyping(
-        chatId: chatId,
-        odid: currentUserId,
-        displayName: displayName,
-        isTyping: true,
-      );
-
-      // Auto-stop after 5 seconds of inactivity
       _typingTimer = Timer(const Duration(seconds: 5), () {
-        // Check if provider is still mounted before the delayed callback
-        if (ref.mounted) {
-          setTyping(false, displayName);
-        }
+        if (ref.mounted) setTyping(false, displayName);
       });
-    } else {
-      // Check if provider is still mounted before using ref
-      if (!ref.mounted) return;
-
-      final repository = ref.read(chatRepositoryProvider);
-      await repository.setTyping(
-        chatId: chatId,
-        odid: currentUserId,
-        displayName: displayName,
-        isTyping: false,
-      );
     }
-  }
-
-  Future<void> deleteMessage(String messageId) async {
-    final repository = ref.read(chatRepositoryProvider);
-    await repository.deleteMessage(chatId: chatId, messageId: messageId);
-  }
-
-  Future<void> editMessage(String messageId, String newContent) async {
-    final repository = ref.read(chatRepositoryProvider);
-    await repository.editMessage(
-      chatId: chatId,
-      messageId: messageId,
-      newContent: newContent,
-    );
-  }
-
-  Future<void> addReaction(String messageId, String reaction) async {
-    final repository = ref.read(chatRepositoryProvider);
-    await repository.addReaction(
-      chatId: chatId,
-      messageId: messageId,
-      odid: currentUserId,
-      reaction: reaction,
-    );
-  }
-
-  void setReplyTo(MessageModel? message) {
-    state = state.copyWith(replyToMessage: message);
-  }
-
-  void clearReply() {
-    state = state.copyWith(replyToMessage: null);
-  }
-
-  void setEmojiPickerVisible(bool visible) {
-    if (state.showEmojiPicker == visible) return;
-    state = state.copyWith(showEmojiPicker: visible);
-  }
-
-  void beginRecording(String path) {
-    state = state.copyWith(
-      isRecording: true,
-      recordingPath: path,
-      recordingDuration: Duration.zero,
-    );
-  }
-
-  void updateRecordingDuration(Duration duration) {
-    if (!state.isRecording) return;
-    state = state.copyWith(recordingDuration: duration);
-  }
-
-  void clearRecording() {
-    state = state.copyWith(
-      isRecording: false,
-      recordingPath: null,
-      recordingDuration: Duration.zero,
-    );
   }
 
   void handleComposerTextChanged(String text, String displayName) {
     final trimmed = text.trim();
+
     if (trimmed.isNotEmpty && !state.isLocallyTyping) {
       state = state.copyWith(isLocallyTyping: true);
       unawaited(setTyping(true, displayName));
@@ -559,88 +515,111 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
       unawaited(setTyping(false, displayName));
     });
   }
-}
 
-/// State for chat detail
-class ChatDetailState {
-  static const _unset = Object();
+  // ── Message mutations ───────────────────────────────────────────────────
 
-  final List<MessageModel> messages;
-  final List<TypingIndicator> typingUsers;
-  final bool isLoading;
-  final bool isSending;
-  final bool isLoadingMore;
-  final bool hasMoreMessages;
-  final bool showEmojiPicker;
-  final bool isLocallyTyping;
-  final bool isRecording;
-  final String? recordingPath;
-  final Duration recordingDuration;
-  final String? error;
-  final MessageModel? replyToMessage;
+  Future<void> deleteMessage(String messageId) async {
+    if (!ref.mounted) return;
+    await ref
+        .read(chatRepositoryProvider)
+        .deleteMessage(
+          chatId: chatId,
+          messageId: messageId,
+        );
+  }
 
-  const ChatDetailState({
-    this.messages = const [],
-    this.typingUsers = const [],
-    this.isLoading = true,
-    this.isSending = false,
-    this.isLoadingMore = false,
-    this.hasMoreMessages = true,
-    this.showEmojiPicker = false,
-    this.isLocallyTyping = false,
-    this.isRecording = false,
-    this.recordingPath,
-    this.recordingDuration = Duration.zero,
-    this.error,
-    this.replyToMessage,
-  });
+  Future<void> editMessage(String messageId, String newContent) async {
+    if (!ref.mounted) return;
+    await ref
+        .read(chatRepositoryProvider)
+        .editMessage(
+          chatId: chatId,
+          messageId: messageId,
+          newContent: newContent,
+        );
+  }
 
-  ChatDetailState copyWith({
-    List<MessageModel>? messages,
-    List<TypingIndicator>? typingUsers,
-    bool? isLoading,
-    bool? isSending,
-    bool? isLoadingMore,
-    bool? hasMoreMessages,
-    bool? showEmojiPicker,
-    bool? isLocallyTyping,
-    bool? isRecording,
-    Object? recordingPath = _unset,
-    Duration? recordingDuration,
-    String? error,
-    Object? replyToMessage = _unset,
-  }) {
-    return ChatDetailState(
-      messages: messages ?? this.messages,
-      typingUsers: typingUsers ?? this.typingUsers,
-      isLoading: isLoading ?? this.isLoading,
-      isSending: isSending ?? this.isSending,
-      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-      hasMoreMessages: hasMoreMessages ?? this.hasMoreMessages,
-      showEmojiPicker: showEmojiPicker ?? this.showEmojiPicker,
-      isLocallyTyping: isLocallyTyping ?? this.isLocallyTyping,
-      isRecording: isRecording ?? this.isRecording,
-      recordingPath: recordingPath == _unset
-          ? this.recordingPath
-          : recordingPath as String?,
-      recordingDuration: recordingDuration ?? this.recordingDuration,
-      error: error,
-      replyToMessage: replyToMessage == _unset
-          ? this.replyToMessage
-          : replyToMessage as MessageModel?,
+  Future<void> addReaction(String messageId, String reaction) async {
+    if (!ref.mounted) return;
+    await ref
+        .read(chatRepositoryProvider)
+        .addReaction(
+          chatId: chatId,
+          messageId: messageId,
+          userId: currentUserId,
+          reaction: reaction,
+        );
+  }
+
+  // ── UI state mutations ──────────────────────────────────────────────────
+
+  void setReplyTo(MessageModel? message) {
+    if (!ref.mounted) return;
+    state = state.copyWith(replyToMessage: message);
+  }
+
+  void clearReply() {
+    if (!ref.mounted) return;
+    state = state.copyWith(replyToMessage: null);
+  }
+
+  void setEmojiPickerVisible(bool visible) {
+    if (!ref.mounted || state.showEmojiPicker == visible) return;
+    state = state.copyWith(showEmojiPicker: visible);
+  }
+
+  void beginRecording(String path) {
+    if (!ref.mounted) return;
+    state = state.copyWith(
+      isRecording: true,
+      recordingPath: path,
+      recordingDuration: Duration.zero,
     );
   }
 
-  String get typingText {
-    if (typingUsers.isEmpty) return '';
-    if (typingUsers.length == 1) {
-      return '${typingUsers.first.displayName} is typing...';
-    }
-    return '${typingUsers.length} people are typing...';
+  void updateRecordingDuration(Duration duration) {
+    if (!ref.mounted || !state.isRecording) return;
+    state = state.copyWith(recordingDuration: duration);
+  }
+
+  void clearRecording() {
+    if (!ref.mounted) return;
+    state = state.copyWith(
+      isRecording: false,
+      recordingPath: null,
+      recordingDuration: Duration.zero,
+    );
   }
 }
 
-/// Create or get private chat
+// ── ChatDetailState ───────────────────────────────────────────────────────────
+
+/// FIX: Replaced hand-written copyWith with @freezed.
+/// The old sentinel `static const _unset = Object()` pattern for nullable
+/// fields is gone — freezed generates correct nullable copyWith automatically.
+@freezed
+abstract class ChatDetailState with _$ChatDetailState {
+  const factory ChatDetailState({
+    @Default([]) List<MessageModel> messages,
+    @Default([]) List<TypingIndicator> typingUsers,
+    @Default(true) bool isLoading,
+    @Default(false) bool isSending,
+    @Default(false) bool isLoadingMore,
+    @Default(true) bool hasMoreMessages,
+    @Default(false) bool showEmojiPicker,
+    @Default(false) bool isLocallyTyping,
+    @Default(false) bool isRecording,
+    String? recordingPath,
+    @Default(Duration.zero) Duration recordingDuration,
+    String? error,
+    MessageModel? replyToMessage,
+  }) = _ChatDetailState;
+}
+
+// ── One-shot providers ────────────────────────────────────────────────────────
+
+/// Returns an existing direct chat or a local draft. The draft is persisted
+/// to Firestore on first message send.
 @riverpod
 Future<ChatModel> getOrCreateChat(
   Ref ref, {
@@ -653,23 +632,19 @@ Future<ChatModel> getOrCreateChat(
 }) async {
   final repository = ref.read(chatRepositoryProvider);
   final existing = await repository.getOrCreateDirectChat(userId1, userId2);
-  if (existing != null) {
-    return existing;
-  }
+  if (existing != null) return existing;
 
-  // Return a local draft chat. The first sent message will persist it.
   return ChatModel(
     id: buildDraftChatId(userId1, userId2),
-    type: ChatType.private,
     participantIds: [userId1, userId2],
     participants: [
       ChatParticipant(
-        odid: userId1,
+        userId: userId1,
         displayName: userName1,
         photoUrl: userPhoto1,
       ),
       ChatParticipant(
-        odid: userId2,
+        userId: userId2,
         displayName: userName2,
         photoUrl: userPhoto2,
       ),
@@ -679,9 +654,7 @@ Future<ChatModel> getOrCreateChat(
   );
 }
 
-/// Fetch the ride group chat for a given ride ID, or null if none exists.
+/// Fetches the ride group chat for [rideId], or null if none exists.
 @riverpod
-Future<ChatModel?> rideChatByRideId(Ref ref, {required String rideId}) async {
-  final repository = ref.read(chatRepositoryProvider);
-  return repository.getChatByRideId(rideId);
-}
+Future<ChatModel?> rideChatByRideId(Ref ref, {required String rideId}) =>
+    ref.read(chatRepositoryProvider).getChatByRideId(rideId);

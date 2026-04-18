@@ -48,8 +48,6 @@ enum NotificationPriority { low, normal, high, urgent }
 /// Notification model
 @freezed
 abstract class NotificationModel with _$NotificationModel {
-  const NotificationModel._();
-
   const factory NotificationModel({
     required String id,
     required String userId,
@@ -81,6 +79,7 @@ abstract class NotificationModel with _$NotificationModel {
     @TimestampConverter() DateTime? readAt,
     @TimestampConverter() DateTime? expiresAt,
   }) = _NotificationModel;
+  const NotificationModel._();
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) =>
       _$NotificationModelFromJson(json);

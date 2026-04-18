@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
-import 'package:sport_connect/core/widgets/premium_button.dart';
-import 'package:sport_connect/features/rides/models/driver_stats.dart';
-import 'package:sport_connect/features/rides/view_models/driver_view_model.dart';
-import 'package:sport_connect/features/payments/view_models/payment_view_model.dart';
-import 'package:intl/intl.dart';
-import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
 import 'package:sport_connect/core/widgets/analytics_payment_widgets.dart';
+import 'package:sport_connect/core/widgets/premium_button.dart';
+import 'package:sport_connect/features/payments/view_models/payment_view_model.dart';
+import 'package:sport_connect/features/rides/models/driver_stats.dart';
+import 'package:sport_connect/features/rides/view_models/driver_view_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Driver Earnings Screen  - View earnings with real Firestore data
 ///
@@ -141,7 +141,7 @@ class DriverEarningsScreen extends ConsumerWidget {
           slivers: [
             // App Bar
             SliverAppBar(
-              expandedHeight: 280.h,
+              expandedHeight: 160.h,
               pinned: true,
               backgroundColor: AppColors.primary,
               flexibleSpace: FlexibleSpaceBar(
@@ -273,13 +273,14 @@ class DriverEarningsScreen extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 Text(
-                  '${AppLocalizations.of(context).totalEarnings} · ${_periodLabel(context, selectedPeriod)}',
+                  _periodLabel(context, selectedPeriod),
                   style: TextStyle(
-                    fontSize: 14.sp,
-                    color: Colors.white.withValues(alpha: 0.8),
+                    fontSize: 13.sp,
+                    color: Colors.white.withValues(alpha: 0.75),
+                    letterSpacing: 0.5,
                   ),
                 ),
-                SizedBox(height: 8.h),
+                SizedBox(height: 6.h),
                 Text(
                   AppLocalizations.of(context).value5(
                     (() {
@@ -296,69 +297,26 @@ class DriverEarningsScreen extends ConsumerWidget {
                     })().toStringAsFixed(0),
                   ),
                   style: TextStyle(
-                    fontSize: 42.sp,
+                    fontSize: 40.sp,
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
                     letterSpacing: -1,
                   ),
-                ).animate().fadeIn().scale(begin: const Offset(0.8, 0.8)),
-                SizedBox(height: 8.h),
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 12.w,
-                    vertical: 6.h,
+                ).animate().fadeIn().scale(begin: const Offset(0.9, 0.9)),
+                SizedBox(height: 6.h),
+                Text(
+                  () {
+                    final rides = switch (selectedPeriod) {
+                      'thisWeek' => stats.ridesThisWeek,
+                      'thisMonth' => stats.ridesThisMonth,
+                      _ => stats.totalRides,
+                    };
+                    return '$rides ${AppLocalizations.of(context).totalRides.toLowerCase()}';
+                  }(),
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    color: Colors.white.withValues(alpha: 0.75),
                   ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(20.r),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.trending_up_rounded,
-                        color: AppColors.successLight,
-                        size: 18.sp,
-                      ),
-                      SizedBox(width: 6.w),
-                      Text(
-                        AppLocalizations.of(context).thisWeekValue(
-                          stats.earningsThisWeek.toStringAsFixed(0),
-                        ),
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 24.h),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _HeaderStat(
-                      value: stats.totalRides.toString(),
-                      label: AppLocalizations.of(context).totalRides,
-                    ),
-                    Container(
-                      width: 1,
-                      height: 40.h,
-                      color: Colors.white.withValues(alpha: 0.2),
-                    ),
-                    _HeaderStat(
-                      value: stats.totalRides > 0
-                          ? '${(stats.totalEarnings / stats.totalRides).toStringAsFixed(0)} ${_currencyCode(ref)}'
-                          : '0 ${_currencyCode(ref)}',
-                      label: AppLocalizations.of(context).avgPerRide,
-                    ),
-                    Container(
-                      width: 1,
-                      height: 40.h,
-                      color: Colors.white.withValues(alpha: 0.2),
-                    ),
-                  ],
                 ),
               ],
             ),
@@ -425,47 +383,33 @@ class DriverEarningsScreen extends ConsumerWidget {
     WidgetRef ref,
     String selectedPeriod,
   ) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: _periodKeys.map((period) {
-            final isSelected = period == selectedPeriod;
-            return Padding(
-              padding: EdgeInsets.only(right: 8.w),
-              child: GestureDetector(
-                onTap: () => ref
-                    .read(driverEarningsPeriodViewModelProvider.notifier)
-                    .setPeriod(period),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 20.w,
-                    vertical: 10.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppColors.primary : AppColors.surface,
-                    borderRadius: BorderRadius.circular(20.r),
-                    border: Border.all(
-                      color: isSelected ? AppColors.primary : AppColors.border,
-                    ),
-                    boxShadow: isSelected ? AppSpacing.shadowSm : null,
-                  ),
-                  child: Text(
-                    _periodLabel(context, period),
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
-                      color: isSelected
-                          ? Colors.white
-                          : AppColors.textSecondary,
-                    ),
-                  ),
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 14.h),
+      child: SegmentedButton<String>(
+        segments: _periodKeys
+            .map(
+              (p) => ButtonSegment<String>(
+                value: p,
+                label: Text(
+                  _periodLabel(context, p),
+                  style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
                 ),
               ),
-            );
-          }).toList(),
+            )
+            .toList(),
+        selected: {selectedPeriod},
+        onSelectionChanged: (value) => ref
+            .read(driverEarningsPeriodViewModelProvider.notifier)
+            .setPeriod(value.first),
+        style: SegmentedButton.styleFrom(
+          backgroundColor: AppColors.surface,
+          selectedBackgroundColor: AppColors.primary,
+          selectedForegroundColor: Colors.white,
+          foregroundColor: AppColors.textSecondary,
+          side: BorderSide(color: AppColors.border),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.r),
+          ),
         ),
       ),
     );
@@ -486,19 +430,20 @@ class DriverEarningsScreen extends ConsumerWidget {
           case 'today':
             displayEarnings = stats.earningsToday;
             displayRides = stats.totalRides;
-            break;
           case 'thisWeek':
             displayEarnings = stats.earningsThisWeek;
             displayRides = stats.ridesThisWeek;
-            break;
           case 'thisMonth':
             displayEarnings = stats.earningsThisMonth;
             displayRides = stats.ridesThisMonth;
-            break;
           default:
             displayEarnings = stats.totalEarnings;
             displayRides = stats.totalRides;
         }
+
+        final avgPerRide = displayRides > 0
+            ? '${(displayEarnings / displayRides).toStringAsFixed(0)} ${_currencyCode(ref)}'
+            : '— ${_currencyCode(ref)}';
 
         return Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.w),
@@ -520,8 +465,7 @@ class DriverEarningsScreen extends ConsumerWidget {
                       icon: Icons.attach_money_rounded,
                       iconColor: AppColors.success,
                       title: AppLocalizations.of(context).statEarnings,
-                      value:
-                          '${displayEarnings.toStringAsFixed(0)} ${_currencyCode(ref)}',
+                      value: '${displayEarnings.toStringAsFixed(0)} ${_currencyCode(ref)}',
                     ),
                   ),
                 ],
@@ -536,7 +480,16 @@ class DriverEarningsScreen extends ConsumerWidget {
                       title: AppLocalizations.of(context).statAvgRating,
                       value: stats.rating > 0
                           ? stats.rating.toStringAsFixed(2)
-                          : '-',
+                          : '—',
+                    ),
+                  ),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: _StatCard(
+                      icon: Icons.trending_up_rounded,
+                      iconColor: AppColors.secondary,
+                      title: AppLocalizations.of(context).avgPerRide,
+                      value: avgPerRide,
                     ),
                   ),
                 ],
@@ -626,46 +579,13 @@ class DriverEarningsScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  AppLocalizations.of(context).earningsOverview,
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 10.w,
-                    vertical: 4.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.success.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.trending_up,
-                        size: 14.sp,
-                        color: AppColors.success,
-                      ),
-                      SizedBox(width: 4.w),
-                      Text(
-                        AppLocalizations.of(context).active,
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.success,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+            Text(
+              AppLocalizations.of(context).earningsOverview,
+              style: TextStyle(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
             ),
             SizedBox(height: 20.h),
             // Total earnings breakdown
@@ -781,11 +701,11 @@ class DriverEarningsScreen extends ConsumerWidget {
 
         return stripeStatus.when(
           data: (status) => _buildPayoutCard(context, ref, status),
-          loading: () => _buildPayoutCardLoading(),
+          loading: _buildPayoutCardLoading,
           error: (_, _) => _buildPayoutCard(context, ref, null),
         );
       },
-      loading: () => _buildPayoutCardLoading(),
+      loading: _buildPayoutCardLoading,
       error: (_, _) => _buildErrorPlaceholder(context),
     );
   }
@@ -795,10 +715,10 @@ class DriverEarningsScreen extends ConsumerWidget {
     WidgetRef ref,
     DriverStripeStatus? status,
   ) {
-    final bool isConnected = status?.isConnected ?? false;
-    final bool payoutsEnabled = status?.payoutsEnabled ?? false;
-    final double availableBalance = status?.availableBalance ?? 0.0;
-    final String? stripeAccountId = status?.stripeAccountId;
+    final isConnected = status?.isConnected ?? false;
+    final payoutsEnabled = status?.payoutsEnabled ?? false;
+    final availableBalance = status?.availableBalance ?? 0.0;
+    final stripeAccountId = status?.stripeAccountId;
 
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 20.w),
@@ -930,12 +850,40 @@ class DriverEarningsScreen extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              AppLocalizations.of(context).availableBalance,
-                              style: TextStyle(
-                                fontSize: 13.sp,
-                                color: AppColors.textSecondary,
-                              ),
+                            Row(
+                              children: [
+                                Text(
+                                  AppLocalizations.of(context).availableBalance,
+                                  style: TextStyle(
+                                    fontSize: 13.sp,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                                SizedBox(width: 4.w),
+                                GestureDetector(
+                                  onTap: () async => showDialog<void>(
+                                    context: context,
+                                    builder: (_) => AlertDialog.adaptive(
+                                      title: Text(AppLocalizations.of(context).availableBalance),
+                                      content: const Text(
+                                        'Available Balance is what Stripe has settled and is ready to withdraw to your bank.\n\n'
+                                        'Total Earnings (shown above) is your lifetime trip revenue — some may still be processing through Stripe.',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.of(context).pop(),
+                                          child: const Text('Got it'),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    Icons.info_outline_rounded,
+                                    size: 14.sp,
+                                    color: AppColors.textTertiary,
+                                  ),
+                                ),
+                              ],
                             ),
                             SizedBox(height: 4.h),
                             Text(
@@ -984,7 +932,6 @@ class DriverEarningsScreen extends ConsumerWidget {
                 text: AppLocalizations.of(context).connectStripeAccount,
                 onPressed: () =>
                     context.push(AppRoutes.driverStripeOnboarding.path),
-                style: PremiumButtonStyle.primary,
               ),
             ),
           ],
@@ -996,7 +943,6 @@ class DriverEarningsScreen extends ConsumerWidget {
                 text: AppLocalizations.of(context).completeVerification,
                 onPressed: () =>
                     context.push(AppRoutes.driverStripeOnboarding.path),
-                style: PremiumButtonStyle.primary,
               ),
             ),
           ],
@@ -1098,7 +1044,7 @@ class DriverEarningsScreen extends ConsumerWidget {
           ),
         );
       }
-    } catch (e) {
+    } on Exception catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1109,13 +1055,13 @@ class DriverEarningsScreen extends ConsumerWidget {
     }
   }
 
-  void _onWithdrawPressed(
+  Future<void> _onWithdrawPressed(
     BuildContext context,
     WidgetRef ref, {
     required String? stripeAccountId,
     required double availableBalance,
     required bool isFullySetup,
-  }) {
+  }) async {
     if (!isFullySetup) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1128,8 +1074,8 @@ class DriverEarningsScreen extends ConsumerWidget {
 
     if (stripeAccountId == null || stripeAccountId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Payout account is still syncing. Pull to refresh.'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).tryAgain),
           backgroundColor: AppColors.error,
         ),
       );
@@ -1138,15 +1084,15 @@ class DriverEarningsScreen extends ConsumerWidget {
 
     if (availableBalance <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No available balance to withdraw yet.'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).noData),
           backgroundColor: AppColors.error,
         ),
       );
       return;
     }
 
-    _requestPayout(context, ref, stripeAccountId, availableBalance);
+    await _requestPayout(context, ref, stripeAccountId, availableBalance);
   }
 
   Widget _buildRecentTransactions(
@@ -1214,6 +1160,12 @@ class DriverEarningsScreen extends ConsumerWidget {
                   date: DateFormat(
                     'MMM d, h:mm a',
                   ).format(transaction.createdAt),
+                  onTap: transaction.type == TransactionType.payout
+                      ? () => context.push(
+                            AppRoutes.payoutDetail.path
+                                .replaceFirst(':id', transaction.id),
+                          )
+                      : null,
                 ).animate().fadeIn(delay: Duration(milliseconds: 100 * index));
               },
             );
@@ -1238,11 +1190,11 @@ class DriverEarningsScreen extends ConsumerWidget {
             ),
             child: Row(
               children: [
-                Icon(Icons.error_outline, color: AppColors.error),
+                const Icon(Icons.error_outline, color: AppColors.error),
                 SizedBox(width: 12.w),
                 Text(
                   AppLocalizations.of(context).failedToLoadTransactions,
-                  style: TextStyle(color: AppColors.error),
+                  style: const TextStyle(color: AppColors.error),
                 ),
               ],
             ),
@@ -1253,49 +1205,17 @@ class DriverEarningsScreen extends ConsumerWidget {
   }
 }
 
-class _HeaderStat extends StatelessWidget {
-  final String value;
-  final String label;
-
-  const _HeaderStat({required this.value, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 20.sp,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
-        ),
-        SizedBox(height: 4.h),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12.sp,
-            color: Colors.white.withValues(alpha: 0.7),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _StatCard extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final String title;
-  final String value;
-
   const _StatCard({
     required this.icon,
     required this.iconColor,
     required this.title,
     required this.value,
   });
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
@@ -1347,19 +1267,20 @@ class _StatCard extends StatelessWidget {
 }
 
 class _TransactionItem extends StatelessWidget {
-  final String description;
-  final double amount;
-  final TransactionType type;
-  final String currency;
-  final String date;
-
   const _TransactionItem({
     required this.description,
     required this.amount,
     required this.type,
     required this.currency,
     required this.date,
+    this.onTap,
   });
+  final String description;
+  final double amount;
+  final TransactionType type;
+  final String currency;
+  final String date;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -1370,22 +1291,20 @@ class _TransactionItem extends StatelessWidget {
       case TransactionType.ride:
         icon = Icons.directions_car;
         color = AppColors.primary;
-        break;
       case TransactionType.bonus:
         icon = Icons.star;
         color = AppColors.starFilled;
-        break;
       case TransactionType.refund:
         icon = Icons.replay;
         color = AppColors.warning;
-        break;
       case TransactionType.payout:
         icon = Icons.account_balance;
         color = AppColors.success;
-        break;
     }
 
-    return Container(
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
       margin: EdgeInsets.only(bottom: 12.h),
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -1427,15 +1346,29 @@ class _TransactionItem extends StatelessWidget {
               ],
             ),
           ),
-          Text(
-            '${amount >= 0 ? '+' : ''}${amount.toStringAsFixed(2)} $currency',
-            style: TextStyle(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w700,
-              color: amount >= 0 ? AppColors.success : AppColors.error,
-            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${amount >= 0 ? '+' : ''}${amount.toStringAsFixed(2)} $currency',
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w700,
+                  color: amount >= 0 ? AppColors.success : AppColors.error,
+                ),
+              ),
+              if (onTap != null) ...[
+                SizedBox(width: 4.w),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 18.sp,
+                  color: AppColors.textTertiary,
+                ),
+              ],
+            ],
           ),
         ],
+      ),
       ),
     );
   }

@@ -1,7 +1,8 @@
 /// User roles in the app
 enum UserRole {
   rider,
-  driver;
+  driver
+  ;
 
   String get displayName {
     switch (this) {
@@ -28,7 +29,8 @@ enum UserLevel {
   silver(1000, 5000, 'Silver', 2),
   gold(5000, 15000, 'Gold', 3),
   platinum(15000, 35000, 'Platinum', 4),
-  diamond(35000, double.infinity, 'Diamond', 5);
+  diamond(35000, double.infinity, 'Diamond', 5)
+  ;
 
   final double minXP;
   final double maxXP;
@@ -50,7 +52,8 @@ enum Expertise {
   rookie('Rookie'),
   intermediate('Intermediate'),
   advanced('Advanced'),
-  expert('Expert');
+  expert('Expert')
+  ;
 
   final String displayName;
 

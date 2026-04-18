@@ -7,11 +7,10 @@ part 'ride_pricing.g.dart';
 /// Ride pricing information
 @freezed
 abstract class RidePricing with _$RidePricing {
-  const RidePricing._();
-
   const factory RidePricing({
     required Money pricePerSeat,
   }) = _RidePricing;
+  const RidePricing._();
 
   factory RidePricing.fromJson(Map<String, dynamic> json) =>
       _$RidePricingFromJson(json);

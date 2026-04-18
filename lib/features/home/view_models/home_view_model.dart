@@ -1,20 +1,40 @@
 import 'dart:async';
-import 'package:geolocator/geolocator.dart';
+import 'package:geolocator/geolocator.dart' show Position;
 import 'package:latlong2/latlong.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/core/services/location_service.dart';
 import 'package:sport_connect/core/services/routing_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
-import 'package:sport_connect/features/home/models/home_models.dart';
-import 'package:sport_connect/features/home/repositories/home_repository.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 
 part 'home_view_model.g.dart';
 
 /// State for the home screen with comprehensive map and location management
 class HomeState {
+  const HomeState({
+    this.selectedTabIndex = 0,
+    this.isMapExpanded = true,
+    this.currentLocation = const LatLng(37.7749, -122.4194),
+    this.isLoadingLocation = true,
+    this.locationError,
+    this.userHeading = 0.0,
+    this.currentZoom = 14,
+    this.selectedMapStyle = 'standard',
+    this.showNearbyDrivers = true,
+    this.showDistanceRadius = false,
+    this.searchRadius = 5.0,
+    this.selectedFilter = 'all',
+    this.activeRoute,
+    this.alternativeRoutes = const [],
+    this.isLoadingRoute = false,
+    this.showRouteInfo = false,
+    this.selectedRouteIndex = 0,
+    this.user = const AsyncLoading(),
+  });
   // Navigation state
   final int selectedTabIndex;
   final bool isMapExpanded;
@@ -29,7 +49,6 @@ class HomeState {
   final double currentZoom;
   final String selectedMapStyle;
   final bool showNearbyDrivers;
-  final bool showHotspots;
   final bool showDistanceRadius;
   final double searchRadius;
 
@@ -47,32 +66,6 @@ class HomeState {
   /// Current authenticated user.
   final AsyncValue<UserModel?> user;
 
-  /// Live hotspot list.
-  final AsyncValue<List<Hotspot>> hotspots;
-
-  const HomeState({
-    this.selectedTabIndex = 0,
-    this.isMapExpanded = true,
-    this.currentLocation = const LatLng(37.7749, -122.4194),
-    this.isLoadingLocation = true,
-    this.locationError,
-    this.userHeading = 0.0,
-    this.currentZoom = 14,
-    this.selectedMapStyle = 'standard',
-    this.showNearbyDrivers = true,
-    this.showHotspots = true,
-    this.showDistanceRadius = false,
-    this.searchRadius = 5.0,
-    this.selectedFilter = 'all',
-    this.activeRoute,
-    this.alternativeRoutes = const [],
-    this.isLoadingRoute = false,
-    this.showRouteInfo = false,
-    this.selectedRouteIndex = 0,
-    this.user = const AsyncLoading(),
-    this.hotspots = const AsyncLoading(),
-  });
-
   HomeState copyWith({
     int? selectedTabIndex,
     bool? isMapExpanded,
@@ -83,7 +76,6 @@ class HomeState {
     double? currentZoom,
     String? selectedMapStyle,
     bool? showNearbyDrivers,
-    bool? showHotspots,
     bool? showDistanceRadius,
     double? searchRadius,
     String? selectedFilter,
@@ -93,7 +85,6 @@ class HomeState {
     bool? showRouteInfo,
     int? selectedRouteIndex,
     AsyncValue<UserModel?>? user,
-    AsyncValue<List<Hotspot>>? hotspots,
   }) {
     return HomeState(
       selectedTabIndex: selectedTabIndex ?? this.selectedTabIndex,
@@ -105,7 +96,6 @@ class HomeState {
       currentZoom: currentZoom ?? this.currentZoom,
       selectedMapStyle: selectedMapStyle ?? this.selectedMapStyle,
       showNearbyDrivers: showNearbyDrivers ?? this.showNearbyDrivers,
-      showHotspots: showHotspots ?? this.showHotspots,
       showDistanceRadius: showDistanceRadius ?? this.showDistanceRadius,
       searchRadius: searchRadius ?? this.searchRadius,
       selectedFilter: selectedFilter ?? this.selectedFilter,
@@ -115,7 +105,6 @@ class HomeState {
       showRouteInfo: showRouteInfo ?? this.showRouteInfo,
       selectedRouteIndex: selectedRouteIndex ?? this.selectedRouteIndex,
       user: user ?? this.user,
-      hotspots: hotspots ?? this.hotspots,
     );
   }
 }
@@ -133,19 +122,14 @@ class HomeViewModel extends _$HomeViewModel {
       _positionStreamSubscription?.cancel();
     });
 
-    // Subscribe to user and hotspots streams via ref.listen so that Firestore
+    // Subscribe to user streams via ref.listen so that Firestore
     // emissions do NOT re-run build() (which would reset location state).
     ref.listen(currentUserProvider, (_, next) {
       state = state.copyWith(user: next);
     });
 
-    ref.listen(hotspotsStreamProvider, (_, next) {
-      state = state.copyWith(hotspots: next);
-    });
-
     return HomeState(
       user: ref.read(currentUserProvider),
-      hotspots: ref.read(hotspotsStreamProvider),
     );
   }
 
@@ -179,62 +163,36 @@ class HomeViewModel extends _$HomeViewModel {
 
   /// Get current device location with permission handling
   Future<void> getCurrentLocation() async {
+    final locationService = ref.read(locationServiceProvider);
     try {
-      // Check if location services are enabled
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        TalkerService.debug('Location services are disabled');
+      final granted = await locationService.requestPermission();
+      if (!granted) {
+        final permanentlyDenied = await locationService
+            .isPermissionPermanentlyDenied();
         state = state.copyWith(
           isLoadingLocation: false,
-          locationError: 'Location services are disabled',
+          locationError: permanentlyDenied
+              ? 'Location permission denied forever. Please enable in settings.'
+              : 'Location permission denied',
         );
         return;
       }
 
-      // Check and request permissions
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          TalkerService.debug('Location permission denied');
-          state = state.copyWith(
-            isLoadingLocation: false,
-            locationError: 'Location permission denied',
-          );
-          return;
-        }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        TalkerService.debug('Location permission denied forever');
+      final position = await locationService.getCurrentLocation();
+      if (position == null) {
         state = state.copyWith(
           isLoadingLocation: false,
-          locationError:
-              'Location permission denied forever. Please enable in settings.',
+          locationError: 'Unable to get location',
         );
         return;
       }
-
-      // Get current position
-      TalkerService.debug('Getting current position...');
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 10),
-        ),
-      );
-
-      TalkerService.debug(
-        'Got position: ${position.latitude}, ${position.longitude}',
-      );
 
       state = state.copyWith(
         currentLocation: LatLng(position.latitude, position.longitude),
         isLoadingLocation: false,
-        locationError: null,
         userHeading: position.heading,
       );
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Error getting location: $e');
       state = state.copyWith(
         isLoadingLocation: false,
@@ -245,19 +203,15 @@ class HomeViewModel extends _$HomeViewModel {
 
   /// Start continuous location tracking stream
   void startLocationTracking() {
-    const locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 10, // Update every 10 meters
-    );
-
-    _positionStreamSubscription =
-        Geolocator.getPositionStream(locationSettings: locationSettings).listen(
-          (Position position) {
+    _positionStreamSubscription = ref
+        .read(locationServiceProvider)
+        .getLocationStream()
+        .listen(
+          (position) {
             final newLocation = LatLng(position.latitude, position.longitude);
             state = state.copyWith(
               currentLocation: newLocation,
               userHeading: position.heading,
-              locationError: null,
             );
           },
           onError: (error) {
@@ -278,7 +232,6 @@ class HomeViewModel extends _$HomeViewModel {
     state = state.copyWith(
       currentLocation: location,
       isLoadingLocation: false,
-      locationError: null,
     );
   }
 
@@ -301,11 +254,6 @@ class HomeViewModel extends _$HomeViewModel {
   /// Toggle nearby drivers/riders visibility on map
   void toggleNearbyDrivers() {
     state = state.copyWith(showNearbyDrivers: !state.showNearbyDrivers);
-  }
-
-  /// Toggle hotspots visibility on map
-  void toggleHotspots() {
-    state = state.copyWith(showHotspots: !state.showHotspots);
   }
 
   /// Toggle distance radius circle visibility
@@ -366,7 +314,6 @@ class HomeViewModel extends _$HomeViewModel {
   /// Clear active route and alternatives
   void clearRoutes() {
     state = state.copyWith(
-      activeRoute: null,
       alternativeRoutes: [],
       selectedRouteIndex: 0,
       showRouteInfo: false,
@@ -379,18 +326,16 @@ class HomeViewModel extends _$HomeViewModel {
 
   /// Clear location error
   void clearLocationError() {
-    state = state.copyWith(locationError: null);
+    state = state.copyWith();
   }
 }
 
 /// Available map styles with their tile URLs
 const Map<String, String> availableMapStyles = {
-  'standard': 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-  'terrain': 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-  'dark':
-      'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png',
-  'satellite':
-      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  'standard': AppConstants.osmStandardTileUrl,
+  'terrain': AppConstants.openTopoTileUrl,
+  'dark': AppConstants.stadiaDarkTileUrl,
+  'satellite': AppConstants.arcgisSatelliteTileUrl,
 };
 
 // Note: nearbyRidesStreamProvider is defined below as a VM-layer provider.

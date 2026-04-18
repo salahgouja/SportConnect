@@ -1,8 +1,8 @@
 /// simple route definition holder
 class AppRoute {
+  const AppRoute(this.path, this.name);
   final String path;
   final String name;
-  const AppRoute(this.path, this.name);
 }
 
 class AppRoutes {
@@ -71,6 +71,10 @@ class AppRoutes {
   static const profileSearch = AppRoute('/profile/search', 'profile-search');
   static const home = AppRoute('/home', 'home');
   static const paymentHistory = AppRoute('/payment-history', 'payment-history');
+  static const managePaymentMethods = AppRoute(
+    '/payment-methods',
+    'manage-payment-methods',
+  );
   static const premiumSubscribe = AppRoute(
     '/premium/subscribe',
     'premium-subscribe',
@@ -158,9 +162,15 @@ class AppRoutes {
 
   // Events
   static const events = AppRoute('/events', 'events');
-  static const eventDetail = AppRoute('/events/:id', 'event-detail');
-  static const eventAttendees = AppRoute('/events/:id/attendees', 'event-attendees');
-  static const editEvent = AppRoute('/events/:id/edit', 'edit-event');
-  static const myEvents = AppRoute('/events/mine', 'my-events');
   static const createEvent = AppRoute('/events/create', 'create-event');
+  static const myEvents = AppRoute('/events/mine', 'my-events');
+  static const eventDetail = AppRoute(
+    '/events/detail/:id',
+    'event-detail',
+  ); // ← /detail/ prefix
+  static const eventAttendees = AppRoute(
+    '/events/detail/:id/attendees',
+    'event-attendees',
+  );
+  static const editEvent = AppRoute('/events/detail/:id/edit', 'edit-event');
 }

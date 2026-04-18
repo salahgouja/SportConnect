@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/models/user/user_model.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
+import 'package:sport_connect/core/widgets/gamification_widgets.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
 import 'package:sport_connect/features/events/view_models/event_view_model.dart';
@@ -17,15 +20,12 @@ import 'package:sport_connect/features/home/view_models/rider_home_view_model.da
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
-import 'package:sport_connect/core/providers/user_providers.dart';
-import 'package:sport_connect/core/models/user/user_model.dart';
-import 'package:sport_connect/core/widgets/gamification_widgets.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Scrollable content-first feed for the Rider Home Screen.
 /// Replaces the blank map with an engaging, social feed.
 class RiderHomeFeed extends ConsumerWidget {
-  const RiderHomeFeed({super.key, required this.onSearchTap});
+  const RiderHomeFeed({required this.onSearchTap, super.key});
 
   /// Callback when the compact search bar is tapped.
   final VoidCallback onSearchTap;
@@ -241,12 +241,11 @@ class _GamificationStrip extends StatelessWidget {
               currentXP: totalXP,
               maxXP: level.maxXP.isFinite ? level.maxXP.toInt() : totalXP,
               level: level.level,
-              showLabel: true,
             ),
           ),
           if (streak > 0) ...[
             SizedBox(width: 12.w),
-            StreakCounter(days: streak, isActive: true),
+            StreakCounter(days: streak),
           ],
         ],
       ),
@@ -355,7 +354,7 @@ class _NextRideCard extends ConsumerWidget {
             child: Container(
               padding: EdgeInsets.all(16.w),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
+                gradient: const LinearGradient(
                   colors: [AppColors.primary, AppColors.primaryDark],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -862,7 +861,7 @@ class _NearbyRidesSection extends ConsumerWidget {
               child: SizedBox(
                 width: 24.w,
                 height: 24.w,
-                child: CircularProgressIndicator.adaptive(
+                child: const CircularProgressIndicator.adaptive(
                   strokeWidth: 2,
                   valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                 ),
@@ -913,7 +912,7 @@ class _NearbyRidesSection extends ConsumerWidget {
                             context.push(AppRoutes.searchRides.path),
                         child: Text(
                           l10n.findARide,
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: AppColors.primary,
                             fontWeight: FontWeight.w600,
                           ),
@@ -1011,7 +1010,7 @@ class _NearbyRideCard extends StatelessWidget {
                     Container(
                       width: 8.w,
                       height: 8.w,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: AppColors.primary,
                         shape: BoxShape.circle,
                       ),

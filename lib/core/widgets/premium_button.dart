@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
 
@@ -13,22 +13,9 @@ enum PremiumButtonSize { small, medium, large }
 
 /// Premium Button - Modern, animated button with haptic feedback
 class PremiumButton extends StatefulWidget {
-  final String text;
-  final VoidCallback? onPressed;
-  final PremiumButtonStyle style;
-  final PremiumButtonSize size;
-  final IconData? icon;
-  final IconData? trailingIcon;
-  final bool isLoading;
-  final bool isDisabled;
-  final bool fullWidth;
-  final bool showShimmer;
-  final double? customWidth;
-  final double? customHeight;
-
   const PremiumButton({
-    super.key,
     required this.text,
+    super.key,
     this.onPressed,
     this.style = PremiumButtonStyle.primary,
     this.size = PremiumButtonSize.medium,
@@ -41,6 +28,18 @@ class PremiumButton extends StatefulWidget {
     this.customWidth,
     this.customHeight,
   });
+  final String text;
+  final VoidCallback? onPressed;
+  final PremiumButtonStyle style;
+  final PremiumButtonSize size;
+  final IconData? icon;
+  final IconData? trailingIcon;
+  final bool isLoading;
+  final bool isDisabled;
+  final bool fullWidth;
+  final bool showShimmer;
+  final double? customWidth;
+  final double? customHeight;
 
   @override
   State<PremiumButton> createState() => _PremiumButtonState();
@@ -80,15 +79,19 @@ class _PremiumButtonState extends State<PremiumButton>
       case PremiumButtonStyle.primary:
         return AppColors.primaryGradient;
       case PremiumButtonStyle.secondary:
-        return LinearGradient(
+        return const LinearGradient(
           colors: [AppColors.secondary, AppColors.secondaryLight],
         );
       case PremiumButtonStyle.success:
         return AppColors.successGradient;
       case PremiumButtonStyle.danger:
-        return LinearGradient(colors: [AppColors.error, AppColors.errorDark]);
+        return const LinearGradient(
+          colors: [AppColors.error, AppColors.errorDark],
+        );
       case PremiumButtonStyle.ghost:
-        return LinearGradient(colors: [Colors.transparent, Colors.transparent]);
+        return const LinearGradient(
+          colors: [Colors.transparent, Colors.transparent],
+        );
       case PremiumButtonStyle.gold:
         return AppColors.goldGradient;
     }
@@ -297,17 +300,9 @@ class _PremiumButtonState extends State<PremiumButton>
 
 /// Icon-only premium button
 class PremiumIconButton extends StatefulWidget {
-  final IconData icon;
-  final VoidCallback? onPressed;
-  final PremiumButtonStyle style;
-  final PremiumButtonSize size;
-  final bool isLoading;
-  final bool isDisabled;
-  final String? tooltip;
-
   const PremiumIconButton({
-    super.key,
     required this.icon,
+    super.key,
     this.onPressed,
     this.style = PremiumButtonStyle.primary,
     this.size = PremiumButtonSize.medium,
@@ -315,6 +310,13 @@ class PremiumIconButton extends StatefulWidget {
     this.isDisabled = false,
     this.tooltip,
   });
+  final IconData icon;
+  final VoidCallback? onPressed;
+  final PremiumButtonStyle style;
+  final PremiumButtonSize size;
+  final bool isLoading;
+  final bool isDisabled;
+  final String? tooltip;
 
   @override
   State<PremiumIconButton> createState() => _PremiumIconButtonState();
@@ -376,15 +378,19 @@ class _PremiumIconButtonState extends State<PremiumIconButton>
       case PremiumButtonStyle.primary:
         return AppColors.primaryGradient;
       case PremiumButtonStyle.secondary:
-        return LinearGradient(
+        return const LinearGradient(
           colors: [AppColors.secondary, AppColors.secondaryLight],
         );
       case PremiumButtonStyle.success:
         return AppColors.successGradient;
       case PremiumButtonStyle.danger:
-        return LinearGradient(colors: [AppColors.error, AppColors.errorDark]);
+        return const LinearGradient(
+          colors: [AppColors.error, AppColors.errorDark],
+        );
       case PremiumButtonStyle.ghost:
-        return LinearGradient(colors: [Colors.transparent, Colors.transparent]);
+        return const LinearGradient(
+          colors: [Colors.transparent, Colors.transparent],
+        );
       case PremiumButtonStyle.gold:
         return AppColors.goldGradient;
     }
@@ -479,7 +485,7 @@ class _PremiumIconButtonState extends State<PremiumIconButton>
     );
 
     if (widget.tooltip != null) {
-      button = Tooltip(message: widget.tooltip!, child: button);
+      button = Tooltip(message: widget.tooltip, child: button);
     }
 
     return button;
@@ -488,20 +494,19 @@ class _PremiumIconButtonState extends State<PremiumIconButton>
 
 /// Floating Action Button Premium style
 class PremiumFAB extends StatefulWidget {
-  final IconData icon;
-  final String? label;
-  final VoidCallback? onPressed;
-  final bool isExtended;
-  final bool showPulse;
-
   const PremiumFAB({
-    super.key,
     required this.icon,
+    super.key,
     this.label,
     this.onPressed,
     this.isExtended = false,
     this.showPulse = false,
   });
+  final IconData icon;
+  final String? label;
+  final VoidCallback? onPressed;
+  final bool isExtended;
+  final bool showPulse;
 
   @override
   State<PremiumFAB> createState() => _PremiumFABState();

@@ -1,9 +1,9 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:talker_flutter/talker_flutter.dart';
 import 'package:talker_dio_logger/talker_dio_logger.dart';
+import 'package:talker_flutter/talker_flutter.dart';
 import 'package:talker_riverpod_logger/talker_riverpod_logger.dart';
-import 'package:dio/dio.dart';
 
 /// Centralized Talker service for logging across the app
 ///
@@ -20,11 +20,7 @@ class TalkerService {
   /// Global Talker instance
   static Talker get instance {
     _instance ??= TalkerFlutter.init(
-      settings: TalkerSettings(
-        enabled: true,
-        useConsoleLogs: kDebugMode,
-        maxHistoryItems: 1000,
-      ),
+      settings: TalkerSettings(),
       logger: TalkerLogger(
         output: debugPrint,
         settings: TalkerLoggerSettings(
@@ -46,11 +42,8 @@ class TalkerService {
   static TalkerDioLogger get dioLogger => TalkerDioLogger(
     talker: instance,
     settings: TalkerDioLoggerSettings(
-      printRequestHeaders: false,
-      printResponseHeaders: false,
       printRequestData: false,
       printResponseData: false,
-      printResponseMessage: true,
       printErrorData: false,
       printErrorHeaders: false,
       // AnsiPen is not supported on web
@@ -72,11 +65,8 @@ class TalkerService {
   static TalkerRiverpodObserver get riverpodObserver => TalkerRiverpodObserver(
     talker: instance,
     settings: const TalkerRiverpodLoggerSettings(
-      enabled: true,
       printProviderAdded: false,
       printProviderUpdated: false,
-      printProviderDisposed: false,
-      printProviderFailed: true,
     ),
   );
 

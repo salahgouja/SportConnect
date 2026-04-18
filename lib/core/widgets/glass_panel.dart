@@ -9,20 +9,19 @@ import 'package:sport_connect/core/theme/app_colors.dart';
 /// For the full Liquid Glass design system, see [liquid_glass.dart].
 /// This widget is kept for backward compatibility.
 class GlassPanel extends StatelessWidget {
-  final Widget child;
-  final EdgeInsetsGeometry? padding;
-  final double radius;
-  final Color? borderColor;
-  final Color? color;
-
   const GlassPanel({
-    super.key,
     required this.child,
+    super.key,
     this.padding,
     this.radius = 20,
     this.borderColor,
     this.color,
   });
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
+  final double radius;
+  final Color? borderColor;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -45,8 +44,8 @@ class GlassPanel extends StatelessWidget {
               end: Alignment.bottomRight,
               colors: [
                 Colors.white.withValues(alpha: 0.25),
-                Colors.white.withValues(alpha: 0.0),
-                Colors.white.withValues(alpha: 0.0),
+                Colors.white.withValues(alpha: 0),
+                Colors.white.withValues(alpha: 0),
                 Colors.white.withValues(alpha: 0.08),
               ],
               stops: const [0.0, 0.3, 0.7, 1.0],

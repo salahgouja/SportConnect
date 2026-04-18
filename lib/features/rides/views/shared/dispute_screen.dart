@@ -2,14 +2,14 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
-import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -98,6 +98,7 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
     );
 
     if (source == null) return;
+    if (!mounted) return;
 
     final accepted = await PermissionDialogHelper.showCameraRationale(
       context,
@@ -116,6 +117,7 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
     );
 
     if (picked == null) return;
+    if (!mounted) return;
 
     await ref
         .read(disputeFormViewModelProvider(widget.rideId).notifier)
@@ -458,15 +460,18 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
             counterStyle: TextStyle(fontSize: 11.sp),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.border),
+              borderSide: const BorderSide(color: AppColors.border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.border),
+              borderSide: const BorderSide(color: AppColors.border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+              borderSide: const BorderSide(
+                color: AppColors.primary,
+                width: 1.5,
+              ),
             ),
             contentPadding: EdgeInsets.all(14.w),
           ),

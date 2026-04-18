@@ -1,21 +1,27 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
-import 'package:sport_connect/core/services/analytics_service.dart';
-import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_auth_repository.dart';
+import 'package:sport_connect/core/services/analytics_service.dart';
+import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 
 /// Repository for authentication operations - Firebase only
 class AuthRepository implements IAuthRepository {
+  /// Creates an [AuthRepository] with optional dependency injection.
+  ///
+  /// Defaults to production Firebase instances when no arguments are provided.
+  /// Pass custom instances in tests to enable mocking.
+  AuthRepository(this._auth, this._storage, this._firestore);
   final FirebaseAuth _auth;
   final FirebaseStorage _storage;
   final FirebaseFirestore _firestore;
@@ -25,12 +31,6 @@ class AuthRepository implements IAuthRepository {
   /// once per app lifecycle — storing the Future here guarantees that.
   final Future<void> _googleSignInInitialized = GoogleSignIn.instance
       .initialize();
-
-  /// Creates an [AuthRepository] with optional dependency injection.
-  ///
-  /// Defaults to production Firebase instances when no arguments are provided.
-  /// Pass custom instances in tests to enable mocking.
-  AuthRepository(this._auth, this._storage, this._firestore);
 
   CollectionReference<UserModel> get _usersCollection => _firestore
       .collection(AppConstants.usersCollection)
@@ -79,7 +79,7 @@ class AuthRepository implements IAuthRepository {
     } on FirebaseAuthException catch (e) {
       TalkerService.error('Sign in error: ${e.message}');
       throw _handleAuthException(e);
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Sign in error', e);
       rethrow;
     }
@@ -121,9 +121,6 @@ class AuthRepository implements IAuthRepository {
             displayName: displayName.trim(),
             phoneNumber: phone?.trim(),
             photoUrl: photoUrl,
-            rating: const RatingBreakdown(),
-            gamification: const GamificationStats.driver(),
-            preferences: const UserPreferences(),
             createdAt: DateTime.now(),
             lastSeenAt: DateTime.now(),
           );
@@ -134,9 +131,6 @@ class AuthRepository implements IAuthRepository {
             displayName: displayName.trim(),
             phoneNumber: phone?.trim(),
             photoUrl: photoUrl,
-            rating: const RatingBreakdown(),
-            gamification: const GamificationStats.rider(),
-            preferences: const UserPreferences(),
             createdAt: DateTime.now(),
             lastSeenAt: DateTime.now(),
           );
@@ -150,7 +144,7 @@ class AuthRepository implements IAuthRepository {
         }
 
         // Auto-send email verification after registration
-        if (!(credential.user!.emailVerified)) {
+        if (!credential.user!.emailVerified) {
           await credential.user!.sendEmailVerification();
         }
 
@@ -159,7 +153,7 @@ class AuthRepository implements IAuthRepository {
     } on FirebaseAuthException catch (e) {
       TalkerService.error('Register error: ${e.message}');
       throw _handleAuthException(e);
-    } catch (e) {
+    } on Exception catch (e) {
       if (credential?.user != null) {
         TalkerService.warning('Rolling back user creation due to error');
         await credential!.user!.delete();
@@ -196,7 +190,7 @@ class AuthRepository implements IAuthRepository {
       // Get the download URL
       final url = await uploadTask.ref.getDownloadURL();
       return url;
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Image upload failed', e);
       // We return null so the registration doesn't fail completely
       // just because the image failed.
@@ -213,7 +207,7 @@ class AuthRepository implements IAuthRepository {
       if (doc.exists && doc.data() != null) {
         return doc.data()!;
       }
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Get user data error', e);
     }
     return null;
@@ -223,7 +217,7 @@ class AuthRepository implements IAuthRepository {
   Stream<UserModel?> getUserDataStream(String uid) {
     return _usersCollection.doc(uid).snapshots().map((doc) {
       if (doc.exists && doc.data() != null) {
-        return doc.data()!;
+        return doc.data();
       }
       return null;
     });
@@ -233,11 +227,11 @@ class AuthRepository implements IAuthRepository {
   @override
   Future<void> signOut() async {
     try {
-      GoogleSignIn googleSignIn = GoogleSignIn.instance;
+      final googleSignIn = GoogleSignIn.instance;
       await googleSignIn.signOut();
       await _auth.signOut();
       TalkerService.info('User signed out');
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Sign out error', e);
       rethrow;
     }
@@ -354,7 +348,7 @@ class AuthRepository implements IAuthRepository {
           'Storage cleanup failed (best-effort): ${e.message}',
         );
       }
-      GoogleSignIn googleSignIn = GoogleSignIn.instance;
+      final googleSignIn = GoogleSignIn.instance;
       await googleSignIn.signOut();
       await user.delete();
 
@@ -368,7 +362,7 @@ class AuthRepository implements IAuthRepository {
         );
       }
       throw _handleAuthException(e);
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Delete account error', e);
       rethrow;
     }
@@ -383,8 +377,7 @@ class AuthRepository implements IAuthRepository {
 
       // authenticate() triggers the Credential Manager sheet.
       // Throws GoogleSignInException on cancellation — never returns null.
-      final GoogleSignInAccount googleUser = await GoogleSignIn.instance
-          .authenticate();
+      final googleUser = await GoogleSignIn.instance.authenticate();
 
       // Firebase Auth only needs idToken. authorizeScopes() would open a
       // second Credential Manager dialog that gets canceled, causing a
@@ -397,7 +390,7 @@ class AuthRepository implements IAuthRepository {
       final userCredential = await _auth.signInWithCredential(credential);
 
       if (userCredential.user != null) {
-        UserModel? existingUser = await getUserData(userCredential.user!.uid);
+        var existingUser = await getUserData(userCredential.user!.uid);
 
         if (existingUser != null) {
           // FIX A-4: A banned/suspended user must not regain access simply by
@@ -405,7 +398,7 @@ class AuthRepository implements IAuthRepository {
           // Auth immediately and surface a clear error.
           if (!existingUser.isActive) {
             await _auth.signOut();
-            throw AuthException(
+            throw const AuthException(
               code: 'account-disabled',
               message:
                   'Your account has been suspended. Please contact support.',
@@ -415,7 +408,7 @@ class AuthRepository implements IAuthRepository {
           await _usersCollection
               .doc(userCredential.user!.uid)
               .set(existingUser, SetOptions(merge: true));
-          return SocialSignInResult(user: existingUser, isNewUser: false);
+          return SocialSignInResult(user: existingUser);
         } else {
           // New users default to riders with pending role selection
           final newUser = UserModel.rider(
@@ -442,7 +435,7 @@ class AuthRepository implements IAuthRepository {
       );
       // User simply dismissed the sheet — not a real error, handle silently.
       if (e.code == GoogleSignInExceptionCode.canceled) {
-        throw AuthException(
+        throw const AuthException(
           code: 'google-sign-in-canceled',
           message: 'Sign-in was cancelled.',
         );
@@ -462,7 +455,7 @@ class AuthRepository implements IAuthRepository {
     } on FirebaseAuthException catch (e) {
       TalkerService.error('Google sign in error: ${e.message}');
       throw _handleAuthException(e);
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Google sign in error', e);
       rethrow;
     }
@@ -490,14 +483,14 @@ class AuthRepository implements IAuthRepository {
       final userCredential = await _auth.signInWithCredential(oauthCredential);
 
       if (userCredential.user != null) {
-        UserModel? existingUser = await getUserData(userCredential.user!.uid);
+        var existingUser = await getUserData(userCredential.user!.uid);
 
         if (existingUser != null) {
           // FIX A-4: Same ban check as Google sign-in — banned users must not
           // re-enter via Apple OAuth either.
           if (!existingUser.isActive) {
             await _auth.signOut();
-            throw AuthException(
+            throw const AuthException(
               code: 'account-disabled',
               message:
                   'Your account has been suspended. Please contact support.',
@@ -507,9 +500,9 @@ class AuthRepository implements IAuthRepository {
           await _usersCollection
               .doc(userCredential.user!.uid)
               .set(existingUser, SetOptions(merge: true));
-          return SocialSignInResult(user: existingUser, isNewUser: false);
+          return SocialSignInResult(user: existingUser);
         } else {
-          String displayName = 'User';
+          var displayName = 'User';
           if (appleCredential.givenName != null) {
             displayName =
                 '${appleCredential.givenName} ${appleCredential.familyName ?? ''}'
@@ -542,7 +535,7 @@ class AuthRepository implements IAuthRepository {
     } on FirebaseAuthException catch (e) {
       TalkerService.error('Apple sign in Firebase error: ${e.message}');
       throw _handleAuthException(e);
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Apple sign in error', e);
       rethrow;
     }
@@ -574,7 +567,7 @@ class AuthRepository implements IAuthRepository {
       await _usersCollection.doc(user.uid).set(user, SetOptions(merge: true));
       TalkerService.info('User document created/updated for ${user.uid}');
       return user;
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Create user document error', e);
       rethrow;
     }
@@ -589,7 +582,7 @@ class AuthRepository implements IAuthRepository {
     int? ridesCompletedIncrement,
   }) async {
     try {
-      UserModel? userModel = await getUserData(userId);
+      var userModel = await getUserData(userId);
       userModel = userModel?.copyWith(
         updatedAt: DateTime.now(),
         gamification: userModel.gamification.copyWith(
@@ -604,7 +597,7 @@ class AuthRepository implements IAuthRepository {
 
       await _usersCollection.doc(userId).update(userModel?.toJson() ?? {});
       TalkerService.info('User stats updated for $userId');
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Update user stats error', e);
       rethrow;
     }
@@ -620,7 +613,7 @@ class AuthRepository implements IAuthRepository {
         'updatedAt': DateTime.now(),
       });
       TalkerService.info('User role updated to ${role.name} for $userId');
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Update user role error', e);
       rethrow;
     }
@@ -635,7 +628,7 @@ class AuthRepository implements IAuthRepository {
         'updatedAt': DateTime.now(),
       });
       TalkerService.info('Cleared needsRoleSelection for $userId');
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Clear needsRoleSelection error', e);
       rethrow;
     }
@@ -649,7 +642,7 @@ class AuthRepository implements IAuthRepository {
     } on FirebaseAuthException catch (e) {
       TalkerService.error('Password reset error: ${e.message}');
       throw _handleAuthException(e);
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Password reset error', e);
       rethrow;
     }
@@ -668,7 +661,7 @@ class AuthRepository implements IAuthRepository {
     } on FirebaseAuthException catch (e) {
       TalkerService.error('Update password error: ${e.message}');
       throw _handleAuthException(e);
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Update password error', e);
       rethrow;
     }
@@ -682,7 +675,7 @@ class AuthRepository implements IAuthRepository {
         'updatedAt': DateTime.now(),
       });
       TalkerService.info('User data updated for ${user.uid}');
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Update user data error', e);
       rethrow;
     }
@@ -690,7 +683,7 @@ class AuthRepository implements IAuthRepository {
 
   @override
   Future<String?> uploadProfileImage(File image, String uid) async {
-    return await _uploadProfileImage(image, uid);
+    return _uploadProfileImage(image, uid);
   }
 
   AuthException _handleAuthException(FirebaseAuthException e) {
@@ -754,7 +747,7 @@ class AuthRepository implements IAuthRepository {
     } on FirebaseAuthException catch (e) {
       TalkerService.error('Re-authentication error: ${e.message}');
       throw _handleAuthException(e);
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Re-authentication error', e);
       rethrow;
     }
@@ -770,7 +763,7 @@ class AuthRepository implements IAuthRepository {
       // FIX A-7: Verify the Google account email matches the current user's email
       final currentEmail = _auth.currentUser?.email;
       if (currentEmail != null && googleUser.email != currentEmail) {
-        throw AuthException(
+        throw const AuthException(
           code: 'email-mismatch',
           message:
               'The selected Google account does not match your account email. '
@@ -789,7 +782,7 @@ class AuthRepository implements IAuthRepository {
       }
       await user.reauthenticateWithCredential(credential);
       TalkerService.info('User re-authenticated with Google');
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Google re-authentication error', e);
       rethrow;
     }
@@ -839,7 +832,7 @@ class AuthRepository implements IAuthRepository {
     } on FirebaseAuthException catch (e) {
       TalkerService.error('Send verification email error: ${e.message}');
       throw _handleAuthException(e);
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Send verification email error', e);
       rethrow;
     }
@@ -947,7 +940,7 @@ class AuthRepository implements IAuthRepository {
     } on FirebaseAuthException catch (e) {
       TalkerService.error('Phone OTP error: ${e.message}');
       throw _handleAuthException(e);
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Phone OTP error', e);
       rethrow;
     }
@@ -965,7 +958,7 @@ class AuthRepository implements IAuthRepository {
     } on FirebaseAuthException catch (e) {
       TalkerService.error('Phone auto-verification error: ${e.message}');
       throw _handleAuthException(e);
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Phone auto-verification error', e);
       rethrow;
     }

@@ -1,25 +1,25 @@
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/config/page_transitions.dart';
 import 'package:sport_connect/core/config/routes/route_config.dart';
 import 'package:sport_connect/core/config/routes/route_params.dart';
-import 'package:sport_connect/core/config/page_transitions.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
-import 'package:sport_connect/features/rides/views/passenger/ride_search_screen.dart';
-import 'package:sport_connect/features/rides/views/driver/driver_offer_ride_screen.dart';
-import 'package:sport_connect/features/rides/views/passenger/ride_detail_screen.dart';
-import 'package:sport_connect/features/rides/views/passenger/rider_view_ride_screen.dart';
-import 'package:sport_connect/features/rides/views/driver/driver_view_ride_screen.dart';
-import 'package:sport_connect/features/rides/views/driver/driver_requests_screen.dart';
-import 'package:sport_connect/features/rides/views/passenger/active_ride_screen.dart'
-    as passenger_active;
 import 'package:sport_connect/features/rides/views/driver/active_ride_screen.dart'
     as driver_active;
-import 'package:sport_connect/features/rides/views/shared/ride_completion_screen.dart';
-import 'package:sport_connect/features/rides/views/shared/cancellation_reason_screen.dart';
-import 'package:sport_connect/features/rides/views/shared/dispute_screen.dart';
+import 'package:sport_connect/features/rides/views/driver/driver_offer_ride_screen.dart';
+import 'package:sport_connect/features/rides/views/driver/driver_rate_passenger_screen.dart';
+import 'package:sport_connect/features/rides/views/driver/driver_requests_screen.dart';
+import 'package:sport_connect/features/rides/views/driver/driver_view_ride_screen.dart';
+import 'package:sport_connect/features/rides/views/passenger/active_ride_screen.dart'
+    as passenger_active;
 import 'package:sport_connect/features/rides/views/passenger/ride_booking_pending_screen.dart';
 import 'package:sport_connect/features/rides/views/passenger/ride_countdown_screen.dart';
-import 'package:sport_connect/features/rides/views/driver/driver_rate_passenger_screen.dart';
+import 'package:sport_connect/features/rides/views/passenger/ride_detail_screen.dart';
+import 'package:sport_connect/features/rides/views/passenger/ride_search_screen.dart';
+import 'package:sport_connect/features/rides/views/passenger/rider_view_ride_screen.dart';
+import 'package:sport_connect/features/rides/views/shared/cancellation_reason_screen.dart';
+import 'package:sport_connect/features/rides/views/shared/dispute_screen.dart';
+import 'package:sport_connect/features/rides/views/shared/ride_completion_screen.dart';
 
 /// Ride module routes with type-safe parameters
 class RideRoutes implements RouteConfig {
@@ -105,7 +105,7 @@ class RideRoutes implements RouteConfig {
         pageBuilder: (context, state) {
           // Safety: guard against wrong extra type (e.g. deep-link with no extra)
           final existingRide = state.extra is RideModel
-              ? state.extra as RideModel
+              ? state.extra! as RideModel
               : null;
           return SlideUpTransitionPage(
             key: state.pageKey,

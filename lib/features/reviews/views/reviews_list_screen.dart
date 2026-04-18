@@ -1,30 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/rating_and_profile_widgets.dart';
 import 'package:sport_connect/features/reviews/models/review_model.dart';
 import 'package:sport_connect/features/reviews/view_models/review_view_model.dart';
-import 'package:intl/intl.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Screen to display a user's reviews and rating stats
 class ReviewsListScreen extends ConsumerWidget {
+  const ReviewsListScreen({
+    required this.userId,
+    required this.userName,
+    super.key,
+    this.userPhotoUrl,
+  });
   final String userId;
   final String userName;
   final String? userPhotoUrl;
-
-  const ReviewsListScreen({
-    super.key,
-    required this.userId,
-    required this.userName,
-    this.userPhotoUrl,
-  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -104,7 +103,7 @@ class ReviewsListScreen extends ConsumerWidget {
                 averageRating: state.averageRating,
                 totalReviews: state.totalReviews,
                 distribution: {
-                  for (final entry in (state.stats!.distribution.entries))
+                  for (final entry in state.stats!.distribution.entries)
                     entry.key: entry.value.toInt(),
                 },
               ),
@@ -351,15 +350,14 @@ class ReviewsListScreen extends ConsumerWidget {
 }
 
 class _FilterChip extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
   const _FilterChip({
     required this.label,
     required this.isSelected,
     required this.onTap,
   });
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -388,9 +386,8 @@ class _FilterChip extends StatelessWidget {
 }
 
 class _ReviewCard extends StatelessWidget {
-  final ReviewModel review;
-
   const _ReviewCard({required this.review});
+  final ReviewModel review;
 
   @override
   Widget build(BuildContext context) {

@@ -34,6 +34,19 @@ enum LiquidGlassVariant {
 /// It wraps content in a translucent, blurred container with subtle
 /// border highlights that mimic glass refraction.
 class LiquidGlassContainer extends StatelessWidget {
+  const LiquidGlassContainer({
+    required this.child,
+    super.key,
+    this.padding,
+    this.margin,
+    this.borderRadius = 20,
+    this.variant = LiquidGlassVariant.regular,
+    this.tintColor,
+    this.blurSigma = 24,
+    this.onTap,
+    this.showHighlight = true,
+  });
+
   /// The child widget to display inside the glass container.
   final Widget child;
 
@@ -60,19 +73,6 @@ class LiquidGlassContainer extends StatelessWidget {
 
   /// Whether to show the top highlight border (simulates light refraction).
   final bool showHighlight;
-
-  const LiquidGlassContainer({
-    super.key,
-    required this.child,
-    this.padding,
-    this.margin,
-    this.borderRadius = 20,
-    this.variant = LiquidGlassVariant.regular,
-    this.tintColor,
-    this.blurSigma = 24,
-    this.onTap,
-    this.showHighlight = true,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -120,8 +120,8 @@ class LiquidGlassContainer extends StatelessWidget {
                         end: Alignment.bottomRight,
                         colors: [
                           Colors.white.withValues(alpha: highlightOpacity),
-                          Colors.white.withValues(alpha: 0.0),
-                          Colors.white.withValues(alpha: 0.0),
+                          Colors.white.withValues(alpha: 0),
+                          Colors.white.withValues(alpha: 0),
                           Colors.white.withValues(
                             alpha: highlightOpacity * 0.3,
                           ),
@@ -144,6 +144,19 @@ class LiquidGlassContainer extends StatelessWidget {
 /// Floats above content with translucent background, allowing content
 /// to scroll and peek through — per Apple's Liquid Glass guidelines.
 class LiquidGlassAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const LiquidGlassAppBar({
+    super.key,
+    this.title,
+    this.titleWidget,
+    this.actions,
+    this.leading,
+    this.showBackButton = true,
+    this.onBackPressed,
+    this.centerTitle = true,
+    this.bottom,
+    this.variant = LiquidGlassVariant.regular,
+  });
+
   /// The title text to display.
   final String? title;
 
@@ -170,19 +183,6 @@ class LiquidGlassAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   /// Glass variant to use.
   final LiquidGlassVariant variant;
-
-  const LiquidGlassAppBar({
-    super.key,
-    this.title,
-    this.titleWidget,
-    this.actions,
-    this.leading,
-    this.showBackButton = true,
-    this.onBackPressed,
-    this.centerTitle = true,
-    this.bottom,
-    this.variant = LiquidGlassVariant.regular,
-  });
 
   @override
   Size get preferredSize =>
@@ -279,6 +279,16 @@ class LiquidGlassAppBar extends StatelessWidget implements PreferredSizeWidget {
 /// Unlike [LiquidGlassContainer] which is for navigation/controls,
 /// this provides a subtler glass effect appropriate for content sections.
 class LiquidGlassCard extends StatelessWidget {
+  const LiquidGlassCard({
+    required this.child,
+    super.key,
+    this.padding,
+    this.margin,
+    this.borderRadius = 20,
+    this.onTap,
+    this.tintColor,
+  });
+
   /// The child widget.
   final Widget child;
 
@@ -296,16 +306,6 @@ class LiquidGlassCard extends StatelessWidget {
 
   /// Tint color for the glass.
   final Color? tintColor;
-
-  const LiquidGlassCard({
-    super.key,
-    required this.child,
-    this.padding,
-    this.margin,
-    this.borderRadius = 20,
-    this.onTap,
-    this.tintColor,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -349,6 +349,13 @@ class LiquidGlassCard extends StatelessWidget {
 /// The bar floats above content with translucent blur, allowing
 /// content to peek through from beneath.
 class LiquidGlassBottomBar extends StatelessWidget {
+  const LiquidGlassBottomBar({
+    required this.items,
+    required this.activeIndex,
+    required this.onTap,
+    super.key,
+  });
+
   /// Navigation items to display.
   final List<LiquidGlassNavItem> items;
 
@@ -357,13 +364,6 @@ class LiquidGlassBottomBar extends StatelessWidget {
 
   /// Called when a tab is tapped.
   final ValueChanged<int> onTap;
-
-  const LiquidGlassBottomBar({
-    super.key,
-    required this.items,
-    required this.activeIndex,
-    required this.onTap,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -408,12 +408,6 @@ class LiquidGlassBottomBar extends StatelessWidget {
 
 /// A single tab item for [LiquidGlassBottomBar].
 class _LiquidGlassNavTab extends StatelessWidget {
-  final LiquidGlassNavItem item;
-  final bool isActive;
-  final VoidCallback onTap;
-  final int index;
-  final int totalTabs;
-
   const _LiquidGlassNavTab({
     required this.item,
     required this.isActive,
@@ -421,6 +415,11 @@ class _LiquidGlassNavTab extends StatelessWidget {
     required this.index,
     required this.totalTabs,
   });
+  final LiquidGlassNavItem item;
+  final bool isActive;
+  final VoidCallback onTap;
+  final int index;
+  final int totalTabs;
 
   @override
   Widget build(BuildContext context) {
@@ -504,6 +503,12 @@ class _LiquidGlassNavTab extends StatelessWidget {
 
 /// Data class for [LiquidGlassBottomBar] items.
 class LiquidGlassNavItem {
+  const LiquidGlassNavItem({
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+  });
+
   /// Icon when inactive.
   final IconData icon;
 
@@ -512,18 +517,20 @@ class LiquidGlassNavItem {
 
   /// Tab label text.
   final String label;
-
-  const LiquidGlassNavItem({
-    required this.icon,
-    required this.activeIcon,
-    required this.label,
-  });
 }
 
 /// A Liquid Glass floating action button.
 ///
 /// A pill-shaped or circular FAB with frosted glass effect.
 class LiquidGlassFAB extends StatelessWidget {
+  const LiquidGlassFAB({
+    required this.onPressed,
+    required this.icon,
+    super.key,
+    this.label,
+    this.semanticLabel,
+  });
+
   /// Called when tapped.
   final VoidCallback onPressed;
 
@@ -535,14 +542,6 @@ class LiquidGlassFAB extends StatelessWidget {
 
   /// Semantic label for accessibility.
   final String? semanticLabel;
-
-  const LiquidGlassFAB({
-    super.key,
-    required this.onPressed,
-    required this.icon,
-    this.label,
-    this.semanticLabel,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -630,6 +629,15 @@ class LiquidGlassSheetHandle extends StatelessWidget {
 /// Small translucent pill-shaped label, useful for status badges,
 /// category tags, or filter chips with glass effect.
 class LiquidGlassChip extends StatelessWidget {
+  const LiquidGlassChip({
+    required this.label,
+    super.key,
+    this.icon,
+    this.color,
+    this.onTap,
+    this.isSelected = false,
+  });
+
   /// Label text.
   final String label;
 
@@ -644,15 +652,6 @@ class LiquidGlassChip extends StatelessWidget {
 
   /// Whether the chip is selected.
   final bool isSelected;
-
-  const LiquidGlassChip({
-    super.key,
-    required this.label,
-    this.icon,
-    this.color,
-    this.onTap,
-    this.isSelected = false,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -711,6 +710,13 @@ class LiquidGlassChip extends StatelessWidget {
 /// Per Apple's Liquid Glass guidance, section headers should use
 /// title-style capitalization and provide visual separation.
 class LiquidGlassSectionHeader extends StatelessWidget {
+  const LiquidGlassSectionHeader({
+    required this.title,
+    super.key,
+    this.trailing,
+    this.padding,
+  });
+
   /// Section title text.
   final String title;
 
@@ -719,13 +725,6 @@ class LiquidGlassSectionHeader extends StatelessWidget {
 
   /// Padding around the header.
   final EdgeInsetsGeometry? padding;
-
-  const LiquidGlassSectionHeader({
-    super.key,
-    required this.title,
-    this.trailing,
-    this.padding,
-  });
 
   @override
   Widget build(BuildContext context) {

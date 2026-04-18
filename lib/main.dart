@@ -1,16 +1,19 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:riverpod_devtools_tracker/riverpod_devtools_tracker.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:riverpod_devtools_tracker/riverpod_devtools_tracker.dart';
 // Config & Services
 import 'package:sport_connect/core/config/app_router.dart';
 import 'package:sport_connect/core/config/stripe_config.dart';
+import 'package:sport_connect/core/providers/settings_provider.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/analytics_service.dart';
 import 'package:sport_connect/core/services/deep_link_service.dart';
 import 'package:sport_connect/core/services/firebase_service.dart';
@@ -18,19 +21,16 @@ import 'package:sport_connect/core/services/push_notification_service.dart';
 import 'package:sport_connect/core/services/stripe_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/theme/app_theme.dart';
-
 // Localization
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:sport_connect/core/providers/settings_provider.dart';
-import 'package:sport_connect/core/providers/user_providers.dart';
 
 void main() async {
   // 1. Ensure bindings are initialized first
   WidgetsFlutterBinding.ensureInitialized();
 
   // 2. Set up error handling BEFORE initializing services
-  FlutterError.onError = (details) {
-    FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+  FlutterError.onError = (details) async {
+    await FirebaseCrashlytics.instance.recordFlutterFatalError(details);
     TalkerService.error(
       'FlutterError: ${details.exceptionAsString()}',
       details.exception,
@@ -47,7 +47,7 @@ void main() async {
   // 3. Initialize with safety catch to prevent Splash Screen freeze
   try {
     await _initializeApp();
-  } catch (e, stack) {
+  } on Exception catch (e, stack) {
     TalkerService.error('🚨 CRITICAL INITIALIZATION FAILURE', e, stack);
   }
 
@@ -81,7 +81,7 @@ Future<void> _initializeStripe() async {
       publishableKey: StripeConfig.publishableKey,
     );
     TalkerService.info('✅ Stripe initialized');
-  } catch (e, stackTrace) {
+  } on Exception catch (e, stackTrace) {
     TalkerService.error('❌ Failed to initialize Stripe', e, stackTrace);
   }
 }

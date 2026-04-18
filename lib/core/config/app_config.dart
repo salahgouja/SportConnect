@@ -58,9 +58,9 @@ class AppConfig {
   static const Duration locationTimeout = Duration(seconds: 10);
 
   /// Map settings
-  static const double defaultMapZoom = 13.0;
-  static const double minMapZoom = 3.0;
-  static const double maxMapZoom = 18.0;
+  static const double defaultMapZoom = 13;
+  static const double minMapZoom = 3;
+  static const double maxMapZoom = 18;
 
   /// Pagination
   static const int pageSize = 20;

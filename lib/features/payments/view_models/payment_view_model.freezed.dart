@@ -13,7 +13,7 @@ part of 'payment_view_model.dart';
 T _$identity<T>(T value) => value;
 
 /// @nodoc
-mixin _$DriverStripeStatus {
+mixin _$DriverStripeStatus implements DiagnosticableTreeMixin {
 
  bool get isConnected; bool get payoutsEnabled; bool get chargesEnabled; bool get detailsSubmitted; double get availableBalance; double get pendingBalance; String get currency; String? get stripeAccountId;
 /// Create a copy of DriverStripeStatus
@@ -25,6 +25,12 @@ $DriverStripeStatusCopyWith<DriverStripeStatus> get copyWith => _$DriverStripeSt
   /// Serializes this DriverStripeStatus to a JSON map.
   Map<String, dynamic> toJson();
 
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'DriverStripeStatus'))
+    ..add(DiagnosticsProperty('isConnected', isConnected))..add(DiagnosticsProperty('payoutsEnabled', payoutsEnabled))..add(DiagnosticsProperty('chargesEnabled', chargesEnabled))..add(DiagnosticsProperty('detailsSubmitted', detailsSubmitted))..add(DiagnosticsProperty('availableBalance', availableBalance))..add(DiagnosticsProperty('pendingBalance', pendingBalance))..add(DiagnosticsProperty('currency', currency))..add(DiagnosticsProperty('stripeAccountId', stripeAccountId));
+}
 
 @override
 bool operator ==(Object other) {
@@ -36,7 +42,7 @@ bool operator ==(Object other) {
 int get hashCode => Object.hash(runtimeType,isConnected,payoutsEnabled,chargesEnabled,detailsSubmitted,availableBalance,pendingBalance,currency,stripeAccountId);
 
 @override
-String toString() {
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
   return 'DriverStripeStatus(isConnected: $isConnected, payoutsEnabled: $payoutsEnabled, chargesEnabled: $chargesEnabled, detailsSubmitted: $detailsSubmitted, availableBalance: $availableBalance, pendingBalance: $pendingBalance, currency: $currency, stripeAccountId: $stripeAccountId)';
 }
 
@@ -215,7 +221,7 @@ return $default(_that.isConnected,_that.payoutsEnabled,_that.chargesEnabled,_tha
 /// @nodoc
 @JsonSerializable()
 
-class _DriverStripeStatus implements DriverStripeStatus {
+class _DriverStripeStatus with DiagnosticableTreeMixin implements DriverStripeStatus {
   const _DriverStripeStatus({this.isConnected = false, this.payoutsEnabled = false, this.chargesEnabled = false, this.detailsSubmitted = false, this.availableBalance = 0.0, this.pendingBalance = 0.0, this.currency = 'EUR', this.stripeAccountId});
   factory _DriverStripeStatus.fromJson(Map<String, dynamic> json) => _$DriverStripeStatusFromJson(json);
 
@@ -238,6 +244,12 @@ _$DriverStripeStatusCopyWith<_DriverStripeStatus> get copyWith => __$DriverStrip
 Map<String, dynamic> toJson() {
   return _$DriverStripeStatusToJson(this, );
 }
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'DriverStripeStatus'))
+    ..add(DiagnosticsProperty('isConnected', isConnected))..add(DiagnosticsProperty('payoutsEnabled', payoutsEnabled))..add(DiagnosticsProperty('chargesEnabled', chargesEnabled))..add(DiagnosticsProperty('detailsSubmitted', detailsSubmitted))..add(DiagnosticsProperty('availableBalance', availableBalance))..add(DiagnosticsProperty('pendingBalance', pendingBalance))..add(DiagnosticsProperty('currency', currency))..add(DiagnosticsProperty('stripeAccountId', stripeAccountId));
+}
 
 @override
 bool operator ==(Object other) {
@@ -249,7 +261,7 @@ bool operator ==(Object other) {
 int get hashCode => Object.hash(runtimeType,isConnected,payoutsEnabled,chargesEnabled,detailsSubmitted,availableBalance,pendingBalance,currency,stripeAccountId);
 
 @override
-String toString() {
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
   return 'DriverStripeStatus(isConnected: $isConnected, payoutsEnabled: $payoutsEnabled, chargesEnabled: $chargesEnabled, detailsSubmitted: $detailsSubmitted, availableBalance: $availableBalance, pendingBalance: $pendingBalance, currency: $currency, stripeAccountId: $stripeAccountId)';
 }
 

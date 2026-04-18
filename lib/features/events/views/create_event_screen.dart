@@ -2,19 +2,20 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
 import 'package:sport_connect/features/events/view_models/event_view_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Full-screen event creation — navigated to via GoRouter.
 /// Returns [EventModel] via context.pop(created) on success.
@@ -22,7 +23,7 @@ import 'package:sport_connect/features/events/view_models/event_view_model.dart'
 /// Add to your router:
 /// ```dart
 /// GoRoute(
-///   path: AppRoutes.createEvent.path,   // e.g. '/events/create'
+///   path: AppRoutes.createEvent.path,
 ///   parentNavigatorKey: rootNavigatorKey,
 ///   pageBuilder: (context, state) => SlideUpTransitionPage(
 ///     key: state.pageKey,
@@ -30,14 +31,39 @@ import 'package:sport_connect/features/events/view_models/event_view_model.dart'
 ///   ),
 /// ),
 /// ```
-class CreateEventScreen extends ConsumerWidget {
+class CreateEventScreen extends ConsumerStatefulWidget {
   const CreateEventScreen({super.key});
+
+  @override
+  ConsumerState<CreateEventScreen> createState() => _CreateEventScreenState();
+}
+
+class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
+  late final FormGroup _form;
+
+  @override
+  void initState() {
+    super.initState();
+    _form = FormGroup({
+      'title': FormControl<String>(
+        value: '',
+        validators: [Validators.required, Validators.minLength(3)],
+      ),
+      'description': FormControl<String>(value: ''),
+    });
+  }
+
+  @override
+  void dispose() {
+    _form.dispose();
+    super.dispose();
+  }
 
   // ════════════════════════════════════════════════════════════
   // BUILD
   // ════════════════════════════════════════════════════════════
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final createState = ref.watch(createEventFormViewModelProvider);
     final l10n = AppLocalizations.of(context);
 
@@ -82,31 +108,37 @@ class CreateEventScreen extends ConsumerWidget {
         ),
         centerTitle: true,
       ),
-      body: SafeArea(
-        top: false,
-        child: ListView(
-          padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 32.h),
-          children: [
-            _buildSportTypeSelector(ref, createState, l10n),
-            SizedBox(height: 20.h),
-            _buildTitleField(ref, createState, l10n),
-            SizedBox(height: 14.h),
-            SizedBox(height: 14.h),
-            _buildDescriptionField(ref, createState, l10n),
-            SizedBox(height: 20.h),
-            _buildImagePicker(ref, createState, l10n),
-            SizedBox(height: 20.h),
-            _buildLocationPicker(context, ref, createState, l10n),
-            SizedBox(height: 20.h),
-            _buildWhenSection(context, ref, createState, l10n),
-            SizedBox(height: 20.h),
-            _buildParticipantSlider(ref, createState, l10n),
-            SizedBox(height: 20.h),
-            _buildRecurringToggle(context, ref, createState, l10n),
-            SizedBox(height: 32.h),
-            _buildSubmitButton(context, ref, createState, l10n),
-          ],
+      body: ReactiveForm(
+        formGroup: _form,
+        child: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: SafeArea(
+          top: false,
+          child: ListView(
+            padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 32.h),
+            children: [
+              _buildSportTypeSelector(ref, createState, l10n),
+              SizedBox(height: 20.h),
+              _buildTitleField(ref, createState, l10n),
+              SizedBox(height: 14.h),
+              SizedBox(height: 14.h),
+              _buildDescriptionField(ref, createState, l10n),
+              SizedBox(height: 20.h),
+              _buildImagePicker(ref, createState, l10n),
+              SizedBox(height: 20.h),
+              _buildLocationPicker(context, ref, createState, l10n),
+              SizedBox(height: 20.h),
+              _buildWhenSection(context, ref, createState, l10n),
+              SizedBox(height: 20.h),
+              _buildParticipantSlider(ref, createState, l10n),
+              SizedBox(height: 20.h),
+              _buildRecurringToggle(context, ref, createState, l10n),
+              SizedBox(height: 32.h),
+              _buildSubmitButton(context, ref, createState, l10n),
+            ],
+          ),
         ),
+      ),
       ),
     );
   }
@@ -176,16 +208,19 @@ class CreateEventScreen extends ConsumerWidget {
     CreateEventFormState createState,
     AppLocalizations l10n,
   ) {
-    return TextFormField(
-      initialValue: createState.title,
+    return ReactiveTextField<String>(
+      formControlName: 'title',
       textCapitalization: TextCapitalization.words,
       maxLength: 100,
-      onChanged: ref.read(createEventFormViewModelProvider.notifier).setTitle,
-      decoration: _deco(l10n.eventTitleField, Icons.title_rounded).copyWith(
-        errorText: createState.hasAttemptedSubmit
-            ? createState.titleError
-            : null,
-      ),
+      onChanged: (control) => ref
+          .read(createEventFormViewModelProvider.notifier)
+          .setTitle(control.value ?? ''),
+      validationMessages: {
+        ValidationMessage.required: (_) => 'Title is required',
+        ValidationMessage.minLength: (_) =>
+            'Title must be at least 3 characters',
+      },
+      decoration: _deco(l10n.eventTitleField, Icons.title_rounded),
     ).animate().fadeIn(duration: 250.ms, delay: 60.ms);
   }
 
@@ -194,15 +229,15 @@ class CreateEventScreen extends ConsumerWidget {
     CreateEventFormState createState,
     AppLocalizations l10n,
   ) {
-    return TextFormField(
-      initialValue: createState.description,
+    return ReactiveTextField<String>(
+      formControlName: 'description',
       maxLines: 3,
       minLines: 2,
       maxLength: 500,
       textCapitalization: TextCapitalization.sentences,
-      onChanged: ref
+      onChanged: (control) => ref
           .read(createEventFormViewModelProvider.notifier)
-          .setDescription,
+          .setDescription(control.value ?? ''),
       decoration: _deco(l10n.eventDescriptionField, Icons.notes_rounded),
     ).animate().fadeIn(duration: 250.ms, delay: 140.ms);
   }
@@ -521,7 +556,6 @@ class CreateEventScreen extends ConsumerWidget {
         ),
         Slider.adaptive(
           value: createState.maxParticipants.toDouble(),
-          min: 0,
           max: 100,
           divisions: 20,
           activeColor: createState.type.color,
@@ -574,8 +608,8 @@ class CreateEventScreen extends ConsumerWidget {
         if (createState.isRecurring) ...[
           SizedBox(height: 12.h),
           GestureDetector(
-            onTap: () {
-              _showRecurrencePatternPicker(context, ref, createState);
+            onTap: () async {
+              await _showRecurrencePatternPicker(context, ref, createState);
             },
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
@@ -673,7 +707,7 @@ class CreateEventScreen extends ConsumerWidget {
 
     if (!context.mounted) return;
 
-    showModalBottomSheet(
+    await showModalBottomSheet<void>(
       context: context,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
@@ -813,7 +847,6 @@ class CreateEventScreen extends ConsumerWidget {
       onPressed: createState.isBusy ? null : () => _submit(context, ref),
       isLoading: createState.isBusy,
       icon: Icons.check_rounded,
-      style: PremiumButtonStyle.primary,
     ).animate().fadeIn(duration: 250.ms, delay: 300.ms);
   }
 
@@ -850,11 +883,11 @@ class CreateEventScreen extends ConsumerWidget {
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14.r),
-      borderSide: BorderSide(color: AppColors.border),
+      borderSide: const BorderSide(color: AppColors.border),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14.r),
-      borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+      borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
     ),
   );
 
@@ -972,3 +1005,4 @@ class CreateEventScreen extends ConsumerWidget {
     context.pop(result.event);
   }
 }
+

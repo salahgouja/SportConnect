@@ -11,15 +11,15 @@ _MessageModel _$MessageModelFromJson(Map json) => _MessageModel(
   chatId: json['chatId'] as String,
   senderId: json['senderId'] as String,
   senderName: json['senderName'] as String,
-  senderPhotoUrl: json['senderPhotoUrl'] as String?,
   content: json['content'] as String,
+  senderPhotoUrl: json['senderPhotoUrl'] as String?,
   type:
       $enumDecodeNullable(_$MessageTypeEnumMap, json['type']) ??
       MessageType.text,
   status:
       $enumDecodeNullable(_$MessageStatusEnumMap, json['status']) ??
       MessageStatus.sending,
-  imageUrl: json['imageUrl'] as String?,
+  mediaUrl: json['mediaUrl'] as String?,
   thumbnailUrl: json['thumbnailUrl'] as String?,
   latitude: (json['latitude'] as num?)?.toDouble(),
   longitude: (json['longitude'] as num?)?.toDouble(),
@@ -55,11 +55,11 @@ Map<String, dynamic> _$MessageModelToJson(_MessageModel instance) =>
       'chatId': instance.chatId,
       'senderId': instance.senderId,
       'senderName': instance.senderName,
-      'senderPhotoUrl': instance.senderPhotoUrl,
       'content': instance.content,
+      'senderPhotoUrl': instance.senderPhotoUrl,
       'type': _$MessageTypeEnumMap[instance.type]!,
       'status': _$MessageStatusEnumMap[instance.status]!,
-      'imageUrl': instance.imageUrl,
+      'mediaUrl': instance.mediaUrl,
       'thumbnailUrl': instance.thumbnailUrl,
       'latitude': instance.latitude,
       'longitude': instance.longitude,
@@ -94,7 +94,7 @@ const _$MessageStatusEnumMap = {
 };
 
 _ChatParticipant _$ChatParticipantFromJson(Map json) => _ChatParticipant(
-  odid: json['odid'] as String,
+  userId: json['odid'] as String,
   displayName: json['displayName'] as String,
   photoUrl: json['photoUrl'] as String?,
   isAdmin: json['isAdmin'] as bool? ?? false,
@@ -105,7 +105,7 @@ _ChatParticipant _$ChatParticipantFromJson(Map json) => _ChatParticipant(
 
 Map<String, dynamic> _$ChatParticipantToJson(_ChatParticipant instance) =>
     <String, dynamic>{
-      'odid': instance.odid,
+      'odid': instance.userId,
       'displayName': instance.displayName,
       'photoUrl': instance.photoUrl,
       'isAdmin': instance.isAdmin,
@@ -202,7 +202,7 @@ const _$ChatTypeEnumMap = {
 };
 
 _TypingIndicator _$TypingIndicatorFromJson(Map json) => _TypingIndicator(
-  odid: json['odid'] as String,
+  userId: json['userId'] as String,
   displayName: json['displayName'] as String,
   chatId: json['chatId'] as String,
   startedAt: const TimestampConverter().fromJson(json['startedAt']),
@@ -210,7 +210,7 @@ _TypingIndicator _$TypingIndicatorFromJson(Map json) => _TypingIndicator(
 
 Map<String, dynamic> _$TypingIndicatorToJson(_TypingIndicator instance) =>
     <String, dynamic>{
-      'odid': instance.odid,
+      'userId': instance.userId,
       'displayName': instance.displayName,
       'chatId': instance.chatId,
       'startedAt': const TimestampConverter().toJson(instance.startedAt),

@@ -4,30 +4,28 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
-
 /// Post-ride quick review prompt (#47)
 class PostRideReviewPrompt extends StatelessWidget {
+  const PostRideReviewPrompt({
+    required this.driverName,
+    required this.onRate,
+    required this.onSkip,
+    super.key,
+    this.driverPhotoUrl,
+  });
   final String driverName;
   final String? driverPhotoUrl;
   final ValueChanged<int> onRate;
   final VoidCallback onSkip;
 
-  const PostRideReviewPrompt({
-    super.key,
-    required this.driverName,
-    this.driverPhotoUrl,
-    required this.onRate,
-    required this.onSkip,
-  });
-
   static Future<void> show(
     BuildContext context, {
     required String driverName,
-    String? driverPhotoUrl,
     required ValueChanged<int> onRate,
     required VoidCallback onSkip,
+    String? driverPhotoUrl,
   }) {
-    return showDialog(
+    return showDialog<void>(
       context: context,
       barrierLabel: AppLocalizations.of(context).rateYourRide,
       builder: (_) => PostRideReviewPrompt(
@@ -120,18 +118,17 @@ class PostRideReviewPrompt extends StatelessWidget {
 
 /// Add to calendar button (#49)
 class AddToCalendarButton extends StatelessWidget {
-  final DateTime departureTime;
-  final String origin;
-  final String destination;
-  final VoidCallback onAdd;
-
   const AddToCalendarButton({
-    super.key,
     required this.departureTime,
     required this.origin,
     required this.destination,
     required this.onAdd,
+    super.key,
   });
+  final DateTime departureTime;
+  final String origin;
+  final String destination;
+  final VoidCallback onAdd;
 
   @override
   Widget build(BuildContext context) {
@@ -155,18 +152,17 @@ class AddToCalendarButton extends StatelessWidget {
 
 /// App-wide search bar (#82)
 class AppSearchBar extends StatelessWidget {
+  const AppSearchBar({
+    required this.controller,
+    required this.onChanged,
+    super.key,
+    this.onClear,
+    this.hintText = 'Search rides, people, places...',
+  });
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
   final VoidCallback? onClear;
   final String hintText;
-
-  const AppSearchBar({
-    super.key,
-    required this.controller,
-    required this.onChanged,
-    this.onClear,
-    this.hintText = 'Search rides, people, places...',
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -203,22 +199,21 @@ class AppSearchBar extends StatelessWidget {
 
 /// Onboarding feature tooltip (#83)
 class FeatureTooltip extends StatelessWidget {
+  const FeatureTooltip({
+    required this.title,
+    required this.description,
+    required this.onDismiss,
+    super.key,
+    this.onNext,
+    this.currentStep = 1,
+    this.totalSteps = 1,
+  });
   final String title;
   final String description;
   final VoidCallback onDismiss;
   final VoidCallback? onNext;
   final int currentStep;
   final int totalSteps;
-
-  const FeatureTooltip({
-    super.key,
-    required this.title,
-    required this.description,
-    required this.onDismiss,
-    this.onNext,
-    this.currentStep = 1,
-    this.totalSteps = 1,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -310,17 +305,15 @@ class FeatureTooltip extends StatelessWidget {
   }
 }
 
-
 /// Traffic-aware ETA display (#89)
 class TrafficAwareEta extends StatelessWidget {
-  final Duration baseEta;
-  final Duration trafficEta;
-
   const TrafficAwareEta({
-    super.key,
     required this.baseEta,
     required this.trafficEta,
+    super.key,
   });
+  final Duration baseEta;
+  final Duration trafficEta;
 
   @override
   Widget build(BuildContext context) {
@@ -377,18 +370,17 @@ class TrafficAwareEta extends StatelessWidget {
 
 /// Smart departure reminder (#90)
 class SmartReminderCard extends StatelessWidget {
-  final DateTime departureTime;
-  final int minutesBefore;
-  final bool isEnabled;
-  final ValueChanged<bool> onToggle;
-
   const SmartReminderCard({
-    super.key,
     required this.departureTime,
     required this.minutesBefore,
     required this.isEnabled,
     required this.onToggle,
+    super.key,
   });
+  final DateTime departureTime;
+  final int minutesBefore;
+  final bool isEnabled;
+  final ValueChanged<bool> onToggle;
 
   @override
   Widget build(BuildContext context) {

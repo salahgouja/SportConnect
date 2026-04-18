@@ -1,6 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/features/reviews/models/review_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 
@@ -159,15 +159,16 @@ class DriverPassengerRatingViewModel extends _$DriverPassengerRatingViewModel {
               comment: state.comment.trim().isEmpty
                   ? null
                   : state.comment.trim(),
-              tags: const [],
             ),
           );
+      if (!ref.mounted) return;
       state = state.copyWith(
         isSubmitting: false,
         isSubmitted: true,
         clearError: true,
       );
-    } catch (e) {
+    } on Exception catch (e) {
+      if (!ref.mounted) return;
       state = state.copyWith(
         isSubmitting: false,
         isSubmitted: false,

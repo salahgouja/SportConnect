@@ -63,7 +63,6 @@ class FeedbackAnimations {
     HapticFeedback.mediumImpact();
     return showGeneralDialog(
       context: context,
-      barrierDismissible: false,
       barrierLabel: AppLocalizations.of(context).bookingRequestSent,
       barrierColor: Colors.black54,
       transitionDuration: const Duration(milliseconds: 300),
@@ -77,17 +76,16 @@ class FeedbackAnimations {
 }
 
 class _FeedbackOverlay extends StatefulWidget {
-  final IconData icon;
-  final Color color;
-  final String message;
-  final VoidCallback? onDismissed;
-
   const _FeedbackOverlay({
     required this.icon,
     required this.color,
     required this.message,
     this.onDismissed,
   });
+  final IconData icon;
+  final Color color;
+  final String message;
+  final VoidCallback? onDismissed;
 
   @override
   State<_FeedbackOverlay> createState() => _FeedbackOverlayState();
@@ -124,8 +122,8 @@ class _FeedbackOverlayState extends State<_FeedbackOverlay> {
                   size: 64.sp,
                   color: widget.color,
                 ).animate().scale(
-                  begin: const Offset(0.0, 0.0),
-                  end: const Offset(1.0, 1.0),
+                  begin: const Offset(0, 0),
+                  end: const Offset(1, 1),
                   duration: 500.ms,
                   curve: Curves.elasticOut,
                 ),
@@ -143,7 +141,7 @@ class _FeedbackOverlayState extends State<_FeedbackOverlay> {
             ),
           ).animate().scale(
             begin: const Offset(0.8, 0.8),
-            end: const Offset(1.0, 1.0),
+            end: const Offset(1, 1),
             duration: 300.ms,
             curve: Curves.easeOutCubic,
           ),
@@ -152,15 +150,14 @@ class _FeedbackOverlayState extends State<_FeedbackOverlay> {
 }
 
 class _BookingConfirmationOverlay extends StatefulWidget {
-  final String rideInfo;
-  final String dateTime;
-  final VoidCallback? onDismissed;
-
   const _BookingConfirmationOverlay({
     required this.rideInfo,
     required this.dateTime,
     this.onDismissed,
   });
+  final String rideInfo;
+  final String dateTime;
+  final VoidCallback? onDismissed;
 
   @override
   State<_BookingConfirmationOverlay> createState() =>
@@ -186,7 +183,7 @@ class _BookingConfirmationOverlayState
               children: [
                 Container(
                   padding: EdgeInsets.all(20.w),
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: AppColors.primaryGradient,
                   ),
@@ -196,8 +193,8 @@ class _BookingConfirmationOverlayState
                     color: Colors.white,
                   ),
                 ).animate().scale(
-                  begin: const Offset(0.0, 0.0),
-                  end: const Offset(1.0, 1.0),
+                  begin: const Offset(0, 0),
+                  end: const Offset(1, 1),
                   duration: 600.ms,
                   curve: Curves.elasticOut,
                 ),
@@ -251,7 +248,7 @@ class _BookingConfirmationOverlayState
             ),
           ).animate().scale(
             begin: const Offset(0.8, 0.8),
-            end: const Offset(1.0, 1.0),
+            end: const Offset(1, 1),
             duration: 300.ms,
             curve: Curves.easeOutCubic,
           ),

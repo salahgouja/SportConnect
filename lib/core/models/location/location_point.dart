@@ -8,8 +8,6 @@ part 'location_point.g.dart';
 /// Replaces scattered LatLng and LocationPoint usage
 @freezed
 abstract class LocationPoint with _$LocationPoint {
-  const LocationPoint._();
-
   const factory LocationPoint({
     required double latitude,
     required double longitude,
@@ -18,12 +16,6 @@ abstract class LocationPoint with _$LocationPoint {
     String? country,
     String? placeId,
   }) = _LocationPoint;
-
-  factory LocationPoint.fromJson(Map<String, dynamic> json) =>
-      _$LocationPointFromJson(json);
-
-  /// Convert to LatLng for map libraries
-  LatLng toLatLng() => LatLng(latitude, longitude);
 
   /// Create from LatLng
   factory LocationPoint.fromLatLng(
@@ -42,6 +34,13 @@ abstract class LocationPoint with _$LocationPoint {
       placeId: placeId,
     );
   }
+  const LocationPoint._();
+
+  factory LocationPoint.fromJson(Map<String, dynamic> json) =>
+      _$LocationPointFromJson(json);
+
+  /// Convert to LatLng for map libraries
+  LatLng toLatLng() => LatLng(latitude, longitude);
 
   /// Calculate distance to another point in kilometers
   double distanceTo(LocationPoint other) {

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/services/map_service.dart';
+import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// POI (Points of Interest) Search Widget
@@ -19,17 +20,16 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 /// - And more...
 ///
 /// Works worldwide (France, etc.) using Overpass API (Free & Open Source)
-class POISearchSheet extends StatefulWidget {
+class POISearchSheet extends ConsumerStatefulWidget {
+  const POISearchSheet({
+    required this.currentLocation,
+    required this.onPOISelected,
+    super.key,
+    this.initialRadius = 2000, // 2km default
+  });
   final LatLng currentLocation;
   final Function(PointOfInterest poi) onPOISelected;
   final double initialRadius;
-
-  const POISearchSheet({
-    super.key,
-    required this.currentLocation,
-    required this.onPOISelected,
-    this.initialRadius = 2000, // 2km default
-  });
 
   /// Show POI search bottom sheet
   static Future<void> show(
@@ -38,7 +38,7 @@ class POISearchSheet extends StatefulWidget {
     required Function(PointOfInterest poi) onPOISelected,
     double initialRadius = 2000,
   }) {
-    return showModalBottomSheet(
+    return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -51,63 +51,63 @@ class POISearchSheet extends StatefulWidget {
   }
 
   @override
-  State<POISearchSheet> createState() => _POISearchSheetState();
+  ConsumerState<POISearchSheet> createState() => _POISearchSheetState();
 }
 
-class _POISearchSheetState extends State<POISearchSheet> {
+class _POISearchSheetState extends ConsumerState<POISearchSheet> {
   POIType? _selectedType;
   List<PointOfInterest> _results = [];
   bool _isLoading = false;
   double _searchRadius = 2000;
 
   final List<_POICategory> _categories = [
-    _POICategory(
+    const _POICategory(
       type: POIType.gasStation,
       label: 'Gas Stations',
       icon: Icons.local_gas_station_rounded,
-      color: const Color(0xFFFF6B6B),
+      color: Color(0xFFFF6B6B),
     ),
-    _POICategory(
+    const _POICategory(
       type: POIType.parking,
       label: 'Parking',
       icon: Icons.local_parking_rounded,
-      color: const Color(0xFF4ECDC4),
+      color: Color(0xFF4ECDC4),
     ),
-    _POICategory(
+    const _POICategory(
       type: POIType.restaurant,
       label: 'Restaurants',
       icon: Icons.restaurant_rounded,
-      color: const Color(0xFFFFBE0B),
+      color: Color(0xFFFFBE0B),
     ),
-    _POICategory(
+    const _POICategory(
       type: POIType.sportsCenter,
       label: 'Sports',
       icon: Icons.sports_soccer_rounded,
       color: AppColors.primary,
     ),
-    _POICategory(
+    const _POICategory(
       type: POIType.university,
       label: 'Universities',
       icon: Icons.school_rounded,
-      color: const Color(0xFF9B59B6),
+      color: Color(0xFF9B59B6),
     ),
-    _POICategory(
+    const _POICategory(
       type: POIType.hospital,
       label: 'Hospitals',
       icon: Icons.local_hospital_rounded,
-      color: const Color(0xFFE74C3C),
+      color: Color(0xFFE74C3C),
     ),
-    _POICategory(
+    const _POICategory(
       type: POIType.publicTransport,
       label: 'Transport',
       icon: Icons.directions_bus_rounded,
-      color: const Color(0xFF3498DB),
+      color: Color(0xFF3498DB),
     ),
-    _POICategory(
+    const _POICategory(
       type: POIType.cafe,
       label: 'Cafés',
       icon: Icons.local_cafe_rounded,
-      color: const Color(0xFF8B4513),
+      color: Color(0xFF8B4513),
     ),
   ];
 
@@ -123,11 +123,13 @@ class _POISearchSheetState extends State<POISearchSheet> {
       _isLoading = true;
     });
 
-    final results = await MapService.searchPOI(
-      center: widget.currentLocation,
-      radiusMeters: _searchRadius,
-      type: type,
-    );
+    final results = await ref
+        .read(mapServiceProvider)
+        .searchPOI(
+          center: widget.currentLocation,
+          radiusMeters: _searchRadius,
+          type: type,
+        );
 
     if (mounted) {
       setState(() {
@@ -681,15 +683,14 @@ class _POISearchSheetState extends State<POISearchSheet> {
 }
 
 class _POICategory {
-  final POIType type;
-  final String label;
-  final IconData icon;
-  final Color color;
-
   const _POICategory({
     required this.type,
     required this.label,
     required this.icon,
     required this.color,
   });
+  final POIType type;
+  final String label;
+  final IconData icon;
+  final Color color;
 }

@@ -7,10 +7,9 @@ import 'package:sport_connect/features/payments/models/payment_model.dart';
 
 /// Payment Repository for Firestore operations
 class PaymentRepository implements IPaymentRepository {
+  PaymentRepository(this._firestore, this._stripeService);
   final FirebaseFirestore _firestore;
   final StripeService _stripeService;
-
-  PaymentRepository(this._firestore, this._stripeService);
 
   CollectionReference<PaymentTransaction> get _paymentsCollection => _firestore
       .collection(AppConstants.paymentsCollection)
@@ -53,7 +52,7 @@ class PaymentRepository implements IPaymentRepository {
       await docRef.set(paymentWithId);
       TalkerService.info('Payment transaction created: ${docRef.id}');
       return docRef.id;
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Error creating payment transaction: $e');
       rethrow;
     }
@@ -101,7 +100,7 @@ class PaymentRepository implements IPaymentRepository {
       TalkerService.info(
         'Payment status updated: $paymentId -> ${status.name}',
       );
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Error updating payment status: $e');
       rethrow;
     }
@@ -128,7 +127,7 @@ class PaymentRepository implements IPaymentRepository {
 
       if (snapshot.docs.isEmpty) return null;
       return snapshot.docs.first.data();
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Error getting payment: $e');
       rethrow;
     }
@@ -144,7 +143,7 @@ class PaymentRepository implements IPaymentRepository {
           .get();
 
       return snapshot.docs.map((doc) => doc.data()).toList();
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Error getting payments by ride: $e');
       rethrow;
     }
@@ -164,7 +163,7 @@ class PaymentRepository implements IPaymentRepository {
           .get();
 
       return snapshot.docs.map((doc) => doc.data()).toList();
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Error getting rider payment history: $e');
       rethrow;
     }
@@ -193,7 +192,7 @@ class PaymentRepository implements IPaymentRepository {
     int limit = 50,
   }) async {
     try {
-      Query<PaymentTransaction> query = _paymentsCollection
+      var query = _paymentsCollection
           .where('driverId', isEqualTo: driverId)
           .where('status', isEqualTo: PaymentStatus.succeeded.name);
 
@@ -216,7 +215,7 @@ class PaymentRepository implements IPaymentRepository {
           .get();
 
       return snapshot.docs.map((doc) => doc.data()).toList();
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Error getting driver earnings: $e');
       rethrow;
     }
@@ -288,8 +287,8 @@ class PaymentRepository implements IPaymentRepository {
       final now = DateTime.now();
       final todayStart = DateTime(now.year, now.month, now.day);
       final weekStart = now.subtract(Duration(days: now.weekday - 1));
-      final monthStart = DateTime(now.year, now.month, 1);
-      final yearStart = DateTime(now.year, 1, 1);
+      final monthStart = DateTime(now.year, now.month);
+      final yearStart = DateTime(now.year);
 
       final allPayments = await _paymentsCollection
           .where('driverId', isEqualTo: driverId)
@@ -301,16 +300,16 @@ class PaymentRepository implements IPaymentRepository {
       double totalEarnings = 0;
       double totalPlatformFees = 0;
       double totalStripeFees = 0;
-      int totalRides = payments.length;
+      final totalRides = payments.length;
 
       double earningsToday = 0;
       double earningsThisWeek = 0;
       double earningsThisMonth = 0;
       double earningsThisYear = 0;
 
-      int ridesToday = 0;
-      int ridesThisWeek = 0;
-      int ridesThisMonth = 0;
+      var ridesToday = 0;
+      var ridesThisWeek = 0;
+      var ridesThisMonth = 0;
 
       for (final payment in payments) {
         totalEarnings += payment.driverEarnings;
@@ -352,7 +351,7 @@ class PaymentRepository implements IPaymentRepository {
         lastUpdated: DateTime.now(),
         lastPayoutDate: lastPayoutDate,
       );
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Error calculating earnings summary: $e');
       rethrow;
     }
@@ -371,7 +370,7 @@ class PaymentRepository implements IPaymentRepository {
       await docRef.set(payoutWithId);
       TalkerService.info('Payout created: ${docRef.id}');
       return docRef.id;
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Error creating payout: $e');
       rethrow;
     }
@@ -394,7 +393,7 @@ class PaymentRepository implements IPaymentRepository {
       });
 
       TalkerService.info('Payout status updated: $payoutId -> ${status.name}');
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Error updating payout status: $e');
       rethrow;
     }
@@ -414,7 +413,7 @@ class PaymentRepository implements IPaymentRepository {
           .get();
 
       return snapshot.docs.map((doc) => doc.data()).toList();
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Error getting driver payouts: $e');
       rethrow;
     }
@@ -435,7 +434,7 @@ class PaymentRepository implements IPaymentRepository {
           );
 
       TalkerService.info('Connected account saved: ${account.driverId}');
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Error saving connected account: $e');
       rethrow;
     }
@@ -449,7 +448,7 @@ class PaymentRepository implements IPaymentRepository {
       if (!doc.exists) return null;
 
       return doc.data();
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Error getting connected account: $e');
       rethrow;
     }
@@ -480,7 +479,7 @@ class PaymentRepository implements IPaymentRepository {
       });
 
       TalkerService.info('Connected account status updated: $driverId');
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Error updating connected account status: $e');
       rethrow;
     }
@@ -507,7 +506,7 @@ class PaymentRepository implements IPaymentRepository {
       );
 
       TalkerService.info('Refund processed: $paymentId');
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Error processing refund: $e');
       rethrow;
     }
@@ -520,7 +519,7 @@ class PaymentRepository implements IPaymentRepository {
       final doc = await _payoutsCollection.doc(payoutId).get();
       if (!doc.exists) return null;
       return doc.data();
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Error getting payout: $e');
       rethrow;
     }
@@ -570,7 +569,7 @@ class PaymentRepository implements IPaymentRepository {
       await saveConnectedAccount(account);
       TalkerService.info('Connected account created: $userId');
       return account;
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Error creating connected account: $e');
       rethrow;
     }

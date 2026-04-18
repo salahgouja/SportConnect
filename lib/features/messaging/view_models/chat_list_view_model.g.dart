@@ -42,7 +42,7 @@ final class ChatListUiViewModelProvider
 }
 
 String _$chatListUiViewModelHash() =>
-    r'd2e235248958b60843e945e79818d0b6f35ddff6';
+    r'922875ab2b918b571fcf9facaa6e49596fc6043d';
 
 abstract class _$ChatListUiViewModel extends $Notifier<ChatListUiState> {
   ChatListUiState build();
@@ -95,7 +95,7 @@ final class NewChatSearchViewModelProvider
 }
 
 String _$newChatSearchViewModelHash() =>
-    r'e9126dc74a4bc0cb5e3d1367a0c2d3ab3d9a3340';
+    r'ef260f2fcc0ba375f797f1cde2df191492b6a569';
 
 abstract class _$NewChatSearchViewModel extends $Notifier<NewChatSearchState> {
   NewChatSearchState build();

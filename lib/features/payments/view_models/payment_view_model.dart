@@ -1,28 +1,20 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:riverpod/src/providers/provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/stripe_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/payments/models/payment_model.dart';
-import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 
 part 'payment_view_model.freezed.dart';
 part 'payment_view_model.g.dart';
 
 class DriverStripeOnboardingFlowState {
-  final bool isLoading;
-  final bool showWebView;
-  final bool isVerifying;
-  final bool completionHandled;
-  final bool isConnected;
-  final double webViewProgress;
-  final String? onboardingUrl;
-  final String? errorMessage;
-  final String? successMessage;
-
   const DriverStripeOnboardingFlowState({
     this.isLoading = false,
     this.showWebView = false,
@@ -34,6 +26,15 @@ class DriverStripeOnboardingFlowState {
     this.errorMessage,
     this.successMessage,
   });
+  final bool isLoading;
+  final bool showWebView;
+  final bool isVerifying;
+  final bool completionHandled;
+  final bool isConnected;
+  final double webViewProgress;
+  final String? onboardingUrl;
+  final String? errorMessage;
+  final String? successMessage;
 
   DriverStripeOnboardingFlowState copyWith({
     bool? isLoading,
@@ -68,7 +69,7 @@ class DriverStripeOnboardingFlowState {
 }
 
 class PaymentHistoryFilterState {
-  const PaymentHistoryFilterState({this.selectedFilter = 'all'});
+  const PaymentHistoryFilterState({this.selectedFilter = 'completed'});
 
   final String selectedFilter;
 
@@ -100,7 +101,8 @@ class PaymentHistoryFilterViewModel extends _$PaymentHistoryFilterViewModel {
   }
 }
 
-final filteredRiderPaymentsProvider =
+final ProviderFamily<List<PaymentTransaction>, List<PaymentTransaction>>
+filteredRiderPaymentsProvider =
     Provider.family<List<PaymentTransaction>, List<PaymentTransaction>>((
       ref,
       payments,
@@ -243,7 +245,7 @@ class PaymentViewModel extends _$PaymentViewModel {
       } else {
         throw Exception('Payment cancelled by user');
       }
-    } catch (e, stack) {
+    } on Exception catch (e, stack) {
       TalkerService.error('Error processing payment: $e');
 
       // Check if provider is still mounted before setting error state
@@ -272,7 +274,7 @@ class PaymentViewModel extends _$PaymentViewModel {
         existingCustomerId: existingCustomerId,
       );
       return result['customerId'] as String;
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Error getting/creating customer: $e');
       rethrow;
     }
@@ -298,7 +300,7 @@ class PaymentViewModel extends _$PaymentViewModel {
       if (!ref.mounted) return;
 
       state = const AsyncValue.data(null);
-    } catch (e, stack) {
+    } on Exception catch (e, stack) {
       TalkerService.error('Error processing refund: $e');
 
       // Check if provider is still mounted before setting error state
@@ -353,7 +355,7 @@ class DriverOnboardingViewModel extends _$DriverOnboardingViewModel {
 
       state = const AsyncValue.data(null);
       return account;
-    } catch (e, stack) {
+    } on Exception catch (e, stack) {
       TalkerService.error('Error creating connected account: $e');
       if (ref.mounted) {
         state = AsyncValue.error(e, stack);
@@ -379,7 +381,7 @@ class DriverStripeOnboardingFlowViewModel
       if (status.isConnected) {
         state = state.copyWith(isConnected: true, clearError: true);
       }
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Error checking existing Stripe account: $e');
     }
   }
@@ -439,7 +441,7 @@ class DriverStripeOnboardingFlowViewModel
           errorMessage: 'Stripe account creation failed.',
         );
       }
-    } catch (e) {
+    } on Exception {
       if (!ref.mounted) return;
       state = state.copyWith(
         isLoading: false,
@@ -485,7 +487,7 @@ class DriverStripeOnboardingFlowViewModel
     );
 
     try {
-      await Future.delayed(const Duration(seconds: 2));
+      await Future<void>.delayed(const Duration(seconds: 2));
       if (user == null) {
         state = state.copyWith(
           isVerifying: false,
@@ -507,7 +509,7 @@ class DriverStripeOnboardingFlowViewModel
           await ref.read(profileRepositoryProvider).updateProfile(user.uid, {
             'isStripeOnboarded': true,
           });
-        } catch (e) {
+        } on Exception catch (e) {
           TalkerService.warning('Failed to persist isStripeOnboarded flag: $e');
         }
         if (!ref.mounted) return;
@@ -523,7 +525,7 @@ class DriverStripeOnboardingFlowViewModel
           completionHandled: false,
         );
       }
-    } catch (e, stack) {
+    } on Exception catch (e, stack) {
       TalkerService.error(
         'Stripe onboarding verification failed: $e',
         e,
@@ -557,9 +559,8 @@ class DriverStripeOnboardingFlowViewModel
     if (user.country != null && user.country!.isNotEmpty) {
       return user.country!.toUpperCase();
     }
-
-    if (user.phoneNumber != null) {
-      final phone = user.phoneNumber!;
+    final phone = user.phoneNumber;
+    if (phone != null) {
       const phoneCountryMap = {
         '+216': 'TN',
         '+33': 'FR',
@@ -626,7 +627,7 @@ class DriverConnectedAccountViewModel
     try {
       // Refresh from Firestore (webhooks keep it updated)
       ref.invalidateSelf();
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Error refreshing account status: $e');
       rethrow;
     }
@@ -699,7 +700,7 @@ class DriverPayoutViewModel extends _$DriverPayoutViewModel {
 
       state = const AsyncValue.data(null);
       return true;
-    } catch (e, stack) {
+    } on Exception catch (e, stack) {
       TalkerService.error('Error requesting payout: $e');
       if (ref.mounted) {
         state = AsyncValue.error(e, stack);
@@ -721,7 +722,7 @@ class DriverPayoutViewModel extends _$DriverPayoutViewModel {
       if (!ref.mounted) return true;
       state = const AsyncValue.data(null);
       return true;
-    } catch (e, stack) {
+    } on Exception catch (e, stack) {
       TalkerService.error('Error cancelling payout: $e');
       if (ref.mounted) {
         state = AsyncValue.error(e, stack);
@@ -815,7 +816,7 @@ Future<DriverStripeStatus> driverStripeStatus(Ref ref) async {
         currency: liveCurrency,
         stripeAccountId: accountId,
       );
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.warning(
         'Live Stripe status fetch failed, falling back to cached status: $e',
       );
@@ -841,7 +842,7 @@ Future<DriverStripeStatus> driverStripeStatus(Ref ref) async {
         stripeAccountId: accountId,
       );
     }
-  } catch (e) {
+  } on Exception {
     return const DriverStripeStatus();
   }
 }

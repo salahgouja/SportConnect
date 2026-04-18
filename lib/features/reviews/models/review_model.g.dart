@@ -11,12 +11,13 @@ _ReviewModel _$ReviewModelFromJson(Map json) => _ReviewModel(
   rideId: json['rideId'] as String,
   reviewerId: json['reviewerId'] as String,
   reviewerName: json['reviewerName'] as String,
-  reviewerPhotoUrl: json['reviewerPhotoUrl'] as String?,
   revieweeId: json['revieweeId'] as String,
   revieweeName: json['revieweeName'] as String,
-  revieweePhotoUrl: json['revieweePhotoUrl'] as String?,
   type: $enumDecode(_$ReviewTypeEnumMap, json['type']),
   rating: (json['rating'] as num).toDouble(),
+  createdAt: const RequiredTimestampConverter().fromJson(json['createdAt']),
+  reviewerPhotoUrl: json['reviewerPhotoUrl'] as String?,
+  revieweePhotoUrl: json['revieweePhotoUrl'] as String?,
   comment: json['comment'] as String?,
   tags:
       (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ??
@@ -24,7 +25,6 @@ _ReviewModel _$ReviewModelFromJson(Map json) => _ReviewModel(
   isVisible: json['isVisible'] as bool? ?? true,
   response: json['response'] as String?,
   responseAt: const TimestampConverter().fromJson(json['responseAt']),
-  createdAt: const RequiredTimestampConverter().fromJson(json['createdAt']),
   updatedAt: const TimestampConverter().fromJson(json['updatedAt']),
 );
 
@@ -35,18 +35,18 @@ Map<String, dynamic> _$ReviewModelToJson(
   'rideId': instance.rideId,
   'reviewerId': instance.reviewerId,
   'reviewerName': instance.reviewerName,
-  'reviewerPhotoUrl': instance.reviewerPhotoUrl,
   'revieweeId': instance.revieweeId,
   'revieweeName': instance.revieweeName,
-  'revieweePhotoUrl': instance.revieweePhotoUrl,
   'type': _$ReviewTypeEnumMap[instance.type]!,
   'rating': instance.rating,
+  'createdAt': const RequiredTimestampConverter().toJson(instance.createdAt),
+  'reviewerPhotoUrl': instance.reviewerPhotoUrl,
+  'revieweePhotoUrl': instance.revieweePhotoUrl,
   'comment': instance.comment,
   'tags': instance.tags,
   'isVisible': instance.isVisible,
   'response': instance.response,
   'responseAt': const TimestampConverter().toJson(instance.responseAt),
-  'createdAt': const RequiredTimestampConverter().toJson(instance.createdAt),
   'updatedAt': const TimestampConverter().toJson(instance.updatedAt),
 };
 
@@ -91,9 +91,9 @@ _CreateReviewRequest _$CreateReviewRequestFromJson(Map json) =>
       rideId: json['rideId'] as String,
       revieweeId: json['revieweeId'] as String,
       revieweeName: json['revieweeName'] as String,
-      revieweePhotoUrl: json['revieweePhotoUrl'] as String?,
       type: $enumDecode(_$ReviewTypeEnumMap, json['type']),
       rating: (json['rating'] as num).toDouble(),
+      revieweePhotoUrl: json['revieweePhotoUrl'] as String?,
       comment: json['comment'] as String?,
       tags:
           (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ??
@@ -106,9 +106,9 @@ Map<String, dynamic> _$CreateReviewRequestToJson(
   'rideId': instance.rideId,
   'revieweeId': instance.revieweeId,
   'revieweeName': instance.revieweeName,
-  'revieweePhotoUrl': instance.revieweePhotoUrl,
   'type': _$ReviewTypeEnumMap[instance.type]!,
   'rating': instance.rating,
+  'revieweePhotoUrl': instance.revieweePhotoUrl,
   'comment': instance.comment,
   'tags': instance.tags,
 };

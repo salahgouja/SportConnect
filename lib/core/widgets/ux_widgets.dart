@@ -6,16 +6,15 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Animated status badge with transitions (#77)
 class AnimatedStatusBadge extends StatelessWidget {
-  final String label;
-  final Color color;
-  final IconData icon;
-
   const AnimatedStatusBadge({
-    super.key,
     required this.label,
     required this.color,
     required this.icon,
+    super.key,
   });
+  final String label;
+  final Color color;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
@@ -57,19 +56,9 @@ class AnimatedStatusBadge extends StatelessWidget {
 
 /// Swipe action wrapper for list items (#76)
 class SwipeActionTile extends StatelessWidget {
-  final Widget child;
-  final VoidCallback? onSwipeLeft;
-  final VoidCallback? onSwipeRight;
-  final IconData leftIcon;
-  final IconData rightIcon;
-  final Color leftColor;
-  final Color rightColor;
-  final String? leftLabel;
-  final String? rightLabel;
-
   const SwipeActionTile({
-    super.key,
     required this.child,
+    super.key,
     this.onSwipeLeft,
     this.onSwipeRight,
     this.leftIcon = Icons.delete_rounded,
@@ -79,6 +68,15 @@ class SwipeActionTile extends StatelessWidget {
     this.leftLabel,
     this.rightLabel,
   });
+  final Widget child;
+  final VoidCallback? onSwipeLeft;
+  final VoidCallback? onSwipeRight;
+  final IconData leftIcon;
+  final IconData rightIcon;
+  final Color leftColor;
+  final Color rightColor;
+  final String? leftLabel;
+  final String? rightLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -155,14 +153,13 @@ class SwipeActionTile extends StatelessWidget {
 
 /// Compact/Expanded list toggle (#81)
 class ListViewToggle extends StatelessWidget {
-  final bool isCompact;
-  final ValueChanged<bool> onToggle;
-
   const ListViewToggle({
-    super.key,
     required this.isCompact,
     required this.onToggle,
+    super.key,
   });
+  final bool isCompact;
+  final ValueChanged<bool> onToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -194,17 +191,16 @@ class ListViewToggle extends StatelessWidget {
 }
 
 class _ToggleButton extends StatelessWidget {
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-  final String tooltip;
-
   const _ToggleButton({
     required this.icon,
     required this.isSelected,
     required this.onTap,
     required this.tooltip,
   });
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final String tooltip;
 
   @override
   Widget build(BuildContext context) {

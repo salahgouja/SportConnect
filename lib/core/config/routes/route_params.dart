@@ -2,9 +2,8 @@ import 'package:go_router/go_router.dart';
 
 /// Type-safe parameter extractors for routes
 class RouteParams {
-  final GoRouterState state;
-
   const RouteParams(this.state);
+  final GoRouterState state;
 
   // String parameters
   String? getString(String key) => state.pathParameters[key];

@@ -6,10 +6,6 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:sport_connect/features/payments/models/premium_plan.dart';
 
 class PremiumIapResult {
-  final bool isSuccess;
-  final String? errorMessage;
-  final PurchaseDetails? purchase;
-
   const PremiumIapResult._({
     required this.isSuccess,
     this.errorMessage,
@@ -21,6 +17,9 @@ class PremiumIapResult {
 
   const PremiumIapResult.failure(String message)
     : this._(isSuccess: false, errorMessage: message);
+  final bool isSuccess;
+  final String? errorMessage;
+  final PurchaseDetails? purchase;
 }
 
 class PremiumIapService {
@@ -172,7 +171,7 @@ class PremiumIapService {
       return const PremiumIapResult.failure(
         'In-app purchase plugin is not ready. Fully restart the app and try again.',
       );
-    } catch (e) {
+    } on Exception catch (e) {
       return PremiumIapResult.failure(
         'In-app purchase failed unexpectedly: $e',
       );

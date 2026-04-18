@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod/src/providers/future_provider.dart';
+import 'package:riverpod/src/providers/stream_provider.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_review_repository.dart';
 import 'package:sport_connect/core/models/models.dart';
@@ -43,53 +45,59 @@ import 'package:uuid/uuid.dart';
 /// 5. Tag aggregation: Can compute tag statistics
 
 /// Provider to get reviews for a specific user
-final userReviewsProvider = FutureProvider.family<List<ReviewModel>, String>((
-  ref,
-  userId,
-) async {
-  final repo = ref.read(reviewRepositoryProvider);
-  return repo.getReviewsForUser(userId);
-});
-
-/// Provider to get reviews left by a specific user
-final reviewsByUserProvider = FutureProvider.family<List<ReviewModel>, String>((
-  ref,
-  userId,
-) async {
-  final repo = ref.read(reviewRepositoryProvider);
-  return repo.getReviewsByUser(userId);
-});
-
-/// Provider to get rating stats for a user
-final userRatingStatsProvider = FutureProvider.family<RatingStats, String>((
-  ref,
-  userId,
-) async {
-  final repo = ref.read(reviewRepositoryProvider);
-  return repo.getRatingStatsForUser(userId);
-});
-
-/// Provider to get reviews for a specific ride
-final rideReviewsProvider = FutureProvider.family<List<ReviewModel>, String>((
-  ref,
-  rideId,
-) async {
-  final repo = ref.read(reviewRepositoryProvider);
-  return repo.getReviewsForRide(rideId);
-});
-
-/// Stream provider for real-time review updates for a user
-final userReviewsStreamProvider =
-    StreamProvider.family<List<ReviewModel>, String>((ref, userId) {
+final FutureProviderFamily<List<ReviewModel>, String> userReviewsProvider =
+    FutureProvider.family<List<ReviewModel>, String>((
+      ref,
+      userId,
+    ) async {
       final repo = ref.read(reviewRepositoryProvider);
-      return repo.watchReviewsForUser(userId);
+      return repo.getReviewsForUser(userId);
     });
 
+/// Provider to get reviews left by a specific user
+final FutureProviderFamily<List<ReviewModel>, String> reviewsByUserProvider =
+    FutureProvider.family<List<ReviewModel>, String>((
+      ref,
+      userId,
+    ) async {
+      final repo = ref.read(reviewRepositoryProvider);
+      return repo.getReviewsByUser(userId);
+    });
+
+/// Provider to get rating stats for a user
+final FutureProviderFamily<RatingStats, String> userRatingStatsProvider =
+    FutureProvider.family<RatingStats, String>((
+      ref,
+      userId,
+    ) async {
+      final repo = ref.read(reviewRepositoryProvider);
+      return repo.getRatingStatsForUser(userId);
+    });
+
+/// Provider to get reviews for a specific ride
+final FutureProviderFamily<List<ReviewModel>, String> rideReviewsProvider =
+    FutureProvider.family<List<ReviewModel>, String>((
+      ref,
+      rideId,
+    ) async {
+      final repo = ref.read(reviewRepositoryProvider);
+      return repo.getReviewsForRide(rideId);
+    });
+
+/// Stream provider for real-time review updates for a user
+final StreamProviderFamily<List<ReviewModel>, String>
+userReviewsStreamProvider = StreamProvider.family<List<ReviewModel>, String>((
+  ref,
+  userId,
+) {
+  final repo = ref.read(reviewRepositoryProvider);
+  return repo.watchReviewsForUser(userId);
+});
+
 class ReviewRepository implements IReviewRepository {
+  ReviewRepository(this._firestore);
   final FirebaseFirestore _firestore;
   final _uuid = const Uuid();
-
-  ReviewRepository(this._firestore);
 
   CollectionReference<ReviewModel> get _reviewsCollection => _firestore
       .collection(AppConstants.reviewsCollection)
@@ -118,7 +126,7 @@ class ReviewRepository implements IReviewRepository {
     String? userId,
     CreateReviewRequest request,
   ) async {
-    UserModel? currentUser = await _usersCollection
+    final currentUser = await _usersCollection
         .doc(userId)
         .get()
         .then((doc) => doc.data());
@@ -180,7 +188,6 @@ class ReviewRepository implements IReviewRepository {
       rating: request.rating,
       comment: request.comment,
       tags: request.tags,
-      isVisible: true,
       createdAt: now,
     );
 
@@ -200,7 +207,7 @@ class ReviewRepository implements IReviewRepository {
     int limit = 50,
     DateTime? startAfter,
   }) async {
-    Query<ReviewModel> query = _reviewsCollection
+    var query = _reviewsCollection
         .where('revieweeId', isEqualTo: userId)
         .where('isVisible', isEqualTo: true)
         .orderBy('createdAt', descending: true);
@@ -271,7 +278,7 @@ class ReviewRepository implements IReviewRepository {
     String reviewId,
     String response,
   ) async {
-    UserModel? currentUser = await _usersCollection
+    final currentUser = await _usersCollection
         .doc(userId)
         .get()
         .then((doc) => doc.data());
@@ -300,7 +307,7 @@ class ReviewRepository implements IReviewRepository {
   /// Delete a review (by reviewer or admin)
   @override
   Future<void> deleteReview(String userId, String reviewId) async {
-    UserModel? currentUser = await _usersCollection
+    final currentUser = await _usersCollection
         .doc(userId)
         .get()
         .then((doc) => doc.data());
@@ -354,7 +361,7 @@ class ReviewRepository implements IReviewRepository {
     required String rideId,
     required String revieweeId,
   }) async {
-    UserModel? currentUser = await _usersCollection
+    final currentUser = await _usersCollection
         .doc(userId)
         .get()
         .then((doc) => doc.data());
@@ -373,7 +380,7 @@ class ReviewRepository implements IReviewRepository {
   /// Get pending reviews (rides that user participated in but hasn't reviewed)
   @override
   Future<List<Map<String, dynamic>>> getPendingReviews(String userId) async {
-    UserModel? currentUser = await _usersCollection
+    final currentUser = await _usersCollection
         .doc(userId)
         .get()
         .then((doc) => doc.data());
@@ -407,7 +414,7 @@ class ReviewRepository implements IReviewRepository {
             rideId: rideId,
             revieweeId: passengerId,
           );
-          final UserModel? passenger = await _usersCollection
+          final passenger = await _usersCollection
               .doc(passengerId)
               .get()
               .then((doc) => doc.data());
@@ -431,7 +438,7 @@ class ReviewRepository implements IReviewRepository {
           rideId: rideId,
           revieweeId: driverId,
         );
-        final UserModel? driver = await _usersCollection
+        final driver = await _usersCollection
             .doc(driverId)
             .get()
             .then((doc) => doc.data());

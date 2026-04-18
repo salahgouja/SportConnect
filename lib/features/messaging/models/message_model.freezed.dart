@@ -15,11 +15,12 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$MessageModel {
 
- String get id; String get chatId; String get senderId; String get senderName; String? get senderPhotoUrl; String get content; MessageType get type; MessageStatus get status;// For image messages
- String? get imageUrl; String? get thumbnailUrl;// For location messages
- double? get latitude; double? get longitude; String? get locationName;// For ride messages
- String? get rideId;// Reply
- String? get replyToMessageId; String? get replyToContent;// Reactions
+ String get id; String get chatId; String get senderId; String get senderName; String get content; String? get senderPhotoUrl; MessageType get type; MessageStatus get status;// FIX: unified media field — replaces the old split imageUrl / (misused)
+// imageUrl-for-audio pattern. One field for image, audio, and video URLs.
+ String? get mediaUrl; String? get thumbnailUrl;// Location
+ double? get latitude; double? get longitude; String? get locationName;// Ride attachment
+ String? get rideId;// Reply context
+ String? get replyToMessageId; String? get replyToContent;// Reactions: emoji → [userId, ...]
  Map<String, List<String>> get reactions;// Read receipts
  List<String> get readBy; List<String> get deliveredTo;// Metadata
  bool get isEdited; bool get isDeleted;@TimestampConverter() DateTime? get createdAt;@TimestampConverter() DateTime? get editedAt;
@@ -35,16 +36,16 @@ $MessageModelCopyWith<MessageModel> get copyWith => _$MessageModelCopyWithImpl<M
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageModel&&(identical(other.id, id) || other.id == id)&&(identical(other.chatId, chatId) || other.chatId == chatId)&&(identical(other.senderId, senderId) || other.senderId == senderId)&&(identical(other.senderName, senderName) || other.senderName == senderName)&&(identical(other.senderPhotoUrl, senderPhotoUrl) || other.senderPhotoUrl == senderPhotoUrl)&&(identical(other.content, content) || other.content == content)&&(identical(other.type, type) || other.type == type)&&(identical(other.status, status) || other.status == status)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.thumbnailUrl, thumbnailUrl) || other.thumbnailUrl == thumbnailUrl)&&(identical(other.latitude, latitude) || other.latitude == latitude)&&(identical(other.longitude, longitude) || other.longitude == longitude)&&(identical(other.locationName, locationName) || other.locationName == locationName)&&(identical(other.rideId, rideId) || other.rideId == rideId)&&(identical(other.replyToMessageId, replyToMessageId) || other.replyToMessageId == replyToMessageId)&&(identical(other.replyToContent, replyToContent) || other.replyToContent == replyToContent)&&const DeepCollectionEquality().equals(other.reactions, reactions)&&const DeepCollectionEquality().equals(other.readBy, readBy)&&const DeepCollectionEquality().equals(other.deliveredTo, deliveredTo)&&(identical(other.isEdited, isEdited) || other.isEdited == isEdited)&&(identical(other.isDeleted, isDeleted) || other.isDeleted == isDeleted)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.editedAt, editedAt) || other.editedAt == editedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageModel&&(identical(other.id, id) || other.id == id)&&(identical(other.chatId, chatId) || other.chatId == chatId)&&(identical(other.senderId, senderId) || other.senderId == senderId)&&(identical(other.senderName, senderName) || other.senderName == senderName)&&(identical(other.content, content) || other.content == content)&&(identical(other.senderPhotoUrl, senderPhotoUrl) || other.senderPhotoUrl == senderPhotoUrl)&&(identical(other.type, type) || other.type == type)&&(identical(other.status, status) || other.status == status)&&(identical(other.mediaUrl, mediaUrl) || other.mediaUrl == mediaUrl)&&(identical(other.thumbnailUrl, thumbnailUrl) || other.thumbnailUrl == thumbnailUrl)&&(identical(other.latitude, latitude) || other.latitude == latitude)&&(identical(other.longitude, longitude) || other.longitude == longitude)&&(identical(other.locationName, locationName) || other.locationName == locationName)&&(identical(other.rideId, rideId) || other.rideId == rideId)&&(identical(other.replyToMessageId, replyToMessageId) || other.replyToMessageId == replyToMessageId)&&(identical(other.replyToContent, replyToContent) || other.replyToContent == replyToContent)&&const DeepCollectionEquality().equals(other.reactions, reactions)&&const DeepCollectionEquality().equals(other.readBy, readBy)&&const DeepCollectionEquality().equals(other.deliveredTo, deliveredTo)&&(identical(other.isEdited, isEdited) || other.isEdited == isEdited)&&(identical(other.isDeleted, isDeleted) || other.isDeleted == isDeleted)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.editedAt, editedAt) || other.editedAt == editedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hashAll([runtimeType,id,chatId,senderId,senderName,senderPhotoUrl,content,type,status,imageUrl,thumbnailUrl,latitude,longitude,locationName,rideId,replyToMessageId,replyToContent,const DeepCollectionEquality().hash(reactions),const DeepCollectionEquality().hash(readBy),const DeepCollectionEquality().hash(deliveredTo),isEdited,isDeleted,createdAt,editedAt]);
+int get hashCode => Object.hashAll([runtimeType,id,chatId,senderId,senderName,content,senderPhotoUrl,type,status,mediaUrl,thumbnailUrl,latitude,longitude,locationName,rideId,replyToMessageId,replyToContent,const DeepCollectionEquality().hash(reactions),const DeepCollectionEquality().hash(readBy),const DeepCollectionEquality().hash(deliveredTo),isEdited,isDeleted,createdAt,editedAt]);
 
 @override
 String toString() {
-  return 'MessageModel(id: $id, chatId: $chatId, senderId: $senderId, senderName: $senderName, senderPhotoUrl: $senderPhotoUrl, content: $content, type: $type, status: $status, imageUrl: $imageUrl, thumbnailUrl: $thumbnailUrl, latitude: $latitude, longitude: $longitude, locationName: $locationName, rideId: $rideId, replyToMessageId: $replyToMessageId, replyToContent: $replyToContent, reactions: $reactions, readBy: $readBy, deliveredTo: $deliveredTo, isEdited: $isEdited, isDeleted: $isDeleted, createdAt: $createdAt, editedAt: $editedAt)';
+  return 'MessageModel(id: $id, chatId: $chatId, senderId: $senderId, senderName: $senderName, content: $content, senderPhotoUrl: $senderPhotoUrl, type: $type, status: $status, mediaUrl: $mediaUrl, thumbnailUrl: $thumbnailUrl, latitude: $latitude, longitude: $longitude, locationName: $locationName, rideId: $rideId, replyToMessageId: $replyToMessageId, replyToContent: $replyToContent, reactions: $reactions, readBy: $readBy, deliveredTo: $deliveredTo, isEdited: $isEdited, isDeleted: $isDeleted, createdAt: $createdAt, editedAt: $editedAt)';
 }
 
 
@@ -55,7 +56,7 @@ abstract mixin class $MessageModelCopyWith<$Res>  {
   factory $MessageModelCopyWith(MessageModel value, $Res Function(MessageModel) _then) = _$MessageModelCopyWithImpl;
 @useResult
 $Res call({
- String id, String chatId, String senderId, String senderName, String? senderPhotoUrl, String content, MessageType type, MessageStatus status, String? imageUrl, String? thumbnailUrl, double? latitude, double? longitude, String? locationName, String? rideId, String? replyToMessageId, String? replyToContent, Map<String, List<String>> reactions, List<String> readBy, List<String> deliveredTo, bool isEdited, bool isDeleted,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? editedAt
+ String id, String chatId, String senderId, String senderName, String content, String? senderPhotoUrl, MessageType type, MessageStatus status, String? mediaUrl, String? thumbnailUrl, double? latitude, double? longitude, String? locationName, String? rideId, String? replyToMessageId, String? replyToContent, Map<String, List<String>> reactions, List<String> readBy, List<String> deliveredTo, bool isEdited, bool isDeleted,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? editedAt
 });
 
 
@@ -72,17 +73,17 @@ class _$MessageModelCopyWithImpl<$Res>
 
 /// Create a copy of MessageModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? chatId = null,Object? senderId = null,Object? senderName = null,Object? senderPhotoUrl = freezed,Object? content = null,Object? type = null,Object? status = null,Object? imageUrl = freezed,Object? thumbnailUrl = freezed,Object? latitude = freezed,Object? longitude = freezed,Object? locationName = freezed,Object? rideId = freezed,Object? replyToMessageId = freezed,Object? replyToContent = freezed,Object? reactions = null,Object? readBy = null,Object? deliveredTo = null,Object? isEdited = null,Object? isDeleted = null,Object? createdAt = freezed,Object? editedAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? chatId = null,Object? senderId = null,Object? senderName = null,Object? content = null,Object? senderPhotoUrl = freezed,Object? type = null,Object? status = null,Object? mediaUrl = freezed,Object? thumbnailUrl = freezed,Object? latitude = freezed,Object? longitude = freezed,Object? locationName = freezed,Object? rideId = freezed,Object? replyToMessageId = freezed,Object? replyToContent = freezed,Object? reactions = null,Object? readBy = null,Object? deliveredTo = null,Object? isEdited = null,Object? isDeleted = null,Object? createdAt = freezed,Object? editedAt = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,chatId: null == chatId ? _self.chatId : chatId // ignore: cast_nullable_to_non_nullable
 as String,senderId: null == senderId ? _self.senderId : senderId // ignore: cast_nullable_to_non_nullable
 as String,senderName: null == senderName ? _self.senderName : senderName // ignore: cast_nullable_to_non_nullable
+as String,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
 as String,senderPhotoUrl: freezed == senderPhotoUrl ? _self.senderPhotoUrl : senderPhotoUrl // ignore: cast_nullable_to_non_nullable
-as String?,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
-as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
+as String?,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as MessageType,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as MessageStatus,imageUrl: freezed == imageUrl ? _self.imageUrl : imageUrl // ignore: cast_nullable_to_non_nullable
+as MessageStatus,mediaUrl: freezed == mediaUrl ? _self.mediaUrl : mediaUrl // ignore: cast_nullable_to_non_nullable
 as String?,thumbnailUrl: freezed == thumbnailUrl ? _self.thumbnailUrl : thumbnailUrl // ignore: cast_nullable_to_non_nullable
 as String?,latitude: freezed == latitude ? _self.latitude : latitude // ignore: cast_nullable_to_non_nullable
 as double?,longitude: freezed == longitude ? _self.longitude : longitude // ignore: cast_nullable_to_non_nullable
@@ -182,10 +183,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String chatId,  String senderId,  String senderName,  String? senderPhotoUrl,  String content,  MessageType type,  MessageStatus status,  String? imageUrl,  String? thumbnailUrl,  double? latitude,  double? longitude,  String? locationName,  String? rideId,  String? replyToMessageId,  String? replyToContent,  Map<String, List<String>> reactions,  List<String> readBy,  List<String> deliveredTo,  bool isEdited,  bool isDeleted, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? editedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String chatId,  String senderId,  String senderName,  String content,  String? senderPhotoUrl,  MessageType type,  MessageStatus status,  String? mediaUrl,  String? thumbnailUrl,  double? latitude,  double? longitude,  String? locationName,  String? rideId,  String? replyToMessageId,  String? replyToContent,  Map<String, List<String>> reactions,  List<String> readBy,  List<String> deliveredTo,  bool isEdited,  bool isDeleted, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? editedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MessageModel() when $default != null:
-return $default(_that.id,_that.chatId,_that.senderId,_that.senderName,_that.senderPhotoUrl,_that.content,_that.type,_that.status,_that.imageUrl,_that.thumbnailUrl,_that.latitude,_that.longitude,_that.locationName,_that.rideId,_that.replyToMessageId,_that.replyToContent,_that.reactions,_that.readBy,_that.deliveredTo,_that.isEdited,_that.isDeleted,_that.createdAt,_that.editedAt);case _:
+return $default(_that.id,_that.chatId,_that.senderId,_that.senderName,_that.content,_that.senderPhotoUrl,_that.type,_that.status,_that.mediaUrl,_that.thumbnailUrl,_that.latitude,_that.longitude,_that.locationName,_that.rideId,_that.replyToMessageId,_that.replyToContent,_that.reactions,_that.readBy,_that.deliveredTo,_that.isEdited,_that.isDeleted,_that.createdAt,_that.editedAt);case _:
   return orElse();
 
 }
@@ -203,10 +204,10 @@ return $default(_that.id,_that.chatId,_that.senderId,_that.senderName,_that.send
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String chatId,  String senderId,  String senderName,  String? senderPhotoUrl,  String content,  MessageType type,  MessageStatus status,  String? imageUrl,  String? thumbnailUrl,  double? latitude,  double? longitude,  String? locationName,  String? rideId,  String? replyToMessageId,  String? replyToContent,  Map<String, List<String>> reactions,  List<String> readBy,  List<String> deliveredTo,  bool isEdited,  bool isDeleted, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? editedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String chatId,  String senderId,  String senderName,  String content,  String? senderPhotoUrl,  MessageType type,  MessageStatus status,  String? mediaUrl,  String? thumbnailUrl,  double? latitude,  double? longitude,  String? locationName,  String? rideId,  String? replyToMessageId,  String? replyToContent,  Map<String, List<String>> reactions,  List<String> readBy,  List<String> deliveredTo,  bool isEdited,  bool isDeleted, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? editedAt)  $default,) {final _that = this;
 switch (_that) {
 case _MessageModel():
-return $default(_that.id,_that.chatId,_that.senderId,_that.senderName,_that.senderPhotoUrl,_that.content,_that.type,_that.status,_that.imageUrl,_that.thumbnailUrl,_that.latitude,_that.longitude,_that.locationName,_that.rideId,_that.replyToMessageId,_that.replyToContent,_that.reactions,_that.readBy,_that.deliveredTo,_that.isEdited,_that.isDeleted,_that.createdAt,_that.editedAt);case _:
+return $default(_that.id,_that.chatId,_that.senderId,_that.senderName,_that.content,_that.senderPhotoUrl,_that.type,_that.status,_that.mediaUrl,_that.thumbnailUrl,_that.latitude,_that.longitude,_that.locationName,_that.rideId,_that.replyToMessageId,_that.replyToContent,_that.reactions,_that.readBy,_that.deliveredTo,_that.isEdited,_that.isDeleted,_that.createdAt,_that.editedAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -223,10 +224,10 @@ return $default(_that.id,_that.chatId,_that.senderId,_that.senderName,_that.send
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String chatId,  String senderId,  String senderName,  String? senderPhotoUrl,  String content,  MessageType type,  MessageStatus status,  String? imageUrl,  String? thumbnailUrl,  double? latitude,  double? longitude,  String? locationName,  String? rideId,  String? replyToMessageId,  String? replyToContent,  Map<String, List<String>> reactions,  List<String> readBy,  List<String> deliveredTo,  bool isEdited,  bool isDeleted, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? editedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String chatId,  String senderId,  String senderName,  String content,  String? senderPhotoUrl,  MessageType type,  MessageStatus status,  String? mediaUrl,  String? thumbnailUrl,  double? latitude,  double? longitude,  String? locationName,  String? rideId,  String? replyToMessageId,  String? replyToContent,  Map<String, List<String>> reactions,  List<String> readBy,  List<String> deliveredTo,  bool isEdited,  bool isDeleted, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? editedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _MessageModel() when $default != null:
-return $default(_that.id,_that.chatId,_that.senderId,_that.senderName,_that.senderPhotoUrl,_that.content,_that.type,_that.status,_that.imageUrl,_that.thumbnailUrl,_that.latitude,_that.longitude,_that.locationName,_that.rideId,_that.replyToMessageId,_that.replyToContent,_that.reactions,_that.readBy,_that.deliveredTo,_that.isEdited,_that.isDeleted,_that.createdAt,_that.editedAt);case _:
+return $default(_that.id,_that.chatId,_that.senderId,_that.senderName,_that.content,_that.senderPhotoUrl,_that.type,_that.status,_that.mediaUrl,_that.thumbnailUrl,_that.latitude,_that.longitude,_that.locationName,_that.rideId,_that.replyToMessageId,_that.replyToContent,_that.reactions,_that.readBy,_that.deliveredTo,_that.isEdited,_that.isDeleted,_that.createdAt,_that.editedAt);case _:
   return null;
 
 }
@@ -238,32 +239,33 @@ return $default(_that.id,_that.chatId,_that.senderId,_that.senderName,_that.send
 @JsonSerializable()
 
 class _MessageModel extends MessageModel {
-  const _MessageModel({required this.id, required this.chatId, required this.senderId, required this.senderName, this.senderPhotoUrl, required this.content, this.type = MessageType.text, this.status = MessageStatus.sending, this.imageUrl, this.thumbnailUrl, this.latitude, this.longitude, this.locationName, this.rideId, this.replyToMessageId, this.replyToContent, final  Map<String, List<String>> reactions = const {}, final  List<String> readBy = const [], final  List<String> deliveredTo = const [], this.isEdited = false, this.isDeleted = false, @TimestampConverter() this.createdAt, @TimestampConverter() this.editedAt}): _reactions = reactions,_readBy = readBy,_deliveredTo = deliveredTo,super._();
+  const _MessageModel({required this.id, required this.chatId, required this.senderId, required this.senderName, required this.content, this.senderPhotoUrl, this.type = MessageType.text, this.status = MessageStatus.sending, this.mediaUrl, this.thumbnailUrl, this.latitude, this.longitude, this.locationName, this.rideId, this.replyToMessageId, this.replyToContent, final  Map<String, List<String>> reactions = const {}, final  List<String> readBy = const [], final  List<String> deliveredTo = const [], this.isEdited = false, this.isDeleted = false, @TimestampConverter() this.createdAt, @TimestampConverter() this.editedAt}): _reactions = reactions,_readBy = readBy,_deliveredTo = deliveredTo,super._();
   factory _MessageModel.fromJson(Map<String, dynamic> json) => _$MessageModelFromJson(json);
 
 @override final  String id;
 @override final  String chatId;
 @override final  String senderId;
 @override final  String senderName;
-@override final  String? senderPhotoUrl;
 @override final  String content;
+@override final  String? senderPhotoUrl;
 @override@JsonKey() final  MessageType type;
 @override@JsonKey() final  MessageStatus status;
-// For image messages
-@override final  String? imageUrl;
+// FIX: unified media field — replaces the old split imageUrl / (misused)
+// imageUrl-for-audio pattern. One field for image, audio, and video URLs.
+@override final  String? mediaUrl;
 @override final  String? thumbnailUrl;
-// For location messages
+// Location
 @override final  double? latitude;
 @override final  double? longitude;
 @override final  String? locationName;
-// For ride messages
+// Ride attachment
 @override final  String? rideId;
-// Reply
+// Reply context
 @override final  String? replyToMessageId;
 @override final  String? replyToContent;
-// Reactions
+// Reactions: emoji → [userId, ...]
  final  Map<String, List<String>> _reactions;
-// Reactions
+// Reactions: emoji → [userId, ...]
 @override@JsonKey() Map<String, List<String>> get reactions {
   if (_reactions is EqualUnmodifiableMapView) return _reactions;
   // ignore: implicit_dynamic_type
@@ -305,16 +307,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageModel&&(identical(other.id, id) || other.id == id)&&(identical(other.chatId, chatId) || other.chatId == chatId)&&(identical(other.senderId, senderId) || other.senderId == senderId)&&(identical(other.senderName, senderName) || other.senderName == senderName)&&(identical(other.senderPhotoUrl, senderPhotoUrl) || other.senderPhotoUrl == senderPhotoUrl)&&(identical(other.content, content) || other.content == content)&&(identical(other.type, type) || other.type == type)&&(identical(other.status, status) || other.status == status)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.thumbnailUrl, thumbnailUrl) || other.thumbnailUrl == thumbnailUrl)&&(identical(other.latitude, latitude) || other.latitude == latitude)&&(identical(other.longitude, longitude) || other.longitude == longitude)&&(identical(other.locationName, locationName) || other.locationName == locationName)&&(identical(other.rideId, rideId) || other.rideId == rideId)&&(identical(other.replyToMessageId, replyToMessageId) || other.replyToMessageId == replyToMessageId)&&(identical(other.replyToContent, replyToContent) || other.replyToContent == replyToContent)&&const DeepCollectionEquality().equals(other._reactions, _reactions)&&const DeepCollectionEquality().equals(other._readBy, _readBy)&&const DeepCollectionEquality().equals(other._deliveredTo, _deliveredTo)&&(identical(other.isEdited, isEdited) || other.isEdited == isEdited)&&(identical(other.isDeleted, isDeleted) || other.isDeleted == isDeleted)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.editedAt, editedAt) || other.editedAt == editedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageModel&&(identical(other.id, id) || other.id == id)&&(identical(other.chatId, chatId) || other.chatId == chatId)&&(identical(other.senderId, senderId) || other.senderId == senderId)&&(identical(other.senderName, senderName) || other.senderName == senderName)&&(identical(other.content, content) || other.content == content)&&(identical(other.senderPhotoUrl, senderPhotoUrl) || other.senderPhotoUrl == senderPhotoUrl)&&(identical(other.type, type) || other.type == type)&&(identical(other.status, status) || other.status == status)&&(identical(other.mediaUrl, mediaUrl) || other.mediaUrl == mediaUrl)&&(identical(other.thumbnailUrl, thumbnailUrl) || other.thumbnailUrl == thumbnailUrl)&&(identical(other.latitude, latitude) || other.latitude == latitude)&&(identical(other.longitude, longitude) || other.longitude == longitude)&&(identical(other.locationName, locationName) || other.locationName == locationName)&&(identical(other.rideId, rideId) || other.rideId == rideId)&&(identical(other.replyToMessageId, replyToMessageId) || other.replyToMessageId == replyToMessageId)&&(identical(other.replyToContent, replyToContent) || other.replyToContent == replyToContent)&&const DeepCollectionEquality().equals(other._reactions, _reactions)&&const DeepCollectionEquality().equals(other._readBy, _readBy)&&const DeepCollectionEquality().equals(other._deliveredTo, _deliveredTo)&&(identical(other.isEdited, isEdited) || other.isEdited == isEdited)&&(identical(other.isDeleted, isDeleted) || other.isDeleted == isDeleted)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.editedAt, editedAt) || other.editedAt == editedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hashAll([runtimeType,id,chatId,senderId,senderName,senderPhotoUrl,content,type,status,imageUrl,thumbnailUrl,latitude,longitude,locationName,rideId,replyToMessageId,replyToContent,const DeepCollectionEquality().hash(_reactions),const DeepCollectionEquality().hash(_readBy),const DeepCollectionEquality().hash(_deliveredTo),isEdited,isDeleted,createdAt,editedAt]);
+int get hashCode => Object.hashAll([runtimeType,id,chatId,senderId,senderName,content,senderPhotoUrl,type,status,mediaUrl,thumbnailUrl,latitude,longitude,locationName,rideId,replyToMessageId,replyToContent,const DeepCollectionEquality().hash(_reactions),const DeepCollectionEquality().hash(_readBy),const DeepCollectionEquality().hash(_deliveredTo),isEdited,isDeleted,createdAt,editedAt]);
 
 @override
 String toString() {
-  return 'MessageModel(id: $id, chatId: $chatId, senderId: $senderId, senderName: $senderName, senderPhotoUrl: $senderPhotoUrl, content: $content, type: $type, status: $status, imageUrl: $imageUrl, thumbnailUrl: $thumbnailUrl, latitude: $latitude, longitude: $longitude, locationName: $locationName, rideId: $rideId, replyToMessageId: $replyToMessageId, replyToContent: $replyToContent, reactions: $reactions, readBy: $readBy, deliveredTo: $deliveredTo, isEdited: $isEdited, isDeleted: $isDeleted, createdAt: $createdAt, editedAt: $editedAt)';
+  return 'MessageModel(id: $id, chatId: $chatId, senderId: $senderId, senderName: $senderName, content: $content, senderPhotoUrl: $senderPhotoUrl, type: $type, status: $status, mediaUrl: $mediaUrl, thumbnailUrl: $thumbnailUrl, latitude: $latitude, longitude: $longitude, locationName: $locationName, rideId: $rideId, replyToMessageId: $replyToMessageId, replyToContent: $replyToContent, reactions: $reactions, readBy: $readBy, deliveredTo: $deliveredTo, isEdited: $isEdited, isDeleted: $isDeleted, createdAt: $createdAt, editedAt: $editedAt)';
 }
 
 
@@ -325,7 +327,7 @@ abstract mixin class _$MessageModelCopyWith<$Res> implements $MessageModelCopyWi
   factory _$MessageModelCopyWith(_MessageModel value, $Res Function(_MessageModel) _then) = __$MessageModelCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String chatId, String senderId, String senderName, String? senderPhotoUrl, String content, MessageType type, MessageStatus status, String? imageUrl, String? thumbnailUrl, double? latitude, double? longitude, String? locationName, String? rideId, String? replyToMessageId, String? replyToContent, Map<String, List<String>> reactions, List<String> readBy, List<String> deliveredTo, bool isEdited, bool isDeleted,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? editedAt
+ String id, String chatId, String senderId, String senderName, String content, String? senderPhotoUrl, MessageType type, MessageStatus status, String? mediaUrl, String? thumbnailUrl, double? latitude, double? longitude, String? locationName, String? rideId, String? replyToMessageId, String? replyToContent, Map<String, List<String>> reactions, List<String> readBy, List<String> deliveredTo, bool isEdited, bool isDeleted,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? editedAt
 });
 
 
@@ -342,17 +344,17 @@ class __$MessageModelCopyWithImpl<$Res>
 
 /// Create a copy of MessageModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? chatId = null,Object? senderId = null,Object? senderName = null,Object? senderPhotoUrl = freezed,Object? content = null,Object? type = null,Object? status = null,Object? imageUrl = freezed,Object? thumbnailUrl = freezed,Object? latitude = freezed,Object? longitude = freezed,Object? locationName = freezed,Object? rideId = freezed,Object? replyToMessageId = freezed,Object? replyToContent = freezed,Object? reactions = null,Object? readBy = null,Object? deliveredTo = null,Object? isEdited = null,Object? isDeleted = null,Object? createdAt = freezed,Object? editedAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? chatId = null,Object? senderId = null,Object? senderName = null,Object? content = null,Object? senderPhotoUrl = freezed,Object? type = null,Object? status = null,Object? mediaUrl = freezed,Object? thumbnailUrl = freezed,Object? latitude = freezed,Object? longitude = freezed,Object? locationName = freezed,Object? rideId = freezed,Object? replyToMessageId = freezed,Object? replyToContent = freezed,Object? reactions = null,Object? readBy = null,Object? deliveredTo = null,Object? isEdited = null,Object? isDeleted = null,Object? createdAt = freezed,Object? editedAt = freezed,}) {
   return _then(_MessageModel(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,chatId: null == chatId ? _self.chatId : chatId // ignore: cast_nullable_to_non_nullable
 as String,senderId: null == senderId ? _self.senderId : senderId // ignore: cast_nullable_to_non_nullable
 as String,senderName: null == senderName ? _self.senderName : senderName // ignore: cast_nullable_to_non_nullable
+as String,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
 as String,senderPhotoUrl: freezed == senderPhotoUrl ? _self.senderPhotoUrl : senderPhotoUrl // ignore: cast_nullable_to_non_nullable
-as String?,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
-as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
+as String?,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as MessageType,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as MessageStatus,imageUrl: freezed == imageUrl ? _self.imageUrl : imageUrl // ignore: cast_nullable_to_non_nullable
+as MessageStatus,mediaUrl: freezed == mediaUrl ? _self.mediaUrl : mediaUrl // ignore: cast_nullable_to_non_nullable
 as String?,thumbnailUrl: freezed == thumbnailUrl ? _self.thumbnailUrl : thumbnailUrl // ignore: cast_nullable_to_non_nullable
 as String?,latitude: freezed == latitude ? _self.latitude : latitude // ignore: cast_nullable_to_non_nullable
 as double?,longitude: freezed == longitude ? _self.longitude : longitude // ignore: cast_nullable_to_non_nullable
@@ -378,7 +380,11 @@ as DateTime?,
 /// @nodoc
 mixin _$ChatParticipant {
 
- String get odid; String get displayName; String? get photoUrl; bool get isAdmin; bool get isMuted;@TimestampConverter() DateTime? get lastSeenAt;@TimestampConverter() DateTime? get joinedAt;
+// FIX: Dart field renamed odid → userId for clarity, but the Firestore
+// document field is kept as 'odid' via @JsonKey for backward compatibility
+// with existing participant arrays already written to Firestore.
+// Removing @JsonKey(name: 'odid') would require a Firestore data migration.
+@JsonKey(name: 'odid') String get userId; String get displayName; String? get photoUrl; bool get isAdmin; bool get isMuted;@TimestampConverter() DateTime? get lastSeenAt;@TimestampConverter() DateTime? get joinedAt;
 /// Create a copy of ChatParticipant
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -391,16 +397,16 @@ $ChatParticipantCopyWith<ChatParticipant> get copyWith => _$ChatParticipantCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatParticipant&&(identical(other.odid, odid) || other.odid == odid)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.isAdmin, isAdmin) || other.isAdmin == isAdmin)&&(identical(other.isMuted, isMuted) || other.isMuted == isMuted)&&(identical(other.lastSeenAt, lastSeenAt) || other.lastSeenAt == lastSeenAt)&&(identical(other.joinedAt, joinedAt) || other.joinedAt == joinedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatParticipant&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.isAdmin, isAdmin) || other.isAdmin == isAdmin)&&(identical(other.isMuted, isMuted) || other.isMuted == isMuted)&&(identical(other.lastSeenAt, lastSeenAt) || other.lastSeenAt == lastSeenAt)&&(identical(other.joinedAt, joinedAt) || other.joinedAt == joinedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,odid,displayName,photoUrl,isAdmin,isMuted,lastSeenAt,joinedAt);
+int get hashCode => Object.hash(runtimeType,userId,displayName,photoUrl,isAdmin,isMuted,lastSeenAt,joinedAt);
 
 @override
 String toString() {
-  return 'ChatParticipant(odid: $odid, displayName: $displayName, photoUrl: $photoUrl, isAdmin: $isAdmin, isMuted: $isMuted, lastSeenAt: $lastSeenAt, joinedAt: $joinedAt)';
+  return 'ChatParticipant(userId: $userId, displayName: $displayName, photoUrl: $photoUrl, isAdmin: $isAdmin, isMuted: $isMuted, lastSeenAt: $lastSeenAt, joinedAt: $joinedAt)';
 }
 
 
@@ -411,7 +417,7 @@ abstract mixin class $ChatParticipantCopyWith<$Res>  {
   factory $ChatParticipantCopyWith(ChatParticipant value, $Res Function(ChatParticipant) _then) = _$ChatParticipantCopyWithImpl;
 @useResult
 $Res call({
- String odid, String displayName, String? photoUrl, bool isAdmin, bool isMuted,@TimestampConverter() DateTime? lastSeenAt,@TimestampConverter() DateTime? joinedAt
+@JsonKey(name: 'odid') String userId, String displayName, String? photoUrl, bool isAdmin, bool isMuted,@TimestampConverter() DateTime? lastSeenAt,@TimestampConverter() DateTime? joinedAt
 });
 
 
@@ -428,9 +434,9 @@ class _$ChatParticipantCopyWithImpl<$Res>
 
 /// Create a copy of ChatParticipant
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? odid = null,Object? displayName = null,Object? photoUrl = freezed,Object? isAdmin = null,Object? isMuted = null,Object? lastSeenAt = freezed,Object? joinedAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? userId = null,Object? displayName = null,Object? photoUrl = freezed,Object? isAdmin = null,Object? isMuted = null,Object? lastSeenAt = freezed,Object? joinedAt = freezed,}) {
   return _then(_self.copyWith(
-odid: null == odid ? _self.odid : odid // ignore: cast_nullable_to_non_nullable
+userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
 as String,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
 as String,photoUrl: freezed == photoUrl ? _self.photoUrl : photoUrl // ignore: cast_nullable_to_non_nullable
 as String?,isAdmin: null == isAdmin ? _self.isAdmin : isAdmin // ignore: cast_nullable_to_non_nullable
@@ -522,10 +528,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String odid,  String displayName,  String? photoUrl,  bool isAdmin,  bool isMuted, @TimestampConverter()  DateTime? lastSeenAt, @TimestampConverter()  DateTime? joinedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'odid')  String userId,  String displayName,  String? photoUrl,  bool isAdmin,  bool isMuted, @TimestampConverter()  DateTime? lastSeenAt, @TimestampConverter()  DateTime? joinedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ChatParticipant() when $default != null:
-return $default(_that.odid,_that.displayName,_that.photoUrl,_that.isAdmin,_that.isMuted,_that.lastSeenAt,_that.joinedAt);case _:
+return $default(_that.userId,_that.displayName,_that.photoUrl,_that.isAdmin,_that.isMuted,_that.lastSeenAt,_that.joinedAt);case _:
   return orElse();
 
 }
@@ -543,10 +549,10 @@ return $default(_that.odid,_that.displayName,_that.photoUrl,_that.isAdmin,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String odid,  String displayName,  String? photoUrl,  bool isAdmin,  bool isMuted, @TimestampConverter()  DateTime? lastSeenAt, @TimestampConverter()  DateTime? joinedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'odid')  String userId,  String displayName,  String? photoUrl,  bool isAdmin,  bool isMuted, @TimestampConverter()  DateTime? lastSeenAt, @TimestampConverter()  DateTime? joinedAt)  $default,) {final _that = this;
 switch (_that) {
 case _ChatParticipant():
-return $default(_that.odid,_that.displayName,_that.photoUrl,_that.isAdmin,_that.isMuted,_that.lastSeenAt,_that.joinedAt);case _:
+return $default(_that.userId,_that.displayName,_that.photoUrl,_that.isAdmin,_that.isMuted,_that.lastSeenAt,_that.joinedAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -563,10 +569,10 @@ return $default(_that.odid,_that.displayName,_that.photoUrl,_that.isAdmin,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String odid,  String displayName,  String? photoUrl,  bool isAdmin,  bool isMuted, @TimestampConverter()  DateTime? lastSeenAt, @TimestampConverter()  DateTime? joinedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'odid')  String userId,  String displayName,  String? photoUrl,  bool isAdmin,  bool isMuted, @TimestampConverter()  DateTime? lastSeenAt, @TimestampConverter()  DateTime? joinedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _ChatParticipant() when $default != null:
-return $default(_that.odid,_that.displayName,_that.photoUrl,_that.isAdmin,_that.isMuted,_that.lastSeenAt,_that.joinedAt);case _:
+return $default(_that.userId,_that.displayName,_that.photoUrl,_that.isAdmin,_that.isMuted,_that.lastSeenAt,_that.joinedAt);case _:
   return null;
 
 }
@@ -578,10 +584,14 @@ return $default(_that.odid,_that.displayName,_that.photoUrl,_that.isAdmin,_that.
 @JsonSerializable()
 
 class _ChatParticipant implements ChatParticipant {
-  const _ChatParticipant({required this.odid, required this.displayName, this.photoUrl, this.isAdmin = false, this.isMuted = false, @TimestampConverter() this.lastSeenAt, @TimestampConverter() this.joinedAt});
+  const _ChatParticipant({@JsonKey(name: 'odid') required this.userId, required this.displayName, this.photoUrl, this.isAdmin = false, this.isMuted = false, @TimestampConverter() this.lastSeenAt, @TimestampConverter() this.joinedAt});
   factory _ChatParticipant.fromJson(Map<String, dynamic> json) => _$ChatParticipantFromJson(json);
 
-@override final  String odid;
+// FIX: Dart field renamed odid → userId for clarity, but the Firestore
+// document field is kept as 'odid' via @JsonKey for backward compatibility
+// with existing participant arrays already written to Firestore.
+// Removing @JsonKey(name: 'odid') would require a Firestore data migration.
+@override@JsonKey(name: 'odid') final  String userId;
 @override final  String displayName;
 @override final  String? photoUrl;
 @override@JsonKey() final  bool isAdmin;
@@ -602,16 +612,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ChatParticipant&&(identical(other.odid, odid) || other.odid == odid)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.isAdmin, isAdmin) || other.isAdmin == isAdmin)&&(identical(other.isMuted, isMuted) || other.isMuted == isMuted)&&(identical(other.lastSeenAt, lastSeenAt) || other.lastSeenAt == lastSeenAt)&&(identical(other.joinedAt, joinedAt) || other.joinedAt == joinedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ChatParticipant&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.isAdmin, isAdmin) || other.isAdmin == isAdmin)&&(identical(other.isMuted, isMuted) || other.isMuted == isMuted)&&(identical(other.lastSeenAt, lastSeenAt) || other.lastSeenAt == lastSeenAt)&&(identical(other.joinedAt, joinedAt) || other.joinedAt == joinedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,odid,displayName,photoUrl,isAdmin,isMuted,lastSeenAt,joinedAt);
+int get hashCode => Object.hash(runtimeType,userId,displayName,photoUrl,isAdmin,isMuted,lastSeenAt,joinedAt);
 
 @override
 String toString() {
-  return 'ChatParticipant(odid: $odid, displayName: $displayName, photoUrl: $photoUrl, isAdmin: $isAdmin, isMuted: $isMuted, lastSeenAt: $lastSeenAt, joinedAt: $joinedAt)';
+  return 'ChatParticipant(userId: $userId, displayName: $displayName, photoUrl: $photoUrl, isAdmin: $isAdmin, isMuted: $isMuted, lastSeenAt: $lastSeenAt, joinedAt: $joinedAt)';
 }
 
 
@@ -622,7 +632,7 @@ abstract mixin class _$ChatParticipantCopyWith<$Res> implements $ChatParticipant
   factory _$ChatParticipantCopyWith(_ChatParticipant value, $Res Function(_ChatParticipant) _then) = __$ChatParticipantCopyWithImpl;
 @override @useResult
 $Res call({
- String odid, String displayName, String? photoUrl, bool isAdmin, bool isMuted,@TimestampConverter() DateTime? lastSeenAt,@TimestampConverter() DateTime? joinedAt
+@JsonKey(name: 'odid') String userId, String displayName, String? photoUrl, bool isAdmin, bool isMuted,@TimestampConverter() DateTime? lastSeenAt,@TimestampConverter() DateTime? joinedAt
 });
 
 
@@ -639,9 +649,9 @@ class __$ChatParticipantCopyWithImpl<$Res>
 
 /// Create a copy of ChatParticipant
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? odid = null,Object? displayName = null,Object? photoUrl = freezed,Object? isAdmin = null,Object? isMuted = null,Object? lastSeenAt = freezed,Object? joinedAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? userId = null,Object? displayName = null,Object? photoUrl = freezed,Object? isAdmin = null,Object? isMuted = null,Object? lastSeenAt = freezed,Object? joinedAt = freezed,}) {
   return _then(_ChatParticipant(
-odid: null == odid ? _self.odid : odid // ignore: cast_nullable_to_non_nullable
+userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
 as String,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
 as String,photoUrl: freezed == photoUrl ? _self.photoUrl : photoUrl // ignore: cast_nullable_to_non_nullable
 as String?,isAdmin: null == isAdmin ? _self.isAdmin : isAdmin // ignore: cast_nullable_to_non_nullable
@@ -660,15 +670,13 @@ as DateTime?,
 mixin _$ChatModel {
 
  String get id; ChatType get type;// Participants
- List<ChatParticipant> get participants; List<String> get participantIds;// For group chats
- String? get groupName; String? get groupPhotoUrl; String? get description;// For ride chats
- String? get rideId;// For event chats
- String? get eventId;// Last message info
- String? get lastMessageContent; String? get lastMessageSenderId; String? get lastMessageSenderName; MessageType get lastMessageType;@TimestampConverter() DateTime? get lastMessageAt;// Unread counts per user (userId -> count)
- Map<String, int> get unreadCounts;// Settings
- Map<String, bool> get mutedBy; Map<String, bool> get pinnedBy;// One-sided deletion: userId -> true if deleted for that user
- Map<String, bool> get deletedFor;// Metadata
- bool get isActive;@TimestampConverter() DateTime? get createdAt;@TimestampConverter() DateTime? get updatedAt;
+ List<ChatParticipant> get participants; List<String> get participantIds;// Group
+ String? get groupName; String? get groupPhotoUrl; String? get description;// Ride / event
+ String? get rideId; String? get eventId;// Last message preview
+ String? get lastMessageContent; String? get lastMessageSenderId; String? get lastMessageSenderName; MessageType get lastMessageType;@TimestampConverter() DateTime? get lastMessageAt;// Unread counts: userId → count
+ Map<String, int> get unreadCounts;// Per-user settings
+ Map<String, bool> get mutedBy; Map<String, bool> get pinnedBy;// One-sided deletion: userId → true
+ Map<String, bool> get deletedFor; bool get isActive;@TimestampConverter() DateTime? get createdAt;@TimestampConverter() DateTime? get updatedAt;
 /// Create a copy of ChatModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -903,32 +911,31 @@ class _ChatModel extends ChatModel {
   return EqualUnmodifiableListView(_participantIds);
 }
 
-// For group chats
+// Group
 @override final  String? groupName;
 @override final  String? groupPhotoUrl;
 @override final  String? description;
-// For ride chats
+// Ride / event
 @override final  String? rideId;
-// For event chats
 @override final  String? eventId;
-// Last message info
+// Last message preview
 @override final  String? lastMessageContent;
 @override final  String? lastMessageSenderId;
 @override final  String? lastMessageSenderName;
 @override@JsonKey() final  MessageType lastMessageType;
 @override@TimestampConverter() final  DateTime? lastMessageAt;
-// Unread counts per user (userId -> count)
+// Unread counts: userId → count
  final  Map<String, int> _unreadCounts;
-// Unread counts per user (userId -> count)
+// Unread counts: userId → count
 @override@JsonKey() Map<String, int> get unreadCounts {
   if (_unreadCounts is EqualUnmodifiableMapView) return _unreadCounts;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableMapView(_unreadCounts);
 }
 
-// Settings
+// Per-user settings
  final  Map<String, bool> _mutedBy;
-// Settings
+// Per-user settings
 @override@JsonKey() Map<String, bool> get mutedBy {
   if (_mutedBy is EqualUnmodifiableMapView) return _mutedBy;
   // ignore: implicit_dynamic_type
@@ -942,16 +949,15 @@ class _ChatModel extends ChatModel {
   return EqualUnmodifiableMapView(_pinnedBy);
 }
 
-// One-sided deletion: userId -> true if deleted for that user
+// One-sided deletion: userId → true
  final  Map<String, bool> _deletedFor;
-// One-sided deletion: userId -> true if deleted for that user
+// One-sided deletion: userId → true
 @override@JsonKey() Map<String, bool> get deletedFor {
   if (_deletedFor is EqualUnmodifiableMapView) return _deletedFor;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableMapView(_deletedFor);
 }
 
-// Metadata
 @override@JsonKey() final  bool isActive;
 @override@TimestampConverter() final  DateTime? createdAt;
 @override@TimestampConverter() final  DateTime? updatedAt;
@@ -1040,7 +1046,10 @@ as DateTime?,
 /// @nodoc
 mixin _$TypingIndicator {
 
- String get odid; String get displayName; String get chatId;@TimestampConverter() DateTime? get startedAt;
+// No @JsonKey here: new Firestore writes use 'userId' (written by
+// setTyping in the repository). Existing indicators expire in ≤30 s
+// so backward-compat with the old 'odid' field is not needed.
+ String get userId; String get displayName; String get chatId;@TimestampConverter() DateTime? get startedAt;
 /// Create a copy of TypingIndicator
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1053,16 +1062,16 @@ $TypingIndicatorCopyWith<TypingIndicator> get copyWith => _$TypingIndicatorCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is TypingIndicator&&(identical(other.odid, odid) || other.odid == odid)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.chatId, chatId) || other.chatId == chatId)&&(identical(other.startedAt, startedAt) || other.startedAt == startedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TypingIndicator&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.chatId, chatId) || other.chatId == chatId)&&(identical(other.startedAt, startedAt) || other.startedAt == startedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,odid,displayName,chatId,startedAt);
+int get hashCode => Object.hash(runtimeType,userId,displayName,chatId,startedAt);
 
 @override
 String toString() {
-  return 'TypingIndicator(odid: $odid, displayName: $displayName, chatId: $chatId, startedAt: $startedAt)';
+  return 'TypingIndicator(userId: $userId, displayName: $displayName, chatId: $chatId, startedAt: $startedAt)';
 }
 
 
@@ -1073,7 +1082,7 @@ abstract mixin class $TypingIndicatorCopyWith<$Res>  {
   factory $TypingIndicatorCopyWith(TypingIndicator value, $Res Function(TypingIndicator) _then) = _$TypingIndicatorCopyWithImpl;
 @useResult
 $Res call({
- String odid, String displayName, String chatId,@TimestampConverter() DateTime? startedAt
+ String userId, String displayName, String chatId,@TimestampConverter() DateTime? startedAt
 });
 
 
@@ -1090,9 +1099,9 @@ class _$TypingIndicatorCopyWithImpl<$Res>
 
 /// Create a copy of TypingIndicator
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? odid = null,Object? displayName = null,Object? chatId = null,Object? startedAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? userId = null,Object? displayName = null,Object? chatId = null,Object? startedAt = freezed,}) {
   return _then(_self.copyWith(
-odid: null == odid ? _self.odid : odid // ignore: cast_nullable_to_non_nullable
+userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
 as String,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
 as String,chatId: null == chatId ? _self.chatId : chatId // ignore: cast_nullable_to_non_nullable
 as String,startedAt: freezed == startedAt ? _self.startedAt : startedAt // ignore: cast_nullable_to_non_nullable
@@ -1181,10 +1190,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String odid,  String displayName,  String chatId, @TimestampConverter()  DateTime? startedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String userId,  String displayName,  String chatId, @TimestampConverter()  DateTime? startedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _TypingIndicator() when $default != null:
-return $default(_that.odid,_that.displayName,_that.chatId,_that.startedAt);case _:
+return $default(_that.userId,_that.displayName,_that.chatId,_that.startedAt);case _:
   return orElse();
 
 }
@@ -1202,10 +1211,10 @@ return $default(_that.odid,_that.displayName,_that.chatId,_that.startedAt);case 
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String odid,  String displayName,  String chatId, @TimestampConverter()  DateTime? startedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String userId,  String displayName,  String chatId, @TimestampConverter()  DateTime? startedAt)  $default,) {final _that = this;
 switch (_that) {
 case _TypingIndicator():
-return $default(_that.odid,_that.displayName,_that.chatId,_that.startedAt);case _:
+return $default(_that.userId,_that.displayName,_that.chatId,_that.startedAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1222,10 +1231,10 @@ return $default(_that.odid,_that.displayName,_that.chatId,_that.startedAt);case 
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String odid,  String displayName,  String chatId, @TimestampConverter()  DateTime? startedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String userId,  String displayName,  String chatId, @TimestampConverter()  DateTime? startedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _TypingIndicator() when $default != null:
-return $default(_that.odid,_that.displayName,_that.chatId,_that.startedAt);case _:
+return $default(_that.userId,_that.displayName,_that.chatId,_that.startedAt);case _:
   return null;
 
 }
@@ -1237,10 +1246,13 @@ return $default(_that.odid,_that.displayName,_that.chatId,_that.startedAt);case 
 @JsonSerializable()
 
 class _TypingIndicator implements TypingIndicator {
-  const _TypingIndicator({required this.odid, required this.displayName, required this.chatId, @TimestampConverter() this.startedAt});
+  const _TypingIndicator({required this.userId, required this.displayName, required this.chatId, @TimestampConverter() this.startedAt});
   factory _TypingIndicator.fromJson(Map<String, dynamic> json) => _$TypingIndicatorFromJson(json);
 
-@override final  String odid;
+// No @JsonKey here: new Firestore writes use 'userId' (written by
+// setTyping in the repository). Existing indicators expire in ≤30 s
+// so backward-compat with the old 'odid' field is not needed.
+@override final  String userId;
 @override final  String displayName;
 @override final  String chatId;
 @override@TimestampConverter() final  DateTime? startedAt;
@@ -1258,16 +1270,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TypingIndicator&&(identical(other.odid, odid) || other.odid == odid)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.chatId, chatId) || other.chatId == chatId)&&(identical(other.startedAt, startedAt) || other.startedAt == startedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TypingIndicator&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.chatId, chatId) || other.chatId == chatId)&&(identical(other.startedAt, startedAt) || other.startedAt == startedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,odid,displayName,chatId,startedAt);
+int get hashCode => Object.hash(runtimeType,userId,displayName,chatId,startedAt);
 
 @override
 String toString() {
-  return 'TypingIndicator(odid: $odid, displayName: $displayName, chatId: $chatId, startedAt: $startedAt)';
+  return 'TypingIndicator(userId: $userId, displayName: $displayName, chatId: $chatId, startedAt: $startedAt)';
 }
 
 
@@ -1278,7 +1290,7 @@ abstract mixin class _$TypingIndicatorCopyWith<$Res> implements $TypingIndicator
   factory _$TypingIndicatorCopyWith(_TypingIndicator value, $Res Function(_TypingIndicator) _then) = __$TypingIndicatorCopyWithImpl;
 @override @useResult
 $Res call({
- String odid, String displayName, String chatId,@TimestampConverter() DateTime? startedAt
+ String userId, String displayName, String chatId,@TimestampConverter() DateTime? startedAt
 });
 
 
@@ -1295,9 +1307,9 @@ class __$TypingIndicatorCopyWithImpl<$Res>
 
 /// Create a copy of TypingIndicator
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? odid = null,Object? displayName = null,Object? chatId = null,Object? startedAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? userId = null,Object? displayName = null,Object? chatId = null,Object? startedAt = freezed,}) {
   return _then(_TypingIndicator(
-odid: null == odid ? _self.odid : odid // ignore: cast_nullable_to_non_nullable
+userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
 as String,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
 as String,chatId: null == chatId ? _self.chatId : chatId // ignore: cast_nullable_to_non_nullable
 as String,startedAt: freezed == startedAt ? _self.startedAt : startedAt // ignore: cast_nullable_to_non_nullable

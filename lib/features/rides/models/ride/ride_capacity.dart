@@ -6,12 +6,11 @@ part 'ride_capacity.g.dart';
 /// Ride capacity management
 @freezed
 abstract class RideCapacity with _$RideCapacity {
-  const RideCapacity._();
-
   const factory RideCapacity({
     @Default(3) int available,
     @Default(0) int booked,
   }) = _RideCapacity;
+  const RideCapacity._();
 
   factory RideCapacity.fromJson(Map<String, dynamic> json) =>
       _$RideCapacityFromJson(json);

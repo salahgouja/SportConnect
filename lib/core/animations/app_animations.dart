@@ -6,7 +6,7 @@ import 'package:sport_connect/core/theme/app_colors.dart';
 /// These create a cohesive, premium user experience with micro-interactions
 
 class AppAnimations {
-  // Configure global defaults at app startup
+  /// Configure global defaults at app startup
   static void configure() {
     Animate.defaultDuration = 400.ms;
     Animate.defaultCurve = Curves.easeOutCubic;

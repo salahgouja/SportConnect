@@ -1,27 +1,27 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'dart:async';
 
 /// Incident report flow (#70)
 class IncidentReportSheet extends StatefulWidget {
-  final String rideId;
-  final ValueChanged<IncidentReport> onSubmit;
-
   const IncidentReportSheet({
-    super.key,
     required this.rideId,
     required this.onSubmit,
+    super.key,
   });
+  final String rideId;
+  final ValueChanged<IncidentReport> onSubmit;
 
   static Future<void> show(
     BuildContext context, {
     required String rideId,
     required ValueChanged<IncidentReport> onSubmit,
   }) {
-    return showModalBottomSheet(
+    return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       barrierLabel: AppLocalizations.of(context).reportIncident,
@@ -172,7 +172,8 @@ enum IncidentType {
   routeDeviation,
   vehicleIssue,
   noShow,
-  other;
+  other
+  ;
 
   IconData get icon {
     switch (this) {
@@ -195,7 +196,8 @@ enum IncidentType {
 enum IncidentSeverity {
   low,
   medium,
-  high;
+  high
+  ;
 
   String localizedLabel(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -231,37 +233,35 @@ extension IncidentTypeL10n on IncidentType {
 }
 
 class IncidentReport {
-  final String rideId;
-  final IncidentType type;
-  final IncidentSeverity severity;
-  final String description;
-
   const IncidentReport({
     required this.rideId,
     required this.type,
     required this.severity,
     required this.description,
   });
+  final String rideId;
+  final IncidentType type;
+  final IncidentSeverity severity;
+  final String description;
 }
 
 /// Drive history transparency card (#71)
 class DriveHistoryCard extends StatelessWidget {
+  const DriveHistoryCard({
+    required this.totalRides,
+    required this.averageRating,
+    required this.cancelCount,
+    required this.noShowCount,
+    required this.memberSince,
+    super.key,
+    this.isVerified = false,
+  });
   final int totalRides;
   final double averageRating;
   final int cancelCount;
   final int noShowCount;
   final DateTime memberSince;
   final bool isVerified;
-
-  const DriveHistoryCard({
-    super.key,
-    required this.totalRides,
-    required this.averageRating,
-    required this.cancelCount,
-    required this.noShowCount,
-    required this.memberSince,
-    this.isVerified = false,
-  });
 
   @override
   Widget build(BuildContext context) {

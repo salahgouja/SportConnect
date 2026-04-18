@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
@@ -20,9 +20,9 @@ import 'package:sport_connect/features/events/view_models/event_view_model.dart'
 /// ```
 class InlineEventSelector extends ConsumerStatefulWidget {
   const InlineEventSelector({
-    super.key,
     required this.selected,
     required this.onChanged,
+    super.key,
   });
 
   final EventModel? selected;
@@ -276,7 +276,7 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
     final eventsAsync = ref.watch(upcomingEventsStreamProvider);
 
     return eventsAsync.when(
-      loading: () => _shimmerRow(),
+      loading: _shimmerRow,
       error: (_, _) => Padding(
         padding: EdgeInsets.symmetric(vertical: 8.h),
         child: Text(

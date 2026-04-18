@@ -7,13 +7,6 @@ import 'package:sport_connect/core/theme/app_colors.dart';
 // ---------------------------------------------------------------------------
 
 class OnboardingPage {
-  final String title;
-  final String subtitle;
-  final String description;
-  final List<Color> gradientColors;
-  final List<String> features;
-  final IllustrationVariant illustration;
-
   const OnboardingPage({
     required this.title,
     required this.subtitle,
@@ -22,6 +15,12 @@ class OnboardingPage {
     required this.illustration,
     this.features = const [],
   });
+  final String title;
+  final String subtitle;
+  final String description;
+  final List<Color> gradientColors;
+  final List<String> features;
+  final IllustrationVariant illustration;
 }
 
 enum IllustrationVariant { findRide, offerSeat, planRoute, connectGo }

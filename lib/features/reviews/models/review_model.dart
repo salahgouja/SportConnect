@@ -9,7 +9,8 @@ enum ReviewType {
   @JsonValue('driver')
   driver, // Review left for a driver
   @JsonValue('rider')
-  rider; // Review left for a rider/passenger
+  rider
+  ; // Review left for a rider/passenger
 
   String get displayName {
     switch (this) {
@@ -48,7 +49,8 @@ enum ReviewTag {
   @JsonValue('polite')
   polite('Polite', '😊', ReviewType.rider),
   @JsonValue('easy_communication')
-  easyCommunication('Easy Communication', '💬', ReviewType.rider);
+  easyCommunication('Easy Communication', '💬', ReviewType.rider)
+  ;
 
   final String label;
   final String emoji;
@@ -78,28 +80,27 @@ enum ReviewTag {
 ///   - updatedAt: timestamp
 @freezed
 abstract class ReviewModel with _$ReviewModel {
-  const ReviewModel._();
-
   const factory ReviewModel({
     required String id,
     required String rideId,
     required String reviewerId,
     required String reviewerName,
-    String? reviewerPhotoUrl,
     required String revieweeId,
     required String revieweeName,
-    String? revieweePhotoUrl,
     required ReviewType type,
     required double rating,
+    @RequiredTimestampConverter() required DateTime createdAt,
+    String? reviewerPhotoUrl,
+    String? revieweePhotoUrl,
     String? comment,
     @Default([])
     List<String> tags, // Store as strings for Firestore compatibility
     @Default(true) bool isVisible,
     String? response, // Response from the person being reviewed
     @TimestampConverter() DateTime? responseAt,
-    @RequiredTimestampConverter() required DateTime createdAt,
     @TimestampConverter() DateTime? updatedAt,
   }) = _ReviewModel;
+  const ReviewModel._();
 
   factory ReviewModel.fromJson(Map<String, dynamic> json) =>
       _$ReviewModelFromJson(json);
@@ -110,7 +111,7 @@ abstract class ReviewModel with _$ReviewModel {
         .map((t) {
           try {
             return ReviewTag.values.firstWhere((tag) => tag.name == t);
-          } catch (_) {
+          } on Exception catch (_) {
             return null;
           }
         })
@@ -149,8 +150,6 @@ abstract class ReviewModel with _$ReviewModel {
 /// This is computed and cached for performance
 @freezed
 abstract class RatingStats with _$RatingStats {
-  const RatingStats._();
-
   const factory RatingStats({
     @Default(0) int totalReviews,
     @Default(0.0) double averageRating,
@@ -163,6 +162,63 @@ abstract class RatingStats with _$RatingStats {
     @TimestampConverter() DateTime? lastReviewAt,
     @TimestampConverter() DateTime? updatedAt,
   }) = _RatingStats;
+
+  /// Create stats from a list of reviews
+  factory RatingStats.fromReviews(List<ReviewModel> reviews) {
+    if (reviews.isEmpty) {
+      return const RatingStats();
+    }
+
+    var fiveStar = 0;
+    var fourStar = 0;
+    var threeStar = 0;
+    var twoStar = 0;
+    var oneStar = 0;
+    double totalRating = 0;
+    final tagCounts = <String, int>{};
+
+    for (final review in reviews) {
+      totalRating += review.rating;
+
+      // Count stars
+      final rounded = review.rating.round();
+      switch (rounded) {
+        case 5:
+          fiveStar++;
+        case 4:
+          fourStar++;
+        case 3:
+          threeStar++;
+        case 2:
+          twoStar++;
+        case 1:
+          oneStar++;
+      }
+
+      // Count tags
+      for (final tag in review.tags) {
+        tagCounts[tag] = (tagCounts[tag] ?? 0) + 1;
+      }
+    }
+
+    // Sort reviews by date to get latest
+    final sortedReviews = List<ReviewModel>.from(reviews)
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    return RatingStats(
+      totalReviews: reviews.length,
+      averageRating: totalRating / reviews.length,
+      fiveStarCount: fiveStar,
+      fourStarCount: fourStar,
+      threeStarCount: threeStar,
+      twoStarCount: twoStar,
+      oneStarCount: oneStar,
+      tagCounts: tagCounts,
+      lastReviewAt: sortedReviews.first.createdAt,
+      updatedAt: DateTime.now(),
+    );
+  }
+  const RatingStats._();
 
   factory RatingStats.fromJson(Map<String, dynamic> json) =>
       _$RatingStatsFromJson(json);
@@ -190,67 +246,6 @@ abstract class RatingStats with _$RatingStats {
 
   /// Get formatted average (e.g., "4.5")
   String get formattedAverage => averageRating.toStringAsFixed(1);
-
-  /// Create stats from a list of reviews
-  factory RatingStats.fromReviews(List<ReviewModel> reviews) {
-    if (reviews.isEmpty) {
-      return const RatingStats();
-    }
-
-    int fiveStar = 0;
-    int fourStar = 0;
-    int threeStar = 0;
-    int twoStar = 0;
-    int oneStar = 0;
-    double totalRating = 0;
-    Map<String, int> tagCounts = {};
-
-    for (final review in reviews) {
-      totalRating += review.rating;
-
-      // Count stars
-      final rounded = review.rating.round();
-      switch (rounded) {
-        case 5:
-          fiveStar++;
-          break;
-        case 4:
-          fourStar++;
-          break;
-        case 3:
-          threeStar++;
-          break;
-        case 2:
-          twoStar++;
-          break;
-        case 1:
-          oneStar++;
-          break;
-      }
-
-      // Count tags
-      for (final tag in review.tags) {
-        tagCounts[tag] = (tagCounts[tag] ?? 0) + 1;
-      }
-    }
-
-    // Sort reviews by date to get latest
-    final sortedReviews = List<ReviewModel>.from(reviews)
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-    return RatingStats(
-      totalReviews: reviews.length,
-      averageRating: totalRating / reviews.length,
-      fiveStarCount: fiveStar,
-      fourStarCount: fourStar,
-      threeStarCount: threeStar,
-      twoStarCount: twoStar,
-      oneStarCount: oneStar,
-      tagCounts: tagCounts,
-      lastReviewAt: sortedReviews.first.createdAt,
-      updatedAt: DateTime.now(),
-    );
-  }
 }
 
 /// Review request - used when creating a new review
@@ -260,9 +255,9 @@ abstract class CreateReviewRequest with _$CreateReviewRequest {
     required String rideId,
     required String revieweeId,
     required String revieweeName,
-    String? revieweePhotoUrl,
     required ReviewType type,
     required double rating,
+    String? revieweePhotoUrl,
     String? comment,
     @Default([]) List<String> tags,
   }) = _CreateReviewRequest;

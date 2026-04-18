@@ -46,7 +46,7 @@ final class DriverStatsProvider
   }
 }
 
-String _$driverStatsHash() => r'fcb3a7aecfbc2da6a9e6b1ae8a6906649d1a36d6';
+String _$driverStatsHash() => r'8b75c4bff18085448eb37bb0e7a31ba7f50dc858';
 
 @ProviderFor(pendingRideRequests)
 final pendingRideRequestsProvider = PendingRideRequestsProvider._();

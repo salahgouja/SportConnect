@@ -6,19 +6,12 @@ import 'package:sport_connect/core/theme/platform_adaptive.dart';
 
 /// Empty State Widget
 class EmptyState extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String? description;
-  final String? subtitle; // Alias for description
-  final String? buttonText;
-  final String? actionText; // Alias for buttonText
-  final VoidCallback? onButtonPressed;
-  final VoidCallback? onActionPressed; // Alias for onButtonPressed
+  // Alias for onButtonPressed
 
   const EmptyState({
-    super.key,
     required this.icon,
     required this.title,
+    super.key,
     this.description,
     this.subtitle,
     this.buttonText,
@@ -26,6 +19,14 @@ class EmptyState extends StatelessWidget {
     this.onButtonPressed,
     this.onActionPressed,
   });
+  final IconData icon;
+  final String title;
+  final String? description;
+  final String? subtitle; // Alias for description
+  final String? buttonText;
+  final String? actionText; // Alias for buttonText
+  final VoidCallback? onButtonPressed;
+  final VoidCallback? onActionPressed;
 
   String? get _description => description ?? subtitle;
   String? get _buttonText => buttonText ?? actionText;
@@ -91,16 +92,15 @@ class EmptyState extends StatelessWidget {
 
 /// Loading Shimmer
 class ShimmerLoading extends StatelessWidget {
+  const ShimmerLoading({
+    required this.width,
+    required this.height,
+    super.key,
+    this.borderRadius = 10,
+  });
   final double width;
   final double height;
   final double borderRadius;
-
-  const ShimmerLoading({
-    super.key,
-    required this.width,
-    required this.height,
-    this.borderRadius = 10,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -133,22 +133,22 @@ class SkeletonCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              ShimmerLoading(width: 48, height: 48, borderRadius: 24),
+              const ShimmerLoading(width: 48, height: 48, borderRadius: 24),
               SizedBox(width: 12.w),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ShimmerLoading(width: 120, height: 14),
+                  const ShimmerLoading(width: 120, height: 14),
                   SizedBox(height: 8.h),
-                  ShimmerLoading(width: 80, height: 12),
+                  const ShimmerLoading(width: 80, height: 12),
                 ],
               ),
             ],
           ),
           SizedBox(height: 16.h),
-          ShimmerLoading(width: double.infinity, height: 12),
+          const ShimmerLoading(width: double.infinity, height: 12),
           SizedBox(height: 8.h),
-          ShimmerLoading(width: 200, height: 12),
+          const ShimmerLoading(width: 200, height: 12),
         ],
       ),
     );
@@ -157,10 +157,9 @@ class SkeletonCard extends StatelessWidget {
 
 /// Success Checkmark Animation
 class SuccessCheckmark extends StatefulWidget {
+  const SuccessCheckmark({super.key, this.size = 80, this.color});
   final double size;
   final Color? color;
-
-  const SuccessCheckmark({super.key, this.size = 80, this.color});
 
   @override
   State<SuccessCheckmark> createState() => _SuccessCheckmarkState();
@@ -214,17 +213,9 @@ class _SuccessCheckmarkState extends State<SuccessCheckmark>
 
 /// Tag/Chip Widget
 class PremiumTag extends StatelessWidget {
-  final String label;
-  final Color? backgroundColor;
-  final Color? textColor;
-  final IconData? icon;
-  final VoidCallback? onTap;
-  final VoidCallback? onRemove;
-  final bool isSelected;
-
   const PremiumTag({
-    super.key,
     required this.label,
+    super.key,
     this.backgroundColor,
     this.textColor,
     this.icon,
@@ -232,6 +223,13 @@ class PremiumTag extends StatelessWidget {
     this.onRemove,
     this.isSelected = false,
   });
+  final String label;
+  final Color? backgroundColor;
+  final Color? textColor;
+  final IconData? icon;
+  final VoidCallback? onTap;
+  final VoidCallback? onRemove;
+  final bool isSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -295,15 +293,14 @@ class PremiumTag extends StatelessWidget {
 
 /// Divider with text
 class TextDivider extends StatelessWidget {
+  const TextDivider({required this.text, super.key});
   final String text;
-
-  const TextDivider({super.key, required this.text});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(child: Divider(color: AppColors.border)),
+        const Expanded(child: Divider(color: AppColors.border)),
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 16.w),
           child: Text(
@@ -311,7 +308,7 @@ class TextDivider extends StatelessWidget {
             style: TextStyle(fontSize: 14.sp, color: AppColors.textTertiary),
           ),
         ),
-        Expanded(child: Divider(color: AppColors.border)),
+        const Expanded(child: Divider(color: AppColors.border)),
       ],
     );
   }
@@ -319,10 +316,9 @@ class TextDivider extends StatelessWidget {
 
 /// Status Badge
 class StatusBadge extends StatelessWidget {
+  const StatusBadge({required this.label, required this.type, super.key});
   final String label;
   final StatusType type;
-
-  const StatusBadge({super.key, required this.label, required this.type});
 
   Color get _color {
     switch (type) {
@@ -367,20 +363,19 @@ enum StatusType { success, warning, error, info, pending }
 
 /// Info Banner
 class InfoBanner extends StatelessWidget {
-  final String message;
-  final IconData icon;
-  final Color? backgroundColor;
-  final Color? iconColor;
-  final VoidCallback? onDismiss;
-
   const InfoBanner({
-    super.key,
     required this.message,
+    super.key,
     this.icon = Icons.info_outline_rounded,
     this.backgroundColor,
     this.iconColor,
     this.onDismiss,
   });
+  final String message;
+  final IconData icon;
+  final Color? backgroundColor;
+  final Color? iconColor;
+  final VoidCallback? onDismiss;
 
   @override
   Widget build(BuildContext context) {

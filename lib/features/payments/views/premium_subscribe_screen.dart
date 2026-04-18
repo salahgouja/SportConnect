@@ -14,16 +14,16 @@ import 'package:sport_connect/core/theme/app_colors.dart';
 enum _Cycle { monthly, yearly }
 
 class _Benefit {
+  const _Benefit({required this.icon, required this.label});
   final IconData icon;
   final String label;
-  const _Benefit({required this.icon, required this.label});
 }
 
 class _Feature {
+  const _Feature({required this.icon, required this.title, required this.desc});
   final IconData icon;
   final String title;
   final String desc;
-  const _Feature({required this.icon, required this.title, required this.desc});
 }
 
 const _kBenefits = <_Benefit>[
@@ -396,17 +396,17 @@ class _PremiumSubscribeScreenState extends State<PremiumSubscribeScreen> {
             ),
             child: Row(
               children: [
-                _TrustItem(
+                const _TrustItem(
                   icon: Icons.thumb_up_rounded,
                   label: 'Money-back\nguarantee',
                 ),
                 _trustDivider(),
-                _TrustItem(
+                const _TrustItem(
                   icon: Icons.cancel_outlined,
                   label: 'Cancel\nanytime',
                 ),
                 _trustDivider(),
-                _TrustItem(
+                const _TrustItem(
                   icon: Icons.lock_outline_rounded,
                   label: 'Secure\npayment',
                 ),
@@ -575,10 +575,9 @@ class _PremiumSubscribeScreenState extends State<PremiumSubscribeScreen> {
 // ─── Circle Back Button (on green bg) ─────────────────────────────────────
 
 class _CircleButton extends StatelessWidget {
+  const _CircleButton({required this.icon, required this.onTap});
   final IconData icon;
   final VoidCallback onTap;
-
-  const _CircleButton({required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -601,8 +600,8 @@ class _CircleButton extends StatelessWidget {
 // ─── Feature Row ──────────────────────────────────────────────────────────
 
 class _FeatureRow extends StatelessWidget {
-  final _Feature feature;
   const _FeatureRow({required this.feature});
+  final _Feature feature;
 
   @override
   Widget build(BuildContext context) {
@@ -663,7 +662,7 @@ class _FeatureRow extends StatelessWidget {
           Container(
             width: 22.w,
             height: 22.w,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               shape: BoxShape.circle,
               color: AppColors.primary,
             ),
@@ -682,6 +681,15 @@ class _FeatureRow extends StatelessWidget {
 // ─── Plan Card ────────────────────────────────────────────────────────────
 
 class _PlanCard extends StatelessWidget {
+  const _PlanCard({
+    required this.label,
+    required this.price,
+    required this.period,
+    required this.detail,
+    required this.isSelected,
+    required this.onTap,
+    this.badge,
+  });
   final String label;
   final String price;
   final String period;
@@ -689,16 +697,6 @@ class _PlanCard extends StatelessWidget {
   final String? badge;
   final bool isSelected;
   final VoidCallback onTap;
-
-  const _PlanCard({
-    required this.label,
-    required this.price,
-    required this.period,
-    required this.detail,
-    this.badge,
-    required this.isSelected,
-    required this.onTap,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -838,10 +836,9 @@ class _PlanCard extends StatelessWidget {
 // ─── Trust Item ───────────────────────────────────────────────────────────
 
 class _TrustItem extends StatelessWidget {
+  const _TrustItem({required this.icon, required this.label});
   final IconData icon;
   final String label;
-
-  const _TrustItem({required this.icon, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -851,7 +848,7 @@ class _TrustItem extends StatelessWidget {
           Container(
             width: 36.w,
             height: 36.w,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               shape: BoxShape.circle,
               color: AppColors.primarySurface,
             ),
@@ -877,8 +874,8 @@ class _TrustItem extends StatelessWidget {
 // ─── Green CTA Button ─────────────────────────────────────────────────────
 
 class _GreenCTA extends StatefulWidget {
-  final VoidCallback onPressed;
   const _GreenCTA({required this.onPressed});
+  final VoidCallback onPressed;
 
   @override
   State<_GreenCTA> createState() => _GreenCTAState();

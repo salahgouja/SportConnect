@@ -1,15 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/features/auth/models/auth_exception.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 
-class ChangePasswordState {
-  final bool isLoading;
-  final bool isSuccess;
-  final bool requiresReauth;
-  final String? errorMessage;
-  final bool obscureNewPassword;
-  final bool obscureConfirmPassword;
+part 'change_password_view_model.g.dart';
 
+class ChangePasswordState {
   const ChangePasswordState({
     this.isLoading = false,
     this.isSuccess = false,
@@ -18,6 +14,12 @@ class ChangePasswordState {
     this.obscureNewPassword = true,
     this.obscureConfirmPassword = true,
   });
+  final bool isLoading;
+  final bool isSuccess;
+  final bool requiresReauth;
+  final String? errorMessage;
+  final bool obscureNewPassword;
+  final bool obscureConfirmPassword;
 
   ChangePasswordState copyWith({
     bool? isLoading,
@@ -40,7 +42,8 @@ class ChangePasswordState {
   }
 }
 
-class ChangePasswordViewModel extends Notifier<ChangePasswordState> {
+@riverpod
+class ChangePasswordViewModel extends _$ChangePasswordViewModel {
   String? _pendingPassword;
 
   @override
@@ -59,7 +62,7 @@ class ChangePasswordViewModel extends Notifier<ChangePasswordState> {
       await ref.read(authActionsViewModelProvider).updatePassword(newPassword);
       state = state.copyWith(isLoading: false, isSuccess: true);
       _pendingPassword = null;
-    } catch (e) {
+    } on Exception catch (e) {
       if (e is AuthException && e.code == 'requires-recent-login') {
         state = state.copyWith(isLoading: false, requiresReauth: true);
         return;
@@ -93,8 +96,3 @@ class ChangePasswordViewModel extends Notifier<ChangePasswordState> {
     );
   }
 }
-
-final changePasswordViewModelProvider =
-    NotifierProvider<ChangePasswordViewModel, ChangePasswordState>(
-      ChangePasswordViewModel.new,
-    );

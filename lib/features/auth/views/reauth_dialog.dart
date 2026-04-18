@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/auth/view_models/reauth_view_model.dart';
@@ -31,7 +30,9 @@ class _ReauthBottomSheet extends ConsumerStatefulWidget {
 }
 
 class _ReauthBottomSheetState extends ConsumerState<_ReauthBottomSheet> {
-  final _formKey = GlobalKey<FormBuilderState>();
+  final _form = FormGroup({
+    'password': FormControl<String>(validators: [Validators.required]),
+  });
   bool _obscure = true;
 
   @override
@@ -72,8 +73,8 @@ class _ReauthBottomSheetState extends ConsumerState<_ReauthBottomSheet> {
           ),
         ),
         padding: EdgeInsets.all(24.w),
-        child: FormBuilder(
-          key: _formKey,
+        child: ReactiveForm(
+          formGroup: _form,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -131,8 +132,8 @@ class _ReauthBottomSheetState extends ConsumerState<_ReauthBottomSheet> {
               SizedBox(height: 24.h),
 
               // Password field
-              FormBuilderTextField(
-                name: 'password',
+              ReactiveTextField<String>(
+                formControlName: 'password',
                 decoration: InputDecoration(
                   labelText: l10n.reauthPassword,
                   hintText: l10n.reauthPasswordHint,
@@ -149,9 +150,10 @@ class _ReauthBottomSheetState extends ConsumerState<_ReauthBottomSheet> {
                   ),
                 ),
                 obscureText: _obscure,
-                validator: FormBuilderValidators.required(
-                  errorText: l10n.reauthPasswordRequired,
-                ),
+                validationMessages: {
+                  ValidationMessage.required: (_) =>
+                      l10n.reauthPasswordRequired,
+                },
               ),
 
               if (errorText != null) ...[
@@ -172,15 +174,12 @@ class _ReauthBottomSheetState extends ConsumerState<_ReauthBottomSheet> {
                   onPressed: vmState.isLoading
                       ? null
                       : () {
-                          if (!(_formKey.currentState?.saveAndValidate() ??
-                              false)) {
-                            return;
-                          }
+                          _form.markAllAsTouched();
+                          if (!_form.valid) return;
                           ref
                               .read(reauthViewModelProvider.notifier)
                               .reauthWithPassword(
-                                _formKey.currentState!.fields['password']!.value
-                                    as String,
+                                _form.control('password').value as String,
                               );
                         },
                   isLoading: vmState.isLoading,

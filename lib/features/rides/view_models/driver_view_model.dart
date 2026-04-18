@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/driver_stats.dart';
@@ -46,6 +46,22 @@ final activeDriverRideProvider = StreamProvider<RideModel?>((ref) {
 
 /// Aggregated dashboard state owned entirely by [DriverViewModel].
 class DriverState {
+  const DriverState({
+    this.isLoading = false,
+    this.isRefreshing = false,
+    this.errorMessage,
+    this.lastStatusChange,
+    this.lastRefreshAt,
+    this.pendingRequestActionIds = const <String>{},
+    this.activeRideAsync = const AsyncLoading(),
+    this.user = const AsyncLoading(),
+    this.stats = const AsyncLoading(),
+    this.pendingRequests = const AsyncLoading(),
+    this.acceptedRequests = const AsyncLoading(),
+    this.rejectedRequests = const AsyncLoading(),
+    this.upcomingRides = const AsyncLoading(),
+    this.earningsTransactions = const AsyncLoading(),
+  });
   static const _unset = Object();
 
   // ── Action state ──────────────────────────────────────────────────────────
@@ -75,23 +91,6 @@ class DriverState {
   final AsyncValue<List<RideModel>> upcomingRides;
   final AsyncValue<List<EarningsTransaction>> earningsTransactions;
 
-  const DriverState({
-    this.isLoading = false,
-    this.isRefreshing = false,
-    this.errorMessage,
-    this.lastStatusChange,
-    this.lastRefreshAt,
-    this.pendingRequestActionIds = const <String>{},
-    this.activeRideAsync = const AsyncLoading(),
-    this.user = const AsyncLoading(),
-    this.stats = const AsyncLoading(),
-    this.pendingRequests = const AsyncLoading(),
-    this.acceptedRequests = const AsyncLoading(),
-    this.rejectedRequests = const AsyncLoading(),
-    this.upcomingRides = const AsyncLoading(),
-    this.earningsTransactions = const AsyncLoading(),
-  });
-
   UserModel? get currentUser => user is AsyncData<UserModel?>
       ? (user as AsyncData<UserModel?>).value
       : null;
@@ -118,14 +117,13 @@ class DriverState {
           .take(3)
           .toList(growable: false);
 
-  int get pendingRequestCount =>
-      pendingRequests is AsyncData<List<RideBooking>>
-          ? (pendingRequests as AsyncData<List<RideBooking>>).value.length
-          : 0;
+  int get pendingRequestCount => pendingRequests is AsyncData<List<RideBooking>>
+      ? (pendingRequests as AsyncData<List<RideBooking>>).value.length
+      : 0;
   bool get hasPendingRequests => pendingRequestCount > 0;
-  bool get hasUpcomingRides => upcomingRides is AsyncData<List<RideModel>>
-      ? (upcomingRides as AsyncData<List<RideModel>>).value.isNotEmpty
-      : false;
+  bool get hasUpcomingRides =>
+      upcomingRides is AsyncData<List<RideModel>> &&
+      (upcomingRides as AsyncData<List<RideModel>>).value.isNotEmpty;
   bool isRequestActionInProgress(String bookingId) =>
       pendingRequestActionIds.contains(bookingId);
 
@@ -257,7 +255,7 @@ class DriverViewModel extends _$DriverViewModel {
         isRefreshing: false,
         lastRefreshAt: DateTime.now(),
       );
-    } catch (e) {
+    } on Exception catch (e) {
       if (!ref.mounted) return;
       state = state.copyWith(
         isRefreshing: false,
@@ -300,7 +298,7 @@ class DriverViewModel extends _$DriverViewModel {
         Success() => true,
         Failure(:final message) => throw Exception(message),
       };
-    } catch (e) {
+    } on Exception catch (e) {
       if (!ref.mounted) return false;
       state = state.copyWith(
         isLoading: false,
@@ -345,7 +343,7 @@ class DriverViewModel extends _$DriverViewModel {
         Success() => true,
         Failure(:final message) => throw Exception(message),
       };
-    } catch (e) {
+    } on Exception catch (e) {
       if (!ref.mounted) return false;
       state = state.copyWith(
         isLoading: false,

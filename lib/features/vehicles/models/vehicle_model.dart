@@ -12,7 +12,8 @@ enum FuelType {
   hybrid,
   pluginHybrid,
   hydrogen,
-  other;
+  other
+  ;
 
   String get name {
     switch (this) {
@@ -41,7 +42,8 @@ enum VehicleType {
   van,
   truck,
   bicycle,
-  other;
+  other
+  ;
 
   String get name {
     switch (this) {
@@ -68,18 +70,16 @@ enum VehicleVerificationStatus { pending, verified, rejected }
 /// Owner resolved through VehicleRepository/Service
 @freezed
 abstract class VehicleModel with _$VehicleModel {
-  const VehicleModel._();
-
   const factory VehicleModel({
     required String id,
-    required String ownerId, // Driver ID only
-    @Default('Unknown') String ownerName, // Denormalized for display
-    String? ownerPhotoUrl, // Cached for display
+    required String ownerId,
     required String make,
     required String model,
     required int year,
     required String color,
     required String licensePlate,
+    @Default('Unknown') String ownerName,
+    String? ownerPhotoUrl,
     @Default(VehicleType.car) VehicleType type,
     @Default(4) int capacity,
     @Default(FuelType.gasoline) FuelType fuelType,
@@ -112,6 +112,7 @@ abstract class VehicleModel with _$VehicleModel {
     @TimestampConverter() DateTime? createdAt,
     @TimestampConverter() DateTime? updatedAt,
   }) = _VehicleModel;
+  const VehicleModel._();
 
   factory VehicleModel.fromJson(Map<String, dynamic> json) =>
       _$VehicleModelFromJson(json);

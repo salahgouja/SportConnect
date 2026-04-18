@@ -7,14 +7,13 @@ import 'package:sport_connect/core/interfaces/repositories/i_dispute_repository.
 
 /// Repository for filing and managing ride disputes.
 class DisputeRepository implements IDisputeRepository {
+  DisputeRepository(this._firestore, this._storage);
   final FirebaseFirestore _firestore;
   final FirebaseStorage _storage;
 
-  DisputeRepository(this._firestore, this._storage);
-
   // R-18: Allowed MIME types / extensions for dispute attachments.
   static const _allowedExtensions = {'jpg', 'jpeg', 'png', 'webp', 'pdf'};
-  static const _maxFileSizeBytes = 5 * 1024 * 1024; // 5 MB
+  static const int _maxFileSizeBytes = 5 * 1024 * 1024; // 5 MB
   static const _maxFilesPerUpload = 5;
 
   /// Submits a new dispute and returns the document ID.
@@ -176,11 +175,10 @@ class DisputeRepository implements IDisputeRepository {
     required String disputeId,
     required String resolution,
     required String resolvedByUid,
-  }) =>
-      updateDisputeStatus(
-        disputeId: disputeId,
-        status: 'resolved',
-        resolution: resolution,
-        resolvedByUid: resolvedByUid,
-      );
+  }) => updateDisputeStatus(
+    disputeId: disputeId,
+    status: 'resolved',
+    resolution: resolution,
+    resolvedByUid: resolvedByUid,
+  );
 }

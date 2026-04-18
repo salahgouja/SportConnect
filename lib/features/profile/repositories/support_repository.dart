@@ -31,7 +31,9 @@ class SupportRepository implements ISupportRepository {
     List<File> attachments = const [],
   }) async {
     try {
-      final docRef = _firestore.collection(AppConstants.reportsCollection).doc();
+      final docRef = _firestore
+          .collection(AppConstants.reportsCollection)
+          .doc();
       final urls = attachments.isEmpty
           ? <String>[]
           : await _uploadFiles(attachments, 'report_attachments/${docRef.id}');
@@ -51,7 +53,7 @@ class SupportRepository implements ISupportRepository {
 
       TalkerService.info('Report submitted: ${docRef.id}');
       return docRef.id;
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Error submitting report: $e');
       rethrow;
     }
@@ -73,8 +75,9 @@ class SupportRepository implements ISupportRepository {
     List<File> attachments = const [],
   }) async {
     try {
-      final docRef =
-          _firestore.collection(AppConstants.supportTicketsCollection).doc();
+      final docRef = _firestore
+          .collection(AppConstants.supportTicketsCollection)
+          .doc();
       final urls = attachments.isEmpty
           ? <String>[]
           : await _uploadFiles(attachments, 'support_attachments/${docRef.id}');
@@ -93,7 +96,7 @@ class SupportRepository implements ISupportRepository {
 
       TalkerService.info('Support ticket submitted: ${docRef.id}');
       return docRef.id;
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Error submitting support ticket: $e');
       rethrow;
     }

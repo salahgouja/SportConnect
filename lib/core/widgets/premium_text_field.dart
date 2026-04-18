@@ -6,13 +6,6 @@ import 'package:sport_connect/core/theme/app_spacing.dart';
 
 /// Search Field with special styling
 class PremiumSearchField extends StatefulWidget {
-  final TextEditingController? controller;
-  final String hint;
-  final void Function(String)? onChanged;
-  final void Function(String)? onSubmitted;
-  final VoidCallback? onClear;
-  final bool autofocus;
-
   const PremiumSearchField({
     super.key,
     this.controller,
@@ -22,6 +15,12 @@ class PremiumSearchField extends StatefulWidget {
     this.onClear,
     this.autofocus = false,
   });
+  final TextEditingController? controller;
+  final String hint;
+  final void Function(String)? onChanged;
+  final void Function(String)? onSubmitted;
+  final VoidCallback? onClear;
+  final bool autofocus;
 
   @override
   State<PremiumSearchField> createState() => _PremiumSearchFieldState();
@@ -107,16 +106,15 @@ class _PremiumSearchFieldState extends State<PremiumSearchField> {
 
 /// OTP Input Field
 class OTPField extends StatefulWidget {
+  const OTPField({
+    required this.onCompleted,
+    super.key,
+    this.length = 6,
+    this.onChanged,
+  });
   final int length;
   final void Function(String) onCompleted;
   final void Function(String)? onChanged;
-
-  const OTPField({
-    super.key,
-    this.length = 6,
-    required this.onCompleted,
-    this.onChanged,
-  });
 
   @override
   State<OTPField> createState() => _OTPFieldState();
@@ -135,10 +133,10 @@ class _OTPFieldState extends State<OTPField> {
 
   @override
   void dispose() {
-    for (var c in _controllers) {
+    for (final c in _controllers) {
       c.dispose();
     }
-    for (var f in _focusNodes) {
+    for (final f in _focusNodes) {
       f.dispose();
     }
     super.dispose();
@@ -156,8 +154,8 @@ class _OTPFieldState extends State<OTPField> {
     }
   }
 
-  void _onKeyPressed(RawKeyEvent event, int index) {
-    if (event is RawKeyDownEvent &&
+  void _onKeyPressed(KeyEvent event, int index) {
+    if (event is KeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.backspace) {
       if (_controllers[index].text.isEmpty && index > 0) {
         _focusNodes[index - 1].requestFocus();
@@ -174,9 +172,9 @@ class _OTPFieldState extends State<OTPField> {
           width: 52.w,
           height: 60.h,
           margin: EdgeInsets.symmetric(horizontal: 4.w),
-          child: RawKeyboardListener(
+          child: KeyboardListener(
             focusNode: FocusNode(),
-            onKey: (event) => _onKeyPressed(event, index),
+            onKeyEvent: (event) => _onKeyPressed(event, index),
             child: TextFormField(
               controller: _controllers[index],
               focusNode: _focusNodes[index],
@@ -195,11 +193,14 @@ class _OTPFieldState extends State<OTPField> {
                 fillColor: AppColors.inputFill,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                  borderSide: BorderSide(color: AppColors.border),
+                  borderSide: const BorderSide(color: AppColors.border),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                  borderSide: BorderSide(color: AppColors.primary, width: 2),
+                  borderSide: const BorderSide(
+                    color: AppColors.primary,
+                    width: 2,
+                  ),
                 ),
               ),
               onChanged: (value) => _onChanged(value, index),

@@ -1,7 +1,8 @@
 {
-    "flutterTools.displayGetxContextMenu": false,
-    "flutterTools.displayMobxContextMenu": false,
-    "flutterTools.displayRiverpodContextMenu": true,
-    "flutterTools.displayModularContextMenu": false,
-    "java.configuration.updateBuildConfiguration": "interactive"
+  "[dart]": {
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    }
+  },
+  "java.configuration.updateBuildConfiguration": "interactive"
 }

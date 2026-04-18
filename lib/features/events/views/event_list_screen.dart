@@ -10,7 +10,6 @@ import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/premium_card.dart';
-import 'package:sport_connect/core/services/location_service.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
 import 'package:sport_connect/features/events/view_models/event_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -114,15 +113,17 @@ class EventListScreen extends ConsumerWidget {
       pinned: true,
       backgroundColor: AppColors.background,
       surfaceTintColor: Colors.transparent,
-      leading: IconButton(
-        tooltip: AppLocalizations.of(context).goBackTooltip,
-        icon: Icon(
-          Icons.adaptive.arrow_back_rounded,
-          color: AppColors.textPrimary,
-          size: 22.sp,
-        ),
-        onPressed: () => context.pop(),
-      ),
+      leading: context.canPop()
+          ? IconButton(
+              tooltip: AppLocalizations.of(context).goBackTooltip,
+              icon: Icon(
+                Icons.adaptive.arrow_back_rounded,
+                color: AppColors.textPrimary,
+                size: 22.sp,
+              ),
+              onPressed: () => context.pop(),
+            )
+          : null,
       title: Text(
         AppLocalizations.of(context).discoverEventsTitle,
         style: TextStyle(
@@ -227,7 +228,9 @@ class EventListScreen extends ConsumerWidget {
         Padding(
           padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
           child: GestureDetector(
-            onTap: () => _showRadiusPicker(context, ref, vm),
+            onTap: () async {
+              await _showRadiusPicker(context, ref, vm);
+            },
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
               decoration: BoxDecoration(
@@ -248,7 +251,7 @@ class EventListScreen extends ConsumerWidget {
                     SizedBox(
                       width: 14.w,
                       height: 14.h,
-                      child: CircularProgressIndicator.adaptive(
+                      child: const CircularProgressIndicator.adaptive(
                         strokeWidth: 2,
                         valueColor: AlwaysStoppedAnimation(AppColors.primary),
                       ),
@@ -371,7 +374,7 @@ class EventListScreen extends ConsumerWidget {
                           color: AppColors.textSecondary,
                         ),
                       ),
-                      onTap: () => Navigator.of(ctx).pop(-1.0),
+                      onTap: () => Navigator.of(ctx).pop(-1),
                     ),
                   ],
                 ),
@@ -388,46 +391,9 @@ class EventListScreen extends ConsumerWidget {
       return;
     }
 
-    // Mark loading while fetching GPS
-    ref
+    await ref
         .read(eventListViewModelProvider.notifier)
-        .setRadiusFilter(
-          radiusKm: chosen,
-          lat: vm.userLatitude,
-          lng: vm.userLongitude,
-        );
-
-    try {
-      final locationService = ref.read(locationServiceProvider);
-      final position = await locationService.getCurrentLocation();
-      if (!context.mounted) return;
-      if (position != null) {
-        ref
-            .read(eventListViewModelProvider.notifier)
-            .setRadiusFilter(
-              radiusKm: chosen,
-              lat: position.latitude,
-              lng: position.longitude,
-            );
-      } else {
-        ref.read(eventListViewModelProvider.notifier).clearRadiusFilter();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Could not get your location. Please enable location access.',
-            ),
-          ),
-        );
-      }
-    } catch (_) {
-      if (!context.mounted) return;
-      ref.read(eventListViewModelProvider.notifier).clearRadiusFilter();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Location unavailable. Please try again.'),
-        ),
-      );
-    }
+        .applyRadiusFilterWithLocation(chosen);
   }
 
   // -------------------------------------------------------------------
@@ -582,8 +548,10 @@ class _EventCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return PremiumCard(
-      onTap: () => context.push('/events/${event.id}'),
-      padding: EdgeInsets.zero,
+onTap: () => context.pushNamed(
+  AppRoutes.eventDetail.name,
+  pathParameters: {'id': event.id},
+),      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

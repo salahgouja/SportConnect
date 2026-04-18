@@ -1,29 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart' show Position;
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
-import 'package:sport_connect/core/services/talker_service.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
+import 'package:sport_connect/core/services/location_service.dart';
+import 'package:sport_connect/core/services/push_notification_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/gamification_widgets.dart';
+import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
-import 'package:sport_connect/core/widgets/gamification_widgets.dart';
-import 'package:sport_connect/features/rides/models/driver_stats.dart';
-import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
-import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/home/view_models/driver_location_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
-import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
+import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
+import 'package:sport_connect/features/rides/models/driver_stats.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/driver_view_model.dart';
+import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 /// Driver Home Screen - Responsive dashboard with location support.
 class DriverHomeScreen extends ConsumerStatefulWidget {
@@ -54,60 +54,25 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
   /// previous refusal when that flag is already `true`.
   Future<void> _requestNotificationPermission() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final alreadyAsked = prefs.getBool('notification_dialog_shown') ?? false;
+      final pns = ref.read(pushNotificationServiceProvider);
+      if (await pns.hasPermission()) return;
 
-      final settings = await FirebaseMessaging.instance
-          .getNotificationSettings();
-      final status = settings.authorizationStatus;
+      final settings = await ref.read(settingsRepositoryProvider.future);
+      if (settings.notificationDialogShown) return;
 
-      // Already granted — nothing to do.
-      if (status == AuthorizationStatus.authorized ||
-          status == AuthorizationStatus.provisional) {
-        TalkerService.info('Notification permission already granted: $status');
-        return;
-      }
-
-      // Genuinely denied after a previous explicit OS prompt — cannot re-ask.
-      if (status == AuthorizationStatus.denied && alreadyAsked) {
-        TalkerService.info(
-          'Notification permission denied; user must re-enable from settings.',
-        );
-        return;
-      }
-
-      // `notDetermined` OR `denied` on first launch (OEM quirk):
-      // show our rationale dialog, then request from the OS.
-      await Future.delayed(const Duration(seconds: 1));
+      await Future<void>.delayed(const Duration(seconds: 1));
       if (!context.mounted) return;
 
       final accepted = await PermissionDialogHelper.showNotificationRationale(
         context,
       );
+      await settings.setNotificationDialogShown();
+      if (!accepted) return;
 
-      // Mark that we have now shown the dialog regardless of the user's choice.
-      await prefs.setBool('notification_dialog_shown', true);
-
-      if (!accepted) {
-        TalkerService.info('User dismissed notification rationale.');
-        return;
-      }
-
-      final result = await FirebaseMessaging.instance.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
-      TalkerService.info(
-        'Notification permission result: ${result.authorizationStatus}',
-      );
-    } catch (e) {
-      TalkerService.error('Failed to request notification permission', e);
-    }
+      await pns.requestPermission();
+    } on Exception catch (_) {}
   }
 
-  /// Requests location permission when user explicitly taps the enable button.
-  /// Opens location settings if permission denied or services disabled.
   Future<void> _requestLocationPermission() async {
     try {
       final accepted = await PermissionDialogHelper.showLocationRationale(
@@ -119,11 +84,9 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
           .requestPermission();
       final locationState = ref.read(driverLocationViewModelProvider);
       if (!locationState.locationGranted) {
-        await Geolocator.openLocationSettings();
+        await ref.read(locationServiceProvider).openLocationSettings();
       }
-    } catch (e) {
-      TalkerService.debug('Error requesting location permission: $e');
-    }
+    } on Exception catch (_) {}
   }
 
   @override
@@ -157,7 +120,8 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
         servicesDisabled: locationState.servicesDisabled,
         currentPosition: locationState.currentPosition,
         onRetryLocation: _requestLocationPermission,
-        onOpenSettings: () => Geolocator.openLocationSettings(),
+        onOpenSettings: () =>
+            ref.read(locationServiceProvider).openLocationSettings(),
       ),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'driver_home_offer_fab',
@@ -481,12 +445,11 @@ class _DriverDashboard extends ConsumerWidget {
               currentXP: totalXP,
               maxXP: level.maxXP.isFinite ? level.maxXP.toInt() : totalXP,
               level: level.level,
-              showLabel: true,
             ),
           ),
           if (streak > 0) ...[
             SizedBox(width: 12.w),
-            StreakCounter(days: streak, isActive: true),
+            StreakCounter(days: streak),
           ],
         ],
       ),
@@ -757,7 +720,7 @@ class _DriverDashboard extends ConsumerWidget {
           _StatCard(
             icon: Icons.trending_up_rounded,
             iconColor: AppColors.info,
-            value: (driverStats.earningsThisMonth).toStringAsFixed(0),
+            value: driverStats.earningsThisMonth.toStringAsFixed(0),
             label: l10n.driverThisMonth,
           ),
         ];
@@ -800,7 +763,7 @@ class _DriverDashboard extends ConsumerWidget {
           ],
         );
       },
-      loading: () => _buildShimmerStatsRow(),
+      loading: _buildShimmerStatsRow,
       error: (_, _) => const SizedBox.shrink(),
     );
   }
@@ -1046,17 +1009,16 @@ class _DriverDashboard extends ConsumerWidget {
 // ============ Helper Widgets ============
 
 class _QuickActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
   const _QuickActionButton({
     required this.icon,
     required this.label,
     required this.color,
     required this.onTap,
   });
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -1095,10 +1057,9 @@ class _QuickActionButton extends StatelessWidget {
 }
 
 class _EarningsMetric extends StatelessWidget {
+  const _EarningsMetric({required this.label, required this.value});
   final String label;
   final String value;
-
-  const _EarningsMetric({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -1124,17 +1085,16 @@ class _EarningsMetric extends StatelessWidget {
 }
 
 class _StatCard extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final String value;
-  final String label;
-
   const _StatCard({
     required this.icon,
     required this.iconColor,
     required this.value,
     required this.label,
   });
+  final IconData icon;
+  final Color iconColor;
+  final String value;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -1183,17 +1143,16 @@ class _StatCard extends StatelessWidget {
 }
 
 class _RequestCard extends ConsumerWidget {
-  final RideBooking request;
-  final bool isProcessing;
-  final VoidCallback onAccept;
-  final VoidCallback onDecline;
-
   const _RequestCard({
     required this.request,
     required this.isProcessing,
     required this.onAccept,
     required this.onDecline,
   });
+  final RideBooking request;
+  final bool isProcessing;
+  final VoidCallback onAccept;
+  final VoidCallback onDecline;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1209,7 +1168,13 @@ class _RequestCard extends ConsumerWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 10, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(8),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -1221,21 +1186,47 @@ class _RequestCard extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(passengerName, style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                    Text(
+                      passengerName,
+                      style: TextStyle(
+                        fontSize: 15.sp,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
                     Row(
                       children: [
-                        Icon(Icons.star, color: AppColors.starFilled, size: 14.sp),
+                        Icon(
+                          Icons.star,
+                          color: AppColors.starFilled,
+                          size: 14.sp,
+                        ),
                         SizedBox(width: 4.w),
                         Text(
-                          passengerRating > 0 ? passengerRating.toStringAsFixed(1) : AppLocalizations.of(context).kNew,
-                          style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
+                          passengerRating > 0
+                              ? passengerRating.toStringAsFixed(1)
+                              : AppLocalizations.of(context).kNew,
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                         SizedBox(width: 8.w),
-                        Icon(Icons.event_seat, size: 14.sp, color: AppColors.textTertiary),
+                        Icon(
+                          Icons.event_seat,
+                          size: 14.sp,
+                          color: AppColors.textTertiary,
+                        ),
                         SizedBox(width: 4.w),
                         Text(
-                          AppLocalizations.of(context).valueSeatValue(request.seatsBooked, request.seatsBooked > 1 ? 's' : ''),
-                          style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
+                          AppLocalizations.of(context).valueSeatValue(
+                            request.seatsBooked,
+                            request.seatsBooked > 1 ? 's' : '',
+                          ),
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                       ],
                     ),
@@ -1244,11 +1235,23 @@ class _RequestCard extends ConsumerWidget {
               ),
               if (total > 0)
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-                  decoration: BoxDecoration(color: AppColors.success.withAlpha(25), borderRadius: BorderRadius.circular(20.r)),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 10.w,
+                    vertical: 6.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withAlpha(25),
+                    borderRadius: BorderRadius.circular(20.r),
+                  ),
                   child: Text(
-                    AppLocalizations.of(context).value6(total.toStringAsFixed(0)),
-                    style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w700, color: AppColors.success),
+                    AppLocalizations.of(
+                      context,
+                    ).value6(total.toStringAsFixed(0)),
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.success,
+                    ),
                   ),
                 ),
             ],
@@ -1256,22 +1259,59 @@ class _RequestCard extends ConsumerWidget {
           SizedBox(height: 12.h),
           Container(
             padding: EdgeInsets.all(12.w),
-            decoration: BoxDecoration(color: AppColors.background, borderRadius: BorderRadius.circular(12.r)),
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(12.r),
+            ),
             child: Row(
               children: [
-                Column(children: [
-                  Container(width: 8.w, height: 8.w, decoration: BoxDecoration(color: AppColors.success, shape: BoxShape.circle)),
-                  Container(width: 1, height: 20.h, color: AppColors.border),
-                  Container(width: 8.w, height: 8.w, decoration: BoxDecoration(color: AppColors.error, shape: BoxShape.circle)),
-                ]),
+                Column(
+                  children: [
+                    Container(
+                      width: 8.w,
+                      height: 8.w,
+                      decoration: const BoxDecoration(
+                        color: AppColors.success,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    Container(width: 1, height: 20.h, color: AppColors.border),
+                    Container(
+                      width: 8.w,
+                      height: 8.w,
+                      decoration: const BoxDecoration(
+                        color: AppColors.error,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ],
+                ),
                 SizedBox(width: 12.w),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(request.pickupLocation?.address ?? '—', style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w500, color: AppColors.textPrimary), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      Text(
+                        request.pickupLocation?.address ?? '—',
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       SizedBox(height: 8.h),
-                      Text(request.dropoffLocation?.address ?? '—', style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w500, color: AppColors.textPrimary), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      Text(
+                        request.dropoffLocation?.address ?? '—',
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ],
                   ),
                 ),
@@ -1281,11 +1321,20 @@ class _RequestCard extends ConsumerWidget {
           SizedBox(height: 12.h),
           Row(
             children: [
-              Icon(Icons.schedule_outlined, size: 16.sp, color: AppColors.textTertiary),
+              Icon(
+                Icons.schedule_outlined,
+                size: 16.sp,
+                color: AppColors.textTertiary,
+              ),
               SizedBox(width: 6.w),
               Text(
-                DateFormat('EEE, MMM d • h:mm a').format(request.createdAt ?? DateTime.now()),
-                style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
+                DateFormat(
+                  'EEE, MMM d • h:mm a',
+                ).format(request.createdAt ?? DateTime.now()),
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: AppColors.textSecondary,
+                ),
               ),
             ],
           ),
@@ -1295,18 +1344,53 @@ class _RequestCard extends ConsumerWidget {
               Expanded(
                 child: OutlinedButton(
                   onPressed: isProcessing ? null : onDecline,
-                  style: OutlinedButton.styleFrom(foregroundColor: AppColors.error, side: BorderSide(color: AppColors.error.withAlpha(80)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)), padding: EdgeInsets.symmetric(vertical: 12.h)),
-                  child: Text(AppLocalizations.of(context).decline, style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.error,
+                    side: BorderSide(color: AppColors.error.withAlpha(80)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                  ),
+                  child: Text(
+                    AppLocalizations.of(context).decline,
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ),
               SizedBox(width: 12.w),
               Expanded(
                 child: ElevatedButton(
                   onPressed: isProcessing ? null : onAccept,
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.success, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)), padding: EdgeInsets.symmetric(vertical: 12.h)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.success,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                  ),
                   child: isProcessing
-                      ? SizedBox(width: 18.w, height: 18.w, child: CircularProgressIndicator.adaptive(strokeWidth: 2, valueColor: const AlwaysStoppedAnimation<Color>(Colors.white)))
-                      : Text(AppLocalizations.of(context).accept, style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600)),
+                      ? SizedBox(
+                          width: 18.w,
+                          height: 18.w,
+                          child: const CircularProgressIndicator.adaptive(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                      : Text(
+                          AppLocalizations.of(context).accept,
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
               ),
             ],
@@ -1318,10 +1402,9 @@ class _RequestCard extends ConsumerWidget {
 }
 
 class _UpcomingRideCard extends StatelessWidget {
+  const _UpcomingRideCard({required this.ride, required this.onTap});
   final RideModel ride;
   final VoidCallback onTap;
-
-  const _UpcomingRideCard({required this.ride, required this.onTap});
 
   @override
   Widget build(BuildContext context) {

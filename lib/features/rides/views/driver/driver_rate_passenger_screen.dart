@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
@@ -13,6 +12,8 @@ import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/driver_rate_passenger_view_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
+import 'package:sport_connect/features/rides/views/shared/ride_completion_screen.dart'
+    show RideCompletionScreen;
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Post-ride screen where a driver rates their passenger(s).
@@ -22,12 +23,12 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 /// Navigated to from [RideCompletionScreen] when the authenticated user is
 /// the driver of the completed ride.  The driver selects a passenger (if
 /// multiple bookings), picks a 1–5 star rating, optionally adds a comment,
-/// and submits via [ReviewRepository].
+/// and submits the review via the view model.
 class DriverRatePassengerScreen extends ConsumerStatefulWidget {
+  const DriverRatePassengerScreen({required this.rideId, super.key});
+
   /// The completed ride ID.
   final String rideId;
-
-  const DriverRatePassengerScreen({super.key, required this.rideId});
 
   @override
   ConsumerState<DriverRatePassengerScreen> createState() =>
@@ -91,8 +92,8 @@ class _DriverRatePassengerScreenState
           SnackBar(
             content: Row(
               children: [
-                Icon(Icons.check_circle_rounded, color: Colors.white),
-                SizedBox(width: 8),
+                const Icon(Icons.check_circle_rounded, color: Colors.white),
+                const SizedBox(width: 8),
                 Text(AppLocalizations.of(context).ratingSubmittedThankYou),
               ],
             ),
@@ -324,11 +325,11 @@ class _DriverRatePassengerScreenState
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.r),
-                    borderSide: BorderSide(color: AppColors.divider),
+                    borderSide: const BorderSide(color: AppColors.divider),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.r),
-                    borderSide: BorderSide(
+                    borderSide: const BorderSide(
                       color: AppColors.primary,
                       width: 1.5,
                     ),
@@ -347,7 +348,7 @@ class _DriverRatePassengerScreenState
                 text: AppLocalizations.of(context).submitRating,
                 isLoading: formState.isSubmitting,
                 isDisabled: !formState.canSubmit,
-                onPressed: formState.canSubmit ? () => _submitRating() : null,
+                onPressed: formState.canSubmit ? _submitRating : null,
               ),
               SizedBox(height: 12.h),
               Center(
@@ -518,7 +519,7 @@ class _DriverRatePassengerScreenState
             revieweeName: passengerProfile?.displayName ?? 'Passenger',
             revieweePhotoUrl: passengerProfile?.photoUrl,
           );
-    } catch (e) {
+    } on Exception catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

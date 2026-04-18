@@ -3,10 +3,14 @@ import 'package:geolocator/geolocator.dart';
 /// Location service interface
 abstract class ILocationService {
   // Permissions
+  Future<bool> isServiceEnabled();
   Future<bool> checkPermission();
   Future<bool> requestPermission();
-  // LS-1: Lets UI distinguish a permanent denial so it can show manual input.
   Future<bool> isPermissionPermanentlyDenied();
+
+  // Settings navigation
+  Future<void> openAppSettings();
+  Future<void> openLocationSettings();
 
   // Location Operations
   Future<Position?> getCurrentLocation();

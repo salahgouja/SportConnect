@@ -1,19 +1,13 @@
-import 'dart:async';
+import 'dart:async' show StreamSubscription, unawaited;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:geolocator/geolocator.dart' show Position;
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/services/location_service.dart';
-import 'package:sport_connect/core/services/talker_service.dart';
+
+part 'driver_location_view_model.g.dart';
 
 class DriverLocationState {
-  final bool isLoading;
-  final bool hasInitialized;
-  final bool locationGranted;
-  final bool locationDeniedForever;
-  final bool servicesDisabled;
-  final Position? currentPosition;
-  final String? errorMessage;
-
   const DriverLocationState({
     this.isLoading = true,
     this.hasInitialized = false,
@@ -23,6 +17,13 @@ class DriverLocationState {
     this.currentPosition,
     this.errorMessage,
   });
+  final bool isLoading;
+  final bool hasInitialized;
+  final bool locationGranted;
+  final bool locationDeniedForever;
+  final bool servicesDisabled;
+  final Position? currentPosition;
+  final String? errorMessage;
 
   DriverLocationState copyWith({
     bool? isLoading,
@@ -47,7 +48,8 @@ class DriverLocationState {
   }
 }
 
-class DriverLocationViewModel extends Notifier<DriverLocationState> {
+@riverpod
+class DriverLocationViewModel extends _$DriverLocationViewModel {
   StreamSubscription<Position>? _positionSubscription;
   Future<void>? _initializeOperation;
   Future<void>? _permissionOperation;
@@ -59,32 +61,24 @@ class DriverLocationViewModel extends Notifier<DriverLocationState> {
   }
 
   Future<void> initialize({bool force = false}) {
-    if (state.hasInitialized && !force) {
-      return Future.value();
-    }
-
-    final existingOperation = _initializeOperation;
-    if (existingOperation != null) {
-      return existingOperation;
-    }
-
-    final initializeOperation = _runInitialize(force: force);
-    _initializeOperation = initializeOperation;
-    return initializeOperation.whenComplete(() {
-      if (identical(_initializeOperation, initializeOperation)) {
-        _initializeOperation = null;
-      }
+    if (state.hasInitialized && !force) return Future.value();
+    final existing = _initializeOperation;
+    if (existing != null) return existing;
+    final op = _runInitialize(force: force);
+    _initializeOperation = op;
+    return op.whenComplete(() {
+      if (identical(_initializeOperation, op)) _initializeOperation = null;
     });
   }
 
   Future<void> _runInitialize({required bool force}) async {
     await Future<void>.value();
-
     if (!ref.mounted) return;
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
-      final servicesEnabled = await Geolocator.isLocationServiceEnabled();
+      final svc = ref.read(locationServiceProvider);
+      final servicesEnabled = await svc.isServiceEnabled();
       if (!ref.mounted) return;
 
       if (!servicesEnabled) {
@@ -98,16 +92,16 @@ class DriverLocationViewModel extends Notifier<DriverLocationState> {
         return;
       }
 
-      final permission = await Geolocator.checkPermission();
-      final deniedForever = permission == LocationPermission.deniedForever;
-      final granted = permission != LocationPermission.denied && !deniedForever;
+      final permanentlyDenied = await svc.isPermissionPermanentlyDenied();
+      final granted = !permanentlyDenied && await svc.checkPermission();
+      if (!ref.mounted) return;
 
       state = state.copyWith(
         isLoading: false,
         hasInitialized: true,
         servicesDisabled: false,
         locationGranted: granted,
-        locationDeniedForever: deniedForever,
+        locationDeniedForever: permanentlyDenied,
       );
 
       if (granted) {
@@ -115,9 +109,8 @@ class DriverLocationViewModel extends Notifier<DriverLocationState> {
         if (!ref.mounted) return;
         _startLocationTracking();
       }
-    } catch (e) {
+    } on Exception catch (_) {
       if (!ref.mounted) return;
-      TalkerService.debug('Error checking location status: $e');
       state = state.copyWith(
         isLoading: false,
         hasInitialized: true,
@@ -127,38 +120,46 @@ class DriverLocationViewModel extends Notifier<DriverLocationState> {
   }
 
   Future<void> requestPermission() {
-    final existingOperation = _permissionOperation;
-    if (existingOperation != null) {
-      return existingOperation;
-    }
-
-    final permissionOperation = _runRequestPermission();
-    _permissionOperation = permissionOperation;
-    return permissionOperation.whenComplete(() {
-      if (identical(_permissionOperation, permissionOperation)) {
-        _permissionOperation = null;
-      }
+    final existing = _permissionOperation;
+    if (existing != null) return existing;
+    final op = _runRequestPermission();
+    _permissionOperation = op;
+    return op.whenComplete(() {
+      if (identical(_permissionOperation, op)) _permissionOperation = null;
     });
   }
 
   Future<void> _runRequestPermission() async {
     await Future<void>.value();
-    
     if (!ref.mounted) return;
     state = state.copyWith(isLoading: true, clearError: true);
-    try {
-      final granted = await LocationServiceImpl.instance.requestPermission();
-      final permission = await Geolocator.checkPermission();
-      final servicesEnabled = await Geolocator.isLocationServiceEnabled();
 
+    try {
+      final svc = ref.read(locationServiceProvider);
+      final servicesEnabled = await svc.isServiceEnabled();
+      if (!ref.mounted) return;
+
+      if (!servicesEnabled) {
+        state = state.copyWith(
+          isLoading: false,
+          hasInitialized: true,
+          servicesDisabled: true,
+          locationGranted: false,
+        );
+        return;
+      }
+
+      final granted = await svc.requestPermission();
+      if (!ref.mounted) return;
+      final permanentlyDenied = await svc.isPermissionPermanentlyDenied();
       if (!ref.mounted) return;
 
       state = state.copyWith(
         isLoading: false,
         hasInitialized: true,
         locationGranted: granted,
-        servicesDisabled: !servicesEnabled,
-        locationDeniedForever: permission == LocationPermission.deniedForever,
+        servicesDisabled: false,
+        locationDeniedForever: permanentlyDenied && !granted,
       );
 
       if (granted) {
@@ -166,9 +167,8 @@ class DriverLocationViewModel extends Notifier<DriverLocationState> {
         if (!ref.mounted) return;
         _startLocationTracking();
       }
-    } catch (e) {
+    } on Exception catch (_) {
       if (!ref.mounted) return;
-      TalkerService.debug('Error requesting location permission: $e');
       state = state.copyWith(
         isLoading: false,
         hasInitialized: true,
@@ -178,11 +178,10 @@ class DriverLocationViewModel extends Notifier<DriverLocationState> {
   }
 
   Future<void> _fetchCurrentPosition() async {
-    final position = await LocationServiceImpl.instance.getCurrentLocation();
-    if (!ref.mounted || position == null) {
-      return;
-    }
-
+    final position = await ref
+        .read(locationServiceProvider)
+        .getCurrentLocation();
+    if (!ref.mounted || position == null) return;
     state = state.copyWith(
       currentPosition: position,
       locationGranted: true,
@@ -191,8 +190,9 @@ class DriverLocationViewModel extends Notifier<DriverLocationState> {
   }
 
   void _startLocationTracking() {
-    _positionSubscription?.cancel();
-    _positionSubscription = LocationServiceImpl.instance
+    unawaited(_positionSubscription?.cancel());
+    _positionSubscription = ref
+        .read(locationServiceProvider)
         .getLocationStream()
         .listen(
           (position) {
@@ -202,9 +202,8 @@ class DriverLocationViewModel extends Notifier<DriverLocationState> {
               locationGranted: true,
             );
           },
-          onError: (Object error) {
+          onError: (Object _) {
             if (!ref.mounted) return;
-            TalkerService.debug('Location stream error: $error');
             state = state.copyWith(errorMessage: 'location-stream-failed');
           },
         );
@@ -214,8 +213,3 @@ class DriverLocationViewModel extends Notifier<DriverLocationState> {
     state = state.copyWith(clearError: true);
   }
 }
-
-final driverLocationViewModelProvider =
-    NotifierProvider<DriverLocationViewModel, DriverLocationState>(
-      DriverLocationViewModel.new,
-    );

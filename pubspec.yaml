@@ -72,7 +72,7 @@ dependencies:
   json_annotation: ^4.9.0
 
   # Payments (Stripe)
-  flutter_stripe: ^12.3.0
+  flutter_stripe: ^12.6.0
 
   # Core Utilities
   intl: ^0.20.1
@@ -87,7 +87,6 @@ dependencies:
 
   # Audio
   record: ^6.2.0
-  audioplayers: ^6.1.0
 
   # Authentication
   google_sign_in: ^7.2.0
@@ -119,8 +118,6 @@ dependencies:
   printing: ^5.14.2
   flutter_svg: ^2.2.3
   geoflutterfire_plus: ^0.0.32
-  flutter_form_builder: ^10.3.0+2
-  form_builder_validators: ^11.3.0
 
   # Logging & Debugging
   talker_flutter: ^5.1.12
@@ -128,6 +125,13 @@ dependencies:
   talker_dio_logger: ^5.1.12
   accessibility_tools: ^2.8.0
 
+  riverpod_devtools_tracker: ^1.0.7
+
+  riverpod: ^3.1.0
+  reactive_forms: ^18.2.2
+  v_chat_voice_player: ^3.1.4
+  v_platform: ^2.1.5
+  flutter_secure_storage: ^10.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -156,7 +160,7 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.4
 
   # Development Tools
-  riverpod_devtools_tracker: ^1.0.7
+  very_good_analysis: ^10.2.0
 
 flutter:
   uses-material-design: true

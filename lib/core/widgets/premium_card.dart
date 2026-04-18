@@ -8,20 +8,9 @@ import 'package:sport_connect/core/theme/platform_adaptive.dart';
 
 /// Platform-adaptive card — glass border on iOS, standard on Android
 class PremiumCard extends StatelessWidget {
-  final Widget child;
-  final EdgeInsetsGeometry? padding;
-  final EdgeInsetsGeometry? margin;
-  final VoidCallback? onTap;
-  final Color? backgroundColor;
-  final Gradient? gradient;
-  final bool hasBorder;
-  final Color? borderColor;
-  final double borderRadius;
-  final List<BoxShadow>? shadow;
-
   const PremiumCard({
-    super.key,
     required this.child,
+    super.key,
     this.padding,
     this.margin,
     this.onTap,
@@ -32,6 +21,16 @@ class PremiumCard extends StatelessWidget {
     this.borderRadius = 20,
     this.shadow,
   });
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
+  final EdgeInsetsGeometry? margin;
+  final VoidCallback? onTap;
+  final Color? backgroundColor;
+  final Gradient? gradient;
+  final bool hasBorder;
+  final Color? borderColor;
+  final double borderRadius;
+  final List<BoxShadow>? shadow;
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +45,7 @@ class PremiumCard extends StatelessWidget {
           gradient: gradient,
           borderRadius: BorderRadius.circular(borderRadius.r),
           border: hasBorder
-              ? Border.all(color: borderColor ?? AppColors.border, width: 1)
+              ? Border.all(color: borderColor ?? AppColors.border)
               : PlatformAdaptive.cardBorder,
           boxShadow: shadow ?? PlatformAdaptive.adaptiveShadow(),
         ),
@@ -61,16 +60,15 @@ class PremiumCard extends StatelessWidget {
 
 /// Glass morphism card — Liquid Glass aesthetic
 class GlassCard extends StatelessWidget {
-  final Widget child;
-  final EdgeInsetsGeometry? padding;
-  final double borderRadius;
-
   const GlassCard({
-    super.key,
     required this.child,
+    super.key,
     this.padding,
     this.borderRadius = 20,
   });
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
+  final double borderRadius;
 
   @override
   Widget build(BuildContext context) {
@@ -91,8 +89,8 @@ class GlassCard extends StatelessWidget {
               end: Alignment.bottomRight,
               colors: [
                 Colors.white.withValues(alpha: 0.22),
-                Colors.white.withValues(alpha: 0.0),
-                Colors.white.withValues(alpha: 0.0),
+                Colors.white.withValues(alpha: 0),
+                Colors.white.withValues(alpha: 0),
                 Colors.white.withValues(alpha: 0.08),
               ],
               stops: const [0.0, 0.3, 0.7, 1.0],
@@ -110,6 +108,16 @@ class GlassCard extends StatelessWidget {
 
 /// Stat Card for displaying metrics
 class StatCard extends StatelessWidget {
+  const StatCard({
+    required this.title,
+    required this.value,
+    required this.icon,
+    super.key,
+    this.iconColor,
+    this.gradient,
+    this.subtitle,
+    this.onTap,
+  });
   final String title;
   final String value;
   final IconData icon;
@@ -117,17 +125,6 @@ class StatCard extends StatelessWidget {
   final Gradient? gradient;
   final String? subtitle;
   final VoidCallback? onTap;
-
-  const StatCard({
-    super.key,
-    required this.title,
-    required this.value,
-    required this.icon,
-    this.iconColor,
-    this.gradient,
-    this.subtitle,
-    this.onTap,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -189,22 +186,21 @@ class StatCard extends StatelessWidget {
 
 /// Featured Card with image background
 class FeaturedCard extends StatelessWidget {
+  const FeaturedCard({
+    required this.title,
+    required this.subtitle,
+    super.key,
+    this.imageUrl,
+    this.onTap,
+    this.badge,
+    this.overlayGradient,
+  });
   final String title;
   final String subtitle;
   final String? imageUrl;
   final VoidCallback? onTap;
   final Widget? badge;
   final Gradient? overlayGradient;
-
-  const FeaturedCard({
-    super.key,
-    required this.title,
-    required this.subtitle,
-    this.imageUrl,
-    this.onTap,
-    this.badge,
-    this.overlayGradient,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -289,22 +285,21 @@ class FeaturedCard extends StatelessWidget {
 
 /// List Item Card
 class ListItemCard extends StatelessWidget {
+  const ListItemCard({
+    required this.leading,
+    required this.title,
+    super.key,
+    this.subtitle,
+    this.trailing,
+    this.onTap,
+    this.backgroundColor,
+  });
   final Widget leading;
   final String title;
   final String? subtitle;
   final Widget? trailing;
   final VoidCallback? onTap;
   final Color? backgroundColor;
-
-  const ListItemCard({
-    super.key,
-    required this.leading,
-    required this.title,
-    this.subtitle,
-    this.trailing,
-    this.onTap,
-    this.backgroundColor,
-  });
 
   @override
   Widget build(BuildContext context) {

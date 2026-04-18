@@ -4,47 +4,44 @@ import 'package:sport_connect/core/converters/timestamp_converter.dart';
 part 'message_model.freezed.dart';
 part 'message_model.g.dart';
 
-/// Message type enum
 enum MessageType { text, image, location, ride, system, audio }
 
-/// Message status enum
 enum MessageStatus { sending, sent, delivered, read, failed }
 
-/// Chat type enum
 enum ChatType { private, rideGroup, eventGroup, support }
 
-/// Single message model
+// ── MessageModel ──────────────────────────────────────────────────────────────
+
 @freezed
 abstract class MessageModel with _$MessageModel {
-  const MessageModel._();
-
   const factory MessageModel({
     required String id,
     required String chatId,
     required String senderId,
     required String senderName,
-    String? senderPhotoUrl,
     required String content,
+    String? senderPhotoUrl,
     @Default(MessageType.text) MessageType type,
     @Default(MessageStatus.sending) MessageStatus status,
 
-    // For image messages
-    String? imageUrl,
+    // FIX: unified media field — replaces the old split imageUrl / (misused)
+    // imageUrl-for-audio pattern. One field for image, audio, and video URLs.
+    String? mediaUrl,
     String? thumbnailUrl,
 
-    // For location messages
+    // Location
     double? latitude,
     double? longitude,
     String? locationName,
 
-    // For ride messages
+    // Ride attachment
     String? rideId,
 
-    // Reply
+    // Reply context
     String? replyToMessageId,
     String? replyToContent,
 
-    // Reactions
+    // Reactions: emoji → [userId, ...]
     @Default({}) Map<String, List<String>> reactions,
 
     // Read receipts
@@ -57,26 +54,30 @@ abstract class MessageModel with _$MessageModel {
     @TimestampConverter() DateTime? createdAt,
     @TimestampConverter() DateTime? editedAt,
   }) = _MessageModel;
+  // FIX: private constructor BEFORE the factory — required by freezed so that
+  // custom methods below can reference `this` on the generated concrete class.
+  const MessageModel._();
 
   factory MessageModel.fromJson(Map<String, dynamic> json) =>
       _$MessageModelFromJson(json);
 
-  /// Check if message is from current user
   bool isFromUser(String userId) => senderId == userId;
-
-  /// Check if read by user
   bool isReadBy(String userId) => readBy.contains(userId);
 
-  /// Get total reaction count
   int get totalReactions =>
       reactions.values.fold(0, (sum, list) => sum + list.length);
 }
 
-/// Chat participant model
+// ── ChatParticipant ───────────────────────────────────────────────────────────
+
 @freezed
 abstract class ChatParticipant with _$ChatParticipant {
   const factory ChatParticipant({
-    required String odid,
+    // FIX: Dart field renamed odid → userId for clarity, but the Firestore
+    // document field is kept as 'odid' via @JsonKey for backward compatibility
+    // with existing participant arrays already written to Firestore.
+    // Removing @JsonKey(name: 'odid') would require a Firestore data migration.
+    @JsonKey(name: 'odid') required String userId,
     required String displayName,
     String? photoUrl,
     @Default(false) bool isAdmin,
@@ -89,11 +90,10 @@ abstract class ChatParticipant with _$ChatParticipant {
       _$ChatParticipantFromJson(json);
 }
 
-/// Chat/Conversation model
+// ── ChatModel ─────────────────────────────────────────────────────────────────
+
 @freezed
 abstract class ChatModel with _$ChatModel {
-  const ChatModel._();
-
   const factory ChatModel({
     required String id,
     @Default(ChatType.private) ChatType type,
@@ -102,84 +102,80 @@ abstract class ChatModel with _$ChatModel {
     @Default([]) List<ChatParticipant> participants,
     @Default([]) List<String> participantIds,
 
-    // For group chats
+    // Group
     String? groupName,
     String? groupPhotoUrl,
     String? description,
 
-    // For ride chats
+    // Ride / event
     String? rideId,
-
-    // For event chats
     String? eventId,
 
-    // Last message info
+    // Last message preview
     String? lastMessageContent,
     String? lastMessageSenderId,
     String? lastMessageSenderName,
     @Default(MessageType.text) MessageType lastMessageType,
     @TimestampConverter() DateTime? lastMessageAt,
 
-    // Unread counts per user (userId -> count)
+    // Unread counts: userId → count
     @Default({}) Map<String, int> unreadCounts,
 
-    // Settings
+    // Per-user settings
     @Default({}) Map<String, bool> mutedBy,
     @Default({}) Map<String, bool> pinnedBy,
 
-    // One-sided deletion: userId -> true if deleted for that user
+    // One-sided deletion: userId → true
     @Default({}) Map<String, bool> deletedFor,
 
-    // Metadata
     @Default(true) bool isActive,
     @TimestampConverter() DateTime? createdAt,
     @TimestampConverter() DateTime? updatedAt,
   }) = _ChatModel;
+  // FIX: private constructor before factory — required for custom methods below.
+  const ChatModel._();
 
   factory ChatModel.fromJson(Map<String, dynamic> json) =>
       _$ChatModelFromJson(json);
 
-  /// Get other participant in private chat
+  /// Returns the other participant in a private 1:1 chat, or null for groups.
   ChatParticipant? getOtherParticipant(String currentUserId) {
     if (type != ChatType.private || participants.length != 2) return null;
     return participants.firstWhere(
-      (p) => p.odid != currentUserId,
+      (p) => p.userId != currentUserId,
       orElse: () => participants.first,
     );
   }
 
-  /// Get chat title (group name or other participant's name)
   String getChatTitle(String currentUserId) {
-    if (type == ChatType.rideGroup) return groupName ?? 'Ride Chat';
-    if (type == ChatType.eventGroup) return groupName ?? 'Event Chat';
-    if (type == ChatType.support) return 'Support';
-    if (groupName != null) return groupName!;
-
-    final other = getOtherParticipant(currentUserId);
-    return other?.displayName ?? 'Unknown';
+    return switch (type) {
+      ChatType.rideGroup => groupName ?? 'Ride Chat',
+      ChatType.eventGroup => groupName ?? 'Event Chat',
+      ChatType.support => 'Support',
+      _ =>
+        groupName ??
+            getOtherParticipant(currentUserId)?.displayName ??
+            'Unknown',
+    };
   }
 
-  /// Get chat photo
-  String? getChatPhoto(String currentUserId) {
-    if (groupPhotoUrl != null) return groupPhotoUrl;
-    return getOtherParticipant(currentUserId)?.photoUrl;
-  }
+  String? getChatPhoto(String currentUserId) =>
+      groupPhotoUrl ?? getOtherParticipant(currentUserId)?.photoUrl;
 
-  /// Get unread count for user
   int getUnreadCount(String userId) => unreadCounts[userId] ?? 0;
-
-  /// Is muted by user
   bool isMutedBy(String userId) => mutedBy[userId] ?? false;
-
-  /// Is pinned by user
   bool isPinnedBy(String userId) => pinnedBy[userId] ?? false;
 }
 
-/// Typing indicator model
+// ── TypingIndicator ───────────────────────────────────────────────────────────
+
 @freezed
 abstract class TypingIndicator with _$TypingIndicator {
   const factory TypingIndicator({
-    required String odid,
+    // No @JsonKey here: new Firestore writes use 'userId' (written by
+    // setTyping in the repository). Existing indicators expire in ≤30 s
+    // so backward-compat with the old 'odid' field is not needed.
+    required String userId,
     required String displayName,
     required String chatId,
     @TimestampConverter() DateTime? startedAt,

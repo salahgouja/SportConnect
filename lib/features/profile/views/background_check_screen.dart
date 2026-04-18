@@ -28,7 +28,6 @@ class BackgroundCheckScreen extends StatelessWidget {
         child: Padding(
           padding: EdgeInsets.all(16.w),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(height: 32.h),
               Container(

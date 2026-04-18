@@ -314,6 +314,30 @@ abstract class AppLocalizations {
   /// **'Manage your payment options'**
   String get settingsPaymentMethodsDesc;
 
+  /// No description provided for @managePaymentMethodsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Add, remove, or update saved payment methods for faster checkout.'**
+  String get managePaymentMethodsDesc;
+
+  /// No description provided for @selectedPaymentMethod.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected Payment Method'**
+  String get selectedPaymentMethod;
+
+  /// No description provided for @changePaymentMethod.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Payment Method'**
+  String get changePaymentMethod;
+
+  /// No description provided for @addPaymentMethod.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Payment Method'**
+  String get addPaymentMethod;
+
   /// No description provided for @settingsVerifyAccount.
   ///
   /// In en, this message translates to:

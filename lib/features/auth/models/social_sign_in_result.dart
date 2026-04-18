@@ -5,8 +5,7 @@ import 'package:sport_connect/features/auth/models/models.dart';
 /// Contains the [user] model from Firestore and an [isNewUser] flag
 /// indicating whether this was a first-time sign-in (new account).
 class SocialSignInResult {
+  SocialSignInResult({this.user, this.isNewUser = false});
   final UserModel? user;
   final bool isNewUser;
-
-  SocialSignInResult({this.user, this.isNewUser = false});
 }

@@ -4,14 +4,19 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_database/firebase_database.dart' hide Query;
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_ride_repository.dart';
-import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
+import 'package:sport_connect/features/rides/repositories/booking_repository.dart'
+    show BookingRepository;
 
 /// Ride Repository for Firestore operations
 class RideRepository implements IRideRepository {
+  RideRepository(this._firestore);
   final FirebaseFirestore _firestore;
 
-  RideRepository(this._firestore);
+  // Tracks ride IDs for which onDisconnect().remove() has been registered,
+  // so we only pay the round-trip cost once per ride session.
+  final _disconnectRegistered = <String>{};
 
   CollectionReference<RideModel> get _ridesCollection => _firestore
       .collection(AppConstants.ridesCollection)
@@ -135,10 +140,10 @@ class RideRepository implements IRideRepository {
       throw ArgumentError('maxPrice must be >= 0 (got $maxPrice).');
     }
 
-    final radiusKm = 10.0;
-    final latRange = radiusKm / 111.0;
+    const radiusKm = 10.0;
+    const latRange = radiusKm / 111.0;
 
-    Query<RideModel> query = _ridesCollection
+    final query = _ridesCollection
         .where('status', isEqualTo: 'active')
         .where('route.origin.latitude', isGreaterThan: originLat - latRange)
         .where('route.origin.latitude', isLessThan: originLat + latRange)
@@ -181,6 +186,7 @@ class RideRepository implements IRideRepository {
       'cancellationReason': reason,
       'updatedAt': DateTime.now(),
     });
+    await clearLiveLocation(rideId);
   }
 
   // ==================== EXISTING METHODS ====================
@@ -227,9 +233,9 @@ class RideRepository implements IRideRepository {
   Stream<List<RideModel>> streamRidesAsPassenger(String userId) {
     return _rideBookingsCollection
         .where('passengerId', isEqualTo: userId)
-        .where('status', whereIn: ['pending', 'accepted'])
+        .where('status', whereIn: ['pending', 'accepted', 'completed', 'cancelled'])
         .orderBy('createdAt', descending: true)
-        .limit(50)
+        .limit(100)
         .snapshots()
         .asyncMap((bookingSnapshot) async {
           final rideIds = bookingSnapshot.docs
@@ -382,7 +388,7 @@ class RideRepository implements IRideRepository {
     required BookingStatus newStatus,
   }) async {
     // Read booking data first (before any writes) to avoid TOCTOU race
-    int seatsBooked = 1;
+    var seatsBooked = 1;
     BookingStatus? previousStatus;
     Map<String, dynamic>? pickupLocationMap;
     if (newStatus == BookingStatus.cancelled ||
@@ -395,8 +401,12 @@ class RideRepository implements IRideRepository {
         // Capture pickup location for waypoint creation on accept
         if (newStatus == BookingStatus.accepted &&
             bookingDoc.data()?.pickupLocation != null) {
-          final pickup = bookingDoc.data()!.pickupLocation!;
-          pickupLocationMap = pickup.toJson();
+          final pickup = bookingDoc.data()!.pickupLocation;
+          if (pickup != null) {
+            pickupLocationMap = pickup.toJson();
+          } else {
+            throw StateError('Pickup location is required to accept booking.');
+          }
         }
       }
     }
@@ -411,7 +421,7 @@ class RideRepository implements IRideRepository {
     await _rideBookingsCollection.doc(bookingId).update({
       'status': newStatus.name,
       'respondedAt': DateTime.now(),
-      'pickupOtp': ?pickupOtp,
+      'pickupOtp': pickupOtp,
     });
 
     // If accepted, reserve the seats on the ride and add pickup waypoint.
@@ -515,8 +525,8 @@ class RideRepository implements IRideRepository {
       final rideSnap = await transaction.get(rideRef);
       if (!rideSnap.exists) return;
 
-      final currentCount = (rideSnap.data()!.reviewCount.toInt());
-      final currentAvg = (rideSnap.data()!.averageRating).toDouble();
+      final currentCount = rideSnap.data()!.reviewCount;
+      final currentAvg = rideSnap.data()!.averageRating;
 
       // Incremental average: newAvg = (oldAvg * count + newRating) / (count + 1)
       final newCount = currentCount + 1;
@@ -602,6 +612,7 @@ class RideRepository implements IRideRepository {
       'schedule.arrivalTime': DateTime.now(),
       'updatedAt': DateTime.now(),
     });
+    await clearLiveLocation(rideId);
   }
 
   /// Updates the driver's ride phase (pickingUp, enRoute, arriving, completed).
@@ -637,12 +648,25 @@ class RideRepository implements IRideRepository {
     double longitude, {
     double heading = 0,
   }) async {
-    await FirebaseDatabase.instance.ref('liveLocations/$rideId').update({
+    final rtdbRef = FirebaseDatabase.instance.ref('liveLocations/$rideId');
+    // Register server-side auto-remove once per ride session.
+    // If the device disconnects ungracefully the RTDB node is cleaned up automatically.
+    if (!_disconnectRegistered.contains(rideId)) {
+      await rtdbRef.onDisconnect().remove();
+      _disconnectRegistered.add(rideId);
+    }
+    await rtdbRef.update({
       'lat': latitude,
       'lng': longitude,
       'heading': heading,
-      'ts': DateTime.now().millisecondsSinceEpoch,
+      'ts': ServerValue.timestamp, // server clock — avoids device clock skew
     });
+  }
+
+  @override
+  Future<void> clearLiveLocation(String rideId) async {
+    _disconnectRegistered.remove(rideId);
+    await FirebaseDatabase.instance.ref('liveLocations/$rideId').remove();
   }
 
   /// Streams the driver's live GPS location from Firebase Realtime Database.
@@ -784,7 +808,7 @@ class RideRepository implements IRideRepository {
     );
     waypoints.add(waypoint);
 
-    for (int i = 0; i < waypoints.length; i++) {
+    for (var i = 0; i < waypoints.length; i++) {
       waypoints[i]['order'] = i;
     }
 
@@ -804,7 +828,7 @@ class RideRepository implements IRideRepository {
     if (waypointIndex < 0 || waypointIndex >= waypoints.length) return;
     waypoints.removeAt(waypointIndex);
 
-    for (int i = 0; i < waypoints.length; i++) {
+    for (var i = 0; i < waypoints.length; i++) {
       waypoints[i]['order'] = i;
     }
 
@@ -852,7 +876,7 @@ class RideRepository implements IRideRepository {
       bookingIds: const [],
       bookings: const [],
       reviewCount: 0,
-      averageRating: 0.0,
+      averageRating: 0,
       notes: 'Return trip from "${original.destination.address}"',
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),

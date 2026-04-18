@@ -1,7 +1,4 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,7 +13,8 @@ import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/pending_booking_view_model.dart';
-import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
+import 'package:sport_connect/features/rides/views/passenger/ride_countdown_screen.dart'
+    show RideCountdownScreen;
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Shown immediately after a passenger submits a booking request.
@@ -26,9 +24,8 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 /// - Accepted → [RideCountdownScreen]
 /// - Rejected / Cancelled → back to My Rides
 class RideBookingPendingScreen extends ConsumerStatefulWidget {
+  const RideBookingPendingScreen({required this.rideId, super.key});
   final String rideId;
-
-  const RideBookingPendingScreen({super.key, required this.rideId});
 
   @override
   ConsumerState<RideBookingPendingScreen> createState() =>
@@ -76,7 +73,6 @@ class _RideBookingPendingScreenState
                 ),
               );
             }
-            break;
           case PendingBookingEffectType.navigateMyRides:
             context.go(AppRoutes.riderMyRides.path);
             if (effect.message != null) {
@@ -85,7 +81,6 @@ class _RideBookingPendingScreenState
                 backgroundColor: AppColors.error,
               );
             }
-            break;
           case PendingBookingEffectType.navigateActiveRide:
             final rideId = effect.bookingId;
             if (rideId != null) {
@@ -93,12 +88,10 @@ class _RideBookingPendingScreenState
                 '${AppRoutes.riderActiveRide.path}?rideId=$rideId',
               );
             }
-            break;
           case PendingBookingEffectType.snackbar:
             if (effect.message != null) {
               _showStatusSnackBar(effect.message!);
             }
-            break;
         }
       }
     });
@@ -176,7 +169,6 @@ class _RideBookingPendingScreenState
           32.h + MediaQuery.paddingOf(context).bottom,
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Animated icon
             Container(
@@ -262,7 +254,6 @@ class _RideBookingPendingScreenState
                 PremiumButton(
                   text: AppLocalizations.of(context).completePaymentButton,
                   onPressed: notifier.processPayment,
-                  style: PremiumButtonStyle.primary,
                 ),
               SizedBox(height: 32.h),
             ],
@@ -339,14 +330,14 @@ class _RideBookingPendingScreenState
                 polylines: [
                   Polyline(
                     points: routePoints,
-                    strokeWidth: 6.0,
+                    strokeWidth: 6,
                     color: Colors.white,
-                    borderStrokeWidth: 2.0,
+                    borderStrokeWidth: 2,
                     borderColor: Colors.white,
                   ),
                   Polyline(
                     points: routePoints,
-                    strokeWidth: 4.0,
+                    strokeWidth: 4,
                     color: AppColors.primary,
                   ),
                 ],

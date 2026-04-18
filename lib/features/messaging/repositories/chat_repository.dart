@@ -1,21 +1,23 @@
 import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_chat_repository.dart';
 import 'package:sport_connect/features/messaging/models/message_model.dart';
 
-/// Chat Repository for Firestore operations
 class ChatRepository implements IChatRepository {
+  ChatRepository(this._firestore, this._storage);
+
   final FirebaseFirestore _firestore;
   final FirebaseStorage _storage;
 
-  ChatRepository(this._firestore, this._storage);
+  // ── Collection references ────────────────────────────────────────────────
 
   CollectionReference<ChatModel> get _chatsCollection => _firestore
       .collection(AppConstants.chatsCollection)
-      .withConverter<ChatModel>(
-        fromFirestore: (snapshot, _) => ChatModel.fromJson(snapshot.data()!),
+      .withConverter(
+        fromFirestore: (snap, _) => ChatModel.fromJson(snap.data()!),
         toFirestore: (chat, _) => chat.toJson(),
       );
 
@@ -23,40 +25,51 @@ class ChatRepository implements IChatRepository {
       _chatsCollection
           .doc(chatId)
           .collection(AppConstants.messagesCollection)
-          .withConverter<MessageModel>(
-            fromFirestore: (snapshot, _) =>
-                MessageModel.fromJson(snapshot.data()!),
-            toFirestore: (message, _) => message.toJson(),
+          .withConverter(
+            fromFirestore: (snap, _) => MessageModel.fromJson(snap.data()!),
+            toFirestore: (msg, _) => msg.toJson(),
           );
+
   CollectionReference<TypingIndicator> _typingCollection(String chatId) =>
       _chatsCollection
           .doc(chatId)
           .collection(AppConstants.typingCollection)
-          .withConverter<TypingIndicator>(
-            fromFirestore: (snapshot, _) =>
-                TypingIndicator.fromJson(snapshot.data()!),
-            toFirestore: (typing, _) => typing.toJson(),
+          .withConverter(
+            fromFirestore: (snap, _) => TypingIndicator.fromJson(snap.data()!),
+            toFirestore: (t, _) => t.toJson(),
           );
 
-  // ==================== CHAT OPERATIONS ====================
+  // ── Raw doc references (used when FieldValue sentinels are needed) ────────
 
-  /// Create a new chat
+  DocumentReference<Map<String, dynamic>> _rawChatRef(String chatId) =>
+      _firestore.collection(AppConstants.chatsCollection).doc(chatId);
+
+  DocumentReference<Map<String, dynamic>> _rawMessageRef(
+    String chatId,
+    String messageId,
+  ) => _firestore
+      .collection(AppConstants.chatsCollection)
+      .doc(chatId)
+      .collection(AppConstants.messagesCollection)
+      .doc(messageId);
+
+  // ── Chat CRUD ─────────────────────────────────────────────────────────────
+
   @override
   Future<String> createChat(ChatModel chat) async {
     final docRef = _chatsCollection.doc();
     final now = DateTime.now();
-    final chatWithId = chat.copyWith(
-      id: docRef.id,
-      createdAt: now,
-      updatedAt: now,
-      // Initialize lastMessageAt so chat appears in queries ordered by this field
-      lastMessageAt: chat.lastMessageAt ?? now,
+    await docRef.set(
+      chat.copyWith(
+        id: docRef.id,
+        createdAt: now,
+        updatedAt: now,
+        lastMessageAt: chat.lastMessageAt ?? now,
+      ),
     );
-    await docRef.set(chatWithId);
     return docRef.id;
   }
 
-  /// Get or create private chat between two users
   @override
   Future<ChatModel> getOrCreatePrivateChat({
     required String userId1,
@@ -66,7 +79,6 @@ class ChatRepository implements IChatRepository {
     String? userPhoto1,
     String? userPhoto2,
   }) async {
-    // Check if chat already exists
     final query = await _chatsCollection
         .where('type', isEqualTo: ChatType.private.name)
         .where('participantIds', arrayContains: userId1)
@@ -74,25 +86,21 @@ class ChatRepository implements IChatRepository {
 
     for (final doc in query.docs) {
       final chat = doc.data();
-      if (chat.participantIds.contains(userId2)) {
-        return chat;
-      }
+      if (chat.participantIds.contains(userId2)) return chat;
     }
 
-    // Create new chat
     final newChat = ChatModel(
       id: '',
-      type: ChatType.private,
       participantIds: [userId1, userId2],
       participants: [
         ChatParticipant(
-          odid: userId1,
+          userId: userId1,
           displayName: userName1,
           photoUrl: userPhoto1,
           joinedAt: DateTime.now(),
         ),
         ChatParticipant(
-          odid: userId2,
+          userId: userId2,
           displayName: userName2,
           photoUrl: userPhoto2,
           joinedAt: DateTime.now(),
@@ -104,13 +112,12 @@ class ChatRepository implements IChatRepository {
     return newChat.copyWith(id: chatId);
   }
 
-  /// Create a ride group chat
   Future<ChatModel> createRideChat({
     required String rideId,
     required String driverId,
     required String driverName,
-    String? driverPhoto,
     required String rideName,
+    String? driverPhoto,
   }) async {
     final chat = ChatModel(
       id: '',
@@ -120,7 +127,7 @@ class ChatRepository implements IChatRepository {
       participantIds: [driverId],
       participants: [
         ChatParticipant(
-          odid: driverId,
+          userId: driverId,
           displayName: driverName,
           photoUrl: driverPhoto,
           isAdmin: true,
@@ -128,18 +135,16 @@ class ChatRepository implements IChatRepository {
         ),
       ],
     );
-
     final chatId = await createChat(chat);
     return chat.copyWith(id: chatId);
   }
 
-  /// Create an event group chat
   Future<ChatModel> createEventChat({
     required String eventId,
     required String creatorId,
     required String creatorName,
-    String? creatorPhoto,
     required String eventName,
+    String? creatorPhoto,
   }) async {
     final chat = ChatModel(
       id: '',
@@ -149,7 +154,7 @@ class ChatRepository implements IChatRepository {
       participantIds: [creatorId],
       participants: [
         ChatParticipant(
-          odid: creatorId,
+          userId: creatorId,
           displayName: creatorName,
           photoUrl: creatorPhoto,
           isAdmin: true,
@@ -157,20 +162,16 @@ class ChatRepository implements IChatRepository {
         ),
       ],
     );
-
     final chatId = await createChat(chat);
     return chat.copyWith(id: chatId);
   }
 
-  /// Get chat by ID
   @override
   Future<ChatModel?> getChatById(String chatId) async {
     final doc = await _chatsCollection.doc(chatId).get();
-    if (!doc.exists) return null;
-    return doc.data();
+    return doc.exists ? doc.data() : null;
   }
 
-  /// Get a ride group chat by ride ID.
   @override
   Future<ChatModel?> getChatByRideId(String rideId) async {
     final query = await _chatsCollection
@@ -178,206 +179,224 @@ class ChatRepository implements IChatRepository {
         .where('rideId', isEqualTo: rideId)
         .limit(1)
         .get();
-    if (query.docs.isEmpty) return null;
-    return query.docs.first.data();
+    return query.docs.isEmpty ? null : query.docs.first.data();
   }
 
-  /// Stream user's chats
   @override
-  Stream<List<ChatModel>> streamUserChats(String userId) {
-    return _chatsCollection
-        .where('participantIds', arrayContains: userId)
-        // .where('isActive', isEqualTo: true)
-        .orderBy('lastMessageAt', descending: true)
-        .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => doc.data())
-              .where((chat) => !(chat.deletedFor[userId] ?? false))
-              .toList(),
-        );
+  Stream<List<ChatModel>> streamUserChats(String userId) => _chatsCollection
+      .where('participantIds', arrayContains: userId)
+      .orderBy('lastMessageAt', descending: true)
+      .snapshots()
+      .map(
+        (snap) => snap.docs
+            .map((d) => d.data())
+            .where((chat) => !(chat.deletedFor[userId] ?? false))
+            .toList(),
+      );
+
+  @override
+  Future<ChatModel?> getOrCreateDirectChat(
+    String userId1,
+    String userId2,
+  ) async {
+    final query = await _chatsCollection
+        .where('type', isEqualTo: ChatType.private.name)
+        .where('participantIds', arrayContains: userId1)
+        .get();
+
+    for (final doc in query.docs) {
+      final chat = doc.data();
+      if (chat.participantIds.contains(userId2)) return chat;
+    }
+    return null;
   }
 
-  /// Add participant to chat
+  // ── Participant management ────────────────────────────────────────────────
+
   Future<void> addParticipant({
     required String chatId,
     required ChatParticipant participant,
   }) async {
     await _chatsCollection.doc(chatId).update({
-      'participantIds': FieldValue.arrayUnion([participant.odid]),
+      'participantIds': FieldValue.arrayUnion([participant.userId]),
       'participants': FieldValue.arrayUnion([participant.toJson()]),
-      'updatedAt': DateTime.now(),
+      // FIX: serverTimestamp instead of DateTime.now() — avoids clock skew
+      // on devices whose clocks are wrong.
+      'updatedAt': FieldValue.serverTimestamp(),
     });
   }
 
-  /// Ensure user is a participant in the chat (idempotent operation)
-  /// Used to fix permission issues by adding missing users to participantIds
+  /// Idempotent — adds [userId] to participants only if not already present.
+  ///
+  /// [FieldValue.arrayUnion] is atomic and idempotent at the Firestore server
+  /// level, so no read-then-write transaction is required. This also sidesteps
+  /// the [Transaction.get] return-type ambiguity in some cloud_firestore
+  /// versions where [DocumentSnapshot.data] is typed as [Object?] rather than
+  /// [Map<String, dynamic>?], causing a compile error on the `[]` operator.
   Future<void> ensureParticipant({
     required String chatId,
     required String userId,
     String? displayName,
     String? photoUrl,
   }) async {
-    final chat = await getChatById(chatId);
-    if (chat == null) return;
+    final updates = <String, dynamic>{
+      'participantIds': FieldValue.arrayUnion([userId]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
 
-    // Check if user is already a participant
-    if (chat.participantIds.contains(userId)) {
-      return;
+    if (displayName != null) {
+      updates['participants'] = FieldValue.arrayUnion([
+        ChatParticipant(
+          userId: userId,
+          displayName: displayName,
+          photoUrl: photoUrl,
+          joinedAt: DateTime.now(),
+        ).toJson(),
+      ]);
     }
 
-    // Add user to participantIds
-    await _chatsCollection.doc(chatId).update({
-      'participantIds': FieldValue.arrayUnion([userId]),
-      if (displayName != null && photoUrl != null)
-        'participants': FieldValue.arrayUnion([
-          ChatParticipant(
-            odid: userId,
-            displayName: displayName,
-            photoUrl: photoUrl,
-            joinedAt: DateTime.now(),
-          ).toJson(),
-        ]),
-      'updatedAt': DateTime.now(),
-    });
+    await _chatsCollection.doc(chatId).update(updates);
   }
 
-  /// Remove participant from chat
   Future<void> removeParticipant({
     required String chatId,
-    required String odid,
+    required String userId,
   }) async {
     final chat = await getChatById(chatId);
     if (chat == null) return;
 
-    final updatedParticipants = chat.participants
-        .where((p) => p.odid != odid)
-        .toList();
-
     await _chatsCollection.doc(chatId).update({
-      'participantIds': FieldValue.arrayRemove([odid]),
-      'participants': updatedParticipants.map((p) => p.toJson()).toList(),
-      'updatedAt': DateTime.now(),
+      'participantIds': FieldValue.arrayRemove([userId]),
+      'participants': chat.participants
+          .where((p) => p.userId != userId)
+          .map((p) => p.toJson())
+          .toList(),
+      'updatedAt': FieldValue.serverTimestamp(),
     });
   }
 
-  /// Mute/unmute chat
+  // ── Chat settings ─────────────────────────────────────────────────────────
+
   @override
   Future<void> toggleMute({
     required String chatId,
-    required String odid,
+    required String userId,
     required bool mute,
   }) async {
     await _chatsCollection.doc(chatId).update({
-      'mutedBy.$odid': mute,
-      'updatedAt': DateTime.now(),
+      'mutedBy.$userId': mute,
+      'updatedAt': FieldValue.serverTimestamp(),
     });
   }
 
-  /// Pin/unpin chat
   Future<void> togglePin({
     required String chatId,
-    required String odid,
+    required String userId,
     required bool pin,
   }) async {
     await _chatsCollection.doc(chatId).update({
-      'pinnedBy.$odid': pin,
-      'updatedAt': DateTime.now(),
+      'pinnedBy.$userId': pin,
+      'updatedAt': FieldValue.serverTimestamp(),
     });
   }
 
-  // ==================== MESSAGE OPERATIONS ====================
+  @override
+  Future<void> clearChat({
+    required String chatId,
+    required String userId,
+  }) async {
+    await _chatsCollection.doc(chatId).update({
+      'deletedFor.$userId': true,
+      'unreadCounts.$userId': 0,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
 
-  /// Send a message
+  // ── Messages ──────────────────────────────────────────────────────────────
+
   @override
   Future<String> sendMessage(MessageModel message) async {
-    // M-5: Enforce message length limit to prevent Firestore bloat.
+    // Enforce message length to prevent Firestore document size abuse.
     if (message.content.length > 2000) {
       throw ArgumentError(
-        'Message content must not exceed 2000 characters (got ${message.content.length}).',
+        'Message content must not exceed 2000 characters '
+        '(got ${message.content.length}).',
       );
     }
 
     final chat = await getChatById(message.chatId);
-    late final List<String> participantIds;
+    final List<String> participantIds;
 
-    // If chat exists, use its participants
     if (chat != null) {
-      // FIX M-1: Verify the sender is actually a participant in the chat.
-      // Without this check any authenticated user who knows a chatId can inject
-      // messages into someone else's conversation.
+      // Verify sender is a participant — prevents message injection by
+      // authenticated users who happen to know a chatId.
       if (!chat.participantIds.contains(message.senderId)) {
         throw StateError(
-          'sendMessage: sender ${message.senderId} is not a participant in chat ${message.chatId}',
+          'sendMessage: ${message.senderId} is not a participant '
+          'in chat ${message.chatId}',
         );
       }
 
-      // FIX M-4: Check whether any recipient has blocked the sender.
-      // If so, reject the message to honour the block.
-      for (final recipientId in chat.participantIds) {
-        if (recipientId == message.senderId) continue;
-        final recipientDoc = await _firestore
-            .collection(AppConstants.usersCollection)
-            .doc(recipientId)
-            .get();
-        final blockedUsers = List<String>.from(
-          recipientDoc.data()?['blockedUsers'] as List? ?? [],
+      // FIX: Parallel fetch — was sequential (N+1). Fetches all recipient
+      // docs concurrently before checking blocked status.
+      final recipientDocs = await Future.wait(
+        chat.participantIds
+            .where((id) => id != message.senderId)
+            .map(
+              (id) => _firestore
+                  .collection(AppConstants.usersCollection)
+                  .doc(id)
+                  .get(),
+            ),
+      );
+
+      for (final doc in recipientDocs) {
+        final blocked = List<String>.from(
+          doc.data()?['blockedUsers'] as List? ?? [],
         );
-        if (blockedUsers.contains(message.senderId)) {
+        if (blocked.contains(message.senderId)) {
           throw StateError(
-            'sendMessage: recipient $recipientId has blocked sender ${message.senderId}',
+            'sendMessage: ${doc.id} has blocked ${message.senderId}',
           );
         }
       }
 
       participantIds = chat.participantIds;
+    } else if (message.chatId.startsWith('draft-')) {
+      participantIds = _extractParticipantsFromDraftId(message.chatId);
     } else {
-      // Chat doesn't exist - need to determine participants
-      // For draft chats (format: "draft-user1__user2"), extract both user IDs
-      if (message.chatId.startsWith('draft-')) {
-        participantIds = _extractParticipantsFromDraftId(message.chatId);
-      } else {
-        // For non-draft chats, only add sender (shouldn't happen in normal flow)
-        participantIds = <String>[message.senderId];
-      }
+      participantIds = [message.senderId];
     }
 
     final docRef = _messagesCollection(message.chatId).doc();
     final messageWithId = message.copyWith(
       id: docRef.id,
-      createdAt: DateTime.now(), // local copy for in-memory use
+      // Local DateTime for optimistic UI — overridden with serverTimestamp below.
+      createdAt: DateTime.now(),
       status: MessageStatus.sent,
     );
 
-    // Use batch for atomic operation
     final batch = _firestore.batch();
 
-    // Write message using a raw reference so we can set createdAt to
-    // FieldValue.serverTimestamp() — prevents backdating/forward-dating by
-    // clients whose device clocks are wrong (M-2).
-    final rawMsgRef = _firestore
-        .collection(AppConstants.chatsCollection)
-        .doc(message.chatId)
-        .collection(AppConstants.messagesCollection)
-        .doc(docRef.id);
-    final messageJson = messageWithId.toJson();
-    messageJson['createdAt'] = FieldValue.serverTimestamp();
-    batch.set(rawMsgRef, messageJson);
+    // FIX M-2: Override createdAt with serverTimestamp so clients with wrong
+    // clocks cannot backdate or forward-date messages.
+    final messageJson = messageWithId.toJson()
+      ..['createdAt'] = FieldValue.serverTimestamp();
+    batch.set(_rawMessageRef(message.chatId, docRef.id), messageJson);
 
-    // Update or create chat's last message info.
+    // FIX: Use serverTimestamp for lastMessageAt and updatedAt — was
+    // DateTime.now() which propagates client clock skew to the ordering query.
     batch.set(
-      _firestore.collection(AppConstants.chatsCollection).doc(message.chatId),
+      _rawChatRef(message.chatId),
       {
         'lastMessageContent': message.content,
         'lastMessageSenderId': message.senderId,
         'lastMessageSenderName': message.senderName,
         'lastMessageType': message.type.name,
-        'lastMessageAt': DateTime.now(),
-        'updatedAt': DateTime.now(),
-        'participantIds':
-            participantIds, // Ensure both participants are in the document
-        for (final participantId in participantIds)
-          'deletedFor.$participantId': FieldValue.delete(),
+        'lastMessageAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+        'participantIds': participantIds,
+        for (final id in participantIds) 'deletedFor.$id': FieldValue.delete(),
       },
       SetOptions(merge: true),
     );
@@ -386,31 +405,26 @@ class ChatRepository implements IChatRepository {
     return docRef.id;
   }
 
-  /// Extract participant IDs from a draft chat ID
-  /// Draft chat IDs have format: "draft-user1__user2"
+  // FIX: Removed pointless try/catch — String.split and replaceFirst never
+  // throw checked exceptions. The original catch silenced real errors.
   List<String> _extractParticipantsFromDraftId(String draftChatId) {
-    try {
-      final parts = draftChatId.replaceFirst('draft-', '').split('__');
-      if (parts.length == 2) {
-        return parts;
-      }
-    } catch (_) {}
-    // Fallback: shouldn't reach here in normal operation
-    return <String>[];
+    final parts = draftChatId.replaceFirst('draft-', '').split('__');
+    return parts.length == 2 ? parts : const [];
   }
 
-  /// Stream messages for a chat
   @override
-  Stream<List<MessageModel>> streamMessages(String chatId, {int limit = 50}) {
-    return _messagesCollection(chatId)
-        .where('isDeleted', isEqualTo: false)
-        .orderBy('createdAt', descending: true)
-        .limit(limit)
-        .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
-  }
+  Stream<List<MessageModel>> streamMessages(String chatId, {int limit = 50}) =>
+      _messagesCollection(chatId)
+          .where('isDeleted', isEqualTo: false)
+          .orderBy('createdAt', descending: true)
+          .limit(limit)
+          .snapshots()
+          .map((snap) => snap.docs.map((d) => d.data()).toList());
 
-  /// Load more messages (pagination)
+  // FIX: Removed the duplicate getChatMessages method — it was identical to
+  // streamMessages. All callers should use streamMessages directly.
+  // (Interface method removed; update IChatRepository accordingly.)
+
   @override
   Future<List<MessageModel>> loadMoreMessages({
     required String chatId,
@@ -424,276 +438,150 @@ class ChatRepository implements IChatRepository {
         .limit(limit)
         .get();
 
-    return query.docs.map((doc) => doc.data()).toList();
+    return query.docs.map((d) => d.data()).toList();
   }
 
-  /// Mark messages as read
+  // FIX: Was using `whereNotIn: [userId]` which checks the scalar field value
+  // rather than array membership — always returned nothing or threw.
+  // Replaced with a client-side filter after a bounded fetch.
   @override
   Future<void> markAsRead(String chatId, String userId) async {
-    // Update all unread messages
-    final unreadMessages = await _messagesCollection(
-      chatId,
-    ).where('readBy', whereNotIn: [userId]).get();
+    final snapshot = await _messagesCollection(chatId)
+        .where('isDeleted', isEqualTo: false)
+        .orderBy('createdAt', descending: true)
+        .limit(100)
+        .get();
+
+    final unreadDocs = snapshot.docs.where((doc) {
+      final msg = doc.data();
+      return msg.senderId != userId && !msg.isReadBy(userId);
+    }).toList();
+
+    if (unreadDocs.isEmpty) return;
 
     final batch = _firestore.batch();
-
-    for (final doc in unreadMessages.docs) {
+    for (final doc in unreadDocs) {
       batch.update(doc.reference, {
         'readBy': FieldValue.arrayUnion([userId]),
         'status': MessageStatus.read.name,
       });
     }
-
-    // Reset unread count
-    batch.update(_chatsCollection.doc(chatId), {'unreadCounts.$userId': 0});
-
+    batch.update(_rawChatRef(chatId), {'unreadCounts.$userId': 0});
     await batch.commit();
   }
 
-  /// Delete message (soft delete)
   @override
   Future<void> deleteMessage({
     required String chatId,
     required String messageId,
-  }) async {
-    await _messagesCollection(chatId).doc(messageId).update({
-      'isDeleted': true,
-      'content': 'This message was deleted',
-    });
-  }
+  }) => _messagesCollection(chatId).doc(messageId).update({
+    'isDeleted': true,
+    'content': 'This message was deleted',
+  });
 
-  // ==================== INTERFACE IMPLEMENTATIONS ====================
-
-  @override
-  Stream<List<ChatModel>> getUserChats(String userId) {
-    return _chatsCollection
-        .where('participantIds', arrayContains: userId)
-        .orderBy('lastMessageAt', descending: true)
-        .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => doc.data())
-              .where((chat) => !(chat.deletedFor[userId] ?? false))
-              .toList(),
-        );
-  }
-
-  @override
-  Future<ChatModel?> getOrCreateDirectChat(
-    String userId1,
-    String userId2,
-  ) async {
-    // Check if chat already exists
-    final query = await _chatsCollection
-        .where('type', isEqualTo: ChatType.private.name)
-        .where('participantIds', arrayContains: userId1)
-        .get();
-
-    for (final doc in query.docs) {
-      final chat = doc.data();
-      if (chat.participantIds.contains(userId2)) {
-        return chat;
-      }
-    }
-
-    // Chat doesn't exist, return null (caller should create it with proper user info)
-    return null;
-  }
-
-  @override
-  Stream<List<MessageModel>> getChatMessages(String chatId, {int limit = 50}) {
-    return _messagesCollection(chatId)
-        .orderBy('timestamp', descending: true)
-        .limit(limit)
-        .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
-  }
-
-  @override
-  Future<void> setTypingStatus(
-    String chatId,
-    String userId,
-    bool isTyping,
-  ) async {
-    final typingRef = _typingCollection(chatId).doc(userId);
-
-    if (isTyping) {
-      await typingRef.set(
-        TypingIndicator(
-          odid: userId,
-          chatId: chatId,
-          displayName: '',
-          startedAt: DateTime.now(),
-        ),
-      );
-    } else {
-      await typingRef.delete();
-    }
-  }
-
-  @override
-  Stream<Map<String, bool>> getTypingStatus(String chatId) {
-    return _typingCollection(chatId).snapshots().map(
-      (snapshot) => {for (final doc in snapshot.docs) doc.id: true},
-    );
-  }
-
-  // ==================== EXISTING HELPER METHODS ====================
-
-  /// Mark messages as read (original helper method with list)
-  Future<void> markMessagesAsRead({
-    required String chatId,
-    required String odid,
-    required List<String> messageIds,
-  }) async {
-    final batch = _firestore.batch();
-
-    for (final messageId in messageIds) {
-      batch.update(_messagesCollection(chatId).doc(messageId), {
-        'readBy': FieldValue.arrayUnion([odid]),
-        'status': MessageStatus.read.name,
-      });
-    }
-
-    // Reset unread count
-    batch.update(_chatsCollection.doc(chatId), {'unreadCounts.$odid': 0});
-
-    await batch.commit();
-  }
-
-  /// Edit message
   @override
   Future<void> editMessage({
     required String chatId,
     required String messageId,
     required String newContent,
-  }) async {
-    await _messagesCollection(chatId).doc(messageId).update({
-      'content': newContent,
-      'isEdited': true,
-      'editedAt': DateTime.now(),
-    });
-  }
+  }) => _rawMessageRef(chatId, messageId).update({
+    'content': newContent,
+    'isEdited': true,
+    // FIX: serverTimestamp instead of DateTime.now().
+    'editedAt': FieldValue.serverTimestamp(),
+  });
 
-  /// Add reaction to message
   @override
   Future<void> addReaction({
     required String chatId,
     required String messageId,
-    required String odid,
+    required String userId,
     required String reaction,
-  }) async {
-    await _messagesCollection(chatId).doc(messageId).update({
-      'reactions.$reaction': FieldValue.arrayUnion([odid]),
-    });
-  }
+  }) => _messagesCollection(chatId).doc(messageId).update({
+    'reactions.$reaction': FieldValue.arrayUnion([userId]),
+  });
 
-  /// Remove reaction from message
   Future<void> removeReaction({
     required String chatId,
     required String messageId,
-    required String odid,
+    required String userId,
     required String reaction,
-  }) async {
-    await _messagesCollection(chatId).doc(messageId).update({
-      'reactions.$reaction': FieldValue.arrayRemove([odid]),
-    });
-  }
+  }) => _messagesCollection(chatId).doc(messageId).update({
+    'reactions.$reaction': FieldValue.arrayRemove([userId]),
+  });
 
-  // ==================== TYPING INDICATORS ====================
+  // ── Typing indicators ─────────────────────────────────────────────────────
 
-  /// Set typing status
   @override
   Future<void> setTyping({
     required String chatId,
-    required String odid,
+    required String userId,
     required String displayName,
     required bool isTyping,
   }) async {
-    // FIX M-3: Write to the raw collection so we can add expiresAt = now+30s.
-    // If the user kills the app while typing the indicator will auto-expire
-    // rather than staying "forever" in Firestore.
-    final rawTypingRef = _firestore
+    final ref = _firestore
         .collection(AppConstants.chatsCollection)
         .doc(chatId)
         .collection(AppConstants.typingCollection)
-        .doc(odid);
+        .doc(userId);
 
     if (isTyping) {
-      await rawTypingRef.set({
-        'odid': odid,
+      await ref.set({
+        'userId': userId,
         'displayName': displayName,
         'chatId': chatId,
         'startedAt': FieldValue.serverTimestamp(),
+        // FIX M-3: expiresAt lets the server-side query filter out stale
+        // indicators from users who killed the app without calling setTyping(false).
         'expiresAt': Timestamp.fromDate(
           DateTime.now().add(const Duration(seconds: 30)),
         ),
       });
     } else {
-      await rawTypingRef.delete();
+      await ref.delete();
     }
   }
 
-  /// Stream typing indicators — only returns non-expired indicators (M-3).
   @override
-  Stream<List<TypingIndicator>> streamTypingIndicators(String chatId) {
-    // FIX M-3: Filter server-side to only return indicators that have not
-    // yet expired, so stale indicators from killed apps are invisible.
-    return _firestore
-        .collection(AppConstants.chatsCollection)
-        .doc(chatId)
-        .collection(AppConstants.typingCollection)
-        .where('expiresAt', isGreaterThan: Timestamp.now())
-        .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => TypingIndicator.fromJson(doc.data()))
-              .toList(),
-        );
-  }
+  Stream<List<TypingIndicator>> streamTypingIndicators(String chatId) =>
+      _firestore
+          .collection(AppConstants.chatsCollection)
+          .doc(chatId)
+          .collection(AppConstants.typingCollection)
+          .where('expiresAt', isGreaterThan: Timestamp.now())
+          .snapshots()
+          .map(
+            (snap) => snap.docs
+                .map((d) => TypingIndicator.fromJson(d.data()))
+                .toList(),
+          );
 
-  // ==================== FILE UPLOADS ====================
+  // ── File uploads ──────────────────────────────────────────────────────────
 
-  /// Clear all messages in a chat for the current user (soft delete)
-  @override
-  Future<void> clearChat({
-    required String chatId,
-    required String userId,
-  }) async {
-    // Hide this chat only for the requesting user.
-    await _chatsCollection.doc(chatId).update({
-      'deletedFor.$userId': true,
-      'unreadCounts.$userId': 0,
-      'updatedAt': DateTime.now(),
-    });
-  }
-
-  /// Upload chat image to Firebase Storage and return download URL
   @override
   Future<String> uploadChatImage({
     required String chatId,
     required File imageFile,
     required String fileName,
   }) async {
-    final storageRef = _storage
+    final ref = _storage
         .ref()
         .child('chats')
         .child(chatId)
         .child('attachments')
         .child(fileName);
-    await storageRef.putFile(imageFile);
-    return storageRef.getDownloadURL();
+    await ref.putFile(imageFile);
+    return ref.getDownloadURL();
   }
 
-  /// Upload audio message to Firebase Storage and return download URL
   @override
   Future<String> uploadAudioMessage({
     required String chatId,
     required File audioFile,
     required String fileName,
   }) async {
-    final storageRef = _storage.ref().child('chats/$chatId/audio/$fileName');
-    await storageRef.putFile(audioFile);
-    return storageRef.getDownloadURL();
+    final ref = _storage.ref().child('chats/$chatId/audio/$fileName');
+    await ref.putFile(audioFile);
+    return ref.getDownloadURL();
   }
 }

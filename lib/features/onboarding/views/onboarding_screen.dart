@@ -8,8 +8,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/features/onboarding/view_models/onboarding_view_model.dart';
 import 'package:sport_connect/features/onboarding/models/onboarding_model.dart';
+import 'package:sport_connect/features/onboarding/view_models/onboarding_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 // ---------------------------------------------------------------------------
@@ -60,7 +60,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   Future<void> _showWelcomeDialog() async {
     HapticFeedback.mediumImpact();
     final router = GoRouter.of(context);
-    await showDialog(
+    await showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => Dialog(
@@ -351,7 +351,7 @@ class _PageContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Illustration takes 36 % of screen height, clamped for SE ↔ tablet range.
-    final illustrationH = (1.sh * 0.36).clamp(170.0, 310.0).toDouble();
+    final illustrationH = (1.sh * 0.36).clamp(170.0, 310.0);
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 22.w),
@@ -513,7 +513,9 @@ class _FindRideIllustration extends StatelessWidget {
   });
 
   final List<Color> colors;
-  final double t, w, h;
+  final double t;
+  final double w;
+  final double h;
 
   @override
   Widget build(BuildContext context) {
@@ -617,7 +619,9 @@ class _OfferSeatIllustration extends StatelessWidget {
   });
 
   final List<Color> colors;
-  final double t, w, h;
+  final double t;
+  final double w;
+  final double h;
 
   @override
   Widget build(BuildContext context) {
@@ -716,7 +720,8 @@ class _SeatCard extends StatelessWidget {
   final String label;
   final List<Color> colors;
   final bool filled;
-  final double cardW, cardH;
+  final double cardW;
+  final double cardH;
   final int delay;
 
   @override
@@ -794,7 +799,9 @@ class _PlanRouteIllustration extends StatelessWidget {
   });
 
   final List<Color> colors;
-  final double t, w, h;
+  final double t;
+  final double w;
+  final double h;
 
   @override
   Widget build(BuildContext context) {
@@ -953,7 +960,9 @@ class _ConnectGoIllustration extends StatelessWidget {
   });
 
   final List<Color> colors;
-  final double t, w, h;
+  final double t;
+  final double w;
+  final double h;
 
   @override
   Widget build(BuildContext context) {
@@ -1089,7 +1098,9 @@ class _ArcPainter extends CustomPainter {
     required this.cy,
   });
   final Color color;
-  final double t, cx, cy;
+  final double t;
+  final double cx;
+  final double cy;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1098,7 +1109,7 @@ class _ArcPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5;
     final base = math.min(size.width, size.height) * 0.18;
-    for (int i = 0; i < 3; i++) {
+    for (var i = 0; i < 3; i++) {
       canvas.drawCircle(
         Offset(cx, cy),
         base + i * base * 0.85 + t * base * 0.12,
@@ -1208,12 +1219,14 @@ class _PulseRingPainter extends CustomPainter {
     required this.cy,
   });
   final Color color;
-  final double t, cx, cy;
+  final double t;
+  final double cx;
+  final double cy;
 
   @override
   void paint(Canvas canvas, Size size) {
     final base = math.min(size.width, size.height) * 0.18;
-    for (int i = 0; i < 3; i++) {
+    for (var i = 0; i < 3; i++) {
       final alpha = (0.12 - i * 0.03 + t * 0.03).clamp(0.0, 0.14);
       canvas.drawCircle(
         Offset(cx, cy),

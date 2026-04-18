@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -9,15 +9,14 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Represents a parsed international phone number.
 class PhoneNumber {
-  final String countryCode;
-  final String dialCode;
-  final String number;
-
   const PhoneNumber({
     required this.countryCode,
     required this.dialCode,
     required this.number,
   });
+  final String countryCode;
+  final String dialCode;
+  final String number;
 
   String get fullNumber => '+$dialCode$number';
 
@@ -29,14 +28,6 @@ class PhoneNumber {
 
 /// Represents a country with dial code and formatting info.
 class Country {
-  final String code;
-  final String name;
-  final String dialCode;
-  final String flag;
-  final String example;
-  final int minLength;
-  final int maxLength;
-
   const Country({
     required this.code,
     required this.name,
@@ -46,6 +37,13 @@ class Country {
     this.minLength = 6,
     this.maxLength = 15,
   });
+  final String code;
+  final String name;
+  final String dialCode;
+  final String flag;
+  final String example;
+  final int minLength;
+  final int maxLength;
 }
 
 // ─── Main Widget ──────────────────────────────────────────────────────────────
@@ -60,17 +58,6 @@ class Country {
 /// - Real-time validation with visual feedback
 /// - Accessible labels and semantics
 class IntlPhoneInput extends StatefulWidget {
-  final String? initialValue;
-  final String initialCountryCode;
-  final String? label;
-  final String? hint;
-  final bool enabled;
-  final bool autofocus;
-  final ValueChanged<PhoneNumber>? onChanged;
-  final String? Function(PhoneNumber?)? validator;
-  final Color? accentColor;
-  final Color? fillColor;
-
   const IntlPhoneInput({
     super.key,
     this.initialValue,
@@ -84,6 +71,16 @@ class IntlPhoneInput extends StatefulWidget {
     this.accentColor,
     this.fillColor,
   });
+  final String? initialValue;
+  final String initialCountryCode;
+  final String? label;
+  final String? hint;
+  final bool enabled;
+  final bool autofocus;
+  final ValueChanged<PhoneNumber>? onChanged;
+  final String? Function(PhoneNumber?)? validator;
+  final Color? accentColor;
+  final Color? fillColor;
 
   @override
   State<IntlPhoneInput> createState() => IntlPhoneInputState();
@@ -144,7 +141,7 @@ class IntlPhoneInputState extends State<IntlPhoneInput> {
 
   void _showCountryPicker() {
     final accent = widget.accentColor ?? AppColors.primary;
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -256,17 +253,16 @@ class IntlPhoneInputState extends State<IntlPhoneInput> {
 // ─── Country Picker Button ────────────────────────────────────────────────────
 
 class _CountryPickerButton extends StatelessWidget {
-  final Country country;
-  final Color accent;
-  final bool enabled;
-  final VoidCallback onTap;
-
   const _CountryPickerButton({
     required this.country,
     required this.accent,
     required this.enabled,
     required this.onTap,
   });
+  final Country country;
+  final Color accent;
+  final bool enabled;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -307,15 +303,14 @@ class _CountryPickerButton extends StatelessWidget {
 // ─── Country Picker Sheet ─────────────────────────────────────────────────────
 
 class _CountryPickerSheet extends StatefulWidget {
-  final Color accent;
-  final String selectedCode;
-  final ValueChanged<Country> onSelected;
-
   const _CountryPickerSheet({
     required this.accent,
     required this.selectedCode,
     required this.onSelected,
   });
+  final Color accent;
+  final String selectedCode;
+  final ValueChanged<Country> onSelected;
 
   @override
   State<_CountryPickerSheet> createState() => _CountryPickerSheetState();
@@ -390,7 +385,7 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
                             fontSize: 14.sp,
                             color: AppColors.textTertiary,
                           ),
-                          prefixIcon: Icon(
+                          prefixIcon: const Icon(
                             Icons.search_rounded,
                             color: AppColors.textTertiary,
                           ),

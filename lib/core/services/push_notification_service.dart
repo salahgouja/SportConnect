@@ -73,6 +73,15 @@ class PushNotificationService {
 
   bool _isInitialized = false;
 
+  Future<bool> hasPermission() async {
+    final settings = await _messaging.getNotificationSettings();
+    final s = settings.authorizationStatus;
+    return s == AuthorizationStatus.authorized ||
+        s == AuthorizationStatus.provisional;
+  }
+
+  Future<void> requestPermission() => _messaging.requestPermission();
+
   /// Initialize the service — call once from main.
   Future<void> initialize() async {
     if (_isInitialized) return;
@@ -149,7 +158,7 @@ class PushNotificationService {
         );
         return;
       }
-      UserModel? user = await _usersCollection
+      var user = await _usersCollection
           .doc(userId)
           .get()
           .then((snap) => snap.data());
@@ -171,7 +180,7 @@ class PushNotificationService {
             .set(user!.copyWith(fcmToken: newToken), SetOptions(merge: true));
         TalkerService.info('FCM token refreshed for user $userId');
       });
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to save FCM token', e);
     }
   }
@@ -205,7 +214,6 @@ class PushNotificationService {
         NotificationChannels.generalId,
         NotificationChannels.generalName,
         description: NotificationChannels.generalDesc,
-        importance: Importance.defaultImportance,
       ),
     ];
 
@@ -235,7 +243,7 @@ class PushNotificationService {
           try {
             final data = jsonDecode(response.payload!) as Map<String, dynamic>;
             _navigateFromData(data);
-          } catch (_) {}
+          } on Exception catch (_) {}
         }
       },
     );
@@ -325,7 +333,7 @@ class PushNotificationService {
             }),
           );
         }
-      } catch (_) {
+      } on Exception catch (_) {
         // Best-effort — navigation must not fail if this read fails.
       }
     }
@@ -441,7 +449,7 @@ class PushNotificationService {
       final otherParticipant = currentUserId == null
           ? null
           : chat.getOtherParticipant(currentUserId);
-      final participantId = hintUserId ?? otherParticipant?.odid;
+      final participantId = hintUserId ?? otherParticipant?.userId;
 
       if (participantId != null && participantId.isNotEmpty) {
         final fullUser = await _usersCollection
@@ -466,7 +474,7 @@ class PushNotificationService {
         ),
         chatType: ChatType.private,
       );
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error(
         'Failed to resolve chat receiver from notification',
         e,

@@ -7,7 +7,6 @@ import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
-import 'package:sport_connect/features/profile/models/leaderboard_entry.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -150,12 +149,13 @@ class _AchievementsSliverHeader extends StatelessWidget {
       foregroundColor: Colors.white,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back_ios_rounded),
+        color: AppColors.background,
         onPressed: () => context.pop(),
         tooltip: l10n.goBackTooltip,
       ),
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -261,7 +261,7 @@ class _AchievementsSliverHeader extends StatelessWidget {
       ),
       bottom: PreferredSize(
         preferredSize: Size.fromHeight(48.h),
-        child: Container(
+        child: ColoredBox(
           color: AppColors.primary,
           child: TabBar(
             controller: tabController,
@@ -318,7 +318,7 @@ class _LevelBadge extends StatelessWidget {
       height: 56.w,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [AppColors.primaryLight, AppColors.primaryDark],
@@ -342,7 +342,7 @@ class _LevelBadge extends StatelessWidget {
               fontSize: 14.sp,
               fontWeight: FontWeight.w800,
               color: Colors.white,
-              height: 1.0,
+              height: 1,
             ),
           ),
         ],
@@ -672,11 +672,11 @@ class _ChallengesTab extends StatelessWidget {
 
   List<_ChallengeData> _getChallenges(GamificationStats stats) {
     return [
-      _ChallengeData(
+      const _ChallengeData(
         'Daily Commuter',
         'Complete 1 ride today',
         '0/1',
-        0.0,
+        0,
         50,
         Icons.today_rounded,
         'Resets in 12h',
@@ -685,7 +685,7 @@ class _ChallengesTab extends StatelessWidget {
         'Week Warrior',
         'Complete 5 rides this week',
         '${stats.totalRides.clamp(0, 5)}/5',
-        (stats.totalRides.clamp(0, 5) / 5).toDouble(),
+        stats.totalRides.clamp(0, 5) / 5,
         200,
         Icons.calendar_view_week_rounded,
         'Resets in 3d',
@@ -694,12 +694,12 @@ class _ChallengesTab extends StatelessWidget {
         'Streak Keeper',
         'Maintain a 3-day streak',
         '${stats.currentStreak.clamp(0, 3)}/3',
-        (stats.currentStreak.clamp(0, 3) / 3).toDouble(),
+        stats.currentStreak.clamp(0, 3) / 3,
         150,
         Icons.local_fire_department_rounded,
         'Keep going!',
       ),
-      _ChallengeData(
+      const _ChallengeData(
         'Explorer',
         'Try 3 new routes this month',
         '0/3',
@@ -708,20 +708,20 @@ class _ChallengesTab extends StatelessWidget {
         Icons.explore_rounded,
         'Resets in 23d',
       ),
-      _ChallengeData(
+      const _ChallengeData(
         'Social Rider',
         'Rate 5 drivers this week',
         '0/5',
-        0.0,
+        0,
         100,
         Icons.star_half_rounded,
         'Resets in 3d',
       ),
-      _ChallengeData(
+      const _ChallengeData(
         'Eco Warrior',
         'Share 3 rides today',
         '0/3',
-        0.0,
+        0,
         75,
         Icons.eco_rounded,
         'Resets in 12h',
@@ -891,7 +891,10 @@ class _LeaderboardTab extends ConsumerWidget {
     return leaderboardAsync.when(
       loading: () => Padding(
         padding: EdgeInsets.all(16.w),
-        child: SkeletonLoader(type: SkeletonType.compactTile, itemCount: 8),
+        child: const SkeletonLoader(
+          type: SkeletonType.compactTile,
+          itemCount: 8,
+        ),
       ),
       error: (e, _) => Center(
         child: Padding(
@@ -965,7 +968,7 @@ class _Podium extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [AppColors.primarySurface, AppColors.background],
@@ -1315,9 +1318,9 @@ class _AchievementsLoadingShell extends StatelessWidget {
         padding: EdgeInsets.all(16.w),
         child: Column(
           children: [
-            SkeletonLoader(type: SkeletonType.rideCard, itemCount: 1),
+            const SkeletonLoader(itemCount: 1),
             SizedBox(height: 16.h),
-            SkeletonLoader(type: SkeletonType.compactTile, itemCount: 5),
+            const SkeletonLoader(type: SkeletonType.compactTile, itemCount: 5),
           ],
         ),
       ),
@@ -1385,13 +1388,6 @@ class _AchievementsErrorShell extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────
 
 class _BadgeData {
-  final String name;
-  final String description;
-  final IconData icon;
-  final bool unlocked;
-  final String tier;
-  final double? progress;
-
   const _BadgeData(
     this.name,
     this.description,
@@ -1400,17 +1396,15 @@ class _BadgeData {
     this.tier, [
     this.progress,
   ]);
+  final String name;
+  final String description;
+  final IconData icon;
+  final bool unlocked;
+  final String tier;
+  final double? progress;
 }
 
 class _ChallengeData {
-  final String name;
-  final String description;
-  final String progressText;
-  final double progress;
-  final int xpReward;
-  final IconData icon;
-  final String timeLeft;
-
   const _ChallengeData(
     this.name,
     this.description,
@@ -1420,4 +1414,11 @@ class _ChallengeData {
     this.icon,
     this.timeLeft,
   );
+  final String name;
+  final String description;
+  final String progressText;
+  final double progress;
+  final int xpReward;
+  final IconData icon;
+  final String timeLeft;
 }

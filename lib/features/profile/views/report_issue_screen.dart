@@ -2,9 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
@@ -23,10 +23,9 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 /// - Evidence attachment placeholder
 /// - Firebase submission
 class ReportIssueScreen extends ConsumerStatefulWidget {
+  const ReportIssueScreen({super.key, this.rideId, this.reportedUserId});
   final String? rideId;
   final String? reportedUserId;
-
-  const ReportIssueScreen({super.key, this.rideId, this.reportedUserId});
 
   @override
   ConsumerState<ReportIssueScreen> createState() => _ReportIssueScreenState();
@@ -81,6 +80,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
     );
 
     if (source == null) return;
+    if (!mounted) return;
 
     final accepted = await PermissionDialogHelper.showCameraRationale(
       context,
@@ -99,6 +99,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
     );
 
     if (picked == null) return;
+    if (!mounted) return;
 
     await ref
         .read(_reportFormProvider.notifier)
@@ -120,8 +121,8 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
     reportedUserId: widget.reportedUserId,
   );
 
-  // ignore: strict_raw_type
-  ReportIssueFormViewModelProvider get _reportFormProvider => reportIssueFormViewModelProvider(_reportFormArgs);
+  ReportIssueFormViewModelProvider get _reportFormProvider =>
+      reportIssueFormViewModelProvider(_reportFormArgs);
 
   @override
   Widget build(BuildContext context) {
@@ -333,23 +334,26 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
             fillColor: Colors.white,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.border),
+              borderSide: const BorderSide(color: AppColors.border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.border),
+              borderSide: const BorderSide(color: AppColors.border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+              borderSide: const BorderSide(
+                color: AppColors.primary,
+                width: 1.5,
+              ),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.error),
+              borderSide: const BorderSide(color: AppColors.error),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.error, width: 1.5),
+              borderSide: const BorderSide(color: AppColors.error, width: 1.5),
             ),
           ),
         ).animate().fadeIn(delay: 450.ms),
@@ -586,7 +590,8 @@ enum _ReportType {
   behavior('Behavior', Color(0xFF9C27B0)),
   technical('Technical', Color(0xFF2196F3)),
   discrimination('Discrimination', Color(0xFFE91E63)),
-  other('Other', Color(0xFF607D8B));
+  other('Other', Color(0xFF607D8B))
+  ;
 
   final String label;
   final Color color;
@@ -619,7 +624,8 @@ enum _Severity {
   low('Low', Icons.info_outline_rounded, Color(0xFF4CAF50)),
   medium('Medium', Icons.warning_amber_rounded, Color(0xFFFF9800)),
   high('High', Icons.error_outline_rounded, Color(0xFFF44336)),
-  critical('Critical', Icons.dangerous_rounded, Color(0xFF9C27B0));
+  critical('Critical', Icons.dangerous_rounded, Color(0xFF9C27B0))
+  ;
 
   final String label;
   final IconData icon;

@@ -12,12 +12,6 @@ part 'email_verification_view_model.g.dart';
 /// All timer and polling logic lives here so the widget
 /// never needs `if (mounted)` checks.
 class EmailVerificationState {
-  final bool isEmailVerified;
-  final bool isSending;
-  final int resendCooldown;
-  final String userEmail;
-  final String? errorMessage;
-
   const EmailVerificationState({
     this.isEmailVerified = false,
     this.isSending = false,
@@ -25,6 +19,11 @@ class EmailVerificationState {
     this.userEmail = '',
     this.errorMessage,
   });
+  final bool isEmailVerified;
+  final bool isSending;
+  final int resendCooldown;
+  final String userEmail;
+  final String? errorMessage;
 
   EmailVerificationState copyWith({
     bool? isEmailVerified,
@@ -92,12 +91,12 @@ class EmailVerificationViewModel extends _$EmailVerificationViewModel {
 
         // Small grace period so the UI can show the verified animation
         // before the auth state change triggers navigation.
-        await Future.delayed(const Duration(seconds: 2));
+        await Future<void>.delayed(const Duration(seconds: 2));
         if (!ref.mounted) return;
 
         ref.invalidate(authStateProvider);
       }
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.debug('Email verification poll error: $e');
     }
   }
@@ -119,7 +118,7 @@ class EmailVerificationViewModel extends _$EmailVerificationViewModel {
         clearError: true,
       );
       _startCooldown();
-    } catch (e) {
+    } on Exception catch (e) {
       if (!ref.mounted) return;
       state = state.copyWith(isSending: false, errorMessage: e.toString());
     }

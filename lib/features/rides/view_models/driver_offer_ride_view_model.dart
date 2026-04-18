@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:uuid/uuid.dart';
-
 import 'package:sport_connect/core/models/location/location_point.dart';
-import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/models/value_objects/money.dart';
-import 'package:sport_connect/core/services/routing_service.dart';
+import 'package:sport_connect/core/providers/repository_providers.dart';
+import 'package:sport_connect/core/services/routing_service.dart'
+    show routingServiceProvider;
 import 'package:sport_connect/features/events/models/event_model.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_capacity.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
@@ -16,6 +15,7 @@ import 'package:sport_connect/features/rides/models/ride/ride_route.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_schedule.dart';
 import 'package:sport_connect/features/rides/services/ride_service.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
+import 'package:uuid/uuid.dart';
 
 part 'driver_offer_ride_view_model.g.dart';
 
@@ -24,6 +24,38 @@ const _sentinel = Object();
 
 /// Form state for creating or editing a ride offer
 class DriverOfferRideFormState {
+  const DriverOfferRideFormState({
+    this.currentStep = 0,
+    this.fromLocation,
+    this.fromAddress = '',
+    this.toLocation,
+    this.toAddress = '',
+    this.departureDate,
+    this.departureTime,
+    this.waypoints = const [],
+    this.selectedVehicleId,
+    this.availableSeats = 3,
+    this.pricePerSeat = 15.0,
+    this.isRecurring = false,
+    this.recurringDays = const [],
+    this.recurringEndDate,
+    this.allowPets = false,
+    this.allowSmoking = false,
+    this.allowLuggage = true,
+    this.isWomenOnly = false,
+    this.maxDetourMinutes = 15,
+    this.eventId,
+    this.eventName,
+    this.selectedEvent,
+    this.isLoadingSelectedEvent = false,
+    this.osrmRoutePoints,
+    this.isLoadingRoute = false,
+    this.routeDistanceKm,
+    this.routeDurationMinutes,
+    this.isSubmitting = false,
+    this.submissionError,
+    this.existingRideId,
+  });
   // Step management
   final int currentStep;
 
@@ -69,39 +101,6 @@ class DriverOfferRideFormState {
 
   // Edit mode
   final String? existingRideId;
-
-  const DriverOfferRideFormState({
-    this.currentStep = 0,
-    this.fromLocation,
-    this.fromAddress = '',
-    this.toLocation,
-    this.toAddress = '',
-    this.departureDate,
-    this.departureTime,
-    this.waypoints = const [],
-    this.selectedVehicleId,
-    this.availableSeats = 3,
-    this.pricePerSeat = 15.0,
-    this.isRecurring = false,
-    this.recurringDays = const [],
-    this.recurringEndDate,
-    this.allowPets = false,
-    this.allowSmoking = false,
-    this.allowLuggage = true,
-    this.isWomenOnly = false,
-    this.maxDetourMinutes = 15,
-    this.eventId,
-    this.eventName,
-    this.selectedEvent,
-    this.isLoadingSelectedEvent = false,
-    this.osrmRoutePoints,
-    this.isLoadingRoute = false,
-    this.routeDistanceKm,
-    this.routeDurationMinutes,
-    this.isSubmitting = false,
-    this.submissionError,
-    this.existingRideId,
-  });
 
   DriverOfferRideFormState copyWith({
     int? currentStep,
@@ -450,7 +449,7 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
         eventName: event?.title ?? state.eventName,
         isLoadingSelectedEvent: false,
       );
-    } catch (_) {
+    } on Exception catch (_) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoadingSelectedEvent: false);
     }
@@ -459,7 +458,7 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
   // --- Route Preview ---
   Future<void> _triggerRoutePreview() async {
     if (state.fromLocation == null || state.toLocation == null) {
-      state = state.copyWith(osrmRoutePoints: null);
+      state = state.copyWith();
       return;
     }
 
@@ -483,11 +482,13 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
                 .toList()
           : null;
 
-      final routeInfo = await RoutingService.getRoute(
-        origin: origin,
-        destination: dest,
-        waypoints: waypoints,
-      );
+      final routeInfo = await ref
+          .read(routingServiceProvider)
+          .getRoute(
+            origin: origin,
+            destination: dest,
+            waypoints: waypoints,
+          );
 
       if (!ref.mounted) return;
 
@@ -497,7 +498,7 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
         routeDistanceKm: routeInfo?.distanceKm,
         routeDurationMinutes: routeInfo?.durationMinutes.round(),
       );
-    } catch (_) {
+    } on Exception catch (_) {
       // Fallback: no route preview, just reset loading state
       if (!ref.mounted) return;
       state = state.copyWith(isLoadingRoute: false);
@@ -528,7 +529,6 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
       maxDetourMinutes: ride.preferences.maxDetourMinutes,
       eventId: ride.eventId,
       eventName: ride.eventName,
-      selectedEvent: null,
       routeDistanceKm: ride.route.distanceKm,
       routeDurationMinutes: ride.route.durationMinutes,
     );
@@ -560,11 +560,11 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
       return null;
     }
 
-    state = state.copyWith(isSubmitting: true, submissionError: null);
+    state = state.copyWith(isSubmitting: true);
     _lastSubmittedAt = now;
 
     try {
-      final departure = state.fullDepartureDateTime!;
+      final departure = state.fullDepartureDateTime;
 
       // Additional event-specific validation
       if (state.eventId != null) {
@@ -608,8 +608,8 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
       }
 
       // When editing, preserve the existing booked count and bookingIds
-      int existingBooked = 0;
-      List<String> existingBookingIds = [];
+      var existingBooked = 0;
+      var existingBookingIds = <String>[];
       if (state.existingRideId != null) {
         final existing = await ref
             .read(rideRepositoryProvider)
@@ -635,7 +635,7 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
           durationMinutes: state.routeDurationMinutes,
         ),
         schedule: RideSchedule(
-          departureTime: departure,
+          departureTime: departure!,
           isRecurring: state.isRecurring,
           recurringDays: state.recurringDays,
           recurringEndDate: state.recurringEndDate,
@@ -646,7 +646,7 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
         ),
         bookingIds: existingBookingIds,
         pricing: RidePricing(
-          pricePerSeat: Money(amount: state.pricePerSeat, currency: 'EUR'),
+          pricePerSeat: Money(amount: state.pricePerSeat),
         ),
         preferences: RidePreferences(
           allowPets: state.allowPets,
@@ -678,7 +678,7 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
 
       state = state.copyWith(isSubmitting: false);
       return rideId;
-    } catch (e) {
+    } on Exception catch (e) {
       if (!ref.mounted) return null;
       state = state.copyWith(
         isSubmitting: false,
@@ -695,6 +695,6 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
 
   /// Clear submission error
   void clearSubmissionError() {
-    state = state.copyWith(submissionError: null);
+    state = state.copyWith();
   }
 }

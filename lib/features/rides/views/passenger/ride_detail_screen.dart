@@ -1,42 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:intl/intl.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:sport_connect/core/animations/feedback_animations.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
+import 'package:sport_connect/core/widgets/map_location_picker.dart';
+import 'package:sport_connect/core/widgets/misc_feature_widgets.dart';
 import 'package:sport_connect/core/widgets/passenger_info_widget.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
-import 'package:sport_connect/core/widgets/premium_card.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
-import 'package:sport_connect/core/services/routing_service.dart';
-import 'package:sport_connect/core/widgets/ride_progress_timeline.dart';
+import 'package:sport_connect/core/widgets/premium_card.dart';
 import 'package:sport_connect/core/widgets/ride_feature_widgets.dart';
-import 'package:sport_connect/core/widgets/misc_feature_widgets.dart';
-import 'package:sport_connect/core/widgets/safety_widgets.dart';
-import 'package:sport_connect/core/animations/feedback_animations.dart';
-import 'package:sport_connect/core/widgets/ux_widgets.dart';
-
-import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
-import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
-import 'package:sport_connect/core/models/location/location_point.dart';
-import 'package:sport_connect/core/widgets/map_location_picker.dart';
+import 'package:sport_connect/core/widgets/ride_progress_timeline.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
-import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
-
-import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:sport_connect/core/utils/distance_formatter.dart';
-import 'package:sport_connect/core/services/deep_link_service.dart';
-import 'package:sport_connect/features/rides/views/widgets/ride_shared_widgets.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
+import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
+import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
+import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
+import 'package:sport_connect/features/rides/views/passenger/rider_view_ride_screen.dart'
+    show RiderViewRideScreen;
+import 'package:sport_connect/features/rides/views/widgets/ride_shared_widgets.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Full ride detail screen with map, route visualization, and booking flow.
@@ -45,9 +41,8 @@ import 'package:url_launcher/url_launcher.dart';
 /// For a rider's personal booking view, see [RiderViewRideScreen].
 
 class RideDetailScreen extends ConsumerStatefulWidget {
+  const RideDetailScreen({required this.rideId, super.key});
   final String rideId;
-
-  const RideDetailScreen({super.key, required this.rideId});
 
   @override
   ConsumerState<RideDetailScreen> createState() => _RideDetailScreenState();
@@ -74,7 +69,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
   Future<void> _loadRoute(RideModel ride) async {
     final route = await _uiNotifier.ensureRouteLoaded(ride);
     if (route != null && mounted && route.coordinates.length >= 2) {
-      await Future.delayed(const Duration(milliseconds: 300));
+      await Future<void>.delayed(const Duration(milliseconds: 300));
       if (context.mounted) {
         final bounds = LatLngBounds.fromPoints(route.coordinates);
         _mapController.fitCamera(
@@ -92,7 +87,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: vmState.ride.when(
-        loading: () => _buildLoadingSkeleton(),
+        loading: _buildLoadingSkeleton,
         error: (error, _) => _buildErrorState(error.toString()),
         data: (ride) {
           if (ride == null) {
@@ -122,8 +117,8 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
           backgroundColor: AppColors.primary,
           flexibleSpace: FlexibleSpaceBar(
             background: Container(
-              decoration: BoxDecoration(gradient: AppColors.heroGradient),
-              child: Center(
+              decoration: const BoxDecoration(gradient: AppColors.heroGradient),
+              child: const Center(
                 child: CircularProgressIndicator.adaptive(
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
@@ -427,35 +422,35 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
         IconButton(
           tooltip: AppLocalizations.of(context).shareRide,
           onPressed: () async {
+            final subject = AppLocalizations.of(context).rideShareSubject;
             try {
               // Generate shareable HTTPS link via app_links
-              final dynamicLink = await DeepLinkService.instance
-                  .generateRideLink(
-                    rideId: ride.id,
-                    fromCity: ride.origin.city ?? ride.origin.address,
-                    toCity: ride.destination.city ?? ride.destination.address,
-                    price: ride.pricePerSeat,
-                    seats: ride.remainingSeats,
-                    departureTime: ride.departureTime,
-                  );
+              final dynamicLink = await ref
+                  .read(
+                    rideDetailUiViewModelProvider(widget.rideId).notifier,
+                  )
+                  .generateRideShareLink(ride);
+
+              if (!mounted) return;
 
               final shareText = _buildRideShareText(ride, dynamicLink);
 
               await SharePlus.instance.share(
                 ShareParams(
                   text: shareText,
-                  subject: AppLocalizations.of(context).rideShareSubject,
+                  subject: subject,
                 ),
               );
-            } catch (e) {
+            } on Exception {
+              if (!mounted) return;
               // Fallback
               await SharePlus.instance.share(
                 ShareParams(
                   text: _buildRideShareText(
                     ride,
-                    'https://${DeepLinkService.hostingDomain}/ride/${widget.rideId}',
+                    'https://${AppConstants.hostingDomain}/ride/${widget.rideId}',
                   ),
-                  subject: AppLocalizations.of(context).rideShareSubject,
+                  subject: subject,
                 ),
               );
             }
@@ -519,10 +514,8 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                         ride.origin.latitude,
                         ride.origin.longitude,
                       ),
-                      width: 30,
-                      height: 30,
                       child: Container(
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           color: AppColors.success,
                           shape: BoxShape.circle,
                           border: Border.fromBorderSide(
@@ -546,7 +539,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                         width: 26,
                         height: 26,
                         child: Container(
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             color: AppColors.warning,
                             shape: BoxShape.circle,
                             border: Border.fromBorderSide(
@@ -566,10 +559,8 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                         ride.destination.latitude,
                         ride.destination.longitude,
                       ),
-                      width: 30,
-                      height: 30,
                       child: Container(
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           color: AppColors.error,
                           shape: BoxShape.circle,
                           border: Border.fromBorderSide(
@@ -626,7 +617,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                               SizedBox(
                                 width: 14.w,
                                 height: 14.w,
-                                child: CircularProgressIndicator(
+                                child: const CircularProgressIndicator(
                                   strokeWidth: 2,
                                   color: AppColors.primary,
                                 ),
@@ -691,7 +682,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                   Container(
                     width: 14.w,
                     height: 14.w,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: AppColors.success,
                       shape: BoxShape.circle,
                     ),
@@ -699,7 +690,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                   Container(
                     width: 2.w,
                     height: 50.h,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
@@ -774,7 +765,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
             ],
           ),
           SizedBox(height: 20.h),
-          Divider(color: AppColors.border),
+          const Divider(color: AppColors.border),
           SizedBox(height: 12.h),
           Row(
             children: [
@@ -865,7 +856,6 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                               ),
                               child: DriverRatingWidget(
                                 driverId: ride.driverId,
-                                showIcon: true,
                                 style: TextStyle(
                                   fontSize: 13.sp,
                                   fontWeight: FontWeight.w600,
@@ -917,7 +907,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
     // Calculate projected arrival time
     final durationMin = ride.route.durationMinutes;
     final arrivalTime = durationMin != null
-        ? ride.departureTime.add(Duration(minutes: durationMin.round()))
+        ? ride.departureTime.add(Duration(minutes: durationMin))
         : null;
 
     return Container(
@@ -1070,8 +1060,8 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
     // Score each preference: pets-friendly, luggage allowed,
     // chat allowed, women-only, max detour < 15 min
     final prefs = ride.preferences;
-    int score = 0;
-    int total = 5;
+    var score = 0;
+    const total = 5;
 
     // Positive signals for passenger convenience
     if (prefs.allowLuggage) score++;
@@ -1285,7 +1275,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
               )
             else if (isDriver)
               // Show detailed passenger list for drivers
-              ...acceptedBookings.map((booking) => _buildPassengerItem(booking))
+              ...acceptedBookings.map(_buildPassengerItem)
             else
               // Show compact view for other passengers
               Row(
@@ -1521,7 +1511,6 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                 child: PremiumButton(
                   text: AppLocalizations.of(context).accept,
                   onPressed: () => _handleAcceptRequest(rideId, booking.id),
-                  style: PremiumButtonStyle.primary,
                 ),
               ),
             ],
@@ -1542,7 +1531,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
         AppLocalizations.of(context).requestAccepted,
         backgroundColor: Colors.green,
       );
-    } catch (e) {
+    } on Exception catch (e) {
       _showSnackBar(
         AppLocalizations.of(context).errorValue(e),
         backgroundColor: Colors.red,
@@ -1558,7 +1547,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
           .rejectBooking(bookingId);
 
       _showSnackBar(AppLocalizations.of(context).requestDeclined);
-    } catch (e) {
+    } on Exception catch (e) {
       _showSnackBar(
         AppLocalizations.of(context).errorValue(e),
         backgroundColor: Colors.red,
@@ -1748,7 +1737,10 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                     label: Text(AppLocalizations.of(context).editRide),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.primary,
-                      side: BorderSide(color: AppColors.primary, width: 1.5),
+                      side: const BorderSide(
+                        color: AppColors.primary,
+                        width: 1.5,
+                      ),
                       padding: EdgeInsets.symmetric(vertical: 14.h),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12.r),
@@ -1771,7 +1763,6 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                           queryParameters: {'rideId': ride.id},
                         )
                       : null,
-                  style: PremiumButtonStyle.primary,
                   icon: ride.status == RideStatus.inProgress
                       ? Icons.navigation_rounded
                       : Icons.play_arrow_rounded,
@@ -2356,13 +2347,13 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
   String _getCurrencySymbol(String currency) {
     const symbolMap = {
       'eur': '€',
-      'usd': '\$',
+      'usd': r'$',
       'gbp': '£',
       'jpy': '¥',
       'inr': '₹',
       'chf': 'CHF ',
-      'aud': 'A\$',
-      'cad': 'C\$',
+      'aud': r'A$',
+      'cad': r'C$',
     };
     return symbolMap[currency.toLowerCase()] ?? '€';
   }
@@ -2383,27 +2374,31 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
     final currentUser = ref.read(currentUserProvider).value;
     if (currentUser == null) return;
     try {
-      final driverProfile = await ref.read(userProfileProvider(driverId).future);
+      final driverProfile = await ref.read(
+        userProfileProvider(driverId).future,
+      );
       if (!context.mounted) return;
       if (driverProfile == null) {
         _showSnackBar(AppLocalizations.of(context).passengerProfileNotFound);
         return;
       }
-      final chat = await ref.read(getOrCreateChatProvider(
-        userId1: currentUser.uid,
-        userId2: driverId,
-        userName1: currentUser.displayName,
-        userName2: driverProfile.displayName,
-        userPhoto1: currentUser.photoUrl,
-        userPhoto2: driverProfile.photoUrl,
-      ).future);
+      final chat = await ref.read(
+        getOrCreateChatProvider(
+          userId1: currentUser.uid,
+          userId2: driverId,
+          userName1: currentUser.displayName,
+          userName2: driverProfile.displayName,
+          userPhoto1: currentUser.photoUrl,
+          userPhoto2: driverProfile.photoUrl,
+        ).future,
+      );
       if (!context.mounted) return;
       context.pushNamed(
         AppRoutes.chatDetail.name,
         pathParameters: {'id': chat.id},
         extra: driverProfile,
       );
-    } catch (_) {
+    } on Exception catch (_) {
       if (context.mounted) {
         _showSnackBar(AppLocalizations.of(context).failedToOpenChatTryAgain);
       }
@@ -2415,27 +2410,31 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
     final currentUser = ref.read(currentUserProvider).value;
     if (currentUser == null) return;
     try {
-      final passengerProfile = await ref.read(userProfileProvider(passengerId).future);
+      final passengerProfile = await ref.read(
+        userProfileProvider(passengerId).future,
+      );
       if (!context.mounted) return;
       if (passengerProfile == null) {
         _showSnackBar(AppLocalizations.of(context).passengerProfileNotFound);
         return;
       }
-      final chat = await ref.read(getOrCreateChatProvider(
-        userId1: currentUser.uid,
-        userId2: passengerId,
-        userName1: currentUser.displayName,
-        userName2: passengerProfile.displayName,
-        userPhoto1: currentUser.photoUrl,
-        userPhoto2: passengerProfile.photoUrl,
-      ).future);
+      final chat = await ref.read(
+        getOrCreateChatProvider(
+          userId1: currentUser.uid,
+          userId2: passengerId,
+          userName1: currentUser.displayName,
+          userName2: passengerProfile.displayName,
+          userPhoto1: currentUser.photoUrl,
+          userPhoto2: passengerProfile.photoUrl,
+        ).future,
+      );
       if (!context.mounted) return;
       context.pushNamed(
         AppRoutes.chatDetail.name,
         pathParameters: {'id': chat.id},
         extra: passengerProfile,
       );
-    } catch (_) {
+    } on Exception catch (_) {
       if (context.mounted) {
         _showSnackBar(AppLocalizations.of(context).failedToOpenChatTryAgain);
       }
@@ -2444,7 +2443,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
 
   /// Book ride – creates a pending booking and navigates to the pending screen.
   /// Payment (if applicable) is collected after the driver accepts.
-  void _bookRide(RideModel ride) async {
+  Future<void> _bookRide(RideModel ride) async {
     final uiState = ref.read(rideDetailUiViewModelProvider(widget.rideId));
     final user = ref.read(currentUserProvider).value;
     if (user == null) {
@@ -2492,7 +2491,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
           message: AppLocalizations.of(context).failedToBookRidePlease,
         );
       }
-    } catch (e) {
+    } on Exception catch (e) {
       if (!context.mounted) return;
       _uiNotifier.setBooking(false);
       await FeedbackAnimations.showError(
